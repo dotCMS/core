@@ -659,7 +659,11 @@
 			if ((live || working) && read)  {
 				var actionLabel = write ? '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Edit")) %>' : '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View")) %>';
 
-				strHTML += '<a href="javascript: editHTMLPage(\'' + objId + '\', \'' + referer + '\');" class="contextPopupMenu">';
+				var editFunction = page.isContentlet ?
+						                  "editHTMLPageAsset('" + objId + "','" + page.stInode + "')"
+						                : "editHTMLPage('" + objId + "', '" + referer + "')";  
+				
+				strHTML += "<a href=\"javascript: "+editFunction+";\" class=\"contextPopupMenu\">";
     				strHTML += '<span class="pagePropIcon"></span>';
            			strHTML += actionLabel;
 				strHTML += '</a>';

@@ -1,12 +1,20 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
+import java.util.Map;
+
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 public class HTMLPageAsset extends Contentlet implements IHTMLPage {
     private static final long serialVersionUID = -4775734788059690797L;
@@ -54,7 +62,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public boolean isHttpsRequired() {
-        return getBoolProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD);
+        return getStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD)!=null;
     }
 
     @Override
@@ -74,7 +82,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public String getPageUrl() {
-        return getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+        return getStringProperty(HTMLPageAssetAPI.URL_FIELD)+"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
     }
 
     @Override
@@ -101,5 +109,52 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
     public void setTemplateId(String templateId) {
         setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, templateId);
     }
+
+    @Override
+    public String getFriendlyName() {
+        return getStringProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD);
+    }
+
+    @Override
+    public void setFriendlyName(String friendlyName) {
+        setStringProperty(HTMLPageAssetAPI.FRIENDLY_NAME_FIELD, friendlyName);
+    }
     
+    @Override
+    public Map<String, Object> getMap() throws DotRuntimeException {        
+        Map<String, Object> map = super.getMap();
+        
+        map.put("type", "htmlpage");
+        
+        map.put("title", getTitle());
+        map.put("friendlyName", getFriendlyName());
+        
+        try {
+            map.put("live", isLive());
+            map.put("working", isWorking());
+            map.put("deleted", isArchived());
+            map.put("locked", isLocked());
+        }
+        catch(Exception ex) {
+            throw new DotRuntimeException(ex.getMessage(),ex);
+        }
+        map.put("modDate", getModDate());
+        map.put("modUser", getModUser());
+        User modUser = null;
+        try {
+            modUser = APILocator.getUserAPI().loadUserById(this.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage(), e);
+        }
+        if (UtilMethods.isSet(modUser) && UtilMethods.isSet(modUser.getUserId()) && !modUser.isNew())
+            map.put("modUserName", modUser.getFullName());
+        else
+            map.put("modUserName", "unknown");
+        
+        map.put("metadata", getMetadata());
+        map.put("pageUrl", getPageUrl());
+        map.put("httpsRequired", isHttpsRequired());
+        map.put("redirect", getRedirect());
+        return map;
+    }    
 }

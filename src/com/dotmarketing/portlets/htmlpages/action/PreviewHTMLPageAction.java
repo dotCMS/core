@@ -1,28 +1,36 @@
 package com.dotmarketing.portlets.htmlpages.action;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.portal.struts.ActionException;
 import com.liferay.portlet.ActionRequestImpl;
 
 /**
@@ -42,10 +50,25 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 
 			// get the user
 			User user = com.liferay.portal.util.PortalUtil.getUser(req);
-
-			Logger.debug(this, "Calling Retrieve method");
-			_retrieveWebAsset(req, res, config, form, user, HTMLPage.class, WebKeys.HTMLPAGE_EDIT);
-
+			
+			IHTMLPage webAsset;
+			String inode=req.getParameter("inode");
+            Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+            if(ident.getAssetType().equals("contentlet")) {
+                webAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                        APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 0, user, false));
+            }
+            else {
+                webAsset = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
+            }
+            
+            if(!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PermissionAPI.PERMISSION_READ, user)) {
+                throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+            }
+            
+	        req.setAttribute(WebKeys.HTMLPAGE_EDIT, webAsset);	        
+	        req.setAttribute(WebKeys.VERSIONS_INODE_EDIT, webAsset);
+	        
 			// wraps request to get session object
 			ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 			HttpServletRequest hreq = reqImpl.getHttpServletRequest();

@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+@Deprecated
 public interface HTMLPageAPI {
 	
 	public enum CopyMode {

@@ -69,7 +69,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
-
+@Deprecated
 public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();

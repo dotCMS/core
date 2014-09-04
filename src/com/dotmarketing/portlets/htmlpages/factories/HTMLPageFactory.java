@@ -43,6 +43,7 @@ import com.liferay.portal.struts.ActionException;
  *
  * @author  will
  */
+@Deprecated
 public class HTMLPageFactory {
 	
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();

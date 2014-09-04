@@ -3,11 +3,15 @@ package com.dotmarketing.portlets.htmlpageasset.model;
 import java.util.Map;
 
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
-public interface IHTMLPage {
+public interface IHTMLPage extends Versionable,Permissionable {
+    
+    String getIdentifier();
    
     long getCacheTTL();
     void setCacheTTL(long cacheTTL);
@@ -38,6 +42,9 @@ public interface IHTMLPage {
 
     String getTemplateId();
     void setTemplateId(String templateId);
+    
+    String getFriendlyName();
+    void setFriendlyName(String friendlyName);
 
     public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
         

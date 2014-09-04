@@ -1,8 +1,19 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
+import java.util.List;
+
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.model.User;
 
 public interface HTMLPageAssetAPI {
     
@@ -54,4 +65,17 @@ public interface HTMLPageAssetAPI {
     static final String ADVANCED_PROPERTIES_TAB_NAME="Advanced Properties";
     
     void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException;
+    
+    Template getTemplate(IHTMLPage page, boolean preview) throws DotDataException, DotSecurityException;
+    Host getParentHost(IHTMLPage page) throws DotDataException, DotStateException, DotSecurityException;
+
+    HTMLPageAsset fromContentlet(Contentlet content);
+
+    List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+    List<IHTMLPage> getWorkingHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+    List<IHTMLPage> getDeletedHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+    List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 }

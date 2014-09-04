@@ -35,7 +35,7 @@ function getTemplateCallBack(data) {
 
 dojo.ready(function(){
     var templateStore=new dotcms.dojo.data.TemplateReadStore({ 
-        hostId: dojo.byId("hostfolder").value 
+        hostId: "$host.identifier" 
     });
 
     window.top._templateStore=templateStore;
