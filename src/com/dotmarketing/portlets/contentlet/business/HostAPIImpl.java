@@ -10,11 +10,14 @@ import java.util.StringTokenizer;
 
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
+import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -556,11 +559,9 @@ public class HostAPIImpl implements HostAPI {
 				}
 
 				// Remove Contentlet
-				ContentletAPI contentAPI = APILocator.getContentletAPI();
-				dc.setSQL("select distinct id, language_id from identifier join contentlet on contentlet.identifier=identifier.id where identifier.host_inode=?");
-				dc.addParam(host.getIdentifier());
-				for (Map<String,Object> rr : dc.loadObjectResults()) {
-				    Contentlet contentlet = contentAPI.findContentletByIdentifier((String)rr.get("id"), false, ((Number)rr.get("language_id")).longValue(), user, false);
+				ContentletAPI contentAPI = APILocator.getContentletAPI();								
+				List<Contentlet> contentlets = contentAPI.findContentletsByHost(host, user, respectFrontendRoles);
+				for (Contentlet contentlet : contentlets) {	
 					contentAPI.delete(contentlet, user, respectFrontendRoles);
 				}
 
