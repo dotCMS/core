@@ -40,7 +40,9 @@
 		PermissionAPI permAPI = APILocator.getPermissionAPI();
 		Permissionable asset = ((Permissionable)request.getAttribute(com.dotmarketing.util.WebKeys.PERMISSIONABLE_EDIT));
 		Structure hostStrucuture = StructureCache.getStructureByVelocityVarName("Host");
+		Contentlet contentletAux = ((Contentlet)request.getAttribute(com.dotmarketing.util.WebKeys.CONTENTLET_EDIT));
 	%>
+	var languageId = '<%= ((UtilMethods.isSet(contentletAux) && UtilMethods.isSet(contentletAux.getLanguageId())) ? contentletAux.getLanguageId() : "") %>';
 	var assetId = '<%= asset.getPermissionId() %>';
 	var assetType = '<%= ((asset instanceof Contentlet) && ((Contentlet)asset).getStructureInode().equals(hostStrucuture.getInode()))?Host.class.getName():asset.getClass().getName() %>';
 	var isParentPermissionable = <%= (asset.isParentPermissionable()) %>;
@@ -159,7 +161,7 @@
 		//http://jira.dotmarketing.net/browse/DOTCMS-6214
 		destroyChecks();
 
-		PermissionAjax.getAssetPermissions(assetId, { callback: renderPermissionsCallback, scope: this });
+		PermissionAjax.getAssetPermissions(assetId, languageId, { callback: renderPermissionsCallback, scope: this });
 
 		if(isParentPermissionable)
 			dojo.style('cascadeChangesChkWrapper', { display: '' });
@@ -414,7 +416,7 @@
 			window.scrollTo(0,0);	// To show lightbox effect(IE) and save content errors.
 		dijit.byId('savingPermissionsDialog').show();
 
-		PermissionAjax.saveAssetPermissions(assetId, permissionsToSubmit, cascade, dojo.hitch(this, savePermissionsCallback, assetId, permissionsToSubmit, cascade));
+		PermissionAjax.saveAssetPermissions(assetId, languageId, permissionsToSubmit, cascade, dojo.hitch(this, savePermissionsCallback, assetId, permissionsToSubmit, cascade));
 
 	}
 
@@ -726,7 +728,7 @@
 		   assetType == 'com.dotmarketing.beans.Host') {
 		 dijit.byId('savingPermissionsDialog').show();
 		 changesMadeToPermissions=false;
-		 PermissionAjax.permissionIndividually(assetId, permissionIndividuallyCallback);
+		 PermissionAjax.permissionIndividually(assetId, languageId, permissionIndividuallyCallback);
 
 	  }else{
 
@@ -828,7 +830,7 @@
 		if(confirm(removeIndividualPermissionConfirm)) {
 			changesMadeToPermissions=false;
 			dijit.byId('savingPermissionsDialog').show();
-			PermissionAjax.resetAssetPermissions(assetId, resetPermissionsCallback);
+			PermissionAjax.resetAssetPermissions(assetId, languageId, resetPermissionsCallback);
 		}
 	}
 
