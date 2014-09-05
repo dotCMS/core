@@ -1,31 +1,22 @@
 package com.dotmarketing.portlets.htmlpages.action;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -80,7 +71,7 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
 			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
 
-			HTMLPage htmlPage = _previewHTMLPages(req, user);
+			IHTMLPage htmlPage = _previewHTMLPages(req, user);
 
 			ActivityLogger.logInfo(this.getClass(), "save HTMLpage action", "User " + user.getPrimaryKey() + " save page " + htmlPage.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
@@ -99,10 +90,10 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 		}
 	}
 
-	private HTMLPage _previewHTMLPages(ActionRequest req, User user) throws Exception {
+	private IHTMLPage _previewHTMLPages(ActionRequest req, User user) throws Exception {
 
 		// gets html page being previewed
-		HTMLPage htmlPage = (HTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
+		IHTMLPage htmlPage = (IHTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
 
 		String language = req.getParameter("language");
 		if (!UtilMethods.isSet(language)) {

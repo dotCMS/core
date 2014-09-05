@@ -45,6 +45,9 @@ public interface IHTMLPage extends Versionable,Permissionable {
     
     String getFriendlyName();
     void setFriendlyName(String friendlyName);
+    
+    String getTitle();
+    void setTitle(String title);
 
     public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
         

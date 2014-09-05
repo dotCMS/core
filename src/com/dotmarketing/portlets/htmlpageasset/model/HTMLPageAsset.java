@@ -4,10 +4,8 @@ import java.util.Map;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -156,5 +154,15 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         map.put("httpsRequired", isHttpsRequired());
         map.put("redirect", getRedirect());
         return map;
+    }
+
+    @Override
+    public void setTitle(String title) {
+        setStringProperty(HTMLPageAssetAPI.TITLE_FIELD, title);
     }    
+    
+    @Override
+    public String getTitle() {
+        return getStringProperty(HTMLPageAssetAPI.TITLE_FIELD);
+    }
 }
