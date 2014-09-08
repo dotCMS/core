@@ -36,6 +36,13 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		}
 	}
 	
+	@Override
+	protected void addIdentifierToCache(String identifier, String inode) {
+		if(UtilMethods.isSet(identifier) && InodeUtils.isSet(inode)){
+			cache.put(getVersionGroup() + inode, identifier, getVersionGroup());
+		}
+	}
+	
 	
 	private String getIdentGroup(Identifier id) {
 	    return id.getAssetType()!=null && id.getAssetType().equals(IdentifierAPI.IDENT404) ? 
@@ -111,21 +118,37 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		return value;
 	}
 
-
-
 	protected String getIdentifierFromInode(Versionable versionable)  {
 
 		if(versionable ==null || !InodeUtils.isSet(versionable.getInode())){
 			return null;
 		}
+		
 		String value = null;
+		
 		try {
 			value = (String) cache.get(getVersionGroup() + versionable.getInode(), getVersionGroup());
 		} catch (DotCacheException e) {
 			Logger.debug(IdentifierCacheImpl.class, "Cache Entry not found", e);
 		}
+		
+		return value;
+	}
+	
+	protected String getIdentifierFromInode(String inode)  {
 
-
+		if(!InodeUtils.isSet(inode)){
+			return null;
+		}
+		
+		String value = null;
+		
+		try {
+			value = (String) cache.get(getVersionGroup() + inode, getVersionGroup());
+		} catch (DotCacheException e) {
+			Logger.debug(IdentifierCacheImpl.class, "Cache Entry not found", e);
+		}
+		
 		return value;
 	}
 	

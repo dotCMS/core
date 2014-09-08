@@ -40,9 +40,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		Identifier ident = ifac.loadFromCache(inodeOrIdentifier);
 
 		if(ident == null || !InodeUtils.isSet(ident.getInode())){
-			Contentlet proxy = new Contentlet();
-			proxy.setInode(inodeOrIdentifier);
-			ident = ifac.loadFromCache(proxy);
+			ident = ifac.loadFromCacheFromInode(inodeOrIdentifier);
 		}
 		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
@@ -70,10 +68,8 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 			 ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
 		}
 		
-		if (ident != null && InodeUtils.isSet(ident.getInode()) ) {
-			Contentlet proxy = new Contentlet();
-			proxy.setInode(inodeOrIdentifier);
-			CacheLocator.getIdentifierCache().addIdentifierToCache(ident, proxy);
+		if (ident != null && InodeUtils.isSet(ident.getId()) ) {
+			CacheLocator.getIdentifierCache().addIdentifierToCache(ident.getId(), inodeOrIdentifier);
 		}
 		
 		return ident;
