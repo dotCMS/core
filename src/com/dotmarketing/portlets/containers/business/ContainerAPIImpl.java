@@ -15,6 +15,8 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
+import com.dotmarketing.business.Cachable;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -175,56 +177,83 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	@SuppressWarnings("unchecked")
 	public Container getWorkingContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
-				"where containers.inode = containers_1_.inode and vv.working_inode=containers.inode and " +
-				"vv.identifier = ?");
-		dh.setParam(id);
-		//dh.setParam(true);
-		List<Container> list = dh.list();
+		//Trying to get the container from Working cache.
+		Container container = CacheLocator.getContainerCache().getWorking(id);
+		
+		//If it is not in cache.
+		if(container == null){
+			
+			//Get container from DB.
+			HibernateUtil dh = new HibernateUtil(Container.class);
+			
+			dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
+					"where containers.inode = containers_1_.inode and vv.working_inode=containers.inode and " +
+					"vv.identifier = ?");
+			
+			dh.setParam(id);
+			
+			List<Container> list = dh.list();
 
-		if(list.size() == 0)
-			return null;
+			//If DB return something.
+			if(!list.isEmpty()){
+				Container containerAux = list.get(0);
 
-		Container container = list.get(0);
+				if (!permissionAPI.doesUserHavePermission(containerAux, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+					throw new DotSecurityException("You don't have permission to read the source file.");
+				}
 
-		if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+				if(InodeUtils.isSet(containerAux.getInode())){
+					//container is the one we are going to return.
+					container = containerAux;
+					//Add to cache.
+					CacheLocator.getContainerCache().add(container.getIdentifier(), container);
+				}
+			}
 		}
-
-		if(InodeUtils.isSet(container.getInode()))
-			return container;
-		else
-			return null;
+		
+		return container;
 	}
 
 
 	@SuppressWarnings("unchecked")
 	public Container getLiveContainerById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		
+		//Trying to get the container from Live cache.
+		Container container = CacheLocator.getContainerCache().getLive(id);
+		
+		//If it is not in cache.
+		if(container == null){
+			
+			//Get container from DB.
+			HibernateUtil dh = new HibernateUtil(Container.class);
+			
+			dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
+					"where containers.inode = containers_1_.inode and vv.live_inode=containers.inode and " +
+					"vv.identifier = ?");
+			
+			dh.setParam(id);
+			
+			List<Container> list = dh.list();
 
-		HibernateUtil dh = new HibernateUtil(Container.class);
-		dh.setSQLQuery("select {containers.*} from containers, inode containers_1_, container_version_info vv " +
-				"where containers.inode = containers_1_.inode and vv.live_inode=containers.inode and " +
-				"vv.identifier = ?");
-		dh.setParam(id);
-		//dh.setParam(true);
-		List<Container> list = dh.list();
+			//If DB return something.
+			if(!list.isEmpty()){
+				Container containerAux = list.get(0);
 
-		if(list.size() == 0)
-			return null;
+				if (!permissionAPI.doesUserHavePermission(containerAux, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+					throw new DotSecurityException("You don't have permission to read the source file.");
+				}
 
-		Container container = list.get(0);
-
-		if (!permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+				if(InodeUtils.isSet(containerAux.getInode())){
+					//container is the one we are going to return.
+					container = containerAux;
+					//Add to cache.
+					CacheLocator.getContainerCache().add(container.getIdentifier(), container);
+				}
+			}
 		}
-
-		if(InodeUtils.isSet(container.getInode()))
-			return container;
-		else
-			return null;
+		
+		return container;
 	}
-
 
 	/**
 	 *

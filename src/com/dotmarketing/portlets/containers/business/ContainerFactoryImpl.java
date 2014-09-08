@@ -33,12 +33,12 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 	public void save(Container container) throws DotDataException {
 		HibernateUtil.save(container);
-		containerCache.add(container.getInode(), container);
+		containerCache.add(container.getIdentifier(), container);
 	}
 
 	public void save(Container container, String existingId) throws DotDataException {
 		HibernateUtil.saveWithPrimaryKey(container, existingId);
-		containerCache.add(container.getInode(), container);
+		containerCache.add(container.getIdentifier(), container);
 	}
 
 	@SuppressWarnings("unchecked")
