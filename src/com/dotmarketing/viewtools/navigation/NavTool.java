@@ -68,21 +68,19 @@ public class NavTool implements ViewTool {
         
         NavResult result=navCache.getNav(host.getIdentifier(), folder.getInode());
         
-	        if(result != null) {
-	        	 if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
-	                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
-	        	CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-	        	 }
-	        }
-	        
-            String parentId;
+        if(result != null) {
+        	
+        	return result;
+        	
+        } else {
+        	String parentId;
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
                 parentId=ident.getParentPath().equals("/") ? 
                         FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(ident.getParentPath(), host, user, false).getInode();
-            }
-            else
+            } else {
                 parentId=null;
+            }
             result=new NavResult(parentId, host.getIdentifier(),folder.getInode());
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
             result.setHref(ident.getURI());
@@ -173,9 +171,9 @@ public class NavTool implements ViewTool {
             }
             
             navCache.putNav(host.getIdentifier(), folder.getInode(), result);
-    
-        
-        return result;
+            
+            return result;
+        }
     }
     
     public NavResult getNav() throws DotDataException, DotSecurityException {
