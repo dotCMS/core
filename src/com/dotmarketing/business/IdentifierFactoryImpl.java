@@ -224,6 +224,13 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		if(idStr ==null) return null;
 		return check404(ic.getIdentifier(idStr)); 
 	}
+	
+	protected Identifier loadFromCacheFromInode(String inode) {
+
+		String idStr= ic.getIdentifierFromInode(inode);
+		if(idStr ==null) return null;
+		return check404(ic.getIdentifier(idStr)); 
+	}
 
 	/**
 	 * This method checks cache first, then db. If found in the database it will

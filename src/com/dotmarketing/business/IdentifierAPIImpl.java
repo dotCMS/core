@@ -39,12 +39,8 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public Identifier findFromInode(String inodeOrIdentifier) throws DotDataException {
 		Identifier ident = ifac.loadFromCache(inodeOrIdentifier);
 
-		
-		if(ident ==null){
-			// try to load it from a id first, then by a proxy Inode
-			Contentlet proxy = new Contentlet();
-			proxy.setInode(inodeOrIdentifier);
-			ident = ifac.loadFromCache(proxy);
+		if(ident == null || !InodeUtils.isSet(ident.getInode())){
+			ident = ifac.loadFromCacheFromInode(inodeOrIdentifier);
 		}
 		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
@@ -70,7 +66,11 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		
 		if (ident == null || !InodeUtils.isSet(ident.getInode())) {
 			 ident = ifac.find(InodeFactory.getInode(inodeOrIdentifier, Inode.class));
-		} 
+		}
+		
+		if (ident != null && InodeUtils.isSet(ident.getId()) ) {
+			CacheLocator.getIdentifierCache().addIdentifierToCache(ident.getId(), inodeOrIdentifier);
+		}
 		
 		return ident;
 		
