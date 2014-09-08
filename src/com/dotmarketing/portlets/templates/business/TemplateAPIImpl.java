@@ -496,7 +496,15 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI {
 		if(pages.size()>0) {
 			StringBuilder names=new StringBuilder();
 			for(int i=0; i<pages.size(); i++) {
-				names.append(pages.get(i).getURI()).append(", ");
+				names.append(pages.get(i).getURI());
+				if(i <pages.size()-1){
+					names.append(", ");
+				}
+				if(pages.size()-1 == i){
+					if(!(pages.get(i).isWorking())){
+						names.append(",HTMLPAGE_NON_WORKING_VERSIONS");
+					}
+				}
 			}
 			result =  names.toString();
 		}
