@@ -5,13 +5,17 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class ContainerCacheImpl extends ContainerCache {
 	
 	private DotCacheAdministrator cache;
 	
 	private static String primaryGroup = "ContainerCache";
-    // region's name for the cache
+	private static String CONTAINER_LIVE = "live";
+	private static String CONTAINER_WORKING = "working";
+    
+	// region's name for the cache
     private static String[] groupNames = {primaryGroup};
 
 	public ContainerCacheImpl() {
@@ -19,51 +23,76 @@ public class ContainerCacheImpl extends ContainerCache {
 	}
 
 	@Override
-	protected Container add(String key, Container container) {
-		key = primaryGroup + key;
-
-        // Add the key to the cache
-        cache.put(key, container, primaryGroup);
-
-
-		return container;
+	protected Container add(String identifier, Container container) {
 		
+		try{
+			if(UtilMethods.isSet(container)){
+				String key = primaryGroup + identifier;
+				
+				if(container.isLive()){
+					cache.put(key + CONTAINER_LIVE, container, primaryGroup);
+				} 
+				if(container.isWorking()){
+					cache.put(key += CONTAINER_WORKING, container, primaryGroup);
+				}
+			}
+		} catch (Exception e) {
+			Logger.debug(this, "Could not add entre to cache", e);
+		}	
+        
+		return container;
 	}
 	
 	@Override
-	protected Container get(String key) {
-		key = primaryGroup + key;
+	protected Container getWorking(String identifier) {
+		String key = primaryGroup + identifier + CONTAINER_WORKING;
+		
 		Container container = null;
     	try{
     		container = (Container)cache.get(key,primaryGroup);
     	}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
+    	
         return container;	
 	}
+	
+	@Override
+	protected Container getLive(String identifier) {
+		String key = primaryGroup + identifier + CONTAINER_LIVE;
+		
+		Container container = null;
+    	try{
+    		container = (Container)cache.get(key,primaryGroup);
+    	}catch (DotCacheException e) {
+			Logger.debug(this, "Cache Entry not found", e);
+		}
+        
+    	return container;	
+	}
 
-    /* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionCache#clearCache()
-	 */
     public void clearCache() {
-        // clear the cache
+        // Clear the cache for all group.
         cache.flushGroup(primaryGroup);
     }
 
-    /* (non-Javadoc)
-	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
-	 */
-    public void remove(String key){
-    	key = primaryGroup + key;
+    public void remove(String identifier){
+    	String keyWorking = primaryGroup + identifier + CONTAINER_WORKING;
+    	String keyLive = primaryGroup + identifier + CONTAINER_LIVE;
+    	
     	try{
-    		cache.remove(key,primaryGroup);
+    		cache.remove(keyWorking, primaryGroup);
+    		cache.remove(keyLive, primaryGroup);
+    		
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		} 
     }
+    
     public String[] getGroups() {
     	return groupNames;
     }
+    
     public String getPrimaryGroup() {
     	return primaryGroup;
     }
