@@ -8,6 +8,10 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 public abstract class IdentifierCache implements Cachable {
 
 	abstract protected void addIdentifierToCache(Identifier id);
+	
+    abstract protected void addIdentifierToCache(Identifier id, Versionable v) ;
+    
+    abstract protected void addIdentifierToCache(String identifier, String inode) ;
 
 	abstract protected Identifier getIdentifier(String identId);
 
@@ -16,6 +20,8 @@ public abstract class IdentifierCache implements Cachable {
 	abstract protected Identifier getIdentifier(String hostId, String URI);
 
 	abstract protected String getIdentifierFromInode(Versionable versionable);
+	
+	abstract protected String getIdentifierFromInode(String inode);
 
 	abstract protected void removeFromCacheByURI(String hostId, String URI);
 
@@ -57,10 +63,5 @@ public abstract class IdentifierCache implements Cachable {
 	public String get404Group() {
 	    return "Identifier404Cache";
 	}
-	
-    abstract protected void addIdentifierToCache(Identifier id, Versionable v) ;
-
-		
-	
 
 }
