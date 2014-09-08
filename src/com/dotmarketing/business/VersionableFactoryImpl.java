@@ -72,13 +72,16 @@ public class VersionableFactoryImpl extends VersionableFactory {
 
 		Class clazz = InodeUtils.getClassByDBType(identifier.getAssetType());
 		if(UtilMethods.isSet(vinfo)) {
-    		HibernateUtil dh = new HibernateUtil(clazz);
-    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
-    		dh.setParam(vinfo.getLiveInode());
-    		Logger.debug(this.getClass(), "findLiveVersion query: " + dh.getQuery());
-    		return (Versionable) dh.load();
-		}
-		else {
+			if(UtilMethods.isSet(vinfo.getLiveInode())){
+	    		HibernateUtil dh = new HibernateUtil(clazz);
+	    		dh.setQuery("from inode in class " + clazz.getName() + " where inode.inode=?");
+	    		dh.setParam(vinfo.getLiveInode());
+	    		Logger.debug(this.getClass(), "findLiveVersion query: " + dh.getQuery());
+	    		return (Versionable) dh.load();
+			}else{
+				return null;
+			}
+		}else {
 		    // hey! there is no live version for this versionable
 		    return null;
 		}

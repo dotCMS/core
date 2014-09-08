@@ -26,6 +26,9 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -280,5 +283,21 @@ public class TemplateAjax {
 
         return duplicatedTitle;
     }
+    
+    public String deleteDependentNonWorkingVersions(String templateInode) throws DotDataException, DotRuntimeException, DotSecurityException, PortalException, SystemException{
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = userWebAPI.getLoggedInUser(req);
+		boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
+		Template template = templateAPI.find(templateInode, user, respectFrontendRoles);
+		List<HTMLPage> pages= templateAPI.getPagesUsingTemplate(template, user, respectFrontendRoles);
+		for(HTMLPage page : pages) {
+			try{
+				WebAssetFactory.deleteAssetVersion(page);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		return LanguageUtil.get(user, "Success");
+	}
 
 }
