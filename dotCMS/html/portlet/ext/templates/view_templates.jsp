@@ -140,14 +140,56 @@ function handleDepResponse(data, arg1) {
 	var params = arg1.split('|');
 	var inode = params[0];
 	var referer = params[1];
-
-
+	
 	if(data!=null) {
-		dojo.byId("depDiv").innerHTML = "<br />" + data;
-		dijit.byId("dependenciesDialog").show();
-	} else {
+		if(data.split("HTMLPAGE_NON_WORKING_VERSIONS").length < 2){
+			var res = data.split(",");
+		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
+			for (i = 0; i < res.length; i++) { 
+					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
+			}
+				resultTableStr = resultTableStr + '</tbody></table>';
+			
+			dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
+			dijit.byId("dependenciesDialog").show();
+		
+		}else{
+			data = data.substring(0,data.lastIndexOf(","));
+			var res = data.split(",");
+		    var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "URI")%></th></tr></thead><tbody>';
+			for (i = 0; i < res.length; i++) { 
+					resultTableStr = resultTableStr + "<tr><td>" + res[i]+ "</td></tr>";
+				}
+			resultTableStr = resultTableStr + '</tbody></table><br />';
+			resultTableStr += '<div class="buttonRow"> <button dojoType="dijit.form.Button" iconClass="deleteIcon" name="filterButton" style="font-weight: bold" onClick="deleteDependentNonWorkingVersions(\'' + inode + '\',\'' + referer + '\')"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "dependencies_delete_button") %></button>';
+			resultTableStr += '<button dojoType="dijit.form.Button" iconClass="cancelIcon" name="filterButton" style="font-weight: bold" onClick="hideDependenciesDialog();"> <%= com.liferay.portal.language.LanguageUtil.get(pageContext, "Cancel") %></button></div>';
+			dojo.byId("depDiv").innerHTML = resultTableStr;
+			dijit.byId("dependenciesDialog").show();
+			dojo.parser.parse("dependenciesDialog");
+		}
+	}else{
 		processDelete(inode, referer);
 	}
+}
+
+function hideDependenciesDialog(){
+	dijit.byId("dependenciesDialog").hide();
+}
+
+function deleteDependentNonWorkingVersions(inode,referer){
+	var callMetaData = {
+			arg: inode + '|' + referer,
+			callback:deleteCallback
+			};
+	TemplateAjax.deleteDependentNonWorkingVersions(inode, callMetaData);
+}
+
+function deleteCallback(data,arg1){
+	var params = arg1.split('|');
+	var inode = params[0];
+	var referer = params[1];
+	dijit.byId("dependenciesDialog").hide();
+	processDelete(inode, referer);
 }
 
 function processDelete(inode, referer) {
@@ -411,11 +453,11 @@ if(<%=dependencies%>)
 }) ;
 </script>
 
-<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:300px;vertical-align: middle; " draggable="true"
+<div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none;width:630px;height:auto;vertical-align: middle; " draggable="true"
 	title="<%= LanguageUtil.get(pageContext, "Delete-Template") %>" >
 
 	<span style="color: red; font-weight: bold"><%= LanguageUtil.get(pageContext, "message.template.full_delete.error") %></span>
 
-	<div id="depDiv" style="overflow: auto; height: 220px"></div>
+	<div id="depDiv" style="overflow: auto;height:auto"></div>
 </div>
 

@@ -88,6 +88,12 @@ public abstract class IdentifierFactory {
 	 * @param versionable
 	 */
 	abstract protected Identifier loadFromCache(Versionable versionable);
+	
+	/**
+	 * loads from cache only using inode, returns null if not found
+	 * @param inode
+	 */
+	abstract protected Identifier loadFromCacheFromInode(String inode);
 
 	
 	/**

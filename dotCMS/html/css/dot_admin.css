@@ -337,7 +337,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 #menu ul.dropdown li.dotCMS_TIMEMACHINE a span, .clockIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span, .linkCheckIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1760px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 /* Action Panel */
 .actionPanelPage {position: relative;}
@@ -367,6 +367,8 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 /* BUTTON ICONS 2.0 */
 .shimIcon{width:18px;height:18px;display:inline-block;}
 .shimIconSmall{width:18px;height:1px;display:inline-block;}
+
+.uknIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -2000px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 
 .plusIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px 0px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .colorIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px 0px;width:18px;height:18px;display:inline-block;vertical-align:top;}
@@ -499,7 +501,6 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .appMonitorIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1740px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .workStreamIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1740px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .rememberIcon {background: url(/html/images/icons/clock-select-remain.png) no-repeat center center;width:18px;height:18px;display:inline-block;vertical-align:top;}
-.uknIcon {background: url(/html/images/icons/ukn.png) no-repeat center center;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .exclamationIcon {background: url(/html/images/icons/exclamation-octagon.png) no-repeat center center;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .keyvalueIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1380px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .shimIcon {background: url(/html/images/shim.gif) ;width:18px;height:18px;display:inline-block;vertical-align:top;}
@@ -564,7 +565,7 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 .accdbIcon, .dbIcon, .mdbIcon, .pdbIcon, .sqlIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1620px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .pptIcon, .pptxIcon, .keynote {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1640px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .wmvIcon, .asxIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1640px;width:18px;height:18px;display:inline-block;vertical-align:top;}
-.oggIcon, .asfIcon, .aviIcon, .movIcon, .mpgIcon, .mp4Icon, .rmIcon, .vobIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.oggIcon, .asfIcon, .aviIcon, .movIcon, .mpgIcon, .mp4Icon, .rmIcon, .vobIcon, .ogvIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .mp3Icon, .aacIcon, .aifIcon, .iffIcon, .m3uIcon, .midIcon, .mpaIcon, .raIcon, .wavIcon, .wmaIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1660px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .cssIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 .vtlIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1680px;width:18px;height:18px;display:inline-block;vertical-align:top;}
@@ -593,10 +594,10 @@ div.contextPopupMenuBox a{line-height:18px;padding:3px 0;height:21px;vertical-al
 div.contextPopupMenuBox span{margin:0 8px 0 8px;}
 
 
-table.sTypeTable{};
-table.sTypeTd{vertical-align: top};
-.sTypeHeader{font-weight:bold; nowrap;min-width: 175;border-bottom: 1px solid silver};
-table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-width: 175;};
+table.sTypeTable{}
+table.sTypeTd{vertical-align: top;}
+.sTypeHeader{font-weight:bold; white-space:nowrap; min-width: 175;border-bottom: 1px solid silver;}
+table.sTypeTable.sTypeItem{text-transform: uppercase;white-space: nowrap;min-width: 175;}
 
 /* use in hmtl, templates, etc NOT in Browser Tree pop-ups*/
 #dotCMSErrors {background-color: #ffbcbc;border: 1px solid gray;width: 300px;overflow: auto;padding: 10px;margin-left: 100px;margin-bottom: 10px;}
@@ -726,7 +727,7 @@ table.bgThumbnail td{padding:10px;}
 table.bgThumbnail td div{padding:4px;border:1px solid #a0a0a0;margin:6px;-moz-box-shadow:0px 3px 10px rgba(0, 0, 0, 0.3);-webkit-box-shadow:0px 3px 10px rgba(0, 0, 0, 0.3);box-shadow:0px 3px 10px rgba(0, 0, 0, 0.3);}
 table.bgThumbnail td div a{border:1px solid #a0a0a0;padding:2px;display:block;}
 
-.showPointer{cursor: pointer;};
+.showPointer{cursor: pointer;}
 
 /* Help Dialog */
 div#_dotHelpMenu{color:red;}
