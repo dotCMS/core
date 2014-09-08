@@ -1,5 +1,8 @@
 package com.dotmarketing.cache;
 
+import java.util.List;
+
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -184,8 +187,32 @@ public class StructureCache {
     public static void addURLMasterPattern(String pattern){
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         cache.put(getPrimaryGroup() + MASTER_STRUCTURE, pattern, getPrimaryGroup());
-        
 	}
+    
+    public static void addContainerStructures(List<ContainerStructure> containerStructures, String containerIdentifier){
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        cache.put(getContainerStructureGroup() + containerIdentifier, containerStructures, getContainerStructureGroup());
+	}
+    
+    @SuppressWarnings("unchecked")
+	public static List<ContainerStructure> getContainerStructures(String containerIdentifier){
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    	List<ContainerStructure> containerStructures = null;
+    	
+		try{
+			containerStructures = (List<ContainerStructure>) cache.get(getContainerStructureGroup() + containerIdentifier, getContainerStructureGroup());
+			return containerStructures;
+			
+		} catch (DotCacheException e) {
+			Logger.debug(StructureCache.class, "Cache Entry not found", e);
+			return null;
+    	}
+	}
+    
+    public static void removeContainerStructures(String containerIdentifier) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+        cache.remove(getContainerStructureGroup() + containerIdentifier, getContainerStructureGroup());
+    }
     
     public static void clearCache(){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
@@ -193,11 +220,15 @@ public class StructureCache {
 	    cache.flushGroup(getPrimaryGroup());
 	}
 	public static String[] getGroups() {
-    	String[] groups = {getPrimaryGroup()};
+    	String[] groups = {getPrimaryGroup(), getContainerStructureGroup()};
     	return groups;
     }
     
     public static String getPrimaryGroup() {
     	return "StructureCache";
-    }  
+    }
+    
+    public static String getContainerStructureGroup() {
+    	return "ContainerStructureCache";
+    }
 }
