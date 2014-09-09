@@ -1,21 +1,9 @@
 package com.dotcms.rest;
 
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
 import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -26,6 +14,11 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.InputStream;
+import java.net.URISyntaxException;
+import java.util.Map;
 
 
 @Path("/license")
@@ -38,13 +31,22 @@ public class LicenseResource extends WebResource {
         init(params, true, request, true, "EXT_LICENSE_MANAGER");
         try {
             JSONArray array=new JSONArray();
-            
-            for(Map<String,Object> lic : LicenseUtil.getLicenseRepoList()) {
-                JSONObject obj=new JSONObject();
-                for(Map.Entry<String,Object> entry : lic.entrySet()) {
-                    obj.put(entry.getKey(), entry.getKey()!=null ? entry.getValue() : "");
+
+            for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
+                JSONObject obj = new JSONObject();
+                for ( Map.Entry<String, Object> entry : lic.entrySet() ) {
+
+                    //Lets exclude some data we don' want/need to expose
+                    if ( entry.getKey().equals( "serverid" ) ) {
+                        obj.put( entry.getKey(), entry.getValue() != null ? LicenseUtil.getDisplayServerId( (String) lic.get( "serverId" ) ) : "" );
+                    } else if ( entry.getKey().equals( "serverId" ) || entry.getKey().equals( "license" ) ) {
+                        //Just ignore these fields
+                    } else {
+                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
+                    }
+
                 }
-                array.put(obj);
+                array.put( obj );
             }
             
             return Response.ok(array.toString(), MediaType.APPLICATION_JSON_TYPE).build();

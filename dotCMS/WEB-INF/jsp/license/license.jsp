@@ -18,10 +18,11 @@ if (request.getMethod().equalsIgnoreCase("POST") ) {
     error=LicenseUtil.processForm(request);
 }
 
+String serverId = "";
 boolean badId=false;
 try {
     LicenseUtil.getLevel();
-    LicenseUtil.getDisplayServerId();
+    serverId = LicenseUtil.getDisplayServerId();
 }
 catch(Exception ex) {
     badId=true;
@@ -146,7 +147,7 @@ tr.current_server_row td {
         </div> 
             
             <div style="margin-left:auto;margin-right:auto;width:600px;background:#eee;" class="callOutBox">
-                Server ID: <%= LicenseUtil.getDisplayServerId() %>
+                Server ID: <%= serverId %>
             </div>
       
             <%if(request.getAttribute("LICENSE_APPLIED_SUCCESSFULLY") != null){ %>
@@ -286,9 +287,8 @@ tr.current_server_row td {
         	default: return "-";
         	}
         }
-        
-        var currentServerId='<%= APILocator.getServerAPI().readServerId() %>';
-        
+
+        var currentServerId='<%= serverId %>';
         
         function load() {
             dojo.empty("repotableBody");
