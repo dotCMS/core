@@ -24,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
+@Deprecated
 public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTMLPage {
 
     private static final long serialVersionUID = 1L;

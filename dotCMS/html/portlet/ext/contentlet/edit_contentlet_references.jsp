@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
@@ -27,9 +28,9 @@
 <%
 	int Cmod=0;
    	for (Map<String, Object> reference : references) {
-    	HTMLPage htmlpageRef = (HTMLPage)reference.get("page");
+    	IHTMLPage htmlpageRef = (IHTMLPage)reference.get("page");
     	Container containerRef = (Container)reference.get("container");
-		Host host = APILocator.getHostAPI().findParentHost(htmlpageRef, APILocator.getUserAPI().getSystemUser(), false);
+		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlpageRef);
 		
 		String str_style2 = "";
 		if ((Cmod % 2) == 0) {

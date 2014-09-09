@@ -521,8 +521,8 @@ public abstract class VelocityServlet extends HttpServlet {
     
     			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
     
-    		} catch (ParseErrorException e) {
-    			// out.append(e.getMessage());
+    		} catch (Throwable e) {
+    			Logger.warn(this, "can't do live mode merge", e);
     		}
     
     		context = null;
@@ -825,7 +825,6 @@ public abstract class VelocityServlet extends HttpServlet {
             htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
                     APILocator.getUserAPI().getSystemUser(), false);
         }
-        HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
         // to check user has permission to write on this page

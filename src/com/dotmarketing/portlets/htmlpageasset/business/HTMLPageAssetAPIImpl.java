@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -165,6 +164,20 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<IHTMLPage> getDeletedHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         return getHTMLPages(parent, false, true, user, respectFrontEndRoles);
+    }
+
+    @Override
+    public Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException {
+        Identifier ident = APILocator.getIdentifierAPI().find(htmlPage.getIdentifier());
+        if(ident.getParentPath().equals("/")) {
+            return APILocator.getFolderAPI().findSystemFolder();
+        }
+        else {
+            return APILocator.getFolderAPI().findFolderByPath(
+                    ident.getParentPath(), APILocator.getHostAPI().find(
+                            ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false), 
+                            APILocator.getUserAPI().getSystemUser(), false);
+        }
     }
 
 }

@@ -19,7 +19,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public long getCacheTTL() {
-        return getLongProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD);
+        return Long.parseLong(getStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD));
     }
 
     @Override

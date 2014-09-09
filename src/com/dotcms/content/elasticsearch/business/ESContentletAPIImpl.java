@@ -31,15 +31,15 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
+import com.dotcms.repackage.com.google.gson.Gson;
+import com.dotcms.repackage.com.google.gson.GsonBuilder;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHit;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
-import com.dotcms.repackage.com.google.gson.Gson;
-import com.dotcms.repackage.com.google.gson.GsonBuilder;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -94,7 +94,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
@@ -671,7 +671,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(multitree.getParent1());
             //Get the pages
             try{
-                HTMLPage page = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(htmlPageIdentifier, APILocator.getUserAPI().getSystemUser(), false);
+                IHTMLPage page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, APILocator.getUserAPI().getSystemUser(), false);
 
                 if(page != null && page.isLive()){
                     //Rebuild the pages' files
@@ -752,6 +752,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return cal.getTime();
     }
+    
+    private IHTMLPage loadPageByIdentifier(String ident, boolean live, User user, boolean frontRoles) throws DotDataException, DotContentletStateException, DotSecurityException {
+        Identifier ii = APILocator.getIdentifierAPI().find(ident);
+        if(ii.getAssetType().equals("contentlet")) {
+            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, 0, user, frontRoles));
+        }
+        else {
+            return live? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles) 
+                    : (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ii, user, frontRoles);
+        }
+    }
 
     public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException {
         List<Map<String, Object>> results = new ArrayList<Map<String, Object>>();
@@ -766,7 +777,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return results;
         List<MultiTree> trees = MultiTreeFactory.getMultiTreeByChild(id.getInode());
         for (MultiTree tree : trees) {
-            HTMLPage page = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent1(), APILocator.getUserAPI().getSystemUser(), false);
+            IHTMLPage page = loadPageByIdentifier(tree.getParent1(), false, APILocator.getUserAPI().getSystemUser(), false);
             Container container = (Container) APILocator.getVersionableAPI().findWorkingVersion(tree.getParent2(), APILocator.getUserAPI().getSystemUser(), false);
             if (InodeUtils.isSet(page.getInode()) && InodeUtils.isSet(container.getInode())) {
                 Map<String, Object> map = new HashMap<String, Object>();
@@ -1205,7 +1216,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (MultiTree mt : mts) {
                 Identifier pageIdent = APILocator.getIdentifierAPI().find(mt.getParent1());
                 if(pageIdent != null && UtilMethods.isSet(pageIdent.getInode())){
-                    HTMLPage page=APILocator.getHTMLPageAPI().loadPageByPath(pageIdent.getURI(), pageIdent.getHostId());
+                    IHTMLPage page=loadPageByIdentifier(pageIdent.getId(), false, user, false);
                     if(page!=null && UtilMethods.isSet(page.getIdentifier()))
                         PageServices.invalidate(page);
                 }
@@ -4505,7 +4516,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // or Detail page with id=uuid
         else{
-            HTMLPage p = APILocator.getHTMLPageAPI().loadLivePageById(structure.getDetailPage(), user, respectFrontendRoles);
+            IHTMLPage p = loadPageByIdentifier(structure.getDetailPage(), false, user, respectFrontendRoles);
         	if(p != null && UtilMethods.isSet(p.getIdentifier())){
         		result = p.getURI() + "?id=" + contentlet.getInode();
         	}

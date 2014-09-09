@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.htmlpageasset.business;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -78,4 +77,6 @@ public interface HTMLPageAssetAPI {
     List<IHTMLPage> getDeletedHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
     List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+    Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException;
 }
