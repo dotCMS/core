@@ -10,14 +10,11 @@ import java.util.StringTokenizer;
 
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
@@ -30,7 +27,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -135,51 +131,86 @@ public class HostAPIImpl implements HostAPI {
 
 	public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Host host = hostCache.getHostByAlias(serverName);
-		if(host ==null){
+		
+		if(host == null){
 			User systemUser = APILocator.getUserAPI().getSystemUser();
-			host = findByName(serverName, systemUser, respectFrontendRoles);
+			
+			try {
+				host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
+			} catch (Exception e) {
+				return findDefaultHost(systemUser, respectFrontendRoles);
+			}
+			
 			if(host == null){
 				host = findByAlias(serverName, systemUser, respectFrontendRoles);
 			}
-			//If no host matches then we set the default host
+			
+			//If no host matches then we set the default host.
 			if(host == null){
 				host = findDefaultHost(systemUser, respectFrontendRoles);
 			}
-			if(host !=null){
+			
+			if(host != null){
 				hostCache.addHostAlias(serverName, host);
 			}
 		}
+		
 		if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 			return host;
-		}
-		else{
+		} else {
 			String u = (user != null) ? user.getUserId() : null;
 			String h = (host != null) ? host.getHostname() : null;
 			throw new DotSecurityException("User: " +  u + " does not have read permissions to " + h );
 		}
-
-
 	}
 
 	/**
 	 *
 	 * @param hostName
-	 * @return the host with the passed in name
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return the host with the passed in name or default in error case
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
 	public Host findByName(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		
+		try {
+			return findByNameNotDefault(hostName, user, respectFrontendRoles);
+		} catch (Exception e) {
+			
+			try {
+				User systemUser = APILocator.getUserAPI().getSystemUser();
+				return findDefaultHost(systemUser, respectFrontendRoles);
+				
+			} catch(Exception ex){
+				throw new DotRuntimeException(e.getMessage(), e);
+			}
+		}
+	}
+	
+	/**
+	 *
+	 * @param hostName
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return the host with the passed in name or null in error case
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	private Host findByNameNotDefault(String hostName, User user, boolean respectFrontendRoles) {
 		Host host = null;
+		
 		try{
 			host  = hostCache.get(hostName);
+			
 			if(host != null){
 				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
-		}
-		catch(Exception e){
+			
+		} catch(Exception e){
 			Logger.debug(HostAPIImpl.class, e.getMessage(), e);
 		}
 
@@ -188,35 +219,28 @@ public class HostAPIImpl implements HostAPI {
 			String query = "+structureInode:" + st.getInode() +
 					" +working:true +Host.hostName:" + hostName;
 
-
-
 			List<Contentlet> list = APILocator.getContentletAPI().search(query, 0, 0, null, user, respectFrontendRoles);
+			
 			if(list.size() > 1) {
 				Logger.fatal(this, "More of one host has the same name or alias = " + hostName + "!!");
 				int i=0;
+				
 				for(Contentlet c : list){
 					Logger.fatal(this, "\tdupe Host " + (i+1) + ": " + list.get(i).getTitle() );
 					i++;
 				}
+				
 			}else if (list.size() == 0){
 				return null;
 			}
+			
 			host = new Host(list.get(0));
-
 			hostCache.add(host);
 
 			return host;
-		} catch (Exception e) {
-
-			Logger.error(HostAPIImpl.class, "NO INDEX - SENDING THE DEFAULT HOST " +  e.getMessage(), e);
-
-			try{
-
-				return findDefaultHost(user, respectFrontendRoles);
-			}
-			catch(Exception ex){
-				throw new DotRuntimeException(e.getMessage(), e);
-			}
+			
+		}  catch (Exception e) {
+			throw new DotRuntimeException(e.getMessage(), e);
 		}
 	}
 
