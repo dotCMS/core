@@ -817,7 +817,19 @@ try {
 			var href = dojo.replace(URL, { hostIdentifier: id})
 			window.location=href;	
 		 }
-	
+
+	 dojo.ready(function () {
+	        var tab = dijit.byId("mainTabContainer");
+	        dojo.connect(tab, 'selectChild',
+	                function (evt) {
+	                    selectedTab = tab.selectedChildWidget;
+	                    if (selectedTab.id == "hostStatisticsTab") {
+	                    dojo.byId("viewControle").style.display = 'block';
+	                    }else{
+	                    dojo.byId("viewControle").style.display = 'none';
+	                    }
+	                });
+	 });
 </script>
 
 <style>
