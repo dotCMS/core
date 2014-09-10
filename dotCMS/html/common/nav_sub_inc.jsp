@@ -28,7 +28,7 @@
             for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
                 List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
                 if (portletIdsForLicenseManager.contains("9")) {
-                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&tab=licenseTab";
+                    licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
                     licenseMessage = LanguageUtil.get(pageContext, "Try-Enterprise-Now") + "!" ;
                     break;
                 }
