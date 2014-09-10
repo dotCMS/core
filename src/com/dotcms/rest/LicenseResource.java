@@ -28,7 +28,7 @@ public class LicenseResource extends WebResource {
     @Path("/all/{params:.*}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAll(@Context HttpServletRequest request, @PathParam("params") String params) {
-        init(params, true, request, true, "EXT_LICENSE_MANAGER");
+        init(params, true, request, true, "9");
         try {
             JSONArray array=new JSONArray();
 
@@ -64,7 +64,7 @@ public class LicenseResource extends WebResource {
     public Response putZipFile(@Context HttpServletRequest request, @PathParam("params") String params,
             @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail, 
             @FormDataParam("return") String ret) {
-        InitDataObject initData = init(params, true, request, true, "EXT_LICENSE_MANAGER");
+        InitDataObject initData = init(params, true, request, true, "9");
         try {
            
             if(inputFile!=null) {
@@ -99,7 +99,7 @@ public class LicenseResource extends WebResource {
     @DELETE
     @Path("/delete/{params:.*}")
     public Response delete(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = init(params, true, request, true, "EXT_LICENSE_MANAGER");
+        InitDataObject initData = init(params, true, request, true, "9");
         String id=initData.getParamsMap().get("id");
         try {
             if(UtilMethods.isSet(id)) {
@@ -124,7 +124,7 @@ public class LicenseResource extends WebResource {
     @POST
     @Path("/pick/{params:.*}")
     public Response pickLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = init(params, true, request, true, "EXT_LICENSE_MANAGER");
+        InitDataObject initData = init(params, true, request, true, "9");
         String serial = initData.getParamsMap().get("serial");
         
         final long currentLevel=LicenseUtil.getLevel();
@@ -165,7 +165,7 @@ public class LicenseResource extends WebResource {
     @POST
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = init(params, true, request, true, "EXT_LICENSE_MANAGER");
+        InitDataObject initData = init(params, true, request, true, "9");
         try {
             HibernateUtil.startTransaction();
             

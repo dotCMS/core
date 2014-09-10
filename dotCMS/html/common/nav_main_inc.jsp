@@ -45,7 +45,7 @@
                                                         String linkName = LanguageUtil.get(pageContext,"com.dotcms.repackage.javax.portlet.title." + portletIDs.get(i));
 
 
-                                                        if("EXT_LICENSE_MANAGER".equals(portletIDs.get(i))){
+                                                        if("9".equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF);
                                                         }
                                                         Object obj = Class.forName(p.getPortletClass()).newInstance();
