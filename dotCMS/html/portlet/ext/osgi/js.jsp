@@ -169,7 +169,8 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 
 	add : function(){
 		var fm = dojo.byId("addBundle");
-
+		var bundleUpload = fm.elements["bundleUpload"].value;
+		if(bundleUpload){
         require(["dojo/io/iframe"], function(ioIframe){
             ioIframe.send({
                 // The form node, which contains the
@@ -191,6 +192,11 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		dijit.byId('uploadOSGIDialog').hide();
 		dijit.byId('savingOSGIDialog').show();
 		setTimeout(function() {mainAdmin.refresh();},7000);
+		}else{
+			showDotCMSSystemMessage("Please select a bundle to upload");
+			return false;
+		}
+		fm.elements["bundleUpload"].value='';
 	},
 
     reboot : function(askForConfirmation){
