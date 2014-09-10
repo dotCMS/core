@@ -211,7 +211,7 @@
         if (dijit.byId('savingOSGIDialog') == undefined) {
             setTimeout(function () {
                 getBundlesData()
-            }, 1000);
+            }, 50);
         } else {
             getBundlesData();
         }
