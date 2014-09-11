@@ -2556,7 +2556,7 @@ DECLARE v_time_entered TIMESTAMP;
 DECLARE v_index_val VARCHAR(325);
 DECLARE v_dist_action INT;
 DECLARE cursor_end BOOL DEFAULT FALSE;
-DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' ORDER BY priority ASC LIMIT 10 FOR UPDATE;
+DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' ORDER BY priority ASC LIMIT 50 FOR UPDATE;
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET cursor_end:=TRUE;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_records_reindex;
