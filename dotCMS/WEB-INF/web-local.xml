@@ -1858,11 +1858,6 @@ description, distributable, and context-param elements.
     </servlet-mapping>
 
     <servlet-mapping>
-        <servlet-name>org.apache.jsp.WEB_002dINF.jsp.license.license_jsp</servlet-name>
-        <url-pattern>/WEB-INF/jsp/license/license.jsp</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
         <servlet-name>org.apache.jsp.WEB_002dINF.jsp.dashboard.dashboard_005fhome_jsp</servlet-name>
         <url-pattern>/WEB-INF/jsp/dashboard/dashboard_home.jsp</url-pattern>
     </servlet-mapping>

@@ -940,8 +940,8 @@
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();
-      if (portletIdsForLicenseManager.contains("EXT_LICENSE_MANAGER")) {
-          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=EXT_LICENSE_MANAGER&p_p_action=0";
+      if (portletIdsForLicenseManager.contains("9")) {
+          licenseURL = "/c/portal/layout?p_l_id=" + layoutForLicenseManager.getId() +"&p_p_id=9&p_p_action=0&tab=licenseTab";
           break;
       }
   }

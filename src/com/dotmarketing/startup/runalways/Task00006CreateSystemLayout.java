@@ -44,32 +44,7 @@ public class Task00006CreateSystemLayout implements StartupTask {
 	}
 
 	public boolean forceRun() {
-		
-		List<String> requiredPortlets=new ArrayList<String>();
-		//This is the list of Portlets we need to make sure are in the admin layout
-		requiredPortlets.add("EXT_LICENSE_MANAGER");
-		
-		missingPortlets.addAll(requiredPortlets);
-		try {
-			List<Layout> layouts;
-			layouts = APILocator.getLayoutAPI().findAllLayouts();
-			
-			for (Layout layout:layouts) {
-				List<String> portletIdsForLicenManager=layout.getPortletIds();
-				for (String requiredPortlet:requiredPortlets) {
-					if (portletIdsForLicenManager.contains(requiredPortlet)) {
-						missingPortlets.remove(requiredPortlet);
-						
-					}
-				}
-			
-			}
-		} catch (DotDataException e) {
-			
-			Logger.warn(Task00006CreateSystemLayout.class,"DotDataException: " +e.getMessage(),e);
-		}
-	
-		return missingPortlets.size()>0;
+		return true;
 	}
 
 }
