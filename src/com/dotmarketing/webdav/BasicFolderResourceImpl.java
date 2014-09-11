@@ -49,7 +49,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
     public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException, DotRuntimeException {
     	if(newName.matches("^\\.(.*)-Spotlight$")){
             // http://jira.dotmarketing.net/browse/DOTCMS-7285
-            return null;
+    		newName = newName + ".spotlight";
     	}
    
         User user=(User)HttpManager.request().getAuthorization().getTag();
