@@ -342,7 +342,6 @@ public class DotWebdavHelper {
 		try {
 			host = hostAPI.findByName(hostName, user, false);
 			folder = folderAPI.findFolderByPath(url, host,user, false);
-			APILocator.getContentletAPI().refreshContentUnderFolder(folder);
 		} catch (DotDataException e) {
 			Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 			throw new IOException(e.getMessage());
