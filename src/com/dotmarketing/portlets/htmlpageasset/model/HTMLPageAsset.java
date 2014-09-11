@@ -24,7 +24,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public void setCacheTTL(long cacheTTL) {
-        setLongProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, cacheTTL);
+        setStringProperty(HTMLPageAssetAPI.CACHE_TTL_FIELD, Long.toString(cacheTTL));
     }
 
     @Override
@@ -65,7 +65,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public void setHttpsRequired(boolean httpsRequired) {
-        setBoolProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD, httpsRequired);
+        setStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD, httpsRequired ? "1" : "");
     }
 
     @Override
@@ -85,6 +85,9 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public void setPageUrl(String pageUrl) {
+        if(pageUrl.endsWith("."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"))) {
+            pageUrl = pageUrl.substring(0,pageUrl.lastIndexOf('.'));
+        }
         setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageUrl);
     }
 
@@ -164,5 +167,20 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
     @Override
     public String getTitle() {
         return getStringProperty(HTMLPageAssetAPI.TITLE_FIELD);
+    }
+
+    @Override
+    public boolean isContent() {
+        return true;
+    }
+
+    @Override
+    public boolean isShowOnMenu() {
+        return Config.getBooleanProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD);
+    }
+
+    @Override
+    public void setShowOnMenu(boolean showOnMenu) {
+        setStringProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD, showOnMenu ? "1" : "0");
     }
 }

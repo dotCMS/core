@@ -601,6 +601,10 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
+        
+        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
+        context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
+        
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
 		        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),
 				PERMISSION_WRITE, user, true);
@@ -841,7 +845,10 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
         context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-
+        
+        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
+        context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
+        
         boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission( 
                 APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true), 
                 PERMISSION_WRITE, backendUser ) 

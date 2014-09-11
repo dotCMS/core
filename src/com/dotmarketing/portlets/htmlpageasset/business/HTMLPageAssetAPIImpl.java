@@ -5,14 +5,21 @@ import java.util.List;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -178,6 +185,82 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                             ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false), 
                             APILocator.getUserAPI().getSystemUser(), false);
         }
+    }
+
+    protected HTMLPageAsset copyLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
+        HTMLPageAsset newpage=new HTMLPageAsset();
+        newpage.setStructureInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        newpage.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        newpage.setTitle(legacyPage.getTitle());
+        newpage.setFriendlyName(legacyPage.getFriendlyName());
+        newpage.setHttpsRequired(legacyPage.isHttpsRequired());
+        newpage.setTemplateId(legacyPage.getTemplateId());
+        newpage.setSeoDescription(legacyPage.getSeoDescription());
+        newpage.setSeoKeywords(legacyPage.getSeoKeywords());
+        newpage.setInode(legacyPage.getInode());
+        newpage.setIdentifier(legacyPage.getIdentifier());
+        newpage.setHost(legacyident.getHostId());
+        newpage.setFolder(APILocator.getFolderAPI().findFolderByPath(
+                legacyident.getParentPath(), legacyident.getHostId(), user, respectFrontEndPermissions).getInode());
+        newpage.setPageUrl(legacyPage.getPageUrl());
+        newpage.setCacheTTL(legacyPage.getCacheTTL());
+        newpage.setMetadata(legacyPage.getMetadata());
+        newpage.setSortOrder(legacyPage.getSortOrder());
+        newpage.setShowOnMenu(legacyPage.isShowOnMenu());
+        newpage.setModUser(legacyPage.getModUser());
+        newpage.setModDate(legacyPage.getModDate());
+        return newpage;
+    }
+    
+    @Override
+    public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
+        Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
+        VersionInfo vInfo=APILocator.getVersionableAPI().getVersionInfo(legacyident.getId());
+        
+        List<HTMLPageAsset> versions=new ArrayList<HTMLPageAsset>(); 
+        
+        HTMLPage working=(HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(legacyident, user, respectFrontEndPermissions);
+        HTMLPageAsset cworking=copyLegacyData(working, user, respectFrontEndPermissions), clive=null;
+        if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
+            HTMLPage live=(HTMLPage) APILocator.getVersionableAPI().findLiveVersion(legacyident, user, respectFrontEndPermissions);
+            clive=copyLegacyData(working, user, respectFrontEndPermissions);
+        }
+        
+        List<Permission> perms=null;
+        if(!APILocator.getPermissionAPI().isInheritingPermissions(legacyPage)) {
+            perms = APILocator.getPermissionAPI().getPermissions(legacyPage, true, true, true);
+        }
+        
+        List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
+        
+        APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
+        HibernateUtil.getSession().clear();
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
+        
+        if(clive!=null) {
+            Contentlet cclive = APILocator.getContentletAPI().checkin(clive, user, respectFrontEndPermissions);
+            APILocator.getContentletAPI().publish(cclive, user, respectFrontEndPermissions);
+            APILocator.getContentletAPI().isInodeIndexed(cclive.getInode(),false);
+            APILocator.getContentletAPI().isInodeIndexed(cclive.getInode(),true);
+        }
+        
+        Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
+        
+        if(vInfo.getLiveInode()!=null && vInfo.getWorkingInode().equals(ccworking.getInode())) {
+            APILocator.getContentletAPI().publish(ccworking, user, respectFrontEndPermissions);
+        }
+        
+        for(MultiTree mt : multiTree) {
+            MultiTreeFactory.saveMultiTree(mt);
+        }
+        
+        if(perms!=null) {
+            APILocator.getPermissionAPI().permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
+            APILocator.getPermissionAPI().assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
+        }
+        
+        return fromContentlet(ccworking);
     }
 
 }

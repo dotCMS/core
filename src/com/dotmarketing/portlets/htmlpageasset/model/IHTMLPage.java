@@ -48,7 +48,12 @@ public interface IHTMLPage extends Versionable,Permissionable {
     
     String getTitle();
     void setTitle(String title);
+    
+    boolean isShowOnMenu();
+    void setShowOnMenu(boolean showOnMenu);
 
-    public Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
+    Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
+    
+    boolean isContent();
         
 }

@@ -189,9 +189,21 @@ public class DirectorAction extends DotPortletAction {
 				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
 
 				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
-				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { "0" });
+				
+				String type=req.getParameter("HTMLPageType");
+				
+				if(type!=null && !type.equals("0")) {
+    				params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
+    				params.put("cmd",new String[] { "new" });
+    				params.put("selectedStructure", new String[] { type });
+    				params.put("lang", new String[] { Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) });
+    				params.put("referer", referer);
+				}
+				else {
+				    params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
+	                params.put("cmd",new String[] { "edit" });
+	                params.put("inode",new String[] { "0" });
+				}
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
 
@@ -221,10 +233,12 @@ public class DirectorAction extends DotPortletAction {
 				}
 
 				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
+				params.put("struts_action",new String[] { 
+				        htmlpage instanceof HTMLPage ? "/ext/htmlpages/edit_htmlpage" 
+				                                     : "/ext/contentlet/edit_contentlet"});
 				params.put("cmd",new String[] { "edit" });
 				params.put("inode",new String[] { htmlpage.getInode() });
-				params.put("referer",new String[] {UtilMethods.encodeURL(referer)});
+				params.put("referer",new String[] { referer });
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
 
@@ -775,6 +789,22 @@ public class DirectorAction extends DotPortletAction {
 
 				_sendToReferral(req, res, af);
 				return;
+			}
+			
+			if(cmd!=null && cmd.equals("migrate")) {
+			    try {
+			        HibernateUtil.startTransaction();
+    			    HTMLPage htmlPage = (HTMLPage) HibernateUtil.load(HTMLPage.class, req.getParameter("htmlPage"));
+    			    APILocator.getHTMLPageAssetAPI().migrateLegacyPage(htmlPage, user, false);
+    			    HibernateUtil.commitTransaction();
+			    }
+			    catch(Exception ex) {
+			        HibernateUtil.rollbackTransaction();
+			        Logger.error(this, "can't migrate page inode "+req.getParameter("htmlPage"),ex);
+			    }
+			    
+			    _sendToReferral(req, res, referer);
+                return;
 			}
 			
 

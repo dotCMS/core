@@ -358,5 +358,10 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
 		}
 
 	}
+
+    @Override
+    public boolean isContent() {
+        return false;
+    }
 	
 }
