@@ -201,10 +201,10 @@ public class EnvironmentAjaxAction extends AjaxAction {
 			eAPI.updateEnvironment(environment, permissions);
 
             //If it was updated successfully lets set the session
-            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS ) ) ) {
+            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId() ) ) ) {
 
                 //Get the selected environments from the session
-                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS );
+                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId() );
 
                 Integer indexToReplace = null;
                 for ( Environment currentEnv : lastSelectedEnvironments ) {

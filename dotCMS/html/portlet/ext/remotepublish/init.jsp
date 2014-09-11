@@ -3,15 +3,18 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%
     //Verify if we have set environments on session
+    String selectedEnvKey = com.dotmarketing.util.WebKeys.SELECTED_ENVIRONMENTS + request.getSession().getAttribute("USER_ID");
+	String selectedBundleKey = com.dotmarketing.util.WebKeys.SELECTED_BUNDLE + request.getSession().getAttribute("USER_ID");
+
     List<Environment> lastSelectedEnvironments = null;
-    if ( request.getSession().getAttribute( com.dotmarketing.util.WebKeys.SELECTED_ENVIRONMENTS ) != null ) {
-        lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( com.dotmarketing.util.WebKeys.SELECTED_ENVIRONMENTS );
+    if ( request.getSession().getAttribute(selectedEnvKey) != null ) {
+        lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute(selectedEnvKey);
     }
 
     //Verify if we have set a bundle on session
     com.dotcms.publisher.bundle.bean.Bundle lastSelectedBundle = null;
-    if ( request.getSession().getAttribute( com.dotmarketing.util.WebKeys.SELECTED_BUNDLE ) != null ) {
-        lastSelectedBundle = (com.dotcms.publisher.bundle.bean.Bundle) request.getSession().getAttribute( com.dotmarketing.util.WebKeys.SELECTED_BUNDLE );
+    if ( request.getSession().getAttribute( selectedBundleKey ) != null ) {
+        lastSelectedBundle = (com.dotcms.publisher.bundle.bean.Bundle) request.getSession().getAttribute( selectedBundleKey );
     }
 %>
 <script type="text/javascript">
