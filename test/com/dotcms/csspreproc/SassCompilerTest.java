@@ -179,6 +179,35 @@ public class SassCompilerTest {
         
     }
     
+    @Test
+    public void includedFilesInIncludedFiles() throws Exception {
+        final User user=APILocator.getUserAPI().getSystemUser();
+        final String runId=UUIDGenerator.generateUuid();
+                
+        Host defaultHost=APILocator.getHostAPI().findDefaultHost(user, false);
+        
+        Folder fa=APILocator.getFolderAPI().createFolders("/"+runId+"/a", defaultHost, user, false);
+        Folder fabc=APILocator.getFolderAPI().createFolders("/"+runId+"/a/b/c", defaultHost, user, false);
+        Folder fab=APILocator.getFolderAPI().findFolderByPath("/"+runId+"/a/b", defaultHost, user, false);
+        
+        File file1=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fa.scss"); 
+        FileUtils.writeStringToFile(file1, ".a { color:green; } ");
+        Contentlet fileAsset1=newFile(file1, fa, defaultHost);
+        
+        File file2=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "_fab.scss");
+        FileUtils.writeStringToFile(file2, "@import \"../fa\"; .ab { color:black; }");
+        Contentlet fileAsset2=newFile(file2, fab, defaultHost);
+        
+        File file3=new File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + File.separator + runId + File.separator + "fabc.scss");
+        FileUtils.writeStringToFile(file3, "@import \"../fab\"; .abc { color:white; }");
+        Contentlet fileAsset3=newFile(file3, fabc, defaultHost);
+        
+        URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/fabc.css");
+        String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
+        
+        Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.trim());
+    }
+    
     protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
         Contentlet fileAsset=new Contentlet();
         fileAsset.setStructureInode(StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
