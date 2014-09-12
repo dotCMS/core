@@ -3346,28 +3346,6 @@
 	</portlet>
 
 	<portlet>
-		<portlet-name>EXT_LICENSE_MANAGER</portlet-name>
-		<display-name>License Manager</display-name>
-		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-		<init-param>
-				<name>view-jsp</name>
-				<value>/jsp/license/license.jsp</value>
-		</init-param>
-		<init-param>
-				<name>useWEBINFDIR</name>
-				<value>true</value>
-		</init-param>
-		<expiration-cache>0</expiration-cache>
-		<supports>
-			<mime-type>text/html</mime-type>
-		</supports>
-		<resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-		<security-role-ref>
-			<role-name>CMS Administrator</role-name>
-		</security-role-ref>
-	</portlet>
-
-	<portlet>
 		<portlet-name>EXT_SITESEARCH</portlet-name>
 		<display-name>Site Search Manager</display-name>
 		<portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>

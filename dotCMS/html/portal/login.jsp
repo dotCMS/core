@@ -474,8 +474,9 @@ function showLanguageSelector(){
 
 <div class="inputCaption" style="color:#dddddd;text-align:right;position:absolute;bottom:10px; right:10px;">
 <%-- 	<%String serverId = Config.getStringProperty("DIST_INDEXATION_SERVER_ID");%> --%>
-	<%String serverId = APILocator.getServerAPI().readServerId();%>
-	<% if (UtilMethods.isSet(serverId)){ %>
+	<%
+        String serverId = LicenseUtil.getDisplayServerId();
+        if (UtilMethods.isSet(serverId)){ %>
 		<%= LanguageUtil.get(pageContext, "Server") %>: <%=serverId%> <br />
 	<%} %>
 	<%= LicenseUtil.getLevelName() %>

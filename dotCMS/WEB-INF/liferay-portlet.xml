@@ -124,7 +124,6 @@
 	<portlet id="EXT_FORM_HANDLER" struts-path="ext/formhandler"/>
 	<portlet id="EXT_HOSTADMIN" struts-path="ext/hostadmin"/>
 	<portlet id="EXT_LUCENE_TOOL"  />
-	<portlet id="EXT_LICENSE_MANAGER"  />
 	<portlet id="EXT_SITESEARCH"  />
 	<portlet id="EXT_DASHBOARD" struts-path="ext/dashboard" />
 	<portlet id="WORKFLOW_SCHEMES"  />

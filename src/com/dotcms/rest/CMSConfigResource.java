@@ -358,10 +358,10 @@ public class CMSConfigResource extends WebResource {
             environmentAPI.deleteEnvironment( environment );
 
             //If it was deleted successfully lets remove it from session
-            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS ) ) ) {
+            if ( UtilMethods.isSet( request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS + user ) ) ) {
 
                 //Get the selected environments from the session
-                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS );
+                List<Environment> lastSelectedEnvironments = (List<Environment>) request.getSession().getAttribute( WebKeys.SELECTED_ENVIRONMENTS + user );
                 Iterator<Environment> environmentsIterator = lastSelectedEnvironments.iterator();
 
                 while ( environmentsIterator.hasNext() ) {

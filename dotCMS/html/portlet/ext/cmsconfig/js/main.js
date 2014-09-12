@@ -190,3 +190,20 @@ var loadNetworkTab = function () {
     content.attr("href", url);
     content.refresh();
 };
+
+var loadLicenseTab = function () {
+
+    var url = "/html/portlet/ext/cmsconfig/license.jsp";
+    var content = dijit.byId("licenseTabContent");
+
+    if (content) {
+        content.destroyRecursive(false);
+    }
+    content = new dojox.layout.ContentPane({
+        id: "licenseTabContent",
+        preventCache: true
+    }).placeAt("licenseTabContentDiv");
+
+    content.attr("href", url);
+    content.refresh();
+};

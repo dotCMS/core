@@ -169,7 +169,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			}
 
             //Put the selected environments in session in order to have the list of the last selected environments
-            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );
+            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );
@@ -737,7 +737,7 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Put the selected bundle in session in order to have last one selected
-            request.getSession().setAttribute( WebKeys.SELECTED_BUNDLE, bundle );
+            request.getSession().setAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId(), bundle );
 
             List<String> ids;
             if ( _assetId.startsWith( "query_" ) ) { //Support for lucene queries
@@ -817,9 +817,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
             }
 
             //Put the selected environments in session in order to have the list of the last selected environments
-            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS, envsToSendTo );
+            request.getSession().setAttribute( WebKeys.SELECTED_ENVIRONMENTS + getUser().getUserId(), envsToSendTo );
             //Clean up the selected bundle
-            request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE );
+            request.getSession().removeAttribute( WebKeys.SELECTED_BUNDLE + getUser().getUserId() );
 
             SimpleDateFormat dateFormat = new SimpleDateFormat( "yyyy-MM-dd-H-m" );
             Date publishDate = dateFormat.parse( _contentPushPublishDate + "-" + _contentPushPublishTime );

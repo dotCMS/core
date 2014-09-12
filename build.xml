@@ -44,6 +44,9 @@
     <property name="distribution.plugins.output" value="${distribution.output}/plugins" />
     <property name="distribution.docs.output" value="${distribution.output}/docs" />
 
+    <property name="license.project.home" value="../license"/>
+    <property name="enterprise.project.home" value="../enterprise-2.x"/>
+
     <property name="tomcat7.home" value="${tomcat7.install.location}"/>
     <property name="tomcat7.version" value="${tomcat7.install.version}"/>
     <property name="jboss7.home" value="${jboss7.install.location}"/>
@@ -879,6 +882,65 @@
     <target name="deploy-war-tomcat7" depends="clone-pull-tomcat7, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-tomcat7"/>
     </target>
+
+    <target name="deploy-war-tomcat7-dev"  description="Same as deploy-war-tomcat7 but will use the no obfuscated version of the license and enterprise jars. (Useful for development)">
+        <antcall target="generate-move-clean-projects-tomcat7"/>
+        <antcall target="deploy-war-tomcat7"/>
+    </target>
+
+    <target name="generate-move-clean-projects-tomcat7">
+        <antcall target="generate-move-clean-license-tomcat7"/>
+        <antcall target="generate-move-clean-enterprise-tomcat7"/>
+    </target>
+
+    <target name="generate-move-clean-license-tomcat7">
+
+        <!--Generate the projects jars-->
+        <ant antfile="${license.project.home}/build.xml" target="jar" inheritAll="false"/>
+
+        <!--Delete the old jars-->
+        <delete>
+            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib" includes="eelic-*"/>
+            <fileset dir="dotCMS/WEB-INF/lib" includes="eelic-*" />
+        </delete>
+
+        <!--Copy the jar-->
+        <copy todir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib">
+            <fileset dir="${license.project.home}/build">
+                <include name="eelic_clean.jar"/>
+            </fileset>
+        </copy>
+        <copy todir="dotCMS/WEB-INF/lib">
+            <fileset dir="${license.project.home}/build">
+                <include name="eelic_clean.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="generate-move-clean-enterprise-tomcat7">
+
+        <!--Generate the projects jars-->
+        <ant antfile="${enterprise.project.home}/build.xml" target="jar" inheritAll="false"/>
+
+        <!--Delete the old jars-->
+        <delete>
+            <fileset dir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib" includes="ee-*" />
+            <fileset dir="dotCMS/WEB-INF/lib" includes="ee-*" />
+        </delete>
+
+        <!--Copy the jar-->
+        <copy todir="${tomcat7.home}/webapps/ROOT/WEB-INF/lib">
+            <fileset dir="${enterprise.project.home}/build">
+                <include name="ee_clean.jar"/>
+            </fileset>
+        </copy>
+        <copy todir="dotCMS/WEB-INF/lib">
+            <fileset dir="${enterprise.project.home}/build">
+                <include name="ee_clean.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
     <!--
         Same as the deploy-war-tomcat7 except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
         This is useful in cases when you need to make a deploy-war-tomcat7 but keeping your current data.
