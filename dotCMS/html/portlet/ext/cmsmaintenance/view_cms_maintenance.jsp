@@ -529,6 +529,8 @@ function doDownloadIndex(indexName){
 function doReindex(){
 	var shards;
     if(dojo.byId('structure').value == "<%= LanguageUtil.get(pageContext,"Rebuild-Whole-Index") %>"){
+    	//document.getElementById('defaultStructure').value = "Rebuild Whole Index";
+    	dojo.byId('defaultStructure').value = "Rebuild Whole Index";
 
 		var number=prompt("<%=UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext, "Number-of-Shards"))%> ", <%=Config.getIntProperty("es.index.number_of_shards", 4)%>);
 
@@ -1303,6 +1305,7 @@ dd.leftdl {
         <input type="hidden" name="cacheName" id="cacheName">
         <input type="hidden" name="dataOnly" id="dataOnly">
         <input type="hidden" name="cmd" value="">
+        <input type="hidden"  name="defaultStructure" id="defaultStructure" value="">
         <input type="hidden" name="shards" id="numberOfShards" value="<%=Config.getIntProperty("es.index.number_of_shards", 2)%>">
 
         <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
