@@ -1,8 +1,7 @@
 package com.dotmarketing.util;
 
-import com.dotcms.util.AsciiArt;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotmarketing.db.DbConnectionFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,7 +34,8 @@ public class Config {
 	private static boolean configInited = false;
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
-	private static URL url = null;
+    private static URL dotmarketingPropertiesUrl = null;
+    private static URL clusterPropertiesUrl = null;
 
 	//Config internal methods
 	public static void initializeConfig () {
@@ -43,43 +43,109 @@ public class Config {
 	    _loadProperties();
 	}
 
-	private static void _loadProperties () {
+    private static void _loadProperties () {
 
-	    if (classLoader == null) {
+        if ( classLoader == null ) {
             classLoader = Thread.currentThread().getContextClassLoader();
-		    Logger.info(Config.class, "Initializing properties reader.");
-	    }
-	    if (url == null)
-	        url = classLoader.getResource("dotmarketing-config.properties");
+            Logger.info( Config.class, "Initializing properties reader." );
+        }
 
-		if (url != null) {
-		    File f = new File(url.getPath());
-		    Date lastModified = new Date(f.lastModified());
-		    if (lastModified.after(lastRefreshTime) || props == null) {
-		        try {
-	                Logger.info(Config.class, "Loading dotCMS Properties...");
-		            InputStream propsInputStream = new FileInputStream (f);
-		            Config.props = new PropertiesConfiguration ();
-		            props.load(new InputStreamReader(propsInputStream));
-		            propsInputStream.close();
-		            try {
-		                int interval = props.getInt("config.refreshinterval");
-		                refreshInterval = interval;
-		                Logger.info(Config.class, "Assigned custom refresh interval: " + interval + " minutes.");
-		            } catch (NoSuchElementException e) {
-		                Logger.info(Config.class, "Assigned default refresh interval: " + refreshInterval + " minutes.");
-		            }
-	                Logger.info(Config.class, "dotCMS Properties Loaded");
-		        } catch (Exception e) {
-	                Logger.fatal(Config.class, "Exception loading properties", e);
-		            props = null;
-		        }
-		    }
-	        Config.lastRefreshTime = new Date ();
-		} else {
-            Logger.fatal(Config.class, "DotCMS Properties file (dotmarketing-config.properties) not found.");
-		}
-	}
+        //dotmarketing config file
+        String propertyFile = "dotmarketing-config.properties";
+        if ( dotmarketingPropertiesUrl == null ) {
+            dotmarketingPropertiesUrl = classLoader.getResource( propertyFile );
+        }
+
+        //cluster config file
+        propertyFile = "dotcms-config-cluster.properties";
+        if ( clusterPropertiesUrl == null ) {
+            clusterPropertiesUrl = classLoader.getResource( propertyFile );
+        }
+
+        //Reading both property files
+        readProperties( dotmarketingPropertiesUrl, clusterPropertiesUrl );
+    }
+
+    /**
+     * Reads the properties on the dotmarketing-config.properties and the dotcms-config-cluster.properties
+     * properties files
+     *
+     * @param dotmarketingURL
+     * @param clusterURL
+     */
+    private static void readProperties ( URL dotmarketingURL, URL clusterURL ) {
+
+        File dotmarketingFile = new File( dotmarketingURL.getPath() );
+        Date lastDotmarketingModified = new Date( dotmarketingFile.lastModified() );
+
+        File clusterFile = new File( clusterURL.getPath() );
+        Date lastClusterModified = new Date( clusterFile.lastModified() );
+
+        //If not properties read both files
+        if ( props == null ) {
+
+            readProperties( dotmarketingFile, "dotmarketing-config.properties" );
+            readProperties( clusterFile, "dotcms-config-cluster.properties" );
+
+        } else {
+
+            if ( lastDotmarketingModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
+                try {
+                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
+                } catch ( Exception e ) {
+                    Logger.fatal( Config.class, "Exception loading property file [dotmarketing-config.properties]", e );
+                    props = null;
+                }
+            }
+
+            if ( lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
+                try {
+                    readProperties( clusterFile, "dotcms-config-cluster.properties" );
+                } catch ( Exception e ) {
+                    Logger.fatal( Config.class, "Exception loading property file [dotcms-config-cluster.properties]", e );
+                    props = null;
+                }
+            }
+        }
+
+        try {
+            int interval = props.getInt( "config.refreshinterval" );
+            refreshInterval = interval;
+            Logger.info( Config.class, "Assigned custom refresh interval: " + interval + " minutes." );
+        } catch ( NoSuchElementException e ) {
+            Logger.info( Config.class, "Assigned default refresh interval: " + refreshInterval + " minutes." );
+        }
+
+        //Set the last time we refresh/read the properties files
+        Config.lastRefreshTime = new Date();
+    }
+
+    /**
+     * Reads a given property file and appends its content to the current read properties
+     *
+     * @param fileToRead
+     * @param fileName
+     */
+    private static void readProperties ( File fileToRead, String fileName ) {
+
+        try {
+
+            Logger.info( Config.class, "Loading dotCMS [" + fileName + "] Properties..." );
+
+            if ( Config.props == null ) {
+                Config.props = new PropertiesConfiguration();
+            }
+
+            InputStream propsInputStream = new FileInputStream( fileToRead );
+            props.load( new InputStreamReader( propsInputStream ) );
+            propsInputStream.close();
+
+            Logger.info( Config.class, "dotCMS Properties [" + fileName + "] Loaded" );
+        } catch ( Exception e ) {
+            Logger.fatal( Config.class, "Exception loading properties for file [" + fileName + "]", e );
+            props = null;
+        }
+    }
 
 	private static void _refreshProperties () {
 	    if(System.currentTimeMillis() > lastRefreshTime.getTime() + (refreshInterval * 60 * 1000) || props == null){
@@ -160,7 +226,7 @@ public class Config {
 	@Deprecated
 	public static float getFloatProperty (String name) {
 	    _refreshProperties ();
-	    return props.getFloat(name);
+	    return props.getFloat( name );
 	}
 
 	public static float getFloatProperty (String name, float defaultVal) {

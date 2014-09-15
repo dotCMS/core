@@ -161,6 +161,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		String errorMessage = "";
 		CmsMaintenanceForm ccf = (CmsMaintenanceForm) form;
 		String cmd = req.getParameter("cmd");
+		String defaultStructure = req.getParameter("defaultStructure");	
+		Structure structure = new Structure();
 
 		//Manage all the cache Task
 		if(cmd.equals("cache")){
@@ -169,7 +171,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
 			{
 				Logger.info(this, "Running Contents Index Cache");
-				Structure structure = StructureCache.getStructureByVelocityVarName(ccf.getStructure());
+				if(defaultStructure.equals("Rebuild Whole Index")){
+					structure = StructureCache.getStructureByVelocityVarName(defaultStructure);
+				}else
+					structure = StructureCache.getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
 					try{
