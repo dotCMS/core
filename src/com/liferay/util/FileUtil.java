@@ -25,6 +25,7 @@ package com.liferay.util;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.org.apache.commons.codec.digest.DigestUtils;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 
@@ -446,6 +447,25 @@ public class FileUtil {
 	public static boolean move(File source, File destination) {
 		if (!source.exists()) {
 			return false;
+		}
+		
+		//If both files exists and are equals no need to move it.
+		try {
+			//Confirms that destination exists. 
+			if(destination.exists()) {
+				//Creates FileInputStream for both files.  
+				FileInputStream inputSource = new FileInputStream(source);
+				FileInputStream inputDestination = new FileInputStream(destination);
+				
+				//Both files checked. 
+				if(DigestUtils.md5Hex(inputSource).equals(DigestUtils.md5Hex(inputDestination))){
+					Logger.info(FileUtil.class, "Move method: Source equal to Destination, no need to move.");
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			//In case of error, no worries. Continued with the same logic of move. 
+			Logger.debug(FileUtil.class, "MD5 Checksum failed, continue with standard move");
 		}
 
 		destination.delete();

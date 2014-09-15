@@ -17,7 +17,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 public class DependencySet extends HashSet<String> {
 
@@ -129,17 +128,33 @@ public class DependencySet extends HashSet<String> {
 				
 				if(modified) {
 					try {
-						asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
-						APILocator.getPushedAssetsAPI().savePushedAsset(asset);
+						//We need to check if the assetID is already in the bundle.
+						//1.Get all the pushed assests records with same Asset ID.
+						List<PushedAsset> pushedAssests = APILocator.getPushedAssetsAPI().getPushedAssets(assetId);
+						boolean isAlreadyInPushedBunble = false;
+						
+						//Check through the records to see if match env and bundle ID.
+						for(PushedAsset pushedAsset : pushedAssests){
+							if(pushedAsset.getBundleId().equals(bundleId)
+									&& pushedAsset.getEnvironmentId().equals(env.getId())){
+								isAlreadyInPushedBunble = true;
+							}
+						}
+						
+						//If it is not already in the bundle, we can push the record.
+						if(!isAlreadyInPushedBunble){
+							asset = new PushedAsset(bundleId, assetId, assetType, new Date(), env.getId());
+							APILocator.getPushedAssetsAPI().savePushedAsset(asset);
+						}
+						
+						cache.add(asset);
+						
 					} catch (DotDataException e) {
 						Logger.error(getClass(), "Could not save PushedAsset. "
 								+ "AssetId: " + assetId + ". AssetType: " + assetType + ". Env Id: " + env.getId(), e);
 					}
-					cache.add(asset);
 				}
-
 			}
-
 		}
 
         if ( isForcePush || isDownload || !isPublish || modified ) {
