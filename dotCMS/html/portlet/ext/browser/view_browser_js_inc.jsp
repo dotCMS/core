@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
 <%@page import="com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI"%>
 <%@page import="java.util.TimeZone"%>
@@ -1706,7 +1707,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
             style: "width: 420px; height:130px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
-        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%=HTMLPageAssetAPI.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE%>', folderInode:folderMap.inode });
+        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%=APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost)%>', folderInode:folderMap.inode });
         pageAssetDialog.attr("content", dialogHtml);
         pageAssetDialog.show();
     }

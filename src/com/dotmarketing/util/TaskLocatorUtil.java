@@ -203,6 +203,7 @@ public class TaskLocatorUtil {
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
+		ret.add(Task03100HTMLPageAsContentChanges.class);
 		return ret;
 	}
 

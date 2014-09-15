@@ -82,4 +82,8 @@ public interface HTMLPageAssetAPI {
     Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException;
     
     HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions)  throws Exception;
+
+    String getHostDefaultPageType(Host host);
+
+    String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException;
 }

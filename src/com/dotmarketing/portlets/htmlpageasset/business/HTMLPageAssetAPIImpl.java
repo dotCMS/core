@@ -11,6 +11,7 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -24,12 +25,15 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
+
+    public static final String DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD = "defaultHTMLPageAssetStructure";
 
     @Override
     public void createHTMLPageAssetBaseFields(Structure structure) throws DotDataException, DotStateException {
@@ -190,7 +194,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     protected HTMLPageAsset copyLegacyData(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws DotStateException, DotDataException, DotSecurityException {
         Identifier legacyident=APILocator.getIdentifierAPI().find(legacyPage);
         HTMLPageAsset newpage=new HTMLPageAsset();
-        newpage.setStructureInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        newpage.setStructureInode(getHostDefaultPageType(legacyident.getHostId()));
         newpage.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
         newpage.setTitle(legacyPage.getTitle());
         newpage.setFriendlyName(legacyPage.getFriendlyName());
@@ -235,14 +239,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
         
         APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
+        PageServices.invalidate(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
         
         if(clive!=null) {
             Contentlet cclive = APILocator.getContentletAPI().checkin(clive, user, respectFrontEndPermissions);
             APILocator.getContentletAPI().publish(cclive, user, respectFrontEndPermissions);
-            APILocator.getContentletAPI().isInodeIndexed(cclive.getInode(),false);
-            APILocator.getContentletAPI().isInodeIndexed(cclive.getInode(),true);
         }
         
         Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
@@ -255,12 +258,34 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             MultiTreeFactory.saveMultiTree(mt);
         }
         
+        APILocator.getPermissionAPI().removePermissions(ccworking);
         if(perms!=null) {
             APILocator.getPermissionAPI().permissionIndividually(ccworking.getParentPermissionable(), ccworking, user, respectFrontEndPermissions);
             APILocator.getPermissionAPI().assignPermissions(perms, ccworking, user, respectFrontEndPermissions);
         }
         
         return fromContentlet(ccworking);
+    }
+    
+    @Override
+    public String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException {
+        return getHostDefaultPageType(APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), false));
+    }
+    
+    @Override
+    public String getHostDefaultPageType(Host host) {
+        Field ff=host.getStructure().getField(DEFAULT_HTML_PAGE_ASSET_STRUCTURE_HOST_FIELD);
+        if(ff!=null && InodeUtils.isSet(ff.getInode())) {
+            String stInode= ff.getFieldType().equals(Field.FieldType.CONSTANT.toString()) ? ff.getValues()
+                    : host.getStringProperty(ff.getVelocityVarName());
+            if(stInode!=null && UtilMethods.isSet(stInode)) {
+                Structure type=StructureCache.getStructureByInode(stInode);
+                if(type!=null && InodeUtils.isSet(type.getInode())) {
+                    return stInode;
+                }
+            }
+        }
+        return DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
     }
 
 }

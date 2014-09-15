@@ -60,12 +60,13 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public boolean isHttpsRequired() {
-        return getStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD)!=null;
+        return getStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD)!=null 
+                && getStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD).equals("true");
     }
 
     @Override
     public void setHttpsRequired(boolean httpsRequired) {
-        setStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD, httpsRequired ? "1" : "");
+        setStringProperty(HTMLPageAssetAPI.HTTPS_REQUIRED_FIELD, httpsRequired ? "true" : "");
     }
 
     @Override

@@ -55,5 +55,5 @@ public interface IHTMLPage extends Versionable,Permissionable {
     Map<String, Object> getMap () throws DotStateException, DotDataException, DotSecurityException;
     
     boolean isContent();
-        
+    
 }

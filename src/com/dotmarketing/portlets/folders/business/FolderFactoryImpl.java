@@ -20,7 +20,6 @@ import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -50,6 +49,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
@@ -311,6 +311,15 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 				}
 			} catch (DotSecurityException e) {}
+			
+			try {
+                for(IHTMLPage page : APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false)) {
+                    if(page.isShowOnMenu()) {
+                        filesListSubChildren.add(page);
+                    }
+                }
+                
+            } catch (DotSecurityException e) {}
 
 			// gets all subitems
 			menuList.addAll(subFolders);
@@ -332,41 +341,9 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getAllMenuItems(Inode inode, int orderDirection) throws DotStateException, DotDataException {
-
-		// gets all subfolders
-		java.util.List folderListChildren = getChildrenClass((Folder)inode, Folder.class);
-
-		ChildrenCondition cond=new ChildrenCondition();
-		cond.showOnMenu=true;
-		cond.deleted=false;
-		cond.live=true;
-
-		// gets all links for this folder
-		java.util.List linksListSubChildren = getChildrenClass((Folder) inode, Link.class, cond);
-
-		// gets all html pages for this folder
-		java.util.List htmlPagesSubListChildren = getChildrenClass((Folder) inode, HTMLPage.class, cond);
-
-		// gets all files for this folder
-		java.util.List filesListSubChildren = getChildrenClass((Folder) inode, File.class, cond);
-
-		List<FileAsset> fileAssets = null;
-		try {
-			fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder((Folder) inode, APILocator.getUserAPI().getSystemUser(), false);
-			filesListSubChildren.addAll(fileAssets);
-		} catch (DotSecurityException e) {}
-
-		// gets all subitems
-		java.util.List menuList = new java.util.ArrayList();
-		menuList.addAll(folderListChildren);
-		menuList.addAll(linksListSubChildren);
-		menuList.addAll(htmlPagesSubListChildren);
-		menuList.addAll(filesListSubChildren);
-
-		Comparator comparator = new AssetsComparator(orderDirection);
-		java.util.Collections.sort(menuList, comparator);
-
-		return menuList;
+	    List<Folder> dummy=new ArrayList<Folder>();
+	    dummy.add((Folder)inode);
+	    return getMenuItems(dummy, orderDirection);
 	}
 
 	protected Folder createFolders(String path, Host host) throws DotDataException {
