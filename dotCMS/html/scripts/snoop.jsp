@@ -1,4 +1,7 @@
 <%@ page import="javax.servlet.http.HttpUtils,java.util.Enumeration" %>
+
+<%@ include file="/html/common/uservalidation.jsp"%>
+
 <HTML>
 <HEAD>
 	<TITLE>JSP snoop page</TITLE>
