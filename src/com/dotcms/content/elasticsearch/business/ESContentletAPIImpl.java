@@ -1975,7 +1975,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			}
 			
 			deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
-	        //deleteUnrelatedContents(contentlet, related, related.isHasParent(), user, respectFrontendRoles);
 	        Tree newTree = null;
 	        Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
 	
