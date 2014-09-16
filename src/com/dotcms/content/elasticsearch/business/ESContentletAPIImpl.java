@@ -1965,71 +1965,63 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (child)
             contentParents = TreeFactory.getTreesByChild(contentlet.getIdentifier());
 
-        deleteUnrelatedContents(contentlet, related, related.isHasParent(), user, respectFrontendRoles);
-        Tree newTree = null;
-        Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
-
-        Relationship rel = related.getRelationship();
-        List<Contentlet> conRels = RelationshipFactory.getAllRelationshipRecords(related.getRelationship(), contentlet, related.isHasParent());
-
-        int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
-        int positionInParent;
-        List<Tree> trees;
-        for (Contentlet c : related.getRecords()) {
-            if (child) {
-                //newTree = TreeFactory.getTree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue());
-                newTree = getTree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), contentParents);
-                if(!InodeUtils.isSet(newTree.getParent())) {
-                    try {
-                        positionInParent = 0;
-                        trees = TreeFactory.getTreesByParent(c.getIdentifier());
-                        for (Tree tree: trees) {
-                            if ((tree.getRelationType().equals(rel.getRelationTypeValue())) && (positionInParent <= tree.getTreeOrder())) {
-                                positionInParent = tree.getTreeOrder() + 1;
-                            }
-                        }
-                    } catch (Exception e) {
-                        positionInParent = 0;
-                    }
-                    if(positionInParent == 0)//DOTCMS-6878
-						positionInParent = treePosition;
-                    newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
-                }else{
-                	if(newTree.getTreeOrder() == 0)//DOTCMS-6855
-						newTree.setTreeOrder(treePosition);
-					else
-						treePosition = newTree.getTreeOrder();//DOTCMS-6878
-                }
-            } else {
-                newTree = TreeFactory.getTree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue());
-                if(!InodeUtils.isSet(newTree.getParent()))
-                    newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
-                else
-                    newTree.setTreeOrder(treePosition);
-            }
-
-            //newTree.setTreeOrder(treePosition);
-            if( uniqueRelationshipSet.add(newTree) ) {
-
-            	int newTreePosistion = newTree.getTreeOrder();
-            	Tree treeToUpdate = TreeFactory.getTree(newTree);
-            	treeToUpdate.setTreeOrder(newTreePosistion);
-
-            	if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
-            		TreeFactory.saveTree(treeToUpdate);
-            	else
-            		TreeFactory.saveTree(newTree);
-
-            	treePosition++;
-
-            }
-
-            if(!child){// when we change the order we need to index all the sibling content
-            	for(Contentlet con : getSiblings(c.getIdentifier())){
-            		refresh(con);
-            	}
-            }
-        }
+        boolean localTransaction = false;
+		try{
+			try{
+				localTransaction =	 HibernateUtil.startLocalTransactionIfNeeded();
+			}
+			catch(Exception e){
+				throw new DotDataException(e.getMessage());
+			}
+			
+			deleteRelatedContent(contentlet, related.getRelationship(), related.isHasParent(), user, respectFrontendRoles);
+	        Tree newTree = null;
+	        Set<Tree> uniqueRelationshipSet = new HashSet<Tree>();
+	
+	        Relationship rel = related.getRelationship();
+	        List<Contentlet> conRels = RelationshipFactory.getAllRelationshipRecords(related.getRelationship(), contentlet, related.isHasParent());
+	
+	        int treePosition = (conRels != null && conRels.size() != 0) ? conRels.size() : 1 ;
+	        int positionInParent = 1;
+	        
+	        for (Contentlet c : related.getRecords()) {
+	            if (child) {
+	                newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
+	            } else {
+	                newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
+	            }
+	            positionInParent=positionInParent+1;
+	            
+	            if( uniqueRelationshipSet.add(newTree) ) {
+	            	int newTreePosistion = newTree.getTreeOrder();
+	            	Tree treeToUpdate = TreeFactory.getTree(newTree);
+	            	treeToUpdate.setTreeOrder(newTreePosistion);
+	
+	            	if(treeToUpdate != null && UtilMethods.isSet(treeToUpdate.getRelationType()))
+	            		TreeFactory.saveTree(treeToUpdate);
+	            	else
+	            		TreeFactory.saveTree(newTree);
+	
+	            	treePosition++;
+	            }
+	
+	            if(!child){// when we change the order we need to index all the sibling content
+	            	for(Contentlet con : getSiblings(c.getIdentifier())){
+	            		refresh(con);
+	            	}
+	            }
+	        }
+	        
+	        if(localTransaction){
+	            HibernateUtil.commitTransaction();
+	        }
+		} catch(Exception exception){
+			Logger.debug(this.getClass(), "Failed to relate content. : " + exception.toString(), exception);
+			if(localTransaction){
+				HibernateUtil.rollbackTransaction();
+			}
+			throw new DotDataException(exception.getMessage(), exception);
+		}
     }
 
     public void publish(List<Contentlet> contentlets, User user,    boolean respectFrontendRoles) throws DotSecurityException,DotDataException, DotContentletStateException {

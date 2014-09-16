@@ -5,6 +5,7 @@ import com.dotcms.repackage.org.elasticsearch.script.AbstractLongSearchScript;
 import com.dotcms.repackage.org.elasticsearch.script.ExecutableScript;
 import com.dotcms.repackage.org.elasticsearch.script.NativeScriptFactory;
 
+import java.util.List;
 import java.util.Map;
 
 public class RelationshipSortOrderScriptFactory implements NativeScriptFactory {
@@ -25,7 +26,14 @@ public class RelationshipSortOrderScriptFactory implements NativeScriptFactory {
         
         @Override
         public long runAsLong() {
-            String orderV=((ScriptDocValues)doc().get(orderField)).getValues().get(0)+" ";
+        	String orderV="";
+        	List<String> values =  (List<String>)((ScriptDocValues)doc().get(orderField)).getValues(); 
+        	for(String val : values){
+        		if(val.indexOf(orderPrefix) != -1){
+        			 orderV=val+" ";
+        			 break;
+        		}
+        	}
             int index=orderV.indexOf(orderPrefix); 
             long order=0;
             if(index!=-1) {
