@@ -7,6 +7,7 @@
 <%@ page import="com.dotmarketing.portlets.containers.model.Container" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
 
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
