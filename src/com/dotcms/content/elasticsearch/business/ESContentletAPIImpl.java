@@ -2016,7 +2016,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            HibernateUtil.commitTransaction();
 	        }
 		} catch(Exception exception){
-			Logger.debug(this.getClass(), "Failed to insert Permission Ref. : " + exception.toString(), exception);
+			Logger.debug(this.getClass(), "Failed to relate content. : " + exception.toString(), exception);
 			if(localTransaction){
 				HibernateUtil.rollbackTransaction();
 			}
