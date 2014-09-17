@@ -177,11 +177,17 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public boolean isShowOnMenu() {
-        return Config.getBooleanProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD);
+        String value=getStringProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD);
+        return value!=null && value.contains("true");
     }
 
     @Override
     public void setShowOnMenu(boolean showOnMenu) {
-        setStringProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD, showOnMenu ? "1" : "0");
+        setStringProperty(HTMLPageAssetAPI.SHOW_ON_MENU_FIELD, showOnMenu ? "true" : "");
+    }
+
+    @Override
+    public int getMenuOrder() {
+        return (int)getSortOrder();
     }
 }

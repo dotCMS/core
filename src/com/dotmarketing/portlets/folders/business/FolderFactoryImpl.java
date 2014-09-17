@@ -306,7 +306,7 @@ public class FolderFactoryImpl extends FolderFactory {
 			try {
 				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
 				for(FileAsset fileAsset : fileAssets) {
-					if(fileAsset.isShowOnMenu()){
+					if(fileAsset.isLive() && fileAsset.isShowOnMenu()){
 						filesListSubChildren.add(fileAsset);
 					}
 				}
@@ -443,12 +443,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		APILocator.getPermissionAPI().copyPermissions(source, newFolder);
 
 		// Copying children html pages
-		Map<String, HTMLPage[]> pagesCopied;
+		Map<String, IHTMLPage[]> pagesCopied;
 		if (copiedObjects.get("HTMLPages") == null) {
-			pagesCopied = new HashMap<String, HTMLPage[]>();
+			pagesCopied = new HashMap<String, IHTMLPage[]>();
 			copiedObjects.put("HTMLPages", pagesCopied);
 		} else {
-			pagesCopied = (Map<String, HTMLPage[]>) copiedObjects.get("HTMLPages");
+			pagesCopied = (Map<String, IHTMLPage[]>) copiedObjects.get("HTMLPages");
 		}
 
 		List pages = getChildrenClass(source, HTMLPage.class);
@@ -489,6 +489,17 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
+		
+		//Content Pages
+		List<IHTMLPage> pageAssetList=new ArrayList<IHTMLPage>();
+		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
+		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
+		for(IHTMLPage page : pageAssetList) {
+		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+            APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+            pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
+		}
+		
 
 		// issues/1736
 		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);

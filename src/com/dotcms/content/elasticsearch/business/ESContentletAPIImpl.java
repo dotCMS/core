@@ -684,6 +684,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
         }
+        
+        // if it showOnMenu is checked changing publish status should remove nav on that folder
+        if((contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ||
+                contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) &&
+                contentlet.getStringProperty("showOnMenu")!=null && contentlet.getStringProperty("showOnMenu").contains("true")) {
+            CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
+        }
     }
 
     public void cleanHostField(Structure structure, User user, boolean respectFrontendRoles)
@@ -2817,8 +2824,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 					tagAPI.updateTagReferences(contentlet.getIdentifier(), oldTagStorageId, newTagStorageId);
 				}
 
+				Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
 				if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
-				    Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
 				    //Parse file META-DATA
 				    java.io.File binFile =  getBinaryFile(contentlet.getInode(), FileAssetAPI.BINARY_FIELD, user);
 				    if(binFile!=null){
@@ -2833,26 +2840,41 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				            Gson gson = new GsonBuilder().disableHtmlEscaping().create();
 				            contentlet.setProperty(FileAssetAPI.META_DATA_FIELD, gson.toJson(metaMap));
 				            contentlet = conFac.save(contentlet);
-				            if(!isNewContent){
-				                LiveCache.removeAssetFromCache(contentlet);
-				                LiveCache.addToLiveAssetToCache(contentlet);
-				                WorkingCache.removeAssetFromCache(contentlet);
-				                WorkingCache.addToWorkingAssetToCache(contentlet);
-				                Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
-				                Folder folder = APILocator.getFolderAPI().findFolderByPath(contIdent.getParentPath(), host , user, respectFrontendRoles);
-				                if(RefreshMenus.shouldRefreshMenus(APILocator.getFileAssetAPI().fromContentlet(workingContentlet),APILocator.getFileAssetAPI().fromContentlet(contentlet))){
-				                	RefreshMenus.deleteMenu(folder);
-				                	CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
-				                }
-				            }
 				        }
 				    }
 
 				    // clear possible CSS cache
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), true);
 				    CacheLocator.getCSSCache().remove(contIdent.getHostId(), contIdent.getURI(), false);
+				    
+				    if(!isNewContent) {
+                        LiveCache.removeAssetFromCache(contentlet);
+                        WorkingCache.removeAssetFromCache(contentlet);
+				    }
 
 				}
+				
+				// both file & page as content might trigger a menu cache flush
+				if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET
+				                   || contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+                    Host host = APILocator.getHostAPI().find(contIdent.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
+                    Folder folder = APILocator.getFolderAPI().findFolderByPath(contIdent.getParentPath(), host , APILocator.getUserAPI().getSystemUser(), false);
+                    
+                    boolean shouldRefresh=
+                            (contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET 
+                            && RefreshMenus.shouldRefreshMenus(APILocator.getFileAssetAPI().fromContentlet(workingContentlet)
+                                                               ,APILocator.getFileAssetAPI().fromContentlet(contentlet), isNewContent))
+                            ||
+                            (contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE 
+                            && RefreshMenus.shouldRefreshMenus(APILocator.getHTMLPageAssetAPI().fromContentlet(workingContentlet)
+                                                               ,APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet), isNewContent));
+                    
+                    if(shouldRefresh){
+                        RefreshMenus.deleteMenu(folder);
+                        CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
+                    }
+				}
+				
 				if (contentlet.isLive()) {
 				    publishAssociated(contentlet, isNewContent, createNewVersion);
 				} else {
@@ -2897,7 +2919,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 				// DOTCMS-7290
 				DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-				Identifier contIdent = APILocator.getIdentifierAPI().find(contentlet);
 				Host host = APILocator.getHostAPI().find(contIdent.getHostId(), user, respectFrontendRoles);
 				cache.remove(LiveCache.getPrimaryGroup() + host.getIdentifier() + ":" + contIdent.getParentPath()+contIdent.getAssetName(),
 						LiveCache.getPrimaryGroup() + "_" + host.getIdentifier());

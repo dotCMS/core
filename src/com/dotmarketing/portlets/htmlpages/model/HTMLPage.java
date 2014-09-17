@@ -363,5 +363,10 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
     public boolean isContent() {
         return false;
     }
+
+    @Override
+    public int getMenuOrder() {
+        return getSortOrder();
+    }
 	
 }
