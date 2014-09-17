@@ -86,4 +86,10 @@ public interface HTMLPageAssetAPI {
     String getHostDefaultPageType(Host host);
 
     String getHostDefaultPageType(String hostId) throws DotDataException, DotSecurityException;
+
+    boolean rename(HTMLPageAsset page, String newName, User user) throws DotDataException, DotSecurityException;
+
+    boolean move(HTMLPageAsset page, Folder parent, User user)throws DotDataException, DotSecurityException;
+    
+    boolean move(HTMLPageAsset page, Host host, User user)throws DotDataException, DotSecurityException;
 }

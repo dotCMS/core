@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -286,6 +287,51 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
         }
         return DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE;
+    }
+
+    @Override
+    public boolean rename(HTMLPageAsset page, String newName, User user) throws DotDataException, DotSecurityException {
+        Identifier sourceIdent=APILocator.getIdentifierAPI().find(page);
+        Host host=APILocator.getHostAPI().find(sourceIdent.getHostId(), user, false);
+        Identifier targetIdent=APILocator.getIdentifierAPI().find(host, 
+                sourceIdent.getParentPath()+newName+"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html"));
+        if(targetIdent==null || !InodeUtils.isSet(targetIdent.getId())) {
+            Contentlet cont=APILocator.getContentletAPI().checkout(page.getInode(), user, false);
+            cont.setStringProperty(URL_FIELD, newName);
+            cont=APILocator.getContentletAPI().checkin(cont, user, false);
+            if(page.isLive()) {
+                APILocator.getContentletAPI().publish(cont, user, false);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean move(HTMLPageAsset page, Folder parent, User user) throws DotDataException, DotSecurityException {
+        return move(page,APILocator.getHostAPI().find(APILocator.getIdentifierAPI().find(parent).getHostId(),user,false), parent, user);
+    }
+
+    @Override
+    public boolean move(HTMLPageAsset page, Host host, User user) throws DotDataException, DotSecurityException {
+        return move(page,host,APILocator.getFolderAPI().findSystemFolder(),user);
+    }
+    
+    public boolean move(HTMLPageAsset page, Host host, Folder parent, User user) throws DotDataException, DotSecurityException {
+        Identifier sourceIdent=APILocator.getIdentifierAPI().find(page);
+        Identifier targetFolderIdent=APILocator.getIdentifierAPI().find(parent);
+        Identifier targetIdent=APILocator.getIdentifierAPI().find(host,targetFolderIdent.getURI()+sourceIdent.getAssetName());
+        if(targetIdent==null || !InodeUtils.isSet(targetIdent.getId())) {
+            Contentlet cont=APILocator.getContentletAPI().checkout(page.getInode(), user, false);
+            cont.setFolder(parent.getInode());
+            cont.setHost(host.getIdentifier());
+            cont=APILocator.getContentletAPI().checkin(cont, user, false);
+            if(page.isLive()) {
+                APILocator.getContentletAPI().publish(cont, user, false);
+            }
+            return true;
+        }
+        return false;
     }
 
 }

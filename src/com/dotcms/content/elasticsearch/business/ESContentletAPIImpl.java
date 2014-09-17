@@ -94,6 +94,7 @@ import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -2519,6 +2520,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        } catch (IOException e) {
 				            // TODO
 				        }
+				    }
+				    else if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				        ident.setAssetName(contentletRaw.getStringProperty(HTMLPageAssetAPI.URL_FIELD)
+				                           +"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html"));
 				    }
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
 				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);
