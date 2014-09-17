@@ -111,7 +111,7 @@
 	   	        },
 	   	     	error: function(error){
 	   	     		showDotCMSSystemMessage("ERROR:" + error,true);
-	   	     		dijit.byId("mainTabContainer").selectChild("licenseTab", true);
+	   	     		licenseAdmin.refreshLayout();
 	   	     	
 	   	     	}
 	   	    });
@@ -120,7 +120,9 @@
 	   	
 	   	refreshLayout : function(){
 	   		dijit.byId('uploadDiaWindow').hide();
+	   		dijit.byId('getLicenseCodeDia').hide();
 	   		dijit.byId("mainTabContainer").selectChild("licenseTab", true);
+	   		
 	   		
 	   	},
 	   	
@@ -327,7 +329,7 @@
 		<% if(!isCommunity){  %> 
 			<div style="float:right;">
 				    <button data-dojo-type="dijit.form.Button" onClick="licenseAdmin.resetLicense()" iconClass="resetIcon">
-				        <%= LanguageUtil.get(pageContext, "reset-license") %>
+				        <%= LanguageUtil.get(pageContext, "license-bad-id-button") %>
 				    </button>
 			</div>
 		<%} %>
@@ -344,7 +346,7 @@
 						<%= LanguageUtil.get(pageContext, "license-level") %>
 					</td>
 					<td>
-						<%= LicenseUtil.getLevelName()  %>
+						<b><%= LicenseUtil.getLevelName()  %></b>
 					</td>
 				</tr>
 				
@@ -403,7 +405,9 @@
 				<h3><%= LanguageUtil.get(pageContext, "request-license-trial") %></h3>
 				<div class="callOutBox" >
 				    <div>
-				        <%= LanguageUtil.get(pageContext, "license-trial-promo") %>
+				    	<a href="/html/blank.jsp" target="trialRequestWindow" onclick="licenseAdmin.requestTrial()" style="text-decoration: none;color:black">
+				        	<%= LanguageUtil.get(pageContext, "license-trial-promo") %>
+				        </a>
 				    </div>
 				    <div style="padding:10px;font-weight:bold">
 					    <a href="/html/blank.jsp" target="trialRequestWindow" onclick="licenseAdmin.requestTrial()">
@@ -524,13 +528,15 @@
 	
 	
 	<div dojoType="dijit.Dialog" id="uploadDiaWindow" title="<%= LanguageUtil.get(pageContext, "Upload-license-pack") %>">
-	    <div style="margin:auto;width:80%;margin-bottom:30px;">
+	    <div style="margin:auto;width:80%;margin:30px;">
 	   	
 	        <form method="POST" data-dojo-type="dijit.form.Form" action="/api/license/upload/" onSubmit="return false" encType="multipart/form-data" id="uploadPackForm">
-	
-	            <input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
-	            <input type="hidden" name="return" value="<%= licenseTab %>"/>
-	            <button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
+				<div style="padding:10px;">
+					<input type="file" name="file" id="uploadPackFile" accept="application/zip"/>
+	            </div>
+				<div style="padding:10px;text-align: center;">
+	            	<button data-dojo-type="dijit.form.Button" name="btnSubmit" iconClass="uploadIcon" onClick="licenseAdmin.doPackUpload()"><%= LanguageUtil.get(pageContext, "Upload-license-pack-button") %></button>
+	        	</div>
 	        </form>
 	    </div>
 	</div>
