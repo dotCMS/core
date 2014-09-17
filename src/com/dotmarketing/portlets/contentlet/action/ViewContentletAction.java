@@ -74,7 +74,7 @@ public class ViewContentletAction extends DotPortletAction {
 		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);		
 		if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
 			for(String inode : tempBinaryImageInodes){
-				conAPI.delete(conAPI.find(inode, user, false), user, false, true);
+				conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
 			}
 			tempBinaryImageInodes.clear();
 		}
