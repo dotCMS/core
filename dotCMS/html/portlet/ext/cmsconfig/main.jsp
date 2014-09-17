@@ -11,7 +11,10 @@
     String requestedTab = request.getParameter( "tab" );
 
     Boolean loadLicense = false;
+    if ( requestedTab != null && requestedTab.equals( "licenseTab" ) ) {
 
+        loadLicense = true;
+    }
 %>
 
 <div class="portlet-wrapper">
