@@ -9,12 +9,16 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -237,6 +241,10 @@ public class LicenseResource extends WebResource {
             session.setAttribute( "license_text", licenseText );
 
             String error = LicenseUtil.processForm( request );
+            User u = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            if(error !=null){
+            	return Response.ok( LanguageUtil.get(u, "license-bad-id-explanation"), MediaType.APPLICATION_JSON_TYPE).build();
+            }
         	return Response.ok( error, MediaType.APPLICATION_JSON_TYPE).build();
         }
         catch(Exception ex) {

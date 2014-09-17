@@ -107,20 +107,26 @@
 	   	        handleAs: "text",
 	   	        postData: data,
 	   	        load: function(message) {
-	   	        	licenseAdmin.refreshLayout();
+	   	        	//licenseAdmin.refreshLayout();
 	   	        },
 	   	     	error: function(error){
 	   	     		showDotCMSSystemMessage("ERROR:" + error,true);
-	   	     		licenseAdmin.refreshLayout();
+	   	     		//licenseAdmin.refreshLayout();
 	   	     	
 	   	     	}
 	   	    });
+	   	 	setTimeout(licenseAdmin.refreshLayout(),3000);
+	   	 
 	   	},
 	   	
 	   	
 	   	refreshLayout : function(){
-	   		dijit.byId('uploadDiaWindow').hide();
-	   		dijit.byId('getLicenseCodeDia').hide();
+	   		if(dijit.byId('uploadDiaWindow')){
+	   			dijit.byId('uploadDiaWindow').hide();
+	   		}
+	   		if(dijit.byId('uploadgetLicenseCodeDiaDiaWindow')){
+	   			dijit.byId('getLicenseCodeDia').hide();
+	   		}
 	   		dijit.byId("mainTabContainer").selectChild("licenseTab", true);
 	   		
 	   		
@@ -194,7 +200,7 @@
                         }
 
                         var serial=lic.id;
-                        var optd=dojo.create("td",null,row);
+                        var optd=dojo.create("td",{"nowrap":"true"},row);
 
                         if(lic.serverid==licenseAdmin.currentServerId  ) {
                             dojo.create("span",{"class":"unlockIcon", title:"<%= LanguageUtil.get(pageContext, "license-tip-free") %>"},
@@ -213,7 +219,7 @@
                         	
                         }
 
-                        dojo.create("td",{ innerHTML: lic.id}, row);
+                        dojo.create("td",{ innerHTML: lic.id.substring(lic.id, 8)}, row);
                         dojo.create("td",{ innerHTML: (!lic.serverid || lic.serverid==="") ? "Available" :
                                 lic.serverid+(lic.available ? " (Available)":"")}, row);
                         dojo.create("td",{ innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
@@ -254,9 +260,10 @@
             dojo.xhrPost({
                 url: "/api/license/free/",
                 load: function() {
-                	licenseAdmin.refreshLayout();
+                	
                 }
             });
+            licenseAdmin.refreshLayout();
         },
         
         
@@ -285,10 +292,8 @@
         }
 	});
 	
-	//if(!licenseAdmin){
-		console.log("New LicenseAdmin!!");
+
 		var licenseAdmin = new dotcms.dijit.cmsconfig.LicenseAdmin({});
-	//}
 
 	dojo.require("dojo.io.iframe");
 	dojo.ready(licenseAdmin.load);
