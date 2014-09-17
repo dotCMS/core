@@ -134,7 +134,7 @@ public class PublisherUtil {
         List<ContentletSearch> cs = new ArrayList<ContentletSearch>();
         for ( String luceneQuery : luceneQueries ) {
             try {
-                cs = APILocator.getContentletAPI().searchIndex( luceneQuery, 0, 0, "moddate", APILocator.getUserAPI().getSystemUser(), false );
+            	cs.addAll(APILocator.getContentletAPI().searchIndex( luceneQuery, 0, 0, "moddate", APILocator.getUserAPI().getSystemUser(), false ));
             } catch ( Exception e ) {
                 Logger.error( PublisherUtil.class, e.getMessage(), e );
             }
