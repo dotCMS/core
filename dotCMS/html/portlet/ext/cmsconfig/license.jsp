@@ -339,7 +339,7 @@
 <div class="portlet-wrapper">
 	<table class="listingTable shadowBox layoutTable" style="font-size:12px;margin-top:20px;">
 	    <tr>
-	        <th colspan=2>Current License Information</th>
+	        <th colspan=2><%= LanguageUtil.get(pageContext, "license-current-info") %></th>
 	    </tr>
 		<tr>
 			<td colspan="2" align="center">
