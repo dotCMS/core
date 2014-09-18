@@ -12,7 +12,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
-
+<script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 
 <%
 String hostId = request.getParameter("hostId");
@@ -768,7 +768,8 @@ try {
 	}
 
 	function viewFiles(){
-	    var URL = '<%=filesURL%>&hostId={hostIdentifier}';
+		StructureAjax.setSelectedStructure("FileAsset");
+	    var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}';
 	    var href = dojo.replace(URL, { hostIdentifier: '<%=hostId%>'})
 	    window.location=href;	
 	}
@@ -781,6 +782,7 @@ try {
 	}
 
 	function viewContent(){
+		StructureAjax.setSelectedStructure("webPageContent");
 		var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}';
 	    var href = dojo.replace(URL, { hostIdentifier: '<%=hostId%>'})
 		window.location=href;	
