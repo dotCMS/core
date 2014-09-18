@@ -185,13 +185,16 @@ public class BinaryExporterServlet extends HttpServlet {
 		ContentletAPI contentAPI = APILocator.getContentletAPI();
 		BinaryContentExporter.BinaryContentExporterData data = null;
 		File inputFile = null;
+		HttpSession session =req.getSession(false);
+		List<String> tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+		boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
 
 			String downloadName = "file_asset";
 
-			HttpSession session =req.getSession(false);
+			
 			long lang =APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			try{
 				String x  = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
@@ -221,7 +224,10 @@ public class BinaryExporterServlet extends HttpServlet {
 			if(isContent){
 				Contentlet content = null;
 				if(byInode) {
-					content = contentAPI.find(assetInode, user, respectFrontendRoles);
+					if(isTempBinaryImage)
+						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+					else
+						content = contentAPI.find(assetInode, user, respectFrontendRoles);
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
@@ -247,7 +253,10 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
-				inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
+				if(isTempBinaryImage)
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), APILocator.getUserAPI().getSystemUser());
+				else
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
 				if(inputFile == null){
 					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(404);

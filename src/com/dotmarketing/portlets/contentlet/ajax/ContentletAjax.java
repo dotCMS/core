@@ -1296,7 +1296,7 @@ public class ContentletAjax {
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					Contentlet binaryContentlet =  new Contentlet();
 					try{
-						binaryContentlet = conAPI.find(binaryFileValue, user, false);
+						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
 					}catch(Exception e){}
 					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
 						try {
@@ -1464,7 +1464,7 @@ public class ContentletAjax {
 
 			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
 				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
+					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
 				}
 				tempBinaryImageInodes.clear();
 			}
@@ -1678,7 +1678,7 @@ public class ContentletAjax {
 
 			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
 				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, user, false), user, false, true);
+					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
 				}
 				tempBinaryImageInodes.clear();
 			}
@@ -2014,6 +2014,8 @@ public class ContentletAjax {
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		User user = com.liferay.portal.util.PortalUtil.getUser((HttpServletRequest)req);
+		User sysUser = APILocator.getUserAPI().getSystemUser();
+		
 
 		HttpSession ses = req.getSession();
 		List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
@@ -2023,7 +2025,7 @@ public class ContentletAjax {
 
 		tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
 		for(String tempBinaryImageInode : tempBinaryImageInodes){
-			if(conAPI.find(tempBinaryImageInode, user, false).getStringProperty(FileAssetAPI.TITLE_FIELD).equalsIgnoreCase(fileName)){
+			if(conAPI.find(tempBinaryImageInode, sysUser, false).getStringProperty(FileAssetAPI.TITLE_FIELD).equalsIgnoreCase(fileName)){
 				callbackData.put("contentletInode", tempBinaryImageInode);
 				return callbackData;
 			}
@@ -2062,7 +2064,7 @@ public class ContentletAjax {
 				}
 			}
 
-			newCont = conAPI.checkin(newCont, user, false);
+			newCont = conAPI.checkin(newCont, sysUser, false);
 
 		} catch (Exception e) {
 			Logger.error(this,"Contentlet failed while creating new binary content",e);
