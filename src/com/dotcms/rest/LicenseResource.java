@@ -9,13 +9,20 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONObject;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
@@ -72,7 +79,7 @@ public class LicenseResource extends WebResource {
                 
                 AdminLogger.log(this.getClass(), "putZipFile", "uploaded zip to license repo", initData.getUser());
                 
-                return buildReturn(request, ret);
+                return Response.ok().build();
             }
             
             return Response.status(Response.Status.BAD_REQUEST)
@@ -85,16 +92,8 @@ public class LicenseResource extends WebResource {
         }
         
     }
+
     
-    protected Response buildReturn(HttpServletRequest request, String ret) throws URISyntaxException {
-         
-        if(!UtilMethods.isSet(ret)) {
-            return Response.ok().build();
-        }
-        
-        return Response.status(302).header("Location", ret).build();
-        
-    }
     
     @DELETE
     @Path("/delete/{params:.*}")
@@ -187,4 +186,108 @@ public class LicenseResource extends WebResource {
         
         return Response.ok().build();
     }
+    
+    
+    @POST
+    @Path("/requestCode/{params:.*}")
+    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
+    public Response requestLicense(@Context HttpServletRequest request, 
+    		@FormParam ("licenseLevel") String licenseLevel,
+    		@FormParam ("licenseType") String licenseType) {
+        InitDataObject initData = init("", true, request, true, "9");
+        try {
+
+	        
+	        
+	        
+	        HttpSession session = request.getSession();
+            session.setAttribute( "iwantTo", "request_code" );
+            session.setAttribute( "license_type", licenseType );
+            session.setAttribute( "license_level", licenseLevel );
+            if(!"trial".equals(licenseType) && !   
+            		"dev".equals(licenseType) && !   
+            		"prod".equals(licenseType) 
+            		
+            		){
+            	throw new DotStateException("invalid License Type");
+            }
+
+            LicenseUtil.processForm( request );
+        	return Response.ok(request.getAttribute("requestCode"), MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        catch(Exception ex) {
+            Logger.error(this, "can't request license ",ex);
+
+            return Response.serverError().build();
+        }
+        
+    }
+    
+    @POST
+    @Path("/applyLicense/{params:.*}")
+    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
+    public Response applyLicense(@Context HttpServletRequest request, @PathParam("params") String params,
+
+    		@FormParam ("licenseText") String licenseText) {
+
+        InitDataObject initData = init(params, true, request, true, "9");
+        try {
+	        HttpSession session = request.getSession();
+
+
+            session.setAttribute( "applyForm", Boolean.TRUE );
+            session.setAttribute( "iwantTo", "paste_license" );
+            session.setAttribute( "paste_license", "paste_license" );
+            session.setAttribute( "license_text", licenseText );
+
+            String error = LicenseUtil.processForm( request );
+            User u = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            if(error !=null){
+            	return Response.ok( LanguageUtil.get(u, "license-bad-id-explanation"), MediaType.APPLICATION_JSON_TYPE).build();
+            }
+        	return Response.ok( error, MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        catch(Exception ex) {
+            Logger.error(this, "can't request license ",ex);
+
+            return Response.serverError().build();
+        }
+        
+    }
+    
+    @POST
+    @Path("/resetLicense/{params:.*}")
+    @Consumes (MediaType.APPLICATION_FORM_URLENCODED)
+    public Response resetLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
+
+        InitDataObject initData = init(params, true, request, true, "9");
+        try {
+        	freeLicense(request, params);
+        	
+        	
+        	
+	        HttpSession session = request.getSession();
+
+            session.setAttribute( "applyForm", Boolean.TRUE );
+            session.setAttribute( "iwantTo", "paste_license" );
+            session.setAttribute( "paste_license", "paste_license" );
+            session.setAttribute( "license_text", "blah" );
+
+
+            String error = LicenseUtil.processForm( request );
+        	return Response.ok("", MediaType.APPLICATION_JSON_TYPE).build();
+        }
+        catch(Exception ex) {
+            Logger.error(this, "can't request license ",ex);
+
+            return Response.serverError().build();
+        }
+        
+    }
+    
+    
+    
+    
+    
+    
 }
