@@ -554,5 +554,14 @@ public class StructureAjax {
 		result.put("size",containersList.size());		
 		return result;
 	}
+	
+	public void setSelectedStructure(String StructureVelocityVarName){
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+		
+		if(StructureCache.getStructureByVelocityVarName(StructureVelocityVarName) != null){
+			request.getSession().setAttribute("selectedStructure", StructureCache.getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
+		}
+	}
 
 }
