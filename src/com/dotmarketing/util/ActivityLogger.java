@@ -2,29 +2,31 @@ package com.dotmarketing.util;
 
 import com.dotmarketing.logConsole.model.LogMapper;
 
-
 public class ActivityLogger {
 
-    private static String filename = "dotcms-userActivity.log";
+	private static String filename = "dotcms-userActivity.log";
 
-    public static synchronized void logInfo ( Class cl, String action, String msg ) {
+	public static synchronized void logInfo(Class cl, String action, String msg) {
+		logInfo(cl, action, msg, null);
+	}
 
-        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.info( ActivityLogger.class, cl.toString() + " : " + action + " , " + msg );
-        }
-    }
+	public static synchronized void logInfo(Class cl, String action,
+			String msg, String host) {
+		if (LogMapper.getInstance().isLogEnabled(filename)) {
+			if (!UtilMethods.isSet(host)) {
+				host = "system";
+			}
+			Logger.info(ActivityLogger.class, cl.toString() + ": " + host
+					+ " : " + action + " , " + msg);
+		}
+	}
 
-    public static synchronized void logInfo ( Class cl, String action, String msg, String host ) {
+	public static void logDebug(Class cl, String action, String msg, String host) {
 
-        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.info( ActivityLogger.class, cl.toString() + ": " + host + " : " + action + " , " + msg );
-        }
-    }
+		if (LogMapper.getInstance().isLogEnabled(filename)) {
+			Logger.debug(ActivityLogger.class, cl.toString() + ": " + host
+					+ " :" + action + " , " + msg);
+		}
+	}
 
-    public static void logDebug ( Class cl, String action, String msg, String host ) {
-
-        if ( LogMapper.getInstance().isLogEnabled( filename ) ) {
-            Logger.debug( ActivityLogger.class, cl.toString() + ": " + host + " :" + action + " , " + msg );
-        }
-    }
 }
