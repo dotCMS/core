@@ -32,53 +32,54 @@ public class ESClient {
 	final String syncMe = "esSync";
 
 	public Client getClient() {
-		if(_nodeInstance ==null){
-			synchronized (syncMe) {
-				if(_nodeInstance ==null){
-					try{
-						loadConfig();
-						initNode();
-					}catch (Exception e) {
-						Logger.error(ESClient.class, "Could not initialize ES Node", e);
-					}
-				}
-			}
-		}
+
+        try{
+            initNode();
+        }catch (Exception e) {
+            Logger.error(ESClient.class, "Could not initialize ES Node", e);
+        }
+
 		return _nodeInstance.client();
 	}
 
     private void initNode () {
 
-        synchronized (syncMe) {
+        if ( _nodeInstance == null ) {
+            synchronized (syncMe) {
+                if ( _nodeInstance == null ) {
 
-            shutDownNode();
+                    loadConfig();
 
-            String node_id = ConfigUtils.getServerId();
-            _nodeInstance = nodeBuilder().
-                    settings(
-                            ImmutableSettings.settingsBuilder().
-                                    put( "name", node_id ).
-                                    put( "script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName() ).build()
-                    ).build().start();
+                    shutDownNode();
 
-            try {
-                UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
-                        new UpdateSettingsRequest().settings(
-                                jsonBuilder().startObject()
-                                        .startObject( "index" )
-                                        .field( "auto_expand_replicas", "0-all" )
-                                        .endObject()
-                                        .endObject().string()
-                        ) ).actionGet();
-            } catch ( Exception e ) {
-                Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
-            }
+                    String node_id = ConfigUtils.getServerId();
+                    _nodeInstance = nodeBuilder().
+                            settings(
+                                    ImmutableSettings.settingsBuilder().
+                                            put( "name", node_id ).
+                                            put( "script.native.related.type", RelationshipSortOrderScriptFactory.class.getCanonicalName() ).build()
+                            ).build().start();
 
-            try {
-                // wait a bit while the node gets available for requests
-                Thread.sleep(5000L);
-            } catch ( InterruptedException e ) {
-                Logger.error( ESClient.class, "Error waiting for node to be available", e );
+                    try {
+                        UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
+                                new UpdateSettingsRequest().settings(
+                                        jsonBuilder().startObject()
+                                                .startObject( "index" )
+                                                .field( "auto_expand_replicas", "0-all" )
+                                                .endObject()
+                                                .endObject().string()
+                                ) ).actionGet();
+                    } catch ( Exception e ) {
+                        Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
+                    }
+
+                    try {
+                        // wait a bit while the node gets available for requests
+                        Thread.sleep( 5000L );
+                    } catch ( InterruptedException e ) {
+                        Logger.error( ESClient.class, "Error waiting for node to be available", e );
+                    }
+                }
             }
         }
     }
@@ -220,15 +221,12 @@ public class ESClient {
     		Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
         }
 
-		loadConfig();
 		initNode();
-
 	}
 
 	public void removeClusterNode() {
 	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
     	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
-    	    loadConfig();
     	    initNode();
 	    }
 	}
