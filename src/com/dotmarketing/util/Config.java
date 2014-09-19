@@ -93,7 +93,7 @@ public class Config {
             if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
                 try {
 
-                    Config.props = null;//Cleaning up the current properties
+                    props = new PropertiesConfiguration();//Cleaning up the current properties
 
                     //Read the properties for both files
                     readProperties( dotmarketingFile, "dotmarketing-config.properties" );
@@ -129,8 +129,8 @@ public class Config {
 
             Logger.info( Config.class, "Loading dotCMS [" + fileName + "] Properties..." );
 
-            if ( Config.props == null ) {
-                Config.props = new PropertiesConfiguration();
+            if ( props == null ) {
+                props = new PropertiesConfiguration();
             }
 
             InputStream propsInputStream = new FileInputStream( fileToRead );
