@@ -214,7 +214,7 @@ int periodData = dAPI.checkPeriodData(0,0);
 		<portlet:param name="cmd" value="<%=Constants.VIEW_HOST_REPORT %>" />\
 		<portlet:param name="lang" value="<%= Long.toString(lang.getId()) %>" />\
 		<portlet:param name="referer" value="<%=referer%>" />\
-        </portlet:actionURL>&hostId={hostIdentifier}';
+        </portlet:actionURL>&hostId={hostIdentifier}&r='+ Date.now();
         var href = dojo.replace(URL, { hostIdentifier: id})
    		window.location=href;	
    	 }

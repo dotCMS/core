@@ -769,7 +769,7 @@ try {
 
 	function viewFiles(){
 		StructureAjax.setSelectedStructure("FileAsset");
-	    var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}';
+	    var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}' + '&r=' + Date.now();
 	    var href = dojo.replace(URL, { hostIdentifier: '<%=hostId%>'})
 	    window.location=href;	
 	}
@@ -783,7 +783,7 @@ try {
 
 	function viewContent(){
 		StructureAjax.setSelectedStructure("webPageContent");
-		var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}';
+		var URL = '<%=contentURL%>&p_p_action=0&hostId={hostIdentifier}' + '&r=' + Date.now();
 	    var href = dojo.replace(URL, { hostIdentifier: '<%=hostId%>'})
 		window.location=href;	
 	}
