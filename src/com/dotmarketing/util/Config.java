@@ -89,7 +89,8 @@ public class Config {
 
         } else {
 
-            if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
+            //Refresh the properties if changes detected in any of these properties files
+            if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
                 try {
 
                     Config.props = null;//Cleaning up the current properties
