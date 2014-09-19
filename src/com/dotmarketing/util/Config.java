@@ -89,20 +89,16 @@ public class Config {
 
         } else {
 
-            if ( lastDotmarketingModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
+            if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
                 try {
-                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-                } catch ( Exception e ) {
-                    Logger.fatal( Config.class, "Exception loading property file [dotmarketing-config.properties]", e );
-                    props = null;
-                }
-            }
 
-            if ( lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
-                try {
+                    props = null;//Cleaning up the current properties
+
+                    //Read the properties for both files
+                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
                     readProperties( clusterFile, "dotcms-config-cluster.properties" );
                 } catch ( Exception e ) {
-                    Logger.fatal( Config.class, "Exception loading property file [dotcms-config-cluster.properties]", e );
+                    Logger.fatal( Config.class, "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]", e );
                     props = null;
                 }
             }
