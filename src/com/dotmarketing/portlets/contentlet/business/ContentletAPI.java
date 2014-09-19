@@ -1381,12 +1381,21 @@ public interface ContentletAPI {
 	 * by another user.
 	 * @param contentlet
 	 * @param user
+	 * @param respectFrontendRoles
 	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException 
+	 * @throws DotLockException
 	 */
+	public boolean canLock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotLockException;
 	
-	public boolean canLock(Contentlet contentlet, User user) throws   DotLockException ;
+	/**
+	 * Tests whether a user can potentially lock a piece of content (needed to test before publish, etc).  This method will return false if content is already locked
+	 * by another user.
+	 * @param contentlet
+	 * @param user
+	 * @return
+	 * @throws DotLockException
+	 */
+	public boolean canLock(Contentlet contentlet, User user) throws DotLockException;
 
 	/**
 	 * Returns the ContentRelationships Map for the specified content.
