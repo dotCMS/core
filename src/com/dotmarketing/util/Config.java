@@ -92,7 +92,7 @@ public class Config {
             if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
                 try {
 
-                    props = null;//Cleaning up the current properties
+                    Config.props = null;//Cleaning up the current properties
 
                     //Read the properties for both files
                     readProperties( dotmarketingFile, "dotmarketing-config.properties" );
