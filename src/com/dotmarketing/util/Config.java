@@ -73,7 +73,7 @@ public class Config {
      * @param dotmarketingURL
      * @param clusterURL
      */
-    private static void readProperties ( URL dotmarketingURL, URL clusterURL ) {
+    private static synchronized void readProperties ( URL dotmarketingURL, URL clusterURL ) {
 
         File dotmarketingFile = new File( dotmarketingURL.getPath() );
         Date lastDotmarketingModified = new Date( dotmarketingFile.lastModified() );
