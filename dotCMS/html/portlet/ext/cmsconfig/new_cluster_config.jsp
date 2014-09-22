@@ -3,63 +3,24 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
-<%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
-<%return;} %>
+    <%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
+<%
+        return;
+    }
+%>
 
-<%String dojoPath = Config.getStringProperty("path.to.dojo");%>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
-<head>
-<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+<style media="all" type="text/css">
+    .error-detail {
+        width: 100%;
+        font-size: 11px;
+        margin: 10px 0;
+        text-align: left;
+        overflow: scroll;
+        max-height: 300px;
+    }
+</style>
 
-	<title>dotCMS Style Guide</title>
-	<style media="all" type="text/css">
-		@import "/html/common/css.jsp";
-        @import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css";
-	</style>
-
-	<%-- <script type="text/javascript" src="<%=dojoPath%>/dojo/dojo.js" djConfig="parseOnLoad:true, isDebug:false"></script>
-	<script type="text/javascript" src="<%=dojoPath%>/dojo/dot-dojo.js"></script> --%>
-	<script type="text/javascript">
-		dojo.require("dijit.form.Button");
-		dojo.require('dijit.layout.TabContainer');
-		dojo.require('dijit.layout.ContentPane');
-		dojo.require('dijit.form.FilteringSelect');
-		dojo.require('dojo.data.ItemFileReadStore');
-		dojo.require("dojo.fx");
-		dojo.require("dijit.layout.SplitContainer");
-		dojo.require("dijit.ColorPalette");
-		dojo.require("dijit.form.Slider");
-		dojo.require("dijit.Dialog");
-		dojo.require("dijit.ProgressBar");
-		dojo.require("dijit.form.ComboBox");
-		dojo.require("dijit.Dialog");
-		dojo.require("dijit.form.Button");
-		dojo.require("dijit.form.CheckBox");
-		dojo.require("dijit.form.DateTextBox");
-		dojo.require("dijit.form.FilteringSelect");
-		dojo.require("dijit.form.TextBox");
-		dojo.require("dijit.form.ValidationTextBox");
-		dojo.require("dijit.form.Textarea");
-		dojo.require("dijit.Menu");
-		dojo.require("dijit.MenuItem");
-		dojo.require("dijit.MenuSeparator");
-		dojo.require("dijit.ProgressBar");
-		dojo.require("dijit.PopupMenuItem");
-		dojo.require('dijit.layout.TabContainer');
-		dojo.require('dijit.layout.ContentPane');
-		dojo.require("dijit.layout.BorderContainer");
-		dojo.require("dijit.TitlePane");
-		dojo.require("dijit.Tooltip");
-		dojo.require("dojo.parser");
-		dojo.require("dojo.fx");
-		dojo.require("dojox.layout.ContentPane");
-		dojo.require("dojo.window")
-		dojo.require("dojo/request")
-		dojo.require("dojo/request/xhr")
-	</script>
-
-	<script>
+<script type="text/javascript">
 
 		var actionPanelTable;
 		var initialRow;
@@ -99,8 +60,6 @@
 				dojo.connect(window, 'onresize', this, function(event) {
 					this.initPanel();
 				});
-
-
 
 			},
 
@@ -162,7 +121,7 @@
 					error : function(error) {
 						targetNode.innerHTML = "An unexpected error occurred: " + error;
 					}
-				}
+				};
 
 				deferred = dojo.xhrGet(xhrArgs);
 
@@ -202,7 +161,7 @@
 		            		        open:   nodeStatus.cacheOpen,
 		            		        address:   nodeStatus.cacheAddress,
 		            		        receivedBytes:   nodeStatus.cacheReceivedBytes,
-		            		        port:   nodeStatus.cachePort,
+		            		        port:   nodeStatus.cachePort
 		            		      },
 
 		            		      es: {
@@ -210,14 +169,14 @@
 		            		    	clusterName: nodeStatus.esClusterName,
 		            		    	numberOfNodes: nodeStatus.esNumberOfNodes,
 		            		    	activeShards: nodeStatus.esActiveShards,
-		            		    	port: nodeStatus.esPort,
+		            		    	port: nodeStatus.esPort
 		            		      },
 
 		            		      assets: {
 		            		    	  status: nodeStatus.assetsStatus,
 		            		    	  canRead: nodeStatus.assetsCanRead,
 		            		    	  canWrite: nodeStatus.assetsCanWrite,
-		            		    	  path: nodeStatus.assetsPath,
+		            		    	  path: nodeStatus.assetsPath
 		            		      },
 
 		            		      licenseRepo: {
@@ -233,20 +192,13 @@
 		            }
 		        });
 
-
-
-
 				actionPanelTable.initPanel();
-
-
-
 
 				dojo.removeClass("actionPanel", "hideMe");
 
 				//dojo.parser.parse("actionPanel");
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
 				dojo.style("actionPanel", "height", "800px");
-
 			},
 
 			/**
@@ -263,22 +215,6 @@
 				var actionPanel = dojo.position("actionPanel", true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
 				var bottomOfTheHeader = tableHeader.h + this.ff + tableHeader.y -scroll;
-
-				/*
-				console.log("--------------------------");
-				console.log("tableHeader x:" + tableHeader.x);
-				console.log("tableHeader y:" + tableHeader.y);
-				console.log("tableHeader h:" + tableHeader.h);
-				console.log("tableHeader w:" + tableHeader.w);
-				console.log("selectedRow:" + this.lastRow);
-				console.log("bottomOfTheHeader x:" + bottomOfTheHeader);
-				console.log("selectedRow y:" + selectedRow.y);
-				console.log("selectedRow h:" + selectedRow.h);
-				console.log("actionPanel y:" + actionPanel.y);
-				console.log("actionPanel x:" + actionPanel.x);
-				console.log("Scroll:" +scroll);
-				*/
-
 
 				if(bottomOfTheHeader < 0 ){
 					dojo.style("actionPanel", "position","fixed");
@@ -297,8 +233,6 @@
 				}
 			},
 
-
-
 			initPanel : function(){
 				var tableHeader = dojo.position("actionPanelTableHeader",true);
 				var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
@@ -312,8 +246,6 @@
 					});
 
 				actionPanelTable.placeActionPanel();
-
-
 			}
 		});
 
@@ -366,7 +298,7 @@
 							nodesTableHTML += "<input type='hidden' id='serverId-"+index+"' value='"+item.serverId+"'>"
 						});
 
-						nodesTableHTML += "</table>"
+						nodesTableHTML += "</table>";
 
 						var nodesTable = dojo.create("div", { innerHTML: nodesTableHTML });
 
@@ -392,7 +324,7 @@
 				error : function(error) {
 					targetNode.innerHTML = "An unexpected error occurred: " + error;
 				}
-			}
+			};
 
 			deferred = dojo.xhrGet(xhrArgs);
 
@@ -403,10 +335,9 @@
 
 				  renderNodesStatus();
 
-// 				 /**
-// 					Set the jsp to load up when the action panel is activated
-// 				 **/
-
+ 				 /**
+ 					Set the jsp to load up when the action panel is activated
+ 				 **/
 				  actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
 
 			  });
@@ -417,7 +348,6 @@
 
 			//ES Cluster Nodes Status
 			var properties;
-
 
 			xhrArgs = {
 				url : "/api/cluster/getESConfigProperties/",
@@ -444,12 +374,12 @@
 						  }
 
 						html += "<tr><td><input type='checkbox' data-dojo-type='dijit/form/CheckBox' id='use_"+key+"' onChange='enableDisableProp(\""+key+"\")'></td><td style='font-size:11px; width:50%' ><span style='padding-left:15px; color:#d0d0d0; font-size:11px;' id='label_"+key+"'>"+key+"</span></td><td style='padding:5px; text-align:center'><input class='props' style='font-size:11px; width:100px' type='text' data-dojo-type='dijit/form/TextBox' disabled='disabled'  id='"+key+"' value='"+value+"'></input></td></tr>"
-					};
+					}
 
-					html += "</table>"
+					html += "</table>";
 
 					dojo.empty(dojo.byId("propertiesDiv"));
-					dojo.place(html, dojo.byId("propertiesDiv"))
+					dojo.place(html, dojo.byId("propertiesDiv"));
 					dojo.parser.parse("propertiesDiv");
 
 					dijit.byId('clusterPropertiesDialog').show();
@@ -457,7 +387,7 @@
 				error : function(error) {
 					targetNode.innerHTML = "An unexpected error occurred: " + error;
 				}
-			}
+			};
 
 			deferred = dojo.xhrGet(xhrArgs);
 			dijit.byId('dialogWireButton').setDisabled(false);
@@ -524,7 +454,7 @@
 					error : function(error) {
 						targetNode.innerHTML = "An unexpected error occurred: " + error;
 					}
-				}
+				};
 
 			deferred = dojo.xhrPost(xhrArgs);
 			dojo.byId('wiringNode').style.display = 'block';
@@ -540,33 +470,37 @@
 
 		function refreshStatus(serverId) {
 			 renderNodesStatus();
-			 actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/cmsconfig/cluster_config_right_panel.jsp", alwaysShow:true});
+			 actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
 		}
 
-	</script>
+        /*
+            Displays the error message sent from the server
+         */
+        var showErrorDetail = function () {
+            dojo.byId("showErrorDetailButton").hide();
+            dojo.byId("hideErrorDetailButton").show();
+            dojo.byId("errorDetail").show();
+        };
 
+        /*
+            Hiddes the error message sent from the server
+         */
+        var hideErrorDetail = function () {
+            dojo.byId("hideErrorDetailButton").hide();
+            dojo.byId("showErrorDetailButton").show();
+            dojo.byId("errorDetail").hide()
+        };
 
-
-
-
-
-</head>
-
-<body class="dmundra">
+</script>
 
 
 <div id="doc3" style="min-height: 500px">
 
-
 	<div class="actionPannelPage" id="container" style="min-height: 500px">
-
 		<div id="actionPanel" class="hideMe" style="height: 500px">
 			<div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
-			<div id="actionPanelContent" style="overflow:auto;">
-
-			</div>
+			<div id="actionPanelContent" style="overflow:auto;"></div>
 		</div>
-
 	</div>
 
 </div>
@@ -574,28 +508,25 @@
 <div id="clusterPropertiesDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%=LanguageUtil.get(pageContext, "configuration_cluster_wire_node")%>"
 	style="display: none; width:350px">
     <div style="padding:0px 15px;">
-			<div id="wiringResult" style="display: none; text-align: center; font-size:11px; padding-bottom: 10px">
-				<span id="wireResult"></span>
-				<a href='#' onclick="showErrorDetail(this)" id="showErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "show")%> <%=LanguageUtil.get(pageContext, "details")%></a>
-				<a href='#' onclick="hideErrorDetail(this)" id="hideErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "hide")%> <%=LanguageUtil.get(pageContext, "details")%></a>
+        <div id="wiringResult" style="display: none; text-align: center; font-size:11px; padding-bottom: 10px">
+            <span id="wireResult"></span>
+            <a href='#' onclick="showErrorDetail(this)" id="showErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "show")%> <%=LanguageUtil.get(pageContext, "details")%></a>
+            <a href='#' onclick="hideErrorDetail(this)" id="hideErrorDetailButton" style="display: none"><%=LanguageUtil.get(pageContext, "hide")%> <%=LanguageUtil.get(pageContext, "details")%></a>
 <!-- 				<a href='#' onclick="hideStatusBar()">Clear</a> -->
-				<div id="errorDetail" style="display: none; text-align: center; width: 100%; font-size:11px"></div>
-			</div>
-			<div id="wiringNode" style="display: none; text-align: center; width: 100%; font-size:11px; padding-bottom: 10px">::: Wiring Node :::</div>
+            <div id="errorDetail" class="error-detail" style="display: none;"></div>
+        </div>
+        <div id="wiringNode" style="display: none; text-align: center; width: 100%; font-size:11px; padding-bottom: 10px">::: Wiring Node :::</div>
 
-            <div id='propertiesDiv' style="height: auto;"></div>
-            <div align="center" style="padding-top: 10px">
-               <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
-					iconClass="saveIcon" onclick="wireNode()" id="dialogWireButton"
-					type="button"><%=LanguageUtil.get(pageContext, "Wire")%>
-				</button>
-				<button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
-					onClick='closeDialog()' iconClass="cancelIcon" id="cancelWiringButton"
-					type="button"><%=LanguageUtil.get(pageContext, "Cancel")%>
-				</button>
-			</div>
+        <div id='propertiesDiv' style="height: auto;"></div>
+        <div align="center" style="padding-top: 10px">
+           <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
+                iconClass="saveIcon" onclick="wireNode()" id="dialogWireButton"
+                type="button"><%=LanguageUtil.get(pageContext, "Wire")%>
+            </button>
+            <button style="padding-bottom: 10px;" dojoType="dijit.form.Button"
+                onClick='closeDialog()' iconClass="cancelIcon" id="cancelWiringButton"
+                type="button"><%=LanguageUtil.get(pageContext, "Cancel")%>
+            </button>
+        </div>
     </div>
 </div>
-
-</body>
-</html>

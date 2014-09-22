@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -470,11 +472,18 @@ public class ClusterResource extends WebResource {
 
 	            jsonNode.put("result", "OK");
 
-            } catch (Exception e) {
-				Logger.error(ClusterResource.class, "Error wiring a new node to the Cluster", e);
-				jsonNode.put("result", "ERROR:" + e.getMessage());
-				jsonNode.put("detail", e.getCause());
-			}
+            } catch ( Exception e ) {
+                Logger.error( ClusterResource.class, "Error wiring a new node to the Cluster", e );
+
+                //Get the error information and send it to the client
+                String errorMessage = e.getMessage() == null ? e.toString() : e.getMessage();
+                StringWriter errors = new StringWriter();
+                e.printStackTrace( new PrintWriter( errors ) );
+
+                //Setting the response
+                jsonNode.put( "result", "ERROR: " + errorMessage );
+                jsonNode.put( "detail", errors );
+            }
         }
 
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
