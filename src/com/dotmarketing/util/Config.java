@@ -37,6 +37,8 @@ public class Config {
     private static URL dotmarketingPropertiesUrl = null;
     private static URL clusterPropertiesUrl = null;
 
+    private static final String syncMe = "esSync";
+
 	//Config internal methods
 	public static void initializeConfig () {
 	    classLoader = Thread.currentThread().getContextClassLoader();
@@ -73,7 +75,7 @@ public class Config {
      * @param dotmarketingURL
      * @param clusterURL
      */
-    private static synchronized void readProperties ( URL dotmarketingURL, URL clusterURL ) {
+    private static void readProperties ( URL dotmarketingURL, URL clusterURL ) {
 
         File dotmarketingFile = new File( dotmarketingURL.getPath() );
         Date lastDotmarketingModified = new Date( dotmarketingFile.lastModified() );
@@ -84,23 +86,32 @@ public class Config {
         //If not properties read both files
         if ( props == null ) {
 
-            readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-            readProperties( clusterFile, "dotcms-config-cluster.properties" );
+            synchronized (syncMe) {
+                if ( props == null ) {
+                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
+                    readProperties( clusterFile, "dotcms-config-cluster.properties" );
+                }
+            }
 
         } else {
 
             //Refresh the properties if changes detected in any of these properties files
             if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
-                try {
 
-                    props = new PropertiesConfiguration();//Cleaning up the current properties
+                synchronized (syncMe) {
+                    if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
+                        try {
 
-                    //Read the properties for both files
-                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-                    readProperties( clusterFile, "dotcms-config-cluster.properties" );
-                } catch ( Exception e ) {
-                    Logger.fatal( Config.class, "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]", e );
-                    props = null;
+                            props = new PropertiesConfiguration();//Cleaning up the current properties
+
+                            //Read the properties for both files
+                            readProperties( dotmarketingFile, "dotmarketing-config.properties" );
+                            readProperties( clusterFile, "dotcms-config-cluster.properties" );
+                        } catch ( Exception e ) {
+                            Logger.fatal( Config.class, "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]", e );
+                            props = null;
+                        }
+                    }
                 }
             }
         }
