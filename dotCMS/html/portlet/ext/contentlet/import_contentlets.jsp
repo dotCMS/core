@@ -195,7 +195,7 @@
 
 						%>
 							<td><%= dateValue %></td>
-							<td><%= recs.get("filename") %></td>
+							<td style="word-break: break-all;"><%= recs.get("filename") %></td>
 							<td><%= recs.get("records_to_import") == null || recs.get("records_to_import").toString().equals(0) ? "Still Processing": recs.get("records_to_import").toString() %></td>
 							<td><button dojoType="dijit.form.Button" iconClass="resetIcon" onclick="importCancel(<%= recs.get("id") %>);"><%= LanguageUtil.get(pageContext, "Cancel") %></button></td>
 						</tr>
