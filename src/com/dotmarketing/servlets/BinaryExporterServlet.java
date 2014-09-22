@@ -187,8 +187,10 @@ public class BinaryExporterServlet extends HttpServlet {
 		File inputFile = null;
 		HttpSession session =req.getSession(false);
 		List<String> tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		if(!UtilMethods.isSet(tempBinaryImageInodes))
+		if(!UtilMethods.isSet(tempBinaryImageInodes)){
 			session.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
+			tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);	
+		}
 		
 		boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
