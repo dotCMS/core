@@ -477,12 +477,18 @@ public class ClusterResource extends WebResource {
 
                 //Get the error information and send it to the client
                 String errorMessage = e.getMessage() == null ? e.toString() : e.getMessage();
-                StringWriter errors = new StringWriter();
-                e.printStackTrace( new PrintWriter( errors ) );
+                String errorDetail;
+                if ( e.getCause() == null ) {
+                    StringWriter errors = new StringWriter();
+                    e.printStackTrace( new PrintWriter( errors ) );
+                    errorDetail = errors.toString();
+                } else {
+                    errorDetail = e.getCause().toString();
+                }
 
                 //Setting the response
                 jsonNode.put( "result", "ERROR: " + errorMessage );
-                jsonNode.put( "detail", errors );
+                jsonNode.put( "detail", errorDetail );
             }
         }
 

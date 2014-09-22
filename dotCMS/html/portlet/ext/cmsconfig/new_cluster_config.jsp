@@ -411,23 +411,22 @@
 			var json = "{}";
 			var props = dojo.query(".props");
 
-			json = "{";
-			dojo.forEach(props, function(entry, i){
+            json = "{";
+            dojo.forEach(props, function (entry, i) {
 
-				  var realId = entry.id.substring(7, entry.id.length);
-				  var widget = dijit.byId(realId);
+                var realId = entry.id.substring(7, entry.id.length);
+                var widget = dijit.byId(realId);
 
-				  if(!widget.get("disabled")) {
-				  	json += "'"+widget.get("id")+"':'"+widget.get("value")+"'";
-				  }
+                if (!widget.get("disabled")) {
 
-				  if(i<props.length-1 && json!="{") {
-					  json += ",";
-				  }
-			});
+                    if (json != "{") {
+                        json += ",";
+                    }
 
-			json += "}";
-
+                    json += "'" + widget.get("id") + "':'" + widget.get("value") + "'";
+                }
+            });
+            json += "}";
 
 			xhrArgs = {
 					url : "/api/cluster/wirenode/",
@@ -450,7 +449,10 @@
 							dijit.byId('dialogWireButton').setDisabled(false);
 							dojo.byId("errorDetail").innerHTML = data.detail;
 						}
-					},
+
+                        //Wherever the result, just enable the button again
+                        dijit.byId('dialogWireButton').setDisabled(false);
+                    },
 					error : function(error) {
 						targetNode.innerHTML = "An unexpected error occurred: " + error;
 					}
