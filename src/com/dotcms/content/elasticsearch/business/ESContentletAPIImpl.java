@@ -341,7 +341,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		}
         	}
 
-        	canLock(contentlet, user);
+        	canLock(contentlet, user, respectFrontendRoles);
 
         	String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
 
@@ -4569,7 +4569,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void removeFolderReferences(Folder folder)throws DotDataException, DotSecurityException {
         conFac.removeFolderReferences(folder);
     }
-
+    
+	public boolean canLock(Contentlet contentlet, User user)
+			throws DotLockException {
+		return canLock(contentlet, user, false);
+	}
 
     /**
      * Tests whether a user can potentially lock a piece of content (needed to test before publish, etc).  This method will return false if content is already locked
@@ -4580,7 +4584,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    public boolean canLock(Contentlet contentlet, User user) throws   DotLockException {
+    public boolean canLock(Contentlet contentlet, User user, boolean respectFrontendRoles) throws   DotLockException {
         if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())){
             return true;
         }
@@ -4592,7 +4596,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
                 return true;
             }
-            else if(!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, false)){
+            else if(!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user, respectFrontendRoles)){
                 throw new DotLockException("User: "+ (user != null ? user.getUserId() : "Unknown") 
                 		+" does not have Edit Permissions to lock content: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"));
             }
