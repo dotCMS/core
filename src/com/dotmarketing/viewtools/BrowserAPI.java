@@ -119,8 +119,7 @@ public class BrowserAPI {
                         List<WorkflowActionClass> actionlets = APILocator
                                 .getWorkflowAPI().findActionClasses(action);
                         if (action.requiresCheckout()) {
-                            skip=true;
-                            return;
+                            continue;
                         }
                         Map<String, Object> wfActionMap = new HashMap<String, Object>();
                         wfActionMap.put("name", action.getName());
@@ -292,6 +291,11 @@ public class BrowserAPI {
 					Logger.error(this, "Could not load permissions : ", e);
 				}
 				if (permissions.contains(PERMISSION_READ)) {
+				    WfData wfdata = page instanceof Contentlet ? new WfData((Contentlet)page, permissions, user, showArchived) : null;
+				    
+				    if(wfdata!=null && wfdata.skip)
+				        continue;
+				    
 					Map<String, Object> pageMap = page.getMap();
 					pageMap.put("mimeType", "application/dotpage");
 					pageMap.put("permissions", permissions);
@@ -304,6 +308,20 @@ public class BrowserAPI {
 						Logger.error(this, "Could not get URI : ", e);
 					}
 					pageMap.put("isContentlet", page instanceof Contentlet);
+					
+					if(wfdata!=null) {
+    		            pageMap.put("wfMandatoryWorkflow", wfdata.wfScheme.isMandatory());
+    		            pageMap.put("wfActionMapList", wfdata.wfActionMapList);
+    	                pageMap.put("contentEditable", wfdata.contentEditable);
+					}
+					
+					if(page instanceof Contentlet) {
+					    pageMap.put("identifier", page.getIdentifier());
+		                pageMap.put("inode", page.getInode());
+		                pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+		                pageMap.put("isLocked", page.isLocked());
+					}
+					
 					returnList.add(pageMap);
 				}
 			}
