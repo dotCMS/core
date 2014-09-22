@@ -431,7 +431,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        	    }
 	            }
 	        };
-	        HibernateUtil.addCommitListener(content.getIdentifier(),indexRunner);
+	        HibernateUtil.addCommitListener(content.getInode(),indexRunner);
 	}
 	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {
