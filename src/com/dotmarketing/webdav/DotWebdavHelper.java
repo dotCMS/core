@@ -1292,19 +1292,28 @@ public class DotWebdavHelper {
 				canDelete = diff >= minTimeAllowed;
 			}
 
-			if(identifier!=null && identifier.getAssetType().equals("contentlet") && canDelete){
-			    Contentlet fileAssetCont = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-			    try{
-			        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
-			    }catch (Exception e) {
-			        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
-			        throw new DotDataException(e.getMessage(), e);
+			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
+			    Contentlet fileAssetCont = APILocator.getContentletAPI()
+			    		.findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
+			    
+			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length. 
+			    //No need to wait 10 seconds with files with 0 length. 
+			    if(canDelete 
+			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null 
+			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
+			    	
+			    	try{
+				        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
+				    }catch (Exception e) {
+				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
+				        throw new DotDataException(e.getMessage(), e);
+				    }
+			    	
+				    WorkingCache.removeAssetFromCache(fileAssetCont);
+				    LiveCache.removeAssetFromCache(fileAssetCont);
+				    fileResourceCache.remove(uri + "|" + user.getUserId());
 			    }
-			    WorkingCache.removeAssetFromCache(fileAssetCont);
-			    LiveCache.removeAssetFromCache(fileAssetCont);
-			    fileResourceCache.remove(uri + "|" + user.getUserId());
-			}
-			else {
+			} else {
 			    webAsset = fileAPI.getFileByURI(path, host, false, user, false);
 			    // This line just archive the assets
 			    // WebAssetFactory.deleteAsset(file, user.getUserId());

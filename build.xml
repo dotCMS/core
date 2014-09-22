@@ -972,12 +972,6 @@
         <antcall target="deploy-jsp-app-server"/>
     </target>
     <target name="deploy-jsp-app-server" description="Moves the jsp files from a git checkout to a specified app server location (Useful for development).">
-        <copy todir="${exploded.war.location}/elasticsearch/" overwrite="true">
-            <fileset dir="dotCMS/elasticsearch/">
-                <exclude name="**/.git" />
-            </fileset>
-        </copy>
-
         <copy todir="${exploded.war.location}/html/" overwrite="true">
             <fileset dir="dotCMS/html/">
                 <exclude name="**/.git" />

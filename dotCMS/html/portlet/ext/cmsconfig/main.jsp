@@ -14,16 +14,6 @@
     if ( requestedTab != null && requestedTab.equals( "licenseTab" ) ) {
 
         loadLicense = true;
-
-        if ( request.getMethod().equalsIgnoreCase( "POST" ) ) {
-            session.setAttribute( "applyForm", Boolean.TRUE );
-            session.setAttribute( "iwantTo", request.getParameter( "iwantTo" ) );
-            session.setAttribute( "paste_license", request.getParameter( "paste_license" ) );
-            session.setAttribute( "license_text", request.getParameter( "license_text" ) );
-            session.setAttribute( "request_code", request.getParameter( "request_code" ) );
-            session.setAttribute( "license_type", request.getParameter( "license_type" ) );
-            session.setAttribute( "license_level", request.getParameter( "license_level" ) );
-        }
     }
 %>
 

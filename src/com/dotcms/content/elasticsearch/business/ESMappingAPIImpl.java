@@ -628,7 +628,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	protected void loadRelationshipFields(Contentlet con, Map<String,String> m) throws DotStateException, DotDataException {
 	    DotConnect db = new DotConnect();
-        db.setSQL("select * from tree where parent = ? or child = ?");
+        db.setSQL("select * from tree where parent = ? or child = ? order by tree_order asc");
         db.addParam(con.getIdentifier());
         db.addParam(con.getIdentifier());
 
