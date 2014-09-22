@@ -89,20 +89,17 @@ public class Config {
 
         } else {
 
-            if ( lastDotmarketingModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
+            //Refresh the properties if changes detected in any of these properties files
+            if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
                 try {
-                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-                } catch ( Exception e ) {
-                    Logger.fatal( Config.class, "Exception loading property file [dotmarketing-config.properties]", e );
-                    props = null;
-                }
-            }
 
-            if ( lastClusterModified.after( lastRefreshTime ) ) {//Refresh if changes detected in the file
-                try {
+                    props = new PropertiesConfiguration();//Cleaning up the current properties
+
+                    //Read the properties for both files
+                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
                     readProperties( clusterFile, "dotcms-config-cluster.properties" );
                 } catch ( Exception e ) {
-                    Logger.fatal( Config.class, "Exception loading property file [dotcms-config-cluster.properties]", e );
+                    Logger.fatal( Config.class, "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]", e );
                     props = null;
                 }
             }
@@ -132,8 +129,8 @@ public class Config {
 
             Logger.info( Config.class, "Loading dotCMS [" + fileName + "] Properties..." );
 
-            if ( Config.props == null ) {
-                Config.props = new PropertiesConfiguration();
+            if ( props == null ) {
+                props = new PropertiesConfiguration();
             }
 
             InputStream propsInputStream = new FileInputStream( fileToRead );
