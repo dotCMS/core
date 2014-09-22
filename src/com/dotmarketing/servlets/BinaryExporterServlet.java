@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -24,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -187,6 +187,9 @@ public class BinaryExporterServlet extends HttpServlet {
 		File inputFile = null;
 		HttpSession session =req.getSession(false);
 		List<String> tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+		if(!UtilMethods.isSet(tempBinaryImageInodes))
+			session.setAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST, new ArrayList<String>());
+		
 		boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
