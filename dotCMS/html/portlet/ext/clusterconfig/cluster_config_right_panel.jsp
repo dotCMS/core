@@ -131,14 +131,12 @@
 
 		</div>
 
-
-
 	<% } %>
 
 	<hr>
 
 	<div style="margin:15px;padding:0 0 20px 0;font-size: 88%;text-align:center;">
-		<a href ="javascript:loadClusterTab();" ><%= LanguageUtil.get(pageContext, "Refresh") %> <%= LanguageUtil.get(pageContext, "Status") %></a>
+		<a href ="javascript:loadNetworkTab();" ><%= LanguageUtil.get(pageContext, "Refresh") %> <%= LanguageUtil.get(pageContext, "Status") %></a>
 	</div>
 
 </div>
