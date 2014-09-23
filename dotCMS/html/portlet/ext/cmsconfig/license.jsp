@@ -203,10 +203,10 @@
                         var optd=dojo.create("td",{"nowrap":"true"},row);
 
                         if(lic.serverid==licenseAdmin.currentServerId  ) {
+
                             dojo.create("span",{"class":"unlockIcon", title:"<%= LanguageUtil.get(pageContext, "license-tip-free") %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free()"},optd));
-                        }
-                        else if(lic.available) {
+                        } else if(lic.available) {
 
                             dojo.create("span",{"class":"downloadIcon",title:"<%= LanguageUtil.get(pageContext, "license-tip-pick") %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.pick('"+serial+"')"},optd));
@@ -214,17 +214,13 @@
                             dojo.create("span",{"class":"deleteIcon", title:"<%= LanguageUtil.get(pageContext, "license-tip-del") %>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.del('"+serial+"')"},optd));
                         }
-                        else if(lic.available) {
-                        	
-                        	
-                        }
 
-                        dojo.create("td",{ innerHTML: (!lic.serverid || lic.serverid==="") ? "Available" : lic.serverid+(lic.available ? " (Available)":"")}, row);
-                        dojo.create("td",{ innerHTML: lic.id}, row);
-                        dojo.create("td",{ innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
-                        dojo.create("td",{ innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);
-                        dojo.create("td",{ innerHTML: licenseAdmin.levelName(lic.level)}, row);
-                        dojo.create("td",{ innerHTML: licenseAdmin.typeName(lic.licenseType)}, row);
+                        dojo.create("td", { innerHTML: (!lic.serverid || lic.serverid === "") ? "Available" : lic.serverid + (lic.available ? " (Available)" : "")}, row);
+                        dojo.create("td", { innerHTML: lic.idDisplay}, row);
+                        dojo.create("td", { innerHTML: !lic.available || lic.serverid ? lic.lastping : ""}, row);
+                        dojo.create("td", { innerHTML: lic.perpetual ? "Perpetual" : lic.validUntil}, row);
+                        dojo.create("td", { innerHTML: licenseAdmin.levelName(lic.level)}, row);
+                        dojo.create("td", { innerHTML: licenseAdmin.typeName(lic.licenseType)}, row);
                     });
                     if(data.length==0){
                     	var row=dojo.create("tr",null,dojo.byId("repotableBody"));
