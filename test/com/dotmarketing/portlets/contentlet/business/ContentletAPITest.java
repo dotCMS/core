@@ -1929,6 +1929,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
         assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
 
+        Thread.sleep(2000); // wait a bit for the index
+        
         // also it should be in the index update with the new dates
         FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
         String q="+structureName:"+testStructure.getVelocityVarName()+
