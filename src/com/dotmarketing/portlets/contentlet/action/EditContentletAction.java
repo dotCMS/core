@@ -6,6 +6,7 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -30,7 +32,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -2328,20 +2329,32 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		try {
 			Logger.debug(this, "Calling Full List Delete Method");
-			String [] inodes = req.getParameterValues("publishInode");
+			String [] tempInodes = req.getParameterValues("publishInode");
 
 			if (Boolean.parseBoolean(req.getParameter("fullCommand"))) {
-				inodes = getSelectedInodes(req,user);
+				tempInodes = getSelectedInodes(req,user);
 			}
+			
+			ArrayList<String> inodes = new ArrayList<String>(Arrays.asList(tempInodes));
 
-
+			for(String inode : tempInodes){
+				Contentlet contentlet = conAPI.find(inode, user, false);
+				List<Contentlet> siblings = conAPI.getSiblings(contentlet.getIdentifier());
+				
+				for(Contentlet sibling : siblings){
+					if(!inodes.contains(sibling.getInode())){
+						inodes.add(sibling.getInode());
+					}
+				}
+			}
+			
 
 			class DeleteThread extends Thread {
-				private String[] inodes = new String[0];
+				private List<String> inodes = new ArrayList<String>();
 				private User user;
 				List<Contentlet> contentToIndexAfterCommit  = new ArrayList<Contentlet>();
 
-				public DeleteThread(String[] inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
+				public DeleteThread(List<String> inodes, User user,List<Contentlet> contentToIndexAfterCommit) {
 					this.inodes = inodes;
 					this.user = user;
 					this.contentToIndexAfterCommit = contentToIndexAfterCommit;
@@ -2365,7 +2378,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						Contentlet contentlet = new Contentlet();
 						try{
 							contentlet = conAPI.find(inode, user, false);
-							contentToIndexAfterCommit.add(contentlet);
 						}catch (DotSecurityException e) {
 							hasNoPermissionOnAllContent = true;
 						}catch (Exception ex){
@@ -2399,7 +2411,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 			DeleteThread thread = new DeleteThread(inodes, user,contentToIndexAfterCommit);
 
-			if (inodes.length > 50) {
+			if (inodes.size() > 50) {
 
 				// Starting the thread
 				thread.start();
