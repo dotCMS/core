@@ -406,8 +406,8 @@ public class HostAPIImpl implements HostAPI {
 					otherHost =  new Host(otherHostContentlet);
 					hostCache.remove(otherHost);
 					otherHost.setDefault(false);
-					if(host.getMap().containsKey("_dont_validate_me"))
-					    otherHost.setProperty("_dont_validate_me",true);
+					if(host.getMap().containsKey(Contentlet.DONT_VALIDATE_ME))
+					    otherHost.setProperty(Contentlet.DONT_VALIDATE_ME, true);
 					if(host.getMap().containsKey("__disable_workflow__"))
 					    otherHost.setProperty("__disable_workflow__",true);
 

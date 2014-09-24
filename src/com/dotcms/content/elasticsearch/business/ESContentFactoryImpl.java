@@ -580,7 +580,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 if(verInfo!=null && UtilMethods.isSet(verInfo.getIdentifier())) {
                     if(UtilMethods.isSet(verInfo.getLiveInode()) && verInfo.getLiveInode().equals(con.getInode()))
                         try {
-                            APILocator.getVersionableAPI().removeLive(con.getIdentifier(), con.getLanguageId(), false);
+                            APILocator.getVersionableAPI().removeLive(con);
                         } catch (Exception e) {
                             throw new DotDataException(e.getMessage(),e);
                         }

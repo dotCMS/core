@@ -1996,7 +1996,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						for (Contentlet contentlet : contentlets) {
 							HibernateUtil.startTransaction();
 							try{
-								conAPI.unpublishForce(contentlet, user, false);
+								contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+								conAPI.unpublish(contentlet, user, false);
 								HibernateUtil.commitTransaction();
 								ActivityLogger.logInfo(this.getClass(), "Unublish contentlet action", " User " + user.getFirstName() + " Unpublished content titled '" + contentlet.getTitle()
 										+ "' ", currentHost);

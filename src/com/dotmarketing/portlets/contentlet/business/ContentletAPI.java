@@ -508,16 +508,6 @@ public interface ContentletAPI {
 	public void unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 	
 	/**
-	 * This method unpublishes the given contentlet, it does NOT validate unpublish dates.
-	 * @param contentlet
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 * @throws DotContentletStateException if the contentent cannot be unlocked by the user*/
-	public void unpublishForce(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-	
-	/**
 	 * This method unpublishes the given contentlet
 	 * @param contentlets
 	 * @param user
