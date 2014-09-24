@@ -1441,13 +1441,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             		+ " does not have permission to delete some or all of the contentlets");
         }
 
-        catAPI.removeChildren(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-        catAPI.removeParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
-        for(Relationship relationship :  rels){
-            deleteRelatedContent(contentlet,relationship,user,respectFrontendRoles);
-        }
-
         ArrayList<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
         conFac.deleteVersion(contentlet);
