@@ -473,11 +473,11 @@ public class RelationshipFactory {
     	Tree t = new Tree();
 		for (Contentlet con : relatedContentlets) {
 
-			t= TreeFactory.getTree(contentlet.getInode(), con.getInode(), relationship.getRelationTypeValue());
+			t= TreeFactory.getTree(contentlet.getIdentifier(), con.getIdentifier(), relationship.getRelationTypeValue());
 			if(InodeUtils.isSet(t.getChild())  & InodeUtils.isSet(t.getParent())){
 				TreeFactory.deleteTree(t);
 			}else{
-				t= TreeFactory.getTree(con.getInode(),contentlet.getInode(), relationship.getRelationTypeValue());
+				t= TreeFactory.getTree(con.getIdentifier(),contentlet.getIdentifier(), relationship.getRelationTypeValue());
 				if(InodeUtils.isSet(t.getChild()) & InodeUtils.isSet(t.getParent())){
 					TreeFactory.deleteTree(t);
 				}
