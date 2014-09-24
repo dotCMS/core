@@ -76,7 +76,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static final String WORKFLOW_ACTION_KEY = "wfActionId";
     public static final String WORKFLOW_ASSIGN_KEY = "wfActionAssign";
     public static final String WORKFLOW_COMMENTS_KEY = "wfActionComments";
-
+    
+    public static final String DONT_VALIDATE_ME = "_dont_validate_me";
 
     public static final String WORKFLOW_PUBLISH_DATE = "wfPublishDate";
     public static final String WORKFLOW_PUBLISH_TIME = "wfPublishTime";

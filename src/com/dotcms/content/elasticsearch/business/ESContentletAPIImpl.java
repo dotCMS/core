@@ -1441,13 +1441,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             		+ " does not have permission to delete some or all of the contentlets");
         }
 
-        catAPI.removeChildren(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-        catAPI.removeParents(contentlet, APILocator.getUserAPI().getSystemUser(), true);
-        List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(contentlet.getStructure());
-        for(Relationship relationship :  rels){
-            deleteRelatedContent(contentlet,relationship,user,respectFrontendRoles);
-        }
-
         ArrayList<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
         conFac.deleteVersion(contentlet);
@@ -1522,7 +1515,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
 
         		if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
-        			APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
+        			APILocator.getVersionableAPI().removeLive(liveContentlet);
         			indexAPI.removeContentFromLiveIndex(liveContentlet);
         		}
 
@@ -1760,7 +1753,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
         	canLock(contentlet, user);
 
-        	APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
+        	APILocator.getVersionableAPI().removeLive(contentlet);
 
         	indexAPI.addContentToIndex(contentlet);
         	indexAPI.removeContentFromLiveIndex(contentlet);
@@ -2213,7 +2206,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             ident = APILocator.getIdentifierAPI().find(contentlet);
 
         //If contentlet is not new
-        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get("_dont_validate_me") != null) {
+        if(ident!=null && InodeUtils.isSet(ident.getId()) && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
             workingCon = findWorkingContentlet(contentlet);
             if(workingCon != null) {
 	            permissions = perAPI.getPermissions(workingCon);
@@ -2343,7 +2336,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    dc.setSQL("select inode from contentlet where inode=?");
 				    dc.addParam(contentlet.getInode());
 				    if(dc.loadResults().size()>0){
-				    	if(contentlet.getMap().get("_dont_validate_me") != null){
+				    	if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null){
 				    		Logger.debug(this, "forcing checking with no version as the _dont_validate_me is set and inode exists");
 				    		createNewVersion = false;
 				    	}else{
@@ -2363,7 +2356,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 				if (!createNewVersion && contentlet != null && !InodeUtils.isSet(contentlet.getInode()))
 				    throw new DotContentletStateException("Contentlet must exist already");
-				if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get("_dont_validate_me") == null)
+				if (contentlet != null && contentlet.isArchived() && contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null)
 				    throw new DotContentletStateException("Unable to checkin an archived piece of content, please un-archive first");
 				if (!perAPI.doesUserHavePermission(InodeUtils.isSet(contentlet.getIdentifier()) ? contentlet : contentlet.getStructure(),
 				        PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
@@ -2407,7 +2400,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    throw ve;
 				}
 
-				if(contentlet.getMap().get("_dont_validate_me") == null) {
+				if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null) {
 				    canLock(contentlet, user);
 				}
 				contentlet.setModUser(user.getUserId());
@@ -3753,7 +3746,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats)throws DotContentletValidationException {
-        if(contentlet.getMap().get("_dont_validate_me") != null)
+        if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null)
             return;
 
         DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
@@ -4263,7 +4256,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
 
             newContentlet.getMap().put("__disable_workflow__", true);
-            newContentlet.getMap().put("_dont_validate_me", true);
+            newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))
             	newIdentifier = newContentlet.getIdentifier();
