@@ -2047,7 +2047,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("code:Modified Code to make templates different",writer.toString());
 
         // clean up
-        APILocator.getVersionableAPI().removeLive(w2.getIdentifier(), w2.getLanguageId());
+        APILocator.getVersionableAPI().removeLive(w2);
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
     }
