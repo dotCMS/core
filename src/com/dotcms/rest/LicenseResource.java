@@ -48,6 +48,9 @@ public class LicenseResource extends WebResource {
                         obj.put( entry.getKey(), entry.getValue() != null ? LicenseUtil.getDisplayServerId( (String) lic.get( "serverId" ) ) : "" );
                     } else if ( entry.getKey().equals( "serverId" ) || entry.getKey().equals( "license" ) ) {
                         //Just ignore these fields
+                    } else if ( entry.getKey().equals( "id" ) ) {
+                        obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
+                        obj.put( "idDisplay", entry.getValue() != null ? LicenseUtil.getDisplaySerial( (String) entry.getValue() ) : "" );
                     } else {
                         obj.put( entry.getKey(), entry.getKey() != null ? entry.getValue() : "" );
                     }
