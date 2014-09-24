@@ -1612,6 +1612,23 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.unpublish(contentlet, user, respectFrontendRoles);
 		}
 	}
+	
+	/* (non-Javadoc)
+	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unpublish(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
+	 */
+	public void unpublishForce(Contentlet contentlet, User user,	boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
+		for(ContentletAPIPreHook pre : preHooks){
+			boolean preResult = pre.unpublishForce(contentlet, user, respectFrontendRoles);
+			if(!preResult){
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.unpublishForce(contentlet, user, respectFrontendRoles);
+		for(ContentletAPIPostHook post : postHooks){
+			post.unpublishForce(contentlet, user, respectFrontendRoles);
+		}
+	}
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#unpublish(java.util.List, com.liferay.portal.model.User, boolean)

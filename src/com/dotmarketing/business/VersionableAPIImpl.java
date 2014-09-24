@@ -241,7 +241,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         vfac.saveVersionInfo(ver, true);
     }
 
-    public void removeLive ( String identifier, long lang ) throws DotDataException, DotStateException, DotSecurityException {
+    public void removeLive ( String identifier, long lang, boolean forceUnpublish ) throws DotDataException, DotStateException, DotSecurityException {
 
         if ( !UtilMethods.isSet( identifier ) ) {
             throw new DotStateException( "invalid identifier" );
@@ -265,9 +265,12 @@ public class VersionableAPIImpl implements VersionableAPI {
         //Get the structure for this contentlet
         Structure structure = StructureCache.getStructureByInode( liveContentlet.getStructureInode() );
 
-        if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
-            if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
-                throw new PublishStateException( "message.contentlet.unpublish.expired" );
+        //If forceUnpublish we do not care about dates
+        if(!forceUnpublish){
+        	if ( UtilMethods.isSet( structure.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
+                if ( UtilMethods.isSet( ident.getSysExpireDate() ) && ident.getSysExpireDate().after( new Date() ) ) {
+                    throw new PublishStateException( "message.contentlet.unpublish.expired" );
+                }
             }
         }
 

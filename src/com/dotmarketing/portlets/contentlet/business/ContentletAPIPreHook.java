@@ -396,6 +396,14 @@ public interface ContentletAPIPreHook {
 	public boolean unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles);
 	
 	/**
+	 * This method unpublishes the given contentlet, no matter unpublish dates.
+	 * @param contentlet
+	 * @param user
+	 * @param respectFrontendRoles
+	 */
+	public boolean unpublishForce(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	
+	/**
 	 * This method unpublishes the given contentlet
 	 * @param contentlets
 	 * @param user

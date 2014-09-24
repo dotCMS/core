@@ -224,7 +224,7 @@ public interface VersionableAPI {
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public void removeLive(String identifier, long lang) throws DotDataException, DotStateException,DotSecurityException;
+    public void removeLive(String identifier, long lang, boolean forceUnpublish) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is the working version for its identifier

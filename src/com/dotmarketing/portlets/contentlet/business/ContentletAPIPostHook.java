@@ -395,6 +395,15 @@ public interface ContentletAPIPostHook {
 	public void unpublish(Contentlet contentlet, User user, boolean respectFrontendRoles);
 	
 	/**
+	 * This method unpublishes the given contentlet, not matter unpublish dates
+	 * @param contentlet
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @param returnValue - value returned by primary API Method 
+	 */
+	public void unpublishForce(Contentlet contentlet, User user, boolean respectFrontendRoles);
+	
+	/**
 	 * This method unpublishes the given contentlet
 	 * @param contentlets
 	 * @param user

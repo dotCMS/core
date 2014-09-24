@@ -1515,7 +1515,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	if (user == null || !workingContentlet.isLocked() || workingContentlet.getModUser().equals(user.getUserId())) {
 
         		if (liveContentlet != null && InodeUtils.isSet(liveContentlet.getInode())) {
-        			APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId());
+        			APILocator.getVersionableAPI().removeLive(liveContentlet.getIdentifier(), liveContentlet.getLanguageId(), false);
         			indexAPI.removeContentFromLiveIndex(liveContentlet);
         		}
 
@@ -1725,12 +1725,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
             throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
         }
-
-
-        unpublish(contentlet, user);
+        unpublish(false, contentlet, user);
+    }
+    
+    public void unpublishForce(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
+        if(contentlet.getInode().equals(""))
+            throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
+        if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+            throw new DotSecurityException("User: " + (user != null ? user.getUserId() : "Unknown") + " cannot unpublish Contentlet");
+        }
+        unpublish(true, contentlet, user);
     }
 
-    private void unpublish(Contentlet contentlet, User user) throws DotDataException,DotSecurityException, DotContentletStateException {
+    private void unpublish(boolean forceUnpublish, Contentlet contentlet, User user) throws DotDataException,DotSecurityException, DotContentletStateException {
         if(contentlet == null || !UtilMethods.isSet(contentlet.getInode())){
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
         }
@@ -1753,7 +1760,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         try {
         	canLock(contentlet, user);
 
-        	APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId());
+        	APILocator.getVersionableAPI().removeLive(contentlet.getIdentifier(), contentlet.getLanguageId(), forceUnpublish);
 
         	indexAPI.addContentToIndex(contentlet);
         	indexAPI.removeContentFromLiveIndex(contentlet);
