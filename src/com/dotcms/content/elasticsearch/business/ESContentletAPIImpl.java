@@ -29,6 +29,8 @@ import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.enterprise.cmis.QueryResult;
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.repackage.com.google.gson.Gson;
@@ -1198,21 +1200,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
             List<Contentlet> otherLanguageCons;
             otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
             boolean cannotDelete = false;
+            
             for (Contentlet contentlet : otherLanguageCons) {
-                if(contentlet.getInode() != contentlet.getInode() && contentlet.getLanguageId() != con.getLanguageId() && !contentlet.isArchived()){
-                    cannotDelete = true;
-                    indexAPI.removeContentFromIndex(contentlet);
-                    break;
+                if(contentlet.getInode() != con.getInode() && contentlet.getLanguageId() != con.getLanguageId()){
+                    if(contentlet.isArchived()){
+                    	indexAPI.removeContentFromIndex(contentlet);
+                    } else {
+                    	cannotDelete = true;
+                        break;
+                    }
                 }
             }
             if(cannotDelete){
                 Logger.warn(this, "Cannot delete content that has a working copy in another language");
+                
+                String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
+            	Notification n = new Notification(notificationMessage, NotificationLevel.INFO, user.getUserId());
+            	APILocator.getNotificationAPI().saveNotification(n);
+            	
                 perCons.remove(con);
-                continue;
+                break;
+            } else {
+            	indexAPI.removeContentFromIndex(con);
             }
+            
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             catAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
             List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
+            
             for(Relationship relationship :  rels){
                 deleteRelatedContent(con,relationship,user,respectFrontendRoles);
             }

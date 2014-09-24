@@ -44,9 +44,9 @@ public class ESClient {
 
     private void initNode () {
 
-        if ( _nodeInstance == null ) {
+        if ( _nodeInstance == null || _nodeInstance.isClosed()) {
             synchronized (syncMe) {
-                if ( _nodeInstance == null ) {
+                if ( _nodeInstance == null || _nodeInstance.isClosed()) {
 
                     loadConfig();
 
@@ -221,6 +221,7 @@ public class ESClient {
     		Logger.info(this, "discovery.zen.ping.unicast.hosts: "+initData);
         }
 
+        shutDownNode();
 		initNode();
 	}
 
