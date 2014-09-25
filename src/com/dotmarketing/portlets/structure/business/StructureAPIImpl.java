@@ -72,7 +72,7 @@ public class StructureAPIImpl implements StructureAPI {
         do {
             contentlets = conAPI.findByStructure(st, user, false, limit, offset);
             for(Contentlet contentlet : contentlets){
-            	contentlet.getMap().put("_dont_validate_me", true);
+            	contentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
             }
             conAPI.delete(contentlets, user, false);
         } while(contentlets.size()>0);

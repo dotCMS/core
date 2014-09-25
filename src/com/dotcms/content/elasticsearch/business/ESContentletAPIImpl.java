@@ -1192,7 +1192,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
             }
-            if(cannotDelete && con.getMap().get("_dont_validate_me") == null){
+            if(cannotDelete && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
                 Logger.warn(this, "Cannot delete content that has a working copy in another language");
                 
                 String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
