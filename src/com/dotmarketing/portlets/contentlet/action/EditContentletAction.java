@@ -406,6 +406,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 				// calls the asset factory edit
 				try{
+					contentletToEdit.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
 					conAPI.unpublish(contentletToEdit, user, false);
 					ActivityLogger.logInfo(this.getClass(), "Unpublishing Contentlet "," User "+user.getFirstName()+" Unpublished content titled '"+contentletToEdit.getTitle()+"'", HostUtil.hostNameUtil(req, user));
 					SessionMessages.add(httpReq, "message", "message.contentlet.unpublished");
