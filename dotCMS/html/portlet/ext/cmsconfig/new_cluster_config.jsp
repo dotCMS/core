@@ -105,7 +105,6 @@
 
 				panelDiv = dojo.create("div", {
 					id : "actionPanelContainer",
-					//ozzy
 					height: dojo.style(dojo.byId(hanger,"height"),"height")
 					},"actionPanelContent");
 
@@ -199,8 +198,7 @@
 
 				//dojo.parser.parse("actionPanel");
 				dojo.style("actionPanel", "width", dojo.position("actionPanelTableHeader",true).w -1 +this.ff + "px");
-				//ozzy
-				//dojo.style("actionPanel", "height", "100%");
+				
 			},
 
 			/**
