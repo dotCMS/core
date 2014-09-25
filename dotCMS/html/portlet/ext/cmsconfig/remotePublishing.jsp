@@ -1,4 +1,6 @@
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
+<% request.setAttribute("requiredPortletAccess", "9"); %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -11,7 +13,7 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
-<%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
+<%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
 <%return;} %>
 
 <%
