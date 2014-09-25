@@ -99,7 +99,7 @@ multiMessages.reload();
 	    		return;
 	    	}
 
-	    	
+	    	dijit.byId("codereqButton").disabled=false;
 	    	
 	    	var data = {"licenseLevel":dijit.byId("license_level").getValue(),"licenseType":dijit.byId("license_type").getValue()};
 	   	    dojo.xhrPost({
@@ -627,7 +627,7 @@ multiMessages.reload();
 											</div>
 					                		<div style="text-align:center;margin-top: 15px;">
 						                		<button type="button" onclick="licenseAdmin.doCodeRequest()" data-dojo-id="codereqButton" id="codereqButton"
-							                          data-dojo-type="dijit.form.Button" name="codereqButton" iconClass="" value="upload">
+							                          data-dojo-type="dijit.form.Button" name="codereqButton" disabled="true" iconClass="" value="upload">
 								                  	<%= LanguageUtil.get(pageContext, "request-license-code") %> 
 								                </button>
 								            </div>
