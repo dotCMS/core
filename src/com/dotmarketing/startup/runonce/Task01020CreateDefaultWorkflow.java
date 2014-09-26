@@ -28,6 +28,7 @@ public class Task01020CreateDefaultWorkflow implements StartupTask {
 		List<Map<String, String>> results = null;
 		results = dc.loadResults();
 		if (results != null && results.size() > 0) {
+			// The scheme already exists, use the existing ID instead
 			schemeID = results.get(0).get("id");
 		} else {
 			// Workflow Scheme
@@ -140,31 +141,53 @@ public class Task01020CreateDefaultWorkflow implements StartupTask {
 				+ " 1,"//use_role_hierarchy_assign
 				+ " 0)");//requires_checkout
 		
-		//Permission for Workflow Actions
-		dc.executeStatement("insert into permission (permission_type, inode_id, roleid, permission) "
-				+ "values ('individual', "//permission_type
-				+ "'" + workflowIDAssign + "', "//inode_id
-				+ "'" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + "', "//roleid
-				+ "1)");//permission
+		// Permission for Workflow Actions
+		String query = "insert into permission (%s permission_type, inode_id, roleid, permission) "
+				+ "values (%s 'individual', "// permission_type
+				+ "'%s', "// inode_id
+				+ "'%s', "// roleid
+				+ "1)";
+		String formattedQuery = "";
 		
-		dc.executeStatement("insert into permission (permission_type, inode_id, roleid, permission) "
-				+ "values ('individual', "//permission_type
-				+ "'" + workflowIDReassign + "', "//inode_id
-				+ "'" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + "', "//roleid
-				+ "1)");//permission
+		if (DbConnectionFactory.isOracle()) {
+			formattedQuery = String.format(query, "id,", "permission_seq.NEXTVAL,",
+					workflowIDAssign, APILocator.getRoleAPI()
+							.loadCMSAnonymousRole().getId());
+		} else {
+			formattedQuery = String.format(query, "", "", workflowIDAssign, APILocator
+					.getRoleAPI().loadCMSAnonymousRole().getId());
+		}
+		dc.executeStatement(formattedQuery);
 		
-		dc.executeStatement("insert into permission (permission_type, inode_id, roleid, permission) "
-				+ "values ('individual', "//permission_type
-				+ "'" + workflowIDResolve + "', "//inode_id
-				+ "'" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + "', "//roleid
-				+ "1)");//permission
+		if (DbConnectionFactory.isOracle()) {
+			formattedQuery = String.format(query, "id,", "permission_seq.NEXTVAL,",
+					workflowIDReassign, APILocator.getRoleAPI()
+							.loadCMSAnonymousRole().getId());
+		} else {
+			formattedQuery = String.format(query, "", "", workflowIDReassign, APILocator
+					.getRoleAPI().loadCMSAnonymousRole().getId());
+		}
+		dc.executeStatement(formattedQuery);
 		
-		dc.executeStatement("insert into permission (permission_type, inode_id, roleid, permission) "
-				+ "values ('individual', "//permission_type
-				+ "'" + workflowIDReopen + "', "//inode_id
-				+ "'" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + "', "//roleid
-				+ "1)");//permission
-
+		if (DbConnectionFactory.isOracle()) {
+			formattedQuery = String.format(query, "id,", "permission_seq.NEXTVAL,",
+					workflowIDResolve, APILocator.getRoleAPI()
+							.loadCMSAnonymousRole().getId());
+		} else {
+			formattedQuery = String.format(query, "", "", workflowIDResolve, APILocator
+					.getRoleAPI().loadCMSAnonymousRole().getId());
+		}
+		dc.executeStatement(formattedQuery);
+		
+		if (DbConnectionFactory.isOracle()) {
+			formattedQuery = String.format(query, "id,", "permission_seq.NEXTVAL,",
+					workflowIDReopen, APILocator.getRoleAPI()
+							.loadCMSAnonymousRole().getId());
+		} else {
+			formattedQuery = String.format(query, "", "", workflowIDReopen, APILocator
+					.getRoleAPI().loadCMSAnonymousRole().getId());
+		}
+		dc.executeStatement(formattedQuery);
 	}
 
 	@Override
