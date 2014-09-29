@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -11,7 +15,10 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -20,6 +27,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -29,6 +37,7 @@ import com.dotmarketing.services.PageServices;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -333,5 +342,134 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         }
         return false;
     }
+    
+    /**
+     * Returns the ids for Pages whose Templates, Containers, or Content 
+     * have been modified between 2 dates even if the page hasn't been modified
+     * @param host Must be set
+     * @param pattern url pattern e.g., /some/path/*
+     * @param include the pattern is to include or exclude
+     * @param startDate Must be set
+     * @param endDate Must be Set
+     * @return
+     */
+    @Override
+    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,boolean include,Date startDate, Date endDate) {
+
+        Set<String> ret = new HashSet<String>();
+        
+        String likepattern=RegEX.replaceAll(pattern, "%", "\\*");
+        
+        String concat;
+        if(DbConnectionFactory.isMySql()){
+            concat=" concat(ii.parent_path, ii.asset_name) ";
+        }else if (DbConnectionFactory.isMsSql()) {
+            concat=" (ii.parent_path + ii.asset_name) ";
+        }else {
+            concat=" (ii.parent_path || ii.asset_name) ";
+        }
+        
+        Structure st=StructureCache.getStructureByInode(DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+        Field tf=st.getFieldVar(TEMPLATE_FIELD);
+        
+        // htmlpage with modified template
+        StringBuilder bob = new StringBuilder();
+        DotConnect dc = new DotConnect();
+        bob.append("SELECT ii.id as pident ")
+        .append("from identifier ii ")
+        .append("join contentlet cc on (cc.identifier = ii.id) ")
+        .append("join structure st on (cc.structure_inode=st.inode) ")
+        .append("join template_version_info tvi on (cc.").append(tf.getFieldContentlet()).append(" = tvi.identifier) ")
+        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+        .append(" and tvi.version_ts >= ? and tvi.version_ts <= ? ")
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(this,"can't get pages asset with modified template. sql:"+bob,e);
+        }
+        
+        // htmlpage with modified containers
+        bob = new StringBuilder();
+        bob.append("SELECT ii.id as pident ")
+        .append("from identifier ii " )
+        .append("join contentlet cc on (ii.id=cc.identifier) ")
+        .append("join structure st on (cc.structure_inode=st.inode) ")
+        .append("join template_containers tc on (cc.").append(tf.getFieldContentlet()).append(" = tc.template_id) ")
+        .append("join container_version_info cvi on (tc.container_id = cvi.identifier) ")
+        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+        .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(this,"can't get modified containers under page asset sql:"+bob,e);
+        }
+        
+        // htmlpages with modified content
+        bob = new StringBuilder();
+        bob.append("SELECT ii.id as pident ")
+        .append("from contentlet_version_info hvi join identifier ii on (hvi.identifier=ii.id) " )
+        .append("join contentlet cc on (ii.id=cc.identifier) ")
+        .append("join structure st on (cc.structure_inode=st.inode) ")
+        .append("join multi_tree mt on (hvi.identifier = mt.parent1) ")
+        .append("join contentlet_version_info cvi on (mt.child = cvi.identifier) ")
+        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+        .append(" and cvi.version_ts >= ? and cvi.version_ts <= ? ")
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(this,"can't get mdified content under page asset sql:"+bob,e);
+        }
+        
+        // htmlpage modified itself
+        bob = new StringBuilder();
+        bob.append("SELECT ii.id as pident from contentlet cc ")
+        .append("join identifier ii on (ii.id=cc.identifier) ")
+        .append("join contentlet_version_info vi on (vi.identifier=ii.id) ")
+        .append("join structure st on (cc.structure_inode=st.inode) ")
+        .append("where st.structuretype=").append(Structure.STRUCTURE_TYPE_HTMLPAGE)
+        .append(" and vi.version_ts >= ? and vi.version_ts <= ? ")
+        .append(" and ii.host_inode=? ")
+        .append(" and ").append(concat).append(include?" LIKE ?":" NOT LIKE ?");
+        dc.setSQL(bob.toString());
+        dc.addParam(startDate);
+        dc.addParam(endDate);
+        dc.addParam(host.getIdentifier());
+        dc.addParam(likepattern);
+        
+        try {
+            for (Map<String,Object> row : dc.loadObjectResults())
+                ret.add((String)row.get("pident"));
+        } catch (DotDataException e) {
+            Logger.error(this,"can't get modified page assets sql:"+bob,e);
+        }
+        
+        return new ArrayList<String>(ret);
+    }
+
 
 }

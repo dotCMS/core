@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
+import java.io.OutputStream;
+import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
@@ -92,4 +94,6 @@ public interface HTMLPageAssetAPI {
     boolean move(HTMLPageAsset page, Folder parent, User user)throws DotDataException, DotSecurityException;
     
     boolean move(HTMLPageAsset page, Host host, User user)throws DotDataException, DotSecurityException;
+
+    List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
 }

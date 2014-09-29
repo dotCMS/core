@@ -1608,6 +1608,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-unlocked")) %>');
 		}
 	}
+	
+	function migratePage(objId, referer) {
+		top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
+	}
 
 	function copyHTMLPage (objId, parentId, referer) {
 		BrowserAjax.copyHTMLPage(objId, parentId, copyHTMLPageCallback);

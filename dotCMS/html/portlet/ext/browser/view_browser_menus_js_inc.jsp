@@ -685,7 +685,9 @@
 	      strHTML += '</a>';
 	    }
         
-        strHTML += wfActionsMenu(objId, page);
+        if(page.isContentlet) {
+            strHTML += wfActionsMenu(objId, page);
+        }
         
         if(!page.isContentlet || !page.wfMandatoryWorkflow) {
 			if (working && !archived && publish) {
@@ -767,6 +769,14 @@
 		        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Cut")) %>';
 			strHTML += '</a>';
 
+		}
+		
+		if(!page.isContentlet) {
+			strHTML += '<div class="pop_divider" ></div>';
+			strHTML += '<a href="javascript: migratePage(\''+objId+'\',\''+referer+'\');" class="contextPopupMenu">';
+			strHTML += '<span class="repeatIcon"></span>';
+			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Migrate-To-Content")) %>';
+			strHTML += '</a>';
 		}
 
 		strHTML += '<div class="pop_divider" ></div>';
