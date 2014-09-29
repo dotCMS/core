@@ -519,7 +519,7 @@ public class ContentletAjax {
 
 		// Building search params and lucene query
 		StringBuffer luceneQuery = new StringBuffer();
-
+		String specialCharsToEscape = "([+\\-!\\(\\){}\\[\\]^\"~*?:\\\\]|[&\\|]{2})";
 		Map<String, Object> lastSearchMap = new HashMap<String, Object>();
 
 		if (UtilMethods.isSet(sess)) {
@@ -547,8 +547,7 @@ public class ContentletAjax {
 		            }
 		            String y[] = next.split(" ");
 		            for(int j=0;j<y.length;j++){
-		            	if(y[j].contains("\""))
-			        		y[j] = y[j].replace("\"", "\\\"");
+		            	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
 		                luceneQuery.append("title:" + y[j] + "* ");
 		            }
 		            break;
@@ -683,7 +682,7 @@ public class ContentletAjax {
 									metakey = VelocityUtil.convertToVelocityVariable(metakey);
 									String metaVal = "*" +splitter[splitter.length-1]+"*";
 									fieldValue = metakey + ":" + metaVal;
-									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll("\"", "\\\"") + " ");
+									luceneQuery.append("+" + st.getVelocityVarName() + "." + fieldVelocityVarName + "." + fieldValue.toString().replaceAll(specialCharsToEscape, "\\\\$1") + " ");
 
 
 								}
@@ -727,6 +726,7 @@ public class ContentletAjax {
 							        }
 							        String y[] = next.split(" ");
 							        for(int j=0;j<y.length;j++){
+							        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
 							        	if(fieldName.equals("languageId")){
 							        		luceneQuery.append("+" + fieldName +":" + y[j] + " ");
 							        	}else{
@@ -740,8 +740,7 @@ public class ContentletAjax {
 								        }
 								        String y[] = next.split(" ");
 								        for(int j=0;j<y.length;j++){
-								        	if(y[j].contains("\""))
-								        		y[j] = y[j].replace("\"", "\\\"");
+								        	y[j] = y[j].replaceAll(specialCharsToEscape, "\\\\$1");
 								        	luceneQuery.append("+" + fieldName +":" + y[j] + "* ");
 								        }
 							    }else{
