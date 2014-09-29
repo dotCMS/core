@@ -842,7 +842,11 @@ public class IntegrityUtil {
             		// THIS IS THE NEW CODE
 
                     // 1.1) Insert dummy temp row on INODE table
-            		dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
+                    if ( DbConnectionFactory.isOracle() ) {
+                        dc.executeStatement( "insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') " );
+                    } else {
+                        dc.executeStatement( "insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
+                    }
 
             		Structure fileAssetSt = StructureCache.getStructureByVelocityVarName("FileAsset");
 
@@ -862,9 +866,13 @@ public class IntegrityUtil {
 
             		// 1.3) Insert dummy temp row on FOLDER table
 
-            		dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
+                    if ( DbConnectionFactory.isOracle() ) {
+                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                    } else {
+                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
+                    }
 
-            		// 2) Update references to the new dummies temps
+                    // 2) Update references to the new dummies temps
 
             		// update foreign tables references to TEMP
             		dc.executeStatement("update structure set folder = 'TEMP_INODE' where folder = '"+oldFolderInode+"'");
@@ -879,8 +887,13 @@ public class IntegrityUtil {
             		String name = (String) oldFolderRow.get("name");
             		String title = (String) oldFolderRow.get("title");
             		Boolean showOnMenu = DbConnectionFactory.isDBTrue(oldFolderRow.get("show_on_menu").toString());
-            		Integer sortOrder = (Integer) oldFolderRow.get("sort_order");
-            		String filesMasks = (String) oldFolderRow.get("files_masks");
+
+                    Integer sortOrder = 0;
+                    if ( oldFolderRow.get( "sort_order" ) != null ) {
+                        sortOrder = Integer.valueOf( oldFolderRow.get( "sort_order" ).toString() );
+                    }
+
+                    String filesMasks = (String) oldFolderRow.get("files_masks");
             		String defaultFileType = (String) oldFolderRow.get("default_file_type");
             		Date modDate = (Date) oldFolderRow.get("mod_date");
 
@@ -1033,14 +1046,23 @@ public class IntegrityUtil {
 				// THIS IS THE NEW CODE
 
                 // 1.1) Insert dummy temp row on INODE table
-        		dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
+                if ( DbConnectionFactory.isOracle() ) {
+                    dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') ");
+                } else {
+                    dc.executeStatement("insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
+                }
 
-        		// 1.2) Insert dummy temp row on STRUCTURE table
+                // 1.2) Insert dummy temp row on STRUCTURE table
 
-        		dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
-        				+ ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
+                if ( DbConnectionFactory.isOracle() ) {
+                    dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
+                            + ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                } else {
+                    dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
+                            + ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
+                }
 
-        		// 2) Update references to the new dummies temps
+                // 2) Update references to the new dummies temps
 
         		// update foreign tables references to TEMP
         		dc.executeStatement("update container_structures set structure_id = 'TEMP_INODE' where structure_id = '"+oldStructureInode+"'");
@@ -1063,7 +1085,12 @@ public class IntegrityUtil {
         		String reviewInterval = (String) oldFolderRow.get("review_interval");
         		String reviewerRole = (String) oldFolderRow.get("reviewer_role");
         		String detailPage = (String) oldFolderRow.get("page_detail");
-        		Integer structureType = (Integer) oldFolderRow.get("structuretype");
+
+                Integer structureType = null;
+                if ( oldFolderRow.get( "structuretype" ) != null ) {
+                    structureType = Integer.valueOf( oldFolderRow.get( "structuretype" ).toString() );
+                }
+
         		Boolean system = DbConnectionFactory.isDBTrue(oldFolderRow.get("system").toString());
         		Boolean fixed = DbConnectionFactory.isDBTrue(oldFolderRow.get("fixed").toString());
         		String velocityVarName = (String) oldFolderRow.get("velocity_var_name");
@@ -1177,9 +1204,13 @@ public class IntegrityUtil {
 
         		// 1) Insert dummy temp row on WORKFLOW_SCHEME table
 
-        		dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', '1900-01-01 00:00:00.00')");
+                if ( DbConnectionFactory.isOracle() ) {
+                    dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                } else {
+                    dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', '1900-01-01 00:00:00.00')");
+                }
 
-        		// 2) Update references to the new dummies temps
+                // 2) Update references to the new dummies temps
 
         		// update foreign tables references to TEMP
         		dc.executeStatement("update workflow_step set scheme_id = 'TEMP_INODE' where scheme_id = '"+oldWorkflowId+"'");
