@@ -11,6 +11,7 @@ import java.util.List;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,7 +19,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
+import com.dotcms.repackage.org.mozilla.universalchardet.UniversalDetector;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -93,6 +94,21 @@ public class ImportContentletsAction extends DotPortletAction {
 				//Validation
 				UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 				byte[] bytes = FileUtil.getBytes(uploadReq.getFile("file"));
+				
+				File file = uploadReq.getFile("file");
+				String encodeType=null;
+			    byte[] buf = new byte[4096];
+			    java.io.FileInputStream fis = new java.io.FileInputStream(file);
+			    UniversalDetector detector = new UniversalDetector(null);
+			    int nread;
+			    while ((nread = fis.read(buf)) > 0 && !detector.isDone()) {
+			      detector.handleData(buf, 0, nread);
+			    }
+			    detector.dataEnd();
+			    encodeType = detector.getDetectedCharset();
+			    session.setAttribute("encodeType", encodeType);	
+			    detector.reset();
+			    fis.close();
 
 				ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
@@ -195,10 +211,13 @@ public class ImportContentletsAction extends DotPortletAction {
 							byte[] bytes = (byte[]) httpReq.getSession().getAttribute("file_to_import");
 							File file= (File)httpReq.getSession().getAttribute("csvFile");
 							ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
+							String eCode = (String) httpReq.getSession().getAttribute("encodeType");	
 							if (importContentletsForm.getLanguage() == -1)
 								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName("UTF-8"));
+							else if(eCode != null)
+								reader = new InputStreamReader(new ByteArrayInputStream(bytes), Charset.forName(eCode));
 							else
-								reader = new InputStreamReader(new ByteArrayInputStream(bytes));
+								reader = new InputStreamReader(new ByteArrayInputStream(bytes));	
 							csvreader = new CsvReader(reader);
 							csvreader.setSafetySwitch(false);
 								
