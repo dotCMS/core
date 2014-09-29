@@ -496,10 +496,10 @@
 </script>
 
 
-<div id="doc3" style="min-height: 500px">
+<div id="doc3" style="min-height: 600px">
 
-	<div class="actionPannelPage" id="container" style="min-height: 500px">
-		<div id="actionPanel" class="hideMe" style="height: 500px">
+	<div class="actionPannelPage" id="container" style="min-height: 600px">
+		<div id="actionPanel" class="hideMe" style="height: 600px">
 			<div id="arrow"><img src='/html/images/skin/arrow.png'/></div>
 			<div id="actionPanelContent" style="overflow:auto;"></div>
 		</div>
