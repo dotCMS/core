@@ -50,6 +50,7 @@ import com.dotmarketing.webdav.WebDavTest;
  */
 @RunWith (Suite.class)
 @Suite.SuiteClasses ({
+	HostAPITest.class, //Needs Enterprise License
     LinkCheckerAPITest.class, //Needs Enterprise License
     TemplateAPITest.class,
     HTMLPageAPITest.class,
@@ -74,7 +75,6 @@ import com.dotmarketing.webdav.WebDavTest;
     ContentResourceTest.class,
     RoleAPITest.class,
     FolderAPITest.class,
-    HostAPITest.class, //Needs Enterprise License
     WorkflowSearcherTest.class,
     NotificationAPITest.class,
     SassCompilerTest.class,

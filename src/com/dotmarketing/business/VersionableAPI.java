@@ -7,6 +7,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.liferay.portal.model.User;
 
@@ -218,13 +219,12 @@ public interface VersionableAPI {
      * Remove the reference to the live version for this identifier. This is useful to unpublish 
      * an asset. This is the contentlet specific method as we need the language_id for those cases 
      * 
-     * @param identifier identifier of the asset to be left without live version
-     * @param lang language id of the contentlet
+     * @param contentlet 
      * @throws DotDataException
      * @throws DotStateException
      * @throws DotSecurityException
      */
-    public void removeLive(String identifier, long lang) throws DotDataException, DotStateException,DotSecurityException;
+    public void removeLive(Contentlet contentlet) throws DotDataException, DotStateException,DotSecurityException;
 	
 	/**
 	 * Tells if the versionable is the working version for its identifier

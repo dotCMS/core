@@ -39,6 +39,37 @@ repository is not updated with the latest themes before building. Check out and 
 
 Additional Notes:
 
+===========================================
+===========================================
+dojo 1.8 has an issue visible on the filtering select and combo boxes (https://github.com/dotCMS/core/issues/6431) where you can NOT
+expand and element at the end (actually if the element to select is outside the initial visible area and you need to scroll to see it) of the tree
+component causing the tree to jump to the beginning of the component avoiding the child to expand.
+This happen when the we set a max-height (required as our trees can grow a lot) for the tree component, in that case the focus events are effected
+and when trying to expand the child dojo will focus on the parent container avoiding the user to expand the child.
+
+fix:
+    dot-dojo.js:
+        Original:
+            _onContainerFocus:function(evt){
+                if(evt.target!==this.domNode||this.focusedChild){
+                    return;
+                }
+                this.focus();
+            }
+        Change for:
+            _onContainerFocus:function(evt){
+                if((evt.explicitOriginalTarget && evt.explicitOriginalTarget.tagName == "IMG" && evt.explicitOriginalTarget.className.indexOf("TreeExpando") > -1)
+                 ||  evt.target!==this.domNode||this.focusedChild){
+                    return;
+                }
+                this.focus();
+            }
+
+We added a fix for the specific tree issue in order to avoid to brake old working functionality.
+NOTE: In case of an upgrade test this issue before to apply this fix, a fix could be already added on new dojo releases.
+
+===========================================
+===========================================
 The file /dotCMS/html/js/dojo/release/dojo/dojox/form/uploader/plugins/Flash.js	needs to be modified to be able to fix https://github.com/dotCMS/dotCMS/issues/524.
 The modification is in lines ~(275,276).
 

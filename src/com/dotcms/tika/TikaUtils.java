@@ -114,8 +114,9 @@ public class TikaUtils {
 							out.write(bytes, 0, count);
 							numOfChunks --;
 						}
-					}
-					finally {
+					}catch(IOException ioExc){
+						Logger.debug( this.getClass(), "Error Reading TikaParse Stream.", ioExc );
+					}finally {
 						if ( out != null ) {
 							try {
 								out.close();

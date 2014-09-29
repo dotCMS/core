@@ -328,7 +328,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		// Adds template children from selected box
 		//Identifier templateIdentifier = identifierAPI.find(templateId);
 		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("title", "Quest - 1 Column (With Content Padding)");
+		params.put("title", "Quest - 1 Column");
 		Template template = APILocator.getTemplateAPI().findTemplates(systemUser, false, params, host.getIdentifier(), null, null, null, 0, 1, "").get(0);
 
 
@@ -367,7 +367,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		newHtmlPage2.setTemplateId(template.getIdentifier());
 
 		if (UtilMethods.isSet(newHtmlPage2.getFriendlyName())) {
-			newHtmlPage2.setFriendlyName(newHtmlPage.getFriendlyName());
+			newHtmlPage2.setFriendlyName(newHtmlPage2.getFriendlyName());
 		} else {
 			newHtmlPage2.setFriendlyName(newHtmlPage2.getTitle());
 		}
@@ -404,7 +404,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		Container containerId = null;
 		for(Container container : APILocator.getTemplateAPI().getContainersInTemplate(template, systemUser, false)){
-			if(container.getTitle().equals("Default 1 (Page Content)")){
+			if(container.getTitle().equals("Large Column (lg-1)")) {
 				containerId = container;
 				break;
 			}
@@ -713,7 +713,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		// Adds template children from selected box
 		//Identifier templateIdentifier = identifierAPI.find(templateId);
 		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("title", "Quest - 1 Column (With Content Padding)");
+		params.put("title", "Quest - 1 Column");
 		Template template = APILocator.getTemplateAPI().findTemplates(systemUser, false, params, host.getIdentifier(), null, null, null, 0, 1, "").get(0);
 
 
@@ -746,7 +746,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		Container containerId = null;
 		for(Container container : APILocator.getTemplateAPI().getContainersInTemplate(template, systemUser, false)){
-			if(container.getTitle().equals("Default 1 (Page Content)")){
+			if(container.getTitle().equals("Large Column (lg-1)")){
 				containerId = container;
 				break;
 			}

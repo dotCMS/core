@@ -582,7 +582,7 @@ public class ContentResourceTest extends TestBase {
                         .toString());
         Assert.assertEquals(200, response.getStatus());
         
-        Thread.sleep(1000); // wait for relation fields update
+        Thread.sleep(2000); // wait for relation fields update
         
         String inode=response.getHeaders().getFirst("inode");
         Contentlet cc=APILocator.getContentletAPI().find(inode, sysuser, false);

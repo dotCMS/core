@@ -202,21 +202,20 @@ function showSettings() {
 
 function toggleDatePick() {
 	stopBrowing();
-	if(dojo.byId("future").checked) {
-		dojo.style('pastPicker','display','none');
-	    dojo.style('futurePicker','display','');
-	    var fdate=dijit.byId('fdate').getValue();
-	    var flang=dijit.byId('flang').getValue();
-	    if(fdate != null && flang!=null && flang.length > 0){
+	if (dojo.byId("future").checked) {
+		dojo.style('pastPicker', 'display', 'none');
+	    dojo.style('futurePicker', 'display', '');
+	    var fdate = dijit.byId('fdate').getValue();
+	    var flang = dijit.byId('flang').getValue();
+	    if (fdate && flang != null && flang.length > 0) {
 	    	futureChange();
 	    }
-	}
-	else {
-		dojo.style('futurePicker','display','none');
-		dojo.style('pastPicker','display','');
-	    var time=dijit.byId('timesel').get('value');
-	    var langid=dijit.byId('langsel').get('value');
-	    if(time != null && langid!=null){
+	} else {
+		dojo.style('futurePicker', 'display', 'none');
+		dojo.style('pastPicker', 'display', '');
+	    var time = dijit.byId('timesel').get('value');
+	    var langid = dijit.byId('langsel').get('value');
+	    if (time && langid) {
 	    	timeChange();
 	    }
 	}
