@@ -317,13 +317,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			// THIS IS WHERE THE MAGIC HAPPENS
 			// save to session if user looking to edit a file
 			if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null) {
-				Map<String, String> files = null;
-				if (session != null) {
-					files = (Map<String, String>) session.getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
-				} else {
-					files = new HashMap<String, String>();
-				}
-		    	String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
+                Map<String, String> files;
+                if ( session != null && session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES ) != null ) {
+                    files = (Map<String, String>) session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES );
+                } else {
+                    files = new HashMap<>();
+                }
+                String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
 		    	File tmp = File.createTempFile("binaryexporter", "." +ext);
 		    	FileUtil.copyFile(data.getDataFile(), tmp);
 		    	tmp.deleteOnExit();
