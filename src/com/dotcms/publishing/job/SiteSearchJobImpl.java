@@ -206,7 +206,7 @@ public class SiteSearchJobImpl {
             audit.setUrlmapsCount(urlmapCount);
             audit.setAllHosts(indexAll);
             audit.setFireDate(jobContext.getFireTime());
-            audit.setHostList(UtilMethods.join(indexHosts,","));
+            audit.setHostList(UtilMethods.join(indexHosts,",",true));
             audit.setIncremental(incremental);
             audit.setStartDate(startDate);
             audit.setEndDate(endDate);
