@@ -81,9 +81,9 @@ dojo.ready(function(){
 });
 
 function myConfirmation() {
-    stopBrowing();
 	if(browsingTimeMachine){
-		return "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>";
+        stopBrowing();
+        return "<%= LanguageUtil.get(pageContext, "TIMEMACHINE-CLOSE-WHENDONE")%>";
 	}
 }
 
@@ -95,14 +95,9 @@ var emptyStore = new dojo.data.ItemFileReadStore({data:emptyData});
 function timeChange() {
     var time=dijit.byId('timesel').get('value');
     var langid=dijit.byId('langsel').get('value');
-	console.log("time:" + time);
-	console.log("langid:" + langid);
-	
-	
 	
 	// in with time and lang set
     if(time && time.length>0 && langid && langid.length>0) {
-    	console.log("with time and lang set");
     	dojo.xhr('GET',{
     		url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsing/date/'
     		       +time+'/hostIdentifier/<%=hostIdentifier%>/langid/'+langid+ "/r/" + Math.floor(Math.random()*11232132132131),
@@ -122,27 +117,20 @@ function timeChange() {
 	
  	// with time  set
     else if(time && time.length>0 && (langid == undefined || langid.length==0)) {
-    	console.log("Showing List of LANGs");
     	var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableLangForTimeMachine/hostIdentifier/<%=hostIdentifier%>/date/"+time+ "/r/" + Math.floor(Math.random()*11232132132131);
         dijit.byId('langsel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
     }
 	
 	// init and changing the time
     else{
-    	console.log("Showing List of TMs");
-
-
         dijit.byId('timesel').setValue("");
 
         var myUrl="/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/getAvailableTimeMachineForSite/hostIdentifier/<%=hostIdentifier%>/r/" + Math.floor(Math.random()*11232132132131);
         dijit.byId('timesel').set('store',new dojo.data.ItemFileReadStore({url:myUrl}));
 
         dijit.byId('langsel').set('store',emptyStore);
-    	
-    	
     }
-    
-    
+
 }
 
 function stopBrowing() {
@@ -201,8 +189,10 @@ function showSettings() {
 }
 
 function toggleDatePick() {
+
 	stopBrowing();
-	if (dojo.byId("future").checked) {
+
+    if (dojo.byId("future").checked) {
 		dojo.style('pastPicker', 'display', 'none');
 	    dojo.style('futurePicker', 'display', '');
 	    var fdate = dijit.byId('fdate').getValue();
@@ -213,18 +203,14 @@ function toggleDatePick() {
 	} else {
 		dojo.style('futurePicker', 'display', 'none');
 		dojo.style('pastPicker', 'display', '');
-	    var time = dijit.byId('timesel').get('value');
-	    var langid = dijit.byId('langsel').get('value');
-	    if (time && langid) {
-	    	timeChange();
-	    }
+        timeChange();
 	}
 
 }
 
 function futureChange() {
+
 	var fdate=dijit.byId('fdate').getValue();
-	console.log("fdate:" + fdate);
 	if(fdate){
 		var day=fdate.getDate();
 		var month=fdate.getMonth()+1;
@@ -232,7 +218,6 @@ function futureChange() {
 		var formated=year+"-"+month+"-"+day;
 		
 		var flang=dijit.byId('flang').getValue();
-		console.log("flang:" + flang);
 		if(flang && flang.length>0){
 			dojo.xhr('GET',{
 		        url:'/DotAjaxDirector/com.dotcms.timemachine.ajax.TimeMachineAjaxAction/cmd/startBrowsingFutureDate/date/'
@@ -271,7 +256,7 @@ function futureChange() {
 	                       <td class="title">
 	                       		Snapshot:
 	                         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="past" onChange="toggleDatePick()" checked='true'/><label for="past"><%= LanguageUtil.get(pageContext, "Past") %></label>&nbsp; 
-	                         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="future" onChange="toggleDatePick()"/><label for="future"><%= LanguageUtil.get(pageContext, "Future") %></label>
+	                         	<input type="radio" dojoType="dijit.form.RadioButton" name="sn" id="future"/><label for="future"><%= LanguageUtil.get(pageContext, "Future") %></label>
 	                         	&nbsp; &nbsp; 
 	                       </td>
 	                       <td class="input">
@@ -311,7 +296,7 @@ function futureChange() {
 							t.onTick = function(){
 							  focusUtil.focus(dom.byId("timesel"));
 							  t.stop();
-							}
+							};
 							t.start();
 						});
 					</script>

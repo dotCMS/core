@@ -177,13 +177,13 @@ public class BinaryExporterServlet extends HttpServlet {
 		File inputFile = null;
 		HttpSession session = req.getSession(false);
 		List<String> tempBinaryImageInodes = null;
-		if (session != null) {
-			tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		} else {
-			tempBinaryImageInodes = new ArrayList<String>();
-		}
-		
-		boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
+        if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
+            tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
+        } else {
+            tempBinaryImageInodes = new ArrayList<String>();
+        }
+
+        boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
