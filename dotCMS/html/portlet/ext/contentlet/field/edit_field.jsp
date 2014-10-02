@@ -60,18 +60,6 @@
     String counter = (String) request.getAttribute("counter");
 
 %>
-
-
-<style>
-.dijitTree {
-	width: 100% !important;
-	max-height: 100% !important;
-	overflow: auto;
-}
-.classAce{
-	display: none;
-}
-</style>
 <div class="fieldWrapper">
 
 	<div class="fieldName" id="<%=field.getVelocityVarName()%>_tag">
@@ -984,9 +972,3 @@
 </div>
 	<div class="clear"></div>
 </div>
- <script>
- dojo.ready(function() {
-	 setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
-     recolorTable('<%=field.getFieldContentlet()%>');
-	});
-</script>

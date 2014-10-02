@@ -29,6 +29,17 @@
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
 
+<style>
+.dijitTree {
+	width: 100% !important;
+	max-height: 100% !important;
+	overflow: auto;
+}
+.classAce{
+	display: none;
+}
+</style>
+
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
 	ContentletAPI conAPI = APILocator.getContentletAPI();
