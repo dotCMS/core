@@ -139,7 +139,9 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 		if(UtilMethods.isSet(taskPreviousName) && !taskName.equals(taskPreviousName)){
 			try {
-				APILocator.getSiteSearchAPI().deleteTask(taskPreviousName);
+				if(!config.runNow()){
+					APILocator.getSiteSearchAPI().deleteTask(taskPreviousName);
+				}
 			} catch (Exception e) {
 				Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
 				writeError(response, e.getMessage());
