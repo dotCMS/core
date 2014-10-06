@@ -103,7 +103,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
     
     private void setClipboard(String fileUrl, HttpServletRequest request, HttpServletResponse response) throws IOException{
     	
-    	List<String> list = (List<String>) request.getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
+    	List<String> list = (List<String>) request.getSession().getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
     	if(list ==null){
     		list = new ArrayList<String>();
     	}
@@ -118,7 +118,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
     	list.add(0, fileUrl);
     	
     	
-    	request.setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
+    	request.getSession().setAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD, list);
     	
 
     	
@@ -127,7 +127,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		return;
     }
     private void getClipboard(String fileUrl, HttpServletRequest request, HttpServletResponse response) throws IOException{
-    	List<String> list = (List<String>) request.getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
+    	List<String> list = (List<String>) request.getSession().getAttribute(WebKeys.IMAGE_TOOL_CLIPBOARD);
     	if(list ==null){
     		list = new ArrayList<String>();
     	}
@@ -154,7 +154,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		java.io.File binaryFile = null;
 		String imgToolFile = request.getParameter( WebKeys.IMAGE_TOOL_SAVE_FILES);
 		if(UtilMethods.isSet(imgToolFile)){
-			String x = PublicEncryptionFactory.decryptString(imgToolFile.replaceAll(" ", "+"));
+			String x = PublicEncryptionFactory.decryptString(imgToolFile);
 			if(UtilMethods.isSet(x)){
 				binaryFile = new java.io.File(x);
 				if(binaryFile != null && binaryFile.exists() && binaryFile.length()>0){
@@ -192,7 +192,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
     	User user;
 		try {
 			
-	    	Map<String, String> imgToolFile = (Map<String, String>) request.getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
+	    	Map<String, String> imgToolFile = (Map<String, String>) request.getSession().getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
 			if(imgToolFile  ==null){
 				throw new DotStateException("Cannot find underlying file to 'save as' ");
 			}
@@ -202,7 +202,7 @@ public class ImageToolAjaxServlet extends HttpServlet {
 				for (Map.Entry<String, String> entry : imgToolFile.entrySet()){
 					if(WebKeys.EDITED_IMAGE_FILE_ASSET.equals(entry.getKey())){
 						saveAsIOFile = new java.io.File(entry.getValue());
-						request.removeAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
+						request.getSession().removeAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
 						break;
 					}
 				}
