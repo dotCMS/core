@@ -220,7 +220,7 @@ public class IntegrityUtil {
 
     private static void addToZipFile(String fileName, ZipOutputStream zos, String zipEntryName) throws Exception  {
 
-        System.out.println("Writing '" + fileName + "' to zip file");
+        Logger.info(IntegrityUtil.class, "Writing '" + fileName + "' to zip file");
 
         try {
 
@@ -588,6 +588,107 @@ public class IntegrityUtil {
             throw new Exception("Error running the Workflow Schemes Integrity Check", e);
         }
     }
+    
+    /**
+     * Checks possible conflicts with HTMLPages.
+     * 
+     * @param endpointId Information of the Server you want to examine. 
+     * @return
+     * @throws Exception
+     */
+    public Boolean checkHtmlPagesIntegrity(String endpointId) throws Exception {
+
+        try {
+
+            CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.HTML_PAGES.getDataToCheckCSVName(), '|');
+            
+            boolean tempCreated = false;
+            
+            DotConnect dc = new DotConnect();
+            String tempTableName = getTempTableName(endpointId, IntegrityType.HTML_PAGES);
+            String tempKeyword = getTempKeyword();
+
+            //Create a temporary table and insert all the records coming from the CSV file.
+            String createTempTable = "create " + tempKeyword + " table " + tempTableName 
+            		+ " (inode varchar(36) not null, "
+            		+ "identifier varchar(36) not null, "
+            		+ "parent_path varchar(255), "
+                    + "asset_name varchar(255), "
+                    + "host_identifier varchar(36) not null, "
+                    + "primary key (inode) )" 
+                    + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
+
+            if(DbConnectionFactory.isOracle()) {
+                createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+            }
+
+            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
+
+            while (htmlpages.readRecord()) {
+                if(!tempCreated) {
+                    dc.executeStatement(createTempTable);
+                    tempCreated = true;
+                }
+
+                String htmlPageInode = htmlpages.get(0);
+				String htmlPageIdentifier = htmlpages.get(1);
+				String htmlPageParentPath = htmlpages.get(2);
+				String htmlPageAssetName = htmlpages.get(3);
+				String htmlPageHostIdentifier = htmlpages.get(4);
+
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(htmlPageInode);
+				dc.addParam(htmlPageIdentifier);
+				dc.addParam(htmlPageParentPath);
+				dc.addParam(htmlPageAssetName);
+				dc.addParam(htmlPageHostIdentifier);
+				dc.loadResult();
+            }
+            htmlpages.close();
+
+            String resultsTableName = getResultsTableName(IntegrityType.HTML_PAGES);
+
+            //Compare the data from the CSV to the local database data and see if we have conflicts.
+            dc.setSQL("select 1 from identifier iden "
+                    + "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+                    + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+                    + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
+                    + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
+
+            List<Map<String,Object>> results = dc.loadObjectResults();
+
+            //If we have conflicts, lets create a table out of them.
+            if(!results.isEmpty()) {
+                
+
+                String fullFolder = " c.title || iden.parent_path || iden.asset_name ";
+
+                if(DbConnectionFactory.isMySql()) {
+                    fullFolder = " concat(c.title,iden.parent_path,iden.asset_name) ";
+                } else if(DbConnectionFactory.isMsSql()) {
+                    fullFolder = " c.title + iden.parent_path + iden.asset_name ";
+                }
+
+                final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select " + fullFolder + " as folder, "
+						+ "f.inode as local_inode, ft.inode as remote_inode, f.identifier as local_identifier, ft.identifier as remote_identifier, "
+						+ "'" +endpointId+ "' from identifier iden "
+						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
+						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
+						+ "join contentlet_version_info cvi on c.inode = cvi.working_inode "
+						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+
+                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+
+            }
+
+            dc.setSQL("select * from folders_ir");
+            results = dc.loadObjectResults();
+
+            return !results.isEmpty();
+        } catch(Exception e) {
+            throw new Exception("Error running the Folders Integrity Check", e);
+        }
+    }
 
     public void dropTempTables(String endpointId) throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -690,6 +791,13 @@ public class IntegrityUtil {
         }
     }
 
+    /**
+     * Creates temporary TABLE for integrity checking purposes. 
+     * 
+     * @param endpointId
+     * @param type
+     * @return
+     */
     private String getTempTableName(String endpointId, IntegrityType type) {
 
         if(!UtilMethods.isSet(endpointId)) return null;
@@ -711,8 +819,12 @@ public class IntegrityUtil {
         return type.name().toLowerCase() + "_ir";
     }
 
+    /**
+     * Return Temporary word depending on the Database in the data source. 
+     * 
+     * @return
+     */
     private String getTempKeyword() {
-
         String tempKeyword = "temporary";
 
         if(DbConnectionFactory.isMsSql()) {
@@ -729,8 +841,6 @@ public class IntegrityUtil {
         String folderTable = getResultsTableName(IntegrityType.FOLDERS);
         String structuresTable = getResultsTableName(IntegrityType.STRUCTURES);
         String schemesTable = getResultsTableName(IntegrityType.SCHEMES);
-
-//		final String H2="SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' + ";
 
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT 1 FROM " + folderTable+ " where endpoint_id = ?");
