@@ -85,6 +85,54 @@ public class IntegrityUtil {
         return csvFile;
 
     }
+    
+    /**
+     * Creates CSV file with HTML Pages information from End Point server. 
+     * 
+     * @param outputFile
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     */
+    private File generateHtmlPagesToCheckCSV(String outputFile) throws DotDataException, IOException {
+        Connection conn = DbConnectionFactory.getConnection();
+        ResultSet rs = null;
+        PreparedStatement statement = null;
+        CsvWriter writer = null;
+        File csvFile = null;
+
+        try {
+            csvFile = new File(outputFile);
+            writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+            statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
+			rs = statement.executeQuery();
+            int count = 0;
+
+            while (rs.next()) {
+                writer.write(rs.getString("inode"));
+                writer.write(rs.getString("identifier"));
+                writer.write(rs.getString("parent_path"));
+                writer.write(rs.getString("asset_name"));
+                writer.write(rs.getString("host_inode"));
+                writer.endRecord();
+                count++;
+
+                if(count==1000) {
+                    writer.flush();
+                    count = 0;
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(),e);
+        }finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) { }
+            try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+            if(writer!=null) writer.close();
+        }
+
+        return csvFile;
+    }
 
     private File generateStructuresToCheckCSV(String outputFile) throws DotDataException, IOException {
         Connection conn = DbConnectionFactory.getConnection();
@@ -280,10 +328,17 @@ public class IntegrityUtil {
 
     }
 
+    /**
+     * Creates all the CSV from End Point database table and store them inside zip file. 
+     * 
+     * @param endpointId
+     * @throws Exception
+     */
     public void generateDataToCheckZip(String endpointId) throws Exception {
         File foldersToCheckCsvFile = null;
         File structuresToCheckCsvFile = null;
         File schemesToCheckCsvFile = null;
+        File htmlPagesToCheckCsvFile = null;
         File zipFile = null;
 
         try {
@@ -310,10 +365,12 @@ public class IntegrityUtil {
             foldersToCheckCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName());
             structuresToCheckCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName());
             schemesToCheckCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName());
+            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTML_PAGES.getDataToCheckCSVName());
 
             addToZipFile(foldersToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToCheckCSVName());
             addToZipFile(structuresToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToCheckCSVName());
             addToZipFile(schemesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToCheckCSVName());
+            addToZipFile(htmlPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.HTML_PAGES.getDataToCheckCSVName());
 
             zos.close();
             fos.close();
@@ -330,6 +387,8 @@ public class IntegrityUtil {
                 structuresToCheckCsvFile.delete();
             if(schemesToCheckCsvFile!=null && schemesToCheckCsvFile.exists())
                 schemesToCheckCsvFile.delete();
+            if(htmlPagesToCheckCsvFile!=null && htmlPagesToCheckCsvFile.exists())
+            	htmlPagesToCheckCsvFile.delete();
 
         }
     }
