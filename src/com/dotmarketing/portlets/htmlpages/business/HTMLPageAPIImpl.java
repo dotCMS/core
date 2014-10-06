@@ -339,6 +339,13 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		boolean pageExists = (existingHTMLPage != null) && InodeUtils.isSet(existingHTMLPage.getInode());
 
 		if (pageExists) {
+
+            if ( newHtmlPage.getIdentifier() != null && !newHtmlPage.getIdentifier().equals( existingHTMLPage.getIdentifier() ) ) {
+                throw new DotDataException( "You are trying to save a page with the same name and location but a different identifier. " +
+                        "If you are trying to push Publish you may have to rename the folder [" + parentFolder.getPath() + "]. " +
+                        "HTMLPage trying to save [" + newHtmlPage.getIdentifier() + "], found HTMLPage [" + existingHTMLPage.getIdentifier() + "]" );
+            }
+
 			if (!permissionAPI.doesUserHavePermission(existingHTMLPage, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 				throw new DotSecurityException("You don't have permission to read the HTML page.");
 			}
