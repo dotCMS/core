@@ -341,7 +341,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		if (pageExists) {
 
             if ( newHtmlPage.getIdentifier() != null && !newHtmlPage.getIdentifier().equals( existingHTMLPage.getIdentifier() ) ) {
-                Logger.error( HTMLPageAPIImpl.class, "You are trying to save a page with the same name and location but a different identifier. " +
+                throw new DotDataException( "You are trying to save a page with the same name and location but a different identifier. " +
                         "If you are trying to push Publish you may have to rename the folder [" + parentFolder.getPath() + "]. " +
                         "HTMLPage trying to save [" + newHtmlPage.getIdentifier() + "], found HTMLPage [" + existingHTMLPage.getIdentifier() + "]" );
             }
