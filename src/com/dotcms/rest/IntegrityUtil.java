@@ -649,42 +649,62 @@ public class IntegrityUtil {
             String resultsTableName = getResultsTableName(IntegrityType.HTML_PAGES);
 
             //Compare the data from the CSV to the local database data and see if we have conflicts.
-            dc.setSQL("select 1 from identifier iden "
-                    + "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
-                    + "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
-                    + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-                    + "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name");
+            dc.setSQL("select lh.page_url as html_page, "
+            		+ "lh.inode as local_inode, "
+            		+ "rh.inode as remote_inode, "
+            		+ "li.id as local_identifier, "
+            		+ "ri.id as remote_identifier "
+            		+ "from dotcms30.htmlpage as lh "
+            		+ "join " + tempTableName + " as rh "
+            		+ "join dotcms30.identifier as li "
+            		+ "join dotcms30publish.identifier as ri "
+            		+ "on lh.identifier = li.id "
+            		+ "and rh.identifier = ri.id "
+            		+ "and li.asset_type = 'htmlpage' "
+            		+ "and li.asset_name = ri.asset_name "
+            		+ "and li.parent_path = ri.parent_path "
+            		+ "and li.host_inode = ri.host_inode "
+            		+ "and li.id <> ri.id");
 
             List<Map<String,Object>> results = dc.loadObjectResults();
 
             //If we have conflicts, lets create a table out of them.
             if(!results.isEmpty()) {
-                
-
-                String fullFolder = " c.title || iden.parent_path || iden.asset_name ";
+                String fullHtmlPage = " li.parent_path || li.asset_name ";
 
                 if(DbConnectionFactory.isMySql()) {
-                    fullFolder = " concat(c.title,iden.parent_path,iden.asset_name) ";
+                	fullHtmlPage = " concat(li.parent_path,li.asset_name) ";
                 } else if(DbConnectionFactory.isMsSql()) {
-                    fullFolder = " c.title + iden.parent_path + iden.asset_name ";
+                	fullHtmlPage = " li.parent_path + li.asset_name ";
                 }
 
-                final String INSERT_INTO_RESULTS_TABLE = "insert into " +resultsTableName+ " select " + fullFolder + " as folder, "
-						+ "f.inode as local_inode, ft.inode as remote_inode, f.identifier as local_identifier, ft.identifier as remote_identifier, "
-						+ "'" +endpointId+ "' from identifier iden "
-						+ "join folder f on iden.id = f.identifier join " + tempTableName + " ft on iden.parent_path = ft.parent_path "
-						+ "join contentlet c on iden.host_inode = c.identifier and iden.asset_name = ft.asset_name and ft.host_identifier = iden.host_inode "
-						+ "join contentlet_version_info cvi on c.inode = cvi.working_inode "
-						+ "where asset_type = 'folder' and f.inode <> ft.inode order by c.title, iden.asset_name";
+                final String INSERT_INTO_RESULTS_TABLE = "insert into " + resultsTableName 
+                		+ " select " + fullHtmlPage + " as html_page, "
+                		+ "lh.inode as local_inode, "
+                		+ "rh.inode as remote_inode, "
+                		+ "li.id as local_identifier, "
+                		+ "ri.id as remote_identifier, "
+                		+ "'" + endpointId + "'"
+                		+ "from dotcms30.htmlpage as lh "
+                		+ "join " + tempTableName + " as rh "
+                		+ "join dotcms30.identifier as li "
+                		+ "join dotcms30publish.identifier as ri "
+                		+ "on lh.identifier = li.id "
+                		+ "and rh.identifier = ri.id "
+                		+ "and li.asset_type = 'htmlpage' "
+                		+ "and li.asset_name = ri.asset_name "
+                		+ "and li.parent_path = ri.parent_path "
+                		+ "and li.host_inode = ri.host_inode "
+                		+ "and li.id <> ri.id";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
-
             }
 
-            dc.setSQL("select * from folders_ir");
+            dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTML_PAGES));
             results = dc.loadObjectResults();
 
             return !results.isEmpty();
+            
         } catch(Exception e) {
             throw new Exception("Error running the Folders Integrity Check", e);
         }
@@ -707,6 +727,11 @@ public class IntegrityUtil {
             if(doesTableExist(getTempTableName(endpointId, IntegrityType.SCHEMES))) {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
+            }
+            
+            if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTML_PAGES))) {
+                dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTML_PAGES));
+                dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTML_PAGES));
             }
 
         } catch (SQLException e) {
