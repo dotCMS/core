@@ -27,10 +27,14 @@
 	<div class="codeExample">
 	/api/portlet/$PORTLET_ID/$jspname
 	</div> 
-	minus the jsp extension.  So to render the contents of the testing.jsp,
-	you would call 
+	minus the jsp extension.  So to render the contents of the testing.jsp in the app chrome,
+	you would call (click)
 	<div class="codeExample">
-	<a href="/api/portlet/REST_EXAMPLE_PORTLET/testing" target="newinw">/api/portlet/REST_EXAMPLE_PORTLET/testing</a>
+	<a href="javascript:dotAjaxNav.show('/api/portlet/<%=request.getAttribute("PORTLET_ID") %>/testing');">dotAjaxNav.show('/api/portlet/<%=request.getAttribute("PORTLET_ID") %>/testing')</a>
+</div>
+or the raw url for xhr includes.
+	<div class="codeExample">
+<a href="/api/portlet/REST_EXAMPLE_PORTLET/testing" >/api/portlet/REST_EXAMPLE_PORTLET/testing</a>
 	</div>
 	which will render the jsp under WEB-INF/REST_EXAMPLE_PORTLET/testing.jsp.
 	</p>
@@ -46,8 +50,6 @@
 	The benefits of calling or including the jsps this way is that the BaseRestPortlet also takes care of permissions and portlet authentication for these jsp based views.  This means you do not need to include boilerplate authcode at the the top of all your jsp based snippets.
 
 	</p>
-
-		<a href="javascript:dotAjaxNav.show('/api/portlet/<%=request.getAttribute("PORTLET_ID") %>/testing');">show testing jsp</a><br>&nbsp;<br>
 
 	</div>
 	<h2>JSON Webservices</h2>
