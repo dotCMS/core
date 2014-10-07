@@ -29,7 +29,7 @@ public class Config {
 	public static final int PERMISSION_PUBLISH = 4;
 
 	//Config internal properties
-	private static int refreshInterval = 2; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
+	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
