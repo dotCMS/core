@@ -345,7 +345,8 @@ public class FolderAPIImpl implements FolderAPI  {
 			faker.setInode(folder.getInode());
 			faker.setIdentifier(folder.getIdentifier());
 			faker.setHostId(folder.getHostId());
-
+			Identifier ident=APILocator.getIdentifierAPI().find(faker.getIdentifier());
+			
 			List<Folder> folderChildren = findSubFolders(folder, user, respectFrontEndPermissions);
 
 			// recursivily delete
@@ -370,8 +371,13 @@ public class FolderAPIImpl implements FolderAPI  {
 				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(faker);
 				CacheLocator.getNavToolCache().removeNav(faker.getHostId(), faker.getInode());
-				Identifier ident=APILocator.getIdentifierAPI().find(faker);
+				
 				CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+				//remove value in the parent folder from the children listing
+				Folder parentFolder = !ident.getParentPath().equals("/") ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
+				if(parentFolder != null){
+					CacheLocator.getNavToolCache().getNav(faker.getHostId(), parentFolder.getInode());
+				}
 			}
 
 			PublisherAPI.getInstance().deleteElementFromPublishQueueTable(folder.getInode());
