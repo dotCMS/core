@@ -1,5 +1,5 @@
 /* NAV SUB STYLES 2.0 */
-#admin-banner-logo-div{position:absolute;top:10px;left:20px;height:20px;width:70px;text-indent:-9999px;background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -300px;}
+#admin-banner-logo-div{position:absolute;top:10px;left:20px;height:20px;width:80px;text-indent:-9999px;background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -300px;}
 #admin-site-tools-div {position:absolute; top:4px;right:30px;font-size: 85%;color:#ddd;}
 #admin-site-tools-div a{display:inline-block;color:#fff;text-decoration:none;vertical-align:top;padding:5px 0 0 0;margin-right:15px;}
 #admin-site-tools-div a:hover{}
@@ -79,7 +79,7 @@
 #menu ul.horizontal > li.level1 a {width: auto;}
 li.level1 .navMenu-title{margin:0;padding:0;line-height:14px;overflow:hidden;color:#404040;font-size:93%;font-weight:bold;}
 li.level1 .navMenu-subtitle{margin:0;padding:0;overflow:hidden;color:#5f5f5f;font-size:77%;}
-li.level1 .navMenu-arrow{display:none;background: url(/html/images/skin/skin-sprite.png) no-repeat -80px -300px;width:13px;height:13px;margin:4px auto 2px auto;font-size:77%;}
+li.level1 .navMenu-arrow{display:none;background: url(/html/images/skin/skin-sprite.png) no-repeat -250px -300px;width:13px;height:13px;margin:4px auto 2px auto;font-size:77%;}
 li.smallify .navMenu-subtitle{display:none;}
 li.smallify .navMenu-arrow{display:block;}
 
