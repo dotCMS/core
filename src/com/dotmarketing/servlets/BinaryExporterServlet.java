@@ -332,7 +332,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		    	} else {
 		    		files.put(fieldVarName, tmp.getCanonicalPath());
 		    	}
-		    	resp.getWriter().println(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath()));
+		    	resp.getWriter().println(UtilMethods.encodeURIComponent(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath())));
 		    	resp.getWriter().close();
 		    	resp.flushBuffer();
 		    	return;

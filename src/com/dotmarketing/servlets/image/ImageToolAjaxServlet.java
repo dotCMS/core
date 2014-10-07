@@ -20,6 +20,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
@@ -71,14 +72,11 @@ public class ImageToolAjaxServlet extends HttpServlet {
 	    }
 
     	
-    	
-    	
-    	String fileUrl = request.getParameter("fileUrl");
+	    String fileUrl = request.getParameter("fileUrl");
     	String inode = request.getParameter("inode");
     	String action = request.getParameter("action");
     	String fileName = request.getParameter("fileName");
     	String binaryFieldId = request.getParameter("binaryFieldId");
-    	
     	
     	if("reset".equals(action)){
 			request.getSession().removeAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
@@ -154,10 +152,10 @@ public class ImageToolAjaxServlet extends HttpServlet {
 		//see if we have anything in session from the image tool
 		@SuppressWarnings("unchecked")
 		java.io.File binaryFile = null;
-		Map<String, String> imgToolFile = (Map<String, String>) request.getSession().getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
-    	if(imgToolFile != null){
-			String x = imgToolFile.get(fieldId);
-			if( x != null){
+		String imgToolFile = request.getParameter( WebKeys.IMAGE_TOOL_SAVE_FILES);
+		if(UtilMethods.isSet(imgToolFile)){
+			String x = PublicEncryptionFactory.decryptString(imgToolFile);
+			if(UtilMethods.isSet(x)){
 				binaryFile = new java.io.File(x);
 				if(binaryFile != null && binaryFile.exists() && binaryFile.length()>0){
 					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + userId + 
