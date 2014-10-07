@@ -12,12 +12,13 @@
 	}
 	</style>
 	
-	<div style="padding:30px;">
+	<div style="padding:30px;padding-top:10px;">
 	<p>There are a number of interesting things about this REST example Portlet.</p>
 	<p>First, you didn't need a page refresh to get here.  Any portlets that extend  <i>com.dotcms.rest.BaseRestPortlet</i> will automatically load the contents of the view directly into the dotCMS chrome using an Ajax call. </p>
 
 	<p>
-	Second, developing these portlets are easy, at its simplest, you only need to provide a jsp as a view.
+	Second, developing these portlets are easy.  At its simplest, you only need to provide a jsp as a view. 
+	The benefits of calling or including the jsps this way is that the BaseRestPortlet also takes care of permissions and portlet authentication for these jsp based views.  This means you do not need to include boilerplate authcode at the the top of all your jsp based snippets.
 	The <i>BaseRestPortlet</i> portlet views are wired by convention, the default being 
 	<div class="codeExample">WEB-INF/$PORTLET_ID/render.jsp
 	</div>
@@ -47,7 +48,6 @@ or the raw url for xhr includes.
 	Calling the view using <b>dotAjaxNav.show()</b> has the benefit of allowing your users to use the <b>back and forward buttons</b> to navigate a complex webapp.
 
 
-	The benefits of calling or including the jsps this way is that the BaseRestPortlet also takes care of permissions and portlet authentication for these jsp based views.  This means you do not need to include boilerplate authcode at the the top of all your jsp based snippets.
 
 	</p>
 
@@ -58,8 +58,8 @@ or the raw url for xhr includes.
 	
 
 	
-		Additionally, the BaseRestPortlet can be extended to provide Jersy based webservices 
-		via annotaions.  The link below links to a very simple webservice that looks like this:
+		Additionally, the BaseRestPortlet can be extended to provide Jersey based webservices 
+		via annotaions. The links below link to a very simple webservice that looks like this:
 	</div>
 	<div style="padding:0px 30px "><pre>@Path("/restexample")
 public class RestExamplePortlet extends BaseRestPortlet {

@@ -26,8 +26,8 @@
 	
 
 	
-		The BaseRestPortlet can be extended to provide Jersy based webservices 
-		via annotaions.  The link below links to a very simple webservice that looks like this:
+		The BaseRestPortlet can be extended to provide Jersey based webservices 
+		via annotaions.  The links below link to a very simple webservice that looks like this:
 	</div>
 	<div style="padding:0px 30px "><pre>@Path("/restexample")
 public class RestExamplePortlet extends BaseRestPortlet {
