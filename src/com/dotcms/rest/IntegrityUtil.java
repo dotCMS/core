@@ -710,20 +710,18 @@ public class IntegrityUtil {
             //Compare the data from the CSV to the local database data and see if we have conflicts.
             dc.setSQL("select lh.page_url as html_page, "
             		+ "lh.inode as local_inode, "
-            		+ "rh.inode as remote_inode, "
+            		+ "ri.inode as remote_inode, "
             		+ "li.id as local_identifier, "
-            		+ "ri.id as remote_identifier "
-            		+ "from dotcms30.htmlpage as lh "
-            		+ "join " + tempTableName + " as rh "
-            		+ "join dotcms30.identifier as li "
-            		+ "join dotcms30publish.identifier as ri "
+            		+ "ri.identifier as remote_identifier "
+            		+ "from htmlpage as lh "
+            		+ "join " + tempTableName + " as ri "
+            		+ "join identifier as li "
             		+ "on lh.identifier = li.id "
-            		+ "and rh.identifier = ri.id "
             		+ "and li.asset_type = 'htmlpage' "
             		+ "and li.asset_name = ri.asset_name "
             		+ "and li.parent_path = ri.parent_path "
-            		+ "and li.host_inode = ri.host_inode "
-            		+ "and li.id <> ri.id");
+            		+ "and li.host_inode = ri.host_identifier "
+            		+ "and li.id <> ri.identifier");
 
             List<Map<String,Object>> results = dc.loadObjectResults();
 
@@ -740,21 +738,20 @@ public class IntegrityUtil {
                 final String INSERT_INTO_RESULTS_TABLE = "insert into " + resultsTableName 
                 		+ " select " + fullHtmlPage + " as html_page, "
                 		+ "lh.inode as local_inode, "
-                		+ "rh.inode as remote_inode, "
+                		+ "ri.inode as remote_inode, "
                 		+ "li.id as local_identifier, "
-                		+ "ri.id as remote_identifier, "
+                		+ "ri.identifier as remote_identifier, "
                 		+ "'" + endpointId + "'"
                 		+ "from dotcms30.htmlpage as lh "
-                		+ "join " + tempTableName + " as rh "
+                		+ "join " + tempTableName + " as ri "
                 		+ "join dotcms30.identifier as li "
                 		+ "join dotcms30publish.identifier as ri "
                 		+ "on lh.identifier = li.id "
-                		+ "and rh.identifier = ri.id "
                 		+ "and li.asset_type = 'htmlpage' "
                 		+ "and li.asset_name = ri.asset_name "
                 		+ "and li.parent_path = ri.parent_path "
-                		+ "and li.host_inode = ri.host_inode "
-                		+ "and li.id <> ri.id";
+                		+ "and li.host_inode = ri.host_identifier "
+                		+ "and li.id <> ri.identifier";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
             }
