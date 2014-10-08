@@ -984,6 +984,8 @@ public class IntegrityUtil {
             fixStructures(endpointId);
         } else if(type == IntegrityType.SCHEMES) {
             fixSchemes(endpointId);
+        } else if(type == IntegrityType.HTML_PAGES) {
+            fixHtmlPages(endpointId);
         }
     }
     /**
@@ -1448,6 +1450,36 @@ public class IntegrityUtil {
             throw new DotDataException( e.getMessage(), e );
         }
     }
-
-
+    
+    /**
+     * Replace Identifier with same Identifier from the other server. 
+     * 
+     * @param serverId
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void fixHtmlPages ( String serverId ) throws DotDataException, DotSecurityException {
+    	/*
+		INSERT dotcms30.identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date)
+		SELECT '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1', parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date
+		FROM dotcms30.identifier
+		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		
+		UPDATE dotcms30.htmlpage
+		SET identifier = '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1'
+		WHERE identifier = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		
+		UPDATE dotcms30.htmlpage_version_info
+		SET identifier = '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1'
+		WHERE identifier = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		
+		DELETE FROM dotcms30.identifier
+		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		
+		UPDATE dotcms30.identifier
+		SET asset_name = 'oscar'
+		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+    	 */
+    }
+    
 }
