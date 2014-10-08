@@ -741,11 +741,10 @@ public class IntegrityUtil {
                 		+ "ri.inode as remote_inode, "
                 		+ "li.id as local_identifier, "
                 		+ "ri.identifier as remote_identifier, "
-                		+ "'" + endpointId + "'"
-                		+ "from dotcms30.htmlpage as lh "
+                		+ "'" + endpointId + "' "
+                		+ "from htmlpage as lh "
                 		+ "join " + tempTableName + " as ri "
-                		+ "join dotcms30.identifier as li "
-                		+ "join dotcms30publish.identifier as ri "
+                		+ "join identifier as li "
                 		+ "on lh.identifier = li.id "
                 		+ "and li.asset_type = 'htmlpage' "
                 		+ "and li.asset_name = ri.asset_name "
@@ -762,7 +761,7 @@ public class IntegrityUtil {
             return !results.isEmpty();
             
         } catch(Exception e) {
-            throw new Exception("Error running the Folders Integrity Check", e);
+            throw new Exception("Error running the HTML Pages Integrity Check", e);
         }
     }
 
