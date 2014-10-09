@@ -196,8 +196,11 @@ public class ClusterResource extends WebResource {
     		}
 
     		jsonNode.put("esStatus", esStatus.toString());
-    		jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
-
+    		if(members.size()==0){
+    			jsonNode.put("status", esStatus?"green":"red");
+    		}else{
+    			jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
+    		}
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
@@ -333,6 +336,15 @@ public class ClusterResource extends WebResource {
     		}
 
     		jsonNodeStatusObject.put( "cacheStatus", cacheStatus?"green":"red");
+        } else{
+        	jsonNodeStatusObject.put( "cacheClusterName", "");
+        	jsonNodeStatusObject.put( "cacheOpen", "");
+        	jsonNodeStatusObject.put( "cacheNumberOfNodes", "");
+        	jsonNodeStatusObject.put( "cacheAddress", "");
+        	jsonNodeStatusObject.put( "cacheReceivedBytes", "");
+        	jsonNodeStatusObject.put( "cacheReceivedMessages", "");
+        	jsonNodeStatusObject.put( "cacheSentBytes", "");
+        	jsonNodeStatusObject.put( "cacheSentMessages", "");
         }
 
 
