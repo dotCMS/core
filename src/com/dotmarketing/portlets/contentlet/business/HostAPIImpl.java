@@ -393,7 +393,7 @@ public class HostAPIImpl implements HostAPI {
 		Host savedHost =  new Host(c);
 
 		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
-			List<Host> hosts= findAll(user, respectFrontendRoles);
+			List<Host> hosts= findAllFromDB(user, respectFrontendRoles);
 			Host otherHost;
 			Contentlet otherHostContentlet;
 			for(Host h : hosts){
