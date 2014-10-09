@@ -43,6 +43,7 @@ function deleteJobWithError(name,group) {
 
 <%for(String myGroup : groups) {%>
 	<%String[] tasks =  QuartzUtils.getSequentialScheduler().getJobNames(myGroup);%>
+	<%String[] localTasks =  QuartzUtils.getLocalScheduler().getJobNames(myGroup);%>
 	<div style="padding:10px;">
 		<h3><%= LanguageUtil.get(pageContext, "Group") %>: <%=myGroup %></h3>
 	</div>
@@ -111,6 +112,56 @@ function deleteJobWithError(name,group) {
 		</td></tr>
 		<%} %>
 	<%} %>
+
+        <%--++++++++++++++++++++++++++++++++++++++--%>
+        <%--Local JOBS--%>
+        <%
+            for ( String localTask : localTasks ) {
+                try {
+                    JobDetail d = QuartzUtils.getLocalScheduler().getJobDetail( localTask, myGroup );
+                    Trigger trig = null;
+                    for ( Trigger x : QuartzUtils.getLocalScheduler().getTriggersOfJob( localTask, myGroup ) ) {
+                        trig = x;
+                        break;
+                    }
+        %>
+
+        <tr>
+            <td><%=d.getJobClass() %></td>
+            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
+            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
+            <td><%=LanguageUtil.get( pageContext, "False" )%></td>
+
+            <td align="right">
+                <%if ( trig != null && trig.getNextFireTime() != null ) { %>
+                <%=new SimpleDateFormat( "yyyy-MM-dd 'at' HH:mm:ss  z" ).format( trig.getNextFireTime() ) %>
+                <%} %>
+            </td>
+            <td>
+                <%if ( trig != null ) {
+                    if ( CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING == trig.getMisfireInstruction() ) { %>
+                        <%= LanguageUtil.get( pageContext, "scheduler.job.misfire.donothing" ) %>
+                    <%} else if ( CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW == trig.getMisfireInstruction() ) { %>
+                        <%= LanguageUtil.get( pageContext, "scheduler.job.misfire.fireOnce" ) %>
+                    <%}
+                } %>
+            </td>
+        </tr>
+
+        <%} catch ( Exception e ) {%>
+            <tr>
+                <td><%=localTask%></td>
+                <td colspan="6"
+                    class="red"><%=LanguageUtil.get( pageContext, "an-unexpected-error-occurred" ) + "<br/>" + e.getMessage() %>
+                </td>
+            </tr>
+        <%
+            }
+        }
+        %>
+        <%--Local JOBS--%>
+        <%--++++++++++++++++++++++++++++++++++++++--%>
+
 	</table>
 	<html:form action="/ext/scheduler/edit_scheduler" styleId="deleteJobForm" style="display:hidden">
 	  		<input name="<portlet:namespace /><%= Constants.CMD %>" type="hidden" value="">
