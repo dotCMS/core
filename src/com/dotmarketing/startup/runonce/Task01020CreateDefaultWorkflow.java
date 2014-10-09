@@ -58,17 +58,25 @@ public class Task01020CreateDefaultWorkflow implements StartupTask {
 		// ===== Workflow Actions ===== //
 		String workflowIDAssign = addWorkflowAction(dc, "Assign Workflow",
 				initialID, secondID, "1", DbConnectionFactory.getDBTrue(),
-				DbConnectionFactory.getDBTrue(), "workflowIcon", "1", "1");
+				DbConnectionFactory.getDBTrue(), "workflowIcon",
+				DbConnectionFactory.getDBTrue(),
+				DbConnectionFactory.getDBTrue());
 		String workflowIDReassign = addWorkflowAction(dc, "Reassign Workflow",
 				secondID, secondID, "1", DbConnectionFactory.getDBTrue(),
-				DbConnectionFactory.getDBTrue(), "cancelIcon", "1", "0");
+				DbConnectionFactory.getDBTrue(), "cancelIcon",
+				DbConnectionFactory.getDBTrue(),
+				DbConnectionFactory.getDBFalse());
 		String workflowIDResolve = addWorkflowAction(dc, "Resolve Workflow",
 				secondID, thirdID, "2", DbConnectionFactory.getDBFalse(),
-				DbConnectionFactory.getDBFalse(), "closeIcon", "0", "0");
+				DbConnectionFactory.getDBFalse(), "closeIcon",
+				DbConnectionFactory.getDBFalse(),
+				DbConnectionFactory.getDBFalse());
 		String workflowIDReopen = addWorkflowAction(dc, "Reopen", thirdID,
 				secondID, "1", DbConnectionFactory.getDBTrue(),
-				DbConnectionFactory.getDBTrue(), "workflowIcon", "1", "0");
-		
+				DbConnectionFactory.getDBTrue(), "workflowIcon",
+				DbConnectionFactory.getDBTrue(),
+				DbConnectionFactory.getDBFalse());
+
 		// ===== Permissions for Workflow Actions ===== //
 		addPermissionToAction(dc, workflowIDAssign);
 		addPermissionToAction(dc, workflowIDReassign);
