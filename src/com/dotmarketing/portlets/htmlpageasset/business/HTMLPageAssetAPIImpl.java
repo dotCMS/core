@@ -159,8 +159,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         List<IHTMLPage> pages=new ArrayList<IHTMLPage>();
+        
+        String liveWorkingDeleted = (live) ? " +live:true " :  (deleted)  ?" +working:true +deleted:true " : " +working:true -deleted:true";
+
         for(Contentlet cont : APILocator.getContentletAPI().search(
-                "+live:"+live+" +deleted:"+deleted+
+        		
+
+        		
+        		liveWorkingDeleted + 
                     (parent instanceof Folder ? 
                             " +conFolder:"+((Folder)parent).getInode()
                          :  ((parent instanceof Host) ? 
