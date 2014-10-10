@@ -16,6 +16,8 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectWriter;
 
@@ -30,6 +32,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageUtil;
 
 public class TimeMachineAjaxAction extends IndexAjaxAction {
 
@@ -300,10 +303,19 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             final boolean inc = incremental;
             new Thread() {
                 public void run() {
-                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
-                    String date = DateUtil.getCurrentDate();
+                	String date = DateUtil.getCurrentDate();
                     ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
                     AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
+
+                    try {
+                        //Create a new notification to inform the snapshot was created
+                        String notificationMessage = LanguageUtil.get( getUser().getLocale(), "TIMEMACHINE-SNAPSHOT-CREATED" );
+                        Notification notification = new Notification( notificationMessage, NotificationLevel.INFO, getUser().getUserId() );
+                        APILocator.getNotificationAPI().saveNotification( notification );
+                    } catch ( Exception e ) {
+                        Logger.error( this, "Error creating notification after creation of the Time machine Snapshot.", e );
+                    }
 
                 }
             }.start();

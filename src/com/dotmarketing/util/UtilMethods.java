@@ -148,6 +148,12 @@ public class UtilMethods {
 
         return strBuff.toString();
     }
+    
+    public static final String join(String[] strArray, String separator, boolean empty) {    	
+    	if(strArray.length == 0 && empty)
+    		return "EMPTY";
+        return join(strArray,separator);
+    }
 
     public static final String join(List<String> strList, String separator) {
         StringBuilder strBuff = new StringBuilder();

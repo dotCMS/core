@@ -1,8 +1,8 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'ff28649-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '8cbbc5c-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '42a9851-SNAPSHOT'
-    compile group: 'com.dotcms', name: 'starter', version: '20140916-SNAPSHOT', ext: 'zip'
+    compile group: 'com.dotcms', name: 'starter', version: '2014-10-6-SNAPSHOT', ext: 'zip'
 
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_1'

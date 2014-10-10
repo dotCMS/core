@@ -1091,6 +1091,8 @@ public class FolderFactoryImpl extends FolderFactory {
 				String sortCreate = "values += \"&\" + Sortable.serialize('" + id + "');\n";
 				sb.append(sortCreate);
 			}
+			sb.append("values = values.replace(/\\[/g, '__');\n");
+			sb.append("values = values.replace(/\\]/g, '---');\n");
 			sb.append("return values;\n");
 			sb.append("}\n");
 

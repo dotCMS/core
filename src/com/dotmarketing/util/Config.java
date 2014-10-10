@@ -1,8 +1,5 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
-import com.dotmarketing.db.DbConnectionFactory;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -11,6 +8,9 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotmarketing.db.DbConnectionFactory;
 
 public class Config {
 
@@ -31,11 +31,11 @@ public class Config {
 	//Config internal properties
 	private static int refreshInterval = 5; //In minutes, Default 5 can be overridden in the config file as config.refreshinterval int property
 	private static Date lastRefreshTime = new Date ();
-	private static boolean configInited = false;
 	private static PropertiesConfiguration props = null;
 	private static ClassLoader classLoader = null;
     private static URL dotmarketingPropertiesUrl = null;
     private static URL clusterPropertiesUrl = null;
+    private static int prevInterval = Integer.MIN_VALUE;
 
     private static final String syncMe = "esSync";
 
@@ -68,65 +68,73 @@ public class Config {
         readProperties( dotmarketingPropertiesUrl, clusterPropertiesUrl );
     }
 
-    /**
-     * Reads the properties on the dotmarketing-config.properties and the dotcms-config-cluster.properties
-     * properties files
-     *
-     * @param dotmarketingURL
-     * @param clusterURL
-     */
-    private static void readProperties ( URL dotmarketingURL, URL clusterURL ) {
+	/**
+	 * Reads the properties on the dotmarketing-config.properties and the
+	 * dotcms-config-cluster.properties properties files.
+	 *
+	 * @param dotmarketingURL
+	 * @param clusterURL
+	 */
+	private static void readProperties(URL dotmarketingURL, URL clusterURL) {
+		File dotmarketingFile = new File(dotmarketingURL.getPath());
+		Date lastDotmarketingModified = new Date(
+				dotmarketingFile.lastModified());
+		File clusterFile = new File(clusterURL.getPath());
+		Date lastClusterModified = new Date(clusterFile.lastModified());
 
-        File dotmarketingFile = new File( dotmarketingURL.getPath() );
-        Date lastDotmarketingModified = new Date( dotmarketingFile.lastModified() );
-
-        File clusterFile = new File( clusterURL.getPath() );
-        Date lastClusterModified = new Date( clusterFile.lastModified() );
-
-        //If not properties read both files
-        if ( props == null ) {
-
-            synchronized (syncMe) {
-                if ( props == null ) {
-                    readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-                    readProperties( clusterFile, "dotcms-config-cluster.properties" );
-                }
-            }
-
-        } else {
-
-            //Refresh the properties if changes detected in any of these properties files
-            if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
-
-                synchronized (syncMe) {
-                    if ( lastDotmarketingModified.after( lastRefreshTime ) || lastClusterModified.after( lastRefreshTime ) ) {
-                        try {
-
-                            props = new PropertiesConfiguration();//Cleaning up the current properties
-
-                            //Read the properties for both files
-                            readProperties( dotmarketingFile, "dotmarketing-config.properties" );
-                            readProperties( clusterFile, "dotcms-config-cluster.properties" );
-                        } catch ( Exception e ) {
-                            Logger.fatal( Config.class, "Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]", e );
-                            props = null;
-                        }
-                    }
-                }
-            }
-        }
-
-        try {
-            int interval = props.getInt( "config.refreshinterval" );
-            refreshInterval = interval;
-            Logger.info( Config.class, "Assigned custom refresh interval: " + interval + " minutes." );
-        } catch ( NoSuchElementException e ) {
-            Logger.info( Config.class, "Assigned default refresh interval: " + refreshInterval + " minutes." );
-        }
-
-        //Set the last time we refresh/read the properties files
-        Config.lastRefreshTime = new Date();
-    }
+		if (props == null) {
+			synchronized (syncMe) {
+				if (props == null) {
+					readProperties(dotmarketingFile,
+							"dotmarketing-config.properties");
+					readProperties(clusterFile,
+							"dotcms-config-cluster.properties");
+				}
+			}
+		} else {
+			// Refresh the properties if changes detected in any of these
+			// properties files
+			if (lastDotmarketingModified.after(lastRefreshTime)
+					|| lastClusterModified.after(lastRefreshTime)) {
+				synchronized (syncMe) {
+					if (lastDotmarketingModified.after(lastRefreshTime)
+							|| lastClusterModified.after(lastRefreshTime)) {
+						try {
+							props = new PropertiesConfiguration();
+							// Cleanup and read the properties for both files
+							readProperties(dotmarketingFile,
+									"dotmarketing-config.properties");
+							readProperties(clusterFile,
+									"dotcms-config-cluster.properties");
+						} catch (Exception e) {
+							Logger.fatal(
+									Config.class,
+									"Exception loading property files [dotmarketing-config.properties, dotcms-config-cluster.properties]",
+									e);
+							props = null;
+						}
+					}
+				}
+			}
+		}
+		String type = "";
+		try {
+			refreshInterval = props.getInt("config.refreshinterval");
+			type = "custom";
+		} catch (NoSuchElementException e) {
+			// Property not present, use default interval value
+			type = "default";
+		} finally {
+			// Display log message the first time, and then only if interval changes
+			if (prevInterval != refreshInterval) {
+				Logger.info(Config.class, "Assigned " + type + " refresh: "
+						+ refreshInterval + " minutes.");
+				prevInterval = refreshInterval;
+			}
+		}
+		// Set the last time we refresh/read the properties files
+		Config.lastRefreshTime = new Date();
+	}
 
     /**
      * Reads a given property file and appends its content to the current read properties

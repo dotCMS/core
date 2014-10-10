@@ -11,10 +11,8 @@ import java.util.Set;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -177,63 +175,78 @@ public class OrderMenuAction extends DotPortletAction {
 		return h;
 	}
 
-	private List<Treeable> _orderMenuItemsDragAndDrop(ActionRequest req, ActionResponse res,PortletConfig config,ActionForm form)
-	throws Exception {
+	/**
+	 * Receives the updated order of the items in the menu list and saves the
+	 * changes. Note that XSS validation is performed on the query String, so
+	 * it's important to avoid using dangerous characters for parameter names.
+	 * 
+	 * @param req
+	 *            - The HTTP request.
+	 * @param res
+	 *            - The HTTP response.
+	 * @param config
+	 * @param form
+	 * @return
+	 * @throws Exception
+	 *             An error occurred during the save process or the query String
+	 *             parameters may be incorrect.
+	 */
+	private List<Treeable> _orderMenuItemsDragAndDrop(ActionRequest req,
+			ActionResponse res, PortletConfig config, ActionForm form)
+			throws Exception {
 		List<Treeable> ret = new ArrayList<Treeable>();
-		try
-		{
-			Enumeration parameterNames = req.getParameterNames();
-			HashMap<String,HashMap<Integer, String>> hashMap = new HashMap<String,HashMap<Integer, String>>();
-			while(parameterNames.hasMoreElements())
-			{
+		try {
+			Enumeration<?> parameterNames = req.getParameterNames();
+			HashMap<String, HashMap<Integer, String>> hashMap = new HashMap<String, HashMap<Integer, String>>();
+			while (parameterNames.hasMoreElements()) {
 				String parameterName = (String) parameterNames.nextElement();
-				if(parameterName.startsWith("list"))
-				{
+				if (parameterName.startsWith("list")) {
 					String value = req.getParameter(parameterName);
-					String smallParameterName = parameterName.substring(0,parameterName.indexOf("["));
-					String indexString = parameterName.substring(parameterName.indexOf("[") + 1,parameterName.indexOf("]"));
+					// Restore square brackets which are NOT allowed in URLs
+					parameterName = parameterName.replaceAll("__", "[");
+					parameterName = parameterName.replaceAll("---", "]");
+					String smallParameterName = parameterName.substring(0,
+							parameterName.indexOf("["));
+					String indexString = parameterName.substring(
+							parameterName.indexOf("[") + 1,
+							parameterName.indexOf("]"));
 					int index = Integer.parseInt(indexString);
-					if(hashMap.get(smallParameterName) == null)
-					{
+					if (hashMap.get(smallParameterName) == null) {
 						HashMap<Integer, String> hashInodes = new HashMap<Integer, String>();
-						hashInodes.put(index,value);
-						hashMap.put(smallParameterName,hashInodes);
-					}
-					else
-					{
-						HashMap<Integer, String> hashInodes = (HashMap<Integer, String>) hashMap.get(smallParameterName);
-						hashInodes.put(index,value);
+						hashInodes.put(index, value);
+						hashMap.put(smallParameterName, hashInodes);
+					} else {
+						HashMap<Integer, String> hashInodes = (HashMap<Integer, String>) hashMap
+								.get(smallParameterName);
+						hashInodes.put(index, value);
 					}
 				}
 			}
-
-
 			Set<String> keys = hashMap.keySet();
-			Iterator keysIterator = keys.iterator();
-			while(keysIterator.hasNext())
-			{
-				String key = (String) keysIterator.next();
-				HashMap hashInodes = (HashMap) hashMap.get(key);
-
-				for(int i = 0;i < hashInodes.size();i++)
-				{
+			Iterator<String> keysIterator = keys.iterator();
+			while (keysIterator.hasNext()) {
+				String key = keysIterator.next();
+				HashMap<Integer, String> hashInodes = hashMap.get(key);
+				for (int i = 0; i < hashInodes.size(); i++) {
 					String inode = (String) hashInodes.get(i);
-					Inode asset = (Inode) InodeFactory.getInode(inode,Inode.class);
+					Inode asset = (Inode) InodeFactory.getInode(inode,
+							Inode.class);
 					Contentlet c = null;
 					try {
-						c = APILocator.getContentletAPI().find(inode, user, false);
-					} catch(ClassCastException cce) {
+						c = APILocator.getContentletAPI().find(inode, user,
+								false);
+					} catch (ClassCastException cce) {
+						// Continue
 					}
-
 					if (asset instanceof Folder) {
-						((Folder)asset).setSortOrder(i);
-						ret.add(((Folder)asset));
-					} 
-					if (asset instanceof WebAsset)  {
-						((WebAsset)asset).setSortOrder(i);
-						ret.add(((WebAsset)asset));
-					} 
-					if (APILocator.getFileAssetAPI().isFileAsset(c))  {
+						((Folder) asset).setSortOrder(i);
+						ret.add(((Folder) asset));
+					}
+					if (asset instanceof WebAsset) {
+						((WebAsset) asset).setSortOrder(i);
+						ret.add(((WebAsset) asset));
+					}
+					if (APILocator.getFileAssetAPI().isFileAsset(c)) {
 						ret.add(c);
 						c.setSortOrder(i);
 						APILocator.getContentletAPI().refresh(c);
@@ -241,10 +254,9 @@ public class OrderMenuAction extends DotPortletAction {
 					HibernateUtil.saveOrUpdate(asset);
 				}
 			}
-		}
-		catch(Exception ex)
-		{
-			Logger.error(this, "_orderMenuItemsDragAndDrop: Exception ocurred.", ex);
+		} catch (Exception ex) {
+			Logger.error(this,
+					"_orderMenuItemsDragAndDrop: Exception ocurred.", ex);
 			throw ex;
 		}
 		return ret;

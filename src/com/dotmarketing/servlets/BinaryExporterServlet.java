@@ -177,13 +177,13 @@ public class BinaryExporterServlet extends HttpServlet {
 		File inputFile = null;
 		HttpSession session = req.getSession(false);
 		List<String> tempBinaryImageInodes = null;
-		if (session != null) {
-			tempBinaryImageInodes = (List<String>) session.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-		} else {
-			tempBinaryImageInodes = new ArrayList<String>();
-		}
-		
-		boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
+        if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
+            tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
+        } else {
+            tempBinaryImageInodes = new ArrayList<String>();
+        }
+
+        boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
@@ -317,13 +317,13 @@ public class BinaryExporterServlet extends HttpServlet {
 			// THIS IS WHERE THE MAGIC HAPPENS
 			// save to session if user looking to edit a file
 			if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null) {
-				Map<String, String> files = null;
-				if (session != null) {
-					files = (Map<String, String>) session.getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
-				} else {
-					files = new HashMap<String, String>();
-				}
-		    	String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
+                Map<String, String> files;
+                if ( session != null && session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES ) != null ) {
+                    files = (Map<String, String>) session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES );
+                } else {
+                    files = new HashMap<>();
+                }
+                String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
 		    	File tmp = File.createTempFile("binaryexporter", "." +ext);
 		    	FileUtil.copyFile(data.getDataFile(), tmp);
 		    	tmp.deleteOnExit();
@@ -332,7 +332,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		    	} else {
 		    		files.put(fieldVarName, tmp.getCanonicalPath());
 		    	}
-		    	resp.getWriter().println(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath()));
+		    	resp.getWriter().println(UtilMethods.encodeURIComponent(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath())));
 		    	resp.getWriter().close();
 		    	resp.flushBuffer();
 		    	return;
