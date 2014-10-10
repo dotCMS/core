@@ -264,7 +264,7 @@ public class BrowserAPI {
 					else {
 						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
-						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
+						//pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
 					}
 
 					if(showArchived) {
