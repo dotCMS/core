@@ -345,7 +345,11 @@ public class SpeedyAssetServlet extends HttpServlet {
 				}
 
 			}
-
+			
+			if(uri.endsWith(".jsp")){
+				request.getRequestDispatcher(assetPath + uri).forward(request,response);
+				return;
+			}
 
 			ServletOutputStream out = null;
 			FileChannel from = null;
