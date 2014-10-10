@@ -818,7 +818,7 @@ public class BrowserAjax {
     	
     	String pageURL = page.getPageUrl();
     	result.put("lastName", pageURL.substring(0, pageURL.lastIndexOf(".")));
-    	result.put("extension", Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html"));
+
     	result.put("newName", newName);
     	result.put("inode", inode);
     	if (ident.getAssetType().equals("htmlpage") ? 

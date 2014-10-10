@@ -31,6 +31,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
 		iapi = APILocator.getIdentifierAPI();
 		icache = CacheLocator.getIdentifierCache();
 	}
+	
+	
+	private final String fourOhFour="NOTFOUND";
 
 	@Override
 	protected Versionable findWorkingVersion(String id) throws DotDataException, DotStateException {
@@ -120,7 +123,7 @@ public class VersionableFactoryImpl extends VersionableFactory {
     protected VersionInfo getVersionInfo(String identifier) throws DotDataException,
             DotStateException {
         VersionInfo vi = icache.getVersionInfo(identifier);
-        if(vi==null || vi.getWorkingInode().equals("NOTFOUND")) {
+        if(vi==null || vi.getWorkingInode().equals(fourOhFour)) {
             Identifier ident = APILocator.getIdentifierAPI().find(identifier);
             if(ident==null || !UtilMethods.isSet(ident.getId()))
                 return null;
@@ -206,16 +209,23 @@ public class VersionableFactoryImpl extends VersionableFactory {
     @Override
     protected ContentletVersionInfo getContentletVersionInfo(String identifier, long lang) throws DotDataException, DotStateException {
         ContentletVersionInfo contv = icache.getContentVersionInfo(identifier, lang);
-        if(contv==null) {
-            HibernateUtil dh = new HibernateUtil(ContentletVersionInfo.class);
-            dh.setQuery("from "+ContentletVersionInfo.class.getName()+" where identifier=? and lang=?");
-            dh.setParam(identifier);
-            dh.setParam(lang);
-            Logger.debug(this.getClass(), "getContentletVersionInfo query: "+dh.getQuery());
-            contv = (ContentletVersionInfo)dh.load();
-            if(UtilMethods.isSet(contv.getIdentifier()))
-                icache.addContentletVersionInfoToCache(contv);
+        if(contv!=null && fourOhFour.equals(contv.getWorkingInode())) {
+        	return null;
+        }else if(contv!=null ){
+        	return contv;
         }
+        
+    	contv = findContentletVersionInfoInDB(identifier, lang);
+        if(contv!=null && UtilMethods.isSet(contv.getIdentifier())){
+            icache.addContentletVersionInfoToCache(contv);
+        }else{
+        	contv = new ContentletVersionInfo();
+        	contv.setIdentifier(identifier);
+        	contv.setLang(lang);
+        	contv.setWorkingInode(fourOhFour);
+        	icache.addContentletVersionInfoToCache(contv);
+        }
+        
         return contv;
     }
 
@@ -318,4 +328,9 @@ public class VersionableFactoryImpl extends VersionableFactory {
         	icache.removeContentletVersionInfoToCache(id, lang);
         }
 	}
+	
+	
+
+	
+	
 }

@@ -2522,8 +2522,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				        }
 				    }
 				    else if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-				        ident.setAssetName(contentletRaw.getStringProperty(HTMLPageAssetAPI.URL_FIELD)
-				                           +"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html"));
+				        ident.setAssetName(contentletRaw.getStringProperty(HTMLPageAssetAPI.URL_FIELD));
 				    }
 				    if(UtilMethods.isSet(contentletRaw.getFolder()) && !contentletRaw.getFolder().equals(FolderAPI.SYSTEM_FOLDER)){
 				        Folder folder = APILocator.getFolderAPI().find(contentletRaw.getFolder(), sysuser, false);

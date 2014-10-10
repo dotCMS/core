@@ -62,6 +62,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -82,6 +83,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.HTMLPageWebAPI;
+import com.dotmarketing.viewtools.RequestWrapper;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -120,17 +122,29 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private String CHARSET = null;
 
-	private String VELOCITY_HTMLPAGE_EXTENSION = null;
+	private String VELOCITY_HTMLPAGE_EXTENSION = "dotpage";
 
 
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
 
-	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
+		
+		final String uri =URLDecoder.decode(
+				(req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null) 
+					? (String) req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE) 
+							: req.getRequestURI()
+				, "UTF-8");
+	
+		
 
+        RequestWrapper request  = new RequestWrapper( req );
+        request.setRequestUri(uri);
+		
 
-
+        
+        
 		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -151,40 +165,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 		try {
 
-			// Check if the uri is a physical file. Fix for the cases when the
-			// site configure VELOCITY_PAGE_EXTENSION as htm, html or any known
-			// extension.
-			// Example:
-			// /html/js/tinymce/jscripts/tiny_mce/plugins/advlink/link.htm
-			String uri = request.getRequestURI();
-			uri = URLDecoder.decode(uri, "UTF-8");
-			File file = new File(FileUtil.getRealPath(uri));
-			if (file.exists()) {
-				if(file.isDirectory()){
-					file = new File(file.getAbsolutePath() + File.separator + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
-				}
-				FileInputStream fileIS = new FileInputStream(file);
-				ServletOutputStream servletOS = response.getOutputStream();
-				int b;
-				for (; -1 < (b = fileIS.read());) {
-					servletOS.write(b);
-				}
-				fileIS.close();
-				servletOS.flush();
-				servletOS.close();
+
+			if(uri==null){
+				response.sendError(500, "VelocityServlet called without running through the CMS Filter");
+				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + CMSFilter.CMS_FILTER_URI_OVERRIDE);
 				return;
 			}
 
-			// If we are at a directory, e.g. /home
-			// we need to redirect to /home/
-			String forwardFor = (String) request.getRequestURL().toString();
-			if (request.getAttribute(Globals.MAPPING_KEY) == null && forwardFor != null && !forwardFor.endsWith("/")
-					&& !forwardFor.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
-				// The query string parameters should be preserved as well
-				String queryString = request.getQueryString();
-				response.sendRedirect(SecurityUtils.stripReferer(request, forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : "")));
-				return;
-			}
+
+
 
 			HttpSession session = request.getSession();
 			boolean timemachine=session.getAttribute("tm_date")!=null;
@@ -198,7 +187,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 			// ### VALIDATE ARCHIVE ###
-			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request)) {
+			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request, uri)) {
 				PREVIEW_MODE = true;
 				EDIT_MODE = false;
 				request.setAttribute("archive", true);
@@ -312,7 +301,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		Context context = VelocityUtil.getWebContext(request, response);
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-		uri = UtilMethods.cleanURI(uri);
+
 
 		Host host = hostWebAPI.getCurrentHost(request);
 
@@ -365,8 +354,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	    try {
 
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-    		uri = UtilMethods.cleanURI(uri);
-    
+
     		Host host = hostWebAPI.getCurrentHost(request);
     
     		// Map with all identifier inodes for a given uri.
@@ -550,7 +538,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-		uri = UtilMethods.cleanURI(uri);
+
 
 		Host host = hostWebAPI.getCurrentHost(request);
 
@@ -619,6 +607,13 @@ public abstract class VelocityServlet extends HttpServlet {
 		VelocityUtil.makeBackendContext(context, htmlPage, cmsTemplate.getInode(), id.getURI(), request, true, false, true, host);
 		context.put("previewPage", "2");
 		context.put("livePage", "0");
+		
+
+			
+		context.put("dotPageContent", htmlPage);
+		
+		
+		
 		// get the containers for the page and stick them in context
 		List<Container> containers = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate,
 				APILocator.getUserAPI().getSystemUser(),false);
@@ -792,7 +787,6 @@ public abstract class VelocityServlet extends HttpServlet {
     protected void doEditMode ( HttpServletRequest request, HttpServletResponse response ) throws Exception {
 
         String uri = request.getRequestURI();
-        uri = UtilMethods.cleanURI( uri );
 
         Host host = hostWebAPI.getCurrentHost( request );
 
@@ -1084,9 +1078,9 @@ public abstract class VelocityServlet extends HttpServlet {
 	// THE WEB.XML FILE
 	protected abstract void _setClientVariablesOnContext(HttpServletRequest request, ChainedContext context);
 
-	private boolean isArchive(HttpServletRequest request) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		String uri = request.getRequestURI();
-		uri = UtilMethods.cleanURI(uri);
+	private boolean isArchive(HttpServletRequest request, String uri) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+
 
 		Host host = null;
 		String hostId = "";

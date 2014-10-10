@@ -190,12 +190,12 @@ public class NavigationWebAPI implements ViewTool {
 		Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 		//Checking if it's the end of the url and we are requesting a page
-		if (openPath.equals(fullPath) && openPath.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
+		if (openPath.equals(fullPath) && openPath.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
 			getPageTrail(stringbuffer, fullPath, crumbTitle, request);
 		} else {
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(openPath, host, user, true);
 
-			String tempPath = openPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+			String tempPath = openPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 
 			if ((tempPath.equals(fullPath)) ||
 				(!UtilMethods.isSet(LiveCache.getPathFromCache(tempPath, host.getIdentifier()))))
@@ -634,7 +634,7 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1, addSpans,isFirstItem, firstItemClass, isLastItem, lastItemClass, menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(path)).append("index.").append(Config.getStringProperty("VELOCITY_PAGE_EXTENSION")).append("\">");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(path)).append(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")).append("\">");
 						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
 
 					}
@@ -1024,7 +1024,7 @@ public class NavigationWebAPI implements ViewTool {
 		folderChildPath = folderChildPath.substring(0, folderChildPath.lastIndexOf("/"));
 
 		Host host = WebAPILocator.getHostWebAPI().findParentHost(thisFolder, user, true);//DOTCMS-4099
-		Identifier id = APILocator.getIdentifierAPI().find(host,thisFolderPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
+		Identifier id = APILocator.getIdentifierAPI().find(host,thisFolderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"));
 		if(id != null && InodeUtils.isSet(id.getInode()))
 			stringbuf.append("<a href=\"" + UtilMethods.encodeURIComponent(thisFolderPath) + "\">");
 		stringbuf.append(UtilHTML.escapeHTMLSpecialChars(thisFolder.getTitle()));
@@ -1047,8 +1047,8 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderSiteMapMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1,orderDirection,menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath())).append("index.")
-						        .append(Config.getStringProperty("VELOCITY_PAGE_EXTENSION")).append("\">");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath())).append(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))
+						        .append("\">");
 						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append("</a></li>");
 
 					}

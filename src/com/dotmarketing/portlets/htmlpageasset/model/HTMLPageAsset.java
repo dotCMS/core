@@ -50,7 +50,7 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
     @Override
     public String getURI(Folder folder) throws DotStateException, DotDataException {
         return APILocator.getIdentifierAPI().find(folder.getIdentifier()).getURI()
-                +getPageUrl()+"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html");
+                +getPageUrl();
     }
 
     @Override
@@ -81,14 +81,12 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
 
     @Override
     public String getPageUrl() {
-        return getStringProperty(HTMLPageAssetAPI.URL_FIELD)+"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
+        return getStringProperty(HTMLPageAssetAPI.URL_FIELD);
     }
 
     @Override
     public void setPageUrl(String pageUrl) {
-        if(pageUrl.endsWith("."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"))) {
-            pageUrl = pageUrl.substring(0,pageUrl.lastIndexOf('.'));
-        }
+
         setStringProperty(HTMLPageAssetAPI.URL_FIELD, pageUrl);
     }
 

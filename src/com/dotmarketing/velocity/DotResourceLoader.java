@@ -47,11 +47,16 @@ import com.liferay.util.FileUtil;
 
 public class DotResourceLoader extends ResourceLoader {
 
-    final String[] velocityCMSExtenstions = { Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"),
-            Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"), Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION"),
-            Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"), Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION"),
-            Config.getStringProperty("VELOCITY_BANNER_EXTENSION"),Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION"),
-            Config.getStringProperty("VELOCITY_FIELD_EXTENSION"),Config.getStringProperty("VELOCITY_HOST_EXTENSION")};
+    final String[] velocityCMSExtenstions = { 
+    		Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION"),
+            Config.getStringProperty("VELOCITY_CONTENT_EXTENSION"), 
+            Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION"),
+            Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION"), 
+            Config.getStringProperty("VELOCITY_CONTENT_MAP_EXTENSION"),
+            Config.getStringProperty("VELOCITY_BANNER_EXTENSION"),
+            Config.getStringProperty("VELOCITY_STRUCTURE_EXTENSION"),
+            Config.getStringProperty("VELOCITY_FIELD_EXTENSION"),
+            Config.getStringProperty("VELOCITY_HOST_EXTENSION")};
 
     private String VELOCITY_ROOT = null;
     private String VELOCITY_CONTAINER_EXTENSION = null;

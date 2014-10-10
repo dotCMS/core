@@ -294,7 +294,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 					}
 				}
 				else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-				    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
+				    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
 				}
 				identifier.setAssetType("contentlet");
 				identifier.setParentPath(parentId.getPath());
@@ -378,7 +378,7 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
                     }
                 }
                 else if(cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
-                    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html");
+                    uri = cont.getStringProperty(HTMLPageAssetAPI.URL_FIELD) ;
                 }
                 identifier.setAssetType( "contentlet" );
                 identifier.setParentPath( "/" );

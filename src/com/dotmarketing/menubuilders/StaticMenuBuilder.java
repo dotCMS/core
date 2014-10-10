@@ -382,19 +382,19 @@ public class StaticMenuBuilder implements ViewTool {
 		folderChildPath = folderChildPath.substring(0, folderChildPath.lastIndexOf("/"));
 		
 		stringbuf.append("#set ($VTLSERVLET_DECODED_URI=\"$UtilMethods.decodeURL($VTLSERVLET_URI)\")\n");
-		stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '"  + folderChildPath + "' && $VTLSERVLET_DECODED_URI != '" + folderPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "')\n");
+		stringbuf.append("#if ($VTLSERVLET_DECODED_URI != '"  + folderChildPath + "' && $VTLSERVLET_DECODED_URI != '" + folderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")+ "')\n");
 		stringbuf.append("<li id=\"" + folderChildChild.getName()+ "\">");
 		
 		HTMLPage page = new HTMLPage();
 		try {
-			page = HTMLPageFactory.getLiveHTMLPageByPath(folderPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"), host);
+			page = HTMLPageFactory.getLiveHTMLPageByPath(folderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"), host);
 		} catch (Exception e1) {
 			Logger.error(StaticMenuBuilder.class, e1.getMessage(),e1);
 		} 
 		if (!InodeUtils.isSet(page.getInode())) {
 			if (linkFolders) stringbuf.append("<a href=\""+UtilMethods.encodeURIComponent(folderPath) + "\">");
 		} else { 
-			if (linkFolders) stringbuf.append("<a href=\""+UtilMethods.encodeURIComponent(folderPath) + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION")+"\">");
+			if (linkFolders) stringbuf.append("<a href=\""+UtilMethods.encodeURIComponent(folderPath) + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")+"\">");
 		}
 
 		//if it uses an image or text.
@@ -437,7 +437,7 @@ public class StaticMenuBuilder implements ViewTool {
 						} catch (Exception e) {
 							 Logger.error(StaticMenuBuilder.class, e.getMessage(),e);
 						} 
-						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(path) + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">\n");
+						stringbuf.append("<li><a href=\"" + UtilMethods.encodeURIComponent(path) + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">\n");
 						stringbuf.append(folderChildChild2.getTitle() + "</a></li>\n");
 					}
 					else {

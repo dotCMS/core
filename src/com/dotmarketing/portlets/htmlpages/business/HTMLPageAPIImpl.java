@@ -652,7 +652,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		Context context = null;
 		
 
-		uri = UtilMethods.cleanURI(uri);
+
 
 		// Map with all identifier inodes for a given uri.
 		String idInode = APILocator.getIdentifierAPI().find(host, uri)

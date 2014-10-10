@@ -131,8 +131,8 @@ public class PermalinkServlet extends HttpServlet {
 					Logger.info(PermalinkServlet.class, e.getMessage());
 				}
 
-			} else if(iden.getURI().endsWith(Config.getStringProperty("VELOCITY_PAGE_EXTENSION")) ||
-					iden.getURI().endsWith(Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION"))){
+			} else if(iden.getURI().endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")) ||
+					iden.getURI().endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))){
 				/*Check if is a page and redirect to the specified page*/
 				redirect = redirect+UtilMethods.encodeURIComponent(iden.getURI());
 			}else{

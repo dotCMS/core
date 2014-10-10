@@ -111,6 +111,14 @@ public class PageServices {
 		}
 		
 		
+		if("contentlet".equals(identifier.getAssetType())){
+			sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
+			
+			
+		}
+		
+		
+		
 		
 		// set the host variables
 

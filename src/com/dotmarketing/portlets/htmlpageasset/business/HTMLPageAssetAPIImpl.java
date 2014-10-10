@@ -62,7 +62,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(HOST_FOLDER_FIELD);
         FieldFactory.saveField(field);        
         
-        field = new Field(URL_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, true, true, true, 3, "", "", "^[A-Za-z0-9-_]+$", true, false, true);
+        field = new Field(URL_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, true, true, true, 3, "", "", "", true, false, true);
         field.setVelocityVarName(URL_FIELD);
         FieldFactory.saveField(field);
         
@@ -303,7 +303,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         Identifier sourceIdent=APILocator.getIdentifierAPI().find(page);
         Host host=APILocator.getHostAPI().find(sourceIdent.getHostId(), user, false);
         Identifier targetIdent=APILocator.getIdentifierAPI().find(host, 
-                sourceIdent.getParentPath()+newName+"."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION", "html"));
+                sourceIdent.getParentPath()+newName);
         if(targetIdent==null || !InodeUtils.isSet(targetIdent.getId())) {
             Contentlet cont=APILocator.getContentletAPI().checkout(page.getInode(), user, false);
             cont.setStringProperty(URL_FIELD, newName);

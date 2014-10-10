@@ -480,7 +480,7 @@ public class HTMLPageFactory {
     	tempPage.copy(page);
     	// sets filename for this new file
     	
-    	String newNamePage = newName + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+    	String newNamePage = newName ;
     	
     	tempPage.setPageUrl(newNamePage);
     	tempPage.setFriendlyName(newNamePage);
