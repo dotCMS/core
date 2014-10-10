@@ -19,9 +19,11 @@ public class DotSchedulerFactory implements SchedulerFactory {
 	
 	private StdSchedulerFactory sequentialSchedulerFactory;
 	private StdSchedulerFactory standardSchedulerFactory;
+	private StdSchedulerFactory localSchedulerFactory;
 	private Scheduler sequentialScheduler;
 	private Scheduler standardScheduler;
-	
+	private Scheduler localScheduler;
+
 	private DotSchedulerFactory () throws SchedulerException {
 		
 			if(sequentialSchedulerFactory == null) {
@@ -50,6 +52,23 @@ public class DotSchedulerFactory implements SchedulerFactory {
 				standardScheduler = standardSchedulerFactory.getScheduler();
 			}
 
+        /*
+         Local Scheduler in order to store scheduling information within memory,
+         This mechanist is fast and lightweight, but all scheduling information is lost when the process terminates.
+         */
+        if ( localSchedulerFactory == null ) {
+            Properties localProperties = new Properties();
+            try {
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                localProperties.load( cl.getResourceAsStream( "quartz_local.properties" ) );
+            } catch ( IOException e ) {
+                Logger.error( DotSchedulerFactory.class, e.getMessage(), e );
+                throw new SchedulerException( e.getMessage(), e );
+            }
+            localSchedulerFactory = new StdSchedulerFactory( localProperties );
+            localScheduler = localSchedulerFactory.getScheduler();
+        }
+
 	}
 
 	public Collection<Scheduler> getAllSchedulers() throws SchedulerException {
@@ -73,6 +92,10 @@ public class DotSchedulerFactory implements SchedulerFactory {
 	
 	public Scheduler getSequentialScheduler() throws SchedulerException {
 		return sequentialScheduler;
+	}
+
+    public Scheduler getLocalScheduler() throws SchedulerException {
+		return localScheduler;
 	}
 
 	public static DotSchedulerFactory getInstance() throws SchedulerException {

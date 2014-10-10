@@ -66,7 +66,7 @@ public class QuartzUtils {
 	 * 
 	 * Lists all jobs scheduled through the standard scheduler, the standard scheduler
 	 * let you run multiple jobs in parallel
-	 * 
+	 *
 	 * @return
 	 */
 	public static List<ScheduledTask> getScheduledTasks() throws SchedulerException {
@@ -76,10 +76,10 @@ public class QuartzUtils {
 		jobs.addAll(getScheduledTasks(sched, false, null));
 		return jobs;
 	}
-		
+
 
 	/**
-	 * 
+	 *
 	 * Lists all jobs scheduled through the sequential scheduler that belong to the given group
 	 * 
 	 * @return
@@ -755,8 +755,16 @@ public class QuartzUtils {
 		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
 		sched.standby();
 	}
-	
-	
+
+    /**
+     * Temporarily pauses the local scheduler from executing future triggers
+     * @throws SchedulerException
+     */
+    public static void pauseLocalScheduler () throws SchedulerException {
+        Scheduler localScheduler = DotSchedulerFactory.getInstance().getLocalScheduler();
+        localScheduler.standby();
+    }
+
 	/**
 	 * Temporarily pauses all schedulers from executing future triggers
 	 * @throws SchedulerException 
@@ -784,7 +792,17 @@ public class QuartzUtils {
 	public static void startSequentialSchedulers () throws SchedulerException {
 		Scheduler sched = DotSchedulerFactory.getInstance().getSequentialScheduler();
 		sched.start();
-	}	
+	}
+
+    /**
+     * Starts the local quartz scheduler
+     *
+     * @throws SchedulerException
+     */
+    public static void startLocalScheduler () throws SchedulerException {
+        Scheduler localScheduler = DotSchedulerFactory.getInstance().getLocalScheduler();
+        localScheduler.start();
+    }
 
 	/**
 	 * Returns you the standard quartz scheduler class that let have more control over jobs and triggers
@@ -804,6 +822,16 @@ public class QuartzUtils {
 	public static Scheduler getSequentialScheduler () throws SchedulerException {
 		return DotSchedulerFactory.getInstance().getSequentialScheduler();
 	}
+
+    /**
+     * Returns the local quartz scheduler
+     *
+     * @return
+     * @throws SchedulerException
+     */
+    public static Scheduler getLocalScheduler () throws SchedulerException {
+        return DotSchedulerFactory.getInstance().getLocalScheduler();
+    }
 	
 	public static boolean isJobRunning(String jobName, String jobGroup) throws SchedulerException{
 		

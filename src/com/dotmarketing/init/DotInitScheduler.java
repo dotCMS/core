@@ -1,50 +1,26 @@
 package com.dotmarketing.init;
 
-import java.lang.management.ManagementFactory;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
-import org.quartz.CronTrigger;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
-
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
-import com.dotmarketing.quartz.job.BinaryCleanupJob;
-import com.dotmarketing.quartz.job.CalendarReminderThread;
-import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
-import com.dotmarketing.quartz.job.ContentFromEmailJob;
-import com.dotmarketing.quartz.job.ContentReindexerThread;
-import com.dotmarketing.quartz.job.ContentReviewThread;
-import com.dotmarketing.quartz.job.DeleteOldClickstreams;
-import com.dotmarketing.quartz.job.DeliverCampaignThread;
-import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
-import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread2;
-import com.dotmarketing.quartz.job.PopBouncedMailThread;
-import com.dotmarketing.quartz.job.ServerHeartbeatJob;
-import com.dotmarketing.quartz.job.TrashCleanupJob;
-import com.dotmarketing.quartz.job.UpdateRatingThread;
-import com.dotmarketing.quartz.job.UsersToDeleteThread;
-import com.dotmarketing.quartz.job.WebDavCleanupJob;
+import com.dotmarketing.quartz.job.*;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import org.quartz.CronTrigger;
+import org.quartz.JobDetail;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+
+import javax.management.*;
+import java.lang.management.ManagementFactory;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -736,41 +712,40 @@ public class DotInitScheduler {
                 }
             }
 
-			//SCHEDULE SERVER HEARTBEAT JOB
-			String serverId = ConfigUtils.getServerId();
-			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
-				try {
-					isNew = false;
+            /*
+              SCHEDULE SERVER HEARTBEAT JOB
+              For this JOB we will use a local Scheduler in order to store the scheduling information within memory.
+             */
+            if ( Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true ) ) {
 
-					try {
-						if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) == null) {
-							job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("ServerHeartBeatJob_" + serverId, "dotcms_jobs");
-						job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger22_" + serverId, "group22_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
-					sched.addJob(job, true);
+                Scheduler localScheduler = QuartzUtils.getLocalScheduler();
 
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger22_" + serverId, "group22_" + serverId, trigger);
-				} catch (Exception e) {
-					Logger.error(DotInitScheduler.class, e.getMessage(),e);
-				}
-			} else {
-				if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) != null) {
-					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
-				}
-			}
+                String jobName = "ServerHeartbeatJob";
+                String jobGroup = "dotcms_jobs";
+                String triggerName = "trigger22";
+                String triggerGroup = "group22";
 
-	        QuartzUtils.startSchedulers();
+                try {
+                    //Job detail
+                    job = new JobDetail( jobName, jobGroup, ServerHeartbeatJob.class );
+                    calendar = GregorianCalendar.getInstance();
+                    //Trigger
+                    trigger = new CronTrigger( triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null, Config.getStringProperty( "HEARTBEAT_CRON_EXPRESSION" ) );
+                    trigger.setMisfireInstruction( CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+                    //Schedule the Job
+                    localScheduler.addJob( job, true );
+                    localScheduler.scheduleJob( trigger );
+
+                    //Starting the local quartz Scheduler
+                    QuartzUtils.startLocalScheduler();
+                } catch ( Exception e ) {
+                    Logger.error( DotInitScheduler.class, e.getMessage(), e );
+                }
+            }
+
+            //Starting the sequential and standard Schedulers
+            QuartzUtils.startSchedulers();
 
 		} catch (SchedulerException e) {
 			Logger.fatal(DotInitScheduler.class, "An error as ocurred scheduling critical startup task of dotCMS, the system will shutdown immediately, " + e.toString(), e);
