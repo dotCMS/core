@@ -30,6 +30,7 @@ import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
+import com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
 import com.dotmarketing.quartz.job.DeliverCampaignThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
@@ -769,7 +770,42 @@ public class DotInitScheduler {
 					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
 				}
 			}
+			//SCHEDULE REMOVE INACTIVE CLUSTER SERVERS JOB
+            String jobName = "RemoveInactiveClusterServerJob";
+            String jobGroup = "dotcms_jobs";
+            String triggerName = "trigger23";
+            String triggerGroup = "group23";
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)) {
+				try {
+					isNew = false;
+					
+					try {
+						if ((job = sched.getJobDetail(jobName, jobGroup)) == null) {
+							job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob(jobName, jobGroup);
+						job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+				    trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null,Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_CRON_EXPRESSION"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
 
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob(triggerName, triggerGroup, trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
+					sched.deleteJob(jobName, jobGroup);
+				}
+			}
 	        QuartzUtils.startSchedulers();
 
 		} catch (SchedulerException e) {

@@ -33,5 +33,17 @@ public interface ServerAPI {
 	public List<Server> getAllServers() throws DotDataException;
 
 	public void updateServerName(String serverId, String name) throws DotDataException;
+	/**
+	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
+	 * @param serverId Server identifier
+	 * @throws DotDataException
+	 */
+	public void removeServer(String serverId) throws DotDataException;
+	/**
+	 * Get the list of inactive servers
+	 * @return List<Server>
+	 * @throws DotDataException
+	 */
+	public List<Server> getInactiveServers() throws DotDataException;
 
 }
