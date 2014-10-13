@@ -120,8 +120,21 @@
 	    				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Template")) %>';
 					strHTML += '</a>'
 				}
+				
 
+				
 				if(isAdminUser || userRoles.fileModifiable) {
+					
+					
+					strHTML += '<a class="contextPopupMenu" href="javascript: addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+					strHTML += '<span class="newPageIcon"></span>&nbsp;';
+					strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
+					strHTML += '</a>';
+					
+					
+					
+					
+					
 					strHTML += '<a class="contextPopupMenu" href="javascript:addFile(\'' + objId + '\',\'' + referer + '\',false);hidePopUp(\'context_menu_popup_'+objId+'\');">';
 					    strHTML += '<span class="fileNewIcon"></span>';
 					    strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Image-or-File")) %>';
@@ -247,7 +260,6 @@
 			strHTML += '</a>';
 
 			strHTML += '<div class="pop_divider" ></div>';
-
 		}
 
 		if(addChildren) {
@@ -924,9 +936,9 @@
 				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
 				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
 
-				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addTopFolder(\'' + objId + '\', \'' + referer + '\')">';
-				htmlCode += '<span class="folderAddIcon"></span>&nbsp;';
-				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Folder")) %>';
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
+				htmlCode += '<span class="newPageIcon"></span>&nbsp;';
+				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
 				htmlCode += '</div>';
 
 				if(containerperm){

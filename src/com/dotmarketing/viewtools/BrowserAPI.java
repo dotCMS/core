@@ -275,9 +275,7 @@ public class BrowserAPI {
 					pages.addAll(folderAPI.getHTMLPages(host, true,
 							showArchived, user, false));
 					pages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(host,true,showArchived, user, false));
-					if(showWorking) {
-					    pages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(host,false,showArchived, user, false));
-					}
+
 				}
 			} catch (Exception e1) {
 				Logger.error(this, "Could not load HTMLPages : ", e1);
