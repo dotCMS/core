@@ -266,8 +266,9 @@
 							+ "<th width='7%'>&nbsp;</th>"
 							+ "<th width='35%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
 							+ "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
-							+ "<th width='20%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
+							+ "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
 							+ "<th width='6%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "status") %></th>"
+							+ "<th width='10%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "configuration_cluster_delete") %></th>"
 							<!-- /Add these up to 100% -->
 
 							<%-- the width of the inner div is the only thing you have to set to change the width --%>
@@ -284,6 +285,12 @@
 								myServerId = item.serverId;
 							}
 
+							var deleteServer = "<td align='center'></td>";
+							
+							if(item.heartbeat && item.heartbeat == "false"){
+								deleteServer = "<td align='center'><img onclick=\"alert('Remove Click');\" src='/html/images/icons/cross.png'></td>";
+							}
+
 							nodesTableHTML += ""
 							+ "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
 								+ "<td align='center'><img src='/html/images/skin/icon-server.png'></td>"
@@ -291,7 +298,8 @@
 								+ "<td>" + item.friendlyName + "</td>"
 								+ "<td align='left'>"+item.ipAddress+"</td>"
 								+ "<td align='left'>"+item.contacted+"</td>"
-								+ "<td align='left'><i class='fa fa-circle fa-2x "+item.status+"'></i></td>"
+								+ "<td align='center'><i class='fa fa-circle fa-2x "+item.status+"'></i></td>"
+								+ deleteServer
 								+ "<td id='td-"+index+"'></td>"
 							+ "</tr>";
 

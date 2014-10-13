@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -184,6 +185,14 @@ public class ClusterResource extends WebResource {
     		} else {
     			jsonNode.put("cacheStatus", cacheStatus.toString());
     		}
+    		
+    		Boolean hasHeartBeat = false;
+    		
+    		if(serverAPI.getAliveServers() != null 
+    				&& Arrays.asList(serverAPI.getAliveServersIds()).contains(server.getServerId())){
+    			
+    			hasHeartBeat = true;
+    		}
 
     		jsonNode.put("esStatus", esStatus.toString());
     		jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
@@ -191,6 +200,7 @@ public class ClusterResource extends WebResource {
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
     		jsonNode.put("friendlyName", server.getName());
+    		jsonNode.put("heartbeat", hasHeartBeat.toString());
 
     		//Added to the response list
     		jsonNodes.add( jsonNode );
