@@ -16,9 +16,6 @@
 <%@page import="java.text.SimpleDateFormat"%>
 
 <%
-//Force the reading of the languages files as we add/remove/edit keys
-MultiMessageResources multiMessages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
-multiMessages.reload();
     String licenseTab = "/c/portal/layout?p_l_id=" + layoutId + "&p_p_id=9&tab=licenseTab";
 
     String error=null;

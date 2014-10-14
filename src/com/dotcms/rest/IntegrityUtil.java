@@ -868,6 +868,8 @@ public class IntegrityUtil {
 
                     if ( DbConnectionFactory.isOracle() ) {
                         dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                    } else if(DbConnectionFactory.isPostgres()) {
+                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "+DbConnectionFactory.getDBFalse()+", '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
                     } else {
                         dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
                     }

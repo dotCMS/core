@@ -3781,80 +3781,91 @@ public class ESContentletAPIImpl implements ContentletAPI {
         validateContentlet(contentlet, relationshipsData, cats);
     }
 
-    public void validateContentlet(Contentlet contentlet, ContentletRelationships contentRelationships, List<Category> cats)throws DotContentletValidationException {
-        if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null)
-            return;
-
-        DotContentletValidationException cve = new DotContentletValidationException("Contentlet's fields are not valid");
-        boolean hasError = false;
-        String stInode = contentlet.getStructureInode();
-        if(!InodeUtils.isSet(stInode)){
-            throw new DotContentletValidationException("The contentlet's structureInode must be set");
-        }
-        try{
-            validateContentlet(contentlet,cats);
-        }catch (DotContentletValidationException ve) {
-            cve = ve;
-            hasError = true;
-        }
-        if( contentRelationships != null ) {
-            List<ContentletRelationshipRecords> records = contentRelationships.getRelationshipsRecords();
-            for (ContentletRelationshipRecords cr : records) {
-                Relationship rel = cr.getRelationship();
-                List<Contentlet> cons = cr.getRecords();
-                if(cons == null)
-                    cons = new ArrayList<Contentlet>();
-                //if i am the parent
-                if(rel.getParentStructureInode().equalsIgnoreCase(stInode)){
-                    if(rel.isChildRequired() && cons.isEmpty()){
-                        hasError = true;
-                        cve.addRequiredRelationship(rel, cons);
-                    }
-                    for(Contentlet con : cons){
-                    	 try {
-                    		 	List<Contentlet> relatedCon = getRelatedContent(con, rel, APILocator.getUserAPI().getSystemUser(), true);
-                    		 	if(rel.getCardinality()==0 && relatedCon.size()>0 
-                    		 			&& relatedCon.get(0).getIdentifier() != contentlet.getIdentifier()) {
-                    		 		hasError = true;
-                    		 		cve.addBadCardinalityRelationship(rel, cons);
-                    		 	}
-                    		 	if(!con.getStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
-                    		 		hasError = true;
-                    		 		cve.addInvalidContentRelationship(rel, cons);
-                    		 	}
-                    	 }
-                    	 catch (DotSecurityException e) {
-                    		 Logger.error(this,"Unable to get system user",e);
-                    	 }
-                    	 catch (DotDataException e) {
-							 Logger.error(this,"Unable to get system user",e);
-                    	 }
-                    }
-                }else if(rel.getChildStructureInode().equalsIgnoreCase(stInode)){
-                    if(rel.isParentRequired() && cons.isEmpty()){
-                        hasError = true;
-                        cve.addRequiredRelationship(rel, cons);
-                    }
-                    if(rel.getCardinality()==0 && cons.size()>1) {
-                    	hasError = true;
-                    	cve.addBadCardinalityRelationship(rel, cons);
-                    }
-                    for(Contentlet con : cons){
-                        if(!con.getStructureInode().equalsIgnoreCase(rel.getParentStructureInode())){
-                            hasError = true;
-                            cve.addInvalidContentRelationship(rel, cons);
-                        }
-                    }
-                }else{
-                    hasError = true;
-                    cve.addBadRelationship(rel, cons);
-                }
-            }
-        }
-        if(hasError){
-            throw cve;
-        }
-    }
+	public void validateContentlet(Contentlet contentlet,
+			ContentletRelationships contentRelationships, List<Category> cats)
+			throws DotContentletValidationException {
+		if (contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) != null) {
+			return;
+		}
+		DotContentletValidationException cve = new DotContentletValidationException(
+				"Contentlet's fields are not valid");
+		boolean hasError = false;
+		String stInode = contentlet.getStructureInode();
+		if (!InodeUtils.isSet(stInode)) {
+			throw new DotContentletValidationException(
+					"The contentlet's structureInode must be set");
+		}
+		try {
+			validateContentlet(contentlet, cats);
+		} catch (DotContentletValidationException ve) {
+			cve = ve;
+			hasError = true;
+		}
+		if (contentRelationships != null) {
+			List<ContentletRelationshipRecords> records = contentRelationships
+					.getRelationshipsRecords();
+			for (ContentletRelationshipRecords cr : records) {
+				Relationship rel = cr.getRelationship();
+				List<Contentlet> cons = cr.getRecords();
+				if (cons == null) {
+					cons = new ArrayList<Contentlet>();
+				}
+				// if i am the parent
+				if (rel.getParentStructureInode().equalsIgnoreCase(stInode)) {
+					if (rel.isChildRequired() && cons.isEmpty()) {
+						hasError = true;
+						cve.addRequiredRelationship(rel, cons);
+					}
+					for (Contentlet con : cons) {
+						try {
+							List<Contentlet> relatedCon = getRelatedContent(
+									con, rel, APILocator.getUserAPI()
+											.getSystemUser(), true);
+							if (rel.getCardinality() == 0
+									&& relatedCon.size() > 0
+									&& !relatedCon.get(0).getIdentifier()
+											.equals(contentlet.getIdentifier())) {
+								hasError = true;
+								cve.addBadCardinalityRelationship(rel, cons);
+							}
+							if (!con.getStructureInode().equalsIgnoreCase(
+									rel.getChildStructureInode())) {
+								hasError = true;
+								cve.addInvalidContentRelationship(rel, cons);
+							}
+						} catch (DotSecurityException e) {
+							Logger.error(this, "Unable to get system user", e);
+						} catch (DotDataException e) {
+							Logger.error(this, "Unable to get system user", e);
+						}
+					}
+				} else if (rel.getChildStructureInode().equalsIgnoreCase(
+						stInode)) {
+					if (rel.isParentRequired() && cons.isEmpty()) {
+						hasError = true;
+						cve.addRequiredRelationship(rel, cons);
+					}
+					if (rel.getCardinality() == 0 && cons.size() > 1) {
+						hasError = true;
+						cve.addBadCardinalityRelationship(rel, cons);
+					}
+					for (Contentlet con : cons) {
+						if (!con.getStructureInode().equalsIgnoreCase(
+								rel.getParentStructureInode())) {
+							hasError = true;
+							cve.addInvalidContentRelationship(rel, cons);
+						}
+					}
+				} else {
+					hasError = true;
+					cve.addBadRelationship(rel, cons);
+				}
+			}
+		}
+		if (hasError) {
+			throw cve;
+		}
+	}
 
     public boolean isFieldTypeBoolean(Field field) {
         if(field.getFieldContentlet().startsWith("bool")){
