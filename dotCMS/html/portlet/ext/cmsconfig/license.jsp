@@ -269,7 +269,11 @@ multiMessages.reload();
                         	dojo.addClass(dojo.byId("generateCode"), "hidden");
                             dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
                                     dojo.create("a",{href:"javascript:licenseAdmin.free()"},optd));
-                            
+                        
+                        } else if(!lic.available) {    
+                        	dojo.addClass(dojo.byId("generateCode"), "hidden");
+                            dojo.create("span",{"class":"unlockIcon", title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-free") )%>"},
+                                    dojo.create("a",{href:"javascript:licenseAdmin.free('"+lic.id+"','"+lic.fullserverid+"')"},optd));	
                         } else if(lic.available) {
 
                             dojo.create("span",{"class":"downloadIcon",title:"<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-tip-pick")) %>"},
@@ -336,7 +340,17 @@ multiMessages.reload();
             });
             
         },
-        
+
+        free: function (serial, serverid) {
+            if(!confirm('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-repo-confirm-free-remote")) %>')) return;
+            dojo.xhrPost({
+                url: "/api/license/free/serial/"+serial+"/serverid/"+serverid+"/",
+                load: function() {
+                	licenseAdmin.refreshLayout('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "license-freed") )%>');
+                }
+            });
+            
+        },
         
         doPackUpload : function () {
 

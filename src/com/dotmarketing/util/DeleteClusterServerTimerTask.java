@@ -2,6 +2,7 @@ package com.dotmarketing.util;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.TimerTask;
 
@@ -14,10 +15,13 @@ import com.dotmarketing.exception.DotDataException;
  * Remove server from  cluster tables if the server doesn't have a license associated
  */
 public class DeleteClusterServerTimerTask extends TimerTask {
-    private String serverId;
+    
+	private String serverId;
+	
 	public DeleteClusterServerTimerTask(String serverId) {
 		this.serverId = serverId;
 	}
+	
 	@Override
 	public void run() {
 		try {
@@ -29,12 +33,25 @@ public class DeleteClusterServerTimerTask extends TimerTask {
 				}
 			}
 			if(removeServer){
-				Server server = APILocator.getServerAPI().getServer(serverId);
-				long timeOff = (new Date().getTime() - server.getLastHeartBeat().getTime())/1000;
-				if(timeOff >= Config.getIntProperty("HEARTBEAT_TIMEOUTHEARTBEAT_TIMEOUT",10)){
-					APILocator.getServerAPI().removeServerFromCluster(serverId);
+				List<Server> servers = APILocator.getServerAPI().getAllServers();
+				
+				Server serverToDelete = null;
+				for (Server server : servers) {
+					if(server.getServerId().equals(serverId)){
+						serverToDelete = server;
+					}
+				}
+				
+				if(serverToDelete != null && serverToDelete.getLastHeartBeat() != null){
+					long timeOff = (new Date().getTime() - serverToDelete.getLastHeartBeat().getTime())/1000;
+					if(timeOff >= Config.getIntProperty("HEARTBEAT_TIMEOUTHEARTBEAT_TIMEOUT",10)){
+						APILocator.getServerAPI().removeServerFromCluster(serverId);
+					}
+				} else {
+					Logger.error(DeleteClusterServerTimerTask.class, "Server or Heartbeat NOT FOUND, cancelling JOB");
 				}
 			}
+			
 		} catch (DotDataException e) {
 			Logger.error(DeleteClusterServerTimerTask.class, e.getMessage(),e);
 		} catch (IOException e) {
@@ -42,7 +59,5 @@ public class DeleteClusterServerTimerTask extends TimerTask {
 		}finally{
 			cancel();
 		}
-		
 	}
-
 }

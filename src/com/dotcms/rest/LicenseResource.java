@@ -51,6 +51,7 @@ public class LicenseResource extends WebResource {
                     //Lets exclude some data we don' want/need to expose
                     if ( entry.getKey().equals( "serverid" ) ) {
                         obj.put( entry.getKey(), entry.getValue() != null ? LicenseUtil.getDisplayServerId( (String) lic.get( "serverId" ) ) : "" );
+                        obj.put( "fullserverid", entry.getValue() != null ? entry.getValue() : "" );
                     } else if ( entry.getKey().equals( "serverId" ) || entry.getKey().equals( "license" ) ) {
                         //Just ignore these fields
                     } else if ( entry.getKey().equals( "id" ) ) {
@@ -187,10 +188,10 @@ public class LicenseResource extends WebResource {
             	LicenseUtil.freeLicenseOnRepo();
             }
             Timer timer = new Timer();
-            timer.schedule(new DeleteClusterServerTimerTask(serverId), Config.getIntProperty("REMOVE_UNLICENSED_SERVER_TIME"));
+            timer.schedule(new DeleteClusterServerTimerTask(serverId), Config.getIntProperty("REMOVE_UNLICENSED_SERVER_TIME", 70000));
             
             HibernateUtil.commitTransaction();
-            AdminLogger.log(LicenseResource.class, "freeLicense", "freed license from repo", initData.getUser());
+            AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
         }
         catch(Exception ex) {
             Logger.error(this, "can't free license ",ex);
