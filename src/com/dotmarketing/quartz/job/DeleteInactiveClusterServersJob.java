@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * This class will remove from the cluster_table and cluster_server_uptime
@@ -48,15 +49,11 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 			Date currentDate = new Date();
 			for(Server server : inactiveServers){
 				Date lastBeat = server.getLastHeartBeat();
-				long timeOff = currentDate.getTime() - lastBeat.getTime();
-				if(timeOff >= maxAmountOfTime){
-					for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
-						if( server.getServerId().equals((String)lic.get("serverid"))) {
-							LicenseUtil.deleteLicense((String)lic.get( "id" ) );
-							break;
-						}
+				if(UtilMethods.isSet(lastBeat)){
+					long timeOff = currentDate.getTime() - lastBeat.getTime();
+					if(timeOff >= maxAmountOfTime){
+						APILocator.getServerAPI().removeServerFromCluster(server.getServerId());
 					}
-					APILocator.getServerAPI().removeServer(server.getServerId());
 				}
 			}
 		} catch (DotDataException e) {

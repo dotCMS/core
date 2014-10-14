@@ -38,7 +38,7 @@ public interface ServerAPI {
 	 * @param serverId Server identifier
 	 * @throws DotDataException
 	 */
-	public void removeServer(String serverId) throws DotDataException;
+	public void removeServerFromCluster(String serverId) throws DotDataException,IOException;
 	/**
 	 * Get the list of inactive servers
 	 * @return List<Server>

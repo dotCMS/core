@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
 import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
@@ -15,6 +16,9 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.DeleteClusterServerTimerTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
@@ -26,6 +30,7 @@ import javax.servlet.http.HttpSession;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Timer;
 
 
 @Path("/license")
@@ -106,6 +111,10 @@ public class LicenseResource extends WebResource {
         try {
             if(UtilMethods.isSet(id)) {
                 LicenseUtil.deleteLicense(id);
+                
+        			//waiting 10seconds just in case the user is only changing the server license
+                	// if not the try to remove it
+        		//TODO
             }
             else {
                 return Response.status(Response.Status.BAD_REQUEST)
@@ -168,13 +177,19 @@ public class LicenseResource extends WebResource {
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
         InitDataObject initData = init(params, true, request, true, "9");
+        String serial = initData.getParamsMap().get("serial");
+        String serverId = initData.getParamsMap().get("serverid");
         try {
             HibernateUtil.startTransaction();
-            
-            LicenseUtil.freeLicenseOnRepo();
+            if(UtilMethods.isSet(serial)){
+            	LicenseUtil.freeLicenseOnRepo(serial);
+            }else{
+            	LicenseUtil.freeLicenseOnRepo();
+            }
+            Timer timer = new Timer();
+            timer.schedule(new DeleteClusterServerTimerTask(serverId), Config.getIntProperty("REMOVE_UNLICENSED_SERVER_TIME"));
             
             HibernateUtil.commitTransaction();
-            
             AdminLogger.log(LicenseResource.class, "freeLicense", "freed license from repo", initData.getUser());
         }
         catch(Exception ex) {

@@ -9,9 +9,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.dotcms.cluster.bean.Server;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -135,8 +137,15 @@ public class ServerAPIImpl implements ServerAPI {
 	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
 	 * @param serverId Server identifier
 	 * @throws DotDataException
+	 * @throws IOException 
 	 */
-	public void removeServer(String serverId) throws DotDataException{
+	public void removeServerFromCluster(String serverId) throws DotDataException, IOException{
+		for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
+			if( serverId.equals((String)lic.get("serverid"))) {
+				LicenseUtil.freeLicenseOnRepo(serverId);
+				break;
+			}
+		}
 		serverFactory.removeServer(serverId);
 	}
 	/**
