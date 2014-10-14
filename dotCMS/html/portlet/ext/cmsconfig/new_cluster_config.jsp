@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
@@ -288,7 +289,7 @@
 							var deleteServer = "<td align='center'></td>";
 							
 							if(item.heartbeat && item.heartbeat == "false"){
-								deleteServer = "<td align='center'><img onclick=\"alert('Remove Click');\" src='/html/images/icons/cross.png'></td>";
+								deleteServer = "<td align='center'><img onclick='removeFromCluster(\""+item.serverId+"\");' src='/html/images/icons/cross.png'></td>";
 							}
 
 							nodesTableHTML += ""
@@ -501,6 +502,15 @@
             dojo.byId("errorDetail").hide()
         };
 
+        function removeFromCluster(serverId){
+        	if(!confirm('<%= UtilMethods.javaScriptify(LanguageUtil.get(pageContext, "configuration_cluster_remove_server_confirm")) %>')) return;
+            dojo.xhrPost({
+                url: "/api/cluster/remove/serverid/"+serverId,
+                load: function() {
+                	renderNodesStatus();
+                }
+            });
+        }
 </script>
 
 

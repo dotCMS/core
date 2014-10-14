@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -47,10 +48,14 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.DeleteClusterServerTimerTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -512,5 +517,32 @@ public class ClusterResource extends WebResource {
 
         return Response.ok(json.toString()).build();
     }
-
+    /**
+     * Remove server from cluster
+     * @param request
+     * @param params
+     * @return
+     */
+    @POST
+    @Path("/remove/{params:.*}")
+    public Response removeFromCluster(@Context HttpServletRequest request, @PathParam("params") String params) {
+        InitDataObject initData = init(params, true, request, true, "9");
+        String serverId = initData.getParamsMap().get("serverid");
+        try {
+        	HibernateUtil.startTransaction();
+            APILocator.getServerAPI().removeServerFromCluster(serverId);  
+            HibernateUtil.commitTransaction();
+        }
+        catch(Exception ex) {
+            Logger.error(this, "can't remove from cluster ",ex);
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e) {
+                Logger.warn(this, "can't rollback", e);
+            }
+            return Response.serverError().build();
+        }
+        
+        return Response.ok().build();
+    }
 }
