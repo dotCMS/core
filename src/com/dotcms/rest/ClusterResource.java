@@ -3,7 +3,7 @@ package com.dotcms.rest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -120,15 +120,9 @@ public class ClusterResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         ServerAPI serverAPI = APILocator.getServerAPI();
         List<Server> servers = serverAPI.getAllServers();
-        List<Address> members = new ArrayList<Address>();
 
         // JGroups Cache
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-
-        if(view!=null) {
-        	members = view.getMembers();
-        }
 
         // ES Clustering
         AdminClient esClient = null;
@@ -140,8 +134,14 @@ public class ClusterResource extends WebResource {
 
         JSONArray jsonNodes = new JSONArray();
         String myServerId = serverAPI.readServerId();
-
-        for (Server server : servers) {
+        
+        Long dateInMillisLong = new Date().getTime();
+		String dateInMillis = dateInMillisLong.toString();
+		
+		Map<String, Boolean> members = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject())
+				.validateCacheInCluster(dateInMillis, servers.size()-1, 2);
+		
+		for (Server server : servers) {
         	JSONObject jsonNode = new JSONObject();
     		jsonNode.put( "serverId", server.getServerId());
     		jsonNode.put( "ipAddress", server.getIpAddress());
@@ -149,23 +149,14 @@ public class ClusterResource extends WebResource {
 
     		Boolean cacheStatus = false;
     		Boolean esStatus = false;
-    		String nodeCacheWholeAddr = server.getIpAddress() + ":" + server.getCachePort();
-
-    		for ( Address member : members ) {
-    			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
-    			IpAddress ipAddr = (IpAddress)physicalAddr;
-    			String[] addrParts = physicalAddr.toString().split(":");
-    			String cacheLivePort = addrParts[addrParts.length-1];
-
-    			if(nodeCacheWholeAddr.equals(ipAddr.toString())
-    					|| ( server.getCachePort()!=null && cacheLivePort.equals(server.getCachePort().toString()) &&
-    							(ipAddr.toString().contains("localhost") || ipAddr.toString().contains("127.0.0.1"))
-    						)
-    			   ) {
-    				cacheStatus = true;
-    				break;
-    			}
-
+    		
+    		//1. If servers is just one we assume the cache is OK.
+    		//2. If Server is local and we are connected to at least one other server is OK.
+    		//3. If servers are more than 1 and is in members array is OK.
+    		if(servers.size() == 1 
+    				|| (server.getServerId().equals(myServerId) && (members != null && !members.isEmpty()))
+    				|| (members != null && members.containsKey(server.getServerId()))){
+    			cacheStatus = true;
     		}
 
     		if(esClient!=null) {
@@ -194,26 +185,28 @@ public class ClusterResource extends WebResource {
     		} else {
     			jsonNode.put("cacheStatus", cacheStatus.toString());
     		}
+    		
+    		Boolean hasHeartBeat = false;
+    		
+    		if(serverAPI.getAliveServers() != null 
+    				&& Arrays.asList(serverAPI.getAliveServersIds()).contains(server.getServerId())){
+    			
+    			hasHeartBeat = true;
+    		}
 
     		jsonNode.put("esStatus", esStatus.toString());
-    		if(members.size()==0){
-    			jsonNode.put("status", esStatus?"green":"red");
-    		}else{
-    			jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
-    		}
+    		jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
     		jsonNode.put("myself", myServerId.equals(server.getServerId()));
     		jsonNode.put("cachePort", server.getCachePort());
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
-
     		jsonNode.put("friendlyName", server.getName());
-
+    		jsonNode.put("heartbeat", hasHeartBeat.toString());
 
     		//Added to the response list
     		jsonNodes.add( jsonNode );
 		}
 
         return responseResource.response( jsonNodes.toString() );
-
     }
 
     /**
@@ -300,13 +293,20 @@ public class ClusterResource extends WebResource {
         View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
         JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
 
+        List<Server> servers = serverAPI.getAllServers();
+        Long dateInMillisLong = new Date().getTime();
+		String dateInMillis = dateInMillisLong.toString();
+		String myServerId = serverAPI.readServerId();
+        
+    	Map<String, Boolean> members = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject())
+    				.validateCacheInCluster(dateInMillis, servers.size()-1, 1);
+        
         if(view!=null) {
-        	List<Address> members = view.getMembers();
 
         	// general cache stats
         	jsonNodeStatusObject.put( "cacheClusterName", channel.getClusterName());
         	jsonNodeStatusObject.put( "cacheOpen", Boolean.toString(channel.isOpen()));
-        	jsonNodeStatusObject.put( "cacheNumberOfNodes", Integer.toString(members.size()));
+        	jsonNodeStatusObject.put( "cacheNumberOfNodes", Integer.toString(members!= null ? members.size()+1 : 1));
         	jsonNodeStatusObject.put( "cacheAddress", channel.getAddressAsString());
         	jsonNodeStatusObject.put( "cacheReceivedBytes", Long.toString(channel.getReceivedBytes()) + "/" + Long.toString(channel.getSentBytes()));
         	jsonNodeStatusObject.put( "cacheReceivedMessages", Long.toString(channel.getReceivedMessages()));
@@ -314,25 +314,15 @@ public class ClusterResource extends WebResource {
         	jsonNodeStatusObject.put( "cacheSentMessages", Long.toString(channel.getSentMessages()));
 
         	// cache status for the given node
-
         	Boolean cacheStatus = false;
-    		String nodeCacheWholeAddr = server.getIpAddress() + ":" + server.getCachePort();
 
-    		for ( Address member : members ) {
-    			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, member));
-    			IpAddress ipAddr = (IpAddress)physicalAddr;
-    			String[] addrParts = physicalAddr.toString().split(":");
-    			String cacheLivePort = addrParts[addrParts.length-1];
-
-    			if(nodeCacheWholeAddr.equals(ipAddr.toString())
-    					|| ( server.getCachePort()!=null && cacheLivePort.equals(server.getCachePort().toString()) &&
-    							(ipAddr.toString().contains("localhost") || ipAddr.toString().contains("127.0.0.1"))
-    						)
-    			   ) {
-    				cacheStatus = true;
-    				break;
-    			}
-
+    		//1. If servers is just one we assume the cache is OK.
+    		//2. If Server is local and we are connected to at least one other server is OK.
+    		//3. If servers are more than 1 and is in members array is OK.
+    		if(servers.size() == 1 
+    				|| (server.getServerId().equals(myServerId) && (members != null && !members.isEmpty()))
+    				|| (members != null && members.containsKey(server.getServerId()))){
+    			cacheStatus = true;
     		}
 
     		jsonNodeStatusObject.put( "cacheStatus", cacheStatus?"green":"red");
