@@ -26,5 +26,11 @@ public abstract class ServerFactory {
 	public abstract List<Server> getAllServers() throws DotDataException;
 
 	public abstract void updateServerName(String serverId, String name) throws DotDataException;
+	/**
+	 * Remove the specified server from the cluster_server_uptime and cluster_server tables
+	 * @param serverId Server identifier
+	 * @throws DotDataException
+	 */
+	public abstract void removeServer(String serverId) throws DotDataException;
 
 }

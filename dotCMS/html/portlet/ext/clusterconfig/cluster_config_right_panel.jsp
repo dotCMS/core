@@ -2,15 +2,27 @@
 
 <%
 	String rewireable = request.getParameter("rewireable");
+	String hasLicense = request.getParameter("hasLicense");
 %>
 
 <div class="actionPanelContent">
 
 	<h2>Action Panel</h2>
 
+	<% if(hasLicense.equalsIgnoreCase("false")) { %>
+		<hr>
+
+		<table>
+		<tr style="color:red;">
+			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_license_no_license") %></td>
+		</tr>
+		</table>
+	<% } %>
+
 	<hr>
 
 	<table>
+
 		<tr>
 			<td style="width:15px;"><i class="fa fa-circle {cache.status}"></i></td>
 			<td style="width:50%;padding: 0 5px;"><b>Cache</b></td>
