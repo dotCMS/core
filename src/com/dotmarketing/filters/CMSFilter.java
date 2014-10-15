@@ -54,6 +54,17 @@ public class CMSFilter implements Filter {
 
 	CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
+	enum IAm{
+		PAGE,
+		FOLDER,
+		FILE,
+		VANITY_URL,
+		NOTHING_IN_THE_CMS
+	}
+	
+	
+	
+	
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
 
@@ -67,7 +78,8 @@ public class CMSFilter implements Filter {
 				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
 
 		String rewrite = null;
-
+		IAm iAm = IAm.NOTHING_IN_THE_CMS;
+		
 		/*
 		 * Here is a list of directories that we will ignore b/c of legacy code
 		 * and servlet mappings. This is a mess and should be much cleaner
@@ -173,19 +185,16 @@ public class CMSFilter implements Filter {
 		// get the users language
 		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 
-		boolean isFile = false;
-		boolean isVanityURL = false;
-		boolean isPage = false;
-		boolean isFolder = false;
+
 
 		if (urlUtil.isFileAsset(uri, host, languageId)) {
-			isFile = true;
+			iAm= IAm.FILE;
 		} else if (urlUtil.isVanityUrl(uri, host)) {
-			isVanityURL = true;
+			iAm = IAm.VANITY_URL;
 		} else if (urlUtil.isPageAsset(uri, host, languageId)) {
-			isPage = true;
+			iAm = IAm.PAGE;
 		} else if (urlUtil.isFolder(uri, host)) {
-			isFolder = true;
+			iAm = IAm.FOLDER;
 		}
 
 
@@ -211,7 +220,7 @@ public class CMSFilter implements Filter {
 		}
 
 		// if a vanity URL
-		if (isVanityURL) {
+		if (iAm == IAm.VANITY_URL) {
 			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri));
 			if (!UtilMethods.isSet(rewrite)) {
 				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri));
@@ -223,31 +232,30 @@ public class CMSFilter implements Filter {
 			}
 			if (UtilMethods.isSet(rewrite)) {
 				if (urlUtil.isFileAsset(rewrite, host, languageId)) {
-					isFile = true;
+					iAm= IAm.FILE;
 				} else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
-					isPage = true;
+					iAm = IAm.PAGE;
 				} else if (urlUtil.isFolder(rewrite, host)) {
-					isFolder = true;
+					iAm = IAm.FOLDER;
 				}
 			}
 		}
 
-		if (isFolder) {
+		if (iAm == IAm.FOLDER) {
 			if (!uri.endsWith("/")) {
 				response.sendRedirect(uri + "/");
 				closeDbSilently();
 				return;
 			} else {
 				rewrite = uri + Config.getStringProperty("CMS_INDEX_PAGE", "index.html");
-				isPage = true;
-				isFolder = false;
+				iAm = IAm.PAGE;
 			}
 		}
 
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
-		if (isFile) {
+		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
@@ -260,7 +268,7 @@ public class CMSFilter implements Filter {
 			return;
 		}
 
-		if (isPage) {
+		if (iAm == IAm.PAGE) {
 
 			// JBOSS RULEZ only if a page
 			JBossRulesUtils.checkObjectRulesFromXML(request);
