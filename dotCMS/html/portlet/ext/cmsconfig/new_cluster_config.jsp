@@ -147,7 +147,7 @@
 		        // Execute a HTTP GET request
 		        dojo.xhr.get({
 		        	preventCache:true,
-		            url: this.jspToShow+'?rewireable='+canRewire,
+		            url: this.jspToShow+'?rewireable='+canRewire+'&hasLicense='+nodeStatus.hasLicense,
 		            load: function(result) {
 		            	var output = '';
 

@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
@@ -9,7 +10,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -19,6 +19,15 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -29,21 +38,9 @@ import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.info.Nod
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import com.dotcms.repackage.org.elasticsearch.client.AdminClient;
 import com.dotcms.repackage.org.elasticsearch.cluster.node.DiscoveryNode;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.jgroups.Address;
-import com.dotcms.repackage.org.jgroups.Event;
 import com.dotcms.repackage.org.jgroups.JChannel;
-import com.dotcms.repackage.org.jgroups.PhysicalAddress;
 import com.dotcms.repackage.org.jgroups.View;
-import com.dotcms.repackage.org.jgroups.stack.IpAddress;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
@@ -52,10 +49,8 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
-import com.dotmarketing.util.DeleteClusterServerTimerTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -206,6 +201,24 @@ public class ClusterResource extends WebResource {
     		jsonNode.put("esPort", server.getEsTransportTcpPort());
     		jsonNode.put("friendlyName", server.getName());
     		jsonNode.put("heartbeat", hasHeartBeat.toString());
+    		
+    		Boolean hasLicense = false;
+    		
+    		try {
+    			for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
+        			if(UtilMethods.isSet(lic.get("serverid")) && lic.get("serverid").equals(server.getServerId())){
+        				hasLicense = true;
+        			}
+                }
+			} catch (IOException e) {
+				Logger.error(ClusterResource.class, "Error reading License from Repo: " + e.getStackTrace());
+			}
+    		
+    		if(!hasLicense){
+    			jsonNode.put("status", "red");
+    		}
+    		
+    		jsonNode.put("hasLicense", hasLicense.toString());
 
     		//Added to the response list
     		jsonNodes.add( jsonNode );
@@ -397,6 +410,20 @@ public class ClusterResource extends WebResource {
         jsonNodeStatusObject.put("assetsCanWrite", Boolean.toString(assetPath.canWrite()));
         jsonNodeStatusObject.put("assetsPath", serverFilePath);
         jsonNodeStatusObject.put("assetsStatus", assetPath.canRead()&&assetPath.canWrite()?"green":"red");
+        
+        //Has license?
+        Boolean hasLicense = false;
+        try {
+			for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
+    			if(UtilMethods.isSet(lic.get("serverid")) && lic.get("serverid").equals(server.getServerId())){
+    				hasLicense = true;
+    			}
+            }
+		} catch (IOException e) {
+			Logger.error(ClusterResource.class, "Error reading License from Repo: " + e.getStackTrace());
+		}
+        
+        jsonNodeStatusObject.put("hasLicense", hasLicense);
 
 
         return responseResource.response( jsonNodeStatusObject.toString() );

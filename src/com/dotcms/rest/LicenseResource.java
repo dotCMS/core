@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
@@ -18,7 +19,6 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.DeleteClusterServerTimerTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageUtil;
@@ -29,6 +29,8 @@ import javax.servlet.http.HttpSession;
 
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 
@@ -178,22 +180,38 @@ public class LicenseResource extends WebResource {
     @Path("/free/{params:.*}")
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
         InitDataObject initData = init(params, true, request, true, "9");
+        
         String serial = initData.getParamsMap().get("serial");
         String serverId = initData.getParamsMap().get("serverid");
+        
         try {
             HibernateUtil.startTransaction();
+            
+            //If we are removing a remote Server.
             if(UtilMethods.isSet(serial)){
             	LicenseUtil.freeLicenseOnRepo(serial);
+            	/*boolean removeServer=true;
+    			
+            	for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
+    				if( serverId.equals((String)lic.get("serverid"))) {
+    					removeServer=false;
+    					break;
+    				}
+    			}
+    			
+            	if(removeServer){
+    				APILocator.getServerAPI().removeServerFromCluster(serverId);
+    			}*/
+            	
+            //If the server we are removing license is local.
             }else{
             	LicenseUtil.freeLicenseOnRepo();
             }
-            Timer timer = new Timer();
-            timer.schedule(new DeleteClusterServerTimerTask(serverId), Config.getIntProperty("REMOVE_UNLICENSED_SERVER_TIME", 70000));
             
             HibernateUtil.commitTransaction();
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
-        }
-        catch(Exception ex) {
+            
+        } catch(Exception ex) {
             Logger.error(this, "can't free license ",ex);
             try {
                 HibernateUtil.rollbackTransaction();
@@ -205,7 +223,6 @@ public class LicenseResource extends WebResource {
         
         return Response.ok().build();
     }
-    
     
     @POST
     @Path("/requestCode/{params:.*}")
