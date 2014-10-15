@@ -3,14 +3,12 @@ package com.dotmarketing.quartz.job;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
 
 import com.dotcms.cluster.bean.Server;
-import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -27,18 +25,38 @@ import com.dotmarketing.util.UtilMethods;
  *
  */
 public class DeleteInactiveClusterServersJob implements StatefulJob {
-	private final String DEFAULT_UNIT="WEEKS";
-	private final int DEFAULT_TIME=1;
+	private final String DEFAULT_TIME="2W";
 	public void execute(JobExecutionContext arg0) throws JobExecutionException {
 		try {
-			int amount = Config.getIntProperty("REMOVE_INACTIVE_CLUSTER_SERVER_AMOUNT",DEFAULT_TIME);
-			String unit = Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_UNIT",DEFAULT_UNIT);
+			
+			int amount =2;
+			String unit ="W";
+			String amountUnit = Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD",DEFAULT_TIME);
+			if(UtilMethods.isSet(amountUnit)){
+				try{
+					amount= Integer.parseInt(amountUnit.substring(0,amountUnit.length()-1));
+					unit= amountUnit.substring(amountUnit.length()-1).toUpperCase();
+					if(!validUnit(unit)){
+						Logger.error(DeleteInactiveClusterServersJob.class, "The REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD variable is not set properly. Default value will be used.");
+						amount=2;
+						unit="W";
+					}
+				}catch(Exception e){
+					Logger.error(DeleteInactiveClusterServersJob.class, "The REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD variable is not set properly. Error: "+e.getMessage()+". Default value will be used.", e);
+					amount=2;
+					unit="W";
+				}
+			}else{
+				Logger.error(DeleteInactiveClusterServersJob.class, "The REMOVE_INACTIVE_CLUSTER_SERVER_PERIOD variable is not set. Default value will be used.");
+				amount=2;
+				unit="W";
+			}
 			long maxAmountOfTime=0;
-			if(unit.equals("MINUTES")){
+			if(unit.equals("M")){
 				maxAmountOfTime = amount * 1000 * 60;
-			}else if(unit.equals("HOURS")){
+			}else if(unit.equals("H")){
 				maxAmountOfTime = amount * 1000 * 60 * 60;
-			}else if(unit.equals("DAYS")){
+			}else if(unit.equals("D")){
 				maxAmountOfTime = amount * 1000 * 60 * 60 * 24;
 			}else{
 				//weeks to millis seconds
@@ -72,5 +90,18 @@ public class DeleteInactiveClusterServersJob implements StatefulJob {
 			}
 		}
 
+	}
+	/**
+	 * Validate if the Unit pass is valid. the valid Values are: M (for Minutes),H (for Hours), 
+     * D (for Days) or W (for Weeks)
+	 * @param unit Uppercase Initial of time unit
+	 * @return boolean
+	 */
+	private boolean validUnit(String unit){
+		if(unit.equals("M") || unit.equals("H") || unit.equals("D") || unit.equals("W")){
+			return true;
+		}else{
+			return false;
+		}
 	}
 }
