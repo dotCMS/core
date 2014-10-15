@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 import com.dotcms.repackage.org.apache.lucene.search.BooleanQuery;
 import com.dotcms.workflow.EscalationThread;
@@ -291,10 +292,9 @@ public class InitServlet extends HttpServlet {
 /**
  *
  * @author will
- * This thread will fire and send all the configured host names to dotcms.org for internal
+ * This thread will fire and send host ids to dotcms.com for internal
  * corporate information (we are dying to know who is using dotCMS!).
- * To turn this off, set the dotmarketing-config.properties
- * INIT_THREAD_DOTCMS = false
+ * This can be turned off by setting RUN_INIT_THREAD=0 in the config
  *
  */
 
@@ -302,7 +302,10 @@ public class InitServlet extends HttpServlet {
 
         public void run() {
         	try {
-                Thread.sleep(600000);
+        		long runInitThread = Config.getIntProperty("RUN_INIT_THREAD", 600000);
+        		if(runInitThread<1){return;}
+        		
+                Thread.sleep(runInitThread);
             } catch (InterruptedException e) {
                 Logger.debug(this,e.getMessage(),e);
             }
@@ -326,12 +329,21 @@ public class InitServlet extends HttpServlet {
                 StringBuilder sb = new StringBuilder();
                 List<Host> hosts = hostAPI.findAll(APILocator.getUserAPI().getSystemUser(), false);
                 for (Host h : hosts) {
-                    sb.append(h.getHostname() + "\n");
+                	if(!"System Host".equals(h.getHostname())){
+                		sb.append(h.getHostname() + "\n");
+                	}
                     if (UtilMethods.isSet(h.getAliases())) {
-                        sb.append(h.getAliases());
-                    }
+                    	String[] x = h.getAliases().split("\\n|\\r");
+                    	for(String y : x){
+                    		if(UtilMethods.isSet(y) && !y.contains("dotcms.com") || !"host".equals(y)){
+		                    	sb.append(y + "\\n");
+	                    	}
+                		}
+                	}
                 }
 
+                
+                
                 // Construct data
                 StringBuilder data = new StringBuilder();
                 data.append(URLEncoder.encode("ipAddr", "UTF-8"));
@@ -356,37 +368,72 @@ public class InitServlet extends HttpServlet {
                 data.append("&");
                 data.append(URLEncoder.encode("build", "UTF-8"));
                 data.append("=");
-                data.append(URLEncoder.encode(String.valueOf(ReleaseInfo.getBuildNumber()), "UTF-8"));
+                data.append(URLEncoder.encode(String.valueOf(ReleaseInfo.getVersion()), "UTF-8"));
+                data.append("&");
+                
+                data.append(URLEncoder.encode("serverId", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getDisplayServerId()), "UTF-8"));
+                data.append("&");
+                
+                data.append(URLEncoder.encode("licenseId", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getSerial()), "UTF-8"));
+                data.append("&");
+                
+                data.append(URLEncoder.encode("licenseLevel", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getLevel()), "UTF-8"));
+                data.append("&");
+                
+                if(UtilMethods.isSet(LicenseUtil.getValidUntil())){
+	                data.append(URLEncoder.encode("licenseValid", "UTF-8"));
+	                data.append("=");
+	                data.append(URLEncoder.encode(UtilMethods.dateToJDBC(LicenseUtil.getValidUntil())));
+	                data.append("&");
+                }
+                data.append(URLEncoder.encode("perpetual", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.isPerpetual()), "UTF-8"));
+                data.append("&");
+                data.append(URLEncoder.encode("stName", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode("DotcmsStartup", "UTF-8"));
+                data.append("&");
+                data.append(URLEncoder.encode("clientName", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode(String.valueOf(LicenseUtil.getClientName()), "UTF-8"));
+                data.append("&");
+                
+                data.append(URLEncoder.encode("hostfolder", "UTF-8"));
+                data.append("=");
+                data.append(URLEncoder.encode("dotcms.com:/private", "UTF-8"));
+                data.append("&");
+
+                
+                
+                
+                String portalUrl = Config.getStringProperty("DOTCMS_PORTAL_URL", "dotcms.com");
+                String portalUrlProtocol = Config.getStringProperty("DOTCMS_PORTAL_URL_PROTOCOL", "https");
+                String portalUrlUri = Config.getStringProperty("DOTCMS_PORTAL_URL_URI", "/api/content/save/1");
+                
+
                 // Send data
 
-                sb.delete(0, sb.length());
-                sb.append("h");
-                sb.append("tt");
-                sb.append("p");
-                sb.append(":");
-                sb.append("//");
-                sb.append("p");
-                sb.append("i");
-                sb.append("n");
-                sb.append("g");
-                sb.append(".");
-                sb.append("d");
-                sb.append("ot");
-                sb.append("cms");
-                sb.append(".");
-                sb.append("or");
-                sb.append("g/");
-                sb.append("servlets/TB");
-                sb.append("Information");
+                sb = new StringBuilder();
+                sb.append(portalUrlProtocol + "://" + portalUrl + portalUrlUri);
                 URL url = new URL(sb.toString());
-                URLConnection conn = url.openConnection();
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("PUT");
                 conn.setDoOutput(true);
                 conn.setDoInput(true);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(5000);
                 conn.setUseCaches(false);
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-//                conn.connect();
+
+                conn.setRequestProperty("DOTAUTH", "bGljZW5zZXJlcXVlc3RAZG90Y21zLmNvbTpKbnM0QHdAOCZM");
+                
 
                 DataOutputStream wr = new DataOutputStream(conn.getOutputStream());
                 wr.writeBytes(data.toString());
@@ -394,7 +441,7 @@ public class InitServlet extends HttpServlet {
                 wr.close();
                 DataInputStream input = new DataInputStream(conn.getInputStream());
                 input.close();
-//                conn.getContent();
+
 
             } catch (UnknownHostException e) {
                 Logger.debug(this, "Unable to get Hostname", e);
