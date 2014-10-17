@@ -15,6 +15,7 @@ import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -474,11 +475,20 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     
     		// Begin Page Caching
+    		String userId = (user != null) ? user.getUserId() : "PUBLIC";
+    		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+    		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+    		Map<String, String> pageChacheParams = new HashMap<String, String>();
+			pageChacheParams.put("userid", userId);
+			pageChacheParams.put("language", language);
+			pageChacheParams.put("urlmap", urlMap);
+			
     		boolean buildCache = false;
     		String key = getPageCacheKey(request);
     		if (key != null) {
     
-    			String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
+    			//String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
+    			String cachedPage = CacheLocator.getBlockDirectiveCache().get(page, pageChacheParams);
     
     			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
     					|| "refresh".equals(request.getAttribute("dotcache"))
@@ -519,6 +529,7 @@ public abstract class VelocityServlet extends HttpServlet {
     				//CacheLocator.getBlockDirectiveCache().clearCache();
     				CacheLocator.getHTMLPageCache().remove(page);
     				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
+    				CacheLocator.getBlockDirectiveCache().add(page, trimmedPage, pageChacheParams);
     			}
     		} else {
     			out.close();
@@ -1176,7 +1187,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		sb.append(page.getInode());
 		sb.append("_" + page.getModDate().getTime());
 
-		String userId = (user != null) ? user.getUserId() : "PUBLIC";
+		/*String userId = (user != null) ? user.getUserId() : "PUBLIC";
 		sb.append("_" + userId);
 
 		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
@@ -1189,7 +1200,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		if (UtilMethods.isSet(request.getQueryString())) {
 			sb.append("_" + request.getQueryString());
-		}
+		}*/
 
 		return sb.toString();
 
