@@ -49,8 +49,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -478,17 +480,14 @@ public abstract class VelocityServlet extends HttpServlet {
     		String userId = (user != null) ? user.getUserId() : "PUBLIC";
     		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
     		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-    		Map<String, String> pageChacheParams = new HashMap<String, String>();
-			pageChacheParams.put("userid", userId);
-			pageChacheParams.put("language", language);
-			pageChacheParams.put("urlmap", urlMap);
+			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap);
 			
     		boolean buildCache = false;
     		String key = getPageCacheKey(request);
     		if (key != null) {
     
     			//String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
-    			String cachedPage = CacheLocator.getBlockDirectiveCache().get(page, pageChacheParams);
+    			String cachedPage = CacheLocator.getBlockPageCache().get(page, cacheParameters);
     
     			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
     					|| "refresh".equals(request.getAttribute("dotcache"))
@@ -528,8 +527,8 @@ public abstract class VelocityServlet extends HttpServlet {
     			synchronized (key) {
     				//CacheLocator.getBlockDirectiveCache().clearCache();
     				CacheLocator.getHTMLPageCache().remove(page);
-    				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
-    				CacheLocator.getBlockDirectiveCache().add(page, trimmedPage, pageChacheParams);
+    				//CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
+    				CacheLocator.getBlockPageCache().add(page, trimmedPage, cacheParameters);
     			}
     		} else {
     			out.close();
