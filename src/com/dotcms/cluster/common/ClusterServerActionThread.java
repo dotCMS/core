@@ -33,12 +33,12 @@ public class ClusterServerActionThread extends Thread {
 	public void run() {
 		while (!die) {
 			if (start) {
-				Logger.info(this, "ClusterServerActionThread Started with Sleep of "
+				Logger.info(ClusterServerActionThread.class, "ClusterServerActionThread Started with Sleep of "
 						+ this.sleep + " millis.");
 				start = false;
 			}
 			
-			Connection connection = DbConnectionFactory.getConnection();
+			Connection connection = null;
 			
 			try {
 				//Get my Server ID.
@@ -47,17 +47,26 @@ public class ClusterServerActionThread extends Thread {
 				//Get a list of new ServerActionBean in my server.
 				List<ServerActionBean> listServerActionBeans = serverActionAPI.getNewServerActionBeans(myServerID);
 				
-				connection.setAutoCommit(false);
-				
-				//For each ServerActionBean we need to handle it.
-				for (ServerActionBean serverActionBean : listServerActionBeans) {
-					serverActionAPI.handleServerAction(serverActionBean);
+				if(!listServerActionBeans.isEmpty()){
+					connection = DbConnectionFactory.getDataSource().getConnection();
+					connection.setAutoCommit(false);
+					
+					//For each ServerActionBean we need to handle it.
+					for (ServerActionBean serverActionBean : listServerActionBeans) {
+						serverActionAPI.handleServerAction(serverActionBean);
+					}
+					connection.commit();
 				}
-				connection.commit();
 				
 			} catch (Exception e) {
 				try {
-					connection.rollback();
+					Logger.error(ClusterServerActionThread.class, 
+							"Error trying handle ServerActionBean " + e.getMessage(), e);
+					
+					if(connection != null && !connection.isClosed()){
+						connection.rollback();
+					}
+					
 				} catch (SQLException sqlException) {
 					Logger.error(ClusterServerActionThread.class, 
 							"Error trying to Rollback DB connection " + sqlException.getMessage(), sqlException);
@@ -65,12 +74,12 @@ public class ClusterServerActionThread extends Thread {
 				
 			} finally {
 				try {
-					connection.close();
+					if(connection != null && !connection.isClosed()){
+						connection.close();
+					}
 				} catch (SQLException sqlException) {
 					Logger.error(ClusterServerActionThread.class, 
 							"Error trying to close DB connection " + sqlException.getMessage(), sqlException);
-				} finally {
-					DbConnectionFactory.closeConnection();
 				}
 			}
 			
@@ -87,7 +96,7 @@ public class ClusterServerActionThread extends Thread {
 	 * Tells the thread to start processing. Starts the thread
 	 */
 	public synchronized static void startThread(int sleep) {
-		Logger.info(ReindexThread.class,
+		Logger.info(ClusterServerActionThread.class,
 				"ClusterServerActionThread ordered to start processing");
 
 		if (instance == null) {
