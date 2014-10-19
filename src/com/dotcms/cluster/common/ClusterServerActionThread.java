@@ -23,7 +23,7 @@ public class ClusterServerActionThread extends Thread {
 	
 	private boolean die = false;
 	private boolean start = false;
-	private int sleep = 100;
+	private int sleep = 2000;
 	
 	private final ServerAPI serverAPI = APILocator.getServerAPI();
 	private final ServerActionAPI serverActionAPI = APILocator.getServerActionAPI();

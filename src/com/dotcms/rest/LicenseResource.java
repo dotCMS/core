@@ -3,6 +3,9 @@ package com.dotcms.rest;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
+import com.dotcms.enterprise.cluster.action.ServerAction;
+import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
 import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -182,41 +185,65 @@ public class LicenseResource extends WebResource {
         InitDataObject initData = init(params, true, request, true, "9");
         
         String serial = initData.getParamsMap().get("serial");
-        String serverId = initData.getParamsMap().get("serverid");
+        String localServerId = APILocator.getServerAPI().readServerId();
+        String remoteServerId = initData.getParamsMap().get("serverid");
         
         try {
-            HibernateUtil.startTransaction();
-            
-            //If we are removing a remote Server.
-            if(UtilMethods.isSet(serial)){
-            	LicenseUtil.freeLicenseOnRepo(serial);
-            	/*boolean removeServer=true;
+            //If we are removing a remote Server we need to create a ServerAction.
+            if(UtilMethods.isSet(remoteServerId) && !remoteServerId.equals("undefined")){
+            	ResetLicenseServerAction resetLicenseServerAction = new ResetLicenseServerAction();
+            	Long timeoutSeconds = new Long(1);
+            	
+            	ServerActionBean resetLicenseServerActionBean = 
+            			resetLicenseServerAction.getNewServerAction(localServerId, remoteServerId, timeoutSeconds);
+            	
+            	resetLicenseServerActionBean = APILocator.getServerActionAPI()
+            			.saveServerActionBean(resetLicenseServerActionBean);
+            	
+            	//Waits for 3 seconds in order all the servers respond.
+    			int maxWaitTime = 
+    					timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+    			int passedWaitTime = 0;
     			
-            	for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
-    				if( serverId.equals((String)lic.get("serverid"))) {
-    					removeServer=false;
-    					break;
+    			//Trying to NOT wait whole 3 secons for returning the info.
+    			while (passedWaitTime <= maxWaitTime){
+    				try {
+    				    Thread.sleep(10);
+    				    passedWaitTime += 10;
+    				    
+    				    resetLicenseServerActionBean = 
+    				    		APILocator.getServerActionAPI().findServerActionBean(resetLicenseServerActionBean.getId());
+    				    
+    				    //No need to wait if we have all Action results. 
+    				    if(resetLicenseServerActionBean != null && !resetLicenseServerActionBean.isCompleted()){
+    				    	passedWaitTime = maxWaitTime + 1;
+    				    }
+    				    
+    				} catch(InterruptedException ex) {
+    				    Thread.currentThread().interrupt();
+    				    passedWaitTime = maxWaitTime + 1;
     				}
     			}
     			
-            	if(removeServer){
-    				APILocator.getServerAPI().removeServerFromCluster(serverId);
-    			}*/
+    			if(resetLicenseServerActionBean == null || resetLicenseServerActionBean.isFailed()){
+    				throw new Exception(resetLicenseServerActionBean.getResponse().getString(ServerAction.ERROR_STATE));
+    			}
             	
             //If the server we are removing license is local.
-            }else{
+            } else {
+            	HibernateUtil.startTransaction();
             	LicenseUtil.freeLicenseOnRepo();
+            	HibernateUtil.commitTransaction();
             }
             
-            HibernateUtil.commitTransaction();
             AdminLogger.log(LicenseResource.class, "freeLicense", "License From Repo Freed", initData.getUser());
             
-        } catch(Exception ex) {
-            Logger.error(this, "can't free license ",ex);
+        } catch(Exception exception) {
+            Logger.error(this, "can't free license ",exception);
             try {
                 HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e) {
-                Logger.warn(this, "can't rollback", e);
+            } catch (DotHibernateException dotHibernateException) {
+                Logger.warn(this, "can't rollback", dotHibernateException);
             }
             return Response.serverError().build();
         }
