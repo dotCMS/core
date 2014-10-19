@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -17,6 +16,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -49,7 +49,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -299,134 +298,14 @@ public class ClusterResource extends WebResource {
 		if(!UtilMethods.isSet(serverId)) return null;
 
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        ServerAPI serverAPI = APILocator.getServerAPI();
-
-        Server server = serverAPI.getServer(serverId);
-
-        if(server==null) return null;
-
-        JSONObject jsonNodeStatusObject = new JSONObject();
-
-        // JGroups Cache
-        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-
-        List<Server> servers = serverAPI.getAllServers();
-        Long dateInMillisLong = new Date().getTime();
-		String dateInMillis = dateInMillisLong.toString();
-		String myServerId = serverAPI.readServerId();
         
-    	Map<String, Boolean> members = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject())
-    				.validateCacheInCluster(dateInMillis, servers.size()-1, 1);
+        JSONObject jsonNodeStatusObject = ClusterUtil.getNodeInfo();
         
-        if(view!=null) {
-
-        	// general cache stats
-        	jsonNodeStatusObject.put( "cacheClusterName", channel.getClusterName());
-        	jsonNodeStatusObject.put( "cacheOpen", Boolean.toString(channel.isOpen()));
-        	jsonNodeStatusObject.put( "cacheNumberOfNodes", Integer.toString(members!= null ? members.size()+1 : 1));
-        	jsonNodeStatusObject.put( "cacheAddress", channel.getAddressAsString());
-        	jsonNodeStatusObject.put( "cacheReceivedBytes", Long.toString(channel.getReceivedBytes()) + "/" + Long.toString(channel.getSentBytes()));
-        	jsonNodeStatusObject.put( "cacheReceivedMessages", Long.toString(channel.getReceivedMessages()));
-        	jsonNodeStatusObject.put( "cacheSentBytes", Long.toString(channel.getSentBytes()));
-        	jsonNodeStatusObject.put( "cacheSentMessages", Long.toString(channel.getSentMessages()));
-
-        	// cache status for the given node
-        	Boolean cacheStatus = false;
-
-    		//1. If servers is just one we assume the cache is OK.
-    		//2. If Server is local and we are connected to at least one other server is OK.
-    		//3. If servers are more than 1 and is in members array is OK.
-    		if(servers.size() == 1 
-    				|| (server.getServerId().equals(myServerId) && (members != null && !members.isEmpty()))
-    				|| (members != null && members.containsKey(server.getServerId()))){
-    			cacheStatus = true;
-    		}
-
-    		jsonNodeStatusObject.put( "cacheStatus", cacheStatus?"green":"red");
-        } else{
-        	jsonNodeStatusObject.put( "cacheClusterName", "");
-        	jsonNodeStatusObject.put( "cacheOpen", "");
-        	jsonNodeStatusObject.put( "cacheNumberOfNodes", "");
-        	jsonNodeStatusObject.put( "cacheAddress", "");
-        	jsonNodeStatusObject.put( "cacheReceivedBytes", "");
-        	jsonNodeStatusObject.put( "cacheReceivedMessages", "");
-        	jsonNodeStatusObject.put( "cacheSentBytes", "");
-        	jsonNodeStatusObject.put( "cacheSentMessages", "");
+        if(jsonNodeStatusObject != null){
+        	return responseResource.response( jsonNodeStatusObject.toString() );
+        } else {
+        	return null;
         }
-
-
-        Boolean esStatus = false;
-        AdminClient esClient = null;
-        try {
-        	esClient = new ESClient().getClient().admin();
-        }  catch (Exception e) {
-        	Logger.error(ClusterResource.class, "Error getting ES Client", e);
-        }
-
-        ClusterHealthRequest clusterReq = new ClusterHealthRequest();
-		ActionFuture<ClusterHealthResponse> afClusterRes = esClient.cluster().health(clusterReq);
-		ClusterHealthResponse clusterRes = afClusterRes.actionGet();
-
-		// ES general stats
-
-		jsonNodeStatusObject.put("esClusterName", clusterRes.getClusterName());
-		jsonNodeStatusObject.put("esNumberOfNodes", clusterRes.getNumberOfNodes());
-		jsonNodeStatusObject.put("esActiveShards", clusterRes.getActiveShards());
-		jsonNodeStatusObject.put("esActivePrimaryShards", clusterRes.getActivePrimaryShards());
-		jsonNodeStatusObject.put("esUnasignedPrimaryShards", clusterRes.getUnassignedShards());
-
-		 // ES status for the given node
-
-
-        if(esClient!=null) {
-        	NodesInfoRequest nodesReq = new NodesInfoRequest();
-        	ActionFuture<NodesInfoResponse> afNodesRes = esClient.cluster().nodesInfo(nodesReq);
-        	NodesInfoResponse nodesRes = afNodesRes.actionGet();
-        	NodeInfo[] esNodes = nodesRes.getNodes();
-
-        	for (NodeInfo nodeInfo : esNodes) {
-        		DiscoveryNode node = nodeInfo.getNode();
-
-        		if(node.getName().equals(server.getServerId())) {
-        			esStatus = true;
-        			break;
-        		}
-        	}
-
-        	jsonNodeStatusObject.put( "esStatus", esStatus?"green":"red");
-        }
-
-        jsonNodeStatusObject.put("cachePort", server.getCachePort());
-        jsonNodeStatusObject.put("esPort", server.getEsTransportTcpPort());
-
-
-        // asset folder
-
-        String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH", Config.CONTEXT.getRealPath(Config.getStringProperty("ASSET_PATH")));
-        File assetPath = new File(serverFilePath);
-
-        jsonNodeStatusObject.put("assetsCanRead", Boolean.toString(assetPath.canRead()));
-        jsonNodeStatusObject.put("assetsCanWrite", Boolean.toString(assetPath.canWrite()));
-        jsonNodeStatusObject.put("assetsPath", serverFilePath);
-        jsonNodeStatusObject.put("assetsStatus", assetPath.canRead()&&assetPath.canWrite()?"green":"red");
-        
-        //Has license?
-        Boolean hasLicense = false;
-        try {
-			for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
-    			if(UtilMethods.isSet(lic.get("serverid")) && lic.get("serverid").equals(server.getServerId())){
-    				hasLicense = true;
-    			}
-            }
-		} catch (IOException e) {
-			Logger.error(ClusterResource.class, "Error reading License from Repo: " + e.getStackTrace());
-		}
-        
-        jsonNodeStatusObject.put("hasLicense", hasLicense);
-
-
-        return responseResource.response( jsonNodeStatusObject.toString() );
 
     }
 
