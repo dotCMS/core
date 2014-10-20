@@ -83,7 +83,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         public void shutdown() { dotcache.shutdown(); }
         public JChannel getJGroupsChannel() { return dotcache.getJGroupsChannel(); }
         public List<Map<String, Object>> getCacheStatsList() { return dotcache.getCacheStatsList(); }
-        public Class getImplementationClass() { return dotcache.getClass(); }
+        public Class<?> getImplementationClass() { return dotcache.getClass(); }
         public void put(final String key, final Object content, final String group) {
             dotcache.put(key, content, group);
             try {

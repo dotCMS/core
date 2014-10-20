@@ -13,21 +13,22 @@ import com.dotmarketing.util.Logger;
  * Provides the caching implementation for HTML pages. This approach uses a main
  * key to retrieve a cached page, and a subkey to retrieve the different
  * versions of it. With this structure, during the removal of a page, all the 
- * different versions of it will also be deleted. So, basically:
+ * different versions of it will also be deleted easily. So, basically:
  * <ul>
  * 	<li>
  * 		The main key is composed of:
  * 		<ul>
- * 		<li>Page Inode</li>
- * 		<li>Page modification date</li>
+ * 		<li>The page Inode.</li>
+ * 		<li>The page modification date in milliseconds.</li>
  * 		</ul>
  *  </li>
  *  <li>
  * 		The subkey is composed of:
  * 		<ul>
- * 		<li>Current user ID</li>
- * 		<li>Selected language</li>
- * 		<li>URL map</li>
+ * 		<li>The current user ID.</li>
+ * 		<li>The currently selected language ID.</li>
+ * 		<li>The URL map.</li>
+ * 		<li>The query String in the URL.</li>
  * 		</ul>
  *  </li>
  * </ul>
@@ -44,7 +45,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 	private static String primaryCacheGroup = "BlockDirectiveHTMLPageCache";
 
 	/**
-	 * Default constructor
+	 * Default constructor. Initializes the internal caching structures.
 	 */
 	public BlockPageCacheImpl() {
 		this.cache = CacheLocator.getCacheAdministrator();
@@ -104,7 +105,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 					}
 				}
 			} catch (DotCacheException e) {
-				// Key does not exist in cache
+				// Key does not exist in cache, then add it
 			}
 			List<Map<String, Object>> versions = new ArrayList<Map<String, Object>>();
 			Map<String, Object> pageInfo = new HashMap<String, Object>();
@@ -145,6 +146,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 										.currentTimeMillis()) {
 						return cto.getValue();
 					} else {
+						// Remove page from cache if expired and get new version
 						remove(page);
 					}
 				}
