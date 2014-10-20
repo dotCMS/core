@@ -19,6 +19,9 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
+import com.dotcms.enterprise.cluster.action.ServerAction;
+import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -49,6 +52,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -293,19 +297,63 @@ public class ClusterResource extends WebResource {
         InitDataObject initData = init( params, true, request, false, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
-		String serverId = paramsMap.get("id");
+		String remoteServerID = paramsMap.get("id");
+		String localServerId = APILocator.getServerAPI().readServerId();
 
-		if(!UtilMethods.isSet(serverId)) return null;
-
-        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        
-        JSONObject jsonNodeStatusObject = ClusterUtil.getNodeInfo();
-        
-        if(jsonNodeStatusObject != null){
-        	return responseResource.response( jsonNodeStatusObject.toString() );
-        } else {
-        	return null;
-        }
+		if(UtilMethods.isSet(remoteServerID) && !remoteServerID.equals("undefined")) {
+			
+			ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+			
+			NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+			Long timeoutSeconds = new Long(1);
+			
+			ServerActionBean nodeStatusServerActionBean = 
+					nodeStatusServerAction.getNewServerAction(localServerId, remoteServerID, timeoutSeconds);
+			
+			nodeStatusServerActionBean = 
+					APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			
+			//Waits for 3 seconds in order server respond.
+			int maxWaitTime = 
+					timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+			int passedWaitTime = 0;
+			
+			//Trying to NOT wait whole 3 secons for returning the info.
+			while (passedWaitTime <= maxWaitTime){
+				try {
+				    Thread.sleep(10);
+				    passedWaitTime += 10;
+				    
+				    nodeStatusServerActionBean = 
+				    		APILocator.getServerActionAPI().findServerActionBean(nodeStatusServerActionBean.getId());
+				    
+				    //No need to wait if we have all Action results. 
+				    if(nodeStatusServerActionBean != null && nodeStatusServerActionBean.isCompleted()){
+				    	passedWaitTime = maxWaitTime + 1;
+				    }
+				    
+				} catch(InterruptedException ex) {
+				    Thread.currentThread().interrupt();
+				    passedWaitTime = maxWaitTime + 1;
+				}
+			}
+			
+			if(nodeStatusServerActionBean.isFailed()){
+				return null;
+			}
+	        
+	        JSONObject jsonNodeStatusObject = 
+	        		nodeStatusServerActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
+	        
+	        if(jsonNodeStatusObject != null){
+	        	return responseResource.response( jsonNodeStatusObject.toString() );
+	        } else {
+	        	return null;
+	        }
+	        
+		} else {
+			return null;
+		}
 
     }
 

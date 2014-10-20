@@ -215,7 +215,7 @@ public class LicenseResource extends WebResource {
     				    		APILocator.getServerActionAPI().findServerActionBean(resetLicenseServerActionBean.getId());
     				    
     				    //No need to wait if we have all Action results. 
-    				    if(resetLicenseServerActionBean != null && !resetLicenseServerActionBean.isCompleted()){
+    				    if(resetLicenseServerActionBean != null && resetLicenseServerActionBean.isCompleted()){
     				    	passedWaitTime = maxWaitTime + 1;
     				    }
     				    
@@ -225,7 +225,7 @@ public class LicenseResource extends WebResource {
     				}
     			}
     			
-    			if(resetLicenseServerActionBean == null || resetLicenseServerActionBean.isFailed()){
+    			if(resetLicenseServerActionBean.isFailed()){
     				throw new Exception(resetLicenseServerActionBean.getResponse().getString(ServerAction.ERROR_STATE));
     			}
             	
