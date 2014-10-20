@@ -1,9 +1,8 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -16,7 +15,6 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
@@ -36,11 +34,7 @@ import com.dotcms.repackage.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.info.NodeInfo;
-import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.info.NodesInfoRequest;
-import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.node.info.NodesInfoResponse;
 import com.dotcms.repackage.org.elasticsearch.client.AdminClient;
-import com.dotcms.repackage.org.elasticsearch.cluster.node.DiscoveryNode;
 import com.dotcms.repackage.org.jgroups.Address;
 import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotcms.repackage.org.jgroups.View;
@@ -121,111 +115,119 @@ public class ClusterResource extends WebResource {
 
         InitDataObject initData = init( params, true, request, false, "9");
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        
         ServerAPI serverAPI = APILocator.getServerAPI();
         List<Server> servers = serverAPI.getAllServers();
-
-        // JGroups Cache
-        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-
-        // ES Clustering
-        AdminClient esClient = null;
-        try {
-        	esClient = new ESClient().getClient().admin();
-        }  catch (Exception e) {
-        	Logger.error(ClusterResource.class, "Error getting ES Client", e);
-        }
-
-        JSONArray jsonNodes = new JSONArray();
         String myServerId = serverAPI.readServerId();
+
+        List<ServerActionBean> actionBeans = new ArrayList<ServerActionBean>();
+        List<ServerActionBean> resultActionBeans = new ArrayList<ServerActionBean>();
+        JSONArray jsonNodes = new JSONArray();
         
-        Long dateInMillisLong = new Date().getTime();
-		String dateInMillis = dateInMillisLong.toString();
-		
-		Map<String, Boolean> members = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject())
-				.validateCacheInCluster(dateInMillis, servers.size()-1, 2);
+        NodeStatusServerAction nodeStatusServerAction = new NodeStatusServerAction();
+        Long timeoutSeconds = new Long(1);
 		
 		for (Server server : servers) {
-        	JSONObject jsonNode = new JSONObject();
-    		jsonNode.put( "serverId", server.getServerId());
-    		jsonNode.put( "ipAddress", server.getIpAddress());
-    		jsonNode.put( "host", server.getHost());
-
-    		Boolean cacheStatus = false;
-    		Boolean esStatus = false;
-    		
-    		//1. If servers is just one we assume the cache is OK.
-    		//2. If Server is local and we are connected to at least one other server is OK.
-    		//3. If servers are more than 1 and is in members array is OK.
-    		if(servers.size() == 1 
-    				|| (server.getServerId().equals(myServerId) && (members != null && !members.isEmpty()))
-    				|| (members != null && members.containsKey(server.getServerId()))){
-    			cacheStatus = true;
-    		}
-
-    		if(esClient!=null) {
-	    		NodesInfoRequest nodesReq = new NodesInfoRequest();
-	    		ActionFuture<NodesInfoResponse> afNodesRes = esClient.cluster().nodesInfo(nodesReq);
-	    		NodesInfoResponse nodesRes = afNodesRes.actionGet();
-	    		NodeInfo[] esNodes = nodesRes.getNodes();
-
-	    		for (NodeInfo nodeInfo : esNodes) {
-					DiscoveryNode node = nodeInfo.getNode();
-
-					if(node.getName().equals(server.getServerId())) {
-						esStatus = true;
-						break;
+			
+			ServerActionBean nodeStatusServerActionBean = 
+					nodeStatusServerAction.getNewServerAction(myServerId, server.getServerId(), timeoutSeconds);
+			
+			nodeStatusServerActionBean = 
+					APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			
+			actionBeans.add(nodeStatusServerActionBean);
+		}
+		
+		//Waits for 3 seconds in order server respond.
+		int maxWaitTime = 
+				timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
+		int passedWaitTime = 0;
+		
+		//Trying to NOT wait whole time for returning the info.
+		while (passedWaitTime <= maxWaitTime){
+			try {
+			    Thread.sleep(10);
+			    passedWaitTime += 10;
+			    
+			    resultActionBeans = new ArrayList<ServerActionBean>();
+			    
+			    //Iterates over the Actions in order to see if we have it all.
+			    for (ServerActionBean actionBean : actionBeans) {
+			    	ServerActionBean resultActionBean = 
+				    		APILocator.getServerActionAPI().findServerActionBean(actionBean.getId());
+			    	
+			    	//Add the ActionBean to the list of results.
+			    	if(resultActionBean.isCompleted()){
+			    		resultActionBeans.add(resultActionBean);
+			    	}
+				}
+			    
+			    //No need to wait if we have all Action results. 
+			    if(resultActionBeans.size() == servers.size()){
+			    	passedWaitTime = maxWaitTime + 1;
+			    }
+			    
+			} catch(InterruptedException ex) {
+			    Thread.currentThread().interrupt();
+			    passedWaitTime = maxWaitTime + 1;
+			}
+		}
+		
+		//If some of the server didn't pick up the action, means they are down.
+		if(resultActionBeans.size() != actionBeans.size()){
+			//Need to find out which is missing?
+			for(ServerActionBean actionBean : actionBeans){
+				boolean isMissing = true;
+				for(ServerActionBean resultActionBean : resultActionBeans){
+					if(resultActionBean.getId().equals(actionBean.getId())){
+						isMissing = false;
 					}
 				}
-    		}
-
-    		if(UtilMethods.isSet(server.getLastHeartBeat())) {
-    			jsonNode.put("contacted", DateUtil.prettyDateSince(server.getLastHeartBeat()));
-    			jsonNode.put("contactedSeconds", ((new Date()).getTime()-server.getLastHeartBeat().getTime())/1000);
-    		}
-
-    		if(view==null && !myServerId.equals(server.getServerId())) {
-    			jsonNode.put("cacheStatus", "N/A");
-    		} else {
-    			jsonNode.put("cacheStatus", cacheStatus.toString());
-    		}
-    		
-    		Boolean hasHeartBeat = false;
-    		
-    		if(serverAPI.getAliveServers() != null 
-    				&& Arrays.asList(serverAPI.getAliveServersIds()).contains(server.getServerId())){
-    			
-    			hasHeartBeat = true;
-    		}
-
-    		jsonNode.put("esStatus", esStatus.toString());
-    		jsonNode.put("status", esStatus&&cacheStatus?"green":"red");
-    		jsonNode.put("myself", myServerId.equals(server.getServerId()));
-    		jsonNode.put("cachePort", server.getCachePort());
-    		jsonNode.put("esPort", server.getEsTransportTcpPort());
-    		jsonNode.put("friendlyName", server.getName());
-    		jsonNode.put("heartbeat", hasHeartBeat.toString());
-    		
-    		Boolean hasLicense = false;
-    		
-    		try {
-    			for ( Map<String, Object> lic : LicenseUtil.getLicenseRepoList() ) {
-        			if(UtilMethods.isSet(lic.get("serverid")) && lic.get("serverid").equals(server.getServerId())){
-        				hasLicense = true;
-        			}
-                }
-			} catch (IOException e) {
-				Logger.error(ClusterResource.class, "Error reading License from Repo: " + e.getStackTrace());
+				//If the actionBean wasn't pick up.
+				if(isMissing){
+					//We need to save it as failed.
+					actionBean.setCompleted(true);
+					actionBean.setFailed(true);
+					actionBean.setResponse(new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+					APILocator.getServerActionAPI().saveServerActionBean(actionBean);
+					
+					//Add it to the results.
+					resultActionBeans.add(actionBean);
+				}
 			}
-    		
-    		if(!hasLicense){
-    			jsonNode.put("status", "red");
-    		}
-    		
-    		jsonNode.put("hasLicense", hasLicense.toString());
-
-    		//Added to the response list
-    		jsonNodes.add( jsonNode );
 		}
+		
+		//Iterate over all the results gathered.
+		for (ServerActionBean resultActionBean : resultActionBeans) {
+			JSONObject jsonNodeStatusObject = null;
+			
+			//If the result is failed we need to gather the info available.
+			if(resultActionBean.isFailed()){
+				Logger.error(ClusterResource.class, 
+						"Error trying to get Node Status for server " + resultActionBean.getServerId());
+				
+				Server tempServer = APILocator.getServerAPI().getServer(resultActionBean.getServerId());
+				jsonNodeStatusObject = new JSONObject();
+				jsonNodeStatusObject.put( "serverId", tempServer.getServerId());
+		    	jsonNodeStatusObject.put( "ipAddress", tempServer.getIpAddress());
+		    	jsonNodeStatusObject.put( "host", tempServer.getHost());
+		    	jsonNodeStatusObject.put("friendlyName", tempServer.getName());
+		    	jsonNodeStatusObject.put("status", "red");
+		    	
+		    	if(UtilMethods.isSet(tempServer.getLastHeartBeat())) {
+		    		jsonNodeStatusObject.put("contacted", DateUtil.prettyDateSince(tempServer.getLastHeartBeat()));
+		    		jsonNodeStatusObject.put("contactedSeconds", ((new Date()).getTime()-tempServer.getLastHeartBeat().getTime())/1000);
+				}
+			
+		    //If the result is OK we need to get the response object.
+			} else {
+				jsonNodeStatusObject = resultActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
+				jsonNodeStatusObject.put("myself", myServerId.equals(resultActionBean.getServerId()));
+			}
+			
+			//Add the status of the node to the list of other nodes.
+			jsonNodes.add( jsonNodeStatusObject );
+		}	
 
         return responseResource.response( jsonNodes.toString() );
     }
@@ -318,7 +320,7 @@ public class ClusterResource extends WebResource {
 					timeoutSeconds.intValue() * 1000 + Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000) ;
 			int passedWaitTime = 0;
 			
-			//Trying to NOT wait whole 3 secons for returning the info.
+			//Trying to NOT wait whole time for returning the info.
 			while (passedWaitTime <= maxWaitTime){
 				try {
 				    Thread.sleep(10);
