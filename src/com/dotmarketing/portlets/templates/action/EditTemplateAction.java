@@ -8,13 +8,13 @@ import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
@@ -87,6 +87,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
+		
 
 		//wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -107,7 +108,9 @@ public class EditTemplateAction extends DotPortletAction implements
 		HibernateUtil.startTransaction();
 
 		User user = _getUser(req);
-
+		
+		// Old template used to compare against edited version
+		Template oldTemplate = new Template();
 		try {
 			Logger.debug(this, "Calling Retrieve method");
 			_retrieveWebAsset(req, res, config, form, user, Template.class,
@@ -125,7 +128,6 @@ public class EditTemplateAction extends DotPortletAction implements
 			try {
 				Logger.debug(this, "Calling Edit method");
 				_editWebAsset(req, res, config, form, user);
-
 			} catch (Exception ae) {
 				if ((referer != null) && (referer.length() != 0)) {
 					if (ae.getMessage()!=null && ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
@@ -181,6 +183,9 @@ public class EditTemplateAction extends DotPortletAction implements
 			try {
 				if (Validator.validate(req, form, mapping)) {
 					Logger.debug(this, "Calling Save method for design template");
+					Logger.debug(this, "Calling Save method");
+					// the old template before editing using the inode from el request
+					oldTemplate = APILocator.getTemplateAPI().find(req.getParameter("inode"), user, false);
 					_saveWebAsset(req, res, config, form, user);
 					String subcmd = req.getParameter("subcmd");
 					if ((subcmd != null) && subcmd.equals(com.dotmarketing.util.Constants.PUBLISH)) {
@@ -190,6 +195,12 @@ public class EditTemplateAction extends DotPortletAction implements
 							java.util.Map<String, String[]> params = new java.util.HashMap<String, String[]>();
 							params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 							referer = PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
+						}
+						// edited template from the form
+						Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
+						// call for invalidation on the live cache if the theme changed
+						if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
+							APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false, false);
 						}
 					}
 					try{
@@ -221,7 +232,8 @@ public class EditTemplateAction extends DotPortletAction implements
 				if (Validator.validate(req, form, mapping)) {
 
 					Logger.debug(this, "Calling Save method");
-					_saveWebAsset(req, res, config, form, user);
+					// the old template before editing using the inode from el request
+					oldTemplate = APILocator.getTemplateAPI().find(req.getParameter("inode"), user, false);					_saveWebAsset(req, res, config, form, user);
 
 					String subcmd = req.getParameter("subcmd");
 
@@ -237,7 +249,12 @@ public class EditTemplateAction extends DotPortletAction implements
 						params.put("struts_action",new String[] {"/ext/templates/view_templates"});
 						referer = PortletURLUtil.getActionURL(req,WindowState.MAXIMIZED.toString(),params);
 					}
-
+					// edited template from the form
+					Template template = (Template) req.getAttribute(WebKeys.TEMPLATE_FORM_EDIT);
+					// call for invalidation on the live cache if the theme changed
+					if(template.isDrawed() && !template.getTheme().equals(oldTemplate.getTheme())){
+						APILocator.getTemplateAPI().invalidateTemplatePages(template.getInode(), user, false, false);
+					}
 
 
 				}
@@ -465,7 +482,6 @@ public class EditTemplateAction extends DotPortletAction implements
 
 		_setupEditTemplatePage(reqImpl, res, config, form, user);
 
-
 		// *********************** BEGIN GRAZIANO issue-12-dnd-template
 		boolean isDrawed = req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED)!=null?(Boolean)req.getAttribute(WebKeys.TEMPLATE_IS_DRAWED):false;
 
@@ -482,7 +498,7 @@ public class EditTemplateAction extends DotPortletAction implements
 			setForward(req, "portlet.ext.templates.design_template");
 		}else
 			setForward(req, "portlet.ext.templates.edit_template");
-		// *********************** END GRAZIANO issue-12-dnd-template
+		// *********************** END GRAZIANO issue-12-dnd-template		
 	}
 
 	///// ************** ALL METHODS HERE *************************** ////////
