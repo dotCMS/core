@@ -11,7 +11,6 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
 
@@ -126,7 +125,7 @@ public class ClusterServerActionThread extends Thread {
 	 * Creates and starts a thread that doesn't process anything yet
 	 */
 	public synchronized static void createThread() {
-		if (instance == null) {
+		if (instance == null || !instance.isAlive()) {
 			instance = new ClusterServerActionThread();
 			instance.start();
 		}

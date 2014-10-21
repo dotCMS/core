@@ -3158,7 +3158,7 @@ create table cluster_server_action(
 	originator_id varchar(36) not null, 
 	server_id varchar(36) not null, 
 	failed boolean default false, 
-	response varchar(1024), 
+	response varchar(2048), 
 	action_id varchar(1024) not null,
 	completed boolean default false, 
 	entered_date datetime not null,

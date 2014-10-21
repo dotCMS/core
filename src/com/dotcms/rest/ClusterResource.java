@@ -1,9 +1,9 @@
 package com.dotcms.rest;
 
+import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -48,7 +48,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -214,6 +213,26 @@ public class ClusterResource extends WebResource {
 			} else {
 				jsonNodeStatusObject = resultActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
 				jsonNodeStatusObject.put("myself", myServerId.equals(resultActionBean.getServerId()));
+				
+				//Check Test File Asset
+				if(jsonNodeStatusObject.has("assetsStatus")
+						&& jsonNodeStatusObject.getString("assetsStatus").equals("green")
+						&& jsonNodeStatusObject.has("assetsTestPath")){
+					
+					//Get the file Name from the response.
+					File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
+					//If exist we need to check if we can delete it.
+					if (testFile.exists()) {
+						//If we can't delete it, it is a problem.
+						if(!testFile.delete()){
+							jsonNodeStatusObject.put("assetsStatus", "red");
+							jsonNodeStatusObject.put("status", "red");
+						}
+					} else {
+						jsonNodeStatusObject.put("assetsStatus", "red");
+						jsonNodeStatusObject.put("status", "red");
+					}
+				}
 			}
 			
 			//Add the status of the node to the list of other nodes.
@@ -333,6 +352,7 @@ public class ClusterResource extends WebResource {
 				}
 			}
 			
+			//If the we don't have the info after the timeout
 			if(!nodeStatusServerActionBean.isCompleted()){
 				nodeStatusServerActionBean.setCompleted(true);
 				nodeStatusServerActionBean.setFailed(true);
@@ -342,14 +362,35 @@ public class ClusterResource extends WebResource {
 			
 			JSONObject jsonNodeStatusObject = null;
 			
-			//If the we don't have the info after the timeout
+			//If the we have a failed job.
 			if(nodeStatusServerActionBean.isFailed()){
 				jsonNodeStatusObject = 
 						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
 		    	
+			//If everything is OK.
 			} else {
 				jsonNodeStatusObject = 
 		        		nodeStatusServerActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
+				
+				//Check Test File Asset
+				if(jsonNodeStatusObject.has("assetsStatus")
+						&& jsonNodeStatusObject.getString("assetsStatus").equals("green")
+						&& jsonNodeStatusObject.has("assetsTestPath")){
+					
+					//Get the file Name from the response.
+					File testFile = new File(jsonNodeStatusObject.getString("assetsTestPath"));
+					//If exist we need to check if we can delete it.
+					if (testFile.exists()) {
+						//If we can't delete it, it is a problem.
+						if(!testFile.delete()){
+							jsonNodeStatusObject.put("assetsStatus", "red");
+							jsonNodeStatusObject.put("status", "red");
+						}
+					} else {
+						jsonNodeStatusObject.put("assetsStatus", "red");
+						jsonNodeStatusObject.put("status", "red");
+					}
+				}
 			}
 	        
 			if(jsonNodeStatusObject != null){
