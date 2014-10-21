@@ -241,8 +241,8 @@ dojo.require("dojox.layout.ContentPane");
 			var imageName = document.getElementById("selectedwysiwyg_image").value;
 			var imageFolder = document.getElementById("folderwysiwyg_image").value;
 			var ident = document.getElementById("selectedIdentwysiwyg_image").value;
-			wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = /dotAsset/ + ident;
-			wysiwyg_win.ImageDialog.showPreviewImage("/dotAsset/" + ident);
+			wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+			wysiwyg_win.ImageDialog.showPreviewImage("/contentAsset/raw-data/" + ident + "/fileAsset");
 		}
 		if (param == 'wysiwyg_file') {
 			var fileName = document.getElementById("selectedwysiwyg_file").value;
@@ -253,7 +253,7 @@ dojo.require("dojox.layout.ContentPane");
 			if(fileExt == '<%= ext %>'){
 				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = fileFolder + fileName;
 			}else{
-				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = /dotAsset/ + ident;
+				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
 			}
 		}
 	}
