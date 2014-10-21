@@ -41,6 +41,14 @@ public class ESClient {
 
 		return _nodeInstance.client();
 	}
+	
+	public Client getClientInCluster(){
+		if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+			return null;
+		} else {
+			return _nodeInstance.client();
+		}
+	}
 
     private void initNode () {
 
@@ -228,7 +236,7 @@ public class ESClient {
 	public void removeClusterNode() {
 	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
     	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
-    	    initNode();
+    	    shutDownNode();
 	    }
 	}
 }

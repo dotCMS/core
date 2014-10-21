@@ -15,6 +15,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.enterprise.ClusterUtil;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
@@ -206,18 +207,8 @@ public class ClusterResource extends WebResource {
 				Logger.error(ClusterResource.class, 
 						"Error trying to get Node Status for server " + resultActionBean.getServerId());
 				
-				Server tempServer = APILocator.getServerAPI().getServer(resultActionBean.getServerId());
-				jsonNodeStatusObject = new JSONObject();
-				jsonNodeStatusObject.put( "serverId", tempServer.getServerId());
-		    	jsonNodeStatusObject.put( "ipAddress", tempServer.getIpAddress());
-		    	jsonNodeStatusObject.put( "host", tempServer.getHost());
-		    	jsonNodeStatusObject.put("friendlyName", tempServer.getName());
-		    	jsonNodeStatusObject.put("status", "red");
-		    	
-		    	if(UtilMethods.isSet(tempServer.getLastHeartBeat())) {
-		    		jsonNodeStatusObject.put("contacted", DateUtil.prettyDateSince(tempServer.getLastHeartBeat()));
-		    		jsonNodeStatusObject.put("contactedSeconds", ((new Date()).getTime()-tempServer.getLastHeartBeat().getTime())/1000);
-				}
+				jsonNodeStatusObject = 
+						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
 			
 		    //If the result is OK we need to get the response object.
 			} else {
@@ -226,7 +217,9 @@ public class ClusterResource extends WebResource {
 			}
 			
 			//Add the status of the node to the list of other nodes.
-			jsonNodes.add( jsonNodeStatusObject );
+			if(jsonNodeStatusObject != null){
+				jsonNodes.add( jsonNodeStatusObject );
+			}
 		}	
 
         return responseResource.response( jsonNodes.toString() );
@@ -340,18 +333,30 @@ public class ClusterResource extends WebResource {
 				}
 			}
 			
+			if(!nodeStatusServerActionBean.isCompleted()){
+				nodeStatusServerActionBean.setCompleted(true);
+				nodeStatusServerActionBean.setFailed(true);
+				nodeStatusServerActionBean.setResponse(new JSONObject().put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+				APILocator.getServerActionAPI().saveServerActionBean(nodeStatusServerActionBean);
+			}
+			
+			JSONObject jsonNodeStatusObject = null;
+			
+			//If the we don't have the info after the timeout
 			if(nodeStatusServerActionBean.isFailed()){
-				return null;
+				jsonNodeStatusObject = 
+						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
+		    	
+			} else {
+				jsonNodeStatusObject = 
+		        		nodeStatusServerActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
 			}
 	        
-	        JSONObject jsonNodeStatusObject = 
-	        		nodeStatusServerActionBean.getResponse().getJSONObject(NodeStatusServerAction.JSON_NODE_STATUS);
-	        
-	        if(jsonNodeStatusObject != null){
-	        	return responseResource.response( jsonNodeStatusObject.toString() );
-	        } else {
-	        	return null;
-	        }
+			if(jsonNodeStatusObject != null){
+				return responseResource.response( jsonNodeStatusObject.toString() );
+			} else {
+				return null;
+			}
 	        
 		} else {
 			return null;
@@ -378,7 +383,6 @@ public class ClusterResource extends WebResource {
         InitDataObject initData = init( params, true, request, false, "9" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
-//        Iterator<String> keys = DotConfig.getKeys();
         JSONObject jsonNode = new JSONObject();
         ServerAPI serverAPI = APILocator.getServerAPI();
 
@@ -389,8 +393,6 @@ public class ClusterResource extends WebResource {
 
         jsonNode.put("BIND_ADDRESS", server!=null&&UtilMethods.isSet(server.getIpAddress())?server.getIpAddress():"");
         jsonNode.put("CACHE_BINDPORT", server!=null&&UtilMethods.isSet(server.getCachePort())?server.getCachePort():cachePort);
-//        jsonNode.put("CACHE_MULTICAST_ADDRESS", "228.10.10.10");
-//        jsonNode.put("CACHE_MULTICAST_PORT", "45589");
         jsonNode.put("ES_TRANSPORT_TCP_PORT", server!=null&&UtilMethods.isSet(server.getEsTransportTcpPort())?server.getEsTransportTcpPort():esPort);
 
         return responseResource.response( jsonNode.toString() );

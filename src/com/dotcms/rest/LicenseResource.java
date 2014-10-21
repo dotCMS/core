@@ -1,19 +1,29 @@
 package com.dotcms.rest;
 
-import com.dotcms.cluster.bean.Server;
-import com.dotcms.cluster.business.ServerAPIImpl;
+import java.io.InputStream;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
 import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
 import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.DELETE;
+import com.dotcms.repackage.javax.ws.rs.FormParam;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.json.JSONArray;
-import com.dotcms.repackage.org.json.JSONObject;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -21,21 +31,11 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.repackage.org.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
 
 
 @Path("/license")
@@ -184,9 +184,10 @@ public class LicenseResource extends WebResource {
     public Response freeLicense(@Context HttpServletRequest request, @PathParam("params") String params) {
         InitDataObject initData = init(params, true, request, true, "9");
         
-        String serial = initData.getParamsMap().get("serial");
         String localServerId = APILocator.getServerAPI().readServerId();
         String remoteServerId = initData.getParamsMap().get("serverid");
+        String serial = initData.getParamsMap().get("serial");
+
         
         try {
             //If we are removing a remote Server we need to create a ServerAction.
@@ -225,7 +226,22 @@ public class LicenseResource extends WebResource {
     				}
     			}
     			
-    			if(resetLicenseServerActionBean.isFailed()){
+    			//If we reach the timeout and the server didn't respond.
+    			//We assume the server is down and remove the license from the table.
+    			if(!resetLicenseServerActionBean.isCompleted()){
+    				
+    				resetLicenseServerActionBean.setCompleted(true);
+    				resetLicenseServerActionBean.setFailed(true);
+    				resetLicenseServerActionBean
+    					.setResponse(new com.dotmarketing.util.json.JSONObject()
+							.put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
+    				APILocator.getServerActionAPI().saveServerActionBean(resetLicenseServerActionBean);
+    				LicenseUtil.freeLicenseOnRepo(serial);
+    			
+    			//If it was completed but we got some error, we need to alert it.
+    			} else if(resetLicenseServerActionBean.isCompleted() 
+    					&& resetLicenseServerActionBean.isFailed()){
+    				
     				throw new Exception(resetLicenseServerActionBean.getResponse().getString(ServerAction.ERROR_STATE));
     			}
             	
@@ -241,7 +257,9 @@ public class LicenseResource extends WebResource {
         } catch(Exception exception) {
             Logger.error(this, "can't free license ",exception);
             try {
-                HibernateUtil.rollbackTransaction();
+            	if(HibernateUtil.getSession().isOpen()){
+            		HibernateUtil.rollbackTransaction();
+            	}
             } catch (DotHibernateException dotHibernateException) {
                 Logger.warn(this, "can't rollback", dotHibernateException);
             }
