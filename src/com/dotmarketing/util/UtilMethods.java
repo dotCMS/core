@@ -14,6 +14,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
@@ -3468,13 +3469,19 @@ public class UtilMethods {
 
     }
 
+    /**
+     * Validate if the Elastic search tcp port is free or its being used
+     * @param host Host name or IP address
+     * @param port Port number
+     * @return boolean
+     */
     public static boolean isESPortFree(String host,int port) {
     	try {
-    		Socket socket = new Socket(host, port);
+    		ServerSocket socket = new ServerSocket(port,1,InetAddress.getByName(host));
     		socket.close();
-    	    return false;
-        } catch (IOException e) {
-            return true;
+    	    return true;
+        } catch (Exception e) {
+            return false;
         }
     }
 }

@@ -139,11 +139,8 @@ public class ESClient {
 			currentServer.setHost(Config.getStringProperty("es.network.host", null));
 
 			transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
-					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
+					:UtilMethods.isSet(currentServer.getEsTransportTcpPort()) && UtilMethods.isESPortFree(bindAddr, currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailableESPort(serverId, bindAddr, ServerPort.ES_TRANSPORT_TCP_PORT);
 
-			if(UtilMethods.isSet(UtilMethods.isESPortFree(bindAddr, Integer.parseInt(transportTCPPort)))){
-				transportTCPPort = ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
-			}
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
 				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
 						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
