@@ -12,6 +12,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -138,8 +139,8 @@ public class ESClient {
 
 			currentServer.setHost(Config.getStringProperty("es.network.host", null));
 
-			transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
-					:UtilMethods.isSet(currentServer.getEsTransportTcpPort()) && UtilMethods.isESPortFree(bindAddr, currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailableESPort(serverId, bindAddr, ServerPort.ES_TRANSPORT_TCP_PORT);
+			transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? getNextAvailableESPort(serverId,bindAddr,properties.get("ES_TRANSPORT_TCP_PORT"))
+					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString()) : getNextAvailableESPort(serverId, bindAddr, null);
 
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
 				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
@@ -230,4 +231,46 @@ public class ESClient {
     	    initNode();
 	    }
 	}
+	
+	/**
+	 * Validate if the base port is available in the specified bindAddress. 
+	 * If not the it will try to get the next port available
+	 * @param serverId Server identification
+	 * @param bindAddr Address where the port should be running
+	 * @param basePort Initial port to check
+	 * @return port
+	 */
+	public String getNextAvailableESPort(String serverId, String bindAddr, String basePort) {
+        
+        String freePort = Config.getStringProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue());
+        try {
+        	if(UtilMethods.isSet(basePort)){
+        		freePort=basePort;
+        	}else{
+        		DotConnect dc = new DotConnect();
+        	    dc.setSQL("select max(" + ServerPort.ES_TRANSPORT_TCP_PORT.getTableName()+ ") as port from cluster_server where server_id = ? ");
+                dc.addParam(serverId);
+            	List<Map<String,Object>> results = dc.loadObjectResults();
+            	Number maxPort = null;
+                if(!results.isEmpty()) {
+                    maxPort = (Number) results.get(0).get("port");
+                }
+                freePort = UtilMethods.isSet(maxPort)?Integer.toString(maxPort.intValue()+1):freePort;
+        	}
+            int pp=Integer.parseInt(freePort);
+            //This will check the next 10 ports to see if one its available
+            int count=1;
+            while(!UtilMethods.isESPortFree(APILocator.getServerAPI().getServer(serverId).getIpAddress(),pp) && count <= 10) {
+            	pp = pp + 1;
+               	count++;
+            }
+                
+            freePort=Integer.toString(pp);
+
+        } catch (DotDataException e) {
+            Logger.error(ESClient.class, "Could not get an Available server port", e);
+        }
+
+        return freePort.toString();
+    }
 }
