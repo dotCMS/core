@@ -45,9 +45,9 @@
 
 <script src="/html/js/ace-builds-1.1.01/src-noconflict/ace.js" type="text/javascript"></script>
 <%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
-<script type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
+<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tiny_mce_gzip.js"></script>
 <%}else { %>
-<script type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce.js"></script>
+<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
 <%}%>
 <script type="text/javascript">
 
@@ -69,13 +69,23 @@
 
 		});
 	}else{
-		tinyMCE.init({
-			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
-			themes : 'simple,advanced',
+		tinymce.init({
+			selector: "textarea#"+textAreaId,
+    		theme: "modern",
+    		menubar:false,
+    	    statusbar: false,
+    		plugins: [
+        		"advlist autolink lists link image charmap print preview hr anchor pagebreak",
+        		"searchreplace wordcount visualblocks visualchars code fullscreen",
+        		"insertdatetime media nonbreaking save table contextmenu directionality",
+        		"emoticons template paste textcolor colorpicker validation textpattern dotimageclipboard"
+    		],
 			languages : '<%= usera.getLanguageId().substring(0,2) %>',
-			disk_cache : true,
-			debug : false
-
+			toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
+    		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
+    		image_advtab: true,
+    		file_browser_callback: cmsFileBrowser
+    		
 		});
 	}
 </script>
@@ -345,7 +355,7 @@ var cmsfile=null;
 			//Enabling the wysiwyg
 			try
 			{
-				(new tinymce.Editor(textAreaId, tinyMCEProps)).render();
+				(new tinymce.Editor(textAreaId, tinyMCEProps, tinymce.EditorManager)).render();
 
 			}
 			catch(e)
@@ -402,7 +412,7 @@ var cmsfile=null;
 			cmsFileBrowserFile.show();
 		}
 		dojo.style(dojo.query('.clearlooks2')[0], { zIndex: '100' })
-		dojo.style(dojo.byId('mceModalBlocker'), { zIndex: '90' })
+		dojo.style(('mceModalBlocker'), { zIndex: '90' })
 	}
 
 	//Glossary terms search
