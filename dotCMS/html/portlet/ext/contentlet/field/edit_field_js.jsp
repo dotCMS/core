@@ -411,8 +411,9 @@ var cmsfile=null;
 		else{
 			cmsFileBrowserFile.show();
 		}
-		dojo.style(dojo.query('.clearlooks2')[0], { zIndex: '100' })
-		dojo.style(('mceModalBlocker'), { zIndex: '90' })
+		dojo.style(dojo.query('.mce-window')[0], { zIndex: '100' })
+		dojo.style(dojo.byId('mce-modal-block'), { zIndex: '90' })		
+		
 	}
 
 	//Glossary terms search
@@ -574,7 +575,8 @@ var cmsfile=null;
 		var ident
 		var ext=file.extension;
 		var ident =file.identifier+'.'+ext;
-		wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/dotAsset/" + ident;
+		document.getElementById(wysiwyg_field_name).value = "/dotAsset/" + ident;
+		//wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/dotAsset/" + ident;
 		if(wysiwyg_field_name == 'src'){
 			wysiwyg_win.ImageDialog.showPreviewImage("/dotAsset/" + ident);
 		}
@@ -586,9 +588,9 @@ var cmsfile=null;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if(fileExt == '<%= extension %>'){
-			wysiwyg_win.document.forms[0].elements["href"].value = file.pageURI;
+			document.getElementById(wysiwyg_field_name).value = file.pageURI;
 		}else{
-			wysiwyg_win.document.forms[0].elements["href"].value = /dotAsset/ + ident;
+			document.getElementById(wysiwyg_field_name).value = "/dotAsset/" + ident;
 		}
 	}
 
