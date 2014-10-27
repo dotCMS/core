@@ -127,8 +127,8 @@ public class ESClient {
         if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 
 			String serverId = ConfigUtils.getServerId();
-
-			
+			//This line is added because when someone add a license the node is already up and working and reset the existing port
+			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
