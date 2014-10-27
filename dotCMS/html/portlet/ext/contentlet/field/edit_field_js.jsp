@@ -59,6 +59,7 @@
 	dojo.require("dojo.dnd.Source");
 
 <% User usera= com.liferay.portal.util.PortalUtil.getUser(request); %>
+	var textAreaId;
 	if(<%=Config.getBooleanProperty("ENABLE_GZIP",true) %>){
 		tinyMCE_GZ.init({
 			plugins : 'style,layer,table,save,advhr,advimage,advlink,emotions,iespell,insertdatetime,preview,media,searchreplace,print,contextmenu',
