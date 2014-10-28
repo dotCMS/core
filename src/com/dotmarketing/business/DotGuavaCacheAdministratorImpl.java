@@ -25,6 +25,7 @@ import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.jboss.cache.Fqn;
 import com.dotcms.repackage.org.jgroups.Address;
@@ -71,7 +72,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	static final String WORKING_CACHE_PREFIX = "workingcache";
 	static final String DEFAULT_CACHE = "default";
 	public static final String TEST_MESSAGE = "HELLO CLUSTER!";
+	static final String VALIDATE_CACHE = "validateCacheInCluster-";
+	static final String VALIDATE_CACHE_RESPONSE = "validateCacheInCluster-response-";
+	static final String VALIDATE_SEPARATOR = "_";
+	
 	private NullCallable nullCallable = new NullCallable();
+	
+	//Map<DateInMillis, Map<ServerID, True>>
+	private Map<String, Map<String, Boolean>> cacheStatus;
 
 	private boolean isDiskCache(String group){
 		if(group ==null || diskCache==null){
@@ -150,7 +158,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				cacheToDisk.clear();
 			}
 		}
-
+		
+		cacheStatus = new LRUMap(100);
 	}
 
 	public void setCluster(Server localServer) throws Exception {
@@ -746,12 +755,56 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 		}
 	}
+	
+	
+	
+	/**
+	 * @param dateInMillis String use as Key on out Map of results.
+	 * @param numberServers Number of servers to wait for a response.
+	 * @param maxWaitSeconds seconds to wait for a response.
+	 * @return Map with DateInMillis, ServerInfo for each cache/live server in Cluster. 
+	 */
+	public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds){
+		
+		//If we are already in Cluster. 
+		if(numberServers > 0){
+			//Sends the message to the other servers.
+			send(VALIDATE_CACHE + dateInMillis);
+			
+			//Waits for 2 seconds in order all the servers respond.
+			int maxWaitTime = maxWaitSeconds * 1000;
+			int passedWaitTime = 0;
+			
+			//Trying to NOT wait whole 2 secons for returning the info.
+			while (passedWaitTime <= maxWaitTime){
+				try {
+				    Thread.sleep(10);
+				    passedWaitTime += 10;
+				    
+				    Map<String, Boolean> ourMap = (Map<String, Boolean>)cacheStatus.get(dateInMillis);
+				    
+				    //No need to wait if we have all server results. 
+				    if(ourMap != null && ourMap.size() == numberServers){
+				    	passedWaitTime = maxWaitTime + 1;
+				    }
+				    
+				} catch(InterruptedException ex) {
+				    Thread.currentThread().interrupt();
+				    passedWaitTime = maxWaitTime + 1;
+				}
+			}
+		}
+		
+		//Returns the Map with all the info stored by receive() method.
+		return (Map<String, Boolean>)cacheStatus.get(dateInMillis);
+	}
 
 	@Override
 	public void receive(Message msg) {
 		if (msg == null) {
 			return;
 		}
+		
 		Object v = msg.getObject();
 		if (v == null) {
 			return;
@@ -766,7 +819,47 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			} catch (ChannelClosedException e) {
 				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 			}
-
+		
+		//Handle when other server is responding to ping.	
+		} else if (v.toString().startsWith(VALIDATE_CACHE_RESPONSE)) {
+			String message = v.toString();
+			//Deletes the first part of the message, no longer needed.
+			message = message.replace(VALIDATE_CACHE_RESPONSE, "");
+			
+			//Gets the part of the message that has the Data in Milli.
+			String dateInMillis = message.substring(0, message.indexOf(VALIDATE_SEPARATOR));
+			//Gets the last part of the message that has the Server ID. 
+			String serverID = message.substring(message.lastIndexOf(VALIDATE_SEPARATOR) + 1);
+			
+			synchronized(this){
+				//Creates or updates the Map inside the Map.
+				Map<String, Boolean> localMap = cacheStatus.get(dateInMillis);
+				
+				if(localMap == null){
+					localMap = new HashMap<String, Boolean>();
+				}	
+				
+				localMap.put(serverID, Boolean.TRUE);
+				
+				//Add the Info with the Date in Millis and the Map with Server Info.
+				cacheStatus.put(dateInMillis, localMap);
+		    }
+			
+			Logger.debug(this, VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
+					
+		//Handle when other server is trying to ping local server.
+		} else if (v.toString().startsWith(VALIDATE_CACHE)) {
+			String message = v.toString();
+			//Deletes the first part of the message, no longer needed.
+			message = message.replace(VALIDATE_CACHE, "");
+			
+			//Gets the part of the message that has the Data in Milli.
+			String dateInMillis = message;
+			//Sends the message back in order to alert the server we are alive.
+			send(VALIDATE_CACHE_RESPONSE + dateInMillis + VALIDATE_SEPARATOR + APILocator.getServerAPI().readServerId());
+			
+			Logger.debug(this, VALIDATE_CACHE + " DATE_MILLIS: " + dateInMillis);
+			
 		} else if (v.toString().equals("ACK")) {
 			Logger.info(this, "ACK Received " + new Date());
 		} else if(v.toString().equals("MultiMessageResources.reload")) {

@@ -303,10 +303,10 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
             final boolean inc = incremental;
             new Thread() {
                 public void run() {
-                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
-                    String date = DateUtil.getCurrentDate();
+                	String date = DateUtil.getCurrentDate();
                     ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
                     AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: timemachine"  );
+                    APILocator.getTimeMachineAPI().startTimeMachine(dhosts, dlangs,inc);
 
                     try {
                         //Create a new notification to inform the snapshot was created

@@ -1,5 +1,5 @@
 /* NAV SUB STYLES 2.0 */
-#admin-banner-logo-div{position:absolute;top:10px;left:20px;height:20px;width:70px;text-indent:-9999px;background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -300px;}
+#admin-banner-logo-div{position:absolute;top:10px;left:20px;height:20px;width:80px;text-indent:-9999px;background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -300px;}
 #admin-site-tools-div {position:absolute; top:4px;right:30px;font-size: 85%;color:#ddd;}
 #admin-site-tools-div a{display:inline-block;color:#fff;text-decoration:none;vertical-align:top;padding:5px 0 0 0;margin-right:15px;}
 #admin-site-tools-div a:hover{}
@@ -79,7 +79,7 @@
 #menu ul.horizontal > li.level1 a {width: auto;}
 li.level1 .navMenu-title{margin:0;padding:0;line-height:14px;overflow:hidden;color:#404040;font-size:93%;font-weight:bold;}
 li.level1 .navMenu-subtitle{margin:0;padding:0;overflow:hidden;color:#5f5f5f;font-size:77%;}
-li.level1 .navMenu-arrow{display:none;background: url(/html/images/skin/skin-sprite.png) no-repeat -80px -300px;width:13px;height:13px;margin:4px auto 2px auto;font-size:77%;}
+li.level1 .navMenu-arrow{display:none;background: url(/html/images/skin/skin-sprite.png) no-repeat -250px -300px;width:13px;height:13px;margin:4px auto 2px auto;font-size:77%;}
 li.smallify .navMenu-subtitle{display:none;}
 li.smallify .navMenu-arrow{display:block;}
 
@@ -178,7 +178,7 @@ tr.active{background:#ffffcc;cursor:pointer;}
 /* FORM STYLES 2.0 */
 .wrapperRight{margin:0 0 0 275px;overflow:auto;}
 .fieldWrapper{margin: 0 0 20px 0;padding:0;position:relative;}
-.fieldName{float:left;width:175px;text-align:right;font-size: 93%;font-weight:bold;}
+.fieldName{font-size: 93%;font-weight:bold;padding:10px;}
 .fieldValue{float:left;margin:0 0 0 20px;}
 
 .fieldValueText{color:#999;border: 1px solid #ddd;padding:3px 8px;width:400px;}
@@ -196,7 +196,7 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .fieldReadOnly{border-color:#eeeeee;background:blue;}
 .lineDividerTitle{background:#ECECEC;font-weight:bold;border:1px solid #D0D0D0;padding:5px 10px;margin:30px 20px 20px 0;}
 
-.buttonRow-left{position:absolute;overflow:auto;left:22px;top:160px;width:250px;font-size:93%;background:#eee;}
+.buttonRow-left{position:absolute;overflow:auto;left:0px;width:250px;font-size:93%;background:#eee;margin-top:0px}
 .buttonRow-left a{display:block;padding:5px 10px;cursor:pointer;color:#555;background:#fff;border:1px solid silver;margin-bottom:-1px;}
 .buttonRow-left a:hover{background:#E0E9F6;}
 .buttonRow-left a span{margin-right:5px;}

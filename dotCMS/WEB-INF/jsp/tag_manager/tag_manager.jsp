@@ -46,6 +46,10 @@
     String currentHostStore =  currentHost.getTagStorage();
     Host hostTagStore = APILocator.getHostAPI().find(currentHostStore, APILocator.getUserAPI().getSystemUser(), false);
     String tagStoreHostIdentifier = hostTagStore.getIdentifier();
+    String tagStoreHostName = hostTagStore.getHostname();
+    if(tagStoreHostName != null && tagStoreHostName.equals("System Host")){
+        tagStoreHostName = LanguageUtil.get(pageContext, "tag-all-hosts");
+    }
 %>
 
 <style type="text/css">
@@ -119,6 +123,8 @@ td {font-size: 100%;}
     
     var currentHostId = '<%=currentHostId %>';
     var tagStoreHostIdentifier = '<%= tagStoreHostIdentifier %>';
+    var tagStoreHostName = '<%= tagStoreHostName %>';
+
 
     var tagsGrid;
     var layout;
@@ -287,7 +293,8 @@ td {font-size: 100%;}
             dojo.byId('addTagErrorMessagesList').innerHTML = '';
 
             document.getElementById('tagStorage').value = currentHostId;
-            dijit.byId('tagStorage_dropDown').set('value', tagStoreHostIdentifier);
+            dijit.byId('tagStorage_dropDown').set('displayedValue', tagStoreHostName);
+            console.log("tagStoreHostName: " + tagStoreHostName);
         }
 
          //Handler when the user clicks the cancel button

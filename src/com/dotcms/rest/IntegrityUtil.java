@@ -1060,6 +1060,8 @@ public class IntegrityUtil {
 
                     if ( DbConnectionFactory.isOracle() ) {
                         dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                    } else if(DbConnectionFactory.isPostgres()) {
+                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "+DbConnectionFactory.getDBFalse()+", '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
                     } else {
                         dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"+DbConnectionFactory.getDBFalse()+"', '0', '', 'TEMP_IDENTIFIER', '"+ fileAssetSt.getInode()+ "', '1900-01-01 00:00:00.00')");
                     }
@@ -1249,6 +1251,9 @@ public class IntegrityUtil {
                 if ( DbConnectionFactory.isOracle() ) {
                     dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
                             + ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                } else if ( DbConnectionFactory.isPostgres() ) {
+                    dc.executeStatement( "insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', " + DbConnectionFactory.getDBFalse() + ", '', '', '', 1, " + DbConnectionFactory.getDBTrue() + ", " + DbConnectionFactory.getDBFalse() + ", 'DUMMY_VAR_NAME'"
+                            + ", 'DUMMY_PATERN', '" + st.getHost() + "', '" + st.getFolder() + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')" );
                 } else {
                     dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '', '', '', 1, '"+DbConnectionFactory.getDBTrue()+"', '"+DbConnectionFactory.getDBFalse()+"', 'DUMMY_VAR_NAME'"
                             + ", 'DUMMY_PATERN', '"+st.getHost()+"', '"+st.getFolder()+"', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
@@ -1398,6 +1403,8 @@ public class IntegrityUtil {
 
                 if ( DbConnectionFactory.isOracle() ) {
                     dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+                } else if(DbConnectionFactory.isPostgres()) {
+                    dc.executeStatement( "insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', " + DbConnectionFactory.getDBFalse() + ", " + DbConnectionFactory.getDBFalse() + ", " + DbConnectionFactory.getDBFalse() + ", '', '1900-01-01 00:00:00.00')" );
                 } else {
                     dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '"+DbConnectionFactory.getDBFalse()+"', '', '1900-01-01 00:00:00.00')");
                 }

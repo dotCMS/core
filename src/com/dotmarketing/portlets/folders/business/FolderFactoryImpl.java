@@ -568,9 +568,12 @@ public class FolderFactoryImpl extends FolderFactory {
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 		Identifier folderId = identAPI.find(folder.getIdentifier());
 
-		if(folder.isShowOnMenu())
-		    CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-		CacheLocator.getNavToolCache().removeNavByPath(folderId.getHostId(), folderId.getParentPath());
+        //Clean up the cache
+        if ( folder.isShowOnMenu() ) {
+            CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
+        }
+        CacheLocator.getNavToolCache().removeNavByPath( folderId.getHostId(), folderId.getParentPath() );
+        fc.removeFolder( folder, folderId );
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		boolean contains = false;
@@ -1103,6 +1106,8 @@ public class FolderFactoryImpl extends FolderFactory {
 				String sortCreate = "values += \"&\" + Sortable.serialize('" + id + "');\n";
 				sb.append(sortCreate);
 			}
+			sb.append("values = values.replace(/\\[/g, '__');\n");
+			sb.append("values = values.replace(/\\]/g, '---');\n");
 			sb.append("return values;\n");
 			sb.append("}\n");
 
