@@ -5,10 +5,7 @@ package com.dotmarketing.startup.runonce;
 
 import java.util.List;
 
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
-import com.dotmarketing.util.Logger;
 
 /**
  * @author Oscar Arrieta.
@@ -24,22 +21,7 @@ public class Task03060AddClusterServerAction extends AbstractJDBCStartupTask {
 	 */
 	@Override
 	public boolean forceRun() {
-		try {
-            DotConnect dc=new DotConnect();
-            dc.setSQL("select * from cluster_server_action");
-            dc.loadResult();
-            return false;
-        }
-        catch(Exception ex) {
-            return true;
-        }
-        finally {
-            try {
-                DbConnectionFactory.closeConnection();
-            } catch (Exception e) {
-                Logger.error(this, e.getMessage(), e);
-            }
-        }
+		return true;
 	}
 
 	/* (non-Javadoc)
