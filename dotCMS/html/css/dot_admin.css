@@ -178,7 +178,7 @@ tr.active{background:#ffffcc;cursor:pointer;}
 /* FORM STYLES 2.0 */
 .wrapperRight{margin:0 0 0 275px;overflow:auto;}
 .fieldWrapper{margin: 0 0 20px 0;padding:0;position:relative;}
-.fieldName{float:left;width:175px;text-align:right;font-size: 93%;font-weight:bold;}
+.fieldName{font-size: 93%;font-weight:bold;padding:10px;}
 .fieldValue{float:left;margin:0 0 0 20px;}
 
 .fieldValueText{color:#999;border: 1px solid #ddd;padding:3px 8px;width:400px;}
