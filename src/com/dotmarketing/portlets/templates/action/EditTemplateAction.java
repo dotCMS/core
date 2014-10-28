@@ -233,7 +233,7 @@ public class EditTemplateAction extends DotPortletAction implements
 
 					Logger.debug(this, "Calling Save method");
 					// the old template before editing using the inode from el request
-					oldTemplate = APILocator.getTemplateAPI().find(req.getParameter("inode"), user, false);					_saveWebAsset(req, res, config, form, user);
+					oldTemplate = APILocator.getTemplateAPI().find(req.getParameter("inode"), user, false);
 					_saveWebAsset(req, res, config, form, user);
 					String subcmd = req.getParameter("subcmd");
 
