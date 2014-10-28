@@ -24,7 +24,7 @@
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-
+<!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
@@ -173,6 +173,7 @@
 var editButtonRow="editContentletButtonRow";
 </script>
 
+
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
@@ -264,7 +265,27 @@ var editButtonRow="editContentletButtonRow";
 		<%} else {	%>
 			<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
 		<%}%>
-
+		<!-- START Left Column -->
+			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
+		
+				<%if (InodeUtils.isSet(structure.getInode())) {%>
+					<%--If the user has permissions to publish--%>
+					<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
+					<%--Then the save and publish button should appear--%>
+		
+					<div class="gradient2">
+						<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+					</div>
+		
+					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
+					<div id="contentletActionsHanger">
+						<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+					</div>
+				<% } %>
+				</div>
+		
+		<!-- END Left Column -->
+		
 		<!-- START Right Column -->
 			<div class="wrapperRight" style="position:relative;">
 					<div class="fieldWrapper">&nbsp;</div>
@@ -475,26 +496,7 @@ var editButtonRow="editContentletButtonRow";
 
 	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
-	<!-- START Left Column -->
-	 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
-
-		<%if (InodeUtils.isSet(structure.getInode())) {%>
-			<%--If the user has permissions to publish--%>
-			<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
-			<%--Then the save and publish button should appear--%>
-
-			<div class="gradient2">
-				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
-			</div>
-
-			<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-			<div id="contentletActionsHanger">
-				<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
-			</div>
-		<% } %>
-		</div>
-
-<!-- END Left Column -->
+	
 
 </liferay:box>
 

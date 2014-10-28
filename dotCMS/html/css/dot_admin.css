@@ -196,7 +196,7 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .fieldReadOnly{border-color:#eeeeee;background:blue;}
 .lineDividerTitle{background:#ECECEC;font-weight:bold;border:1px solid #D0D0D0;padding:5px 10px;margin:30px 20px 20px 0;}
 
-.buttonRow-left{position:absolute;overflow:auto;left:22px;top:160px;width:250px;font-size:93%;background:#eee;}
+.buttonRow-left{position:absolute;overflow:auto;left:0px;width:250px;font-size:93%;background:#eee;margin-top:0px}
 .buttonRow-left a{display:block;padding:5px 10px;cursor:pointer;color:#555;background:#fff;border:1px solid silver;margin-bottom:-1px;}
 .buttonRow-left a:hover{background:#E0E9F6;}
 .buttonRow-left a span{margin-right:5px;}
