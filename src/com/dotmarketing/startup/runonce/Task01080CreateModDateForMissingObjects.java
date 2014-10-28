@@ -53,7 +53,8 @@ public class Task01080CreateModDateForMissingObjects implements StartupTask {
 			dc.executeStatement("alter table category add mod_date datetime");
 
 			// verify if columns exists
-			dc.setSQL("select column_name from information_schema.columns where table_name='workflow_scheme' and column_name='mod_date'");
+			dc.setSQL("select column_name from information_schema.columns where table_schema = ? and table_name='workflow_scheme' and column_name='mod_date'");
+			dc.addParam(DbConnectionFactory.getConnection().getCatalog());
 			List<Map<String, Object>> results = dc.loadObjectResults();
 
 			if(results.isEmpty()) {
