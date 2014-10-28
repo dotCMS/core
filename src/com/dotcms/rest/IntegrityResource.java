@@ -75,7 +75,7 @@ public class IntegrityResource extends WebResource {
                 "StructuresToCheck.csv",
                 "StructuresToFix.csv"),
         
-        HTML_PAGES("push_publish_integrity_html_pages_conflicts",
+        HTMLPAGES("push_publish_integrity_html_pages_conflicts",
                 "HtmlPagesToCheck.csv",
                 "HtmlPagsToFix.csv");
 
@@ -777,7 +777,7 @@ public class IntegrityResource extends WebResource {
                     case SCHEMES:
                         columns.add("name");
                         break;
-                    case HTML_PAGES:
+                    case HTMLPAGES:
                         columns.add("html_page");
                         break;
                 }

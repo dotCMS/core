@@ -35,6 +35,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -365,12 +366,12 @@ public class IntegrityUtil {
             foldersToCheckCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName());
             structuresToCheckCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName());
             schemesToCheckCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName());
-            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTML_PAGES.getDataToCheckCSVName());
+            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName());
 
             addToZipFile(foldersToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToCheckCSVName());
             addToZipFile(structuresToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToCheckCSVName());
             addToZipFile(schemesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToCheckCSVName());
-            addToZipFile(htmlPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.HTML_PAGES.getDataToCheckCSVName());
+            addToZipFile(htmlPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.HTMLPAGES.getDataToCheckCSVName());
 
             zos.close();
             fos.close();
@@ -659,12 +660,12 @@ public class IntegrityUtil {
 
         try {
 
-            CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.HTML_PAGES.getDataToCheckCSVName(), '|');
+            CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName(), '|');
             
             boolean tempCreated = false;
             
             DotConnect dc = new DotConnect();
-            String tempTableName = getTempTableName(endpointId, IntegrityType.HTML_PAGES);
+            String tempTableName = getTempTableName(endpointId, IntegrityType.HTMLPAGES);
             String tempKeyword = getTempKeyword();
 
             //Create a temporary table and insert all the records coming from the CSV file.
@@ -705,7 +706,7 @@ public class IntegrityUtil {
             }
             htmlpages.close();
 
-            String resultsTableName = getResultsTableName(IntegrityType.HTML_PAGES);
+            String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
 
             //Compare the data from the CSV to the local database data and see if we have conflicts.
             dc.setSQL("select lh.page_url as html_page, "
@@ -755,7 +756,7 @@ public class IntegrityUtil {
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
             }
 
-            dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTML_PAGES));
+            dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTMLPAGES));
             results = dc.loadObjectResults();
 
             return !results.isEmpty();
@@ -784,9 +785,9 @@ public class IntegrityUtil {
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
             }
             
-            if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTML_PAGES))) {
-                dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTML_PAGES));
-                dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTML_PAGES));
+            if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTMLPAGES))) {
+                dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
+                dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
             }
 
         } catch (SQLException e) {
@@ -984,7 +985,7 @@ public class IntegrityUtil {
             fixStructures(endpointId);
         } else if(type == IntegrityType.SCHEMES) {
             fixSchemes(endpointId);
-        } else if(type == IntegrityType.HTML_PAGES) {
+        } else if(type == IntegrityType.HTMLPAGES) {
             fixHtmlPages(endpointId);
         }
     }
@@ -1487,6 +1488,35 @@ public class IntegrityUtil {
 		SET asset_name = 'oscar'
 		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
     	 */
+    	
+    	DotConnect dc = new DotConnect();
+        String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
+        HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
+
+        try {
+            //Delete the schemes cache
+            dc.setSQL( "SELECT local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+            dc.addParam( serverId );
+            List<Map<String, Object>> results = dc.loadObjectResults();
+            
+            for ( Map<String, Object> result : results ) {
+
+            	String oldHtmlPageInode = (String) result.get( "local_inode" );
+                String newHtmlPageInode = (String) result.get( "remote_inode" );
+                String oldHtmlPageIdentifier = (String) result.get( "local_inode" );
+                String newHtmlPageIdentifier = (String) result.get( "remote_inode" );
+
+                htmlPageCache.remove(oldHtmlPageIdentifier);
+
+             	//Fixing by SQL queries
+        		dc.executeStatement("");
+            }
+
+            discardConflicts(serverId, IntegrityType.HTMLPAGES);
+
+        } catch ( SQLException e ) {
+            throw new DotDataException( e.getMessage(), e );
+        }
     }
     
 }
