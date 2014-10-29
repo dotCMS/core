@@ -3056,3 +3056,16 @@ create table folders_ir(folder varchar(255), local_inode varchar(36), remote_ino
 create table structures_ir(velocity_name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
 
+---Server Action
+create table cluster_server_action(
+	server_action_id varchar(36) not null, 
+	originator_id varchar(36) not null, 
+	server_id varchar(36) not null, 
+	failed boolean default false, 
+	response varchar(2048), 
+	action_id varchar(1024) not null,
+	completed boolean default false, 
+	entered_date timestamp not null,
+	time_out_seconds bigint not null,
+	PRIMARY KEY (server_action_id)
+);
