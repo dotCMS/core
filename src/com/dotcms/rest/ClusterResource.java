@@ -15,7 +15,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
-import com.dotcms.enterprise.ClusterUtil;
+import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
@@ -207,7 +207,7 @@ public class ClusterResource extends WebResource {
 						"Error trying to get Node Status for server " + resultActionBean.getServerId());
 				
 				jsonNodeStatusObject = 
-						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
+						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(resultActionBean.getServerId()));
 			
 		    //If the result is OK we need to get the response object.
 			} else {
@@ -365,7 +365,7 @@ public class ClusterResource extends WebResource {
 			//If the we have a failed job.
 			if(nodeStatusServerActionBean.isFailed()){
 				jsonNodeStatusObject = 
-						ClusterUtil.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
+						ClusterUtilProxy.createFailedJson(APILocator.getServerAPI().getServer(nodeStatusServerActionBean.getServerId()));
 		    	
 			//If everything is OK.
 			} else {
