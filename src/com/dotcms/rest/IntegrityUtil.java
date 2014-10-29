@@ -1468,25 +1468,28 @@ public class IntegrityUtil {
      */
     public void fixHtmlPages ( String serverId ) throws DotDataException, DotSecurityException {
     	/*
+    	Local identifier 82c5173a-6c7a-4866-b6cc-c63f117f9f12
+    	Remote identifier d53d770b-2c3f-4ae6-ab48-b43926ccd008
+    	 
 		INSERT dotcms30.identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date)
-		SELECT '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1', parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date
+		SELECT 'd53d770b-2c3f-4ae6-ab48-b43926ccd008', parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date
 		FROM dotcms30.identifier
-		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		WHERE id = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
 		
 		UPDATE dotcms30.htmlpage
-		SET identifier = '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1'
-		WHERE identifier = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		SET identifier = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008'
+		WHERE identifier = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
 		
 		UPDATE dotcms30.htmlpage_version_info
-		SET identifier = '936e8ba1-eb6a-49e4-bd77-cfa56178b3d1'
-		WHERE identifier = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		SET identifier = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008'
+		WHERE identifier = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
 		
 		DELETE FROM dotcms30.identifier
-		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		WHERE id = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
 		
 		UPDATE dotcms30.identifier
-		SET asset_name = 'oscar'
-		WHERE id = '78e8940e-3d19-4f25-ac5e-df81cd8a80ff';
+		SET asset_name = '/contact-us/oscar.html'
+		WHERE id = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008';
     	 */
     	
     	DotConnect dc = new DotConnect();
@@ -1505,6 +1508,7 @@ public class IntegrityUtil {
                 String newHtmlPageInode = (String) result.get( "remote_inode" );
                 String oldHtmlPageIdentifier = (String) result.get( "local_inode" );
                 String newHtmlPageIdentifier = (String) result.get( "remote_inode" );
+                String assetName = (String) result.get( "html_page" );
 
                 htmlPageCache.remove(oldHtmlPageIdentifier);
 
