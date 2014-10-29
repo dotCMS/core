@@ -2,22 +2,11 @@
 
 <%
 	String rewireable = request.getParameter("rewireable");
-	String hasLicense = request.getParameter("hasLicense");
 %>
 
 <div class="actionPanelContent">
 
-	<h2>Action Panel</h2>
-
-	<% if(hasLicense.equalsIgnoreCase("false")) { %>
-		<hr>
-
-		<table>
-		<tr style="color:red;">
-			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_license_no_license") %></td>
-		</tr>
-		</table>
-	<% } %>
+	<h3>{server.host} - {server.serverID}</h3>
 
 	<hr>
 
@@ -25,8 +14,8 @@
 
 		<tr>
 			<td style="width:15px;"><i class="fa fa-circle {cache.status}"></i></td>
-			<td style="width:50%;padding: 0 5px;"><b>Cache</b></td>
-			<td style="width:50%;">&nbsp;</td>
+			<td style="width:50%;padding: 0 5px;"><div id="myShowCacheButton"><b>Cache</b></div></td>
+			<td style="width:50%;">&nbsp;</td>	
 		</tr>
 		<tr>
 			<td>&nbsp;</td>
@@ -51,7 +40,7 @@
 		<tr>
 			<td>&nbsp;</td>
 			<td><%= LanguageUtil.get(pageContext, "configuration_cluster_received_bytes") %></td>
-			<td align="right" nowrap>{cache.receivedBytes} bytes</td>
+			<td align="right" nowrap>{cache.receivedBytes}</td>
 		</tr>
 		<tr>
 			<td>&nbsp;</td>
@@ -102,7 +91,7 @@
 		<tr>
 			<td>&nbsp;</td>
 			<td><%= LanguageUtil.get(pageContext, "Read") %>/<%= LanguageUtil.get(pageContext, "Write") %></td>
-			<td align="right">{assets.canRead}/{assets.canWrite}</td>
+			<td align="right">{assets.canRead}{assets.canWrite}</td>
 		</tr>
 		<tr>
 			<td>&nbsp;</td>
