@@ -38,6 +38,8 @@ import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
@@ -391,26 +393,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			throw new UserEmailAddressException();
 		}
 		
-		User user = null;
+		User user = UserUtil.findByC_EA(companyId, emailAddress);
 
-		//Catching Exception to not leak information about user name existence.
-		try{
-			user = UserUtil.findByC_EA(companyId, emailAddress);
-			
-		} catch(NoSuchUserException noSuchUserException){
-			
-			//If the user doesn't exist but property is true, we need to display the error.
-			//If the user doesn't exist but property is false, wee need to display success.
-			boolean displayNotSuchUserError = 
-					Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
-			
-			if(displayNotSuchUserError){
-				throw noSuchUserException;
-			} else {
-				return;
-			}
-		}
-		
 		// we use the ICQ field to store the token:timestamp of the
 		// password reset request we put in the email
 		// the timestamp is used to set an expiration on the token
