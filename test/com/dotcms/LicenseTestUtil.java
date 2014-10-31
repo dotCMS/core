@@ -36,7 +36,7 @@ public class LicenseTestUtil {
 			LicenseUtil.processForm(req);
 			
 			HttpClient client=new HttpClient();
-			PostMethod post=new PostMethod("http://support.dotcms.com/app/licenseRequest3");
+			PostMethod post=new PostMethod("https://my.dotcms.com/app/licenseRequest3");
 			post.setRequestBody(new NameValuePair[] { new NameValuePair("code", reqcode.toString()) });
 			client.executeMethod(post);
 			

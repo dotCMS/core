@@ -5,9 +5,9 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.enterprise.ServerActionFactoryImplProxy;
 import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
-import com.dotcms.enterprise.cluster.action.business.ServerActionFactoryImpl;
 import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.journal.business.ESDistributedJournalFactoryImpl;
 import com.dotcms.notifications.business.NotificationFactory;
@@ -318,7 +318,7 @@ enum FactoryIndex
             case PUSHED_ASSETS_FACTORY: return new PushedAssetsFactoryImpl();
             case SERVER_FACTORY: return new ServerFactoryImpl();
             case NOTIFICATION_FACTORY: return new NotificationFactoryImpl();
-            case SERVER_ACTION_FACTORY: return new ServerActionFactoryImpl();
+            case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
 		}
 		throw new AssertionError("Unknown Factory Index: " + this);
 	}
