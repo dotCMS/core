@@ -157,7 +157,31 @@ dojo.require("dojo.hash");
                         dojo.parser.parse(this.hangerDiv);
                 },
 
+                
+                refreshHTML : function(html) {
 
+
+
+                    var myCp = dijit.byId(this.contentDiv);
+                    var hanger = dojo.byId(this.hangerDiv);
+                    if(!hanger){
+                            return;
+                    }
+                    if (myCp) {
+                            myCp.destroyRecursive();
+                            myCp.attr("content","");
+                    }
+
+                    myCp = new dojox.layout.ContentPane({
+                            id : this.contentDiv
+                    }).placeAt(this.hangerDiv);
+
+
+                    myCp.attr("content", html);
+
+                    dojo.parser.parse(this.hangerDiv);
+            },
+            
                 addCrumbtrail : function (title, urlx){
                         var entry = {title:title, url:urlx};
                         this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;
