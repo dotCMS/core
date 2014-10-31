@@ -41,6 +41,7 @@ import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONException;
 import com.dotcms.repackage.org.json.JSONObject;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * @author Andrey Chorniy
@@ -310,7 +311,7 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         		  for(String word : words){
         			  wordList.append(","+word);
         		  }
-        		  sb.append(",words:["+wordList.substring(1)+"]");
+        		  sb.append(",words:["+wordList+"]");
         	  }else{
         		  sb.append(","+key+":"+value);
         	  }   
