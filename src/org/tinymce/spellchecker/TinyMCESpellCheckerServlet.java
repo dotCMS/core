@@ -37,6 +37,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.org.dts.spell.SpellChecker;
+import com.dotcms.repackage.org.dts.spell.dictionary.SpellDictionaryException;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotcms.repackage.org.json.JSONException;
 import com.dotcms.repackage.org.json.JSONObject;
@@ -223,6 +225,9 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
             SpellcheckMethod method = SpellcheckMethod.valueOf(methodName.trim());
 
             switch (method) {
+            	case addToDictionary:
+            		jsonOutput.put("result",addToDictionary(jsonInput.optJSONObject("params")));
+            		break;
                 case checkWords:
                     jsonOutput.put("result", checkWords(jsonInput.optJSONArray("params")));
                     break;
@@ -365,7 +370,31 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         }
         return suggestions;
     }
-
+    /**
+     * Include word in the dictionary
+     * @param params
+     * @return
+     * @throws SpellCheckException
+     * @throws SpellDictionaryException
+     * @throws JSONException 
+     */
+    private String addToDictionary(JSONObject params) throws SpellCheckException, SpellDictionaryException, JSONException {
+    	if (params != null) {
+    		String lang = "";
+    		try{
+    		    lang = params.getString("lang");
+    		}catch(Exception e){
+    			Logger.warn(TinyMCESpellCheckerServlet.class, e.getMessage(), e);
+    		}
+            lang = ("".equals(lang)) ? DEFAULT_LANGUAGE : lang;
+            String word = params.getString("word");
+    		SpellChecker checker = (SpellChecker) getChecker(lang);
+    		checker.getDictionary().addWord(word);
+    		return "Word added successfully";
+    	}else{
+    		return "Word can't be added in the dictionary";
+    	}
+    }
 
     protected abstract List<String> findMisspelledWords(Iterator<String> checkedWordsIterator,
                                                         String lang) throws SpellCheckException;

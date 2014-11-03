@@ -8,5 +8,6 @@ package org.tinymce.spellchecker;
 enum SpellcheckMethod {
     checkWords,
     getSuggestions,
+    addToDictionary,
     spellcheck //this method is passed in TinyMCE 4.0
 }
