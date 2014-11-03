@@ -26,6 +26,7 @@ var tinyMCEProps = {
     		],
 
     		toolbar1: "styleselect | bold italic underline strikethrough |  alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | image dotimageclipboard  | link unlink  | spellchecker <%= LicenseUtil.getLevel()>=200 ? ",validation":"" %>",
+    		spellchecker_language : "en_US",
     		spellchecker_languages : "English=en_US,Español=es_ES",
     		spellchecker_rpc_url : "/servlets/jmyspell-spellchecker",
     		paste_auto_cleanup_on_paste : true,
