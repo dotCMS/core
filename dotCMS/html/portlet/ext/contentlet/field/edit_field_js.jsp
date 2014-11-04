@@ -85,7 +85,7 @@
 			toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
     		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
     		image_advtab: true,
-    		file_browser_callback: cmsFileBrowser
+    		file_browser_callback: 'cmsFileBrowser'
     		
 		});
 	}

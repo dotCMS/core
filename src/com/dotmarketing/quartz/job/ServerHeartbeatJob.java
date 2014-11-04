@@ -7,6 +7,7 @@ import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.dotcms.cluster.common.ClusterServerActionThread;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -30,6 +31,7 @@ public class ServerHeartbeatJob implements Job {
 		} catch (DotDataException e) {
 			Logger.error(getClass(), "Could not get ServerUptime", e);
 		}
+		
 		finally {
 		    try {
                 HibernateUtil.closeSession();
@@ -40,6 +42,8 @@ public class ServerHeartbeatJob implements Job {
 		        DbConnectionFactory.closeConnection();
 		    }
 		}
+		
+		ClusterServerActionThread.createThread();
 	}
 
 }

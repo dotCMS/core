@@ -26,28 +26,33 @@ package org.tinymce.spellchecker;
  OTHER DEALINGS IN THE SOFTWARE.
 */
 
-import com.dotcms.repackage.org.json.JSONArray;
-import com.dotcms.repackage.org.json.JSONException;
-import com.dotcms.repackage.org.json.JSONObject;
-import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.List;
+
+import com.dotcms.repackage.org.dts.spell.SpellChecker;
+import com.dotcms.repackage.org.dts.spell.dictionary.SpellDictionaryException;
+import com.dotcms.repackage.org.json.JSONArray;
+import com.dotcms.repackage.org.json.JSONException;
+import com.dotcms.repackage.org.json.JSONObject;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
- * @author: Andrey Chorniy
+ * @author Andrey Chorniy
  * Date: 03.01.2010
  * This is a base class for implementing TinyMCE JSON based request/response
- * Abstract classes define methods required to implement spellchecking functionality/lifecycle
- *
- * TODO: refactor to single servlet which will use particular implementation based on delegating methods to spellchecker implementation
- * TODO: Delegate abstract methods to interface (named as SpellcheckerAdapter for example) to move them away from servlet code
+ * Abstract classes define SpellcheckMethod required to implement spellchecking functionality/lifecycle
+ *  
+ * TODO: refactor to single servlet which will use particular implementation based on delegating SpellcheckMethod to spellchecker implementation
+ * TODO: Delegate abstract SpellcheckMethod to interface (named as SpellcheckerAdapter for example) to move them away from servlet code
  * TODO: Servlet will only do specific servlet functions: Reading JSONRequest, delegate spellchecking functionality to SpellcheckerAdapter and write JSON-response
  * TODO: SpellcheckerAdapter creation will be done in the servlet.init() method
  */
@@ -58,14 +63,10 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     private static final String MAX_SUGGESTIONS_COUNT_PARAM = "maxSuggestionsCount";
     private static final String PRELOADED_LANGUAGES_PARAM = "preloadedLanguages";
 
-    private static final String DEFAULT_LANGUAGE = "en";
+    private static final String DEFAULT_LANGUAGE = "en_US";
     private static final String GET_METHOD_RESPONSE_ERROR = "This servlet expects a JSON encoded body, POSTed to this URL";
 
-    private static String DEFAULT_PRELOADED_LANGUAGES = "en-us";
-
-    private enum methods {
-        checkWords, getSuggestions
-    }
+    private static final String DEFAULT_PRELOADED_LANGUAGES = "en_US,es_ES";
 
     private int maxSuggestionsCount = 25;
 
@@ -73,11 +74,11 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     @Override
     public void init() throws ServletException {
         super.init();
-        preloadSpellcheckers();
+        preLoadSpellcheckers();
         readMaxSuggestionsCount();
     }
 
-    private void preloadSpellcheckers() throws ServletException {
+    private void preLoadSpellcheckers() throws ServletException {
         String preloaded = getServletConfig().getInitParameter(PRELOADED_LANGUAGES_PARAM);
         if (preloaded == null || preloaded.trim().length() == 0) {
             preloaded = DEFAULT_PRELOADED_LANGUAGES;
@@ -86,7 +87,7 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         String[] preloadedLanguages = preloaded.split(";");
         for (String preloadedLanguage : preloadedLanguages) {
             try {
-                preloadLanguageChecker(preloadedLanguage);
+                preLoadLanguageChecker(preloadedLanguage);
             } catch (SpellCheckException e) {
                 //wrong servlet configuration
                 throw new ServletException(e);
@@ -94,7 +95,7 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         }
     }
 
-    protected abstract void preloadLanguageChecker(String preloadedLanguage) throws SpellCheckException;
+    protected abstract void preLoadLanguageChecker(String preloadedLanguage) throws SpellCheckException;
 
     /**
      * This method look for the already created SpellChecker object in the cache, if it is not present in the cache then
@@ -128,10 +129,17 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     public void destroy() {
         super.destroy();
         //remove unused objects from memory
-        clearSpellcheckerCache();
+        try {
+            releaseResources();
+        } catch (Throwable ex) {
+            Logger.error(TinyMCESpellCheckerServlet.class,"Failed to releaseResources()", ex);
+        }
     }
 
-    protected abstract void clearSpellcheckerCache();
+    /**
+     * This method will be called from {@link javax.servlet.Servlet#destroy()} to release resources
+     */
+    protected abstract void releaseResources();
 
 
     /**
@@ -147,8 +155,59 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     }
 
     /**
-     * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-     *      response)
+     * There are three types of requests are supported
+     * h3. "checkWords"
+     * Check the list of words passed as a second argument of the "params" array
+     * First argument of the params array, define the "language"
+     *
+     * h4. Example request body (JSON)
+     * <pre>
+     * {
+     *   "method" : "checkWords",
+     *   "params" : [ "en-us", ["usa","cawboy", "apple"] ]
+     * }
+     * </pre>
+     * h4. Example Response (JSON)
+     * <pre>
+     *     {"id":null,"result":["cawboy"],"error":null}
+     * </pre>
+     *
+     * h3. "getWordSuggestions"
+     * Get suggestion for single word, passed as the 2-nd element in the "params" array
+     * h4. Example request body (JSON)
+     * <pre>
+     *{
+     *  "method" : "getWordSuggestions",
+     *  "params" : [ "en-us", "Guugli" ]
+     *}
+     * </pre>
+     * h4. Example Response (JSON)
+     * <pre>
+     *     {"id":null,"result":["Google"],"error":null}
+     * </pre>
+     *
+     * h3. "spellcheck"
+     * This kind of request is used by TinyMCE 4.0
+     * h4. Example request body (JSON)
+     * <pre>
+     *{
+     *  "id" : "${request-id}",
+     *  "method" : "spellcheck",
+     *  "params" : { "lang": "en",
+     *               "words": ["cawboy", "apple", "Guugli"]
+     *             }
+     *}
+     * </pre>
+     * h4. Example Response (JSON)
+     * <pre>
+     * {
+     *    "id":"${request-id}",
+     *    "result": {
+     *      "cawboy" : ["cowboy"],
+     *      "Guugli" : ["Google"]
+     *    }
+     * }
+     * </pre>
      */
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -161,34 +220,58 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
                 throw new SpellCheckException("Wrong spellchecker-method-name:" + methodName);
             }
 
-            JSONObject jsonOutput = new JSONObject("{'id':null,'result':[],'error':null}");
-            switch (methods.valueOf(methodName.trim())) {
+
+            JSONObject jsonOutput = new JSONObject();
+            SpellcheckMethod method = SpellcheckMethod.valueOf(methodName.trim());
+
+            switch (method) {
+            	case addToDictionary:
+            		jsonOutput.put("result",addToDictionary(jsonInput.optJSONObject("params")));
+            		break;
                 case checkWords:
                     jsonOutput.put("result", checkWords(jsonInput.optJSONArray("params")));
                     break;
                 case getSuggestions:
-                    jsonOutput.put("result", getSuggestions(jsonInput.optJSONArray("params")));
+                    jsonOutput.put("result", getWordSuggestions(jsonInput.optJSONArray("params")));
+                    break;
+                case spellcheck:
+                    //This is TinyMCe 4.0
+                    jsonOutput.put("dictionary", true);
+                    jsonOutput.put("words", getAllWordSuggestions(jsonInput.optJSONObject("params")));
                     break;
                 default:
-                    throw new SpellCheckException("Unimplemented spellchecker method {" + methodName + "}");
+                    throw new SpellCheckException("Spellchecker method not supported {" + methodName + "}");
             }
 
             PrintWriter pw = response.getWriter();
             pw.println(jsonOutput.toString());
 
         } catch (SpellCheckException se) {
-            Logger.error( this.getClass(), se.getMessage(), se );
+        	Logger.warn(TinyMCESpellCheckerServlet.class,"Failed to perform spellcheck operation", se);
             returnError(response, se.getMessage());
         } catch (Exception e) {
-            Logger.error( this.getClass(), e.getMessage(), e );
+        	Logger.warn(TinyMCESpellCheckerServlet.class,"Failed to perform spellcheck operation (generic error)", e);
             returnError(response, e.getMessage());
         }
 
         response.getWriter().flush();
     }
 
+    private JSONObject getAllWordSuggestions(JSONObject params) throws SpellCheckException, JSONException {
+        JSONObject suggestions = new JSONObject();
+        JSONArray checkedWords = params.optJSONArray("words");
+        String lang = params.optString("lang");
+        lang = ("".equals(lang)) ? DEFAULT_LANGUAGE : lang;
+        List<String> misspelledWords = findMisspelledWords(new JsonArrayIterator(checkedWords), lang);
+        for (String misspelledWord : misspelledWords) {
+            List<String> suggestionsList = findSuggestions(misspelledWord, lang, maxSuggestionsCount);
+            suggestions.put(misspelledWord, suggestionsList);
+        }
+        return suggestions;
+    }
+
     private JSONObject readRequest(HttpServletRequest request) throws SpellCheckException {
-        JSONObject jsonInput = null;
+        JSONObject jsonInput;
         try {
             jsonInput = new JSONObject(getRequestBody(request));
         } catch (JSONException e) {
@@ -200,7 +283,7 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
     }
 
     /**
-     * @param response
+     * @param response response
      */
     private void setResponeHeaders(HttpServletResponse response) {
         response.setContentType("text/plain; charset=utf-8");
@@ -212,30 +295,47 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
 
 
     /**
-     * @param request
+     * @param request request
      * @return read the request content and return it as String object
      * @throws IOException
      */
     private String getRequestBody(HttpServletRequest request) throws IOException {
         StringBuilder sb = new StringBuilder();
-        String line = request.getReader().readLine();
-        while (null != line) {
-            sb.append(line);
-            line = request.getReader().readLine();
+        Enumeration<String> keys = request.getParameterNames();
+        String base="";
+        while (keys.hasMoreElements() ){
+           String key = (String)keys.nextElement();
+           //To retrieve a single value
+           String value = request.getParameter(key);
+           if(key.equals("method")){
+        	   base="id:1,"+key+":"+value;
+           }else{
+        	  if(key.equals("text")){
+        		  String[]  words = value.split("[\\s!\"#$%&()*+,-./:;<=>?@\\[\\]^_{|}`\u00a7\u00a9\u00ab\u00ae\u00b1\u00b6\u00b7\u00b8\u00bb\u00bc\u00bd\u00be\u00bf\u00d7\u00f7\u00a4\u201d\u201c\u201e\u00a0\u2002\u2003\u2009]");
+        		  StringBuilder wordList = new StringBuilder();
+        		  for(String word : words){
+        			  wordList.append(","+word);
+        		  }
+        		  sb.append(",words:["+wordList+"]");
+        	  }else{
+        		  sb.append(","+key+":"+value);
+        	  }   
+           }
         }
-        return sb.toString();
+        return "{"+base+",params:{"+sb.toString().substring(1)+"}}";
     }
 
     /**
-     * @param response
-     * @param message
+     * write error response as JSONObject to output
+     * @param response response
+     * @param message error message
      */
     private void returnError(HttpServletResponse response, String message) {
         response.setStatus(500);
         try {
             response.getWriter().print("{'id':null,'response':[],'error':'" + message + "'}");
         } catch (IOException e) {
-            e.printStackTrace();
+        	Logger.error(TinyMCESpellCheckerServlet.class,"Failed to send error response to client", e);
         }
     }
 
@@ -257,7 +357,7 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         return misspelledWords;
     }
 
-    private JSONArray getSuggestions(JSONArray params) throws SpellCheckException {
+    private JSONArray getWordSuggestions(JSONArray params) throws SpellCheckException {
         JSONArray suggestions = new JSONArray();
         if (params != null) {
             String lang = params.optString(0);
@@ -270,7 +370,31 @@ public abstract class TinyMCESpellCheckerServlet extends HttpServlet {
         }
         return suggestions;
     }
-
+    /**
+     * Include word in the dictionary
+     * @param params
+     * @return
+     * @throws SpellCheckException
+     * @throws SpellDictionaryException
+     * @throws JSONException 
+     */
+    private String addToDictionary(JSONObject params) throws SpellCheckException, SpellDictionaryException, JSONException {
+    	if (params != null) {
+    		String lang = "";
+    		try{
+    		    lang = params.getString("lang");
+    		}catch(Exception e){
+    			Logger.warn(TinyMCESpellCheckerServlet.class, e.getMessage(), e);
+    		}
+            lang = ("".equals(lang)) ? DEFAULT_LANGUAGE : lang;
+            String word = params.getString("word");
+    		SpellChecker checker = (SpellChecker) getChecker(lang);
+    		checker.getDictionary().addWord(word);
+    		return "Word added successfully";
+    	}else{
+    		return "Word can't be added in the dictionary";
+    	}
+    }
 
     protected abstract List<String> findMisspelledWords(Iterator<String> checkedWordsIterator,
                                                         String lang) throws SpellCheckException;

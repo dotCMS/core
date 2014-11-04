@@ -3419,3 +3419,16 @@ create table html_pages_ir(html_page varchar2(255), local_inode varchar2(36), re
 create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 
+---Server Action
+create table cluster_server_action(
+	server_action_id varchar2(36) not null, 
+	originator_id varchar2(36) not null, 
+	server_id varchar2(36) not null, 
+	failed number(1, 0), 
+	response varchar2(2048), 
+	action_id varchar2(1024) not null,
+	completed number(1, 0), 
+	entered_date date not null,
+	time_out_seconds number(13) not null,
+	PRIMARY KEY (server_action_id)
+);

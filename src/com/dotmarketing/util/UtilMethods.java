@@ -13,6 +13,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
@@ -39,6 +41,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -3460,5 +3463,20 @@ public class UtilMethods {
             return true;
         }
 
+    }
+    /**
+     * Validate if the Elastic search tcp port is free or its being used
+     * @param host Host name or IP address
+     * @param port Port number
+     * @return boolean
+     */
+    public static boolean isESPortFree(String host,int port) {
+    	try {
+    		ServerSocket socket = new ServerSocket(port,1,InetAddress.getByName(host));
+    		socket.close();
+    	    return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

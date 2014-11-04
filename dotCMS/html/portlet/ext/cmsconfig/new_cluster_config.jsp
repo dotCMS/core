@@ -147,7 +147,7 @@
 		        // Execute a HTTP GET request
 		        dojo.xhr.get({
 		        	preventCache:true,
-		            url: this.jspToShow+'?rewireable='+canRewire+'&hasLicense='+nodeStatus.hasLicense,
+		            url: this.jspToShow+'?rewireable='+canRewire,
 		            load: function(result) {
 		            	var output = '';
 
@@ -183,6 +183,11 @@
 		            		      licenseRepo: {
 		            		    	  total: licenseStatus.total,
 		            		    	  available: licenseStatus.available
+		            		      },
+
+		            		      server: {
+		            		    	  serverID: nodeStatus.serverId.substring(0,8),
+		            		    	  host: nodeStatus.friendlyName
 		            		      }
 
 		            		    }
@@ -190,6 +195,16 @@
 		            		});
 
 		            	dojo.byId("actionPanelContainer").innerHTML = output;
+		            	if(nodeStatus.cacheServersNotResponded){
+		            		dojo.byId("myCacheDialogName").innerHTML = nodeStatus.cacheServersNotResponded;
+
+		            		var myShowCacheButton = dojo.byId("myShowCacheButton");
+		            		dojo.connect(myShowCacheButton, "onclick", function(evt){
+							    var myCacheDialog = dijit.byId("myCacheDialog");
+		   						myCacheDialog.show();
+							});
+		            	}
+		            	
 		            }
 		        });
 
@@ -265,8 +280,9 @@
 						+ "<tr>"
 							+ "<th width='7%'>&nbsp;</th>"
 							+ "<th width='7%'>&nbsp;</th>"
-							+ "<th width='35%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
-							+ "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
+							+ "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_server_id") %></th>"
+							+ "<th width='25%'><%= LanguageUtil.get(pageContext, "configuration_cluster_host") %></th>"
+							+ "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_ip_address") %></th>"
 							+ "<th width='10%'><%= LanguageUtil.get(pageContext, "configuration_cluster_contacted") %></th>"
 							+ "<th width='6%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "status") %></th>"
 							+ "<th width='10%' style='text-align:center;'><%= LanguageUtil.get(pageContext, "configuration_cluster_delete") %></th>"
@@ -296,6 +312,7 @@
 							+ "<tr id='row-"+item.serverId+"' onclick='javascript:actionPanelTable.toggle(\""+item.serverId+"\");'>"
 								+ "<td align='center'><img src='/html/images/skin/icon-server.png'></td>"
 								+ "<td align='center' style='color:#8c9ca9;'>" + (item.myself?"<i class='fa fa-user fa-3x'></i>":"")+"</td>"
+								+ "<td>" + item.serverId + "</td>"
 								+ "<td>" + item.friendlyName + "</td>"
 								+ "<td align='left'>"+item.ipAddress+"</td>"
 								+ "<td align='left'>"+item.contacted+"</td>"
@@ -313,13 +330,6 @@
 
 						dojo.empty(dojo.byId("container"));
 						dojo.place(nodesTable, dojo.byId("container"));
-
-// 						<div id="actionPanel" class="hideMe" >
-// 						<div id="arrow"></div>
-// 						<div id="actionPanelContent" style="overflow:auto;">
-
-// 						</div>
-// 					</div>
 
 						var actionPanelDiv = dojo.create("div", { id: "actionPanel", class: "hideMe" });
 						var arrowDiv = dojo.create("div", { id: "arrow", innerHtml: "<img src='/html/images/skin/arrow.png'/>" });
@@ -508,11 +518,20 @@
                 url: "/api/cluster/remove/serverid/"+serverId,
                 load: function() {
                 	renderNodesStatus();
+                	actionPanelTable = new com.dotcms.ui.ActionPanel({jspToShow:"/html/portlet/ext/clusterconfig/cluster_config_right_panel.jsp", alwaysShow:true});
                 }
             });
         }
+
+		function showCacheDialog(){
+		   
+		}
+		
 </script>
 
+<div id="myCacheDialog" dojoType="dijit.Dialog" draggable="false" style="display:none" title="Servers Not in Cache">
+	<div id="myCacheDialogName"></div>
+</div>
 
 <div id="doc3" style="min-height: 600px">
 
