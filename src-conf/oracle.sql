@@ -3415,7 +3415,7 @@ alter table container_structures add constraint FK_cs_container_id foreign key (
 create table sitelic(id varchar(36) primary key, serverid varchar(100), license nclob not null, lastping date not null);
 
 create table folders_ir(folder varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
-create table html_pages_ir(html_page varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
+create table htmlpages_ir(html_page varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), local_identifier varchar2(36), remote_identifier varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table structures_ir(velocity_name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar2(255), local_inode varchar2(36), remote_inode varchar2(36), endpoint_id varchar2(36), PRIMARY KEY (local_inode, endpoint_id));
 

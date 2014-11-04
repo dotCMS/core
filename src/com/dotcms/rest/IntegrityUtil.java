@@ -1496,31 +1496,57 @@ public class IntegrityUtil {
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
         HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
-        try {
-            //Delete the schemes cache
-            dc.setSQL( "SELECT local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
-            dc.addParam( serverId );
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            
-            for ( Map<String, Object> result : results ) {
+        //Delete the schemes cache
+		dc.setSQL( "SELECT local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.addParam( serverId );
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		
+		for ( Map<String, Object> result : results ) {
 
-            	String oldHtmlPageInode = (String) result.get( "local_inode" );
-                String newHtmlPageInode = (String) result.get( "remote_inode" );
-                String oldHtmlPageIdentifier = (String) result.get( "local_inode" );
-                String newHtmlPageIdentifier = (String) result.get( "remote_inode" );
-                String assetName = (String) result.get( "html_page" );
+			//String oldHtmlPageInode = (String) result.get( "local_inode" );
+		    //String newHtmlPageInode = (String) result.get( "remote_inode" );
+		    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
+		    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
+		    String assetName = (String) result.get( "html_page" );
 
-                htmlPageCache.remove(oldHtmlPageIdentifier);
+		    htmlPageCache.remove(oldHtmlPageIdentifier);
 
-             	//Fixing by SQL queries
-        		dc.executeStatement("");
-            }
+		 	//Fixing by SQL queries
+		    dc.setSQL("INSERT identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+		    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
+		    		+ "FROM identifier WHERE id = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE htmlpage "
+		    		+ "SET identifier = ? "
+		    		+ "WHERE identifier = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE htmlpage_version_info "
+		    		+ "SET identifier = ? "
+		    		+ "WHERE identifier = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("DELETE FROM identifier "
+		    		+ "WHERE id = ?");
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE identifier "
+		    		+ "SET asset_name = ? "
+		    		+ "WHERE id = ?");
+		    dc.addParam(assetName);
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.loadResult();
+		}
 
-            discardConflicts(serverId, IntegrityType.HTMLPAGES);
-
-        } catch ( SQLException e ) {
-            throw new DotDataException( e.getMessage(), e );
-        }
+		discardConflicts(serverId, IntegrityType.HTMLPAGES);
     }
     
 }
