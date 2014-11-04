@@ -308,7 +308,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	    else {
             // add a commit listener to index the contentlet if the entire
             // transaction finish clean
-            HibernateUtil.addCommitListener(content.getInode(),indexAction);
+            HibernateUtil.addCommitListener(content.getInode()+HibernateUtil.addToIndex,indexAction);
 	    }	    
 	}
 
@@ -431,7 +431,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	        	    }
 	            }
 	        };
-	        HibernateUtil.addCommitListener(content.getInode(),indexRunner);
+	        HibernateUtil.addCommitListener(content.getInode()+HibernateUtil.removeFromIndex,indexRunner);
 	}
 	
 	public void removeContentFromIndex(final Contentlet content, final boolean onlyLive) throws DotHibernateException {
