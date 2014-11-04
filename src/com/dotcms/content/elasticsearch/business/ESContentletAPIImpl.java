@@ -3774,8 +3774,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				if (cons == null) {
 					cons = new ArrayList<Contentlet>();
 				}
+				
+				//There is a case when the Relationship is between same structures
+				//We need to validate that case
+				boolean isRelationshipParent = true;
+				
+				if(rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
+					if(!cr.isHasParent()){
+						isRelationshipParent = false;
+					}
+				}
+				
 				// if i am the parent
-				if (rel.getParentStructureInode().equalsIgnoreCase(stInode)) {
+				if (rel.getParentStructureInode().equalsIgnoreCase(stInode) && isRelationshipParent) {
 					if (rel.isChildRequired() && cons.isEmpty()) {
 						hasError = true;
 						cve.addRequiredRelationship(rel, cons);
