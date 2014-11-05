@@ -304,9 +304,9 @@ public class FolderFactoryImpl extends FolderFactory {
 
 			List<FileAsset> fileAssets = null;
 			try {
-				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
+				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "",true,APILocator.getUserAPI().getSystemUser(), false);
 				for(FileAsset fileAsset : fileAssets) {
-					if(fileAsset.isShowOnMenu()){
+					if(fileAsset.isShowOnMenu() && !fileAsset.isDeleted()){
 						filesListSubChildren.add(fileAsset);
 					}
 				}
