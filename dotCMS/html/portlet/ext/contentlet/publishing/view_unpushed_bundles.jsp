@@ -15,6 +15,7 @@
 <%@page import="com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils"%>
 <%@ page import="com.dotmarketing.portlets.contentlet.business.DotContentletStateException" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
+<%@page import="com.dotcms.publisher.business.DotPublisherException"%>
 
 <style>
 
@@ -136,6 +137,13 @@
                                             contentlet = PublishAuditUtil.getInstance().findContentletByIdentifier( identifier );
                                         } catch ( DotContentletStateException e ) {
                                             Logger.warn( this.getClass(), "Unable to find contentlet with identifier: [" + identifier + "]", e );
+                                            try{
+                                            	Logger.info( this.getClass(), "Cleaning Publishing Queue, idenifier [" + identifier + "] no longer exists");
+                                            	publisherAPI.deleteElementFromPublishQueueTable(identifier);	
+                                            } catch (DotPublisherException dpe){
+                                            	Logger.warn( this.getClass(), "Unable to delete Asset from Publishing Queue with identifier: [" + identifier + "]", dpe );
+                                            }
+                                            
                                         }
                                         if (contentlet != null) {
                                             title = contentlet.getTitle();
@@ -147,6 +155,12 @@
                                         if (title.equals( assetType )) {
                                             title = "";
                                             Logger.warn( this.getClass(), "Unable to find Asset of type: [" + assetType + "] with identifier: [" + identifier + "]" );
+                                            try{
+                                            	Logger.info( this.getClass(), "Cleaning Publishing Queue, idenifier [" + identifier + "] no longer exists");
+                                            	publisherAPI.deleteElementFromPublishQueueTable(identifier);	
+                                            } catch (DotPublisherException dpe){
+                                            	Logger.warn( this.getClass(), "Unable to delete Asset from Publishing Queue with identifier: [" + identifier + "]", dpe );
+                                            }
                                         }
                                     }
                                 %>
