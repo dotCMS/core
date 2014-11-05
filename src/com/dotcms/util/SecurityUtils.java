@@ -20,7 +20,7 @@ public class SecurityUtils {
     	if(referer==null) return referer;
 
         String ref = referer;
-        if(Config.getBooleanProperty("DISABLE_EXTERNAL_REFERERS",true) && ref.contains("://")) {
+        if(Config.getBooleanProperty("DISABLE_EXTERNAL_REFERERS", false) && ref.contains("://")) {
 
             try {
 
