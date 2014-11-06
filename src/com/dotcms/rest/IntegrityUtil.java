@@ -1497,7 +1497,7 @@ public class IntegrityUtil {
         HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
         //Delete the schemes cache
-		dc.setSQL( "SELECT local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		
