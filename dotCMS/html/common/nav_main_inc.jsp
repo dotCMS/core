@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.rest.BaseRestPortlet"%>
 <%@page import="com.liferay.portal.model.Portlet"%>
 <%@page import="com.dotcms.rest.WebResource"%>
@@ -48,10 +49,17 @@
                                                         if("9".equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF);
                                                         }
-                                                        Object obj = Class.forName(p.getPortletClass()).newInstance();
-                                                        if(obj instanceof BaseRestPortlet){
-                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
-                                                        }%>
+                                                        try{
+                                                        	Object obj = Class.forName(p.getPortletClass()).newInstance();
+	                                                        if(obj instanceof BaseRestPortlet){
+	                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
+	                                                        }
+                                                        }
+                                                        catch(Exception e){
+                                                        	//Logger.error(this.getClass(),"error in portlet nav:" + e.getMessage());
+                                                        }
+                                                        
+                                                        %>
 
 
 
