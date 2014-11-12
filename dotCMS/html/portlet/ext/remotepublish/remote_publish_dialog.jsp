@@ -53,9 +53,9 @@ String min = (cal.get(GregorianCalendar.MINUTE) < 10) ? "0"+cal.get(GregorianCal
 				<%= LanguageUtil.get(pageContext, "I-want-to") %>:
 			</div>
 			<div class="fieldValue">
-				<input type="radio" dojoType="dijit.form.RadioButton" checked="true" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH %>" name="wfIWantTo" id="iwtPublish" ><label for="iwtPublish"><%= LanguageUtil.get(pageContext, "publish") %></label>&nbsp;
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE %>" name="wfIWantTo" id="iwtExpire" ><label for="iwtExpire"><%= LanguageUtil.get(pageContext, "delete") %></label>&nbsp;
-				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE %>" name="wfIWantTo" id="iwtPublishExpire" ><label for="iwtPublishExpire"><%= LanguageUtil.get(pageContext, "publish") %> &amp; <%= LanguageUtil.get(pageContext, "delete") %></label>
+				<input type="radio" dojoType="dijit.form.RadioButton" checked="true" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH %>" name="wfIWantTo" id="iwtPublish" ><label for="iwtPublish"><%= LanguageUtil.get(pageContext, "push") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_EXPIRE %>" name="wfIWantTo" id="iwtExpire" ><label for="iwtExpire"><%= LanguageUtil.get(pageContext, "Remove") %></label>&nbsp;
+				<input type="radio" dojoType="dijit.form.RadioButton" onChange="pushHandler.togglePublishExpireDivs()" value="<%= RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH_AND_EXPIRE %>" name="wfIWantTo" id="iwtPublishExpire" ><label for="iwtPublishExpire"><%= LanguageUtil.get(pageContext, "push") %> &amp; <%= LanguageUtil.get(pageContext, "Remove") %></label>
 			</div>
 			<div class="clear"></div>
 		</div>
