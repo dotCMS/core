@@ -124,6 +124,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	public void scheduleJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 
 		Map<String, String[]> map = request.getParameterMap();
+	    String date = DateUtil.getCurrentDate();
 
 		SiteSearchConfig config = new SiteSearchConfig();
 		for(String key : map.keySet()){
@@ -142,8 +143,14 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 				if(!config.runNow()){
 					APILocator.getSiteSearchAPI().deleteTask(taskPreviousName);
 				}
+				else{
+		            APILocator.getSiteSearchAPI().scheduleTask(config);
+		            ActivityLogger.logInfo(getClass(), "Job Created", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+		            AdminLogger.log(getClass(), "Job Created", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
+		        }
 			} catch (Exception e) {
 				Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
+				AdminLogger.log(getClass(), "Error Creating Job", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 				writeError(response, e.getMessage());
 
 			}
@@ -152,7 +159,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try {
 			if(config.runNow()){
 				APILocator.getSiteSearchAPI().executeTaskNow(config);
-				 String date = DateUtil.getCurrentDate();
                  ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
                  AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 			}
