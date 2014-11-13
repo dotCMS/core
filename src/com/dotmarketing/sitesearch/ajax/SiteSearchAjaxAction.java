@@ -164,6 +164,8 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			}
 			else{
 				APILocator.getSiteSearchAPI().scheduleTask(config);
+				ActivityLogger.logInfo(getClass(), "Job Created", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+	            AdminLogger.log(getClass(), "Job Created", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 			}
 		} catch (Exception e) {
 			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
