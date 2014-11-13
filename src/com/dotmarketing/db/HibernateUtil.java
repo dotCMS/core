@@ -239,8 +239,6 @@ public class HibernateUtil {
     	Session session = getSession();
     	
     	try{
-    		session.flush();
-        	session.clear();
             return (Object) session.load(c, key);
 		}catch (Exception e) {
 			try
@@ -354,6 +352,11 @@ public class HibernateUtil {
 			return session.load(thisClass, id);
         } catch ( ObjectNotFoundException e ) {
             Logger.debug(this, "---------- DotHibernate: error on load ---------------", e);
+			try{
+				session.close();
+			} catch(Exception ex) {
+				Logger.debug(HibernateUtil.class,ex.toString());
+			}
 
 			/*Ozzy i comment this because see DOTCMS-206. it have nonsence to make a rollback
 			 * when we are doing a search and the object is not found. this make some other operation
