@@ -237,6 +237,7 @@ public class HibernateUtil {
 
     public static Object load(Class c, Serializable key)  throws DotHibernateException{
     	Session session = getSession();
+    	
     	try{
             return (Object) session.load(c, key);
 		}catch (Exception e) {

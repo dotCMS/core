@@ -3,6 +3,9 @@ package com.dotmarketing.util;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.campaigns.model.Campaign;
 import com.dotmarketing.portlets.campaigns.model.Click;
@@ -24,6 +27,11 @@ import com.dotmarketing.portlets.virtuallinks.model.VirtualLink;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 public class InodeUtils {
 
@@ -153,5 +161,40 @@ public class InodeUtils {
 			return Inode.class;
 		}
 
+	}
+
+	/**
+	 * This method hits the DB, table inode to get the Type of the Asset.
+	 *
+	 * @param inode of the Asset we want to find out the Asset Type.
+	 * @return String with the Type of the Asset if found. This method hist the DB.
+	 * @throws DotDataException
+	 */
+	public static String getAssetTypeFromDB(String inode) throws DotDataException {
+		String assetType = null;
+
+		try{
+			DotConnect dotConnect = new DotConnect();
+			List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
+
+			dotConnect.setSQL("SELECT type FROM inode WHERE inode = ?");
+			dotConnect.addParam(inode);
+
+			Connection connection = DbConnectionFactory.getConnection();
+			results = dotConnect.loadObjectResults(connection);
+
+			if(!results.isEmpty()){
+				assetType = results.get(0).get("type").toString();
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(InodeUtils.class, "Error trying find the Asset Type " + e.getMessage());
+			throw new DotDataException("Error trying find the Asset Type ", e);
+
+		} finally{
+			DbConnectionFactory.closeConnection();
+		}
+
+		return assetType;
 	}
 }

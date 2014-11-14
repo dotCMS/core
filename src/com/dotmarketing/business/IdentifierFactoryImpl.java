@@ -2,6 +2,7 @@ package com.dotmarketing.business;
 
 import java.io.IOException;
 import java.io.StringWriter;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -538,6 +539,35 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			Logger.error(IdentifierFactoryImpl.class, "deleteIdentifier failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
+	}
+
+	protected String getAssetTypeFromDB(String identifier) throws DotDataException{
+		String assetType = null;
+
+		try{
+			DotConnect dotConnect = new DotConnect();
+			List<Map<String, Object>> results = new ArrayList<Map<String,Object>>();
+
+			//At first try to search in Table Identifier.
+			dotConnect.setSQL("SELECT asset_type FROM identifier WHERE id = ?");
+			dotConnect.addParam(identifier);
+
+			Connection connection = DbConnectionFactory.getConnection();
+			results = dotConnect.loadObjectResults(connection);
+
+			if(!results.isEmpty()){
+				assetType = results.get(0).get("asset_type").toString();
+			}
+
+		} catch (DotDataException e) {
+			Logger.error(IdentifierFactoryImpl.class, "Error trying find the Asset Type " + e.getMessage());
+			throw new DotDataException("Error trying find the Asset Type ", e);
+
+		} finally{
+			DbConnectionFactory.closeConnection();
+		}
+
+		return assetType;
 	}
 
 }
