@@ -26,6 +26,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.CookieKeys;
@@ -47,19 +48,34 @@ public class BasicAutoLogin implements AutoLogin {
 	public String[] login(HttpServletRequest req, HttpServletResponse res)
 		throws AutoLoginException {
 
-		
+
 		if(req.getQueryString()!=null){
 			if(req.getQueryString().contains("_struts_action") && req.getQueryString().contains("p_l_id")){
 				Cookie testCookie = new Cookie("backend_login_return_url",req.getQueryString());
-				
-				testCookie.setPath("/");
 				testCookie.setMaxAge(100);
+
+				String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
+
+				if(cookiesSecureFlag.equals("always")) {
+					testCookie.setSecure(true);
+				} else if(cookiesSecureFlag.equals("https")) {
+					testCookie.setSecure(req.isSecure());
+				} else if(cookiesSecureFlag.equals("never")) {
+					testCookie.setSecure(false);
+				}
+
+				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
+					testCookie.setPath("/; HttpOnly;");
+				} else {
+					testCookie.setPath("/");
+				}
+
 				res.addCookie(testCookie);
 			}
 		}
-		
+
 		try {
-			
+
 			String[] credentials = null;
 
 			String autoUserId = CookieUtil.get(req.getCookies(), CookieKeys.ID);
@@ -72,7 +88,7 @@ public class BasicAutoLogin implements AutoLogin {
 				Company company = PortalUtil.getCompany(req);
 
 				KeyValuePair kvp = null;
-				
+
 				if (company.isAutoLogin()) {
 					kvp = UserManagerUtil.decryptUserId(
 						company.getCompanyId(), autoUserId, autoPassword);
@@ -90,13 +106,41 @@ public class BasicAutoLogin implements AutoLogin {
 		catch (Exception e) {
 			Cookie cookie = new Cookie(CookieKeys.ID, StringPool.BLANK);
 			cookie.setMaxAge(0);
-			cookie.setPath("/");
+
+			String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
+
+			if(cookiesSecureFlag.equals("always")) {
+				cookie.setSecure(true);
+			} else if(cookiesSecureFlag.equals("https")) {
+				cookie.setSecure(req.isSecure());
+			} else if(cookiesSecureFlag.equals("never")) {
+				cookie.setSecure(false);
+			}
+
+			if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
+				cookie.setPath("/; HttpOnly;");
+			} else {
+				cookie.setPath("/");
+			}
 
 			res.addCookie(cookie);
 
 			cookie = new Cookie(CookieKeys.PASSWORD, StringPool.BLANK);
 			cookie.setMaxAge(0);
-			cookie.setPath("/");
+
+			if(cookiesSecureFlag.equals("always")) {
+				cookie.setSecure(true);
+			} else if(cookiesSecureFlag.equals("https")) {
+				cookie.setSecure(req.isSecure());
+			} else if(cookiesSecureFlag.equals("never")) {
+				cookie.setSecure(false);
+			}
+
+			if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
+				cookie.setPath("/; HttpOnly;");
+			} else {
+				cookie.setPath("/");
+			}
 
 			res.addCookie(cookie);
 
