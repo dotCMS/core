@@ -23,14 +23,9 @@ import com.dotmarketing.util.UtilMethods;
  */
 public class Identifier implements UUIDable,Serializable,Permissionable,Categorizable {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1895228885287457403L;
 
-	/**
-	 * 
-	 */
+	public static final String ASSET_TYPE_FOLDER = "folder";
 
 
 	public Identifier() {

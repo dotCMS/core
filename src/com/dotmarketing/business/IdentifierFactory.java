@@ -141,4 +141,13 @@ public abstract class IdentifierFactory {
 	
 	abstract protected List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
+	/**
+	 * This method hits the DB, table identifier to get the Asset Type.
+	 *
+	 * @param identifier that we want to find its type.
+	 * @return Type of the Identifier that matches parameter. This method hist the DB.
+	 * @throws DotDataException
+	 */
+	abstract protected String getAssetTypeFromDB(String identifier) throws DotDataException;
+
 }
