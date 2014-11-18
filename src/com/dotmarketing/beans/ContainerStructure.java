@@ -1,6 +1,13 @@
 package com.dotmarketing.beans;
 
-public class ContainerStructure {
+import java.io.Serializable;
+
+public class ContainerStructure implements Serializable{
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 
 	private String id;
 

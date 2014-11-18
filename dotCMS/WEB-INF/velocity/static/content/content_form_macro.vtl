@@ -965,9 +965,9 @@ var theme = 'dmundra';
 
 						customErrorMessages["$field.velocityVarName"]="$customErrorMessages";
 						checkboxes = eval("document.submitContentForm.${field.velocityVarName}");
-					 	requiredNumber = (checkboxes[0].getAttribute("requiredNumber")!= undefined) ? checkboxes[0].getAttribute("requiredNumber") : 1;
-			        	prettyText = "$field.fieldName";
 			       		checkboxesLength = checkboxes.length;
+					 	requiredNumber = ((checkboxesLength != undefined) && (checkboxes[0].getAttribute("requiredNumber")!= undefined)) ? checkboxes[0].getAttribute("requiredNumber") : 1;
+			        	prettyText = "$field.fieldName";
 			       		if(!checkboxValid(checkboxes,checkboxesLength,requiredNumber,prettyText)){
 			       			return false;
 			       		}

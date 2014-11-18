@@ -13,6 +13,7 @@ import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.*;
 import com.dotcms.rest.PublishThread;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
@@ -902,23 +903,35 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 		ids.add( _assetId );
                 	}
                 } else {
-                    // if the asset is a folder put the inode instead of the identifier
+
                     try {
-                        Folder folder = null;
-                        try {
-                            folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
-                        } catch ( DotSecurityException e ) {
-                            Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId );
-                        } catch ( DotDataException e ) {
-                            Logger.info( getClass(), "FolderAPI.find(): Identifier is null" );
+                        // if the asset is a folder put the inode instead of the identifier
+                        //At first we try to find the Asset Type by hitting identifier table.
+                        String assetType = APILocator.getIdentifierAPI().getAssetTypeFromDB(_assetId);
+
+                        //If we don't find the Type in table identifier we try to hit table inode.
+                        if(assetType == null){
+                            assetType = InodeUtils.getAssetTypeFromDB(_assetId);
                         }
 
-                        if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
-                        	if(!isAssetInBundle(_assetId, bundleId)){
-                        		ids.add( _assetId );
-                        	}
-                        } else {
-                            // if the asset is not a folder and has identifier, put it, if not, put the inode
+                        if(assetType != null && assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
+                            Folder folder = null;
+
+                            try {
+                                folder = APILocator.getFolderAPI().find( _assetId, getUser(), false );
+                            } catch ( DotSecurityException e ) {
+                                Logger.error( getClass(), "User: " + getUser() + " does not have permission to access folder. Folder identifier: " + _assetId );
+                            } catch ( DotDataException e ) {
+                                Logger.info( getClass(), "FolderAPI.find(): Identifier is null" );
+                            }
+
+                            if ( folder != null && UtilMethods.isSet( folder.getInode() ) ) {
+                                if (!isAssetInBundle(_assetId, bundleId)) {
+                                    ids.add(_assetId);
+                                }
+                            }
+
+                        } else { // if the asset is not a folder and has identifier, put it, if not, put the inode
                             Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
                             	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(iden.getId(), bundleId)){
