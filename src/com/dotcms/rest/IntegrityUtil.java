@@ -1467,36 +1467,12 @@ public class IntegrityUtil {
      * @throws DotSecurityException
      */
     public void fixHtmlPages ( String serverId ) throws DotDataException, DotSecurityException {
-    	/*
-    	Local identifier 82c5173a-6c7a-4866-b6cc-c63f117f9f12
-    	Remote identifier d53d770b-2c3f-4ae6-ab48-b43926ccd008
-    	 
-		INSERT dotcms30.identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date)
-		SELECT 'd53d770b-2c3f-4ae6-ab48-b43926ccd008', parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date
-		FROM dotcms30.identifier
-		WHERE id = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
-		
-		UPDATE dotcms30.htmlpage
-		SET identifier = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008'
-		WHERE identifier = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
-		
-		UPDATE dotcms30.htmlpage_version_info
-		SET identifier = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008'
-		WHERE identifier = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
-		
-		DELETE FROM dotcms30.identifier
-		WHERE id = '82c5173a-6c7a-4866-b6cc-c63f117f9f12';
-		
-		UPDATE dotcms30.identifier
-		SET asset_name = '/contact-us/oscar.html'
-		WHERE id = 'd53d770b-2c3f-4ae6-ab48-b43926ccd008';
-    	 */
     	
     	DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
         HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
-        //Delete the schemes cache
+        //Get the information of the IR.
 		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
@@ -1508,6 +1484,10 @@ public class IntegrityUtil {
 		    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
 		    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
 		    String assetName = (String) result.get( "html_page" );
+
+            //We need only the last part of the url, not the whole path.
+            String[] assetNamebits = assetName.split("/");
+            assetName = assetNamebits[assetNamebits.length-1];
 
 		    htmlPageCache.remove(oldHtmlPageIdentifier);
 

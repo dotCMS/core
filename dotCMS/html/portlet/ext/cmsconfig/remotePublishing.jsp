@@ -489,7 +489,7 @@ function getIntegrityResult(identifier) {
             populateTabContent(workflowsData, "schemes");
             
           	//Getting the htmlpages data
-            var htmlPagesData = data.html_pages;
+            var htmlPagesData = data.htmlpages;
             populateTabContent(htmlPagesData, "htmlPages");
 
             //Display the integrity results dialog
