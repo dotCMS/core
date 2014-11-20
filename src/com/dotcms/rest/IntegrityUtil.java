@@ -226,7 +226,9 @@ public class IntegrityUtil {
 
             String resultsTable = getResultsTableName(type);
 
-            if(type==IntegrityType.FOLDERS) {
+            if(type == IntegrityType.HTMLPAGES){
+                statement = conn.prepareStatement("select html_page, remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
+            } else if(type == IntegrityType.FOLDERS) {
 				statement = conn.prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
 			} else {
 				statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
@@ -240,9 +242,13 @@ public class IntegrityUtil {
                 writer.write(rs.getString("remote_inode"));
                 writer.write(rs.getString("local_inode"));
 
-                if(type==IntegrityType.FOLDERS) {
+                if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
                 	writer.write(rs.getString("remote_identifier"));
                 	writer.write(rs.getString("local_identifier"));
+                }
+
+                if(type == IntegrityType.HTMLPAGES) {
+                    writer.write(rs.getString("html_page"));
                 }
 
                 writer.endRecord();
@@ -845,23 +851,29 @@ public class IntegrityUtil {
 
 			if(type==IntegrityType.FOLDERS) {
 				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
-			}
+			} else if(type==IntegrityType.HTMLPAGES) {
+                INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, html_page, endpoint_id) values(?,?,?,?,?,?)";
+            }
 
 			while (csvFile.readRecord()) {
 
-				//select f.inode, i.parent_path, i.asset_name, i.host_inode
 				String localInode = csvFile.get(0);
 				String remoteInode = csvFile.get(1);
 				dc.setSQL(INSERT_TEMP_TABLE);
 				dc.addParam(localInode);
 				dc.addParam(remoteInode);
 
-				if(type==IntegrityType.FOLDERS) {
+				if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
 					String localIdentifier = csvFile.get(2);
 					String remoteIdentifier = csvFile.get(3);
 					dc.addParam(localIdentifier);
 					dc.addParam(remoteIdentifier);
 				}
+
+                if(type == IntegrityType.HTMLPAGES) {
+                    String htmlPage = csvFile.get(4);
+                    dc.addParam(htmlPage);
+                }
 
 				dc.addParam(endpointId);
 				dc.loadResult();
