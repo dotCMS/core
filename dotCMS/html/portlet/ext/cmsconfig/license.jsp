@@ -253,7 +253,7 @@
                         var row;
 
                         if(lic.serverid===licenseAdmin.currentServerId) {
-                            row=dojo.create("tr",{"class":"current_server_row"},dojo.byId("repotableBody"),"first");
+                            row=dojo.create("tr",{"class":"current_server_row selected"},dojo.byId("repotableBody"),"first");
                         }
                         else {
                             row=dojo.create("tr",null,dojo.byId("repotableBody"));

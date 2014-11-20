@@ -133,6 +133,7 @@ li.smallify .navMenu-arrow{display:block;}
 /* TABLE STYLES 2.0 */
 .listingTable{width:99%;border:1px solid #d0d0d0;border-collapse:collapse;margin:0 auto;font-size:11px;}
 .listingTable tr{}
+.listingTable tr.selected { background-color: #E0E9F6; }
 .listingTable th, .listingTable td{padding:5px 8px;border:1px solid #d0d0d0;border-top: none;}
 .listingTable th{font-weight:bold;background:#ececec;}
 .listingTable td a{text-decoration:none;}
