@@ -152,9 +152,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try {
 			if(config.runNow()){
 				APILocator.getSiteSearchAPI().executeTaskNow(config);
-				 String date = DateUtil.getCurrentDate();
-                 ActivityLogger.logInfo(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
-                 AdminLogger.log(getClass(), "Job Started", "User:" + getUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 			}
 			else{
 				APILocator.getSiteSearchAPI().scheduleTask(config);
