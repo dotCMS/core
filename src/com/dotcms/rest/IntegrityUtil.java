@@ -720,15 +720,15 @@ public class IntegrityUtil {
             		+ "ri.inode as remote_inode, "
             		+ "li.id as local_identifier, "
             		+ "ri.identifier as remote_identifier "
-            		+ "from htmlpage as lh "
-            		+ "join " + tempTableName + " as ri "
-            		+ "join identifier as li "
-            		+ "on lh.identifier = li.id "
-            		+ "and li.asset_type = 'htmlpage' "
-            		+ "and li.asset_name = ri.asset_name "
-            		+ "and li.parent_path = ri.parent_path "
-            		+ "and li.host_inode = ri.host_identifier "
-            		+ "and li.id <> ri.identifier");
+                    + "from identifier as li "
+                    + "join htmlpage as lh "
+                    + "on lh.identifier = li.id "
+                    + "and li.asset_type = 'htmlpage' "
+                    + "join " + tempTableName + " as ri "
+                    + "on li.asset_name = ri.asset_name "
+                    + "and li.parent_path = ri.parent_path "
+                    + "and li.host_inode = ri.host_identifier "
+                    + "and li.id <> ri.identifier");
 
             List<Map<String,Object>> results = dc.loadObjectResults();
 
@@ -749,15 +749,15 @@ public class IntegrityUtil {
                 		+ "li.id as local_identifier, "
                 		+ "ri.identifier as remote_identifier, "
                 		+ "'" + endpointId + "' "
-                		+ "from htmlpage as lh "
-                		+ "join " + tempTableName + " as ri "
-                		+ "join identifier as li "
-                		+ "on lh.identifier = li.id "
-                		+ "and li.asset_type = 'htmlpage' "
-                		+ "and li.asset_name = ri.asset_name "
-                		+ "and li.parent_path = ri.parent_path "
-                		+ "and li.host_inode = ri.host_identifier "
-                		+ "and li.id <> ri.identifier";
+                        + "from identifier as li "
+                        + "join htmlpage as lh "
+                        + "on lh.identifier = li.id "
+                        + "and li.asset_type = 'htmlpage' "
+                        + "join " + tempTableName + " as ri "
+                        + "on li.asset_name = ri.asset_name "
+                        + "and li.parent_path = ri.parent_path "
+                        + "and li.host_inode = ri.host_identifier "
+                        + "and li.id <> ri.identifier";
 
                 dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
             }
