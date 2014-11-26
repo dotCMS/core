@@ -6,28 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.publishing.remote.bundler.BundleXMLAsc;
-import com.dotcms.enterprise.publishing.remote.bundler.CategoryBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContainerBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.ContentBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.FolderBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.HTMLPageBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.HostBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LanguageBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LanguageVariablesBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.LinkBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.RelationshipBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.StructureBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.TemplateBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
-import com.dotcms.enterprise.publishing.remote.bundler.WorkflowBundler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.EndpointDetail;
@@ -44,11 +24,6 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
 import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
 import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
@@ -57,6 +32,14 @@ import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig
 import com.dotcms.repackage.com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
 import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 public class PushPublisher extends Publisher {
 
@@ -112,7 +95,9 @@ public class PushPublisher extends Publisher {
 
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
-
+			Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
+			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
+			boolean isHistoryEmpty = endpointsMap.size() == 0;
 			currentStatusHistory.setPublishStart(new Date());
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 			//Increment numTries
@@ -188,8 +173,9 @@ public class PushPublisher extends Publisher {
 
 	        			Logger.error(this.getClass(), error);
 	        		}
-
-	        		currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
+	        		if (isHistoryEmpty || failedEnvironment) {
+	        			currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
+	        		}
 				}
 
 				if(failedEnvironment) {
