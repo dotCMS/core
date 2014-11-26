@@ -4,6 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,12 +23,15 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.com.google.common.io.Files;
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
+import com.dotcms.util.DownloadUtil;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -219,6 +226,25 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
+				    boolean PREVIEW_MODE = false;
+					boolean EDIT_MODE = false;
+
+					if(session != null) {
+						PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null));
+						try {
+							EDIT_MODE = (((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null)));
+						} catch (Exception e) {
+							Logger.error(this, "Error: Unable to determine if there's a logged user.", e);
+						}
+					}
+					//GIT-4506
+					if(WebAPILocator.getUserWebAPI().isLoggedToBackend(req)){
+						if(!EDIT_MODE && !PREVIEW_MODE)// LIVE_MODE
+							live = true;
+						else
+							live = false;
+					}
+
 				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
 				        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
@@ -349,7 +375,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			resp.setContentType(mimeType);
 
-			if (req.getParameter("force_download") != null) {
+			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
 				String x = UtilMethods.getFileExtension(downloadName);
@@ -359,69 +385,185 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 				resp.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
 				resp.setHeader("Content-Type", "application/force-download");
+			} else {
+
+				boolean _adminMode = false;
+				try {
+				    _adminMode = (session!=null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+				}catch(Exception e){
+
+				}
+
+			    // Set the expiration time
+				if (!_adminMode) {
+
+				    int _daysCache = 365;
+				    GregorianCalendar expiration = new GregorianCalendar();
+					expiration.add(java.util.Calendar.DAY_OF_MONTH, _daysCache);
+					int seconds = (_daysCache * 24 * 60 * 60);
+
+					long _lastModified = data.getDataFile().lastModified();
+					if(_lastModified < 0) {
+					    _lastModified = 0;
+					}
+					// we need to round the _lastmodified to get rid of the milliseconds.
+					_lastModified = _lastModified / 1000;
+					_lastModified = _lastModified * 1000;
+					Date _lastModifiedDate = new java.util.Date(_lastModified);
+
+					long _fileLength = data.getDataFile().length();
+					String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
+
+					SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
+					httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
+		            /* Setting cache friendly headers */
+		            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
+		            resp.setHeader("Cache-Control", "public, max-age="+seconds);
+
+		            String ifModifiedSince = req.getHeader("If-Modified-Since");
+		            String ifNoneMatch = req.getHeader("If-None-Match");
+
+		            /*
+		             * If the etag matches then the file is the same
+		             *
+		            */
+		            if(ifNoneMatch != null){
+		                if(_eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
+		                    resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
+		                    return;
+		                }
+		            }
+
+		            /* Using the If-Modified-Since Header */
+		             if(ifModifiedSince != null){
+					    try{
+					        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
+					        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
+					            resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
+					            return;
+					        }
+					    }
+					    catch(Exception e){}
+					}
+
+		            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
+		            resp.setHeader("Content-Length", String.valueOf(_fileLength));
+		            resp.setHeader("ETag", _eTag);
+
+                /* if we are in ADMIN MODE, don't cache */
+				}else{
+				    GregorianCalendar expiration = new GregorianCalendar();
+					expiration.add(java.util.Calendar.MONTH, -1);
+					resp.setHeader("Expires", DownloadUtil.httpDate.get().format(expiration.getTime()));
+					resp.setHeader("Cache-Control", "max-age=-1");
+				}
 			}
 
-		    int _daysCache = 365;
-		    GregorianCalendar expiration = new GregorianCalendar();
-			expiration.add(java.util.Calendar.DAY_OF_MONTH, _daysCache);
-			int seconds = (_daysCache * 24 * 60 * 60);
+			String rangeHeader = req.getHeader("range");
+			if(UtilMethods.isSet(rangeHeader)){
+				ServletOutputStream out = null;
+				FileChannel from = null;
+				WritableByteChannel to = null;
+				RandomAccessFile input = null;
+				try {
+					out = resp.getOutputStream();
+					from = new FileInputStream(data.getDataFile()).getChannel();
+					to = Channels.newChannel(out);
+					//DOTCMS-5716
+					//32 MB at a time	
+					int maxTransferSize = (32 * 1024 * 1024) ;
+					long size = from.size();
+					long position = 0;
+					
+					boolean responseSent = false;
+					byte[] dataBytes = Files.toByteArray(data.getDataFile());
+		            //ServletOutputStream sos = resp.getOutputStream();
+					//extract range header
+					 resp.setHeader("Accept-Ranges", "bytes");
+					// Range header should match format "bytes=n-n,n-n,n-n...". If not, then return 416.
+					if (!rangeHeader.matches("^bytes=\\d*-\\d*(,\\d*-\\d*)*$")) {
+						resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+						resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+						return;
+					}
+					//parse multiple range bytes
+					ArrayList<SpeedyAssetServletUtil.ByteRange> ranges = SpeedyAssetServletUtil.parseRange(rangeHeader, dataBytes.length);
+					if (ranges != null){
+						SpeedyAssetServletUtil.ByteRange full = new SpeedyAssetServletUtil.ByteRange(0, data.getDataFile().length() - 1, data.getDataFile().length());
+						if (ranges.isEmpty() || ranges.get(0).equals(full)) {
+							// Return full file.
+							input = new RandomAccessFile(data.getDataFile(), "r");
+							SpeedyAssetServletUtil.ByteRange r = full;
+							resp.setContentType(fileAPI.getMimeType(data.getDataFile().getName()));
+							resp.setHeader("Content-Range", "bytes " + r.start + "-" + r.end + "/" + r.total);
+							resp.setHeader("Content-Length", String.valueOf(r.length));
+							// Copy full range.
+							SpeedyAssetServletUtil.copy(input, out, r.start, r.length);
+						} else if (ranges.size() == 1){
+							SpeedyAssetServletUtil.ByteRange range = ranges.get(0);
+							input = new RandomAccessFile(data.getDataFile(), "r");
+							// Check if Range is syntactically valid. If not, then return 416.
+							if (range.start > range.end) {
+								resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+								resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+								return;
+							}
+							resp.setContentType(fileAPI.getMimeType(data.getDataFile().getName()));
+							resp.setHeader("Content-Range", "bytes " + range.start + "-" + range.end + "/" + range.total);
+							resp.setHeader("Content-Length", String.valueOf(range.length));
+				            resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT); // 206.
+							SpeedyAssetServletUtil.copy(input, out, range.start, range.length);
+						}else{
+							resp.setContentType("multipart/byteranges; boundary=" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY);
+							resp.setStatus(HttpServletResponse.SC_PARTIAL_CONTENT);
+						    input = new RandomAccessFile(data.getDataFile(), "r");
+							for (SpeedyAssetServletUtil.ByteRange r : ranges) {
+								if (r.start > r.end) {
+									resp.setHeader("Content-Range", "bytes */" + dataBytes.length); // Required in 416.
+									resp.sendError(HttpServletResponse.SC_REQUESTED_RANGE_NOT_SATISFIABLE);
+									return;
+								}
+								// Add multipart boundary and header fields for every range.
+								out.println();
+								out.println("--" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY);
+								out.println("Content-Type: " + fileAPI.getMimeType(data.getDataFile().getName()));
+								out.println("Content-Range: bytes " + r.start + "-" + r.end + "/" + r.total);
+								out.println();
 
-			long _lastModified = data.getDataFile().lastModified();
-			if(_lastModified < 0) {
-			    _lastModified = 0;
+								// Copy single part range of multi part range.
+								SpeedyAssetServletUtil.copy(input, out, r.start, r.length);
+							}
+							// End with multipart boundary.
+							out.println();
+							out.println("--" + SpeedyAssetServletUtil.MULTIPART_BOUNDARY + "--");
+						}
+						responseSent = true;
+					}
+				} catch (Exception e) {
+					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
+					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
+
+				} finally {
+					if(to != null)
+						to.close();
+					if(from != null)
+						from.close();
+					if(out != null)
+						out.close();
+					if(input !=null)
+						input.close();
+				}
+			}else{
+				FileInputStream is = new FileInputStream(data.getDataFile());
+	            int count = 0;
+	            byte[] buffer = new byte[4096];
+	            OutputStream servletOutput = resp.getOutputStream();
+	            while((count = is.read(buffer)) > 0) {
+	            	servletOutput.write(buffer, 0, count);
+	            }
+	            servletOutput.close();
 			}
-			// we need to round the _lastmodified to get rid of the milliseconds.
-			_lastModified = _lastModified / 1000;
-			_lastModified = _lastModified * 1000;
-			Date _lastModifiedDate = new java.util.Date(_lastModified);
-
-			long _fileLength = data.getDataFile().length();
-			String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
-
-			SimpleDateFormat httpDate = new SimpleDateFormat(Constants.RFC2822_FORMAT);
-			httpDate.setTimeZone(TimeZone.getTimeZone("GMT"));
-            /* Setting cache friendly headers */
-            resp.setHeader("Expires", httpDate.format(expiration.getTime()));
-            resp.setHeader("Cache-Control", "public, max-age="+seconds);
-
-            String ifModifiedSince = req.getHeader("If-Modified-Since");
-            String ifNoneMatch = req.getHeader("If-None-Match");
-
-            /*
-             * If the etag matches then the file is the same
-             *
-            */
-            if(ifNoneMatch != null){
-                if(_eTag.equals(ifNoneMatch) || ifNoneMatch.equals("*")){
-                    resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-                    return;
-                }
-            }
-
-            /* Using the If-Modified-Since Header */
-             if(ifModifiedSince != null){
-			    try{
-			        Date ifModifiedSinceDate = httpDate.parse(ifModifiedSince);
-			        if(_lastModifiedDate.getTime() <= ifModifiedSinceDate.getTime()){
-			            resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED );
-			            return;
-			        }
-			    }
-			    catch(Exception e){}
-			}
-
-            resp.setHeader("Last-Modified", httpDate.format(_lastModifiedDate));
-            resp.setHeader("Content-Length", String.valueOf(_fileLength));
-            resp.setHeader("ETag", _eTag);
-            //resp.setHeader("Content-Disposition", "attachment; filename=" + data.getDataFile().getName());
-            FileInputStream is = new FileInputStream(data.getDataFile());
-            int count = 0;
-            byte[] buffer = new byte[4096];
-            OutputStream servletOutput = resp.getOutputStream();
-            while((count = is.read(buffer)) > 0) {
-            	servletOutput.write(buffer, 0, count);
-            }
-            servletOutput.close();
+            
 		} catch (DotContentletStateException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);

@@ -939,7 +939,7 @@ This would build a file repository from the contents found in the CMS folder /re
 #fileRepository('/documentation/repository')
 And the /application/file_repository.vtl file could look like this
 #foreach($file in $fileRepository_filesList)
-#set($imgpath = "/resize_image?path=/dotAsset/${file.identifier}.${file.getExtension()}&w=178")
+#set($imgpath = "/contentAsset/resize-image/${file.identifier}/fileAsset&w=178")
 <BR><XMP><img src='$imgpath' alt=""/></XMP>
 #end
 <BR>
