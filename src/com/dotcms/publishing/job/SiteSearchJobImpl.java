@@ -49,6 +49,10 @@ public class SiteSearchJobImpl {
     public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
         if(LicenseUtil.getLevel()<200)
             return;
+        
+        String date = DateUtil.getCurrentDate();
+        ActivityLogger.logInfo(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
+        AdminLogger.log(getClass(), "Job Started", "User:" + APILocator.getUserAPI().getSystemUser().getUserId() + "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
 
         HibernateUtil.startTransaction();
 
@@ -225,7 +229,7 @@ public class SiteSearchJobImpl {
             HibernateUtil.closeSession();
         }
 
-        String date = DateUtil.getCurrentDate();
+        date = DateUtil.getCurrentDate();
         ActivityLogger.logInfo(getClass(), "Job Finished", "User: " +APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME  );
         AdminLogger.log(getClass(), "Job Finished", "User: " +APILocator.getUserAPI().getSystemUser().getUserId()+ "; Date: " + date + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME );
     }
