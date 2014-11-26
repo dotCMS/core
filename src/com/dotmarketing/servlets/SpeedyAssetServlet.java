@@ -432,14 +432,34 @@ public class SpeedyAssetServlet extends HttpServlet {
 				Logger.debug(this, "Error serving asset = " + request.getRequestURI() + (request.getQueryString() != null?"?"+request.getQueryString():""), e);
 
 			} finally {
-				if(to != null)
-					to.close();
-				if(from != null)
-					from.close();
-				if(out != null)
-					out.close();
-				if(input !=null)
-					input.close();
+				if ( to != null && to.isOpen() ) {
+					try {
+						to.close();
+					} catch ( IOException e ) {
+						Logger.debug( this.getClass(), "Error closing WritableByteChannel object", e );
+					}
+				}
+				if ( from != null && from.isOpen() ) {
+					try {
+						from.close();
+					} catch ( IOException e ) {
+						Logger.debug( this.getClass(), "Error closing FileChannel object", e );
+					}
+				}
+				if ( out != null ) {
+					try {
+						out.close();
+					} catch ( IOException e ) {
+						Logger.debug( this.getClass(), "Error closing OutputStream object", e );
+					}
+				}
+				if ( input != null ) {
+					try {
+						input.close();
+					} catch ( IOException e ) {
+						Logger.debug( this.getClass(), "Error closing RandomAccessFile object", e );
+					}
+				}
 			}
 
 		} catch (Exception e) {
