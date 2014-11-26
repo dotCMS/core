@@ -1929,6 +1929,8 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals(d3,c11.getDateProperty(fieldPubDate.getVelocityVarName()));
         assertEquals(d4,c11.getDateProperty(fieldExpDate.getVelocityVarName()));
 
+        Thread.sleep(2000); // wait a bit for the index
+        
         // also it should be in the index update with the new dates
         FastDateFormat datetimeFormat = ESMappingAPIImpl.datetimeFormat;
         String q="+structureName:"+testStructure.getVelocityVarName()+
@@ -2047,7 +2049,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         assertEquals("code:Modified Code to make templates different",writer.toString());
 
         // clean up
-        APILocator.getVersionableAPI().removeLive(w2.getIdentifier(), w2.getLanguageId());
+        APILocator.getVersionableAPI().removeLive(w2);
         contentletAPI.archive(w2, user, false);
         contentletAPI.delete(w2, user, false);
     }

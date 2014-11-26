@@ -170,10 +170,23 @@ var editButtonRow="editEventButtonRow";
 				<%@include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
 			</div>
 
-		</div>
-		<% } %>
-		<!-- End Left Column -->
-		
+
+	    <!--  action buttons -->
+		<% if (InodeUtils.isSet(structure.getInode())) { %>
+
+			<!-- START Left Column -->
+			<div class="buttonRow-left lineRight" id="editEventButtonRow">
+				<div class="gradient2">
+					<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+				</div>
+				<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
+				<div id="contentletActionsHanger">
+					<%@include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+				</div>
+
+			</div>
+	<% } %>
+
 		<!-- START Right Column -->
 		<div class="wrapperRight" >
 			<div style="height:20px;"></div>

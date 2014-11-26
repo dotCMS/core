@@ -94,7 +94,7 @@
     </appender>
 
     <appender name="SECURITY" class="com.dotcms.repackage.org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-security.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-security.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">
@@ -104,7 +104,7 @@
     </appender>
 
     <appender name="SITESEARCH" class="com.dotcms.repackage.org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-sitesearch.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-sitesearch.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">
@@ -114,7 +114,7 @@
     </appender>
 
     <appender name="ADMINAUDIT" class="com.dotcms.repackage.org.apache.log4j.RollingFileAppender">
-            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-adminaudit.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-adminaudit.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">
@@ -124,7 +124,7 @@
     </appender>
 
     <appender name="USERS_ACTIVITY" class="com.dotcms.repackage.org.apache.log4j.appender.RollingNewFileAppender">
-            <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-userActivity.log"/>
+            <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-userActivity.log"/>
             <param name="MaxFileSize" value="20MB"/>
             <param name="MaxBackupIndex" value="10"/>
             <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">
@@ -134,7 +134,7 @@
     </appender>
 
     <appender name="VELOCITY" class="com.dotcms.repackage.org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-velocity.log"/>
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-velocity.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">
@@ -144,7 +144,7 @@
     </appender>
 
     <appender name="PUSHPUBLISH" class="com.dotcms.repackage.org.apache.log4j.RollingFileAppender">
-        <param name="File" value="${DOTCMS_LOGGING_HOME}/logs/dotcms-pushpublish.log"/>
+        <param name="File" value="${DOTCMS_LOGGING_HOME}/dotcms-pushpublish.log"/>
         <param name="MaxFileSize" value="20MB"/>
         <param name="MaxBackupIndex" value="10"/>
         <layout class="com.dotcms.repackage.org.apache.log4j.PatternLayout">

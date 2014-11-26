@@ -175,4 +175,13 @@ public interface IdentifierAPI {
 	 */
 	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException;
 
+	/**
+	 * This method hits the DB, table identifier to get the Type of the Asset.
+	 *
+	 * @param identifier that we want to find its type.
+	 * @return Type of the Identifier that matches parameter. This method hist the DB.
+	 * @throws DotDataException
+	 */
+	public String getAssetTypeFromDB(String identifier) throws DotDataException;
+
 }

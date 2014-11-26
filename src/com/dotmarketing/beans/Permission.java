@@ -149,7 +149,7 @@ public class Permission implements Serializable {
 	 */
 	public boolean matchesPermission (int permission) {
 		return (!this.isBitPermission() && this.getPermission() == permission) ||
-			(this.isBitPermission() && (this.getPermission() & permission) > 0);
+				(this.isBitPermission() && (this.getPermission() & permission) > 0);
 	}
 
 	/**

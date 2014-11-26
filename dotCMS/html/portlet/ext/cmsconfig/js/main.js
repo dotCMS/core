@@ -192,8 +192,17 @@ var loadNetworkTab = function () {
 };
 
 var loadLicenseTab = function () {
+	loadLicenseTabMessage("");
+	
+};
+
+
+var loadLicenseTabMessage = function (text) {
 
     var url = "/html/portlet/ext/cmsconfig/license.jsp";
+    if(text.length>0){
+    	url+="?message=" + text;
+    }
     var content = dijit.byId("licenseTabContent");
 
     if (content) {

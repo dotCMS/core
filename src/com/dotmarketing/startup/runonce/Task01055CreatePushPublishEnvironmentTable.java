@@ -60,7 +60,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 		if(DbConnectionFactory.isMsSql()) {
 			dc.executeStatement("create table publishing_environment(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,push_to_all tinyint NOT NULL);");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_environment(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,push_to_all number(1,0) DEFAULT 0 NOT NULL);");
+			dc.executeStatement("create table publishing_environment( id varchar(36) not null primary key, name varchar(255) not null unique, push_to_all number(1,0) default 0 not null )");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("create table publishing_environment(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,push_to_all bool NOT NULL);");
 		}else if(DbConnectionFactory.isPostgres()) {
@@ -72,7 +72,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 		if(DbConnectionFactory.isMsSql()) {
 			dc.executeStatement("create table publishing_bundle(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,publish_date DATETIME, expire_date DATETIME, owner varchar(100));");
 		}else if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_bundle(id varchar2(36) NOT NULL  primary key,name varchar2(255) NOT NULL unique,publish_date TIMESTAMP, expire_date TIMESTAMP, owner varchar2(100));");
+			dc.executeStatement("CREATE TABLE publishing_bundle (id VARCHAR2(36) NOT NULL PRIMARY KEY, name varchar2(255) NOT NULL UNIQUE, publish_date TIMESTAMP, expire_date TIMESTAMP, owner VARCHAR2(100))");
 		}else if(DbConnectionFactory.isMySql()) {
 			dc.executeStatement("create table publishing_bundle(id varchar(36) NOT NULL  primary key,name varchar(255) NOT NULL unique,publish_date DATETIME, expire_date DATETIME, owner varchar(100));");
 		}else if(DbConnectionFactory.isPostgres()) {
@@ -83,7 +83,7 @@ public class Task01055CreatePushPublishEnvironmentTable implements StartupTask {
 	private void createBundleEnvironmentTable(DotConnect dc) throws SQLException, DotDataException {
 
 		if(DbConnectionFactory.isOracle()) {
-			dc.executeStatement("create table publishing_bundle_environment(id varchar2(36) NOT NULL primary key,bundle_id varchar2(36) NOT NULL, environment_id varchar2(36) NOT NULL);");
+			dc.executeStatement("create table publishing_bundle_environment(id varchar2(36) NOT NULL primary key,bundle_id varchar2(36) NOT NULL, environment_id varchar2(36) NOT NULL)");
 		}else {
 			dc.executeStatement("create table publishing_bundle_environment(id varchar(36) NOT NULL primary key,bundle_id varchar(36) NOT NULL, environment_id varchar(36) NOT NULL);");
 		}

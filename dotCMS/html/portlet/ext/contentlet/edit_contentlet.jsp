@@ -24,10 +24,21 @@
 <%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
-
+<!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <%@ include file="/html/portlet/ext/contentlet/field/edit_file_asset_text_inc.jsp" %>
+
+<style>
+.dijitTree {
+	width: 100% !important;
+	max-height: 100% !important;
+	overflow: auto;
+}
+.classAce{
+	display: none;
+}
+</style>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -162,6 +173,7 @@
 var editButtonRow="editContentletButtonRow";
 </script>
 
+
 <%@ include file="/html/portlet/ext/contentlet/field/edit_field_js.jsp" %>
 
 
@@ -253,7 +265,7 @@ var editButtonRow="editContentletButtonRow";
 		<%} else {	%>
 			<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
 		<%}%>
-		
+
 		<!-- START Left Column -->
 			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
 		
@@ -484,6 +496,7 @@ var editButtonRow="editContentletButtonRow";
 	</div>
 
 	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
+
 
 </liferay:box>
 

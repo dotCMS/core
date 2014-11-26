@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -24,7 +25,6 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.collections.LRUMap;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -135,20 +135,14 @@ public class BinaryExporterServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-
-
         String servletPath = req.getServletPath();
 		String uri = req.getRequestURI().substring(servletPath.length());
-
 		String[] uriPieces = uri.split("/");
 		String exporterPath = uriPieces[1];
 		String uuid = uriPieces[2];
 
 		Map<String, String[]> params = new HashMap<String, String[]>();
 		params.putAll(req.getParameterMap());
-
-
-
 		// only set uri params if they are not set in the query string - meaning
 		// the query string will override the uri params.
 		Map<String, String[]> uriParams = getURIParams(req);
@@ -157,10 +151,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				params.put(x, uriParams.get(x));
 			}
 		}
-
-
 		params = sortByKey(params);
-
 
 		String assetInode = null;
 		String assetIdentifier = null;
@@ -173,7 +164,6 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 
 		String fieldVarName = uriPieces.length > 3?uriPieces[3]:null;
-
 		BinaryContentExporter exporter = exportersByPathMapping.get(exporterPath);
 		if(exporter == null) {
 			Logger.warn(this, "No exporter for path " + exporterPath + " is registered. Requested url = " + uri);
@@ -185,47 +175,51 @@ public class BinaryExporterServlet extends HttpServlet {
 		ContentletAPI contentAPI = APILocator.getContentletAPI();
 		BinaryContentExporter.BinaryContentExporterData data = null;
 		File inputFile = null;
+		HttpSession session = req.getSession(false);
+		List<String> tempBinaryImageInodes = null;
+        if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
+            tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
+        } else {
+            tempBinaryImageInodes = new ArrayList<String>();
+        }
+
+        boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
-
 			String downloadName = "file_asset";
-
-			HttpSession session =req.getSession(false);
-			long lang =APILocator.getLanguageAPI().getDefaultLanguage().getId();
-			try{
-				String x  = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
-				lang  = Long.parseLong(x);
-			}
-			catch(Exception e){
-				try{
-					String x  = (String) req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
-					lang  = Long.parseLong(x);
+			long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+			try {
+				String x = null;
+				if (session != null) {
+					x = (String) session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
+				} else {
+					x = (String) req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
 				}
-				catch(Exception ex){
-
-				}
-
+				lang = Long.parseLong(x);
+			} catch(Exception e){
+				// Number parsing exception
 			}
-
 
 			boolean isContent = false;
-			try{
+			try {
 				isContent = isContent(uuid, byInode, lang, respectFrontendRoles);
 			}catch (DotStateException e) {
 				resp.sendError(404);
 				return;
 			}
 
-
-			if(isContent){
+			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-					content = contentAPI.find(assetInode, user, respectFrontendRoles);
+					if(isTempBinaryImage)
+						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
+					else
+						content = contentAPI.find(assetInode, user, respectFrontendRoles);
 					assetIdentifier = content.getIdentifier();
 				} else {
 				    boolean live=userWebAPI.isLoggedToFrontend(req);
-				    if(req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
+				    if (req.getSession(false) != null && req.getSession().getAttribute("tm_date")!=null) {
 				        live=true;
 				        Identifier ident=APILocator.getIdentifierAPI().find(assetIdentifier);
 				        if(UtilMethods.isSet(ident.getSysPublishDate()) || UtilMethods.isSet(ident.getSysExpireDate())) {
@@ -240,27 +234,27 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetInode = content.getInode();
 				}
 				Field field = content.getStructure().getFieldVar(fieldVarName);
-
 				if(field == null){
 					Logger.debug(this,"Field " + fieldVarName + " does not exists within structure " + content.getStructure().getVelocityVarName());
 					resp.sendError(404);
 					return;
 				}
 
-				inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
+				if(isTempBinaryImage)
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), APILocator.getUserAPI().getSystemUser());
+				else
+					inputFile = contentAPI.getBinaryFile(content.getInode(), field.getVelocityVarName(), user);
 				if(inputFile == null){
 					Logger.debug(this,"binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(404);
 					return;
 				}
 				downloadName = inputFile.getName();
-
 			}
 			else{
 				// if we are using this as a "Save as" from the image too
 				fieldVarName = WebKeys.EDITED_IMAGE_FILE_ASSET;
 				com.dotmarketing.portlets.files.model.File dotFile = null;
-
 
 				// get the identifier from cache
 				if(byInode) {
@@ -271,7 +265,6 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 				Identifier id = APILocator.getIdentifierAPI().find(assetIdentifier);
 
-
 				// no identifier, no soup!
 				if(id == null || ! UtilMethods.isSet(id.getInode())){
 					Logger.debug(this,"Identifier: " + assetIdentifier +"not found");
@@ -280,7 +273,6 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 
 				boolean hasLive = (LiveCache.getPathFromCache(id.getURI(), id.getHostId()) != null);
-
 				// no live version and front end, no soup
 				if(respectFrontendRoles && ! hasLive){
 					Logger.debug(this,"File :" + id.getInode() +"is not live");
@@ -298,7 +290,6 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
-
 				if(assetInode != null){
 					inputFile = new File(fileAPI.getRealAssetPath(assetInode, UtilMethods.getFileExtension(dotFile.getFileName())));
 				}
@@ -315,70 +306,50 @@ public class BinaryExporterServlet extends HttpServlet {
 						inputFile = new File(FileUtil.getRealPath(assetPath + WorkingCache.getPathFromCache(id.getURI(), id.getHostId())));
 					}
 				}
-
-
-
 			}
 			//DOTCMS-5674
 			if(UtilMethods.isSet(fieldVarName)){
 				params.put("fieldVarName", new String[]{fieldVarName});
 				params.put("assetInodeOrIdentifier", new String[]{uuid});
 			}
-
 			data = exporter.exportContent(inputFile, params);
-
-
 
 			// THIS IS WHERE THE MAGIC HAPPENS
 			// save to session if user looking to edit a file
-			if(req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null){
-
-
-
-
-		    	Map<String, String> files = (Map<String, String>) session.getAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES);
-		    	if(files == null){
-		    		files = new HashMap<String, String>();
-		    	}
-		    	session.setAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES, files);
-
-
-		    	String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
+			if (req.getParameter(WebKeys.IMAGE_TOOL_SAVE_FILES) != null) {
+                Map<String, String> files;
+                if ( session != null && session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES ) != null ) {
+                    files = (Map<String, String>) session.getAttribute( WebKeys.IMAGE_TOOL_SAVE_FILES );
+                } else {
+                    files = new HashMap<>();
+                }
+                String ext = UtilMethods.getFileExtension(data.getDataFile().getName());
 		    	File tmp = File.createTempFile("binaryexporter", "." +ext);
 		    	FileUtil.copyFile(data.getDataFile(), tmp);
 		    	tmp.deleteOnExit();
-		    	if(req.getParameter("binaryFieldId") != null){
+		    	if (req.getParameter("binaryFieldId") != null) {
 		    		files.put(req.getParameter("binaryFieldId"), tmp.getCanonicalPath());
-		    	}
-		    	else{
+		    	} else {
 		    		files.put(fieldVarName, tmp.getCanonicalPath());
 		    	}
-		    	session.setAttribute(WebKeys.IMAGE_TOOL_SAVE_FILES, files);
-
-
-		    	resp.getWriter().println(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath()));
+		    	resp.getWriter().println(UtilMethods.encodeURIComponent(PublicEncryptionFactory.encryptString(tmp.getAbsolutePath())));
 		    	resp.getWriter().close();
 		    	resp.flushBuffer();
-
 		    	return;
-
 			}
-
 
 			/*******************************
 			 *
 			 *  Start serving the data
 			 *
 			 *******************************/
-
-
 			String mimeType = fileAPI.getMimeType(data.getDataFile().getName());
 
 			if (mimeType == null)
 				mimeType = "application/octet-stream";
 			resp.setContentType(mimeType);
 
-			if(req.getParameter("force_download") != null) {
+			if (req.getParameter("force_download") != null) {
 
 				// if we are downloading a jpeg version of a png or gif
 				String x = UtilMethods.getFileExtension(downloadName);
@@ -403,7 +374,6 @@ public class BinaryExporterServlet extends HttpServlet {
 			_lastModified = _lastModified / 1000;
 			_lastModified = _lastModified * 1000;
 			Date _lastModifiedDate = new java.util.Date(_lastModified);
-
 
 			long _fileLength = data.getDataFile().length();
 			String _eTag = "dot:" + assetInode + ":" + _lastModified + ":" + _fileLength;
@@ -444,17 +414,14 @@ public class BinaryExporterServlet extends HttpServlet {
             resp.setHeader("Content-Length", String.valueOf(_fileLength));
             resp.setHeader("ETag", _eTag);
             //resp.setHeader("Content-Disposition", "attachment; filename=" + data.getDataFile().getName());
-
             FileInputStream is = new FileInputStream(data.getDataFile());
-
             int count = 0;
             byte[] buffer = new byte[4096];
             OutputStream servletOutput = resp.getOutputStream();
-            while((count = is.read(buffer)) > 0)
+            while((count = is.read(buffer)) > 0) {
             	servletOutput.write(buffer, 0, count);
-
+            }
             servletOutput.close();
-
 		} catch (DotContentletStateException e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -490,7 +457,6 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		}
-
 	}
 
 	@SuppressWarnings("unchecked")

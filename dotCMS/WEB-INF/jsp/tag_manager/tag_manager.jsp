@@ -39,17 +39,17 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 
 <%
-
-List<Host> allHosts = APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(),true);
-
-String dojoPath = Config.getStringProperty("path.to.dojo");
-
-String currentHostId = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
-Host currentHost = APILocator.getHostAPI().find(currentHostId, APILocator.getUserAPI().getSystemUser(), false);
-String currentHostStore =  currentHost.getTagStorage();
-Host hostTagStore = APILocator.getHostAPI().find(currentHostStore, APILocator.getUserAPI().getSystemUser(), false);
-String tagStoreHostName = hostTagStore.getHostname();
-
+    List<Host> allHosts = APILocator.getHostAPI().findAll(APILocator.getUserAPI().getSystemUser(),true);
+    String dojoPath = Config.getStringProperty("path.to.dojo");
+    String currentHostId = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
+    Host currentHost = APILocator.getHostAPI().find(currentHostId, APILocator.getUserAPI().getSystemUser(), false);
+    String currentHostStore =  currentHost.getTagStorage();
+    Host hostTagStore = APILocator.getHostAPI().find(currentHostStore, APILocator.getUserAPI().getSystemUser(), false);
+    String tagStoreHostIdentifier = hostTagStore.getIdentifier();
+    String tagStoreHostName = hostTagStore.getHostname();
+    if(tagStoreHostName != null && tagStoreHostName.equals("System Host")){
+        tagStoreHostName = LanguageUtil.get(pageContext, "tag-all-hosts");
+    }
 %>
 
 <style type="text/css">
@@ -77,337 +77,338 @@ td {font-size: 100%;}
 <script type="text/javascript" src="/dwr/interface/TagAjax.js"></script>
 
 <script type="text/javascript">
-	dojo.require("dijit.Dialog");
-	dojo.require("dijit.form.Form");
-	dojo.require("dijit.form.TextBox");
-	dojo.require("dijit.form.Textarea");
-	dojo.require("dijit.form.ValidationTextBox");
-	dojo.require("dijit.form.Button");
-	dojo.require("dijit.form.CheckBox");
-	dojo.require("dojox.grid.EnhancedGrid");
-	//dojo.require("dojox.grid.enhanced.DataSelection");
-	dojo.require("dojox.grid.enhanced.plugins.Menu");
-	dojo.require("dojox.grid.enhanced.plugins.DnD");
-	dojo.require("dojox.grid.enhanced.plugins.NestedSorting");
-	dojo.require("dojox.grid.enhanced.plugins.IndirectSelection");
-	dojo.require("dojox.grid.enhanced.plugins.Pagination");
+    dojo.require("dijit.Dialog");
+    dojo.require("dijit.form.Form");
+    dojo.require("dijit.form.TextBox");
+    dojo.require("dijit.form.Textarea");
+    dojo.require("dijit.form.ValidationTextBox");
+    dojo.require("dijit.form.Button");
+    dojo.require("dijit.form.CheckBox");
+    dojo.require("dojox.grid.EnhancedGrid");
+    //dojo.require("dojox.grid.enhanced.DataSelection");
+    dojo.require("dojox.grid.enhanced.plugins.Menu");
+    dojo.require("dojox.grid.enhanced.plugins.DnD");
+    dojo.require("dojox.grid.enhanced.plugins.NestedSorting");
+    dojo.require("dojox.grid.enhanced.plugins.IndirectSelection");
+    dojo.require("dojox.grid.enhanced.plugins.Pagination");
     dojo.require("dojox.grid.enhanced.plugins.Search");
     dojo.require("dojo.io.iframe");
-	dojo.require("dojo.data.ItemFileReadStore");
-	dojo.require("dojo.data.ItemFileWriteStore");
-	dojo.require("dojox.data.QueryReadStore");
-	dojo.require("dojox.timing._base");
+    dojo.require("dojo.data.ItemFileReadStore");
+    dojo.require("dojo.data.ItemFileWriteStore");
+    dojo.require("dojox.data.QueryReadStore");
+    dojo.require("dojox.timing._base");
 
 
-	dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
-	dojo.require("dotcms.dojo.data.UsersReadStore");
+    dojo.require("dotcms.dijit.form.HostFolderFilteringSelect");
+    dojo.require("dotcms.dojo.data.UsersReadStore");
 
 
-	var tagNameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-name")) %>';
-	var hostMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-storage-host")) %>';
-	var tagSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-saved")) %>';
-	var tagRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-removed")) %>';
-	var confirmRemoveTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tag")) %>';
-	var confirmRemoveTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tags")) %>';
-	var exportTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-tags-message")) %>';
-	var tagNameAlreadyExistForSelectedHost = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-for-host-already-exists")) %>';
-	var noResultsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-no-search-results")) %>';
-	var allTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-all"))%>';
-	var addTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-tag"))%>';
-	var editTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-tag"))%>';
-	var tagsImportedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported"))%>';
-	var ImportTagMessageErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported.error"))%>';
-	var batchDeleteMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags")) %>';
-	var batchDeleteErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags.error")) %>';
-	var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
-	
-	var currentHostId = '<%=currentHostId %>';
-	var tagStoreHostName = '<%=tagStoreHostName %>';
+    var tagNameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-name")) %>';
+    var hostMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-storage-host")) %>';
+    var tagSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-saved")) %>';
+    var tagRemovedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-removed")) %>';
+    var confirmRemoveTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tag")) %>';
+    var confirmRemoveTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "confirm-remove-tags")) %>';
+    var exportTagsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "export-tags-message")) %>';
+    var tagNameAlreadyExistForSelectedHost = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-for-host-already-exists")) %>';
+    var noResultsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-no-search-results")) %>';
+    var allTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "tag-all"))%>';
+    var addTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-tag"))%>';
+    var editTagMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-tag"))%>';
+    var tagsImportedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported"))%>';
+    var ImportTagMessageErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.imported.error"))%>';
+    var batchDeleteMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags")) %>';
+    var batchDeleteErrorMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.delete.tags.error")) %>';
+    var fileRequiredMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.contentlet.file.required"))%>';
+    
+    var currentHostId = '<%=currentHostId %>';
+    var tagStoreHostIdentifier = '<%= tagStoreHostIdentifier %>';
+    var tagStoreHostName = '<%= tagStoreHostName %>';
 
-	var tagsGrid;
-	var layout;
-	var tagStore;
+
+    var tagsGrid;
+    var layout;
+    var tagStore;
 
     var isNewTag = false;
 
-  	dojo.provide("TagsStore");
+    dojo.provide("TagsStore");
 
-	var formatHref = function(value, index) {
-		var grid = dijit.byId("tagsEnhancedGrid");
+    var formatHref = function(value, index) {
+        var grid = dijit.byId("tagsEnhancedGrid");
         var tagId = grid.store.getValue(grid.getItem(index), 'tagId');
         var tagName = grid.store.getValue(grid.getItem(index), 'tagname');
         var hostId = grid.store.getValue(grid.getItem(index), 'hostId');
         var hostName = grid.store.getValue(grid.getItem(index), 'hostName');
-		return "<a href=\"javascript:tagClicked('"+index+"')\" >"+tagName+"</a>";
-	};
+        return "<a href=\"javascript:tagClicked('"+index+"')\" >"+tagName+"</a>";
+    };
 
-  	function createStore(params) {
-		if(params==null) params = '';
+    function createStore(params) {
+        if(params==null) params = '';
 
-		tagStore = new dojox.data.QueryReadStore({
-			url : '/JSONTags'+ convertStringToUnicode(params) 
-		});
-	}
+        tagStore = new dojox.data.QueryReadStore({
+            url : '/JSONTags'+ convertStringToUnicode(params) 
+        });
+    }
 
-	function createGrid() {
-		layout = [{
-			field: 'tagname',
-			name: tagNameMsg,
-			width: '30%',
-			formatter: formatHref
-		},
-		{
-			field: 'hostName',
-			name: hostMsg,
-			width: '70%'
-		}];
+    function createGrid() {
+        layout = [{
+            field: 'tagname',
+            name: tagNameMsg,
+            width: '30%',
+            formatter: formatHref
+        },
+        {
+            field: 'hostName',
+            name: hostMsg,
+            width: '70%'
+        }];
 
-		tagsGrid = new dojox.grid.EnhancedGrid({
-			jsId : "tagsEnhancedGrid",
-			id : "tagsEnhancedGrid",
-			rowsPerPage : 25,
-			store: tagStore,
-			rowSelector: '20px',
-			autoWidth : true,
-			initialWidth : '100%',
-			autoHeight : true,
-			escapeHTMLInData : false,
-			'class': "tundra",
-			structure: layout,
-			dnd: true,
-			plugins:{
-				pagination: {
-					pageSizes : [ "25", "50", "100", "All" ],
-					description : "45%",
-					sizeSwitch : "260px",
-					pageStepper : "30em",
-					gotoButton : true,
-					maxPageStep : 7,
-					position : "bottom"
-				},
-				search : true,
-				indirectSelection: { headerSelector: true }
+        tagsGrid = new dojox.grid.EnhancedGrid({
+            jsId : "tagsEnhancedGrid",
+            id : "tagsEnhancedGrid",
+            rowsPerPage : 25,
+            store: tagStore,
+            rowSelector: '20px',
+            autoWidth : true,
+            initialWidth : '100%',
+            autoHeight : true,
+            escapeHTMLInData : false,
+            'class': "tundra",
+            structure: layout,
+            dnd: true,
+            plugins:{
+                pagination: {
+                    pageSizes : [ "25", "50", "100", "All" ],
+                    description : "45%",
+                    sizeSwitch : "260px",
+                    pageStepper : "30em",
+                    gotoButton : true,
+                    maxPageStep : 7,
+                    position : "bottom"
+                },
+                search : true,
+                indirectSelection: { headerSelector: true }
 
-			}
-		},
-		document.createElement('div'));
+            }
+        },
+        document.createElement('div'));
 
-		// append the new grid
-		dojo.byId('tagsGrid').appendChild(tagsGrid.domNode);
-
-
-	}
-
-	dojo.addOnLoad(function () {
-
-		dojo.style(dojo.byId('tagsGridWrapper'), { visibility: 'visible'});
-		dojo.style(dojo.byId('loadingTagsWrapper'), { display: 'none'});
-
-		//create store
-		createStore();
-
-		//create grid
-		createGrid();
-
-		 // Call startup, in order to render the grid:
-		 tagsGrid.startup();
-
-		 dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
-				dojo.byId("savedMessage").innerHTML = "";
-			});
-
-  		});
-
-		function resetSearch() {
-			dijit.byId("showGlobal").set('checked',false);
-			document.getElementById("globalFilter").value='0';
-			var grid = dijit.byId("tagsEnhancedGrid");
-	        document.getElementById("filterBox").value='';
-
-			doSearch();
-		}
-
-		function tagClicked(index) {
-	        var tagId = tagStore.getValue(tagsGrid.getItem(index),'tagId');
-	        var tagName = tagStore.getValue(tagsGrid.getItem(index), 'tagname');
-	        var hostId = tagStore.getValue(tagsGrid.getItem(index), 'hostId');
-	        var hostName = tagStore.getValue(tagsGrid.getItem(index), 'hostName');
-
-	        dijit.byId('addTagDialog').set('title',editTagMsg);
-	        dijit.byId('deleteButton').set('disabled',false);
-
-	        dijit.byId('addTagDialog').show();
-			dojo.byId('addTagErrorMessagesList').innerHTML = '';
-
-			dijit.byId('tagName').set('value', tagName);
-			document.getElementById('tagId').value = tagId;
-			document.getElementById('tagStorage').value = hostId;
-			document.getElementById('tagStorage_dropDown').value = hostName;
-
-			dijit.byId('tagStorage_dropDown').set("disabled",true);
-			document.getElementById('tagStorage_dropDown').disabled=true;
-
-			isNewTag = false;
-		}
-
-		function doSearch() {
-			dojo.byId('tagsGrid').innerHTML='';
-	        var globalFilter = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
-	        var tagNameFilter = document.getElementById("filterBox").value;
-			var params = "?tagname="+tagNameFilter+"&global="+globalFilter;
-			tagsGrid.destroy(true);
-			createStore(params);
-			createGrid();
-	        tagsGrid.startup();
-
-		}
-
-		function checkGlobalTags(){
-			var globalCheck = (dijit.byId("showGlobal").checked) ? '1' :'0';
-			document.getElementById("globalFilter").value = globalCheck;
-			doSearch();
-		}
-
-		function searchTagByName() {
-			var nameFilter = document.getElementById("filterBox").value;
-			doSearch();
-		}
+        // append the new grid
+        dojo.byId('tagsGrid').appendChild(tagsGrid.domNode);
 
 
-		function updateHiddenFields (){
-			var txtIndexObj = document.getElementById('tagStorage');
-			txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
-		}
+    }
 
-		function addNewTag() {
+    dojo.addOnLoad(function () {
 
-			isNewTag = true;
+        dojo.style(dojo.byId('tagsGridWrapper'), { visibility: 'visible'});
+        dojo.style(dojo.byId('loadingTagsWrapper'), { display: 'none'});
 
-			dijit.byId('newTagForm').reset();
-			dijit.byId('addTagDialog').set('title',addTagMsg);
-			dijit.byId('addTagDialog').show();
-			dijit.byId('deleteButton').set('disabled',true);
-			dijit.byId('tagStorage_dropDown').set("disabled",false);
-			document.getElementById('tagStorage_dropDown').disabled=false;
-			dojo.byId('addTagErrorMessagesList').innerHTML = '';
+        //create store
+        createStore();
 
-			document.getElementById('tagStorage').value = currentHostId;
-			dijit.byId('tagStorage_dropDown').set('displayedValue', tagStoreHostName);
+        //create grid
+        createGrid();
 
-		}
+         // Call startup, in order to render the grid:
+         tagsGrid.startup();
 
-	     //Handler when the user clicks the cancel button
-	   	function cancelAddNewTag () {
-	   		dijit.byId('addTagDialog').hide();
-	   	}
+         dojo.connect(dijit.byId("addTagDialog"), "hide", function (evt) {
+                dojo.byId("savedMessage").innerHTML = "";
+            });
 
-	   	//Handler to save/update the tag
-	   	function saveTag() {
+        });
 
-	   		if(!dijit.byId('newTagForm').validate())
-	   			return;
+        function resetSearch() {
+            dijit.byId("showGlobal").set('checked',false);
+            document.getElementById("globalFilter").value='0';
+            var grid = dijit.byId("tagsEnhancedGrid");
+            document.getElementById("filterBox").value='';
 
-	   		var tagId = document.getElementById('tagId').value;
-	   		var tagName = document.getElementById('tagName').value;
+            doSearch();
+        }
 
-	   		if(tagName.indexOf(',')>-1) {
-	   			var message = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.add.tags.error")) %>';
-	   			dojo.byId("savedMessage").innerHTML = message;
-	   			return;
-	   		}
-	   		//var userId = dijit.byId('userId').attr('value') == null?'':dijit.byId('userId').attr('value');
-	   		var hostId = document.getElementById('tagStorage').value;
+        function tagClicked(index) {
+            var tagId = tagStore.getValue(tagsGrid.getItem(index),'tagId');
+            var tagName = tagStore.getValue(tagsGrid.getItem(index), 'tagname');
+            var hostId = tagStore.getValue(tagsGrid.getItem(index), 'hostId');
+            var hostName = tagStore.getValue(tagsGrid.getItem(index), 'hostName');
 
-	   		if(isNewTag)
-	   			TagAjax.addTag(tagName, "" , hostId, saveTagCallback);
-	   		else
-	   			TagAjax.updateTag(tagId, tagName, hostId, saveTagCallback);
-	   	}
+            dijit.byId('addTagDialog').set('title',editTagMsg);
+            dijit.byId('deleteButton').set('disabled',false);
 
-	   	function saveTagCallback (data) {
-	   		if(data["saveTagErrors"] != null ) {
-	   	   		dojo.byId('addTagErrorMessagesList').innerHTML = '';
-	   	   		dojo.place("<li>" + tagNameAlreadyExistForSelectedHost + "</li>", "addTagErrorMessagesList", "last");
-	   		}else{
-	   	   		dijit.byId('addTagDialog').hide();
-	   	   		showDotCMSSystemMessage(tagSavedMsg);
-	   	   		doSearch();
-	   		}
-	   	}
+            dijit.byId('addTagDialog').show();
+            dojo.byId('addTagErrorMessagesList').innerHTML = '';
 
-	   	//Event handler then deleting a tag
-	   	function deleteTag() {
-	   		var tagId = document.getElementById('tagId').value;
-	   		if(confirm(confirmRemoveTagMsg)) {
-	   			TagAjax.deleteTag(tagId,deleteTagCallback);
-	   		}
-	   	}
+            dijit.byId('tagName').set('value', tagName);
+            document.getElementById('tagId').value = tagId;
+            document.getElementById('tagStorage').value = hostId;
+            document.getElementById('tagStorage_dropDown').value = hostName;
 
-	   	//Callback from the server to confirm a tag deletion
-	   	function deleteTagCallback () {
-	   		dijit.byId('addTagDialog').hide();
-	   		showDotCMSSystemMessage(tagRemovedMsg);
-			doSearch();
-	   	}
+            dijit.byId('tagStorage_dropDown').set("disabled",true);
+            document.getElementById('tagStorage_dropDown').disabled=true;
 
-	   	function exportTags() {
-	   		var globalCheck = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
-	   		var filter = dijit.byId("filterBox").value;
-			var downloadPdfIframeName = "downloadPdfIframe";
-			var iframe = dojo.io.iframe.create(downloadPdfIframeName);
-			dojo.io.iframe.setSrc(iframe, "/JSONTags?tagname="+filter+"&global="+globalCheck+"&action=export", true);
-	   	}
+            isNewTag = false;
+        }
 
-		function openImportTagsDialog() {
-			dijit.byId('importTagsForm').reset();
-			dijit.byId('importTagsDialog').show();
-			dojo.byId('importTagsErrorMessagesList').innerHTML = '';
-		}
+        function doSearch() {
+            dojo.byId('tagsGrid').innerHTML='';
+            var globalFilter = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
+            var tagNameFilter = document.getElementById("filterBox").value;
+            var params = "?tagname="+tagNameFilter+"&global="+globalFilter;
+            tagsGrid.destroy(true);
+            createStore(params);
+            createGrid();
+            tagsGrid.startup();
 
-	   	function cancelImportTags(){
-	   		var fu = document.getElementById('uploadFile');
-	   		if (fu != null) {
-	   		document.getElementById('uploadFile').outerHTML = fu.outerHTML;
-	   		}
-	   		dijit.byId('importTagsDialog').hide();
-	   	}
+        }
 
-	   	function importTags(){
-	   		var file = dwr.util.getValue('uploadFile');
-	   		if(file.value != ""){
-				TagAjax.importTags(file, importTagsCallback);
-	   		}else {
-	   	   		showDotCMSSystemMessage(fileRequiredMsg);
-	   		}
-	   	}
+        function checkGlobalTags(){
+            var globalCheck = (dijit.byId("showGlobal").checked) ? '1' :'0';
+            document.getElementById("globalFilter").value = globalCheck;
+            doSearch();
+        }
 
-	   	function importTagsCallback (data) {
-	   		if(data["importTagErrors"] != null ) {
-	   	   		dojo.byId('importTagsErrorMessagesList').innerHTML = '';
-	   	   		dojo.place("<li>" + ImportTagMessageErrorMsg + "</li>", "importTagsErrorMessagesList", "last");
-	   		}else{
-	   	   		dijit.byId('importTagsDialog').hide();
-	   	   		showDotCMSSystemMessage(tagsImportedMsg);
-	   	   		doSearch();
-	   		}
-	   	}
+        function searchTagByName() {
+            var nameFilter = document.getElementById("filterBox").value;
+            doSearch();
+        }
 
-		function alterFocus(toBlur, toFocus) {
-			if(toBlur.id != "tagName" && toBlur.id != "tagsGridWrapper" && toBlur.id != "loadingTagsGridWrapper"
-					&& toBlur.id != "tagsGrid" && toBlur.id != "tagsEnhancedGrid" && toBlur.id == "tagsEnhancedGridHdr0"
-					|| (toBlur.id == toFocus.id && toBlur.id == "filterBox")) {
-				toBlur.blur();
-				toFocus.focus();
-			}
-		}
 
-		// delete muliple or single category, via ajax
-		function deleteTagsBatch() {
-			var items = tagsGrid.selection.getSelected();
-			if(items.length < 1) {
-				showDotCMSSystemMessage(batchDeleteErrorMsg);
-			}
-			else {
+        function updateHiddenFields (){
+            var txtIndexObj = document.getElementById('tagStorage');
+            txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
+        }
+
+        function addNewTag() {
+            isNewTag = true;
+
+            dijit.byId('newTagForm').reset();
+            dijit.byId('addTagDialog').set('title',addTagMsg);
+            dijit.byId('addTagDialog').show();
+            dijit.byId('deleteButton').set('disabled',true);
+            dijit.byId('tagStorage_dropDown').set("disabled",false);
+            document.getElementById('tagStorage_dropDown').disabled=false;
+            dojo.byId('addTagErrorMessagesList').innerHTML = '';
+
+            document.getElementById('tagStorage').value = currentHostId;
+            dijit.byId('tagStorage_dropDown').set('displayedValue', tagStoreHostName);
+            console.log("tagStoreHostName: " + tagStoreHostName);
+        }
+
+         //Handler when the user clicks the cancel button
+        function cancelAddNewTag () {
+            dijit.byId('addTagDialog').hide();
+        }
+
+        //Handler to save/update the tag
+        function saveTag() {
+
+            if(!dijit.byId('newTagForm').validate())
+                return;
+
+            var tagId = document.getElementById('tagId').value;
+            var tagName = document.getElementById('tagName').value;
+
+            if(tagName.indexOf(',')>-1) {
+                var message = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.tags.add.tags.error")) %>';
+                dojo.byId("savedMessage").innerHTML = message;
+                return;
+            }
+            //var userId = dijit.byId('userId').attr('value') == null?'':dijit.byId('userId').attr('value');
+            var hostId = document.getElementById('tagStorage').value;
+
+            if(isNewTag)
+                TagAjax.addTag(tagName, "" , hostId, saveTagCallback);
+            else
+                TagAjax.updateTag(tagId, tagName, hostId, saveTagCallback);
+        }
+
+        function saveTagCallback (data) {
+            if(data["saveTagErrors"] != null ) {
+                dojo.byId('addTagErrorMessagesList').innerHTML = '';
+                dojo.place("<li>" + tagNameAlreadyExistForSelectedHost + "</li>", "addTagErrorMessagesList", "last");
+            }else{
+                dijit.byId('addTagDialog').hide();
+                showDotCMSSystemMessage(tagSavedMsg);
+                doSearch();
+            }
+        }
+
+        //Event handler then deleting a tag
+        function deleteTag() {
+            var tagId = document.getElementById('tagId').value;
+            if(confirm(confirmRemoveTagMsg)) {
+                TagAjax.deleteTag(tagId,deleteTagCallback);
+            }
+        }
+
+        //Callback from the server to confirm a tag deletion
+        function deleteTagCallback () {
+            dijit.byId('addTagDialog').hide();
+            showDotCMSSystemMessage(tagRemovedMsg);
+            doSearch();
+        }
+
+        function exportTags() {
+            var globalCheck = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
+            var filter = dijit.byId("filterBox").value;
+            var downloadPdfIframeName = "downloadPdfIframe";
+            var iframe = dojo.io.iframe.create(downloadPdfIframeName);
+            dojo.io.iframe.setSrc(iframe, "/JSONTags?tagname="+filter+"&global="+globalCheck+"&action=export", true);
+        }
+
+        function openImportTagsDialog() {
+            dijit.byId('importTagsForm').reset();
+            dijit.byId('importTagsDialog').show();
+            dojo.byId('importTagsErrorMessagesList').innerHTML = '';
+        }
+
+        function cancelImportTags(){
+            var fu = document.getElementById('uploadFile');
+            if (fu != null) {
+            document.getElementById('uploadFile').outerHTML = fu.outerHTML;
+            }
+            dijit.byId('importTagsDialog').hide();
+        }
+
+        function importTags(){
+            var file = dwr.util.getValue('uploadFile');
+            if(file.value != ""){
+                TagAjax.importTags(file, importTagsCallback);
+            }else {
+                showDotCMSSystemMessage(fileRequiredMsg);
+            }
+        }
+
+        function importTagsCallback (data) {
+            if(data["importTagErrors"] != null ) {
+                dojo.byId('importTagsErrorMessagesList').innerHTML = '';
+                dojo.place("<li>" + ImportTagMessageErrorMsg + "</li>", "importTagsErrorMessagesList", "last");
+            }else{
+                dijit.byId('importTagsDialog').hide();
+                showDotCMSSystemMessage(tagsImportedMsg);
+                doSearch();
+            }
+        }
+
+        function alterFocus(toBlur, toFocus) {
+            if(toBlur.id != "tagName" && toBlur.id != "tagsGridWrapper" && toBlur.id != "loadingTagsGridWrapper"
+                    && toBlur.id != "tagsGrid" && toBlur.id != "tagsEnhancedGrid" && toBlur.id == "tagsEnhancedGridHdr0"
+                    || (toBlur.id == toFocus.id && toBlur.id == "filterBox")) {
+                toBlur.blur();
+                toFocus.focus();
+            }
+        }
+
+        // delete muliple or single category, via ajax
+        function deleteTagsBatch() {
+            var items = tagsGrid.selection.getSelected();
+            if(items.length < 1) {
+                showDotCMSSystemMessage(batchDeleteErrorMsg);
+            }
+            else {
 
                 if (confirm(confirmRemoveTagsMsg)) {
 
@@ -427,172 +428,169 @@ td {font-size: 100%;}
                     };
                     t.start();
                 }
-			}
-		}
+            }
+        }
 
-		function downloadCSVSampleFile(){
-	   		var globalCheck = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
-	   		var filter = dijit.byId("filterBox").value;
-			var downloadPdfIframeName = "downloadPdfIframe";
-			var iframe = dojo.io.iframe.create(downloadPdfIframeName);
-			dojo.io.iframe.setSrc(iframe, "/JSONTags?tagname="+filter+"&global="+globalCheck+"&action=download", true);
-		}
+        function downloadCSVSampleFile(){
+            var globalCheck = (document.getElementById("globalFilter").value == '1') ? '1' :'0';
+            var filter = dijit.byId("filterBox").value;
+            var downloadPdfIframeName = "downloadPdfIframe";
+            var iframe = dojo.io.iframe.create(downloadPdfIframeName);
+            dojo.io.iframe.setSrc(iframe, "/JSONTags?tagname="+filter+"&global="+globalCheck+"&action=download", true);
+        }
 
-		function convertStringToUnicode(name) {
-			  var unicodeString = '';
-		 	   for (var i=0; i < name.length; i++) {
-		 			  if(name.charCodeAt(i) > 128){
-		 			 var str = name.charCodeAt(i).toString(16).toUpperCase();
-					 	 while(str.length < 4)
-					        str = "0" + str;
-						  unicodeString += "\\u" + str;
-		 			  }else{
-			          unicodeString += name[i];
-		 			  }
-				   }
-		 	  return unicodeString;
-	  	}
-		
+        function convertStringToUnicode(name) {
+              var unicodeString = '';
+               for (var i=0; i < name.length; i++) {
+                      if(name.charCodeAt(i) > 128){
+                     var str = name.charCodeAt(i).toString(16).toUpperCase();
+                         while(str.length < 4)
+                            str = "0" + str;
+                          unicodeString += "\\u" + str;
+                      }else{
+                      unicodeString += name[i];
+                      }
+                   }
+              return unicodeString;
+        }
+        
    </script>
 <div class="portlet-wrapper">
 <jsp:include page="/html/portlet/ext/browser/sub_nav.jsp"></jsp:include>
 
-	<div class="yui-g nameHeader">
-		<div class="yu-u first" id="filters">
-	        <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
-			<input type="text" name="filterBox" value="" dojoType="dijit.form.TextBox" placeHolder="Filter" trim="true" id="filterBox" intermediateChanges="true" onChange="searchTagByName();" onBlur="alterFocus(document.activeElement, this);" >
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
-		    </button>
-			<button dojoType="dijit.form.Button" iconclass="resetIcon" id="resetButton" onClick="resetSearch()">
-		       <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
-		    </button>
-		    <input id="showGlobal" name="showGlobal" dojoType="dijit.form.CheckBox" value="" onChange="checkGlobalTags()"/>
-			<label for="showGlobal"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "show-global-tags")) %></label>
-			<input type="hidden" name="globalFilter" id="globalFilter" value="0">
-		</div>
+    <div class="yui-g nameHeader">
+        <div class="yu-u first" id="filters">
+            <input type="hidden" name="host_id" id="host_id" value="<%=(String)session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID)%>">
+            <input type="text" name="filterBox" value="" dojoType="dijit.form.TextBox" placeHolder="Filter" trim="true" id="filterBox" intermediateChanges="true" onChange="searchTagByName();" onBlur="alterFocus(document.activeElement, this);" >
+               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Search")) %>
+            </button>
+            <button dojoType="dijit.form.Button" iconclass="resetIcon" id="resetButton" onClick="resetSearch()">
+               <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Reset")) %>
+            </button>
+            <input id="showGlobal" name="showGlobal" dojoType="dijit.form.CheckBox" value="" onChange="checkGlobalTags()"/>
+            <label for="showGlobal"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "show-global-tags")) %></label>
+            <input type="hidden" name="globalFilter" id="globalFilter" value="0">
+        </div>
 
-		<div class="yui-u" style="text-align:right;">
-		<form name="export_form" id="export_form" method="get">
-			<button dojoType="dijit.form.Button" onClick="addNewTag()" type="button" iconClass="plusIcon">
-				<%= LanguageUtil.get(pageContext, "add-tag") %>
-			</button>
-			<button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="openImportTagsDialog()">
-				<%= LanguageUtil.get(pageContext, "import-tags") %>
-			</button>
-			<button dojoType="dijit.form.Button" type="button" iconClass="downloadIcon" onClick="exportTags()">
-				<%= LanguageUtil.get(pageContext, "export-tags") %>
-			</button>
-			<button dojoType="dijit.form.Button" type="button" onClick="deleteTagsBatch()" iconClass="deleteIcon">
-			<%= LanguageUtil.get(pageContext, "delete-tags") %>
-			</button>
-			<input type="hidden" id="cmd" value="none">
-			</form>
-		</div>
-	</div>
-	<div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/lightbox/images/loading.gif"></div>
+        <div class="yui-u" style="text-align:right;">
+        <form name="export_form" id="export_form" method="get">
+            <button dojoType="dijit.form.Button" onClick="addNewTag()" type="button" iconClass="plusIcon">
+                <%= LanguageUtil.get(pageContext, "add-tag") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="openImportTagsDialog()">
+                <%= LanguageUtil.get(pageContext, "import-tags") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" iconClass="downloadIcon" onClick="exportTags()">
+                <%= LanguageUtil.get(pageContext, "export-tags") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" onClick="deleteTagsBatch()" iconClass="deleteIcon">
+            <%= LanguageUtil.get(pageContext, "delete-tags") %>
+            </button>
+            <input type="hidden" id="cmd" value="none">
+            </form>
+        </div>
+    </div>
+    <div id="loadingTagsWrapper" style="text-align:center"><img src="/html/js/lightbox/images/loading.gif"></div>
 
-	<div id="tagsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
-		<div id="tagsGrid"></div>
-	</div>
+    <div id="tagsGridWrapper" style="overflow-y:auto;overflow-x:hidden;">
+        <div id="tagsGrid"></div>
+    </div>
 </div>
 <script language="Javascript">
-	/**
-		focus on search box
-	**/
-	require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
-		dojo.require('dojox.timing');
-		t = new dojox.timing.Timer(500);
-		t.onTick = function(){
-		  focusUtil.focus(dom.byId("filterBox"));
-		  t.stop();
-		};
-		t.start();
-	});
+    /**
+        focus on search box
+    **/
+    require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom){
+        dojo.require('dojox.timing');
+        t = new dojox.timing.Timer(500);
+        t.onTick = function(){
+          focusUtil.focus(dom.byId("filterBox"));
+          t.stop();
+        };
+        t.start();
+    });
 </script>
  <%-- Add Tag Dialog --%>
 
 <div id="addTagDialog" title="<%= LanguageUtil.get(pageContext, "edit-tag") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
-	<form id="newTagForm" dojoType="dijit.form.Form" class="roleForm">
-		<div style="text-align: center">
-	       		<span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
-				</span>
-		</div>
-		<dl>
-			<dt></dt>
-			<dd><ul id="addTagErrorMessagesList"></ul></dd>
+    <form id="newTagForm" dojoType="dijit.form.Form" class="roleForm">
+        <div style="text-align: center">
+                <span  id="savedMessage" style="color:red; font-size:11px; font-family: verdana; " >
+                </span>
+        </div>
+        <dl>
+            <dt></dt>
+            <dd><ul id="addTagErrorMessagesList"></ul></dd>
 
-			<dt><%= LanguageUtil.get(pageContext, "tag") %>:</dt>
-			<dd><input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
-			<dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
-			<dd>
-			<input id="tagId" type="hidden" value=" " />
-			<input id="userId" type="hidden" value=" " />
-			<input id="tagStorage" type="hidden" value=" "/>
-			<select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onChange="verifyHiddenFields()">
-			<option value="SYSTEM_HOST"><%=LanguageUtil.get(pageContext, "tag-all-hosts") %></option>
-			<%for(Host h: allHosts){
-				if(!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive())
-					%><option value="<%=h.getIdentifier() %> "><%=h.getHostname() %></option>
-			<%
-			}
-			%>
+            <dt><%= LanguageUtil.get(pageContext, "tag") %>:</dt>
+            <dd><input id="tagName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+            <dt><%= LanguageUtil.get(pageContext, "Host") %>:</dt>
+            <dd>
+            <input id="tagId" type="hidden" value=" " />
+            <input id="userId" type="hidden" value=" " />
+            <input id="tagStorage" type="hidden" value=" "/>
+            <select id="tagStorage_dropDown" name="tagStorage_dropDown" dojoType="dijit.form.FilteringSelect" autocomplete="true" invalidMessage="Required." onChange="verifyHiddenFields()">
+            <option value="SYSTEM_HOST"><%= LanguageUtil.get(pageContext, "tag-all-hosts") %></option>
+            <%for (Host h: allHosts){
+                if (!h.getIdentifier().equals(Host.SYSTEM_HOST) && h.isLive()) {
+                    %><option value="<%= h.getIdentifier() %> "><%= h.getHostname() %></option><%
+                }
+            }
+            %>
 
-			</select>
+            </select>
 
-			<script type="text/javascript">
+            <script type="text/javascript">
+                dojo.addOnLoad(verifyHiddenFields);
+    
+                function verifyHiddenFields() {
+                    var txtIndexObj = document.getElementById('tagStorage');
+                    txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
+                }
+            </script>
+            </dd>
+        </dl>
 
-			dojo.addOnLoad(verifyHiddenFields);
-
-			function verifyHiddenFields() {
-				var txtIndexObj = document.getElementById('tagStorage');
-				txtIndexObj.value = dijit.byId('tagStorage_dropDown').get('value');
-			}
-
-
-			</script>
-			</dd>
-		</dl>
-
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewTag()" id="cancelAddOrEdit">
-		        <%= LanguageUtil.get(pageContext, "Cancel") %>
-		    </button>
-		    <button dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onClick="saveTag()" id="saveButton">
-		        <%= LanguageUtil.get(pageContext, "Save") %>
-		    </button>
-		    <button dojoType="dijit.form.Button" type="button" iconClass="deleteIcon" onClick="deleteTag()" id="deleteButton">
-		        <%= LanguageUtil.get(pageContext, "Delete") %>
-		    </button>
-		</div>
-	</form>
+        <div class="buttonRow">
+            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelAddNewTag()" id="cancelAddOrEdit">
+                <%= LanguageUtil.get(pageContext, "Cancel") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onClick="saveTag()" id="saveButton">
+                <%= LanguageUtil.get(pageContext, "Save") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" iconClass="deleteIcon" onClick="deleteTag()" id="deleteButton">
+                <%= LanguageUtil.get(pageContext, "Delete") %>
+            </button>
+        </div>
+    </form>
 </div>
 <%-- /Add Tag Dialog --%>
 
 <%-- Import Tag Dialog --%>
 
 <div id="importTagsDialog" title="<%= LanguageUtil.get(pageContext, "import-tags") %>" dojoType="dijit.Dialog" style="display: none;width:500px">
-	<form id="importTagsForm" dojoType="dijit.form.Form" class="roleForm">
-		<dl>
-			<dt></dt>
-			<dd><ul id="importTagsErrorMessagesList"></ul></dd>
-		</dl>
+    <form id="importTagsForm" dojoType="dijit.form.Form" class="roleForm">
+        <dl>
+            <dt></dt>
+            <dd><ul id="importTagsErrorMessagesList"></ul></dd>
+        </dl>
 
-		<input type="file" id="uploadFile"  />
-		<br><br>
-		<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "upload-csv-with-tags")) %>
-		<br><br>
-		<div style="text-align:center">
-		<a onClick="downloadCSVSampleFile()" href="#"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download-sample-csv-file")) %></a>
-		</div>
-		<br>
-		<div class="buttonRow">
-			<button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelImportTags()" id="cancelImport">
-		        <%= LanguageUtil.get(pageContext, "Cancel") %>
-		    </button>
-		    <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="importTags()" id="importButton">
-		        <%= LanguageUtil.get(pageContext, "Import") %>
-		    </button>
-		</div>
-	</form>
+        <input type="file" id="uploadFile"  />
+        <br><br>
+        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "upload-csv-with-tags")) %>
+        <br><br>
+        <div style="text-align:center">
+        <a onClick="downloadCSVSampleFile()" href="#"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download-sample-csv-file")) %></a>
+        </div>
+        <br>
+        <div class="buttonRow">
+            <button dojoType="dijit.form.Button" type="button" iconClass="cancelIcon" onClick="cancelImportTags()" id="cancelImport">
+                <%= LanguageUtil.get(pageContext, "Cancel") %>
+            </button>
+            <button dojoType="dijit.form.Button" type="button" iconClass="uploadIcon" onClick="importTags()" id="importButton">
+                <%= LanguageUtil.get(pageContext, "Import") %>
+            </button>
+        </div>
+    </form>
 </div>
 <%-- /Import Tags Dialog --%>

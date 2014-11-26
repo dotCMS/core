@@ -152,4 +152,9 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	public List<Identifier> findByParentPath(String hostId, String parent_path) throws DotHibernateException {
 	    return ifac.findByParentPath(hostId, parent_path);
 	}
+
+	public String getAssetTypeFromDB(String identifier) throws DotDataException{
+		return ifac.getAssetTypeFromDB(identifier);
+	}
+
 }

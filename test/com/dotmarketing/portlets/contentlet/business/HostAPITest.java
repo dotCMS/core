@@ -56,7 +56,7 @@ public class HostAPITest {
         //#6084: If the license is not Enterprise it should NOT get stuck.
         //It will wait for 5 minutes only. 
         int milliseconds = 0;
-        int maxMilliseconds = 300000; //5 Minutes
+        int maxMilliseconds = 600000; //5 Minutes
         
         while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
             Thread.sleep(500);

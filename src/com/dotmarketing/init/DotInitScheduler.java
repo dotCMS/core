@@ -17,7 +17,6 @@ import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SimpleTrigger;
 
 import com.dotcms.enterprise.DashboardProxy;
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
@@ -30,6 +29,7 @@ import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
+import com.dotmarketing.quartz.job.DeleteInactiveClusterServersJob;
 import com.dotmarketing.quartz.job.DeleteOldClickstreams;
 import com.dotmarketing.quartz.job.DeliverCampaignThread;
 import com.dotmarketing.quartz.job.DistReindexJournalCleanupThread;
@@ -42,7 +42,6 @@ import com.dotmarketing.quartz.job.UsersToDeleteThread;
 import com.dotmarketing.quartz.job.WebDavCleanupJob;
 import com.dotmarketing.servlets.InitServlet;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -736,40 +735,75 @@ public class DotInitScheduler {
                 }
             }
 
-			//SCHEDULE SERVER HEARTBEAT JOB
-			String serverId = ConfigUtils.getServerId();
-			if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) {
+            /*
+              SCHEDULE SERVER HEARTBEAT JOB
+              For this JOB we will use a local Scheduler in order to store the scheduling information within memory.
+             */
+            if ( Config.getBooleanProperty( "ENABLE_SERVER_HEARTBEAT", true ) ) {
+
+                Scheduler localScheduler = QuartzUtils.getLocalScheduler();
+                String jobName = "ServerHeartbeatJob";
+                String jobGroup = "dotcms_jobs";
+                String triggerName = "trigger22";
+                String triggerGroup = "group22";
+
+                try {
+                    //Job detail
+                    job = new JobDetail( jobName, jobGroup, ServerHeartbeatJob.class );
+                    calendar = GregorianCalendar.getInstance();
+                    //Trigger
+                    trigger = new CronTrigger( triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null, Config.getStringProperty( "HEARTBEAT_CRON_EXPRESSION" ) );
+                    trigger.setMisfireInstruction( CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW );
+
+                    //Schedule the Job
+                    localScheduler.addJob( job, true );
+                    localScheduler.scheduleJob( trigger );
+
+                    //Starting the local quartz Scheduler
+                    QuartzUtils.startLocalScheduler();
+                } catch ( Exception e ) {
+                    Logger.error( DotInitScheduler.class, e.getMessage(), e );
+                }
+            }
+
+			//SCHEDULE REMOVE INACTIVE CLUSTER SERVERS JOB
+            String jobName = "RemoveInactiveClusterServerJob";
+            String jobGroup = "dotcms_jobs";
+            String triggerName = "trigger23";
+            String triggerGroup = "group23";
+            if(Config.getBooleanProperty("ENABLE_REMOVE_INACTIVE_CLUSTER_SERVER", true)) {
 				try {
 					isNew = false;
-
+					
 					try {
-						if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) == null) {
-							job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
+						if ((job = sched.getJobDetail(jobName, jobGroup)) == null) {
+							job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
 							isNew = true;
 						}
 					} catch (SchedulerException se) {
-						sched.deleteJob("ServerHeartBeatJob_" + serverId, "dotcms_jobs");
-						job = new JobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs", ServerHeartbeatJob.class);
+						sched.deleteJob(jobName, jobGroup);
+						job = new JobDetail(jobName, jobGroup, DeleteInactiveClusterServersJob.class);
 						isNew = true;
 					}
 					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger22_" + serverId, "group22_" + serverId, "ServerHeartbeatJob_" + serverId, "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("HEARTBEAT_CRON_EXPRESSION"));
+				    trigger = new CronTrigger(triggerName, triggerGroup, jobName, jobGroup, calendar.getTime(), null,Config.getStringProperty("REMOVE_INACTIVE_CLUSTER_SERVER_CRON_EXPRESSION"));
 					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
 					sched.addJob(job, true);
 
 					if (isNew)
 						sched.scheduleJob(trigger);
 					else
-						sched.rescheduleJob("trigger22_" + serverId, "group22_" + serverId, trigger);
+						sched.rescheduleJob(triggerName, triggerGroup, trigger);
 				} catch (Exception e) {
 					Logger.error(DotInitScheduler.class, e.getMessage(),e);
 				}
 			} else {
-				if ((job = sched.getJobDetail("ServerHeartbeatJob_" + serverId, "dotcms_jobs")) != null) {
-					sched.deleteJob("ServerHeartbeatJob_" + serverId, "dotcms_jobs");
+				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
+					sched.deleteJob(jobName, jobGroup);
 				}
 			}
-
+            
+            //Starting the sequential and standard Schedulers
 	        QuartzUtils.startSchedulers();
 
 		} catch (SchedulerException e) {

@@ -28,7 +28,7 @@ public class RestExamplePortlet extends BaseRestPortlet {
                 cc.setNoCache(true);
 
                 ResponseBuilder builder = Response
-                                .ok("{test:test}", "application/json");
+                                .ok("{\"test\":\"test\"}", "application/json");
                 return builder.cacheControl(cc).build();
 
         }

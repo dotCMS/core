@@ -59,7 +59,7 @@ dojo.declare("dotcms.dijit.workflows.MainAdmin", null, {
 			href = href + "?r=" + r;
 		}
 
-		href = href + "?donothing";
+		href = href + "&donothing";
 
 		dojo.hash(encodeURIComponent(href));
 

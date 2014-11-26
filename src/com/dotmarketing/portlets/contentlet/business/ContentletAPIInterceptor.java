@@ -2138,6 +2138,24 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 		return ret;
 	}
+	
+	public boolean canLock(Contentlet contentlet, User user, boolean respectFrondEnd) throws   DotLockException {
+		boolean ret = true;
+		for(ContentletAPIPreHook pre : preHooks){
+			if(!pre.canLock(contentlet, user)){
+				ret = false;
+			}
+		}
+		if(!conAPI.canLock(contentlet, user, respectFrondEnd)){
+			ret = false;
+		}
+		for(ContentletAPIPostHook post : postHooks){
+			if(!post.canLock(contentlet, user)){
+				ret = false;
+			}
+		}
+		return ret;
+	}
 
 	public Map<Relationship, List<Contentlet>> findContentRelationships(
 			Contentlet contentlet, User user) throws DotDataException,

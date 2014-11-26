@@ -449,14 +449,14 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
             sync:true,
             binaryFieldId:field,
             ajaxUrl:this.ajaxUrl,
-            load:function(){
-                var url = this.ajaxUrl   + "?action=save&binaryFieldId=" + field + "&inode=" + this.inode + "&fileName=" + this.fileName;
+            load:function(data){
+                var url = this.ajaxUrl   + "?action=save&binaryFieldId=" + field + "&inode=" + this.inode + "&fileName=" + this.fileName+"&_imageToolSaveFile="+data;
                 console.log("saving:" + url);
                 dojo.xhrPost({
                     sync:true,
                     url:url,
                     handle:function(data){
-                        window.parent.document.getElementById(field).value=this.fileName;                       
+                        window.parent.document.getElementById(field).value=this.fileName; 
                     },
                     preventCache:true,
                     binaryFieldId:field,

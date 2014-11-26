@@ -654,7 +654,7 @@ public class ContentResource extends WebResource {
 			contentlet = APILocator.getContentletAPI().checkin(contentlet,relationships,cats,new ArrayList<Permission>(),init.getUser(),allowFrontEndSaving);
 
 			if(live)
-				APILocator.getContentletAPI().publish(contentlet, init.getUser(), false);
+				APILocator.getContentletAPI().publish(contentlet, init.getUser(), allowFrontEndSaving);
 
 			HibernateUtil.commitTransaction();
 			clean = true;

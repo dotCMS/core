@@ -1,4 +1,6 @@
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
+<% request.setAttribute("requiredPortletAccess", "9"); %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -11,7 +13,7 @@
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 
 <%	if( LicenseUtil.getLevel()<300){ %>
-<%@ include file="/html/portlet/ext/contentlet/publishing/not_licensed.jsp" %>
+<%@ include file="/html/portlet/ext/cmsconfig/publishing/not_licensed.jsp" %>
 <%return;} %>
 
 <%
@@ -478,13 +480,17 @@ function getIntegrityResult(identifier) {
             var structuresData = data.structures;
             populateTabContent(structuresData, "structures");
 
-            //Getting the structures data
+            //Getting the folders data
             var foldersData = data.folders;
             populateTabContent(foldersData, "folders");
 
-            //Getting the structures data
+            //Getting the schemes data
             var workflowsData = data.schemes;
             populateTabContent(workflowsData, "schemes");
+            
+          	//Getting the htmlpages data
+            var htmlPagesData = data.htmlpages;
+            populateTabContent(htmlPagesData, "htmlPages");
 
             //Display the integrity results dialog
             selectedEndpointId = identifier;
@@ -1102,6 +1108,19 @@ function deleteEnvPushHistory(envId) {
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="schemesDiscardButton"
                         onClick="discardConflicts(selectedEndpointId, 'schemes')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_discard_conflicts")%></button>
+                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+            </div>
+        </div>
+        
+        <div id="htmlPagesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "htmlpages") %>" >
+            <div id="htmlPagesTabContentDiv"></div>
+            <div class="buttonRow">
+                <button dojoType="dijit.form.Button" id="htmlPagesFixButton"
+                        onClick="fixConflicts(selectedEndpointId, 'htmlPages')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_fix_conflicts")%></button>
+                <button dojoType="dijit.form.Button" id="htmlPagesDiscardButton"
+                        onClick="discardConflicts(selectedEndpointId, 'htmlPages')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
                 <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
