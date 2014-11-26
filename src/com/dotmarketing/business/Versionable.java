@@ -56,7 +56,7 @@ public interface Versionable {
 	 * returns the title of the specific asset
 	 * @return
 	 */
-	public String getTitle() throws DotStateException, DotDataException, DotSecurityException;
+	public String getTitle() throws DotStateException;
 	/**
 	 * returns user who last modified the version
 	 * @return

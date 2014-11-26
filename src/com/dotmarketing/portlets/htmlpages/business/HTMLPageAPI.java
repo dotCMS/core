@@ -18,6 +18,9 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+
+@Deprecated
+
 /**
  * Provides different mechanisms to save, modify or retrieve information
  * regarding {@link HTMLPage} objects.
@@ -25,6 +28,7 @@ import com.liferay.portal.model.User;
  * @author root
  * @since 03-22-2012
  */
+
 public interface HTMLPageAPI {
 
 	/**

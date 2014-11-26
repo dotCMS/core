@@ -18,6 +18,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
@@ -113,13 +115,15 @@ public class NavTool implements ViewTool {
                     folderIds.add(itemFolder.getInode());
                     children.add(nav);
                 }
-                else if(item instanceof HTMLPage) {
+                else if(item instanceof IHTMLPage) {
                 	final String httpProtocol = "http://";
                 	final String httpsProtocol = "https://";
-                    HTMLPage itemPage=(HTMLPage)item;
+                    IHTMLPage itemPage=(IHTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
-                    HTMLPage page = null;
-                    page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+                    IHTMLPage page = null;
+                    page = ident.getAssetType().equals("contentlet") ?
+                            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), true, 0, APILocator.getUserAPI().getSystemUser(), false))
+                            : APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
                     String redirectUri = page.getRedirect();
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemPage.getTitle());
@@ -129,14 +133,14 @@ public class NavTool implements ViewTool {
                         }else{
                       	  	if(page.isHttpsRequired())
                       	  		nav.setHref(httpsProtocol+redirectUri);	
-                        		else	
-                        			nav.setHref(httpProtocol+redirectUri);
+                    		else	
+                    			nav.setHref(httpProtocol+redirectUri);
                         }
                       	
                       }else{
                       	nav.setHref(ident.getURI());
                       }
-                    nav.setOrder(itemPage.getSortOrder());
+                    nav.setOrder(itemPage.getMenuOrder());
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
                     children.add(nav);

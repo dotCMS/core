@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.filters.CMSFilter"%>
 <%@ page import="java.util.*" %>
 <%@ page import="java.net.URL" %>
 <%@ page import="java.lang.Exception" %>
@@ -91,9 +92,10 @@
 	// if we have virtual link and page exists, redirect or forward
 	if(UtilMethods.isSet(pointer) ){
 		if (pointer.startsWith("/")) {
-			Logger.debug(this, "cms404Page forwarding to relative path: " + pointer);			
-			request.getRequestDispatcher(pointer+ "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode+"&ep_error_uri="+ep_error_uri).forward(request, response);
-			
+			Logger.debug(this, "cms404Page forwarding to relative path: " + pointer);	
+			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, pointer);
+			// Serving a page through the velocity servlet
+			request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
 		} else {
 			pointer = pointer + "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode+"&ep_error_uri="+ep_error_uri;
 			Logger.debug(this, "cms404Page redirecting to absolute path: " + pointer);

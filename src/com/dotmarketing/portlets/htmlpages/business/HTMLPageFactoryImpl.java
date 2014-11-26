@@ -38,7 +38,7 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
+@Deprecated
 public class HTMLPageFactoryImpl implements HTMLPageFactory {
 	static HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 

@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
@@ -246,6 +247,17 @@ public class DependencyManager {
 			}
 		}
 
+		if(UtilMethods.isSet(config.getLuceneQueries())){
+            List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
+            for(String id : contentIds){
+                List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
+                for(Contentlet con : contentlets){
+                    contents.add( con.getIdentifier(), con.getModDate()); 
+                    contentsSet.add(con.getIdentifier());
+                }
+            }
+        }
+		
 		setHostDependencies();
         setFolderDependencies();
         setHTMLPagesDependencies();
@@ -254,16 +266,7 @@ public class DependencyManager {
         setStructureDependencies();
         setLinkDependencies();
 
-        if(UtilMethods.isSet(config.getLuceneQueries())){
-        	List<String> contentIds = PublisherUtil.getContentIds( config.getLuceneQueries());
-        	for(String id : contentIds){
-        		List<Contentlet> contentlets = APILocator.getContentletAPI().search("+identifier:"+id, 0, 0, "moddate", user, false);
-        		for(Contentlet con : contentlets){
-        			contents.add( con.getIdentifier(), con.getModDate()); 
-        			contentsSet.add(con.getIdentifier());
-        		}
-        	}
-        }
+        
         setContentDependencies();
 
 		config.setHostSet(hosts);
@@ -305,7 +308,7 @@ public class DependencyManager {
 					if(link.getLinkType().equals(Link.LinkType.INTERNAL.toString())) {
 						Identifier id = APILocator.getIdentifierAPI().find(link.getInternalLinkIdentifier());
 
-						// add file/content dependencies
+						// add file/content dependencies. will also work with htmlpages as content
 						if (InodeUtils.isSet(id.getInode()) && id.getAssetType().equals("contentlet")) {
 							List<Contentlet> contentList = APILocator.getContentletAPI().search("+identifier:"+id.getId(), 0, 0, "moddate", user, false);
 
@@ -512,7 +515,16 @@ public class DependencyManager {
 			FolderAPI folderAPI = APILocator.getFolderAPI();
 			List<Container> containerList = new ArrayList<Container>();
 
-			for (String pageId : htmlPagesSet) {
+			List<String> idsToWork=new ArrayList<String>();
+			idsToWork.addAll(htmlPagesSet);
+			for( String contId : contentsSet) {
+			    if(APILocator.getContentletAPI().findContentletByIdentifier(contId, false, 0, user, false)
+			            .getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+			        idsToWork.add(contId);
+			    }
+			}
+			
+			for (String pageId : idsToWork) {
 				Identifier iden = idenAPI.find(pageId);
 
 				// Host dependency
@@ -522,8 +534,14 @@ public class DependencyManager {
 				Folder folder = folderAPI.findFolderByPath(iden.getParentPath(), iden.getHostId(), user, false);
 				folders.addOrClean( folder.getInode(), folder.getModDate());
 				foldersSet.add(folder.getInode());
-				HTMLPage workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
-				HTMLPage livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
+				
+				
+				IHTMLPage workingPage = iden.getAssetType().equals("htmlpage") ? 
+				        APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false) :
+				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, false, 0, user, false));
+				IHTMLPage livePage = iden.getAssetType().equals("htmlpage") ?
+				        APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false) :
+				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, true, 0, user, false));
 
 				// working template working page
 				Template workingTemplateWP = null;
@@ -842,12 +860,23 @@ public class DependencyManager {
 
 			try {
 				if(Config.getBooleanProperty("PUSH_PUBLISHING_PUSH_ALL_FOLDER_PAGES",false)) {
-					List<HTMLPage> folderHtmlPages = APILocator.getHTMLPageAPI().findLiveHTMLPages(
-							APILocator.getFolderAPI().find(con.getFolder(), user, false));
+					Folder contFolder=APILocator.getFolderAPI().find(con.getFolder(), user, false);
+				    List<IHTMLPage> folderHtmlPages = new ArrayList<IHTMLPage>(); 
+					folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findLiveHTMLPages(
+							APILocator.getFolderAPI().find(con.getFolder(), user, false)));
 					folderHtmlPages.addAll(APILocator.getHTMLPageAPI().findWorkingHTMLPages(
 							APILocator.getFolderAPI().find(con.getFolder(), user, false)));
-					for(HTMLPage htmlPage: folderHtmlPages) {
-                    	 htmlPages.addOrClean( htmlPage.getIdentifier(), htmlPage.getModDate());
+					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, false, false, user, false));
+					folderHtmlPages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(contFolder, true, false, user, false));
+					
+					for(IHTMLPage htmlPage: folderHtmlPages) {
+                    	 
+					    if(htmlPage instanceof HTMLPage) {
+					        htmlPages.addOrClean( htmlPage.getIdentifier(), htmlPage.getModDate());
+					    }
+					    else {
+					        contents.addOrClean( htmlPage.getIdentifier(), htmlPage.getModDate());
+					    }
 
 						// working template working page
 						Template workingTemplateWP = APILocator.getTemplateAPI().findWorkingTemplate(htmlPage.getTemplateId(), user, false);

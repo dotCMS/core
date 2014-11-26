@@ -21,6 +21,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.util.Config;
@@ -106,30 +107,37 @@ public class SpeedyAssetServlet extends HttpServlet {
 
 		String uri = "";
 		try {
-
 			String relativePath = null;
+			Identifier ident = null;
 			if(request.getParameter("path") == null) {
 
-				// Getting the identifier from the path like /dotAsset/{identifier}.{ext} E.G. /dotAsset/1234.js
-				StringTokenizer _st = new StringTokenizer(request.getRequestURI(), "/");
-
-				Logger.debug(this, "Requesting by url: " + request.getRequestURI());
-
-				String _fileName = null;
-				while(_st.hasMoreElements()){
-					_fileName = _st.nextToken();
+				if(request.getAttribute(CMSFilter.CMS_FILTER_IDENTITY)!=null){
+						ident = (Identifier) request.getAttribute(CMSFilter.CMS_FILTER_IDENTITY);
+				}else{
+					// Getting the identifier from the path like /dotAsset/{identifier}.{ext} E.G. /dotAsset/1234.js
+					StringTokenizer _st = new StringTokenizer(request.getRequestURI(), "/");
+	
+					Logger.debug(this, "Requesting by url: " + request.getRequestURI());
+	
+					String _fileName = null;
+					while(_st.hasMoreElements()){
+						_fileName = _st.nextToken();
+					}
+	
+					Logger.debug(this, "Parsed filename: " + _fileName);
+	
+					String identifier = UtilMethods.getFileName(_fileName);
+		
+					Logger.debug(SpeedyAssetServlet.class, "Loading identifier: " + identifier);
+					try{
+						ident = APILocator.getIdentifierAPI().find(identifier);
+					}catch(Exception ex){
+						Logger.debug(SpeedyAssetServlet.class, "Identifier not found going to try as a File Asset", ex);
+					}
 				}
-
-				Logger.debug(this, "Parsed filename: " + _fileName);
-
-				String identifier = UtilMethods.getFileName(_fileName);
-				Identifier ident = null;
-				Logger.debug(SpeedyAssetServlet.class, "Loading identifier: " + identifier);
-				try{
-					ident = APILocator.getIdentifierAPI().find(identifier);
-				}catch(Exception ex){
-					Logger.debug(SpeedyAssetServlet.class, "Identifier not found going to try as a File Asset", ex);
-				}
+				
+				
+				
 				if(ident != null && ident.getURI() != null && !ident.getURI().equals("")){
 
 					if(serveWorkingVersion){
@@ -280,6 +288,7 @@ public class SpeedyAssetServlet extends HttpServlet {
            		return;
             }
             
+
             request.getRequestDispatcher("/contentAsset/raw-data/" + inode + "/fileAsset/?byInode=true").forward(request, response);
 
 

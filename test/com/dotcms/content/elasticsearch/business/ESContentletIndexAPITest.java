@@ -62,7 +62,7 @@ public class ESContentletIndexAPITest extends TestBase {
     private static String stemmerText;
     private static User user;
     private static Host defaultHost;
-    private static String pageExt;
+
     private static Language defaultLanguage;
 
     @BeforeClass
@@ -74,7 +74,7 @@ public class ESContentletIndexAPITest extends TestBase {
         //Setting the test user
         user = APILocator.getUserAPI().getSystemUser();
         defaultHost = hostAPI.findDefaultHost( user, false );
-        pageExt = Config.getStringProperty( "VELOCITY_PAGE_EXTENSION" );
+      
         //Getting the default language
         defaultLanguage = languageAPI.getDefaultLanguage();
 

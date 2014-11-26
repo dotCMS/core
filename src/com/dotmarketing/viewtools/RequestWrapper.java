@@ -30,7 +30,7 @@ public class RequestWrapper implements HttpServletRequest{
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
-	
+	private String dotCMSUri;
 	public RequestWrapper(HttpServletRequest req) {
 		this._request = req;
 	}
@@ -98,11 +98,16 @@ public class RequestWrapper implements HttpServletRequest{
 	}
 
 	public String getRequestURI() {
+		if(this.dotCMSUri != null){
+			return this.dotCMSUri;
+		}
 		return _request.getRequestURI();
 	}
 
 	public StringBuffer getRequestURL() {
-		return _request.getRequestURL();
+		
+
+		return new StringBuffer(_request.getScheme() + "://" + _request.getServerName() + ":" + _request.getServerPort() + getRequestURI() + "?" + UtilMethods.webifyString(_request.getQueryString()));
 	}
 
 	public String getRequestedSessionId() {
@@ -323,5 +328,14 @@ public class RequestWrapper implements HttpServletRequest{
     public void setCustomUserAgentHeader ( String customUserAgentHeader ) {
         this.customUserAgentHeader = customUserAgentHeader;
     }
+    
+    public void setRequestUri(String uri){
+    	this.dotCMSUri = uri;
+    	
+    	
+    	
+    }
+    
+    
 
 }

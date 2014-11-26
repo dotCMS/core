@@ -370,7 +370,7 @@ public class HorizontalMenuBuilder implements ViewTool {
 		}
 		else {
 			stringbuf.append("<li id=\"" + folderChildChild.getName()+ "\">");
-			if (linkFolders) stringbuf.append("<a href=\"" + folderPath + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">"); 
+			if (linkFolders) stringbuf.append("<a href=\"" + folderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">"); 
 		}
 
 		//if it uses an image or text.
@@ -408,7 +408,7 @@ public class HorizontalMenuBuilder implements ViewTool {
 						} catch (Exception e) {
 							Logger.debug(HorizontalMenuBuilder.class,e.getMessage());
 						} 
-						stringbuf.append("<li><a href=\"" + path + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION") + "\">\n");
+						stringbuf.append("<li><a href=\"" + path + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">\n");
 						stringbuf.append(folderChildChild2.getTitle() + "</a></li>\n");
 					}
 					else {
