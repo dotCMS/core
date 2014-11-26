@@ -72,7 +72,8 @@ import com.liferay.portal.model.User;
 public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	static HTMLPageFactory htmlPageFactory = FactoryLocator.getHTMLPageFactory();
+	static HTMLPageFactory htmlPageFactory = FactoryLocator
+			.getHTMLPageFactory();
 	static HostAPI hostAPI = APILocator.getHostAPI();
 	static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
@@ -88,59 +89,75 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public HTMLPage copy(HTMLPage htmlPage, Folder destination, User user, boolean respectFrontendRoles)
-			throws DotDataException, DotSecurityException {
-		return copy(htmlPage, destination, true, false, HTMLPageAPI.CopyMode.BLANK_HTMLPAGE, user, respectFrontendRoles);
+	public HTMLPage copy(HTMLPage htmlPage, Folder destination, User user,
+			boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException {
+		return copy(htmlPage, destination, true, false,
+				HTMLPageAPI.CopyMode.BLANK_HTMLPAGE, user, respectFrontendRoles);
 	}
 
-
-	public HTMLPage copy(HTMLPage source, Folder destination, boolean forceOverwrite, boolean copyTemplateContainers,
-			HTMLPageAPI.CopyMode copyMode, User user, boolean respectFrontendRoles) throws DotDataException,
+	public HTMLPage copy(HTMLPage source, Folder destination,
+			boolean forceOverwrite, boolean copyTemplateContainers,
+			HTMLPageAPI.CopyMode copyMode, User user,
+			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 
 		Template sourceTemplate = getHTMLPageTemplate(source);
 		Template template;
 
 		if (copyTemplateContainers) {
-			Host hostDestination = hostAPI.find(destination.getHostId(), user, respectFrontendRoles);
-			template = templateAPI.copy(sourceTemplate, hostDestination, false, true, user, respectFrontendRoles);
+			Host hostDestination = hostAPI.find(destination.getHostId(), user,
+					respectFrontendRoles);
+			template = templateAPI.copy(sourceTemplate, hostDestination, false,
+					true, user, respectFrontendRoles);
 		} else {
 			template = sourceTemplate;
 		}
 
 		TemplateAPI templateAPI = APILocator.getTemplateAPI();
 
-        List<Container> sourceContainers = templateAPI.getContainersInTemplate(sourceTemplate, user, respectFrontendRoles);
-        List<Container> copyContainers = templateAPI.getContainersInTemplate(template, user, respectFrontendRoles);
+		List<Container> sourceContainers = templateAPI.getContainersInTemplate(
+				sourceTemplate, user, respectFrontendRoles);
+		List<Container> copyContainers = templateAPI.getContainersInTemplate(
+				template, user, respectFrontendRoles);
 
-        List<ContainerRemapTuple> containersRemap = new LinkedList<ContainerRemapTuple>();
-        for (int i = 0; i < sourceContainers.size(); i++) {
+		List<ContainerRemapTuple> containersRemap = new LinkedList<ContainerRemapTuple>();
+		for (int i = 0; i < sourceContainers.size(); i++) {
 			Container sourceContainer = sourceContainers.get(i);
 			Container destinationContainer = copyContainers.get(i);
-        	containersRemap.add(new ContainerRemapTuple(sourceContainer, destinationContainer));
-        }
-        TemplateContainersReMap remap = new TemplateContainersReMap(sourceTemplate, template, containersRemap);
+			containersRemap.add(new ContainerRemapTuple(sourceContainer,
+					destinationContainer));
+		}
+		TemplateContainersReMap remap = new TemplateContainersReMap(
+				sourceTemplate, template, containersRemap);
 
-		return copy(source, destination, forceOverwrite, copyMode, remap, user, respectFrontendRoles);
+		return copy(source, destination, forceOverwrite, copyMode, remap, user,
+				respectFrontendRoles);
 	}
 
-	public HTMLPage copy(HTMLPage source, Folder destination, boolean forceOverwrite, CopyMode copyMode,
-			TemplateContainersReMap reMapping, User user, boolean respectFrontendRoles) throws DotDataException,
+	public HTMLPage copy(HTMLPage source, Folder destination,
+			boolean forceOverwrite, CopyMode copyMode,
+			TemplateContainersReMap reMapping, User user,
+			boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 
-		if (!permissionAPI.doesUserHavePermission(source, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the source file.");
+		if (!permissionAPI.doesUserHavePermission(source,
+				PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					"You don't have permission to read the source file.");
 		}
 
-		if (!permissionAPI.doesUserHavePermission(destination, PermissionAPI.PERMISSION_WRITE, user,
-				respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to wirte in the destination folder.");
+		if (!permissionAPI.doesUserHavePermission(destination,
+				PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					"You don't have permission to wirte in the destination folder.");
 		}
 
 		boolean isNew = false;
 		HTMLPage newHTMLPage;
 		if (forceOverwrite) {
-			newHTMLPage = getWorkingHTMLPageByPageURL(source.getPageUrl(), destination);
+			newHTMLPage = getWorkingHTMLPageByPageURL(source.getPageUrl(),
+					destination);
 			if (newHTMLPage == null) {
 				isNew = true;
 			}
@@ -155,20 +172,25 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		String pageURL = UtilMethods.getFileName(source.getPageUrl());
 
 		// gets file extension
-		String fileExtension = UtilMethods.getFileExtension(source.getPageUrl());
+		String fileExtension = UtilMethods
+				.getFileExtension(source.getPageUrl());
 
 		if (!forceOverwrite) {
-			newHTMLPage.setPageUrl(getCopyHTMLPageName(pageURL, fileExtension, destination));
+			newHTMLPage.setPageUrl(getCopyHTMLPageName(pageURL, fileExtension,
+					destination));
 
-			if (!UtilMethods.getFileName(newHTMLPage.getPageUrl()).equals(pageURL))
-				newHTMLPage.setFriendlyName(source.getFriendlyName() + " (COPY)");
+			if (!UtilMethods.getFileName(newHTMLPage.getPageUrl()).equals(
+					pageURL))
+				newHTMLPage.setFriendlyName(source.getFriendlyName()
+						+ " (COPY)");
 		}
 
 		Template destinationTemplate = reMapping.getDestinationTemplate();
 
 		List<MultiTree> associatedSourceContentlets = null;
 
-		//Checking if contentlets just need to be remapped or need to be copied on destination
+		// Checking if contentlets just need to be remapped or need to be copied
+		// on destination
 		if (copyMode == HTMLPageAPI.CopyMode.USE_SOURCE_CONTENT) {
 			associatedSourceContentlets = getHTMLPageMultiTree(source);
 		} else if (copyMode == HTMLPageAPI.CopyMode.COPY_SOURCE_CONTENT) {
@@ -176,78 +198,98 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			Contentlet contentlet;
 			FolderAPI folderAPI = APILocator.getFolderAPI();
-			Host systemHost = hostAPI.findSystemHost(user, respectFrontendRoles);
+			Host systemHost = hostAPI
+					.findSystemHost(user, respectFrontendRoles);
 			Folder systemFolder = folderAPI.findSystemFolder();
-			Host destinationHost = hostAPI.find(destination.getHostId(), user, respectFrontendRoles);
+			Host destinationHost = hostAPI.find(destination.getHostId(), user,
+					respectFrontendRoles);
 
 			for (MultiTree multiTree : associatedSourceContentlets) {
-				contentlet = contentletAPI.findContentletByIdentifier(multiTree.getChild(), false, 0, user,
+				contentlet = contentletAPI.findContentletByIdentifier(
+						multiTree.getChild(), false, 0, user,
 						respectFrontendRoles);
 
 				Host contentletHost = null;
-				if(!UtilMethods.isSet(contentlet.getHost()) && !contentlet.getHost().equals(systemHost.getInode())) {
-					contentletHost = hostAPI.find(contentlet.getHost(), user, respectFrontendRoles);
+				if (!UtilMethods.isSet(contentlet.getHost())
+						&& !contentlet.getHost().equals(systemHost.getInode())) {
+					contentletHost = hostAPI.find(contentlet.getHost(), user,
+							respectFrontendRoles);
 				}
 				Folder contentletFolder = null;
-				if(!UtilMethods.isSet(contentlet.getFolder()) && !contentlet.getFolder().equals(systemFolder.getInode())) {
-					contentletFolder = folderAPI.find(contentlet.getFolder(),user,false);
+				if (!UtilMethods.isSet(contentlet.getFolder())
+						&& !contentlet.getFolder().equals(
+								systemFolder.getInode())) {
+					contentletFolder = folderAPI.find(contentlet.getFolder(),
+							user, false);
 				}
 
 				if (contentletFolder != null) {
-					Folder contentletDestFolder = folderAPI.createFolders(APILocator.getIdentifierAPI().find(contentletFolder).getPath(), destinationHost,user,false);
-					contentlet = contentletAPI.copyContentlet(contentlet, contentletDestFolder, user, respectFrontendRoles);
+					Folder contentletDestFolder = folderAPI.createFolders(
+							APILocator.getIdentifierAPI()
+									.find(contentletFolder).getPath(),
+							destinationHost, user, false);
+					contentlet = contentletAPI.copyContentlet(contentlet,
+							contentletDestFolder, user, respectFrontendRoles);
 				} else if (contentletHost != null) {
-					contentlet = contentletAPI.copyContentlet(contentlet, destinationHost, user, respectFrontendRoles);
+					contentlet = contentletAPI.copyContentlet(contentlet,
+							destinationHost, user, respectFrontendRoles);
 				} else {
-					contentlet = contentletAPI.copyContentlet(contentlet, user, respectFrontendRoles);
+					contentlet = contentletAPI.copyContentlet(contentlet, user,
+							respectFrontendRoles);
 				}
 
 				multiTree.setChild(contentlet.getIdentifier());
 			}
 		}
 
-		//Creating the new pages associations mapping with containers
+		// Creating the new pages associations mapping with containers
 		List<MultiTree> newContentletAssociation = new LinkedList<MultiTree>();
 		if (copyMode != HTMLPageAPI.CopyMode.BLANK_HTMLPAGE) {
 			for (MultiTree multiTree : associatedSourceContentlets) {
 				String sourceContainerId = multiTree.getParent2();
 				String destinationContainerId = null;
 				for (int i = 0; i < reMapping.getContainersRemap().size(); i++) {
-					ContainerRemapTuple tuple = reMapping.getContainersRemap().get(i);
-					if(tuple.getSourceContainer().getIdentifier().equals(sourceContainerId)) {
-						destinationContainerId = tuple.getDestinationContainer().getIdentifier();
+					ContainerRemapTuple tuple = reMapping.getContainersRemap()
+							.get(i);
+					if (tuple.getSourceContainer().getIdentifier()
+							.equals(sourceContainerId)) {
+						destinationContainerId = tuple
+								.getDestinationContainer().getIdentifier();
 					}
 				}
-				if(destinationContainerId != null) {
-					newContentletAssociation.add(new MultiTree("", destinationContainerId, multiTree.getChild()));
+				if (destinationContainerId != null) {
+					newContentletAssociation.add(new MultiTree("",
+							destinationContainerId, multiTree.getChild()));
 				}
 			}
 		}
-        newHTMLPage.setTemplateId(destinationTemplate.getIdentifier());
-		//Persisting the new page
+		newHTMLPage.setTemplateId(destinationTemplate.getIdentifier());
+		// Persisting the new page
 		if (isNew) {
 			// creates new identifier for this webasset and persists it
-			Identifier newIdentifier = com.dotmarketing.business.APILocator.getIdentifierAPI().createNew(newHTMLPage, destination);
-			
+			Identifier newIdentifier = com.dotmarketing.business.APILocator
+					.getIdentifierAPI().createNew(newHTMLPage, destination);
+
 			newHTMLPage.setIdentifier(newIdentifier.getInode());
-			
+
 			// persists the webasset
 			save(newHTMLPage);
 		} else {
-			saveHTMLPage(newHTMLPage, destinationTemplate, destination, user, respectFrontendRoles);
+			saveHTMLPage(newHTMLPage, destinationTemplate, destination, user,
+					respectFrontendRoles);
 		}
-		
-		if(source.isLive()){
+
+		if (source.isLive()) {
 			APILocator.getVersionableAPI().setWorking(newHTMLPage);
 			APILocator.getVersionableAPI().setLive(newHTMLPage);
 		}
-		    
 
-		//Saving the new content mapping
+		// Saving the new content mapping
 		if (copyMode != HTMLPageAPI.CopyMode.BLANK_HTMLPAGE) {
 			MultiTree newMultiTree;
 			for (MultiTree multiTree : newContentletAssociation) {
-				newMultiTree = new MultiTree(newHTMLPage.getIdentifier(), multiTree.getParent2(), multiTree.getChild());
+				newMultiTree = new MultiTree(newHTMLPage.getIdentifier(),
+						multiTree.getParent2(), multiTree.getChild());
 				MultiTreeFactory.saveMultiTree(newMultiTree);
 			}
 		}
@@ -258,26 +300,35 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return newHTMLPage;
 	}
 
-	private List<MultiTree> getHTMLPageMultiTree(HTMLPage htmlPage) throws DotDataException {
-		return MultiTreeFactory.getMultiTree(identifierAPI.findFromInode(htmlPage.getIdentifier()));
+	private List<MultiTree> getHTMLPageMultiTree(HTMLPage htmlPage)
+			throws DotDataException {
+		return MultiTreeFactory.getMultiTree(identifierAPI
+				.findFromInode(htmlPage.getIdentifier()));
 	}
 
 	@SuppressWarnings("unchecked")
-	public HTMLPage getWorkingHTMLPageByPageURL(String htmlPageURL, Folder folder) throws DotStateException, DotDataException, DotSecurityException {
+	public HTMLPage getWorkingHTMLPageByPageURL(String htmlPageURL,
+			Folder folder) throws DotStateException, DotDataException,
+			DotSecurityException {
 		HTMLPage ret = null;
-		if(folder != null && InodeUtils.isSet(folder.getInode())){
-			Host h = APILocator.getHostAPI().find(folder.getHostId(), APILocator.getUserAPI().getSystemUser(), true);
+		if (folder != null && InodeUtils.isSet(folder.getInode())) {
+			Host h = APILocator.getHostAPI().find(folder.getHostId(),
+					APILocator.getUserAPI().getSystemUser(), true);
 			String p = folder.getPath();
-			if(UtilMethods.isSet(p)){
-				if(!p.startsWith("/")){
+			if (UtilMethods.isSet(p)) {
+				if (!p.startsWith("/")) {
 					p = "/" + p;
 				}
-				if(!p.endsWith("/")){
+				if (!p.endsWith("/")) {
 					p = p + "/";
 				}
-				Identifier i = APILocator.getIdentifierAPI().find(h, folder.getPath() + htmlPageURL);
-				if(i != null && InodeUtils.isSet(i.getId())){
-					ret = (HTMLPage)APILocator.getVersionableAPI().findWorkingVersion(i, APILocator.getUserAPI().getSystemUser(), true);
+				Identifier i = APILocator.getIdentifierAPI().find(h,
+						folder.getPath() + htmlPageURL);
+				if (i != null && InodeUtils.isSet(i.getId())) {
+					ret = (HTMLPage) APILocator.getVersionableAPI()
+							.findWorkingVersion(i,
+									APILocator.getUserAPI().getSystemUser(),
+									true);
 				}
 			}
 		}
@@ -285,10 +336,13 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected String getCopyHTMLPageName(String htmlPageName, String fileExtension, Folder folder) throws DotStateException, DotDataException, DotSecurityException {
+	protected String getCopyHTMLPageName(String htmlPageName,
+			String fileExtension, Folder folder) throws DotStateException,
+			DotDataException, DotSecurityException {
 		String result = new String(htmlPageName);
 
-		List<HTMLPage> htmlPages = APILocator.getFolderAPI().getHTMLPages(folder, APILocator.getUserAPI().getSystemUser(), false);
+		List<HTMLPage> htmlPages = APILocator.getFolderAPI().getHTMLPages(
+				folder, APILocator.getUserAPI().getSystemUser(), false);
 
 		boolean isValidHTMLPageName = false;
 		String temp1, temp2;
@@ -315,233 +369,263 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return result;
 	}
 
-	private void save(HTMLPage htmlPage) throws DotDataException, DotStateException, DotSecurityException {
+	private void save(HTMLPage htmlPage) throws DotDataException,
+			DotStateException, DotSecurityException {
 		htmlPageFactory.save(htmlPage);
 	}
-	
-	private void save(HTMLPage htmlPage, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
-        htmlPageFactory.save(htmlPage, existingInode);
-    }
 
-	protected void save(WebAsset webAsset) throws DotDataException, DotStateException, DotSecurityException {
+	private void save(HTMLPage htmlPage, String existingInode)
+			throws DotDataException, DotStateException, DotSecurityException {
+		htmlPageFactory.save(htmlPage, existingInode);
+	}
+
+	/**
+	 * Update the {@link HTMLPage} object that points to the current version.
+	 * 
+	 * @param htmlPage
+	 *            - The HTML page that will be updated.
+	 * @throws DotDataException
+	 *             An error occurred while persisting the changes.
+	 * @throws DotStateException
+	 * @throws DotSecurityException
+	 *             The current user does not have permission to perform the
+	 *             requested action.
+	 */
+	private void update(HTMLPage htmlPage)
+			throws DotDataException, DotStateException, DotSecurityException {
+		CacheLocator.getIdentifierCache()
+				.removeFromCacheByVersionable(htmlPage);
+		HibernateUtil.saveOrUpdate(htmlPage);
+		CacheLocator.getHTMLPageCache().remove(htmlPage);
+		WorkingCache.removeAssetFromCache(htmlPage);
+		WorkingCache.addToWorkingAssetToCache(htmlPage);
+		LiveCache.removeAssetFromCache(htmlPage);
+		APILocator.getVersionableAPI().setWorking(htmlPage);
+		if (htmlPage.isLive()) {
+			LiveCache.addToLiveAssetToCache(htmlPage);
+		}
+	}
+
+	protected void save(WebAsset webAsset) throws DotDataException,
+			DotStateException, DotSecurityException {
 		save((HTMLPage) webAsset);
 	}
 
-	protected static Template getHTMLPageTemplate(HTMLPage page) throws DotDataException, DotSecurityException {
-		return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
+	protected static Template getHTMLPageTemplate(HTMLPage page)
+			throws DotDataException, DotSecurityException {
+		return APILocator.getTemplateAPI().findWorkingTemplate(
+				page.getTemplateId(), APILocator.getUserAPI().getSystemUser(),
+				false);
 	}
 
+	@Override
+	public HTMLPage saveHTMLPage(HTMLPage newHtmlPage, Template template,
+			Folder parentFolder, User user, boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		return saveHTMLPage(newHtmlPage, template, parentFolder, user, false,
+				respectFrontendRoles);
+	}
 
-	public HTMLPage saveHTMLPage(HTMLPage newHtmlPage, Template template, Folder parentFolder, User user,
-			boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		HTMLPage existingHTMLPage = getWorkingHTMLPageByPageURL(newHtmlPage.getPageUrl(), parentFolder);
-
-		boolean pageExists = (existingHTMLPage != null) && InodeUtils.isSet(existingHTMLPage.getInode());
-
+	@Override
+	public HTMLPage saveHTMLPage(HTMLPage newHtmlPage, Template template,
+			Folder parentFolder, User user, boolean updateVersion,
+			boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException {
+		HTMLPage existingHTMLPage = getWorkingHTMLPageByPageURL(
+				newHtmlPage.getPageUrl(), parentFolder);
+		boolean pageExists = (existingHTMLPage != null)
+				&& InodeUtils.isSet(existingHTMLPage.getInode());
 		if (pageExists) {
-
-            if ( newHtmlPage.getIdentifier() != null && !newHtmlPage.getIdentifier().equals( existingHTMLPage.getIdentifier() ) ) {
-                throw new DotDataException( "You are trying to save a page with the same name and location but a different identifier. " +
-                        "If you are trying to push Publish you may have to rename the folder [" + parentFolder.getPath() + "]. " +
-                        "HTMLPage trying to save [" + newHtmlPage.getIdentifier() + "], found HTMLPage [" + existingHTMLPage.getIdentifier() + "]" );
-            }
-
-			if (!permissionAPI.doesUserHavePermission(existingHTMLPage, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-				throw new DotSecurityException("You don't have permission to read the HTML page.");
+			if (newHtmlPage.getIdentifier() != null
+					&& !newHtmlPage.getIdentifier().equals(
+							existingHTMLPage.getIdentifier())) {
+				throw new DotDataException(
+						"You are trying to save a page with the same name and location but a different identifier. "
+								+ "If you are trying to push Publish you may have to rename the folder ["
+								+ parentFolder.getPath()
+								+ "]. "
+								+ "HTMLPage trying to save ["
+								+ newHtmlPage.getIdentifier()
+								+ "], found HTMLPage ["
+								+ existingHTMLPage.getIdentifier() + "]");
+			}
+			if (!permissionAPI.doesUserHavePermission(existingHTMLPage,
+					PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+				throw new DotSecurityException(
+						"You don't have permission to read the HTML page.");
 			}
 		}
-
-		if (!permissionAPI.doesUserHavePermission(template, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to read the template or the template is not published.");
+		if (!permissionAPI.doesUserHavePermission(template,
+				PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					"You don't have permission to read the template or the template is not published.");
 		}
-
-		if (!permissionAPI.doesUserHavePermission(parentFolder, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-			throw new DotSecurityException("You don't have permission to write in the destination folder.");
+		if (!permissionAPI.doesUserHavePermission(parentFolder,
+				PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+			throw new DotSecurityException(
+					"You don't have permission to write in the destination folder.");
 		}
-
 		try {
-		    newHtmlPage.setModUser(user.getUserId());
-		    newHtmlPage.setModDate(new Date());
-		    
+			newHtmlPage.setModUser(user.getUserId());
+			newHtmlPage.setModDate(new Date());
 			boolean previousShowMenu = false;
-
 			// parent identifier for this file
 			Identifier identifier = null;
-
 			if (pageExists) {
 				previousShowMenu = existingHTMLPage.isShowOnMenu();
-				identifier = (Identifier) APILocator.getIdentifierAPI().find(existingHTMLPage);
+				identifier = (Identifier) APILocator.getIdentifierAPI().find(
+						existingHTMLPage);
 			}
-
-			// Some checks
-
 			// Get asset host based on the parentFolder of the asset
 			Host host = hostAPI.findParentHost(parentFolder, user, false);
-
 			// get an identifier based on this new uri
-			Identifier testIdentifier = (Identifier) APILocator.getIdentifierAPI().find(host, newHtmlPage.getURI(parentFolder));
-			
+			Identifier testIdentifier = (Identifier) APILocator
+					.getIdentifierAPI().find(host,
+							newHtmlPage.getURI(parentFolder));
 			// if this is a new htmlpage and there is already an identifier with
 			// this uri, return
-			if ((existingHTMLPage != null) && !InodeUtils.isSet(existingHTMLPage.getInode()) && InodeUtils.isSet(testIdentifier.getInode())) {
+			if ((existingHTMLPage != null)
+					&& !InodeUtils.isSet(existingHTMLPage.getInode())
+					&& InodeUtils.isSet(testIdentifier.getInode())) {
 				existingHTMLPage.setParent(parentFolder.getInode());
-				throw new DotDataException("Another page with the same page url exists in this folder");
+				throw new DotDataException(
+						"Another page with the same page url exists in this folder");
 			}
 			// if this is an existing htmlpage and there is already an
 			// identifier
 			// with this uri, return
 			else if (pageExists
-					&& (!testIdentifier.getInode().equalsIgnoreCase(identifier.getInode()))
+					&& (!testIdentifier.getInode().equalsIgnoreCase(
+							identifier.getInode()))
 					&& InodeUtils.isSet(testIdentifier.getInode())) {
 				// when there is an error saving should unlock working asset
 				unLockAsset(existingHTMLPage);
-				throw new DotDataException("Another page with the same page url exists in this folder");
+				throw new DotDataException(
+						"Another page with the same page url exists in this folder");
 			}
 			if (template != null) {
 				// Adds template children from selected box
-				Identifier templateIdentifier = APILocator.getIdentifierAPI().find(template);
+				Identifier templateIdentifier = APILocator.getIdentifierAPI()
+						.find(template);
 
 				newHtmlPage.setTemplateId(templateIdentifier.getInode());
 			}
-			
-			boolean existingIdentifier=false;
-			Identifier currentIdentifier=null;
-			if(UtilMethods.isSet(newHtmlPage.getIdentifier())) {
-			    currentIdentifier=APILocator.getIdentifierAPI().find(newHtmlPage.getIdentifier());
-			    existingIdentifier = currentIdentifier==null || !UtilMethods.isSet(currentIdentifier.getId());
+			boolean existingIdentifier = false;
+			Identifier currentIdentifier = null;
+			if (UtilMethods.isSet(newHtmlPage.getIdentifier())) {
+				currentIdentifier = APILocator.getIdentifierAPI().find(
+						newHtmlPage.getIdentifier());
+				existingIdentifier = currentIdentifier == null
+						|| !UtilMethods.isSet(currentIdentifier.getId());
 			}
-			
-			boolean existingInode=false;
-            if(InodeUtils.isSet(newHtmlPage.getInode())) {
-                try {
-                    HTMLPage existing=(HTMLPage) HibernateUtil.load(HTMLPage.class, newHtmlPage.getInode());
-                    existingInode= existing==null || !UtilMethods.isSet(existing.getInode());
-                } catch (Exception ex) {
-                    existingInode=true;
-                }
-            }
-			
-			// Versioning
+			boolean isInodeMissingInDB = false;
+			boolean isVersionUpdateable = false;
+			if (InodeUtils.isSet(newHtmlPage.getInode())) {
+				try {
+					HTMLPage existing = (HTMLPage) HibernateUtil.load(
+							HTMLPage.class, newHtmlPage.getInode());
+					isInodeMissingInDB = existing == null
+							|| !UtilMethods.isSet(existing.getInode());
+					HibernateUtil.evict(existing);
+				} catch (Exception ex) {
+					isInodeMissingInDB = true;
+				}
+				if (!isInodeMissingInDB) {
+					// If Inode is not missing, page can be updateable
+					isVersionUpdateable = true;
+				}
+			}
 			if (pageExists) {
 				// Creation the version asset
-			    
-			    newHtmlPage.setIdentifier(identifier.getId());
-			    
-			    if(existingInode)
-			        save(newHtmlPage,newHtmlPage.getInode());
-			    else
-			        save(newHtmlPage);
-			    APILocator.getVersionableAPI().setWorking(newHtmlPage);
-			    
-				createAsset(newHtmlPage, user.getUserId(), parentFolder, identifier, false);
+				newHtmlPage.setIdentifier(identifier.getId());
+				if (updateVersion && isVersionUpdateable) {
+					// If page version can be updated and not created, do it
+					update(newHtmlPage);
+				} else if (isInodeMissingInDB) {
+					save(newHtmlPage, newHtmlPage.getInode());
+				} else {
+					save(newHtmlPage);
+				}
+				APILocator.getVersionableAPI().setWorking(newHtmlPage);
+				createAsset(newHtmlPage, user.getUserId(), parentFolder,
+						identifier, false);
 				HibernateUtil.flush();
-
 				LiveCache.removeAssetFromCache(existingHTMLPage);
 				APILocator.getVersionableAPI().setWorking(newHtmlPage);
-
 				// if we need to update the identifier
 				if (InodeUtils.isSet(parentFolder.getInode())
-						&& !newHtmlPage.getURI(parentFolder).equals(identifier.getURI())) {
-
+						&& !newHtmlPage.getURI(parentFolder).equals(
+								identifier.getURI())) {
 					// assets cache
 					LiveCache.removeAssetFromCache(newHtmlPage);
 					LiveCache.removeAssetFromCache(existingHTMLPage);
 					LiveCache.clearCache(host.getIdentifier());
 					WorkingCache.removeAssetFromCache(newHtmlPage);
-
-					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(newHtmlPage);
-
-					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(existingHTMLPage);
-
-
-					APILocator.getIdentifierAPI().updateIdentifierURI(newHtmlPage, parentFolder);
-
+					CacheLocator.getIdentifierCache()
+							.removeFromCacheByVersionable(newHtmlPage);
+					CacheLocator.getIdentifierCache()
+							.removeFromCacheByVersionable(existingHTMLPage);
+					APILocator.getIdentifierAPI().updateIdentifierURI(
+							newHtmlPage, parentFolder);
 				}
-
-			} // Creating the new page
-			else {
-			    Identifier ident= (currentIdentifier!=null && UtilMethods.isSet(currentIdentifier.getId())) ?
-			                           currentIdentifier : 
-			                 (existingIdentifier ? 
-			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder, newHtmlPage.getIdentifier()) :
-			                        APILocator.getIdentifierAPI().createNew(newHtmlPage, parentFolder));
-			    ident=APILocator.getIdentifierAPI().save(ident);
-			    
-			    newHtmlPage.setIdentifier(ident.getId());
-			    if(existingInode)
-			        save(newHtmlPage, newHtmlPage.getInode());
-			    else
-			        save(newHtmlPage);
-				
+			} else {
+				// Creating a new page
+				Identifier ident = (currentIdentifier != null && UtilMethods
+						.isSet(currentIdentifier.getId())) ? currentIdentifier
+						: (existingIdentifier ? APILocator.getIdentifierAPI()
+								.createNew(newHtmlPage, parentFolder,
+										newHtmlPage.getIdentifier())
+								: APILocator.getIdentifierAPI().createNew(
+										newHtmlPage, parentFolder));
+				ident = APILocator.getIdentifierAPI().save(ident);
+				newHtmlPage.setIdentifier(ident.getId());
+				if (isInodeMissingInDB) {
+					save(newHtmlPage, newHtmlPage.getInode());
+				} else {
+					save(newHtmlPage);
+				}
 			}
-
-
-
 			HibernateUtil.flush();
 			HibernateUtil.getSession().refresh(newHtmlPage);
-
-			// Refreshing the menues
+			// Refreshing the menus
 			if (previousShowMenu != newHtmlPage.isShowOnMenu()) {
 				// existing folder with different show on menu ... need to
 				// regenerate menu
-				//RefreshMenus.deleteMenus();
+				// RefreshMenus.deleteMenus();
 				RefreshMenus.deleteMenu(newHtmlPage);
-				CacheLocator.getNavToolCache().removeNav(parentFolder.getHostId(), parentFolder.getInode());
+				CacheLocator.getNavToolCache().removeNav(
+						parentFolder.getHostId(), parentFolder.getInode());
 			}
 		} catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
-
 		return newHtmlPage;
 	}
 
-	/**
-	 *
-	 * @param path
-	 * @param host
-	 * @return HTMLPage from a path on a given host
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public HTMLPage loadPageByPath(String path, Host host) throws DotDataException, DotSecurityException {
+	@Override
+	public HTMLPage loadPageByPath(String path, Host host)
+			throws DotDataException, DotSecurityException {
 		return loadPageByPath(path, host.getIdentifier());
 	}
 
-	/**
-	 *
-	 * @param path
-	 * @param host
-	 * @return HTMLPage from a path on a given hostId
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public HTMLPage loadPageByPath(String path, String hostId) throws DotDataException, DotSecurityException {
+	@Override
+	public HTMLPage loadPageByPath(String path, String hostId)
+			throws DotDataException, DotSecurityException {
 		return htmlPageFactory.getLiveHTMLPageByPath(path, hostId);
 	}
 
-	/**
-	 *
-	 * @param page
-	 * @param container
-	 * @return true/false on whether or not a Page has content with a specificed
-	 *         container
-	 */
+	@Override
 	public boolean hasContent(HTMLPage page, Container container) {
-		return htmlPageFactory.findNumOfContent(page, container) > 0 ? true : false;
+		return htmlPageFactory.findNumOfContent(page, container) > 0 ? true
+				: false;
 	}
 
-	/**
-	 * Use to method to get the template for the HTMLPage set on the API. This
-	 * method will hit the database.
-	 *
-	 * @return Template for the working version of a HTMLPage
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
-	 */
-	public Template getTemplateForWorkingHTMLPage(HTMLPage htmlpage) throws DotStateException, DotDataException, DotSecurityException {
-		return (Template) APILocator.getVersionableAPI().findWorkingVersion(htmlpage.getTemplateId(),APILocator.getUserAPI().getSystemUser(), false);
-
+	@Override
+	public Template getTemplateForWorkingHTMLPage(HTMLPage htmlpage)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return (Template) APILocator.getVersionableAPI().findWorkingVersion(
+				htmlpage.getTemplateId(),
+				APILocator.getUserAPI().getSystemUser(), false);
 	}
 
 	/**
@@ -554,8 +638,10 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings({ "deprecation", "unchecked" })
-	public List<HTMLPage> findLiveHTMLPages(Folder folder) throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getFolderAPI().getLiveHTMLPages(folder, APILocator.getUserAPI().getSystemUser(),false);
+	public List<HTMLPage> findLiveHTMLPages(Folder folder)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return APILocator.getFolderAPI().getLiveHTMLPages(folder,
+				APILocator.getUserAPI().getSystemUser(), false);
 	}
 
 	/**
@@ -568,74 +654,99 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
-	public List<HTMLPage> findWorkingHTMLPages(Folder folder) throws DotStateException, DotDataException, DotSecurityException {
-		return APILocator.getFolderAPI().getWorkingHTMLPages(folder,APILocator.getUserAPI().getSystemUser(),false);
+	public List<HTMLPage> findWorkingHTMLPages(Folder folder)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return APILocator.getFolderAPI().getWorkingHTMLPages(folder,
+				APILocator.getUserAPI().getSystemUser(), false);
 	}
 
-	public Folder getParentFolder(HTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException {
+	public Folder getParentFolder(HTMLPage object)
+			throws DotIdentifierStateException, DotDataException,
+			DotSecurityException {
 		return htmlPageFactory.getParentFolder(object);
 	}
 
-	public Host getParentHost(HTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException {
+	public Host getParentHost(HTMLPage object)
+			throws DotIdentifierStateException, DotDataException,
+			DotSecurityException {
 		return htmlPageFactory.getParentHost(object);
 	}
 
-	public boolean delete(HTMLPage htmlPage, User user, boolean respectFrontendRoles) throws DotSecurityException, Exception {
-		if(permissionAPI.doesUserHavePermission(htmlPage, PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+	public boolean delete(HTMLPage htmlPage, User user,
+			boolean respectFrontendRoles) throws DotSecurityException,
+			Exception {
+		if (permissionAPI.doesUserHavePermission(htmlPage,
+				PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
 			return deleteAsset(htmlPage);
 		} else {
 			throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 		}
 	}
 
-	public List<Map<String, Serializable>> DBSearch(Query query, User user,boolean respectFrontendRoles) throws ValidationException,DotDataException {
+	public List<Map<String, Serializable>> DBSearch(Query query, User user,
+			boolean respectFrontendRoles) throws ValidationException,
+			DotDataException {
 
 		Map<String, String> dbColToObjectAttribute = new HashMap<String, String>();
 
-		if(UtilMethods.isSet(query.getSelectAttributes())){
+		if (UtilMethods.isSet(query.getSelectAttributes())) {
 
-			if(!query.getSelectAttributes().contains("title")){
-				query.getSelectAttributes().add("title" + " as " + QueryResult.CMIS_TITLE);
+			if (!query.getSelectAttributes().contains("title")) {
+				query.getSelectAttributes().add(
+						"title" + " as " + QueryResult.CMIS_TITLE);
 			}
-		}else{
+		} else {
 			List<String> atts = new ArrayList<String>();
 			atts.add("*");
 			atts.add("title" + " as " + QueryResult.CMIS_TITLE);
 			query.setSelectAttributes(atts);
 		}
 
-		return QueryUtil.DBSearch(query, dbColToObjectAttribute, null, user, true, respectFrontendRoles);
+		return QueryUtil.DBSearch(query, dbColToObjectAttribute, null, user,
+				true, respectFrontendRoles);
 	}
 
-	public String getHTML(HTMLPage htmlPage, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(HTMLPage htmlPage, String userAgent)
+			throws DotStateException, DotDataException, DotSecurityException {
 
 		return getHTML(htmlPage, true, null, userAgent);
 	}
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+
+	public String getHTML(HTMLPage htmlPage, boolean liveMode, String userAgent)
+			throws DotStateException, DotDataException, DotSecurityException {
 
 		return getHTML(htmlPage, liveMode, null, userAgent);
 	}
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+
+	public String getHTML(HTMLPage htmlPage, boolean liveMode,
+			String contentId, String userAgent) throws DotStateException,
+			DotDataException, DotSecurityException {
 		return getHTML(htmlPage, liveMode, contentId, null, userAgent);
 	}
-	
+
 	@Override
-	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
-	    return getHTML(uri,host,liveMode,contentId,user,0,userAgent);
+	public String getHTML(String uri, Host host, boolean liveMode,
+			String contentId, User user, String userAgent)
+			throws DotStateException, DotDataException, DotSecurityException {
+		return getHTML(uri, host, liveMode, contentId, user, 0, userAgent);
 	}
-	
+
 	@Override
-	public String getHTML(String uri, Host host,boolean liveMode, String contentId,User user, long langId, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+	public String getHTML(String uri, Host host, boolean liveMode,
+			String contentId, User user, long langId, String userAgent)
+			throws DotStateException, DotDataException, DotSecurityException {
 		/*
-		 * The below code is copied from VelocityServlet.doLiveMode() and modified to parse a HTMLPage.
-		 * Replaced the request and response objects with DotRequestProxy and DotResponseProxyObjects.
-		 *
+		 * The below code is copied from VelocityServlet.doLiveMode() and
+		 * modified to parse a HTMLPage. Replaced the request and response
+		 * objects with DotRequestProxy and DotResponseProxyObjects.
+		 * 
 		 * TODO Code clean-up.
-		 *
+		 * 
 		 * TODO: I don't think it will work - jorge.urdaneta
 		 */
 
-		InvocationHandler dotInvocationHandler = new DotInvocationHandler(new HashMap());
+		InvocationHandler dotInvocationHandler = new DotInvocationHandler(
+				new HashMap());
 
 		DotRequestProxy requestProxy = (DotRequestProxy) Proxy
 				.newProxyInstance(DotRequestProxy.class.getClassLoader(),
@@ -649,7 +760,6 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 		StringWriter out = new StringWriter();
 		Context context = null;
-		
 
 		uri = UtilMethods.cleanURI(uri);
 
@@ -658,7 +768,8 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				.getInode();
 
 		// Checking the path is really live using the livecache
-		String cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host) : WorkingCache.getPathFromCache(uri, host);
+		String cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
+				: WorkingCache.getPathFromCache(uri, host);
 
 		// if we still have nothing.
 		if (!InodeUtils.isSet(idInode) || cachedUri == null) {
@@ -666,27 +777,26 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 					"Resource %s not found in Live mode!", uri));
 		}
 
-		responseProxy.setContentType( "text/html" );
-        requestProxy.setAttribute( "User-Agent", userAgent );
-        requestProxy.setAttribute("idInode", String.valueOf(idInode));
+		responseProxy.setContentType("text/html");
+		requestProxy.setAttribute("User-Agent", userAgent);
+		requestProxy.setAttribute("idInode", String.valueOf(idInode));
 
 		/* Set long lived cookie regardless of who this is */
 		String _dotCMSID = UtilMethods.getCookieValue(
 				requestProxy.getCookies(),
 				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
 
-
 		if (!UtilMethods.isSet(_dotCMSID)) {
 			/* create unique generator engine */
 			Cookie idCookie = CookieUtil.createCookie();
 			responseProxy.addCookie(idCookie);
 		}
-		
+
 		requestProxy.put("host", host);
 		requestProxy.put("host_id", host.getIdentifier());
 		requestProxy.put("uri", uri);
 		requestProxy.put("user", user);
-		if(!liveMode){
+		if (!liveMode) {
 			requestProxy.setAttribute(WebKeys.PREVIEW_MODE_SESSION, "true");
 		}
 		boolean signedIn = false;
@@ -695,7 +805,6 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			signedIn = true;
 		}
 		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
-
 
 		Logger.debug(HTMLPageAPIImpl.class, "Page Permissions for URI=" + uri);
 
@@ -747,9 +856,8 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 							PermissionAPI.PERMISSION_READ, user, true)) {
 						// the user doesn't have permissions to see this page
 						// go to unauthorized page
-						Logger
-								.warn(HTMLPageAPIImpl.class,
-										"VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
+						Logger.warn(HTMLPageAPIImpl.class,
+								"VELOCITY CHECKING PERMISSION: Page doesn't have any access for this user");
 						responseProxy.sendError(403,
 								"The requested page/file is forbidden");
 						return "PAGE NOT FOUND!";
@@ -757,25 +865,26 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				}
 			}
 
-			if(UtilMethods.isSet(contentId)){
+			if (UtilMethods.isSet(contentId)) {
 				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
 			}
-			
-			if(langId>0) {
-			    requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(langId));
+
+			if (langId > 0) {
+				requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE,
+						Long.toString(langId));
 			}
 			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
-            langWebAPI.checkSessionLocale(requestProxy);
-			
+			langWebAPI.checkSessionLocale(requestProxy);
+
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
-			
-			if(langId>0) { 
-                context.put("language", Long.toString(langId));
+
+			if (langId > 0) {
+				context.put("language", Long.toString(langId));
 			}
-			
-			if(! liveMode ){
+
+			if (!liveMode) {
 				context.put("PREVIEW_MODE", new Boolean(true));
-			}else{
+			} else {
 				context.put("PREVIEW_MODE", new Boolean(false));
 			}
 
@@ -789,12 +898,11 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 			String VELOCITY_HTMLPAGE_EXTENSION = Config
 					.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-			String vTempalate = (liveMode) ?
-					"/live/" + idInode + "." + VELOCITY_HTMLPAGE_EXTENSION :
-						"/working/" + idInode + "." + VELOCITY_HTMLPAGE_EXTENSION ;
+			String vTempalate = (liveMode) ? "/live/" + idInode + "."
+					+ VELOCITY_HTMLPAGE_EXTENSION : "/working/" + idInode + "."
+					+ VELOCITY_HTMLPAGE_EXTENSION;
 
-			ve.getTemplate(vTempalate)
-					.merge(context, out);
+			ve.getTemplate(vTempalate).merge(context, out);
 
 		} catch (Exception e1) {
 			Logger.error(this, e1.getMessage(), e1);
@@ -802,7 +910,6 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 			context = null;
 			VelocityServlet.velocityCtx.remove();
 		}
-
 
 		if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
 			Logger.debug(HTMLPageAPIImpl.class, "Into the ClickstreamFilter");
@@ -834,43 +941,55 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 		return out.toString();
 	}
-	
-	//http://jira.dotmarketing.net/browse/DOTCMS-3392
-	public String getHTML(HTMLPage htmlPage, boolean liveMode, String contentId, User user, String userAgent) throws DotStateException, DotDataException, DotSecurityException {
+
+	// http://jira.dotmarketing.net/browse/DOTCMS-3392
+	public String getHTML(HTMLPage htmlPage, boolean liveMode,
+			String contentId, User user, String userAgent)
+			throws DotStateException, DotDataException, DotSecurityException {
 		String uri = htmlPage.getURI();
 		Host host = getParentHost(htmlPage);
 		return getHTML(uri, host, liveMode, contentId, user, userAgent);
 	}
 
-
-	public HTMLPage loadWorkingPageById(String pageId, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+	public HTMLPage loadWorkingPageById(String pageId, User user,
+			boolean respectFrontendRoles) throws DotSecurityException,
+			DotDataException {
 		HTMLPage page = htmlPageFactory.loadWorkingPageById(pageId);
-		if(page == null)
+		if (page == null)
 			return page;
-		if(!permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
-			throw new DotSecurityException("User " + user.getUserId() + "has no permissions to read page id " + pageId);
+		if (!permissionAPI.doesUserHavePermission(page,
+				PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
+			throw new DotSecurityException("User " + user.getUserId()
+					+ "has no permissions to read page id " + pageId);
 
 		return page;
 	}
 
-	public HTMLPage loadLivePageById(String pageId, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+	public HTMLPage loadLivePageById(String pageId, User user,
+			boolean respectFrontendRoles) throws DotSecurityException,
+			DotDataException {
 		HTMLPage page = htmlPageFactory.loadLivePageById(pageId);
-		if(page == null)
+		if (page == null)
 			return page;
-		if(!permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
-			throw new DotSecurityException("User " + user.getUserId() + "has no permissions to read page id " + pageId);
+		if (!permissionAPI.doesUserHavePermission(page,
+				PermissionAPI.PERMISSION_READ, user, respectFrontendRoles))
+			throw new DotSecurityException("User " + user.getUserId()
+					+ "has no permissions to read page id " + pageId);
 
 		return page;
 	}
-
 
 	public List<HTMLPage> findHtmlPages(User user, boolean includeArchived,
-			Map<String, Object> params, String hostId, String inode, String identifier, String parent,int offset, int limit, String orderBy)
-			throws DotSecurityException, DotDataException {
-		return FactoryLocator.getHTMLPageFactory().findHtmlPages(user, includeArchived, params, hostId, inode, identifier, parent, offset, limit, orderBy);
+			Map<String, Object> params, String hostId, String inode,
+			String identifier, String parent, int offset, int limit,
+			String orderBy) throws DotSecurityException, DotDataException {
+		return FactoryLocator.getHTMLPageFactory().findHtmlPages(user,
+				includeArchived, params, hostId, inode, identifier, parent,
+				offset, limit, orderBy);
 	}
-	
-	public boolean movePage(HTMLPage page, Folder parent, User user,boolean respectFrontendRoles) throws DotStateException,
+
+	public boolean movePage(HTMLPage page, Folder parent, User user,
+			boolean respectFrontendRoles) throws DotStateException,
 			DotDataException, DotSecurityException {
 
 		if (!permissionAPI.doesUserHavePermission(page,
@@ -886,22 +1005,22 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 
 	}
 
+	@Override
+	public int deleteOldVersions(Date assetsOlderThan)
+			throws DotStateException, DotDataException {
+		return deleteOldVersions(assetsOlderThan, "htmlpage");
+	}
 
-    @Override
-    public int deleteOldVersions(Date assetsOlderThan) throws DotStateException, DotDataException {
-        return deleteOldVersions(assetsOlderThan,"htmlpage");
-    }
+	@Override
+	public List<String> findUpdatedHTMLPageIds(Host host, Date startDate,
+			Date endDate) {
+		return findUpdatedHTMLPageIdsByURI(host, "/*", true, startDate, endDate);
+	}
 
-
-    @Override
-    public List<String> findUpdatedHTMLPageIds(Host host, Date startDate, Date endDate) {
-        return findUpdatedHTMLPageIdsByURI(host, "/*", true, startDate, endDate);
-    }
-
-
-    @Override
-    public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,
-            boolean include, Date startDate, Date endDate) {
-        return htmlPageFactory.findUpdatedHTMLPageIdsByURI(host, pattern, include, startDate, endDate);
-    }
+	@Override
+	public List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern,
+			boolean include, Date startDate, Date endDate) {
+		return htmlPageFactory.findUpdatedHTMLPageIdsByURI(host, pattern,
+				include, startDate, endDate);
+	}
 }

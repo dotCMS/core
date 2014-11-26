@@ -58,7 +58,7 @@
 		<ul id="addLayoutErrorMessagesList"></ul>
 		<dl style="margin-bottom:20px;">
 			<dt><%= LanguageUtil.get(pageContext, "Name") %>:</dt>
-			<dd><input id="layoutName" type="text" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
+			<dd><input id="layoutName" type="text" maxlength="255" required="true" invalidMessage="Required." dojoType="dijit.form.ValidationTextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "Description") %>:</dt>
 			<dd><input id="layoutDescription" type="text" dojoType="dijit.form.TextBox" /></dd>
 			<dt><%= LanguageUtil.get(pageContext, "order") %>:</dt>

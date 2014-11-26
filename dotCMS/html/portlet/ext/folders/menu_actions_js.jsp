@@ -168,7 +168,7 @@
 			fileInodePath = fileInodePath + '';
 		}
 		fileInodePath = fileInodePath.substring(0,1) + '/' + fileInodePath.substring(1,2);
-		window.open('/dotAsset/' + fileInodePath + '/' + objId + '.' + fileExt,'fileWin','toolbar=no,resizable=yes,width=400,height=300');
+		window.open('/contentAsset/raw-data/' + fileInodePath + '/' + objId + '/fileAsset','fileWin','toolbar=no,resizable=yes,width=400,height=300');
 	}
 
 	function reloadTree(objId,node) {

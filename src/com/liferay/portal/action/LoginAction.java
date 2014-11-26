@@ -60,6 +60,7 @@ import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.ejb.UserManagerImpl;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
 import com.liferay.portal.model.Company;
@@ -144,14 +145,32 @@ public class LoginAction extends Action {
 				_sendPassword(req);
 			}
 			catch (Exception e) {
-				if (e != null &&
-					e instanceof NoSuchUserException ||
+				if(e != null &&
+						e instanceof NoSuchUserException){
+					
+					//If the user doesn't exist but property is true, we need to display the error.
+					//If the user doesn't exist but property is false, wee need to display success.
+					boolean displayNotSuchUserError = 
+							Config.getBooleanProperty("DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD", false);
+					
+					if(displayNotSuchUserError){
+						SessionErrors.add(req, e.getClass().getName());
+					} else {
+						SecurityLogger.logInfo(UserManagerImpl.class, 
+								"User does NOT exist in the Database, returning OK message for security reasons");
+						String emailAddress = ParamUtil.getString(
+								req, "my_account_email_address");
+						SessionMessages.add(req, "new_password_sent", emailAddress);
+						
+					}
+					
+				} else if (e != null &&
 					e instanceof SendPasswordException ||
 					e instanceof UserEmailAddressException) {
 
 					SessionErrors.add(req, e.getClass().getName());
-				}
-				else {
+					
+				} else {
 					req.setAttribute(PageContext.EXCEPTION, e);
 
 					return mapping.findForward(Constants.COMMON_ERROR);

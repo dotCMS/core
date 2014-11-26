@@ -551,7 +551,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	         }
 		};
 		try {
-			if(!DbConnectionFactory.getConnection().getAutoCommit()){
+			if(DbConnectionFactory.inTransaction()){
 				HibernateUtil.addCommitListener(cacheRemoveRunnable);
 			}
 		} catch (Exception e) {

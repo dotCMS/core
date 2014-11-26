@@ -38,6 +38,8 @@ import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
+import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
@@ -390,7 +392,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 		if (!Validator.isEmailAddress(emailAddress)) {
 			throw new UserEmailAddressException();
 		}
-
+		
 		User user = UserUtil.findByC_EA(companyId, emailAddress);
 
 		// we use the ICQ field to store the token:timestamp of the

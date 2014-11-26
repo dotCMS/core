@@ -157,8 +157,21 @@ var editButtonRow="editEventButtonRow";
 	<% } else { %>
 		<div id="properties" style="padding:0;"  dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()" >
 	<% } %>
-
 	<!--  action buttons -->
+		<% if (InodeUtils.isSet(structure.getInode())) { %>
+	
+		<!-- START Left Column -->
+		<div class="buttonRow-left lineRight" id="editEventButtonRow">
+			<div class="gradient2">
+				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+			</div>
+			<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
+			<div id="contentletActionsHanger">
+				<%@include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+			</div>
+
+
+	    <!--  action buttons -->
 		<% if (InodeUtils.isSet(structure.getInode())) { %>
 
 			<!-- START Left Column -->
@@ -173,6 +186,7 @@ var editButtonRow="editEventButtonRow";
 
 			</div>
 	<% } %>
+
 		<!-- START Right Column -->
 		<div class="wrapperRight" >
 			<div style="height:20px;"></div>
@@ -335,7 +349,7 @@ var editButtonRow="editEventButtonRow";
 </div>
 
 	<%@include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
-	
+
 </liferay:box>
 
 </html:form>

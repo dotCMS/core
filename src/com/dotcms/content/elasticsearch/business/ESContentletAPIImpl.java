@@ -360,6 +360,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
         			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        			IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        			if(fileAsset.isShowOnMenu()){
+        				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
+        				RefreshMenus.deleteMenu(folder);
+        				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+	                }
         		}
 
         	}
@@ -1529,6 +1535,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), false);
+        			//remove from navtoolcache
+        			IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        			if(fileAsset.isShowOnMenu()){
+        				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
+	                	RefreshMenus.deleteMenu(folder);
+	                	CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+	                }
         		}
 
         		ContentletServices.invalidate(contentlet);
@@ -1761,6 +1774,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
         		Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         		CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        		//remove from navCache
+        		IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+    			if(fileAsset.isShowOnMenu()){
+    				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, false);
+    				RefreshMenus.deleteMenu(folder);
+    				CacheLocator.getNavToolCache().getNav(ident.getHostId(), folder.getInode());
+                }
         	}
 
         	ContentletServices.unpublishContentletFile(contentlet);

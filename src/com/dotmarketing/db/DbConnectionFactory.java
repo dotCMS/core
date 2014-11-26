@@ -11,7 +11,7 @@ package com.dotmarketing.db;import java.sql.Connection;import java.sql.Databa
 			throw new DotRuntimeException(e.toString());
 		}
 	}
-
+	/**	 * Returns if the db is in a transaction - it will not open a db connection	 * if there is not one already open - instead, it will return false	 * @return	 */	public static boolean inTransaction(){		HashMap<String, Connection> connectionsList = (HashMap<String, Connection>) connectionsHolder.get();		if(connectionsList == null || connectionsList.size() == 0){			return false;		}		Connection connection = connectionsList.get(Constants.DATABASE_DEFAULT_DATASOURCE);		try {			if (connection == null || connection.isClosed() ) {				return false;			}			return (! connection.getAutoCommit());		} catch (SQLException e) {			Logger.error(DbConnectionFactory.class, "---------- DBConnectionFactory: error : " + e);			throw new DotRuntimeException(e.toString());		}	}		
 	/**
 	 * Retrieves the list of all valid dataSources setup in the dotCMS
 	 * @return
