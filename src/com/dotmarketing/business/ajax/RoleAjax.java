@@ -179,18 +179,47 @@ public class RoleAjax {
 		return mapOfUserRoles;
 	}
 
+	/**
+	 * Removes a user or set of users from a specific role. This method is
+	 * called from the <i>Roles & Tabs</i> page.
+	 * 
+	 * @param userIds
+	 *            - A String array containing the IDs of the users that will be
+	 *            removed from the selected role
+	 * @param roleId
+	 *            - The ID of the role.
+	 * @throws DotDataException
+	 *             - An error occurred while interacting with the database.
+	 * @throws NoSuchUserException
+	 *             - A specific user ID does not exist in the database.
+	 * @throws DotRuntimeException
+	 *             - An serious error has occurred.
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 *             - The current user does not have permission to perform this
+	 *             action.
+	 */
 	public void removeUsersFromRole(String[] userIds, String roleId) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
-
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI uAPI = APILocator.getUserAPI();
-
 		Role role = roleAPI.loadRoleById(roleId);
-
-		for(String userId : userIds) {
+		User modUser = getUser();
+		String modUserID = modUser != null ? modUser.getUserId() : "";
+		String roleName = role != null ? role.getName() : "";
+		for (String userId : userIds) {
 			User user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			String date = DateUtil.getCurrentDate();
+			String userID = user != null ? user.getUserId() : "";
+			ActivityLogger.logInfo(getClass(), "Removing Role: " + roleName
+					+ " to User: " + userID, "Date: " + date + "; " + "User:"
+					+ modUserID);
+			AdminLogger.log(getClass(), "Removing Role: " + roleName
+					+ " to User: " + userID, "Date: " + date + "; " + "User:"
+					+ modUserID);
 			roleAPI.removeRoleFromUser(role, user);
 		}
 	}
