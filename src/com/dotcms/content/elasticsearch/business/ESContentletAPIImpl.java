@@ -361,6 +361,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         		if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
         			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        			IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        			if(fileAsset.isShowOnMenu()){
+        				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
+        				RefreshMenus.deleteMenu(folder);
+        				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+	                }
         		}
 
         	}
@@ -1548,6 +1554,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
         			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), false);
+        			//remove from navtoolcache
+        			IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+        			if(fileAsset.isShowOnMenu()){
+        				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
+	                	RefreshMenus.deleteMenu(folder);
+	                	CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+	                }
         		}
 
         		ContentletServices.invalidate(contentlet);
@@ -1780,6 +1793,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
         		Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
         		CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+        		//remove from navCache
+        		IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+    			if(fileAsset.isShowOnMenu()){
+    				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, false);
+    				RefreshMenus.deleteMenu(folder);
+    				CacheLocator.getNavToolCache().getNav(ident.getHostId(), folder.getInode());
+                }
         	}
 
         	ContentletServices.unpublishContentletFile(contentlet);
@@ -3810,8 +3830,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				if (cons == null) {
 					cons = new ArrayList<Contentlet>();
 				}
+				
+				//There is a case when the Relationship is between same structures
+				//We need to validate that case
+				boolean isRelationshipParent = true;
+				
+				if(rel.getParentStructureInode().equalsIgnoreCase(rel.getChildStructureInode())){
+					if(!cr.isHasParent()){
+						isRelationshipParent = false;
+					}
+				}
+				
 				// if i am the parent
-				if (rel.getParentStructureInode().equalsIgnoreCase(stInode)) {
+				if (rel.getParentStructureInode().equalsIgnoreCase(stInode) && isRelationshipParent) {
 					if (rel.isChildRequired() && cons.isEmpty()) {
 						hasError = true;
 						cve.addRequiredRelationship(rel, cons);

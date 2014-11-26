@@ -141,8 +141,9 @@ public class ServerAPIImpl implements ServerAPI {
 	 */
 	public void removeServerFromCluster(String serverId) throws DotDataException, IOException{
 		for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
+			
 			if( serverId.equals((String)lic.get("serverid"))) {
-				LicenseUtil.freeLicenseOnRepo(serverId);
+				LicenseUtil.freeLicenseOnRepo((String)lic.get("serial"));
 				break;
 			}
 		}

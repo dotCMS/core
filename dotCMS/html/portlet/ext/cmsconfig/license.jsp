@@ -175,8 +175,26 @@
 	   		
 	   		
 	   		loadLicenseTabMessage(text);
-	   		//dijit.byId("mainTabContainer").selectChild("licenseTab", true);
-	   		
+	   		//This code will update the license info in the top of the page
+	   		dojo.xhrGet({ // 
+	   	        url: "<%=licenseTab%>", 
+	   	        handleAs: "text",
+
+	   	        // The LOAD function will be called on a successful response.
+	   	        load: function(response, ioArgs) {
+	   	          var text = response.substring(response.indexOf('<div id="admin-site-tools-div">')+31);
+	   	          text = text.substring(0, text.indexOf("</div>"));
+	   	          dojo.byId("admin-site-tools-div").innerHTML = text; 
+	   	          return text;
+	   	        },
+
+	   	        // The ERROR function will be called in an error case.
+	   	        error: function(response, ioArgs) {
+	   	        	showDotCMSSystemMessage("ERROR HTTP status code: " + ioArgs.xhr.status,true);
+   	        		console.log("HTTP status code: ", ioArgs.xhr.status);
+   	        		return response;
+	   	          }
+	   	        });
 	   		
 	   	},
 	   	
@@ -253,7 +271,7 @@
                         var row;
 
                         if(lic.serverid===licenseAdmin.currentServerId) {
-                            row=dojo.create("tr",{"class":"current_server_row"},dojo.byId("repotableBody"),"first");
+                            row=dojo.create("tr",{"class":"current_server_row selected"},dojo.byId("repotableBody"),"first");
                         }
                         else {
                             row=dojo.create("tr",null,dojo.byId("repotableBody"));

@@ -38,7 +38,7 @@ import java.util.zip.ZipFile;
 /**
  * Implementation based on http://jmyspell.javahispano.net/
  * Dictionaries could be downloaded from http://wiki.services.openoffice.org/wiki/Dictionaries
- * @author: Andrey Chorniy
+ * @author Andrey Chorniy <andrey.chorniy@gmail.com>
  * Date: 10.12.2009
  */
 public class JMySpellCheckerServlet extends TinyMCESpellCheckerServlet {
@@ -138,10 +138,22 @@ public class JMySpellCheckerServlet extends TinyMCESpellCheckerServlet {
     }
 
 
-    @Override
     protected void clearSpellcheckerCache() {
         spellcheckersCache.clear();
         spellcheckersCache = new Hashtable<String, SpellChecker>();
     }
+
+	@Override
+	protected void preLoadLanguageChecker(String preloadedLanguage)
+			throws SpellCheckException {
+		getChecker(preloadedLanguage);
+		
+	}
+
+	@Override
+	protected void releaseResources() {
+		// TODO Auto-generated method stub
+		
+	}
 
 }

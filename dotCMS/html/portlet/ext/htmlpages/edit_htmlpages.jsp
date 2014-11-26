@@ -214,6 +214,9 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
             <dd><input type="text" dojoType="dijit.form.TextBox" name="pageUrl" id="pageUrl" value="<%= UtilMethods.isSet(htmlpage.getPageUrl()) ? UtilMethods.webifyString(htmlpage.getPageUrl()) : "" %>" /></dd>
             <dd class="inputCaption">(<%= LanguageUtil.get(pageContext, "page-name") %>)</dd>
 
+			<dt><%= LanguageUtil.get(pageContext, "Cache-TTL") %>:</dt>
+			<dd><input type="text" onchange="showCacheTime()" dojoType="dijit.form.NumberTextBox" name="cacheTTL" constraints="{min:0,max:30758400,places:0}"  id="cacheTTL" value="<%= htmlpage.getCacheTTL() %>" style="width:100px" />   <span id="showCacheTime"></span></dd>
+				
 			<dt><%= LanguageUtil.get(pageContext, "Template") %>:</dt>
 			<dd>
 				<span dojoType="dotcms.dojo.data.TemplateReadStore" jsId="templateStore" dojoId="templateStoreDojo" hostId="<%=host.getIdentifier() %>" ></span>
@@ -294,9 +297,7 @@ else if(!canUserWriteToHTMLPage && (folder==null || !InodeUtils.isSet(folder.get
 			</dd>
 		</div>
 
-			<dt><%= LanguageUtil.get(pageContext, "Cache-TTL") %>:</dt>
-			<dd>
-				<input type="text" onchange="showCacheTime()" dojoType="dijit.form.NumberTextBox" name="cacheTTL" constraints="{min:0,max:30758400,places:0}"  id="cacheTTL" value="<%= htmlpage.getCacheTTL() %>" style="width:100px" />   <span id="showCacheTime"></span></dd>
+			
 
 
 

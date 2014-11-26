@@ -478,8 +478,13 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                     m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), "");
                 }
                 else if(f.getFieldType().equals("time")) {
-                    String timeStr=timeFormat.format(valueObj);
-                    m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
+                	try{
+                        String timeStr=timeFormat.format(valueObj);
+                        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), timeStr);
+                	}
+                	catch(Exception e){
+                		m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(),"");
+                	}
                 }
                 else if (f.getFieldType().equals("date")) {
                     try {

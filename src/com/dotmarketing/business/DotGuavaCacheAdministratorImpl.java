@@ -75,6 +75,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	static final String VALIDATE_CACHE = "validateCacheInCluster-";
 	static final String VALIDATE_CACHE_RESPONSE = "validateCacheInCluster-response-";
 	static final String VALIDATE_SEPARATOR = "_";
+	static final String DUMMY_TEXT_TO_SEND = "DUMMY MSG TO TEST SEND";
 	
 	private NullCallable nullCallable = new NullCallable();
 	
@@ -550,7 +551,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	         }
 		};
 		try {
-			if(!DbConnectionFactory.getConnection().getAutoCommit()){
+			if(DbConnectionFactory.inTransaction()){
 				HibernateUtil.addCommitListener(cacheRemoveRunnable);
 			}
 		} catch (Exception e) {
@@ -747,13 +748,21 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		return useJgroups;
 	}
 
-	public void send(String msg) {
+	/**
+	 * @param msg
+	 * @return True if the message was sent without any problem, false otherwise.
+	 */
+	public boolean send(String msg) {
+		boolean success = false;
 		Message message = new Message(null, null, msg);
 		try {
 			channel.send(message);
+			success = true;
 		} catch (Exception e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+			Logger.warn(DotGuavaCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
+			success = false;
 		}
+		return success;
 	}
 	
 	
@@ -766,8 +775,10 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	 */
 	public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds){
 		
+		cacheStatus = new HashMap<String, Map<String,Boolean>>();
+		
 		//If we are already in Cluster. 
-		if(numberServers > 0){
+		if(numberServers > 0 && send(DUMMY_TEXT_TO_SEND)){
 			//Sends the message to the other servers.
 			send(VALIDATE_CACHE + dateInMillis);
 			
@@ -775,7 +786,7 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			int maxWaitTime = maxWaitSeconds * 1000;
 			int passedWaitTime = 0;
 			
-			//Trying to NOT wait whole 2 secons for returning the info.
+			//Trying to NOT wait whole 2 seconds for returning the info.
 			while (passedWaitTime <= maxWaitTime){
 				try {
 				    Thread.sleep(10);
@@ -796,7 +807,13 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		}
 		
 		//Returns the Map with all the info stored by receive() method.
-		return (Map<String, Boolean>)cacheStatus.get(dateInMillis);
+		Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
+		
+		if((Map<String, Boolean>)cacheStatus.get(dateInMillis) != null){
+			mapToReturn = (Map<String, Boolean>)cacheStatus.get(dateInMillis);
+		}
+		
+		return mapToReturn;
 	}
 
 	@Override
@@ -865,6 +882,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		} else if(v.toString().equals("MultiMessageResources.reload")) {
 			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
             messages.reload();
+		} else if (v.toString().equals(DUMMY_TEXT_TO_SEND)) {
+			//Don't do anything is we are only checking sending.
 		} else {
 			invalidateCacheFromCluster(v.toString());
 		}

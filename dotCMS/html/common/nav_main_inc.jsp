@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.util.Logger"%>
 <%@page import="com.dotcms.rest.BaseRestPortlet"%>
 <%@page import="com.liferay.portal.model.Portlet"%>
 <%@page import="com.dotcms.rest.WebResource"%>
@@ -48,10 +49,17 @@
                                                         if("9".equals(portletIDs.get(i))){
                                                                 request.setAttribute("licenseManagerPortletUrl", linkHREF);
                                                         }
-                                                        Object obj = Class.forName(p.getPortletClass()).newInstance();
-                                                        if(obj instanceof BaseRestPortlet){
-                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
-                                                        }%>
+                                                        try{
+                                                        	Object obj = Class.forName(p.getPortletClass()).newInstance();
+	                                                        if(obj instanceof BaseRestPortlet){
+	                                                                linkHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(i) + "/', '" + l + "');";
+	                                                        }
+                                                        }
+                                                        catch(Exception e){
+                                                        	//Logger.error(this.getClass(),"error in portlet nav:" + e.getMessage());
+                                                        }
+                                                        
+                                                        %>
 
 
 
@@ -157,7 +165,31 @@ dojo.require("dojo.hash");
                         dojo.parser.parse(this.hangerDiv);
                 },
 
+                
+                refreshHTML : function(html) {
 
+
+
+                    var myCp = dijit.byId(this.contentDiv);
+                    var hanger = dojo.byId(this.hangerDiv);
+                    if(!hanger){
+                            return;
+                    }
+                    if (myCp) {
+                            myCp.destroyRecursive();
+                            myCp.attr("content","");
+                    }
+
+                    myCp = new dojox.layout.ContentPane({
+                            id : this.contentDiv
+                    }).placeAt(this.hangerDiv);
+
+
+                    myCp.attr("content", html);
+
+                    dojo.parser.parse(this.hangerDiv);
+            },
+            
                 addCrumbtrail : function (title, urlx){
                         var entry = {title:title, url:urlx};
                         this.wfCrumbTrail[this.wfCrumbTrail.length] = entry;
@@ -252,10 +284,10 @@ dojo.require("dojo.hash");
         --%>
 
                                 if(tabW > screenWidth || lastTop > firstTop){
-                                        classes = classes + " smallify";
+                                       /*  classes = classes + " smallify";
                                         dojo.attr(x, "class", classes);
                                         width = (dojo.coords(x)).w;
-                                        tabW = tabW+width;
+                                        tabW = tabW+width; */
                                 }else{
                                         break;
                                 }

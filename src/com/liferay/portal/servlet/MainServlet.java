@@ -41,6 +41,7 @@ import javax.servlet.jsp.PageContext;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import com.dotcms.cluster.common.ClusterServerActionThread;
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -126,6 +127,9 @@ public class MainServlet extends ActionServlet {
 			}
 
 			ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
+
+			//Start Cluster Server Action Thread.
+			ClusterServerActionThread.startThread(Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", 2000));
 
 			try {
 				EventsProcessor.process(new String[] { StartupAction.class.getName() }, true);
@@ -304,8 +308,23 @@ public class MainServlet extends ActionServlet {
 				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
 
 				Cookie sharedSessionIdCookie = new Cookie(CookieKeys.SHARED_SESSION_ID, sharedSessionId);
-				sharedSessionIdCookie.setPath("/");
 				sharedSessionIdCookie.setMaxAge(86400);
+
+				String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
+
+				if(cookiesSecureFlag.equals("always")) {
+					sharedSessionIdCookie.setSecure(true);
+				} else if(cookiesSecureFlag.equals("https")) {
+					sharedSessionIdCookie.setSecure(req.isSecure());
+				} else if(cookiesSecureFlag.equals("never")) {
+					sharedSessionIdCookie.setSecure(false);
+				}
+
+				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
+					sharedSessionIdCookie.setPath("/; HttpOnly;");
+				} else {
+					sharedSessionIdCookie.setPath("/");
+				}
 
 				res.addCookie(sharedSessionIdCookie);
 

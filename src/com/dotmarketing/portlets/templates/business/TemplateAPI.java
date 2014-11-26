@@ -207,4 +207,14 @@ public interface TemplateAPI {
 	 */
     public void updateThemeWithoutVersioning(String templateInode, String theme) throws DotDataException;
 
+	/**
+	 * Invalidate pages cache related to the specified template 
+	 * @param templateInode
+	 * @param user
+	 * @param live
+	 * @param respectFrontEndRoles
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+    public void invalidateTemplatePages(String templateInode, User user, boolean live, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException;
 }

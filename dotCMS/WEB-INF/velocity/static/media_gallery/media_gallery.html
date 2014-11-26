@@ -120,7 +120,7 @@
 			#else
 				#set ($img = $file.photo)
 				#set ($mov = $file.movie)
-				<a href="javascript:showAsset('/dotAsset/${mov.identifier}.flv', 'video', '', '')" title="${mov.friendlyName}"><img src="/thumbnail?inode=${img.inode}&w=${thumbnailWidth}&h=${thumbnailHeight}&r=246&g=243&b=238" alt="${img.title}" border="0" style="border: solid 1px #D7CCB3;"></a>
+				<a href="javascript:showAsset('/contentAsset/raw-data/${mov.identifier}/fileAsset', 'video', '', '')" title="${mov.friendlyName}"><img src="/thumbnail?inode=${img.inode}&w=${thumbnailWidth}&h=${thumbnailHeight}&r=246&g=243&b=238" alt="${img.title}" border="0" style="border: solid 1px #D7CCB3;"></a>
 				#if ($showMediaTitle)
 				<h2>$mov.friendlyName</h2>
 				#end
@@ -136,7 +136,7 @@
 		#else
 			#set ($img = $file.photo)
 			#set ($mov = $file.movie)
-				showAsset('/dotAsset/${mov.identifier}.flv', 'video', '', '');
+				showAsset('/contentAsset/raw-data/${mov.identifier}/fileAsset', 'video', '', '');
 		#end
 	</script>
 	#end

@@ -125,12 +125,17 @@ public class DependencyManager {
 				try {
 					HTMLPage page = APILocator.getHTMLPageAPI().loadLivePageById(asset.getAsset(), user, false);
 
-					if(page==null) {
+					if(page == null) {
 						page = APILocator.getHTMLPageAPI().loadWorkingPageById(asset.getAsset(), user, false);
 					}
-
-					htmlPages.add(asset.getAsset(), page.getModDate());
-					htmlPagesSet.add(asset.getAsset());
+					
+					if(page == null) {
+						Logger.warn(getClass(), "HTMLPage id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						htmlPages.add(asset.getAsset(), page.getModDate());
+						htmlPagesSet.add(asset.getAsset());
+					}
+					
 				} catch (Exception e) {
 					Logger.error(getClass(), "Couldn't add the HtmlPage to the Bundle. Bundle ID: " + config.getId() + ", HTMLPage ID: " + asset.getAsset(), e);
 				}
@@ -138,8 +143,14 @@ public class DependencyManager {
 			} else if(asset.getType().equals("structure")) {
 				try {
 					Structure st = StructureCache.getStructureByInode(asset.getAsset());
-					structures.add(asset.getAsset(), st.getModDate());
-					structuresSet.add(asset.getAsset());
+					
+					if(st == null) {
+						Logger.warn(getClass(), "Structure id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						structures.add(asset.getAsset(), st.getModDate());
+						structuresSet.add(asset.getAsset());
+					}
+					
 				} catch (Exception e) {
 					Logger.error(getClass(), "Couldn't add the Structure to the Bundle. Bundle ID: " + config.getId() + ", Structure ID: " + asset.getAsset(), e);
 				}
@@ -148,12 +159,16 @@ public class DependencyManager {
 				try {
 					Template t = APILocator.getTemplateAPI().findLiveTemplate(asset.getAsset(), user, false);
 
-					if(t==null || !UtilMethods.isSet(t.getIdentifier())) {
+					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
 						t = APILocator.getTemplateAPI().findWorkingTemplate(asset.getAsset(), user, false);
 					}
-
-					templates.add(asset.getAsset(), t.getModDate());
-					templatesSet.add(asset.getAsset());
+					if(t == null || !UtilMethods.isSet(t.getIdentifier())) {
+						Logger.warn(getClass(), "Template id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						templates.add(asset.getAsset(), t.getModDate());
+						templatesSet.add(asset.getAsset());
+					}
+					
 				} catch (Exception e) {
 					Logger.error(getClass(), "Couldn't add the Template to the Bundle. Bundle ID: " + config.getId() + ", Template ID: " + asset.getAsset(), e);
 				}
@@ -161,45 +176,74 @@ public class DependencyManager {
 				try {
 					Container c = APILocator.getContainerAPI().getLiveContainerById(asset.getAsset(), user, false);
 
-					if(c==null) {
+					if(c == null) {
 						c = APILocator.getContainerAPI().getWorkingContainerById(asset.getAsset(), user, false);
 					}
-
-					containers.add(asset.getAsset(), c.getModDate());
-					containersSet.add(asset.getAsset());
+					
+					if(c == null) {
+						Logger.warn(getClass(), "Container id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						containers.add(asset.getAsset(), c.getModDate());
+						containersSet.add(asset.getAsset());
+					}
+					
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Container to the Bundle. Bundle ID: " + config.getId() + ", Container ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("folder")) {
 				try {
 					Folder f = APILocator.getFolderAPI().find(asset.getAsset(), user, false);
-					folders.add(asset.getAsset(), f.getModDate());
-					foldersSet.add(asset.getAsset());
+					
+					if(f == null){
+						Logger.warn(getClass(), "Folder id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						folders.add(asset.getAsset(), f.getModDate());
+						foldersSet.add(asset.getAsset());
+					}
+					
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Folder to the Bundle. Bundle ID: " + config.getId() + ", Folder ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("host")) {
 				try {
 					Host h = APILocator.getHostAPI().find(asset.getAsset(), user, false);
-					hosts.add(asset.getAsset(), h.getModDate());
-					hostsSet.add(asset.getAsset());
+					
+					if(h == null){
+						Logger.warn(getClass(), "Host id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						hosts.add(asset.getAsset(), h.getModDate());
+						hostsSet.add(asset.getAsset());
+					}
+					
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("links")) {
 				try {
 					Link link = (Link) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
-					if(link==null || !InodeUtils.isSet(link.getInode())) {
+					
+					if(link == null || !InodeUtils.isSet(link.getInode())) {
 						link = APILocator.getMenuLinkAPI().findWorkingLinkById(asset.getAsset(), user, false);
 					}
-					links.add(asset.getAsset(),link.getModDate());
-					linksSet.add(asset.getAsset());
+					
+					if(link == null || !InodeUtils.isSet(link.getInode())) {
+						Logger.warn(getClass(), "Link id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+					} else {
+						links.add(asset.getAsset(),link.getModDate());
+						linksSet.add(asset.getAsset());
+					}
+					
 				} catch (DotSecurityException e) {
 					Logger.error(getClass(), "Couldn't add the Host to the Bundle. Bundle ID: " + config.getId() + ", Host ID: " + asset.getAsset(), e);
 				}
 			} else if(asset.getType().equals("workflow")) {
 				WorkflowScheme scheme = APILocator.getWorkflowAPI().findScheme(asset.getAsset());
-				workflows.add(asset.getAsset(),scheme.getModDate());
+				
+				if(scheme == null){
+					Logger.warn(getClass(), "WorkflowScheme id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
+				} else {
+					workflows.add(asset.getAsset(),scheme.getModDate());
+				}
 			}
 		}
 

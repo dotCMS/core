@@ -143,7 +143,7 @@
 
     <target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
         <delete>
-            <fileset dir="dotCMS/html/js/tinymce/jscripts/tiny_mce/" includes="*.gz"/>
+            <fileset dir="dotCMS/html/js/tinymce/js/tinymce/" includes="*.gz"/>
         </delete>
     </target>
 
@@ -996,7 +996,7 @@
             <fileset dir="libs/buildlibs/">
                 <include name="mail.jar"/>
 
-                <include name="mysql-connector-java-5.1.23-bin.jar"/>
+                <include name="mysql-connector-java-5.1.33-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>
                 <include name="jtds-1.2.2.jar"/>

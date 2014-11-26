@@ -31,6 +31,7 @@ width: 9px;
 margin-top: -22px;
 -moz-opacity: 0;
 right: 80px;
+top: 77%;
 }
 
 .fakefile input.upload {

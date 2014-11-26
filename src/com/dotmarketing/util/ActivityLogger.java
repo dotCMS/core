@@ -1,5 +1,9 @@
 package com.dotmarketing.util;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapper;
 
 public class ActivityLogger {
@@ -11,22 +15,37 @@ public class ActivityLogger {
 	}
 
 	public static synchronized void logInfo(Class cl, String action,
-			String msg, String host) {
+			String msg, String hostNameOrId) {
 		if (LogMapper.getInstance().isLogEnabled(filename)) {
-			if (!UtilMethods.isSet(host)) {
-				host = "system";
-			}
-			Logger.info(ActivityLogger.class, cl.toString() + ": " + host
+			Logger.info(ActivityLogger.class, cl.toString() + ": " + getHostName(hostNameOrId)
 					+ " : " + action + " , " + msg);
 		}
 	}
 
-	public static void logDebug(Class cl, String action, String msg, String host) {
+	public static void logDebug(Class cl, String action, String msg, String hostNameOrId) {
 
 		if (LogMapper.getInstance().isLogEnabled(filename)) {
-			Logger.debug(ActivityLogger.class, cl.toString() + ": " + host
+			Logger.debug(ActivityLogger.class, cl.toString() + ": " + getHostName(hostNameOrId)
 					+ " :" + action + " , " + msg);
 		}
+	}
+	
+	private static String getHostName(String hostNameOrId){
+		if (!UtilMethods.isSet(hostNameOrId)) {
+			return "system";
+		}
+		Host h = new Host();
+		try {
+			h = APILocator.getHostAPI().findByName(hostNameOrId, APILocator.getUserAPI().getSystemUser(), false);
+		} catch (Exception e) {}
+		if(!UtilMethods.isSet(h) || !UtilMethods.isSet(h.getIdentifier())){
+			try {
+				h = APILocator.getHostAPI().find(hostNameOrId, APILocator.getUserAPI().getSystemUser(), false);
+			} catch (Exception e1) {}
+		}
+		if(UtilMethods.isSet(h) && UtilMethods.isSet(h.getIdentifier()))
+			return h.getHostname();
+		return "";
 	}
 
 }

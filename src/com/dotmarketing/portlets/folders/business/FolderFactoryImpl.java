@@ -304,9 +304,11 @@ public class FolderFactoryImpl extends FolderFactory {
 
 			List<FileAsset> fileAssets = null;
 			try {
-				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, APILocator.getUserAPI().getSystemUser(), false);
+				fileAssets = APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "",true,APILocator.getUserAPI().getSystemUser(), false);
 				for(FileAsset fileAsset : fileAssets) {
-					if(fileAsset.isLive() && fileAsset.isShowOnMenu()){
+
+					if(fileAsset.isShowOnMenu() && !fileAsset.isDeleted()){
+
 						filesListSubChildren.add(fileAsset);
 					}
 				}
@@ -552,7 +554,6 @@ public class FolderFactoryImpl extends FolderFactory {
 	@SuppressWarnings("unchecked")
 	private boolean move(Folder folder, Object destination) throws DotDataException, DotStateException, DotSecurityException {
 
-		folder = (Folder) HibernateUtil.load(Folder.class, folder.getInode());
 		IdentifierAPI identAPI = APILocator.getIdentifierAPI();
 		Identifier folderId = identAPI.find(folder.getIdentifier());
 

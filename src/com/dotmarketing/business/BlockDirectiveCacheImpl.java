@@ -4,6 +4,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.Logger;
 
 public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
@@ -17,6 +18,15 @@ public class BlockDirectiveCacheImpl extends BlockDirectiveCache {
 		cache.put(key, cto, group);
 
 	}
+	
+	/**
+	 * 
+	 * @param page
+	 */
+	public void add(HTMLPage page) {
+		
+	}
+	
 	private boolean canCache;
 	private DotCacheAdministrator cache;
 

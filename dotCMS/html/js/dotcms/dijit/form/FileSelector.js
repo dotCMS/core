@@ -233,7 +233,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 	
 	_infoClicked : function () {
 		if(this.fileInfo.type == 'file_asset') {
-			var fileURL = '/dotAsset/' + this.fileInfo.identifier + '.' + this.fileInfo.extension;
+			var fileURL = '/contentAsset/raw-data/' + this.fileInfo.identifier + '/fileAsset';
 			var fullPath = this.fileInfo.path + this.fileInfo.fileName;
 			var fileName = this.fileInfo.fileName;
 			var html = dojo.replace(this.fileInfoTemplate, this.fileInfo);
@@ -245,7 +245,7 @@ dojo.declare("dotcms.dijit.form.FileSelector", [dijit._Widget, dijit._Templated]
 			var html = dojo.replace(this.pageInfoTemplate, this.fileInfo);
 		}
 		if (this.fileInfo.type == 'contentlet') {
-			var fileURL = '/dotAsset/' + this.fileInfo.identifier + '.' + this.fileInfo.extension;
+			var fileURL = '/contentAsset/raw-data/' + this.fileInfo.identifier + '/fileAsset';
 			var fullPath = this.fileInfo.path + this.fileInfo.fileName;
 			var fileName = this.fileInfo.fileName;
 			var html = dojo.replace(this.fileInfoTemplate, this.fileInfo);

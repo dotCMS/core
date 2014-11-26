@@ -258,6 +258,13 @@ public class EditFolderAction extends DotPortletAction {
 
 		FolderForm folderForm = (FolderForm) form;
 		
+		// the folders is new or there are changes
+		if(UtilMethods.isSet(f.getIdentifier()) && f.equals(folderForm)){
+			// no changes to save, the message is shown and nothing saved.
+			SessionMessages.add(req, "message", "message.folder.nochanges");
+			return true;
+		}
+		
 		HibernateUtil.startTransaction();
 		
 		

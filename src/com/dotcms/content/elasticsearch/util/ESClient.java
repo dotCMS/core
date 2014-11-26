@@ -12,6 +12,7 @@ import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -40,6 +41,14 @@ public class ESClient {
         }
 
 		return _nodeInstance.client();
+	}
+	
+	public Client getClientInCluster(){
+		if ( _nodeInstance == null || _nodeInstance.isClosed()) {
+			return null;
+		} else {
+			return _nodeInstance.client();
+		}
 	}
 
     private void initNode () {
@@ -126,8 +135,8 @@ public class ESClient {
         if(Config.getBooleanProperty("CLUSTER_AUTOWIRE",true)) {
 
 			String serverId = ConfigUtils.getServerId();
-
-			
+			//This line is added because when someone add a license the node is already up and working and reset the existing port
+			shutDownNode();
 			currentServer = serverAPI.getServer(serverId);
 
 			String storedBindAddr = (UtilMethods.isSet(currentServer.getHost()) && !currentServer.getHost().equals("localhost"))
@@ -138,10 +147,14 @@ public class ESClient {
 
 			currentServer.setHost(Config.getStringProperty("es.network.host", null));
 
-			transportTCPPort = properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT")) ? properties.get("ES_TRANSPORT_TCP_PORT")
-					:UtilMethods.isSet(currentServer.getEsTransportTcpPort())?currentServer.getEsTransportTcpPort().toString() : ClusterFactory.getNextAvailablePort(serverId, ServerPort.ES_TRANSPORT_TCP_PORT);
+			if(properties!=null && UtilMethods.isSet(properties.get("ES_TRANSPORT_TCP_PORT"))){
+				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,properties.get("ES_TRANSPORT_TCP_PORT"));
+			} else if(UtilMethods.isSet(currentServer.getEsTransportTcpPort())){
+				transportTCPPort = getNextAvailableESPort(serverId,bindAddr,currentServer.getEsTransportTcpPort().toString()); 
+			}else{ 
+				transportTCPPort = getNextAvailableESPort(serverId, bindAddr, null);
+			}
 
-			
 			if(Config.getBooleanProperty("es.http.enabled", false)) {
 				httpPort = properties!=null &&   UtilMethods.isSet(properties.get("ES_HTTP_PORT")) ? properties.get("ES_HTTP_PORT")
 						:UtilMethods.isSet(currentServer.getEsHttpPort()) ? currentServer.getEsHttpPort().toString()
@@ -228,7 +241,40 @@ public class ESClient {
 	public void removeClusterNode() {
 	    if(UtilMethods.isSet(System.getProperty("es.discovery.zen.ping.unicast.hosts"))) {
     	    System.setProperty("es.discovery.zen.ping.unicast.hosts","");
-    	    initNode();
+    	    shutDownNode();
 	    }
 	}
+	
+	/**
+	 * Validate if the base port is available in the specified bindAddress. 
+	 * If not the it will try to get the next port available
+	 * @param serverId Server identification
+	 * @param bindAddr Address where the port should be running
+	 * @param basePort Initial port to check
+	 * @return port
+	 */
+	public String getNextAvailableESPort(String serverId, String bindAddr, String basePort) {
+        
+        String freePort = Config.getStringProperty(ServerPort.ES_TRANSPORT_TCP_PORT.getPropertyName(), ServerPort.ES_TRANSPORT_TCP_PORT.getDefaultValue());
+        try {
+        	if(UtilMethods.isSet(basePort)){
+        		freePort=basePort;
+        	}else{
+        		Number port = ClusterFactory.getESPort(serverId);
+                freePort = UtilMethods.isSet(port)?Integer.toString(port.intValue()+1):freePort;
+        	}
+            int pp=Integer.parseInt(freePort);
+            //This will check the next 10 ports to see if one its available
+            int count=1;
+            while(!UtilMethods.isESPortFree(bindAddr,pp) && count <= 10) {
+            	pp = pp + 1;
+               	count++;
+            }   
+            freePort=Integer.toString(pp);
+        } catch (DotDataException e) {
+            Logger.error(ESClient.class, "Could not get an Available server port", e);
+        }
+
+        return freePort.toString();
+    }
 }

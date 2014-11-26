@@ -10,26 +10,17 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import com.dotcms.repackage.net.sf.hibernate.*;
-import com.dotcms.repackage.net.sf.hibernate.CallbackException;
-import com.dotcms.repackage.net.sf.hibernate.FlushMode;
-import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-import com.dotcms.repackage.net.sf.hibernate.Interceptor;
-import com.dotcms.repackage.net.sf.hibernate.MappingException;
-import com.dotcms.repackage.net.sf.hibernate.Query;
-import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.net.sf.hibernate.SessionFactory;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Configuration;
 import com.dotcms.repackage.net.sf.hibernate.cfg.Mappings;
 import com.dotcms.repackage.net.sf.hibernate.type.Type;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -62,10 +53,13 @@ public class HibernateUtil {
 	private static Mappings mappings;
 
 	private static final boolean useCache = true;
+	
+	public static final String addToIndex="-add-to-index";
+	public static final String removeFromIndex="-remove-from-index";
 
 	private static final ThreadLocal< Map<String,Runnable> > commitListeners=new ThreadLocal<Map<String,Runnable>>() {
 	    protected java.util.Map<String,Runnable> initialValue() {
-	        return new HashMap<String,Runnable>();
+	        return new LinkedHashMap<String,Runnable>();
 	    }
 	};
 
@@ -243,6 +237,7 @@ public class HibernateUtil {
 
     public static Object load(Class c, Serializable key)  throws DotHibernateException{
     	Session session = getSession();
+    	
     	try{
             return (Object) session.load(c, key);
 		}catch (Exception e) {

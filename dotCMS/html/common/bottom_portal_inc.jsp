@@ -48,8 +48,17 @@
 		var myId=document.getElementById("hidden_iframe");
 		myId.src ="/html/common/keep_alive.jsp?r=<%=System.currentTimeMillis()%>";
 	}
+	function killSession(){
+		  alert("Session Expired !!");
+		  window.location = "/html/portal/login.jsp?r="+<%=System.currentTimeMillis()%>;
+	}
+	<% if(Config.getStringProperty("KEEP_SESSION_ALIVE").equalsIgnoreCase("true")) {%>
 	// 15 minutes
-	setTimeout("setKeepAlive()", 60000 * 15);
+		setTimeout("setKeepAlive()", 60000 * 15);
+	<%}else{%>
+	// 30 minutes
+		setTimeout("killSession()", 60000 * 30);
+	<%} %>
 </script>
 
 	

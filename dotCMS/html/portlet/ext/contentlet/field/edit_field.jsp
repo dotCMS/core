@@ -240,7 +240,7 @@
         	}
         }
 %>
-    <div style="margin-bottom:20px;width:700px;overflow:visible;border:0px red solid">
+    <div style="margin-bottom:20px;width:845px;overflow:visible;border:0px red solid">
     	<div id="<%=field.getVelocityVarName()%>aceEditor" class="classAce"></div>
         <textarea  <%= isReadOnly?"readonly=\"readonly\"":"" %>
             class="editWYSIWYGField" rows="7"

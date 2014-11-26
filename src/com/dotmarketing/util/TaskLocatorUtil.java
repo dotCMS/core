@@ -94,6 +94,8 @@ import com.dotmarketing.startup.runonce.Task03045TagnameTypeChangeMSSQL;
 import com.dotmarketing.startup.runonce.Task03050updateFormTabName;
 import com.dotmarketing.startup.runonce.Task03100HTMLPageAsContentChanges;
 import com.dotmarketing.startup.runonce.Task03055RemoveLicenseManagerPortlet;
+import com.dotmarketing.startup.runonce.Task03060AddClusterServerAction;
+import com.dotmarketing.startup.runonce.Task03065AddHtmlPageIR;
 
 
 public class TaskLocatorUtil {
@@ -189,7 +191,9 @@ public class TaskLocatorUtil {
         ret.add(Task03042AddLicenseRepoModel.class);
         ret.add(Task03045TagnameTypeChangeMSSQL.class);
         ret.add(Task03050updateFormTabName.class);
-        ret.add(Task03055RemoveLicenseManagerPortlet.class);        
+        ret.add(Task03055RemoveLicenseManagerPortlet.class);
+        ret.add(Task03060AddClusterServerAction.class);
+		ret.add(Task03065AddHtmlPageIR.class);
         ret.add(Task03100HTMLPageAsContentChanges.class);
         return ret;
     }
