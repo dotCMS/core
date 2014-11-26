@@ -72,8 +72,8 @@
 #menu ul li {list-style:none;}
 #menu ul li a {float:left;display:block;text-decoration:none;}
 #menu ul.horizontal li.level1 {float:left;padding:0px;}
-#menu ul.horizontal li.level1 a{background:url(/html/images/skin/skin-sprite.png) no-repeat right -140px;}
-#menu ul.horizontal li.level1 a:hover,#menu ul.horizontal li.Active a {background-position: right -190px;}
+#menu ul.horizontal li.level1 a{background:url(/html/images/skin/skin-sprite.png) repeat left -140px;}
+#menu ul.horizontal li.level1 a:hover,#menu ul.horizontal li.Active a {background-position: left -190px;}
 #menu ul.horizontal li.level1 .tabLeft{background: url(/html/images/skin/skin-sprite.png) no-repeat 0 -240px;padding: 8px 10px 5px 10px;}
 #menu ul.horizontal li.level1 a:hover .navMenu-title,#menu ul.horizontal li.Active a .navMenu-title{color:#cc0000;}
 #menu ul.horizontal > li.level1 a {width: auto;}
@@ -250,8 +250,8 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 .inputMedium{width:250px;}
 .inputLarge{width:350px;}
 
-.buttonBoxLeft{position:absolute;left:35px;top:133px;height:30px;z-index:10;line-height:18px;}
-.buttonBoxRight{position:absolute;right:35px;top:133px;height:30px;z-index:11;line-height:18px;}
+.buttonBoxLeft{position:absolute;left:35px;height:35px;z-index:10;line-height:30px;}
+.buttonBoxRight{position:absolute;right:35px;height:35px;z-index:10;line-height:33px;}
 
 .buttonBoxLeftNoTop{position:absolute;left:5px;top:15px;height:30px;z-index:10;line-height:18px;}
 .buttonBoxRightNoTop{position:absolute;right:3px;top:15px; height:30px;z-index:11;line-height:18px;}

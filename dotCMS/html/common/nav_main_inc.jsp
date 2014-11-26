@@ -284,10 +284,10 @@ dojo.require("dojo.hash");
         --%>
 
                                 if(tabW > screenWidth || lastTop > firstTop){
-                                        classes = classes + " smallify";
+                                       /*  classes = classes + " smallify";
                                         dojo.attr(x, "class", classes);
                                         width = (dojo.coords(x)).w;
-                                        tabW = tabW+width;
+                                        tabW = tabW+width; */
                                 }else{
                                         break;
                                 }

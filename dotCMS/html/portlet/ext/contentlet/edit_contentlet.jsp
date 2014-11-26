@@ -265,6 +265,7 @@ var editButtonRow="editContentletButtonRow";
 		<%} else {	%>
 			<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
 		<%}%>
+
 		<!-- START Left Column -->
 			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
 		
@@ -496,7 +497,6 @@ var editButtonRow="editContentletButtonRow";
 
 	<%@ include file="/html/portlet/ext/contentlet/edit_contentlet_js_inc.jsp" %>
 
-	
 
 </liferay:box>
 
