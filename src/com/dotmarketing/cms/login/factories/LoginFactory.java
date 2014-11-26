@@ -1,5 +1,7 @@
 package com.dotmarketing.cms.login.factories;
 
+import java.util.ArrayList;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -8,6 +10,7 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.salesforce.SalesForceUtils;
+import com.dotcms.enterprise.cas.CASAuthUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
@@ -34,6 +37,7 @@ public class LoginFactory {
 
 	/*Custom Code*/
 	public static boolean useSalesForceLoginFilter = new Boolean (Config.getBooleanProperty("SALESFORCE_LOGIN_FILTER_ON",false));
+	public static boolean useCASLoginFilter = new Boolean (Config.getBooleanProperty("FRONTEND_CAS_FILTER_ON",false));
 	/*End of Custom Code*/
 
     public static boolean doLogin(LoginForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
@@ -103,8 +107,37 @@ public class LoginFactory {
             	}
             	else
             		SecurityLogger.logInfo(LoginFactory.class, "Unable to retrieve user from SalesForce with id: " + decryptedId);
+            }
+            if(useCASLoginFilter){
+            	String decryptedId = PublicEncryptionFactory.decryptString(encryptedId);
+            	Logger.info(LoginFactory.class, "Try to retrieve user from LDAP/CAS with id: " + decryptedId);
+            	User newUser = CASAuthUtils.loadUserFromLDAP(decryptedId);
+            	
+            	if(UtilMethods.isSet(newUser)){
+            		User user = null;
+            		Company comp = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+            		try {
+						if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+							user = APILocator.getUserAPI().loadByUserByEmail(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+						} else {
+							user = APILocator.getUserAPI().loadUserById(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
+						}
+                        
+	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
+	            		
+						if(UtilMethods.isSet(userIdFromCAS)){
+							CASAuthUtils.setUserValuesOnSession(user, request, response, true);
+						}
 
-        }
+                        return true;
+                         
+                    } catch (Exception ex) {
+                    	return false;
+                    }
+            	}
+            	else
+            		Logger.info(LoginFactory.class, "Unable to retrieve user from LDAP/CAS with id: " + decryptedId);
+            }
 
         doLogout(request, response);
 
@@ -144,7 +177,9 @@ public class LoginFactory {
 
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
-        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
+        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION")) &&
+        		!useCASLoginFilter) {
+        		
         		Class ldap_auth_impl_class = Class.forName(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
         		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.newInstance();
         		int auth = 0;
@@ -175,6 +210,8 @@ public class LoginFactory {
     			}
 
     			match = auth == Authenticator.SUCCESS;
+    		
+
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -196,7 +233,7 @@ public class LoginFactory {
 	            }
 
 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
-
+	            
 	            if (match) {
 	            	if(useSalesForceLoginFilter){/*Custom Code */
 	            		user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
@@ -208,6 +245,7 @@ public class LoginFactory {
               	  			SalesForceUtils.syncRoles(user.getEmailAddress(), request, response, accessToken, instanceURL);
               	  		}
               		}/*End of Custom Code*/
+	            	
 	            	user.setLastLoginDate(new java.util.Date());
 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 
@@ -235,15 +273,22 @@ public class LoginFactory {
 	                  	  		match = true;
 	                  	  	}
 	            		}
+	            	}else if(useCASLoginFilter){
+	            		
+	            		String userIdFromCAS = (String)request.getSession(false).getAttribute("edu.yale.its.tp.cas.client.filter.user");
+	            		
+						if(UtilMethods.isSet(userIdFromCAS)){
+							user = CASAuthUtils.syncExistingUser(user);
+							match=true;
+						}
 	            	}
+
 	            	/* end of custom code*/
 	            	else{
 	            		match = false;
 		            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
 		            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 		        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
-
-
 	            	}
 	            }
         	}
