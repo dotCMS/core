@@ -61,20 +61,20 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 	function addFileImageCallback(file) {
 		var ident
 		var ext=file.extension;
-		var ident =file.identifier+'.'+ext;
-		wysiwyg_win.document.forms[0].elements["src"].value = "/dotAsset/" + ident;
-		wysiwyg_win.ImageDialog.showPreviewImage("/dotAsset/" + ident);
+		var ident =file.identifier;
+		wysiwyg_win.document.forms[0].elements["src"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+		wysiwyg_win.ImageDialog.showPreviewImage("/contentAsset/raw-data/" + ident + "/fileAsset");
 	}
 	function addFileCallback(file) {
 		var ident
 		var ext=file.extension;
-		var ident =file.identifier+'.'+ext;
+		var ident =file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if(fileExt == '<%= extension %>'){
 			wysiwyg_win.document.forms[0].elements["href"].value = file.pageURI;
 		}else{
-			wysiwyg_win.document.forms[0].elements["href"].value = /dotAsset/ + ident;
+			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
 		}
 	}
 		
@@ -84,7 +84,7 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 			var imageName = document.getElementById("selectedwysiwyg_image").value;
 			var imageFolder = document.getElementById("folderwysiwyg_image").value;
 			var ident = document.getElementById("selectedIdentwysiwyg_image").value;
-			wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = /dotAsset/ + ident;
+			wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
 		}
 		if (param == 'wysiwyg_file') {
 			var fileName = document.getElementById("selectedwysiwyg_file").value;
@@ -95,7 +95,7 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 			if(fileExt == '<%= ext %>'){
 				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = fileFolder + fileName;
 			}else{
-				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = /dotAsset/ + ident;
+				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
 			}
 		}
 	}

@@ -29,7 +29,7 @@ public class FileMap extends File {
 	 * @return
 	 */
 	public String getUri(){
-		uri = InodeUtils.isSet(this.getIdentifier()) ? UtilMethods.espaceForVelocity("/dotAsset/" + this.getIdentifier() + "." + this.getExtension()) : "";
+		uri = InodeUtils.isSet(this.getIdentifier()) ? UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + this.getIdentifier() + "/fileAsset") : "";
 		return uri;
 	}
 	

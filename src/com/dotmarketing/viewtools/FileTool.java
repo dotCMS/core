@@ -66,7 +66,7 @@ public class FileTool implements ViewTool {
 	
 	public String getURI(File file){
 		if(file != null && InodeUtils.isSet(file.getIdentifier())){
-			return UtilMethods.espaceForVelocity("/dotAsset/" + file.getIdentifier() + "." + file.getExtension());
+			return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset");
 		}else{
 			return "";
 		}
@@ -74,7 +74,7 @@ public class FileTool implements ViewTool {
 	
 	public String getURI(FileAsset file){
 		if(file != null && InodeUtils.isSet(file.getIdentifier())){
-			return UtilMethods.espaceForVelocity("/dotAsset/" + file.getIdentifier() + "." + file.getExtension());
+			return UtilMethods.espaceForVelocity("/contentAsset/raw-data/" + file.getIdentifier() + "/fileAsset");
 		}else{
 			return "";
 		}

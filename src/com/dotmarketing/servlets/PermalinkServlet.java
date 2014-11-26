@@ -137,7 +137,7 @@ public class PermalinkServlet extends HttpServlet {
 				redirect = redirect+UtilMethods.encodeURIComponent(iden.getURI());
 			}else{
 				/*Check if is a contentlet and redirect to the speedy asset servlet */
-				redirect = redirect+"/dotAsset/"+iden.getInode()+iden.getURI().substring(iden.getURI().lastIndexOf("."));
+				redirect = redirect+"/contentAsset/raw-data/"+iden.getInode()+"/fileAsset";
 			}
 
 
