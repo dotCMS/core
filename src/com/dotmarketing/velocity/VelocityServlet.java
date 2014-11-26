@@ -48,6 +48,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.BlockPageCache;
+import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.portal.PortletAPI;
@@ -351,18 +353,21 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * 
+	 * @param request
+	 * @param response
+	 * @throws Exception
+	 */
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 	    LicenseUtil.startLiveMode();
 	    try {
-
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		uri = UtilMethods.cleanURI(uri);
-    
     		Host host = hostWebAPI.getCurrentHost(request);
     
     		// Map with all identifier inodes for a given uri.
     		//
-    
     		// Checking the path is really live using the livecache
     		String cachedUri = LiveCache.getPathFromCache(uri, host);
     
@@ -373,11 +378,10 @@ public abstract class VelocityServlet extends HttpServlet {
     
     		// now  we check identifier cache first (which DOES NOT have a 404 cache )
     		Identifier ident = APILocator.getIdentifierAPI().find(host, uri);
-    		if(ident ==null && ident.getInode() == null){
+    		if(ident == null || ident.getInode() == null){
     			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
     		}
     		response.setContentType(CHARSET);
-    
     		request.setAttribute("idInode", String.valueOf(ident.getInode()));
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
     
@@ -403,12 +407,9 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     
     		boolean signedIn = false;
-    
     		if (user != null) {
     			signedIn = true;
     		}
-    
-    
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
     		HTMLPage page = null;
@@ -436,15 +437,11 @@ public abstract class VelocityServlet extends HttpServlet {
     				// request.getSession().setAttribute(WebKeys.LAST_PATH,
     				// new ObjectValuePair(uri, request.getParameterMap()));
     				request.getSession().setAttribute(com.dotmarketing.util.WebKeys.REDIRECT_AFTER_LOGIN, uri);
-    
     				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: Page doesn't have anonymous access" + uri);
-    
     				Logger.debug(VelocityServlet.class, "401 URI = " + uri);
-    
     				Logger.debug(VelocityServlet.class, "Unauthorized URI = " + uri);
     				response.sendError(401, "The requested page/file is unauthorized");
     				return;
-    
     			} else if (!permissionAPI.getReadRoles(ident).contains(APILocator.getRoleAPI().loadLoggedinSiteRole())) {
     				// user is logged in need to check user permissions
     				Logger.debug(VelocityServlet.class, "VELOCITY CHECKING PERMISSION: User signed in");
@@ -473,13 +470,17 @@ public abstract class VelocityServlet extends HttpServlet {
     			}
     		}
     
-    		// Begin Page Caching
+    		// Begin page caching
+    		String userId = (user != null) ? user.getUserId() : "PUBLIC";
+    		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+    		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
+    		String queryString = request.getQueryString();
+			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString);
+			
     		boolean buildCache = false;
     		String key = getPageCacheKey(request);
     		if (key != null) {
-    
-    			String cachedPage = CacheLocator.getBlockDirectiveCache().get(key, (int) page.getCacheTTL());
-    
+    			String cachedPage = CacheLocator.getBlockPageCache().get(page, cacheParameters);
     			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
     					|| "refresh".equals(request.getAttribute("dotcache"))
     					|| "refresh".equals(request.getSession().getAttribute("dotcache"))) {
@@ -493,19 +494,13 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     
     		Writer out = (buildCache) ? new StringWriter(4096) : new VelocityFilterWriter(response.getWriter());
-    
     		//get the context from the requst if possible
     		Context context = VelocityUtil.getWebContext(request, response);
-    
     		request.setAttribute("velocityContext", context);
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
     
-    
-    
     		try {
-    
     			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
-    
     		} catch (ParseErrorException e) {
     			// out.append(e.getMessage());
     		}
@@ -516,14 +511,12 @@ public abstract class VelocityServlet extends HttpServlet {
     			response.getWriter().write(trimmedPage);
     			response.getWriter().close();
     			synchronized (key) {
-    				//CacheLocator.getBlockDirectiveCache().clearCache();
     				CacheLocator.getHTMLPageCache().remove(page);
-    				CacheLocator.getBlockDirectiveCache().add(getPageCacheKey(request), trimmedPage, (int) page.getCacheTTL());
+    				CacheLocator.getBlockPageCache().add(page, trimmedPage, cacheParameters);
     			}
     		} else {
     			out.close();
     		}
-		
 	    }
 	    finally {
 	        LicenseUtil.stopLiveMode();
@@ -1134,15 +1127,15 @@ public abstract class VelocityServlet extends HttpServlet {
 	}
 
 	/**
-	 * This method trys to build a cache key based on the information given in
-	 * the request - if the page can't be cached, or caching is not availbale
-	 * then return null
+	 * This method tries to build a cache key based on information given in the
+	 * request. Post requests are ignored and will not be cached.
 	 *
 	 * @param request
-	 * @return
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The page cache key if the page can be cached. If it can't be
+	 *         cached or caching is not available, returns <code>null</code>.
 	 */
 	private String getPageCacheKey(HttpServletRequest request) {
-		// no license
 		if (LicenseUtil.getLevel() < 100) {
 			return null;
 		}
@@ -1152,47 +1145,31 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 		// nocache passed either as a session var, as a request var or as a
 		// request attribute
-		if ("no".equals(request.getParameter("dotcache")) || "no".equals(request.getAttribute("dotcache"))
+		if ("no".equals(request.getParameter("dotcache"))
+				|| "no".equals(request.getAttribute("dotcache"))
 				|| "no".equals(request.getSession().getAttribute("dotcache"))) {
 			return null;
 		}
-
 		String idInode = (String) request.getAttribute("idInode");
-
-		User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-
+		User user = (com.liferay.portal.model.User) request.getSession()
+				.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 		HTMLPage page = null;
 		try {
-			page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user, true);
+			page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user,
+					true);
 		} catch (Exception e) {
-			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + idInode + " because " + e.getMessage());
+			Logger.error(HTMLPageWebAPI.class,
+					"unable to load live version of page: " + idInode
+							+ " because " + e.getMessage());
 			return null;
 		}
 		if (page == null || page.getCacheTTL() < 1) {
 			return null;
 		}
-
 		StringBuilder sb = new StringBuilder();
 		sb.append(page.getInode());
 		sb.append("_" + page.getModDate().getTime());
-
-		String userId = (user != null) ? user.getUserId() : "PUBLIC";
-		sb.append("_" + userId);
-
-		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-		sb.append("_" + language);
-
-		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
-		if (urlMap != null) {
-			sb.append("_" + urlMap);
-		}
-
-		if (UtilMethods.isSet(request.getQueryString())) {
-			sb.append("_" + request.getQueryString());
-		}
-
 		return sb.toString();
-
 	}
 
 }
