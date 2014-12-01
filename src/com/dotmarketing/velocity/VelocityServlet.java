@@ -361,7 +361,6 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-    		uri = UtilMethods.cleanURI(uri);
     		Host host = hostWebAPI.getCurrentHost(request);
     
     		// Map with all identifier inodes for a given uri.

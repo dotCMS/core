@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 public interface IHTMLPage extends Versionable,Permissionable {
     
     String getIdentifier();
+    void setIdentifier(String identifier);
    
     long getCacheTTL();
     void setCacheTTL(long cacheTTL);
