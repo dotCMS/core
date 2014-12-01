@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 /**
@@ -83,33 +84,33 @@ public abstract class BlockPageCache implements Cachable {
 	 * Adds a new entry to the cache.
 	 * 
 	 * @param page
-	 *            - The {@link HTMLPage} object.
+	 *            - The {@link IHTMLPage} object.
 	 * @param value
 	 *            - The String representation of the page.
 	 * @param pageChacheParams
 	 *            - Values used to cache a specific page.
 	 */
-	abstract public void add(HTMLPage page, String value,
+	abstract public void add(IHTMLPage page, String value,
 			PageCacheParameters pageChacheParams);
 
 	/**
 	 * Retrieves a page from the cache.
 	 * 
 	 * @param page
-	 *            - The {@link HTMLPage} object.
+	 *            - The {@link IHTMLPage} object.
 	 * @param pageChacheParams
 	 *            - Values used to retrieve a specific page from the cache.
 	 * @return
 	 */
-	abstract public String get(HTMLPage page,
+	abstract public String get(IHTMLPage page,
 			PageCacheParameters pageChacheParams);
 
 	/**
 	 * Removes a page from the cache, along with all of its versions.
 	 * 
 	 * @param page
-	 *            - The {@link HTMLPage} object.
+	 *            - The {@link IHTMLPage} object.
 	 */
-	abstract public void remove(HTMLPage page);
+	abstract public void remove(IHTMLPage page);
 
 }
