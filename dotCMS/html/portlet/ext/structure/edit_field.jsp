@@ -53,6 +53,8 @@ s2 += " class=\"form-text\" id=\"textAreaValues\">" + textArea + "</textarea>";
 
 
 	function addNewField(){
+		
+		dijit.byId("saveButton").set("disabled",true);
 
 		var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
 		href = href + "<portlet:param name='struts_action' value='/ext/structure/edit_field' />";
