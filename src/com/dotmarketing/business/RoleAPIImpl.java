@@ -215,7 +215,13 @@ public class RoleAPIImpl implements RoleAPI {
 		
 		return rf.save(role);
 	}
-
+	
+	public Role save(Role role, String existingId) throws DotDataException, DotStateException {
+		if(role==null) return null;
+		
+		return rf.save(role, existingId);
+	}
+	
 	public List<Role> findRootRoles() throws DotDataException {
 		return rf.findRootRoles();
 	}
