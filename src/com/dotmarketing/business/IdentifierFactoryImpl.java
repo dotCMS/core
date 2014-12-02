@@ -166,10 +166,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		}
 
 		HibernateUtil dh = new HibernateUtil(Identifier.class);
-		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1);
-		String assetName = uri.substring(uri.lastIndexOf("/") + 1);
+		String parentPath = uri.substring(0, uri.lastIndexOf("/") + 1).toLowerCase();
+		String assetName = uri.substring(uri.lastIndexOf("/") + 1).toLowerCase();
 
-		dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and asset_name = ? and host_inode = ?");
+		dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where lower(parent_path) = ? and lower(asset_name) = ? and host_inode = ?");
 		dh.setParam(parentPath);
 		dh.setParam(assetName);
 		dh.setParam(hostId);
@@ -187,8 +187,10 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 	    if(!parent_path.endsWith("/"))
 	        parent_path=parent_path+"/";
 	    
+	    parent_path = parent_path.toLowerCase();
+	    
         HibernateUtil dh = new HibernateUtil(Identifier.class);
-        dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where parent_path=? and host_inode = ?");
+        dh.setQuery("from identifier in class com.dotmarketing.beans.Identifier where lower(parent_path) = ? and host_inode = ?");
         dh.setParam(parent_path);
         dh.setParam(hostId);
         return (List<Identifier>) dh.list();
