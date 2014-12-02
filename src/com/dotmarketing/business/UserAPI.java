@@ -208,6 +208,28 @@ public interface UserAPI {
     public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException, DuplicateUserException;
 
     /**
+	 * Save or update in DB the user object. If <code>validatePassword</code> is
+	 * <code>true</code>, the specified password will be validated as per the
+	 * portal security settings (character set, length, recycling policy, etc.)
+	 * and then safely encrypted for database storage.
+	 * <p>
+	 * It's important to note that the password <b>must not be encrypted</b> for
+	 * the validation to perform correctly. Otherwise, it will be ignored.
+	 * 
+	 * @param userToSave
+	 *            - User to save
+	 * @param user
+	 *            - User to check permissions to save
+	 * @param validatePassword
+	 *            - If <code>true</code>, the specified password will be
+	 *            validated and then properly encrypted.
+	 * @param respectFrontEndRoles
+	 */
+	public void save(User userToSave, User user, boolean validatePassword,
+			boolean respectFrontEndRoles) throws DotDataException,
+			DotSecurityException, DuplicateUserException;
+
+    /**
      *
      * @param userToDelete
      * @param user
