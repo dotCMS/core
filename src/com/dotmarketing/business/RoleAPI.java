@@ -148,6 +148,15 @@ public interface RoleAPI {
 	public Role save(Role role) throws DotDataException, DotStateException;
 	
 	/**
+	 * Persist the given role in db with the given id
+	 * @param Role
+	 * @author Jason Tesser
+	 * @throws DotDataException 
+	 * @throws DotStateException
+	 */
+	public Role save(Role role, String existingId) throws DotDataException, DotStateException;
+	
+	/**
 	 * Find all top level roles excluding the role key RoleAPI.USERS_ROOT_ROLE_KEY (cms_users). 
 	 * The cms_users is the place holder for user roles and is not typically needed for the pull of root roles
 	 * this method will hit the database
