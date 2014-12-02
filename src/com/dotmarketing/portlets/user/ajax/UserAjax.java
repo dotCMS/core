@@ -98,6 +98,31 @@ public class UserAjax {
 		}
 	}
 
+	/**
+	 * Creates a new system user. Validations regarding password security
+	 * policies are enforced during the process.
+	 * 
+	 * @param userId
+	 *            - The internal user ID.
+	 * @param newUserID
+	 * @param firstName
+	 *            - The user's first name.
+	 * @param lastName
+	 *            - The user's last name.
+	 * @param email
+	 *            - The user's email address.
+	 * @param password
+	 *            - The user's password.
+	 * @return The user ID of the recently added user.
+	 * @throws DotDataException
+	 *             An error occurred during the user data update process.
+	 * @throws DotRuntimeException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotSecurityException
+	 *             The current user does not have permissions to edit user's
+	 *             data.
+	 */
 	public String addUser (String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		User modUser = getUser();
@@ -105,9 +130,9 @@ public class UserAjax {
 
 		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
+		boolean localTransaction = false;
 		try {
-
+			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
@@ -116,22 +141,54 @@ public class UserAjax {
 			User user = uAPI.createUser(userId, email);
 			user.setFirstName(firstName);
 			user.setLastName(lastName);
-			user.setPassword(Encryptor.digest(password));
-			uAPI.save(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			user.setPassword(password);
+			user.setPasswordEncrypted(false);
+			uAPI.save(user, uWebAPI.getLoggedInUser(request), true, !uWebAPI.isLoggedToBackend(request));
 
 			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
+			
+			if (localTransaction) {
+				HibernateUtil.commitTransaction();
+			}
 			return user.getUserId();
 
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			if (localTransaction) {
+				HibernateUtil.rollbackTransaction();
+			}
 			throw e;
 		}
 
 	}
 
+	/**
+	 * Updates the personal information of a user. Validations regarding
+	 * password security policies are also enforced during the process.
+	 * 
+	 * @param userId
+	 *            - The internal user ID.
+	 * @param newUserID
+	 * @param firstName
+	 *            - The user's first name.
+	 * @param lastName
+	 *            - The user's last name.
+	 * @param email
+	 *            - The user's email address.
+	 * @param password
+	 *            - The user's password.
+	 * @return The user ID of the recently saved user.
+	 * @throws DotRuntimeException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotDataException
+	 *             An error occurred during the user data update process.
+	 * @throws DotSecurityException
+	 *             The current user does not have permissions to edit user's
+	 *             data.
+	 */
 	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
 		DotDataException, DotSecurityException {
 
@@ -163,14 +220,18 @@ public class UserAjax {
 			userToSave.setLastName(lastName);
 			if(email != null)
 				userToSave.setEmailAddress(email);
-			if(password != null) {
-				userToSave.setPassword(Encryptor.digest(password));
+			boolean validatePassword = false;
+			if (password != null) {
+				// Password has changed, so it has to be validated
+				userToSave.setPassword(password);
+				userToSave.setPasswordEncrypted(false);
+				validatePassword = true;
 			}
 
 			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
-				uAPI.save(userToSave, uAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+				uAPI.save(userToSave, uAPI.getSystemUser(), validatePassword, !uWebAPI.isLoggedToBackend(request));
 			}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
-				uAPI.save(userToSave, loggedInUser, !uWebAPI.isLoggedToBackend(request));
+				uAPI.save(userToSave, loggedInUser, validatePassword, !uWebAPI.isLoggedToBackend(request));
 			}else{
 				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
 			}

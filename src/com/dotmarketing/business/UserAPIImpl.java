@@ -4,12 +4,18 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.PortalException;
+import com.liferay.portal.SystemException;
+import com.liferay.portal.ejb.PasswordTrackerLocalManager;
+import com.liferay.portal.ejb.PasswordTrackerLocalManagerFactory;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
@@ -196,14 +202,54 @@ public class UserAPIImpl implements UserAPI {
 	}
 
 	public void save(User userToSave, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
-		if (userToSave.getUserId() == null) {
+		String userId = userToSave.getUserId();
+		if (userId == null) {
 			throw new DotDataException("Can't save a user without a userId");
 		}
-		if(!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,APILocator.getUserAPI().getSystemUser(), false), PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)){
-			throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
+		if (!perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,
+				APILocator.getUserAPI().getSystemUser(), false),
+				PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
+			throw new DotSecurityException(
+					"User doesn't have permission to save the user which is trying to be saved");
 		}
 		uf.saveUser(userToSave);
+		PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
+				.getManager();
+		try {
+			if (passwordTracker.isPasswordRecyclingActive()
+					&& StringUtils.isNotBlank(userToSave.getPassword())) {
+				passwordTracker.trackPassword(userId, userToSave.getPassword());
+			}
+		} catch (PortalException | SystemException e) {
+			SecurityLogger.logInfo(UserAPIImpl.class, "Password for user ["
+					+ userId + "] could not be added for tracking.");
+		}
 		APILocator.getRoleAPI().getUserRole(userToSave);
+	}
+
+	@Override
+	public void save(User userToSave, User user, boolean validatePassword,
+			boolean respectFrontEndRoles) throws DotDataException,
+			DotSecurityException, DuplicateUserException {
+		String pwd = userToSave.getPassword();
+		if (validatePassword && !userToSave.isPasswordEncrypted()) {
+			PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
+					.getManager();
+			try {
+				if (!passwordTracker.isValidPassword(userToSave.getUserId(),
+						pwd)) {
+					// Get the first validation error and display it
+					throw new DotDataException(passwordTracker
+							.getValidationErrors().get(0).toString());
+				}
+			} catch (PortalException | SystemException e) {
+				throw new DotDataException(
+						"An error occurred during the save process.");
+			}
+			userToSave.setPassword(Encryptor.digest(pwd));
+			userToSave.setPasswordEncrypted(true);
+		}
+		save(userToSave, user, respectFrontEndRoles);
 	}
 
 	public void delete(User userToDelete, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
