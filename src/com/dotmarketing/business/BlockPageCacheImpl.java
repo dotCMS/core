@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.LicenseUtil;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.Logger;
 
 /**
@@ -69,7 +69,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 	}
 
 	@Override
-	public void add(HTMLPage page, String value,
+	public void add(IHTMLPage page, String value,
 			PageCacheParameters pageChacheParams) {
 		if (page == null || pageChacheParams == null
 				|| pageChacheParams == null) {
@@ -116,7 +116,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 	}
 
 	@Override
-	public String get(HTMLPage page, PageCacheParameters pageChacheParams) {
+	public String get(IHTMLPage page, PageCacheParameters pageChacheParams) {
 		if (!canCache || page == null || pageChacheParams == null
 				|| pageChacheParams == null) {
 			return null;
@@ -159,7 +159,7 @@ public class BlockPageCacheImpl extends BlockPageCache {
 	}
 
 	@Override
-	public void remove(HTMLPage page) {
+	public void remove(IHTMLPage page) {
 		try {
 			StringBuilder key = new StringBuilder();
 			key.append(page.getInode());
