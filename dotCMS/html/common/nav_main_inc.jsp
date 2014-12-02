@@ -47,7 +47,7 @@
 
 
                                                         if("9".equals(portletIDs.get(i))){
-                                                                request.setAttribute("licenseManagerPortletUrl", linkHREF);
+                                                                request.setAttribute("licenseManagerPortletUrl", linkHREF + "&tab=licenseTab");
                                                         }
                                                         try{
                                                         	Object obj = Class.forName(p.getPortletClass()).newInstance();
