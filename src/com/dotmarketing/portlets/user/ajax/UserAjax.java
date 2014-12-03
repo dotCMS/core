@@ -132,9 +132,35 @@ public class UserAjax {
 
 	}
 
-	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
+	/**
+	 * Updates the personal information of a user. Validations regarding
+	 * password security policies are also enforced during the process.
+	 * 
+	 * @param userId
+	 *            - The internal user ID.
+	 * @param newUserID
+	 * @param firstName
+	 *            - The user's first name.
+	 * @param lastName
+	 *            - The user's last name.
+	 * @param email
+	 *            - The user's email address.
+	 * @param password
+	 *            - The user's password.
+	 * @return A {@link Map} with useful status information regarding the recent
+	 *         changes.
+	 * @throws DotRuntimeException
+	 * @throws PortalException
+	 * @throws SystemException
+	 * @throws DotDataException
+	 *             An error occurred during the user data update process.
+	 * @throws DotSecurityException
+	 *             The current user does not have permissions to edit user's
+	 *             data.
+	 */
+	public Map<String, Object> updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
 		DotDataException, DotSecurityException {
-
+		Map<String, Object> resultMap = null;
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
 
@@ -163,8 +189,11 @@ public class UserAjax {
 			userToSave.setLastName(lastName);
 			if(email != null)
 				userToSave.setEmailAddress(email);
+			boolean reauthenticationRequired = false;
 			if(password != null) {
 				userToSave.setPassword(Encryptor.digest(password));
+				// Re-authentication might be required
+				reauthenticationRequired = true;
 			}
 
 			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
@@ -177,9 +206,10 @@ public class UserAjax {
 
 			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
-
-			return userToSave.getUserId();
+			resultMap = new HashMap<String, Object>();
+			resultMap.put("userID", userToSave.getUserId());
+			resultMap.put("reauthenticate", reauthenticationRequired);
+			return resultMap;
 
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());

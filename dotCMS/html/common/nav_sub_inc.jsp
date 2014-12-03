@@ -391,13 +391,17 @@ dojo.require("dojo.cookie");
 
     }
 
-    //Callback from the server to confirm the user saved
-    function saveUserCallbackMyAccount (userId) {
-        if(userId) {
+    /* Callback from the server to confirm the user saved */
+    function saveUserCallbackMyAccount(status) {
+    	if (status.userID) {
             userChangedMyAccount = false;
             passwordChangedMyAccount = false;
             alert(userSavedMsg);
-            editUserMyAccount(userId);
+            if (status.reauthenticate) {
+            	window.location = "/c/portal/logout?referer=/c";
+            } else {
+            	editUserMyAccount(userId);
+            }
         } else {
             alert(userSaveFailedMsg);
         }
@@ -414,7 +418,7 @@ dojo.require("dojo.cookie");
         } else if(exception.javaClassName == 'com.dotmarketing.exception.DotSecurityException'){
                 alert(doNotHavePermissionsMsg);
             }else {
-            alert("Server error: " + exception);
+            alert("Server error: " + exception.message);
         }
     }
 
