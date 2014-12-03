@@ -461,10 +461,13 @@
 
                         if(data.result=="OK") {
                             dojo.byId("wireResult").innerHTML = '<%= LanguageUtil.get(pageContext, "configuration_cluster_wiring_success") %>.';
-                            dojo.byId("wireResult").style = 'color:green';
+                            dojo.byId("wireResult").style.color = 'green';
+                            dojo.byId("showErrorDetailButton").hide();
+                            dojo.byId("hideErrorDetailButton").hide();
+                            dojo.byId("errorDetail").innerHTML = '';
                         } else if(data.result.indexOf('ERROR')>-1) {
                             dojo.byId("wireResult").innerHTML = data.result;
-                            dojo.byId("wireResult").style = 'color:red';
+                            dojo.byId("wireResult").style.color = 'red';
                             dojo.byId("showErrorDetailButton").style.display = '';
                             dijit.byId('dialogWireButton').setDisabled(false);
                             dojo.byId("errorDetail").innerHTML = data.detail;
