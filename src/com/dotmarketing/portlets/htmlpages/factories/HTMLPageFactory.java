@@ -27,6 +27,7 @@ import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -42,6 +43,7 @@ import com.liferay.portal.struts.ActionException;
  *
  * @author  will
  */
+@Deprecated
 public class HTMLPageFactory {
 	
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -478,7 +480,7 @@ public class HTMLPageFactory {
     	tempPage.copy(page);
     	// sets filename for this new file
     	
-    	String newNamePage = newName + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+    	String newNamePage = newName ;
     	
     	tempPage.setPageUrl(newNamePage);
     	tempPage.setFriendlyName(newNamePage);

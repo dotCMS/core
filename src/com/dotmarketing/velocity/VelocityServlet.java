@@ -64,11 +64,12 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -84,6 +85,7 @@ import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.HTMLPageWebAPI;
+import com.dotmarketing.viewtools.RequestWrapper;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -122,17 +124,29 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private String CHARSET = null;
 
-	private String VELOCITY_HTMLPAGE_EXTENSION = null;
+	private String VELOCITY_HTMLPAGE_EXTENSION = "dotpage";
 
 
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
 
-	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
+		
+		final String uri =URLDecoder.decode(
+				(req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE)!=null) 
+					? (String) req.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE) 
+							: req.getRequestURI()
+				, "UTF-8");
+	
+		
 
+        RequestWrapper request  = new RequestWrapper( req );
+        request.setRequestUri(uri);
+		
 
-
+        
+        
 		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -153,40 +167,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 		try {
 
-			// Check if the uri is a physical file. Fix for the cases when the
-			// site configure VELOCITY_PAGE_EXTENSION as htm, html or any known
-			// extension.
-			// Example:
-			// /html/js/tinymce/jscripts/tiny_mce/plugins/advlink/link.htm
-			String uri = request.getRequestURI();
-			uri = URLDecoder.decode(uri, "UTF-8");
-			File file = new File(FileUtil.getRealPath(uri));
-			if (file.exists()) {
-				if(file.isDirectory()){
-					file = new File(file.getAbsolutePath() + File.separator + "index." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"));
-				}
-				FileInputStream fileIS = new FileInputStream(file);
-				ServletOutputStream servletOS = response.getOutputStream();
-				int b;
-				for (; -1 < (b = fileIS.read());) {
-					servletOS.write(b);
-				}
-				fileIS.close();
-				servletOS.flush();
-				servletOS.close();
+
+			if(uri==null){
+				response.sendError(500, "VelocityServlet called without running through the CMS Filter");
+				Logger.error(this.getClass(), "You cannot call the VelocityServlet without passing the requested url via a  requestAttribute called  " + CMSFilter.CMS_FILTER_URI_OVERRIDE);
 				return;
 			}
 
-			// If we are at a directory, e.g. /home
-			// we need to redirect to /home/
-			String forwardFor = (String) request.getRequestURL().toString();
-			if (request.getAttribute(Globals.MAPPING_KEY) == null && forwardFor != null && !forwardFor.endsWith("/")
-					&& !forwardFor.endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
-				// The query string parameters should be preserved as well
-				String queryString = request.getQueryString();
-				response.sendRedirect(SecurityUtils.stripReferer(request, forwardFor + "/" + (UtilMethods.isSet(queryString) ? "?" + queryString : "")));
-				return;
-			}
+
+
 
 			HttpSession session = request.getSession();
 			boolean timemachine=session.getAttribute("tm_date")!=null;
@@ -200,7 +189,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 			// ### VALIDATE ARCHIVE ###
-			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request)) {
+			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request, uri)) {
 				PREVIEW_MODE = true;
 				EDIT_MODE = false;
 				request.setAttribute("archive", true);
@@ -314,19 +303,28 @@ public abstract class VelocityServlet extends HttpServlet {
 		Context context = VelocityUtil.getWebContext(request, response);
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-		uri = UtilMethods.cleanURI(uri);
+
 
 		Host host = hostWebAPI.getCurrentHost(request);
 
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 		request.setAttribute("idInode", id.getInode());
 
-		HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI()
-				.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
+		IHTMLPage htmlPage; 
+		if(id.getAssetType().equals("contentlet")) {
+		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+		                APILocator.getContentletAPI()
+		                 .findContentletByIdentifier(id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+		}
+		else {
+    		htmlPage = (IHTMLPage) APILocator.getVersionableAPI()
+    				.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+		}
+		
 		VelocityUtil.makeBackendContext(context, htmlPage, "", id.getURI(), request, true, false, false, host);
 
-		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(htmlPageAPI.getTemplateForWorkingHTMLPage(htmlPage),
+		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
+		        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),
 				PERMISSION_WRITE, backendUser);
 		context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
@@ -363,7 +361,6 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-    		uri = UtilMethods.cleanURI(uri);
     		Host host = hostWebAPI.getCurrentHost(request);
     
     		// Map with all identifier inodes for a given uri.
@@ -412,10 +409,16 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
-    		HTMLPage page = null;
+    		IHTMLPage page = null;
     		try {
-    			// we get the page and check permissions below
-    			page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+    		    if(ident.getAssetType().equals("contentlet")) {
+    		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+    		                APILocator.getContentletAPI().findContentletByIdentifier(
+    		                  ident.getId(), true, 0, APILocator.getUserAPI().getSystemUser(), false));
+    		    }
+    		    else {
+    		        page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
+    		    }
     		} catch (Exception e) {
     			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + ident.getInode() + " because " + e.getMessage());
     			return;
@@ -501,8 +504,8 @@ public abstract class VelocityServlet extends HttpServlet {
     
     		try {
     			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
-    		} catch (ParseErrorException e) {
-    			// out.append(e.getMessage());
+    		} catch (Throwable e) {
+    			Logger.warn(this, "can't do live mode merge", e);
     		}
     
     		context = null;
@@ -528,7 +531,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-		uri = UtilMethods.cleanURI(uri);
+
 
 		Host host = hostWebAPI.getCurrentHost(request);
 
@@ -556,7 +559,15 @@ public abstract class VelocityServlet extends HttpServlet {
 		response.setContentType(CHARSET);
 		Context context = VelocityUtil.getWebContext(request, response);
 
-		HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
+		IHTMLPage htmlPage; 
+		if(id.getAssetType().equals("contentlet")) {
+		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                         APILocator.getContentletAPI().findContentletByIdentifier(
+                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+		}
+		else {
+		    htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
+		}
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -571,12 +582,17 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "REMOTE_PUBLISH_HTMLPAGE_PERMISSION", new Boolean( hasRemotePublishPermOverHTMLPage ) );
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(htmlPageAPI.getTemplateForWorkingHTMLPage(htmlPage),
+        
+        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
+        context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
+        
+		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
+		        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),
 				PERMISSION_WRITE, user, true);
 		context.put("EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate);
 
-		com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory
-				.getHTMLPageTemplate(htmlPage, true);
+		com.dotmarketing.portlets.templates.model.Template cmsTemplate = 
+		                        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true);
 		Identifier templateIdentifier = APILocator.getIdentifierAPI().find(cmsTemplate);
 
 		Logger.debug(VelocityServlet.class, "VELOCITY TEMPLATE INODE=" + cmsTemplate.getInode());
@@ -584,6 +600,13 @@ public abstract class VelocityServlet extends HttpServlet {
 		VelocityUtil.makeBackendContext(context, htmlPage, cmsTemplate.getInode(), id.getURI(), request, true, false, true, host);
 		context.put("previewPage", "2");
 		context.put("livePage", "0");
+		
+
+			
+		context.put("dotPageContent", htmlPage);
+		
+		
+		
 		// get the containers for the page and stick them in context
 		List<Container> containers = APILocator.getTemplateAPI().getContainersInTemplate(cmsTemplate,
 				APILocator.getUserAPI().getSystemUser(),false);
@@ -757,7 +780,6 @@ public abstract class VelocityServlet extends HttpServlet {
     protected void doEditMode ( HttpServletRequest request, HttpServletResponse response ) throws Exception {
 
         String uri = request.getRequestURI();
-        uri = UtilMethods.cleanURI( uri );
 
         Host host = hostWebAPI.getCurrentHost( request );
 
@@ -784,8 +806,16 @@ public abstract class VelocityServlet extends HttpServlet {
         response.setContentType( CHARSET );
         Context context = VelocityUtil.getWebContext( request, response );
 
-        HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion( id, APILocator.getUserAPI().getSystemUser(), false );
-        HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
+        IHTMLPage htmlPage; 
+        if(id.getAssetType().equals("contentlet")) {
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                         APILocator.getContentletAPI().findContentletByIdentifier(
+                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+        }
+        else {
+            htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
+                    APILocator.getUserAPI().getSystemUser(), false);
+        }
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
         // to check user has permission to write on this page
@@ -802,11 +832,18 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean(hasEndPoints) );
         context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-
-        boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission( htmlPageAPI.getTemplateForWorkingHTMLPage( htmlPage ), PERMISSION_WRITE, backendUser ) && portletAPI.hasTemplateManagerRights( backendUser );
+        
+        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
+        context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
+        
+        boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission( 
+                APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true), 
+                PERMISSION_WRITE, backendUser ) 
+                && portletAPI.hasTemplateManagerRights( backendUser );
         context.put( "EDIT_TEMPLATE_PERMISSION", canUserWriteOnTemplate );
 
-        com.dotmarketing.portlets.templates.model.Template cmsTemplate = com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory.getHTMLPageTemplate( htmlPage, true );
+        com.dotmarketing.portlets.templates.model.Template cmsTemplate = 
+                APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true);
         //issue- 1775 If User doesn't have edit permission on HTML Pages
        /* if(!hasWritePermOverHTMLPage){
         	doPreviewMode(request, response);
@@ -1034,9 +1071,9 @@ public abstract class VelocityServlet extends HttpServlet {
 	// THE WEB.XML FILE
 	protected abstract void _setClientVariablesOnContext(HttpServletRequest request, ChainedContext context);
 
-	private boolean isArchive(HttpServletRequest request) throws PortalException, SystemException, DotDataException, DotSecurityException {
-		String uri = request.getRequestURI();
-		uri = UtilMethods.cleanURI(uri);
+	private boolean isArchive(HttpServletRequest request, String uri) throws PortalException, SystemException, DotDataException, DotSecurityException {
+
+
 
 		Host host = null;
 		String hostId = "";
@@ -1063,11 +1100,19 @@ public abstract class VelocityServlet extends HttpServlet {
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 
 		request.setAttribute("idInode", String.valueOf(id.getInode()));
-		HTMLPage htmlPage = (HTMLPage) APILocator.getVersionableAPI()
-				.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+		
+		IHTMLPage htmlPage; 
+        if(id.getAssetType().equals("contentlet")) {
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                         APILocator.getContentletAPI().findContentletByIdentifier(
+                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+        }
+        else {
+            htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
+                    APILocator.getUserAPI().getSystemUser(), false);
+        }
 
-		boolean isArchived = htmlPage.isDeleted();
-		return isArchived;
+		return htmlPage.isArchived();
 	}
 
 	/**
@@ -1151,12 +1196,26 @@ public abstract class VelocityServlet extends HttpServlet {
 			return null;
 		}
 		String idInode = (String) request.getAttribute("idInode");
-		User user = (com.liferay.portal.model.User) request.getSession()
-				.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-		HTMLPage page = null;
+		Identifier id;
+		
 		try {
-			page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user,
-					true);
+            id=APILocator.getIdentifierAPI().find(idInode);
+        } catch (DotDataException e1) {
+            Logger.warn(this, "can't load page identifier",e1);
+            return null;
+        }
+		
+		User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+
+		IHTMLPage page = null;
+		try {
+		    if(id.getAssetType().equals("contentlet")) {
+		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
+		                APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, 0, user, true));
+		    }
+		    else {
+		        page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user, true);
+		    }
 		} catch (Exception e) {
 			Logger.error(HTMLPageWebAPI.class,
 					"unable to load live version of page: " + idInode

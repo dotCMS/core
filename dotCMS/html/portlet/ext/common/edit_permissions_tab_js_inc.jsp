@@ -916,7 +916,15 @@
 			role["virtual-links-permission-style"] = 'display: none'
 		} else if(assetType == 'com.dotmarketing.portlets.htmlpages.model.HTMLPage') {
 			role["virtual-links-permission-style"] = 'display: none'
-		} else {
+		} 
+		<% if(UtilMethods.isSet(contentletAux) && contentletAux.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {%>
+        else if(assetType == contentClassName) {
+            role["virtual-links-permission-style"] = 'display: none';
+            // hola mundo
+        }
+     <% } %>
+		
+		else {
 			role["add-children-permission-style"] = 'display: none'
 			role["virtual-links-permission-style"] = 'display: none'
 		}

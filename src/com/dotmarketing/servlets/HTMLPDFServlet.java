@@ -302,11 +302,11 @@ public class HTMLPDFServlet extends VelocityServlet {
 					}
 				}
 				if (!external) {
-					String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-					if (!pointer.endsWith(ext)) {
+
+					if (!pointer.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
 						if (!pointer.endsWith("/"))
 							pointer += "/";
-						pointer += "index." + ext;
+						pointer += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 
 					}
 					pageID = pointer;
@@ -383,24 +383,19 @@ public class HTMLPDFServlet extends VelocityServlet {
 					}
 					pageID = "/"
 							+ path[1]
-							+ "/index."
-							+ Config
-									.getStringProperty("VELOCITY_PAGE_EXTENSION");
+							+ "/"
+							+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 					uri=pageID;
 
 				}
 			}
 
 			if (pageID.endsWith("/")) {
-				uri = pageID + "index."
-						+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+				uri = pageID + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 			} else {
-				if (!pageID.endsWith("."
-						+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION"))) {
+				if (!pageID.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
 					uri = pageID
-							+ "/index."
-							+ Config
-									.getStringProperty("VELOCITY_PAGE_EXTENSION");
+							+ "/" +Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 				}
 			}
 			try {

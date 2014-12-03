@@ -113,12 +113,19 @@
     function addPage(){
         document.getElementById('htmlPage').value='0';
         document.getElementById('cmd').value="newHTMLPage";
+        document.getElementById('HTMLPageType').value="${HTMLPAGE_ASSET_STRUCTURE_TYPE}";
         document.getElementById('submitParent').submit();
     }
 
     function editPage(){
         document.getElementById('htmlPage').value='$htmlPageInode';
         document.getElementById('cmd').value="editHTMLPage";
+        document.getElementById('submitParent').submit();
+    }
+    
+    function migrate() {
+        document.getElementById('htmlPage').value='$htmlPageInode';
+        document.getElementById('cmd').value="migrate";
         document.getElementById('submitParent').submit();
     }
 
@@ -289,6 +296,14 @@
             <a href="javascript: addPage();">
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
+			
+			#if(! $HTMLPAGE_IS_CONTENT)
+			
+			<a href="javascript: migrate();">
+                <span class="repeatIcon"></span> $languagewebapi.getFromUserLanguage("modes.Migrate-To-Content")
+            </a>
+            
+            #end
 
         </div>
 
@@ -487,6 +502,7 @@
     <input type="hidden" name="package" id="package" value=""><BR>
     <input type="hidden" name="category" id="category" value=""><BR>
     <input type="hidden" name="parentFolder" id="parentFolder" value=""><BR>
+    <input type="hidden" name="HTMLPageType" id="HTMLPageType" value=""><BR>
 </form>
 </div>
 

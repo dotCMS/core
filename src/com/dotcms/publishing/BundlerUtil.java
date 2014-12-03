@@ -8,10 +8,23 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
@@ -152,4 +165,62 @@ public class BundlerUtil {
 		}
 
 	}
+    
+    public static void publisherConfigToLuceneQuery(StringBuilder bob, PublisherConfig config) {
+        
+        if(config.getExcludePatterns() != null && config.getExcludePatterns().size()>0){
+            bob.append("-(" );
+            for (String p : config.getExcludePatterns()) {
+                if(!UtilMethods.isSet(p)){
+                    continue;
+                }
+                //p = p.replace(" ", "+");
+                bob.append("path:").append(p).append(" ");
+            }
+            bob.append(")" );
+        }else if(config.getIncludePatterns() != null && config.getIncludePatterns().size()>0){
+            bob.append("+(" );
+            for (String p : config.getIncludePatterns()) {
+                if(!UtilMethods.isSet(p)){
+                    continue;
+                }
+                //p = p.replace(" ", "+");
+                bob.append("path:").append(p).append(" ");
+            }
+            bob.append(")" );
+        }
+        
+        if(config.isIncremental()) {
+            Calendar cal = Calendar.getInstance();
+            cal.set(Calendar.YEAR, 1900);
+            
+            Date start;
+            Date end;
+            
+            if(config.getStartDate() != null){
+                start = config.getStartDate();
+            } else {
+                start = cal.getTime();                
+            }
+            
+            if(config.getEndDate() != null){
+                end = config.getEndDate();
+            } else {
+                end = cal.getTime();
+            }
+            
+                        
+            bob.append(" +versionTs:[").append(ESMappingAPIImpl.datetimeFormat.format(start)) 
+                    .append(" TO ").append(ESMappingAPIImpl.datetimeFormat.format(end)).append("] ");
+        }
+        
+        
+        if(config.getHosts() != null && config.getHosts().size() > 0){
+            bob.append(" +(" );
+            for(Host h : config.getHosts()){
+                bob.append("conhost:").append(h.getIdentifier()).append(" ");
+            }
+            bob.append(" ) " );
+        }
+    }
 }

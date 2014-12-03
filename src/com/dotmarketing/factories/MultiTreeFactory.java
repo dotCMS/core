@@ -14,7 +14,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 /**
@@ -155,7 +156,7 @@ public class MultiTreeFactory {
 		//return new java.util.ArrayList();
 	}
 	@SuppressWarnings("unchecked")
-	public static java.util.List<MultiTree> getMultiTree(HTMLPage htmlPage, Container container) {
+	public static java.util.List<MultiTree> getMultiTree(IHTMLPage htmlPage, Container container) {
 		try {
 			HibernateUtil dh = new HibernateUtil(MultiTree.class);
 			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? and parent2 = ? ");
@@ -215,9 +216,17 @@ public class MultiTreeFactory {
 		try {
 			HibernateUtil.saveOrUpdate(o);
 			
-			VersionInfo htmlVI = APILocator.getVersionableAPI().getVersionInfo(o.getParent1());
-			htmlVI.setVersionTs(new Date());
-			APILocator.getVersionableAPI().saveVersionInfo(htmlVI);
+			Identifier ident=APILocator.getIdentifierAPI().find(o.getParent1());
+			if(ident.getAssetType().equals("contentlet")) {
+			    ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+			    vi.setVersionTs(new Date());
+			    APILocator.getVersionableAPI().saveContentletVersionInfo(vi);
+			}
+			else {
+    			VersionInfo htmlVI = APILocator.getVersionableAPI().getVersionInfo(o.getParent1());
+    			htmlVI.setVersionTs(new Date());
+    			APILocator.getVersionableAPI().saveVersionInfo(htmlVI);
+			}
 		} catch (DotHibernateException e) {
 			Logger.error(MultiTreeFactory.class, "saveMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.getMessage());
