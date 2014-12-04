@@ -1,6 +1,6 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
 <div id="${id}">
-	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" style="height: 500px;width: 1000px;">
+	<div dojoAttachPoint="dialog" dojoType="dijit.Dialog" style="height: 500px;width: 1000px;" dojoAttachEvent='onHide:_clearSearch'>
 		<form dojoAttachPoint="search_form" onsubmit="return false;" id="searchForm">
 				<div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" style="height:450px;" dojoAttachPoint="borderContainer" class="shadowBox headerBox">
 
