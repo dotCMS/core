@@ -252,16 +252,19 @@
 
             initPanel : function(){
                 var tableHeader = dojo.position("actionPanelTableHeader",true);
-                var scroll = window.pageYOffset ? window.pageYOffset : document.documentElement.scrollTop ? document.documentElement.scrollTop : document.body.scrollTop;
-                var bottomOfTheHeader = tableHeader.h + tableHeader.y -scroll;
-
+                var panelPage = dojo.position(document.getElementById("actionPanel").parentNode,true);
+                var panelMinHeight = document.getElementById("actionPanel").parentNode.style.minHeight;
                 dojo.style("actionPanel", "width", tableHeader.w -1 + "px");
-
+                if(panelPage.h < panelMinHeight){
+                    dojo.style("actionPanel", "height", panelMinHeight - tableHeader.h + "px");
+                }
+                else{
+                    dojo.style("actionPanel", "height", panelPage.h - tableHeader.h + "px");
+                }
                 require(["dojo/window"], function(win){
                        var vs = win.getBox();
-                        dojo.style("actionPanelContent", "height", vs.h - bottomOfTheHeader + 50 + "px");
+                        dojo.style("actionPanelContent", "height", panelPage.h - tableHeader.h + "px");
                     });
-
                 actionPanelTable.placeActionPanel();
             }
         });
