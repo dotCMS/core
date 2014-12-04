@@ -1506,7 +1506,7 @@ public class IntegrityUtil {
 		    CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
 
 		 	//Fixing by SQL queries
-		    dc.setSQL("INSERT into identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+		    dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
 		    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
 		    		+ "FROM identifier WHERE id = ?");
 		    dc.addParam(newHtmlPageIdentifier);
