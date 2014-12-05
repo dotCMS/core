@@ -104,7 +104,9 @@ public class CmsUrlUtil {
 
 	public boolean isFolder(String uri, Host host) {
 		Identifier id;
-		
+		if("/".equals(uri)){
+			return true;
+		}
 		while(uri.endsWith("/") && uri.length()>1){
 			uri = uri.substring(0,uri.length()-1);
 		}
@@ -127,12 +129,18 @@ public class CmsUrlUtil {
 	}
 
 	public boolean isVanityUrl(String uri, Host host) {
-		if("/".equals(uri)){
-			return true;
-		}
+
 		boolean isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
 		if (!isVanityURL) {
 			isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(uri));
+		}
+		// Still support legacy cmsHomePage
+		if("/".equals(uri) && !isVanityURL){
+			uri = "/cmsHomePage";
+			isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
+			if (!isVanityURL) {
+				isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(uri));
+			}
 		}
 		return isVanityURL;
 
