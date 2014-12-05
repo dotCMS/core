@@ -85,7 +85,7 @@ public class UserFactoryLiferayImpl extends UserFactory {
 		
 		try {
 			defaultUser = APILocator.getUserAPI().getDefaultUser();
-			Long.toString(CounterManagerUtil.increment(User.class.getName() + "." + companyId));
+			CounterManagerUtil.increment(User.class.getName() + "." + companyId);
 		} catch (Exception e) {
 			throw new DotDataException("Can't get default user");
 		}		
