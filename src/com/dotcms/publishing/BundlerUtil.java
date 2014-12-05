@@ -118,7 +118,7 @@ public class BundlerUtil {
         if ( removeFirst && f.exists() )
             f.delete();
 
-        XStream xstream = new XStream( new DomDriver("UTF8") );
+        XStream xstream = new XStream( new DomDriver("UTF-8") );
 
         try {
             if ( !f.exists() ){
