@@ -591,9 +591,10 @@ var cmsfile=null;
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if(fileExt == '<%= extension %>'){
 			document.getElementById(wysiwyg_field_name).value = file.pageURI;
-		}else{
+		}else {
 
 			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+		}
 	}
 
 	function replaceAll(find, replace, str) {
