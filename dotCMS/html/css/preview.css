@@ -64,7 +64,7 @@
 	-webkit-box-shadow: 5px 5px 3px #888;
 	box-shadow: 5px 5px 3px #888;
 }
-.dotContentletInlineEdit span{height:17px;width:24px;border:1px solid #9ab2cf;background-color:#fff;display:block;padding: 5px 5px 5px 25px;float:left;cursor:hand;}
+.dotContentletInlineEdit span{height:27px;width:24px;border:1px solid #9ab2cf;background-color:#fff;display:block;padding: 5px 5px 5px 25px;float:left;cursor:hand;}
 
 .dotInlineSave{background-image: url(/html/images/icons/disk.png); height:18px;width:24px;border:1px solid #9ab2cf; background-repeat: no-repeat; background-position: center 5px;}
 .dotInlineSave:hover{color:#5981B1;border:1px solid #5981B1;background-color: #D7E6FE;cursor:pointer;}
