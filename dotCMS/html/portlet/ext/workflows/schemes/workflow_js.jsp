@@ -814,8 +814,15 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 
 	addActionClass : function ( clazz, myName){
 		var actionId = dojo.byId("actionId").value;
+
 		var xhrArgs = {
-				url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax?cmd=add&actionId=" +actionId + "&actionletClass=" + clazz + "&actionletName=" + encodeURIComponent(myName),
+				url: "/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfActionClassAjax",
+				content: {
+			      cmd: "add",
+			      actionId: actionId,
+			      actionletClass: clazz,
+			      actionletName: myName
+			    },
 				handle : function(dataOrError, ioArgs) {
 					if (dojo.isString(dataOrError)) {
 						if (dataOrError.indexOf("FAILURE") == 0) {
@@ -836,7 +843,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
 					}
 				}
 			};
-			dojo.xhrPut(xhrArgs);
+			dojo.xhrPost(xhrArgs);
 
 
 	},
