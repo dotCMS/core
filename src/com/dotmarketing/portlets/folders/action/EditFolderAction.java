@@ -103,6 +103,8 @@ public class EditFolderAction extends DotPortletAction {
 
 		} catch (Exception ae) {
 			_handleException(ae, req);
+			SessionMessages.add(req, "message", "message.folder.refresh");
+			_sendToReferral(req, res, referer);
 			return;
 		}
 
