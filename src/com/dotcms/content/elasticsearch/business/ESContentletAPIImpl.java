@@ -3561,6 +3561,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                    throw cve;
 	                }
+	            }else{
+	                DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.url.required");
+	                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+	                throw cve;
 	            }
 	            UtilMethods.validateFileName(url);
 
