@@ -66,31 +66,38 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         field.setVelocityVarName(URL_FIELD);
         FieldFactory.saveField(field);
         
-        field = new Field(TEMPLATE_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, false, true, 4, 
+        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 4, 
+                "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')", "", "^[0-9]+$", true, false, true);
+        field.setVelocityVarName(CACHE_TTL_FIELD);
+        FieldFactory.saveField(field);
+        
+        
+        field = new Field(TEMPLATE_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, false, true, 5, 
                 "$velutil.mergeTemplate('/static/htmlpage_assets/template_custom_field.vtl')", "", "", true, false, true);
         field.setVelocityVarName(TEMPLATE_FIELD);
         FieldFactory.saveField(field);
         
-        field = new Field(ADVANCED_PROPERTIES_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 5, "", "", "", false, false, false);
+        
+        
+        
+        
+        field = new Field(ADVANCED_PROPERTIES_TAB_NAME, Field.FieldType.TAB_DIVIDER, Field.DataType.SECTION_DIVIDER, structure, false, false, false, 6, "", "", "", false, false, false);
         field.setVelocityVarName(ADVANCED_PROPERTIES_TAB);
         FieldFactory.saveField(field);
         
-        field = new Field(SHOW_ON_MENU_FIELD_NAME, Field.FieldType.CHECKBOX, Field.DataType.TEXT, structure, false, false, true, 6, "|true", "false", "", true, false, false);
+        field = new Field(SHOW_ON_MENU_FIELD_NAME, Field.FieldType.CHECKBOX, Field.DataType.TEXT, structure, false, false, true, 7, "|true", "false", "", true, false, false);
         field.setVelocityVarName(SHOW_ON_MENU_FIELD);
         FieldFactory.saveField(field);
 
-        field = new Field(SORT_ORDER_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.INTEGER, structure, true, false, true, 7, "", "0", "", true, false, true);
+        field = new Field(SORT_ORDER_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.INTEGER, structure, true, false, true, 8, "", "0", "", true, false, true);
         field.setVelocityVarName(SORT_ORDER_FIELD);
         FieldFactory.saveField(field);
         
-        field = new Field(FRIENDLY_NAME_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, false, true, 8, "", "", "", true, false, true);
+        field = new Field(FRIENDLY_NAME_FIELD_NAME, Field.FieldType.TEXT, Field.DataType.TEXT, structure, false, false, true, 9, "", "", "", true, false, true);
         field.setVelocityVarName(FRIENDLY_NAME_FIELD);
         FieldFactory.saveField(field);
         
-        field = new Field(CACHE_TTL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, true, true, true, 9, 
-                "$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')", "", "^[0-9]+$", true, false, true);
-        field.setVelocityVarName(CACHE_TTL_FIELD);
-        FieldFactory.saveField(field);
+
         
         field = new Field(REDIRECT_URL_FIELD_NAME, Field.FieldType.CUSTOM_FIELD, Field.DataType.TEXT, structure, false, true, true, 10, 
                 "$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')", "", "", true, false, true);
