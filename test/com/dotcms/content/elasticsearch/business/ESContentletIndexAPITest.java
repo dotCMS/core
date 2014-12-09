@@ -710,7 +710,7 @@ public class ESContentletIndexAPITest extends TestBase {
         template = APILocator.getTemplateAPI().saveTemplate( template, defaultHost, user, false );
 
         //Create the html page
-        String pageUrl = "testpage_" + new Date().getTime() + "." + pageExt;
+        String pageUrl = "testpage_" + new Date().getTime();
         Folder homeFolder = APILocator.getFolderAPI().createFolders( "/home/", defaultHost, user, false );
         HTMLPage htmlPage = new HTMLPage();
         htmlPage.setPageUrl( pageUrl );
