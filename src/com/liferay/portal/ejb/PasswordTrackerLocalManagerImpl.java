@@ -41,23 +41,21 @@ import com.liferay.util.Time;
  * <a href="PasswordTrackerLocalManagerImpl.java.html"><b><i>View Source</i></b>
  * </a>
  *
- * @author Brian Wing Shun Chan
- * @version $Revision: 1.3 $
+ * @author  Brian Wing Shun Chan
+ * @version $Revision: 1.2 $
  *
  */
-public class PasswordTrackerLocalManagerImpl implements
-		PasswordTrackerLocalManager {
+public class PasswordTrackerLocalManagerImpl
+	implements PasswordTrackerLocalManager {
 
 	private List<Object> validationErrorsList = null;
 
-	@Override
 	public void deleteAll(String userId) throws SystemException {
 		PasswordTrackerUtil.removeByUserId(userId);
 	}
 
-	@Override
 	public boolean isValidPassword(String userId, String password)
-			throws PortalException, SystemException {
+		throws PortalException, SystemException {
 		RegExpToolkit regExpToolkit = new RegExpToolkit();
 		this.validationErrorsList = new ArrayList<Object>();
 		boolean successful = true;
@@ -90,16 +88,19 @@ public class PasswordTrackerLocalManagerImpl implements
 		return successful;
 	}
 
-	@Override
 	public void trackPassword(String userId, String encPwd)
-			throws PortalException, SystemException {
-		String passwordTrackerId = Long.toString(CounterManagerUtil
-				.increment(PasswordTracker.class.getName()));
-		PasswordTracker passwordTracker = PasswordTrackerUtil
-				.create(passwordTrackerId);
+		throws PortalException, SystemException {
+
+		String passwordTrackerId = Long.toString(CounterManagerUtil.increment(
+			PasswordTracker.class.getName()));
+
+		PasswordTracker passwordTracker =
+			PasswordTrackerUtil.create(passwordTrackerId);
+
 		passwordTracker.setUserId(userId);
 		passwordTracker.setCreateDate(new Date());
 		passwordTracker.setPassword(encPwd);
+
 		PasswordTrackerUtil.update(passwordTracker);
 	}
 
@@ -117,5 +118,5 @@ public class PasswordTrackerLocalManagerImpl implements
 	public List<Object> getValidationErrors() {
 		return this.validationErrorsList;
 	}
-
+	
 }

@@ -9,10 +9,9 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.generic.SortTool;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -50,50 +49,36 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+import com.liferay.util.Encryptor;
 
-/**
- * 
- * @author root
- * @version 1.0
- * @since 03-22-2012
- *
- */
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+
 public class UserAjax {
 
 	// Constants for internal use only
 	private static final String USER_TYPE_VALUE = "user";
 	private static final String ROLE_TYPE_VALUE = "role";
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public Map<String, Object> getUserById(String userId)
-			throws DotDataException, DotSecurityException {
+	public Map<String, Object> getUserById(String userId) throws DotDataException,DotSecurityException {
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserProxyAPI uProxyWebAPI = APILocator.getUserProxyAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		UserAPI uAPI = APILocator.getUserAPI();
+
 		User user = null;
 		try {
-			// lock down to users with access to Users portlet
-			User loggedInUser = uWebAPI.getLoggedInUser(request);
-			if (loggedInUser == null
-					|| !APILocator.getPortletAPI().hasUserAdminRights(
-							loggedInUser)) {
-				SecurityLogger.logInfo(
-						UserAjax.class,
-						"unauthorized attempt to call getUserById by user "
-								+ loggedInUser != null ? loggedInUser
-								.getUserId() : "[not logged in]");
-				throw new DotSecurityException("not authorized");
-			}
-			user = uAPI.loadUserById(userId, uWebAPI.getSystemUser(),
-					!uWebAPI.isLoggedToBackend(request));
+		    // lock down to users with access to Users portlet
+	        User loggedInUser=uWebAPI.getLoggedInUser(request);
+	        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+	            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+	            throw new DotSecurityException("not authorized");
+	        }
+
+			user = uAPI.loadUserById(userId,uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+
 			Map<String, Object> aRecord = user.toMap();
 			aRecord.put("id", user.getUserId());
 			aRecord.put("type", USER_TYPE_VALUE);
@@ -101,11 +86,12 @@ public class UserAjax {
 			aRecord.put("firstName", user.getFirstName());
 			aRecord.put("lastName", user.getLastName());
 			aRecord.put("emailaddress", user.getEmailAddress());
-			UserProxy up = uProxyWebAPI.getUserProxy(user,
-					uWebAPI.getSystemUser(),
-					!uWebAPI.isLoggedToBackend(request));
+
+			UserProxy up = uProxyWebAPI.getUserProxy(user, uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
 			aRecord.putAll(up.getMap());
+
 			return aRecord;
+
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -137,16 +123,13 @@ public class UserAjax {
 	 *             The current user does not have permissions to edit user's
 	 *             data.
 	 */
-	public String addUser(String userId, String firstName, String lastName,
-			String email, String password) throws DotDataException,
-			DotRuntimeException, PortalException, SystemException,
-			DotSecurityException {
+	public String addUser (String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
-		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date
-				+ "; " + "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "
-				+ "User:" + modUser.getUserId());
+
+		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		boolean localTransaction = false;
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
@@ -154,31 +137,31 @@ public class UserAjax {
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
 			UserAPI uAPI = APILocator.getUserAPI();
+
 			User user = uAPI.createUser(userId, email);
 			user.setFirstName(firstName);
 			user.setLastName(lastName);
 			user.setPassword(password);
 			user.setPasswordEncrypted(false);
-			uAPI.save(user, uWebAPI.getLoggedInUser(request), true,
-					!uWebAPI.isLoggedToBackend(request));
-			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date
-					+ "; " + "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "
-					+ "User:" + modUser.getUserId());
+			uAPI.save(user, uWebAPI.getLoggedInUser(request), true, !uWebAPI.isLoggedToBackend(request));
+
+			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			
 			if (localTransaction) {
 				HibernateUtil.commitTransaction();
 			}
 			return user.getUserId();
-		} catch (DotDataException | DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: "
-					+ date + ";  " + "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date
-					+ ";  " + "User:" + modUser.getUserId());
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
 			throw e;
 		}
+
 	}
 
 	/**
@@ -206,17 +189,17 @@ public class UserAjax {
 	 *             The current user does not have permissions to edit user's
 	 *             data.
 	 */
-	public String updateUser(String userId, String newUserID, String firstName,
-			String lastName, String email, String password)
-			throws DotRuntimeException, PortalException, SystemException,
-			DotDataException, DotSecurityException {
+	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
+		DotDataException, DotSecurityException {
+
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
-		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date
-				+ "; " + "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "
-				+ "User:" + modUser.getUserId());
+
+		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		try {
+
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
@@ -225,9 +208,9 @@ public class UserAjax {
 			UserProxyAPI upAPI = APILocator.getUserProxyAPI();
 			User userToSave;
 			User loggedInUser = uWebAPI.getLoggedInUser(request);
+
 			try {
-				userToSave = (User) uAPI.loadUserById(userId,
-						uAPI.getSystemUser(), false).clone();
+				userToSave = (User)uAPI.loadUserById(userId,uAPI.getSystemUser(),false).clone();
 				userToSave.setModified(false);
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -235,9 +218,8 @@ public class UserAjax {
 			}
 			userToSave.setFirstName(firstName);
 			userToSave.setLastName(lastName);
-			if (email != null) {
+			if(email != null)
 				userToSave.setEmailAddress(email);
-			}
 			boolean validatePassword = false;
 			if (password != null) {
 				// Password has changed, so it has to be validated
@@ -245,114 +227,90 @@ public class UserAjax {
 				userToSave.setPasswordEncrypted(false);
 				validatePassword = true;
 			}
-			if (userToSave.getUserId().equalsIgnoreCase(
-					loggedInUser.getUserId())) {
-				uAPI.save(userToSave, uAPI.getSystemUser(), validatePassword,
-						!uWebAPI.isLoggedToBackend(request));
-			} else if (perAPI
-					.doesUserHavePermission(upAPI.getUserProxy(userToSave,
-							uAPI.getSystemUser(), false),
-							PermissionAPI.PERMISSION_EDIT, loggedInUser, false)) {
-				uAPI.save(userToSave, loggedInUser, validatePassword,
-						!uWebAPI.isLoggedToBackend(request));
-			} else {
-				throw new DotSecurityException(
-						"User doesn't have permission to save the user which is trying to be saved");
+
+			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
+				uAPI.save(userToSave, uAPI.getSystemUser(), validatePassword, !uWebAPI.isLoggedToBackend(request));
+			}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
+				uAPI.save(userToSave, loggedInUser, validatePassword, !uWebAPI.isLoggedToBackend(request));
+			}else{
+				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
 			}
-			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date
-					+ "; " + "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "
-					+ "User:" + modUser.getUserId());
+
+			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
+
 			return userToSave.getUserId();
-		} catch (DotDataException | DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: "
-					+ date + ";  " + "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date
-					+ ";  " + "User:" + modUser.getUserId());
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			throw e;
 		}
+
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws DotHibernateException
-	 * @throws PortalException
-	 * @throws SystemException
-	 */
-	public boolean deleteUser(String userId) throws DotHibernateException,
-			PortalException, SystemException {
+	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException {
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
-		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date
-				+ "; " + "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "
-				+ "User:" + modUser.getUserId());
+
+		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		try {
+
 			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 			WebContext ctx = WebContextFactory.get();
 			HttpServletRequest request = ctx.getHttpServletRequest();
 			UserAPI uAPI = APILocator.getUserAPI();
+
 			User user;
 			try {
 				HibernateUtil.startTransaction();
-				user = uAPI.loadUserById(userId,
-						uWebAPI.getLoggedInUser(request), false);
+				user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
 				APILocator.getContentletAPI().removeUserReferences(userId);
-				uAPI.delete(user, uWebAPI.getLoggedInUser(request),
-						!uWebAPI.isLoggedToBackend(request));
+				uAPI.delete(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 				HibernateUtil.commitTransaction();
 			} catch (Exception e) {
 				HibernateUtil.rollbackTransaction();
 				Logger.error(this, e.getMessage(), e);
 				return false;
 			}
-		} catch (DotDataException | DotStateException e) {
-			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: "
-					+ date + ";  " + "User:" + modUser.getUserId());
-			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date
-					+ ";  " + "User:" + modUser.getUserId());
+
+		} catch(DotDataException | DotStateException e) {
+			ActivityLogger.logInfo(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Deleting User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			throw e;
 		}
-		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date
-				+ "; " + "User:" + modUser.getUserId());
-		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "
-				+ "User:" + modUser.getUserId());
+
+		ActivityLogger.logInfo(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		AdminLogger.log(getClass(), "User Deleted", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
 		return true;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws Exception
-	 */
-	public List<Map<String, Object>> getUserRoles(String userId)
-			throws Exception {
-		List<Map<String, Object>> roleMaps = new ArrayList<Map<String, Object>>();
-		Role userRole = APILocator.getRoleAPI().loadRoleByKey(
-				RoleAPI.USERS_ROOT_ROLE_KEY);
+	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
+		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
+		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
 		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getUserRoles by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
-		if (UtilMethods.isSet(userId)) {
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserRoles by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
+		if(UtilMethods.isSet(userId)){
 			RoleAPI roleAPI = APILocator.getRoleAPI();
-			List<com.dotmarketing.business.Role> roles = roleAPI
-					.loadRolesForUser(userId, false);
-			for (com.dotmarketing.business.Role r : roles) {
-				String DBFQN = r.getDBFQN();
-				if (DBFQN.contains(userRole.getId())) {
+			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
+			for(com.dotmarketing.business.Role r : roles) {
+
+				String DBFQN =  r.getDBFQN();
+
+				if(DBFQN.contains(userRole.getId())) {
 					continue;
 				}
 				roleMaps.add(r.toMap());
@@ -361,197 +319,118 @@ public class UserAjax {
 		return roleMaps;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param hostIdentifier
-	 * @return
-	 * @throws Exception
-	 */
-	public Map<String, Boolean> getUserRolesValues(String userId,
-			String hostIdentifier) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| !(APILocator.getPortletAPI()
-						.hasUserAdminRights(loggedInUser) || userId
-						.equals(loggedInUser.getUserId()))) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getUserRolesValues by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
-		Map<String, Boolean> userPerms = new HashMap<String, Boolean>();
-		if (UtilMethods.isSet(userId)) {
+	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws Exception {
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || !(APILocator.getPortletAPI().hasUserAdminRights(loggedInUser) || userId.equals(loggedInUser.getUserId()))) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserRolesValues by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
+		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
+		if(UtilMethods.isSet(userId)){
 			RoleAPI roleAPI = APILocator.getRoleAPI();
-			List<com.dotmarketing.business.Role> roles = roleAPI
-					.loadRolesForUser(userId, false);
-			for (com.dotmarketing.business.Role r : roles) {
-				List<Permission> perms = APILocator.getPermissionAPI()
-						.getPermissionsByRole(r, false);
+			List<com.dotmarketing.business.Role> roles = roleAPI.loadRolesForUser(userId, false);
+			for(com.dotmarketing.business.Role r : roles) {
+				List<Permission> perms = APILocator.getPermissionAPI().getPermissionsByRole(r, false);
 				for (Permission p : perms) {
 					String permType = p.getType();
-					permType = permType.equals(Folder.class.getCanonicalName()) ? "folderModifiable"
-							: permType
-									.equals(Template.class.getCanonicalName()) ? "templateModifiable"
-									: permType.equals(Container.class
-											.getCanonicalName()) ? "containerModifiable"
-											: permType.equals(File.class
-													.getCanonicalName()) ? "fileModifiable"
-													: "";
-					Boolean hasPerm = userPerms.get(permType) != null ? userPerms
-							.get(permType) : false;
+					permType = permType.equals(Folder.class.getCanonicalName())?"folderModifiable":
+						 permType.equals(Template.class.getCanonicalName())?"templateModifiable":
+						 permType.equals(Container.class.getCanonicalName())?"containerModifiable":
+						 permType.equals(File.class.getCanonicalName())?"fileModifiable":"";
 
-					if (UtilMethods.isSet(permType)
-							&& p.getInode().equals(hostIdentifier)) {
-						userPerms
-								.put(permType,
-										hasPerm
-												| (p.getPermission() == PermissionAPI.PERMISSION_EDIT || p
-														.getPermission() == PermissionAPI.PERMISSION_PUBLISH));
-					}
+					Boolean hasPerm = userPerms.get(permType)!=null?userPerms.get(permType):false;
+
+					 if(UtilMethods.isSet(permType) && p.getInode().equals(hostIdentifier)) {
+						 userPerms.put(permType, hasPerm | (p.getPermission()==PermissionAPI.PERMISSION_EDIT ||
+								 p.getPermission()==PermissionAPI.PERMISSION_PUBLISH));
+					 }
 				}
 			}
 		}
 		return userPerms;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param roleIds
-	 * @throws DotDataException
-	 * @throws NoSuchUserException
-	 * @throws DotRuntimeException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public void updateUserRoles(String userId, List<String> roleIds)
-			throws DotDataException, NoSuchUserException, DotRuntimeException,
-			PortalException, SystemException, DotSecurityException {
+	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
 		String date = DateUtil.getCurrentDate();
 		User currentUser = getUser();
-		ActivityLogger.logInfo(getClass(), "Modifying User Roles",
-				"User Beign Modified:" + userId + "; " + "Modificator User:"
-						+ currentUser.getUserId() + "; Date:" + date);
-		AdminLogger.log(getClass(), "Modifying User Roles",
-				"User Beign Modified:" + userId + "; " + "Modificator User:"
-						+ currentUser.getUserId() + "; Date:" + date);
+
+		ActivityLogger.logInfo(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+		AdminLogger.log(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI uAPI = APILocator.getUserAPI();
-		List<com.dotmarketing.business.Role> userRoles = roleAPI
-				.loadRolesForUser(userId);
-		User user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request),
-				false);
-		// Remove all roles not assigned
-		for (com.dotmarketing.business.Role r : userRoles) {
-			if (!roleIds.contains(r.getId())) {
-				if (r.isEditUsers()) {
+
+		List<com.dotmarketing.business.Role> userRoles = roleAPI.loadRolesForUser(userId);
+
+		User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+
+		//Remove all roles not assigned
+		for(com.dotmarketing.business.Role r : userRoles) {
+			if(!roleIds.contains(r.getId())) {
+				if(r.isEditUsers()) {
 					try {
 						roleAPI.removeRoleFromUser(r, user);
-					} catch (DotDataException | DotStateException e) {
-						ActivityLogger.logInfo(
-								getClass(),
-								"Error Removing User Role",
-								"User Beign Modified:" + userId + "; "
-										+ "Modificator User:"
-										+ currentUser.getUserId()
-										+ "; RoleID: " + r.getId() + "; Date:"
-										+ date);
-						AdminLogger.log(
-								getClass(),
-								"Error Removing User Role",
-								"User Beign Modified:" + userId + "; "
-										+ "Modificator User:"
-										+ currentUser.getUserId()
-										+ "; RoleID: " + r.getId() + "; Date:"
-										+ date);
+					} catch(DotDataException | DotStateException e) {
+						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 						throw e;
 					}
 				}
 			}
 		}
-		for (com.dotmarketing.business.Role r : roleAPI
-				.loadRolesForUser(userId)) {
-			if (roleIds.contains(r.getId())) {
+
+		for(com.dotmarketing.business.Role r : roleAPI.loadRolesForUser(userId)) {
+			if(roleIds.contains(r.getId())) {
 				roleIds.remove(r.getId());
 			}
 		}
-		// Adding missing roles
-		for (String roleId : roleIds) {
+
+		//Adding missing roles
+		for(String roleId : roleIds) {
 			com.dotmarketing.business.Role r = roleAPI.loadRoleById(roleId);
-			if (r.isEditUsers()) {
+			if(r.isEditUsers()) {
 				try {
 					roleAPI.addRoleToUser(r, user);
-				} catch (DotDataException e) {
-					ActivityLogger.logInfo(getClass(),
-							"Error Adding User Role", "User Beign Modified:"
-									+ userId + "; " + "Modificator User:"
-									+ currentUser.getUserId() + "; RoleID: "
-									+ r.getId() + "; Date:" + date);
-					AdminLogger.log(
-							getClass(),
-							"Error Adding User Role",
-							"User Beign Modified:" + userId + "; "
-									+ "Modificator User:"
-									+ currentUser.getUserId() + "; RoleID: "
-									+ r.getId() + "; Date:" + date);
+				} catch(DotDataException e) {
+					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 					throw e;
-				} catch (DotStateException e) {
-					ActivityLogger.logInfo(getClass(),
-							"Error Adding User Role", "User Beign Modified:"
-									+ userId + "; " + "Modificator User:"
-									+ currentUser.getUserId() + "; RoleID: "
-									+ r.getId() + "; Date:" + date);
-					AdminLogger.log(
-							getClass(),
-							"Error Adding User Role",
-							"User Beign Modified:" + userId + "; "
-									+ "Modificator User:"
-									+ currentUser.getUserId() + "; RoleID: "
-									+ r.getId() + "; Date:" + date);
+				} catch(DotStateException e) {
+					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 					throw e;
 				}
 			}
 		}
-		ActivityLogger.logInfo(getClass(), "User Roles Modified",
-				"User Modified:" + userId + "; " + "Modificator User:"
-						+ currentUser.getUserId() + "; Date:" + date);
-		AdminLogger.log(getClass(), "User Roles Modified", "User Modified:"
-				+ userId + "; " + "Modificator User:" + currentUser.getUserId()
-				+ "; Date:" + date);
+
+		ActivityLogger.logInfo(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+		AdminLogger.log(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws DotDataException
-	 */
-	public List<Map<String, String>> loadUserAddresses(String userId)
-			throws DotDataException {
+	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException {
+
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		User user = null;
 		List<Address> userAddresses = new ArrayList<Address>();
 		try {
-			if (UtilMethods.isSet(userId)) {
-				user = uAPI.loadUserById(userId,
-						uWebAPI.getLoggedInUser(request),
-						!uWebAPI.isLoggedToBackend(request));
-				userAddresses = uAPI.loadUserAddresses(user,
-						uWebAPI.getLoggedInUser(request),
-						!uWebAPI.isLoggedToBackend(request));
+			if(UtilMethods.isSet(userId)){
+				user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+				userAddresses = uAPI.loadUserAddresses(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 			}
 		} catch (NoSuchUserException e) {
 			Logger.error(this, e.getMessage(), e);
@@ -569,41 +448,25 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
-		List<Map<String, String>> addressesToReturn = new ArrayList<Map<String, String>>();
-		for (Address add : userAddresses) {
+
+		List<Map<String, String>> addressesToReturn = new ArrayList<Map<String,String>>();
+		for(Address add : userAddresses) {
 			addressesToReturn.add(add.toMap());
 		}
 		return addressesToReturn;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param addressDescription
-	 * @param street1
-	 * @param street2
-	 * @param city
-	 * @param state
-	 * @param zip
-	 * @param country
-	 * @param phone
-	 * @param fax
-	 * @param cell
-	 * @return
-	 * @throws DotDataException
-	 */
-	public Map<String, String> addNewUserAddress(String userId,
-			String addressDescription, String street1, String street2,
-			String city, String state, String zip, String country,
-			String phone, String fax, String cell) throws DotDataException {
+	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
+			String zip, String country, String phone, String fax, String cell) throws DotDataException {
+
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		User user = null;
 		try {
-			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (NoSuchUserException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -620,6 +483,7 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+
 		Address ad = new Address();
 		ad.setDescription(addressDescription);
 		ad.setStreet1(street1);
@@ -631,9 +495,9 @@ public class UserAjax {
 		ad.setPhone(phone);
 		ad.setFax(fax);
 		ad.setCell(cell);
+
 		try {
-			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (DotDataException e) {
 			throw new DotDataException(e.getCause().toString(), e);
 		} catch (DotRuntimeException e) {
@@ -649,38 +513,22 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+
 		return ad.toMap();
+
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param addressId
-	 * @param addressDescription
-	 * @param street1
-	 * @param street2
-	 * @param city
-	 * @param state
-	 * @param zip
-	 * @param country
-	 * @param phone
-	 * @param fax
-	 * @param cell
-	 * @return
-	 * @throws DotDataException
-	 */
-	public Map<String, String> saveUserAddress(String userId, String addressId,
-			String addressDescription, String street1, String street2,
-			String city, String state, String zip, String country,
-			String phone, String fax, String cell) throws DotDataException {
+	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
+			String zip, String country, String phone, String fax, String cell) throws DotDataException {
+
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		User user = null;
 		try {
-			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (NoSuchUserException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -697,6 +545,7 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+
 		Address ad = new Address();
 		ad.setAddressId(addressId);
 		ad.setDescription(addressDescription);
@@ -709,9 +558,9 @@ public class UserAjax {
 		ad.setPhone(phone);
 		ad.setFax(fax);
 		ad.setCell(cell);
+
 		try {
-			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+			uAPI.saveAddress(user, ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -725,29 +574,21 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+
 		return ad.toMap();
+
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param addressId
-	 * @return
-	 * @throws DotDataException
-	 */
-	public String deleteAddress(String userId, String addressId)
-			throws DotDataException {
+	public String deleteAddress(String userId, String addressId) throws DotDataException {
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		Address ad;
 		try {
-			ad = uAPI.loadAddressById(addressId,
-					uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
-			uAPI.deleteAddress(ad, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+			ad = uAPI.loadAddressById(addressId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			uAPI.deleteAddress(ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -761,66 +602,50 @@ public class UserAjax {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		}
+
 		return addressId;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param active
-	 * @param prefix
-	 * @param suffix
-	 * @param title
-	 * @param company
-	 * @param website
-	 * @param additionalVars
-	 * @throws DotDataException
-	 */
-	public void saveUserAddittionalInfo(String userId, boolean active,
-			String prefix, String suffix, String title, String company,
-			String website, String[] additionalVars) throws DotDataException {
+	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
+	 	throws DotDataException {
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserAPI uAPI = APILocator.getUserAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		try {
+
+			User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
+
 			UserProxyAPI uProxyAPI = APILocator.getUserProxyAPI();
-			User u = uAPI.loadUserById(userId,
-					uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
-			UserProxy up = uProxyAPI.getUserProxy(u,
-					uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
-			if (!active
-					&& u.getUserId().equals(
-							uWebAPI.getLoggedInUser(request).getUserId())) {
-				throw new DotRuntimeException(LanguageUtil.get(
-						uWebAPI.getLoggedInUser(request),
-						"deactivate-your-own-user-error"));
+			User u = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			UserProxy up = uProxyAPI.getUserProxy(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+
+
+			if(!active && u.getUserId().equals(uWebAPI.getLoggedInUser(request).getUserId())){
+				throw new DotRuntimeException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"deactivate-your-own-user-error"));
 			}
+
 			u.setActive(active);
 			up.setPrefix(prefix);
 			up.setSuffix(suffix);
 			up.setTitle(title);
 			up.setCompany(company);
 			up.setWebsite(website);
-			for (int i = 1; i <= additionalVars.length; i++) {
+			for(int i = 1; i <= additionalVars.length; i++) {
 				up.setVar(i, additionalVars[i - 1]);
 			}
-			uAPI.save(u, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
-			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request),
-					!uWebAPI.isLoggedToBackend(request));
+
+			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+
 			User modUser = getUser();
 			String date = DateUtil.getCurrentDate();
-			ActivityLogger.logInfo(getClass(),
-					"Updating User Additional Info. 'Is User Enabled' was set to: "
-							+ active, "Date: " + date + "; " + "User:"
-							+ modUser.getUserId());
-			AdminLogger.log(getClass(),
-					"Updating User Additional Info. 'Is User Enabled' was set to: "
-							+ active, "Date: " + date + "; " + "User:"
-							+ modUser.getUserId());
+
+			ActivityLogger.logInfo(getClass(), "Updating User Additional Info. 'Is User Enabled' was set to: " + active , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Updating User Additional Info. 'Is User Enabled' was set to: " + active , "Date: " + date + "; "+ "User:" + modUser.getUserId());
+
+
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -836,36 +661,32 @@ public class UserAjax {
 		}
 	}
 
-	/**
-	 * 
-	 * @param roleId
-	 * @return
-	 * @throws Exception
-	 */
+	private void setActive(boolean active) {
+		// TODO Auto-generated method stub
+
+	}
+
 	public Map<String, Object> getRoleById(String roleId) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getRoleById by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
+		RoleAPI api = APILocator.getRoleAPI();
 		Role role;
 		try {
-			role = com.dotmarketing.business.APILocator.getRoleAPI()
-					.loadRoleById(roleId);
+			role = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleById(roleId);
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
 		}
-		if (role == null) {
+		if(role == null){
 			return null;
 		}
 		HashMap<String, Object> aRecord = new HashMap<String, Object>();
@@ -876,359 +697,293 @@ public class UserAjax {
 		return aRecord;
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param params
-	 * @return
-	 * @throws Exception
-	 */
-	public Map<String, Object> getUsersAndRolesList(String assetInode,
-			String permission, Map<String, String> params) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getRoleById by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+	public Map<String, Object> getUsersAndRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
+
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
 		int start = 0;
-		if (params.containsKey("start")) {
-			start = Integer.parseInt((String) params.get("start"));
-		}
+		if(params.containsKey("start"))
+			start = Integer.parseInt((String)params.get("start"));
+
 		int limit = -1;
-		if (params.containsKey("limit")) {
-			limit = Integer.parseInt((String) params.get("limit"));
-		}
+		if(params.containsKey("limit"))
+			limit = Integer.parseInt((String)params.get("limit"));
+
 		String query = "";
-		if (params.containsKey("query")) {
+		if(params.containsKey("query"))
 			query = (String) params.get("query");
+
+		boolean hideSystemRoles =false;
+		if(params.get("hideSystemRoles")!=null){
+			hideSystemRoles = params.get("hideSystemRoles").equals("true")?true:false;
 		}
-		boolean hideSystemRoles = false;
-		if (params.get("hideSystemRoles") != null) {
-			hideSystemRoles = params.get("hideSystemRoles").equals("true") ? true
-					: false;
-		}
+
 		Map<String, Object> results;
-		if ((InodeUtils.isSet(assetInode) && !assetInode.equals("0"))
-				&& (UtilMethods.isSet(permission) && !permission.equals("0"))) {
-			results = processUserAndRoleListWithPermissionOnInode(assetInode,
-					permission, query, start, limit, hideSystemRoles);
+
+		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
+			results = processUserAndRoleListWithPermissionOnInode(assetInode, permission, query, start, limit, hideSystemRoles);
 		} else {
-			results = processUserAndRoleList(query, start, limit,
-					hideSystemRoles);
+			results = processUserAndRoleList(query, start, limit, hideSystemRoles);
 		}
+
 		return results;
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param params
-	 * @return
-	 * @throws Exception
-	 */
-	public Map<String, Object> getRolesList(String assetInode,
-			String permission, Map<String, String> params) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getRoleById by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+
+	public Map<String, Object> getRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
+
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
 		int start = 0;
-		if (params.containsKey("start")) {
-			start = Integer.parseInt((String) params.get("start"));
-		}
+		if(params.containsKey("start"))
+			start = Integer.parseInt((String)params.get("start"));
+
 		int limit = -1;
-		if (params.containsKey("limit")) {
-			limit = Integer.parseInt((String) params.get("limit"));
-		}
+		if(params.containsKey("limit"))
+			limit = Integer.parseInt((String)params.get("limit"));
+
 		String query = "";
-		if (params.containsKey("query")) {
+		if(params.containsKey("query"))
 			query = (String) params.get("query");
+
+		boolean hideSystemRoles =false;
+		if(params.get("hideSystemRoles")!=null){
+			hideSystemRoles = params.get("hideSystemRoles").equals("true")?true:false;
 		}
-		boolean hideSystemRoles = false;
-		if (params.get("hideSystemRoles") != null) {
-			hideSystemRoles = params.get("hideSystemRoles").equals("true") ? true
-					: false;
-		}
+
 		Map<String, Object> results;
-		if ((InodeUtils.isSet(assetInode) && !assetInode.equals("0"))
-				&& (UtilMethods.isSet(permission) && !permission.equals("0"))) {
-			results = processRoleListWithPermissionOnInode(assetInode,
-					permission, query, start, limit, hideSystemRoles);
+
+		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
+			results = processRoleListWithPermissionOnInode(assetInode, permission, query, start, limit, hideSystemRoles);
 		} else {
 			results = processRoleList(query, start, limit, hideSystemRoles);
 		}
+
+
 		return results;
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param params
-	 * @return
-	 * @throws Exception
-	 */
-	public Map<String, Object> getUsersList(String assetInode,
-			String permission, Map<String, String> params) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getUsersList by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+
+
+	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params) throws Exception {
+
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUsersList by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
 		int start = 0;
-		if (params.containsKey("start"))
-			start = Integer.parseInt((String) params.get("start"));
+		if(params.containsKey("start"))
+			start = Integer.parseInt((String)params.get("start"));
 
 		int limit = -1;
-		if (params.containsKey("limit")) {
-			limit = Integer.parseInt((String) params.get("limit"));
-		}
+		if(params.containsKey("limit"))
+			limit = Integer.parseInt((String)params.get("limit"));
+
 		String query = "";
-		if (params.containsKey("query")) {
+		if(params.containsKey("query"))
 			query = (String) params.get("query");
-		}
+
 		Map<String, Object> results;
-		if ((InodeUtils.isSet(assetInode) && !assetInode.equals("0"))
-				&& (UtilMethods.isSet(permission) && !permission.equals("0"))) {
-			results = processUserListWithPermissionOnInode(assetInode,
-					permission, query, start, limit);
+
+		if ( (InodeUtils.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
+			results = processUserListWithPermissionOnInode(assetInode, permission, query, start, limit);
 		} else {
 			results = processUserList(query, start, limit);
 		}
+
 		return results;
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param params
-	 * @return
-	 * @throws Exception
-	 */
-	public List getUsersList2(String assetInode, String permission,
-			Map<String, String> params) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call getUsersList2 by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+	public List getUsersList2(String assetInode, String permission, Map<String, String> params) throws Exception {
+
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUsersList2 by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
 		int start = 0;
-		if (params.containsKey("start")) {
-			start = Integer.parseInt((String) params.get("start"));
-		}
+		if(params.containsKey("start"))
+			start = Integer.parseInt((String)params.get("start"));
+
 		int limit = -1;
-		if (params.containsKey("limit")) {
-			limit = Integer.parseInt((String) params.get("limit"));
-		}
+		if(params.containsKey("limit"))
+			limit = Integer.parseInt((String)params.get("limit"));
+
 		String query = "";
-		if (params.containsKey("query")) {
+		if(params.containsKey("query"))
 			query = (String) params.get("query");
-		}
+
 		Map<String, Object> results;
-		if ((UtilMethods.isSet(assetInode) && !assetInode.equals("0"))
-				&& (UtilMethods.isSet(permission) && !permission.equals("0"))) {
-			results = processUserListWithPermissionOnInode(assetInode,
-					permission, query, start, limit);
+
+		if ( (UtilMethods.isSet(assetInode) && !assetInode.equals("0")) && (UtilMethods.isSet(permission) && !permission.equals("0")) ) {
+			results = processUserListWithPermissionOnInode(assetInode, permission, query, start, limit);
 		} else {
 			results = processUserList(query, start, limit);
 		}
+
 		return (List) results.get("data");
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @param hideSystemRoles
-	 * @return
-	 */
-	private Map<String, Object> processRoleListWithPermissionOnInode(
-			String assetInode, String permission, String query, int start,
-			int limit, boolean hideSystemRoles) {
+	private Map<String, Object> processRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
+			boolean hideSystemRoles) {
+
 		Map<String, Object> results;
+
 		try {
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
-			results = new RolesListTemplate(inode, permissionType, query,
-					start, limit, hideSystemRoles) {
+			results = new RolesListTemplate(inode, permissionType, query, start, limit, hideSystemRoles) {
 
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 				@Override
-				public int getRoleCount(boolean hideSystemRoles)
-						throws NoSuchRoleException, SystemException {
-					return perAPI.getRoleCount(inode, permissionType, filter,
-							hideSystemRoles);
+				public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException,
+						SystemException {
+					return perAPI.getRoleCount(inode, permissionType, filter, hideSystemRoles);
 				}
 
 				@Override
-				public List<Role> getRoles(boolean hideSystemRoles)
-						throws NoSuchRoleException, SystemException {
-					List<Role> roles = perAPI.getRoles(inode, permissionType,
-							filter, start, limit, hideSystemRoles);
-					Collections.sort(roles, new Comparator<Role>() {
+				public List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException,
+						SystemException {
+					List<Role> roles = perAPI.getRoles(inode, permissionType, filter, start, limit, hideSystemRoles);
+					Collections.sort(roles, new Comparator<Role>(){
 
 						public int compare(Role o1, Role o2) {
 							return o1.getName().compareTo(o2.getName());
 						}
 
 					});
+
 					return roles;
 				}
 
+
 			}.perform();
-		} catch (NumberFormatException nfe) {
-			Logger.warn(
-					UserAjax.class,
-					String.format(
-							"::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).",
-							assetInode, permission));
-			results = new HashMap<String, Object>(0);
 		}
+		catch(NumberFormatException nfe) {
+    		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
+    		results = new HashMap<String,Object>(0);
+		}
+
 		return results;
+
 	}
 
-	/**
-	 * 
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @param hideSystemRoles
-	 * @return
-	 */
-	private Map<String, Object> processRoleList(String query, int start,
-			int limit, boolean hideSystemRoles) {
-		Map<String, Object> results = new RolesListTemplate("", 0, query,
-				start, limit, hideSystemRoles) {
+private Map<String, Object> processRoleList(String query, int start, int limit, boolean hideSystemRoles) {
+
+		Map<String, Object> results = new RolesListTemplate("", 0, query, start, limit, hideSystemRoles)
+		{
+
+			RoleAPI roleAPI = APILocator.getRoleAPI();
+
 
 			@Override
-			public int getRoleCount(boolean hideSystemRoles)
-					throws NoSuchRoleException, SystemException {
+			public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
 				try {
-					roleList = APILocator.getRoleAPI().findRolesByNameFilter(
-							filter, 0, 0);
+					roleList = APILocator.getRoleAPI().findRolesByNameFilter(filter,0,0);
 				} catch (DotDataException e) {
-					Logger.error(UserAjax.class, e.getMessage(), e);
+					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
 				List<Role> roleListTemp = new ArrayList<Role>(roleList);
-				for (Role r : roleListTemp) {
-					if (PortalUtil.isSystemRole(r)
-							&& !r.getFQN().startsWith("Users"))
+				for(Role r : roleListTemp) {
+					if(PortalUtil.isSystemRole(r) && !r.getFQN().startsWith("Users"))
 						roleList.remove(r);
 				}
 				return roleList.size();
 			}
 
+
 			@Override
-			public List<Role> getRoles(boolean hideSystemRoles)
-					throws NoSuchRoleException, SystemException {
+			public List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
 				try {
-					roleList = APILocator.getRoleAPI().findRolesByNameFilter(
-							filter, start, limit);
+					roleList = APILocator.getRoleAPI().findRolesByNameFilter(filter, start, limit);
 				} catch (DotDataException e) {
-					Logger.error(UserAjax.class, e.getMessage(), e);
+					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
 				List<Role> roleListTemp = new ArrayList<Role>(roleList);
-				for (Role r : roleListTemp) {
-					if (PortalUtil.isSystemRole(r) && hideSystemRoles
-							&& !r.getFQN().startsWith("Users"))
+				for(Role r : roleListTemp) {
+					if(PortalUtil.isSystemRole(r)&& hideSystemRoles && !r.getFQN().startsWith("Users"))
 						roleList.remove(r);
 				}
 				return roleList;
 			}
 
-		}.perform();
+		}
+		.perform();
+
 		return results;
+
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @param hideSystemRoles
-	 * @return
-	 */
-	private Map<String, Object> processUserAndRoleListWithPermissionOnInode(
-			String assetInode, String permission, String query, int start,
-			int limit, boolean hideSystemRoles) {
+
+
+
+
+	private Map<String, Object> processUserAndRoleListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit,
+			boolean hideSystemRoles) {
+
 		Map<String, Object> results;
+
 		try {
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
-			results = new UsersAndRolesListTemplate(inode, permissionType,
-					query, start, limit, hideSystemRoles) {
+			results = new UsersAndRolesListTemplate(inode, permissionType, query, start, limit, hideSystemRoles) {
 
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
 
 				@Override
-				public int getRoleCount(boolean hideSystemRoles)
-						throws NoSuchRoleException, SystemException {
-					return perAPI.getRoleCount(inode, permissionType, filter,
-							hideSystemRoles);
+				public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException,
+						SystemException {
+					return perAPI.getRoleCount(inode, permissionType, filter, hideSystemRoles);
 				}
 
 				@Override
-				public List<Role> getRoles(boolean hideSystemRoles)
-						throws NoSuchRoleException, SystemException {
-					List<Role> roles = perAPI.getRoles(inode, permissionType,
-							filter, start, limit, hideSystemRoles);
-					Collections.sort(roles, new Comparator<Role>() {
+				public List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException,
+						SystemException {
+					List<Role> roles = perAPI.getRoles(inode, permissionType, filter, start, limit, hideSystemRoles);
+					Collections.sort(roles, new Comparator<Role>(){
 
 						public int compare(Role o1, Role o2) {
 							return o1.getName().compareTo(o2.getName());
 						}
 
 					});
+
 					return roles;
 				}
 
@@ -1239,70 +994,56 @@ public class UserAjax {
 
 				@Override
 				public List<User> getUsers(int newStart, int newLimit) {
-					return perAPI.getUsers(inode, permissionType, filter,
-							newStart, newLimit);
+					return perAPI.getUsers(inode, permissionType, filter, newStart, newLimit);
 				}
-
 			}.perform();
-		} catch (NumberFormatException nfe) {
-			Logger.warn(
-					UserAjax.class,
-					String.format(
-							"::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).",
-							assetInode, permission));
-			results = new HashMap<String, Object>(0);
 		}
+		catch(NumberFormatException nfe) {
+    		Logger.warn(UserAjax.class, String.format("::getUsersAndRolesList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
+    		results = new HashMap<String,Object>(0);
+		}
+
 		return results;
+
 	}
 
-	/**
-	 * 
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @param hideSystemRoles
-	 * @return
-	 */
-	private Map<String, Object> processUserAndRoleList(String query, int start,
-			int limit, boolean hideSystemRoles) {
-		Map<String, Object> results = new UsersAndRolesListTemplate("", 0,
-				query, start, limit, hideSystemRoles) {
+	private Map<String, Object> processUserAndRoleList(String query, int start, int limit, boolean hideSystemRoles) {
 
+		Map<String, Object> results = new UsersAndRolesListTemplate("", 0, query, start, limit, hideSystemRoles)
+		{
+
+			RoleAPI roleAPI = APILocator.getRoleAPI();
 			UserAPI userAPI = APILocator.getUserAPI();
 
 			@Override
-			public int getRoleCount(boolean hideSystemRoles)
-					throws NoSuchRoleException, SystemException {
+			public int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
 				try {
-					roleList = APILocator.getRoleAPI().findRolesByNameFilter(
-							filter, 0, 0);
+					roleList = APILocator.getRoleAPI().findRolesByNameFilter(filter,0,0);
 				} catch (DotDataException e) {
-					Logger.error(UserAjax.class, e.getMessage(), e);
+					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
 				List<Role> roleListTemp = new ArrayList<Role>(roleList);
-				for (Role r : roleListTemp) {
-					if (PortalUtil.isSystemRole(r))
+				for(Role r : roleListTemp) {
+					if(PortalUtil.isSystemRole(r))
 						roleList.remove(r);
 				}
 				return roleList.size();
 			}
 
 			@Override
-			public List<Role> getRoles(boolean hideSystemRoles)
-					throws NoSuchRoleException, SystemException {
+			public List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException {
 				List<Role> roleList;
 				try {
-					roleList = APILocator.getRoleAPI().findRolesByNameFilter(
-							filter, start, limit);
+					roleList = APILocator.getRoleAPI().findRolesByNameFilter(filter, start, limit);
 				} catch (DotDataException e) {
-					Logger.error(UserAjax.class, e.getMessage(), e);
+					Logger.error(UserAjax.class,e.getMessage(),e);
 					throw new SystemException(e);
 				}
 				List<Role> roleListTemp = new ArrayList<Role>(roleList);
-				for (Role r : roleListTemp) {
-					if (PortalUtil.isSystemRole(r) && hideSystemRoles)
+				for(Role r : roleListTemp) {
+					if(PortalUtil.isSystemRole(r)&& hideSystemRoles)
 						roleList.remove(r);
 				}
 				return roleList;
@@ -1311,8 +1052,7 @@ public class UserAjax {
 			@Override
 			public int getUserCount() {
 				try {
-					return new Long(userAPI.getCountUsersByNameOrEmail(filter))
-							.intValue();
+					return new Long(userAPI.getCountUsersByNameOrEmail(filter)).intValue();
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 					return 0;
@@ -1322,36 +1062,27 @@ public class UserAjax {
 			@Override
 			public List<User> getUsers(int newStart, int newLimit) {
 				try {
-					return userAPI.getUsersByName(filter, newStart, newLimit,
-							APILocator.getUserAPI().getSystemUser(), false);
+					return userAPI.getUsersByName(filter, newStart, newLimit, APILocator.getUserAPI().getSystemUser(),false);
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 					return new ArrayList<User>();
 				}
 			}
+		}
+		.perform();
 
-		}.perform();
 		return results;
+
 	}
 
-	/**
-	 * 
-	 * @param assetInode
-	 * @param permission
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @return
-	 */
-	private Map<String, Object> processUserListWithPermissionOnInode(
-			String assetInode, String permission, String query, int start,
-			int limit) {
+	private Map<String, Object> processUserListWithPermissionOnInode(String assetInode, String permission, String query, int start, int limit) {
+
 		Map<String, Object> results;
+
 		try {
 			int permissionType = Integer.parseInt(permission);
 			String inode = assetInode;
-			results = new UsersListTemplate(inode, permissionType, query,
-					start, limit) {
+			results = new UsersListTemplate(inode, permissionType, query, start, limit) {
 
 				PermissionAPI perAPI = APILocator.getPermissionAPI();
 
@@ -1362,235 +1093,167 @@ public class UserAjax {
 
 				@Override
 				public List<User> getUsers() {
-					return perAPI.getUsers(inode, permissionType, filter,
-							start, limit);
+					return perAPI.getUsers(inode, permissionType, filter, start, limit);
 				}
-
 			}.perform();
-		} catch (NumberFormatException nfe) {
-			Logger.warn(
-					UserAjax.class,
-					String.format(
-							"::getUsersList -> Invalid parameters inode(%s) permission(%s).",
-							assetInode, permission));
-			results = new HashMap<String, Object>(0);
 		}
+		catch(NumberFormatException nfe) {
+			Logger.warn(UserAjax.class, String.format("::getUsersList -> Invalid parameters inode(%s) permission(%s).", assetInode, permission));
+			results = new HashMap<String,Object>(0);
+		}
+
 		return results;
 	}
 
-	/**
-	 * 
-	 * @param query
-	 * @param start
-	 * @param limit
-	 * @return
-	 */
-	private Map<String, Object> processUserList(String query, int start,
-			int limit) {
-		Map<String, Object> results = new UsersListTemplate("", 0, query,
-				start, limit) {
-			UserAPI userAPI = APILocator.getUserAPI();
+	private Map<String, Object> processUserList(String query, int start, int limit) {
 
-			@Override
-			public int getUserCount() {
-				try {
-					return new Long(
-							userAPI.getCountUsersByNameOrEmailOrUserID(filter))
-							.intValue();
-				} catch (DotDataException e) {
-					Logger.error(this, e.getMessage(), e);
-					return 0;
+		Map<String, Object> results = new UsersListTemplate("", 0, query, start, limit)
+		{
+				UserAPI userAPI = APILocator.getUserAPI();
+
+				@Override
+				public int getUserCount() {
+					try {
+						return new Long(userAPI.getCountUsersByNameOrEmailOrUserID(filter)).intValue();
+					} catch (DotDataException e) {
+						Logger.error(this, e.getMessage(), e);
+						return 0;
+					}
 				}
-			}
 
-			@Override
-			public List<User> getUsers() {
-				try {
-					int page = (start / limit) + 1;
-					int pageSize = limit;
-					return userAPI.getUsersByNameOrEmailOrUserID(filter, page,
-							pageSize);
-				} catch (DotDataException e) {
-					Logger.error(this, e.getMessage(), e);
-					return new ArrayList<User>();
+				@Override
+				public List<User> getUsers() {
+					try {
+						int page = (start/limit)+1;
+						int pageSize = limit;
+						return userAPI.getUsersByNameOrEmailOrUserID(filter, page, pageSize);
+					} catch (DotDataException e) {
+						Logger.error(this, e.getMessage(), e);
+						return new ArrayList<User>();
+					}
 				}
-			}
+		}
+		.perform();
 
-		}.perform();
 		return results;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param roles
-	 * @return
-	 * @throws Exception
-	 */
+
 	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-		// lock down to users with access to Users portlet
-		User loggedInUser = uWebAPI.getLoggedInUser(request);
-		if (loggedInUser == null
-				|| APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser)
-						.isEmpty()) {
-			SecurityLogger.logInfo(UserAjax.class,
-					"unauthorized attempt to call hasUserRoles by user "
-							+ loggedInUser != null ? loggedInUser.getUserId()
-							: "[not logged in]");
-			throw new DotSecurityException("not authorized");
-		}
+	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+        WebContext ctx = WebContextFactory.get();
+        HttpServletRequest request = ctx.getHttpServletRequest();
+
+        // lock down to users with access to Users portlet
+        User loggedInUser=uWebAPI.getLoggedInUser(request);
+        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call hasUserRoles by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+            throw new DotSecurityException("not authorized");
+        }
+
 		User user;
 		try {
-			user = APILocator.getUserAPI().loadUserById(userId,
-					APILocator.getUserAPI().getSystemUser(), false);
+			user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage(), e);
 			return false;
 		}
-		for (String roleName : roles) {
+		for(String roleName : roles) {
 			try {
-				if (com.dotmarketing.business.APILocator.getRoleAPI()
-						.doesUserHaveRole(user, roleName)) {
+				if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName))
 					return true;
-				}
 			} catch (DotDataException e) {
-				Logger.error(UserAjax.class, e.getMessage(), e);
+				Logger.error(UserAjax.class,e.getMessage(),e);
 				return false;
 			}
 		}
 		return false;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @return
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	public List<Map<String, Object>> getUserCategories(String userId)
-			throws PortalException, SystemException, DotDataException,
-			DotSecurityException {
+	public List<Map<String, Object>> getUserCategories(String userId) throws PortalException, SystemException, DotDataException, DotSecurityException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
+
 		CategoryAPI catAPI = APILocator.getCategoryAPI();
-		UserProxy uProxy = userProxyAPI.getUserProxy(userId,
-				uWebAPI.getLoggedInUser(request),
-				uWebAPI.isLoggedToBackend(request));
-		List<Category> children = catAPI.getChildren(uProxy,
-				uWebAPI.getLoggedInUser(request),
-				uWebAPI.isLoggedToBackend(request));
-		List<Map<String, Object>> toReturn = new ArrayList<Map<String, Object>>();
-		for (Category child : children) {
+		UserProxy uProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
+		List<Category> children = catAPI.getChildren(uProxy, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
+
+		List<Map<String, Object>> toReturn = new ArrayList<Map<String,Object>>();
+		for(Category child: children) {
 			toReturn.add(child.getMap());
 		}
+
 		return toReturn;
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param categories
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public void updateUserCategories(String userId, String[] categories)
-			throws PortalException, SystemException, DotSecurityException,
-			DotDataException {
+	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
+
 		User user = uWebAPI.getLoggedInUser(request);
 		boolean respectFrontend = uWebAPI.isLoggedToBackend(request);
+
 		CategoryAPI catAPI = APILocator.getCategoryAPI();
-		UserProxy userProxy = userProxyAPI.getUserProxy(userId,
-				uWebAPI.getLoggedInUser(request),
-				uWebAPI.isLoggedToBackend(request));
+		UserProxy userProxy = userProxyAPI.getUserProxy(userId, uWebAPI.getLoggedInUser(request), uWebAPI.isLoggedToBackend(request));
+
 		HibernateUtil.startTransaction();
-		List<Category> myUserCategories = catAPI.getChildren(userProxy, user,
-				respectFrontend);
+		List<Category> myUserCategories = catAPI.getChildren(userProxy, user, respectFrontend);
 		for (Object o : myUserCategories) {
-			if (o instanceof Category
-					&& catAPI.canUseCategory((Category) o, user,
-							respectFrontend)) {
-				catAPI.removeChild(userProxy, (Category) o, user,
-						respectFrontend);
+			if(o instanceof Category && catAPI.canUseCategory((Category)o, user, respectFrontend)){
+				catAPI.removeChild(userProxy, (Category)o, user, respectFrontend);
 			}
 		}
-		for (int i = 0; i < categories.length; i++) {
-			Category category = catAPI.find(categories[i], user,
-					respectFrontend);
-			if (InodeUtils.isSet(category.getInode())) {
+		for(int i = 0;i < categories.length;i++)
+		{
+			Category category = catAPI.find(categories[i], user, respectFrontend);
+			if(InodeUtils.isSet(category.getInode()))
+			{
 				catAPI.addChild(userProxy, category, user, respectFrontend);
 			}
 		}
 		HibernateUtil.commitTransaction();
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param timeZoneId
-	 * @param languageId
-	 * @throws DotDataException
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 */
-	public void updateUserLocale(String userId, String timeZoneId,
-			String languageId) throws DotDataException, PortalException,
-			SystemException, DotSecurityException {
+	public void updateUserLocale(String userId, String timeZoneId, String languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI userAPI = APILocator.getUserAPI();
+
 		User user = uWebAPI.getLoggedInUser(request);
 		boolean respectFrontend = uWebAPI.isLoggedToBackend(request);
+
 		User toUpdate = userAPI.loadUserById(userId, user, respectFrontend);
 		toUpdate.setTimeZoneId(timeZoneId);
 		toUpdate.setLanguageId(languageId);
 		userAPI.save(toUpdate, user, respectFrontend);
+
 	}
 
-	/**
-	 * 
-	 * @param userId
-	 * @param disabled
-	 * @throws PortalException
-	 * @throws SystemException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public void disableUserClicktracking(String userId, boolean disabled)
-			throws PortalException, SystemException, DotSecurityException,
-			DotDataException {
+	public void disableUserClicktracking(String userId, boolean disabled) throws PortalException, SystemException, DotSecurityException, DotDataException {
+
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserProxyAPI userProxyAPI = APILocator.getUserProxyAPI();
+
 		User user = uWebAPI.getLoggedInUser(request);
 		boolean respectFrontEndRoles = uWebAPI.isLoggedToBackend(request);
+
 		HibernateUtil.startTransaction();
-		UserProxy toUpdate = userProxyAPI.getUserProxy(userId, user,
-				respectFrontEndRoles);
+		UserProxy toUpdate = userProxyAPI.getUserProxy(userId, user, respectFrontEndRoles);
 		toUpdate.setNoclicktracking(disabled);
 		userProxyAPI.saveUserProxy(toUpdate, user, respectFrontEndRoles);
 		HibernateUtil.commitTransaction();
+
 	}
 
-	/**
-	 * Helper classes. They implement the template method design pattern.
-	 */
+
+	// Helper classes. They implement the template method design pattern.
 	@SuppressWarnings("unused")
 	private abstract class UsersAndRolesListTemplate {
 
@@ -1601,18 +1264,12 @@ public class UserAjax {
 		protected int limit;
 		protected boolean hideSystemRoles;
 
-		public abstract int getRoleCount(boolean hideSystemRoles)
-				throws NoSuchRoleException, SystemException;
-
-		public abstract List<Role> getRoles(boolean hideSystemRoles)
-				throws NoSuchRoleException, SystemException;
-
+		public abstract int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
+		public abstract List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 		public abstract int getUserCount();
-
 		public abstract List<User> getUsers(int start, int limit);
 
-		public UsersAndRolesListTemplate(String inode, int permissionType,
-				String filter, int start, int limit, boolean hideSystemRoles) {
+		public UsersAndRolesListTemplate(String inode, int permissionType, String filter, int start, int limit, boolean hideSystemRoles) {
 			this.inode = inode;
 			this.permissionType = permissionType;
 			this.filter = filter;
@@ -1622,81 +1279,86 @@ public class UserAjax {
 		}
 
 		public Map<String, Object> perform() {
-			ArrayList<Map<String, String>> list = null; // Keeps a list of roles
-														// and/or users
-			// Keeps the objects in container needed by the Ajax proxy
-			// (client-side)
-			Map<String, Object> results = new HashMap<String, Object>(2);
-			int totalItemCount = 0; // Keeps the grand total of items
-									// (No. of roles + No. of users)
+
+			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			int totalItemCount = 0;											// Keeps the grand total of items
+																			// (No. of roles + No. of users)
 			List<Role> roles = null;
 			List<User> users = new ArrayList<User>();
 			int realRoleCount = 0;
 			int realUserCount = 0;
-			// Step 1. Retrieve roles, beginning from "start" parameter, up to a
-			// number of "limit" items, filtered by "filter" parameter.
+
+			// Step 1. Retrieve roles, beginning from "start" parameter, up to a number of "limit" items, filtered by "filter" parameter.
 			try {
+
 				totalItemCount = getRoleCount(hideSystemRoles);
-				if (start < totalItemCount) {
+				if( start < totalItemCount ) {
 					roles = getRoles(hideSystemRoles);
 					realRoleCount = roles.size();
 				}
-				// Step 2. Retrieve users by matching name for the remaining of
-				// page, if needed.
-				if (realRoleCount < limit || limit < 0) {
-					// Since one page should be filled in with up to "limit"
-					// number of items, fill the remaining of page with users
-					int realStart = start - totalItemCount < 0 ? 0 : start
-							- totalItemCount;
-					int realLimit = limit - realRoleCount < 0 ? -1 : limit
-							- realRoleCount;
+
+			// Step 2. Retrieve users by matching name for the remaining of page, if needed.
+
+				if( realRoleCount < limit || limit < 0 ) {
+
+					// Since one page should be filled in with up to "limit" number of items, fill the remaining of page with users
+					int realStart = start - totalItemCount < 0 ? 0 : start - totalItemCount;
+					int realLimit = limit - realRoleCount < 0 ? -1 : limit - realRoleCount;
 					users = getUsers(realStart, realLimit);
 					realUserCount = users.size();
 				}
+
 				totalItemCount += getUserCount();
+
 				// Step 3. Get the CMS Admins
-				if (realRoleCount != 0 && (realRoleCount < limit || limit < 0)) {
-					Role CMSAdministratorRole = com.dotmarketing.business.APILocator
-							.getRoleAPI().loadCMSAdminRole();
-					List<User> CMSAdministrators = com.dotmarketing.business.APILocator
-							.getRoleAPI().findUsersForRole(
-									CMSAdministratorRole.getId());
+				if(realRoleCount != 0 && (realRoleCount < limit || limit < 0))
+				{
+					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
+					List<User> CMSAdministrators = com.dotmarketing.business.APILocator.getRoleAPI().findUsersForRole(CMSAdministratorRole.getId());
 					String localFilter = filter.toLowerCase();
-					for (User administrator : CMSAdministrators) {
-						if (administrator.getFullName().toLowerCase()
-								.contains(filter)) {
-							if (!users.contains(administrator)
-									&& !administrator.getUserId().equals(
-											"system")) {
+					for(User administrator : CMSAdministrators)
+					{
+						if(administrator.getFullName().toLowerCase().contains(filter))
+						{
+							if(!users.contains(administrator) && !administrator.getUserId().equals("system"))
+							{
 								users.add(administrator);
 							}
 						}
 					}
 				}
-				try {
+
+				try
+				{
 					SortTool sortTool = new SortTool();
-					users = (List<User>) sortTool.sort(users.toArray(),
-							"firstName");
-				} catch (Exception ex) {
-					Logger.info(
-							UserAjax.class,
-							"couldn't sort the users by first name"
-									+ ex.getMessage());
+					users = (List<User>) sortTool.sort(users.toArray(),"firstName");
+
 				}
-				try {
+				catch(Exception ex)
+				{
+					Logger.info(UserAjax.class,"couldn't sort the users by first name" + ex.getMessage());
+				}
+
+				try
+				{
 					SortTool sortTool = new SortTool();
-					roles = (List<Role>) sortTool.sort(roles.toArray(), "name");
-				} catch (Exception ex) {
-					Logger.info(UserAjax.class,
-							"couldn't sort the roles by name" + ex.getMessage());
+					roles = (List<Role>) sortTool.sort(roles.toArray(),"name");
+
 				}
-				// Step 4. Assemble all of this information into an appropriate
-				// container to the view
-				if (roles != null || users != null) {
+				catch(Exception ex)
+				{
+					Logger.info(UserAjax.class,"couldn't sort the roles by name" + ex.getMessage());
+				}
+
+				//Step 4. Assemble all of this information into an appropriate container to the view
+				if( roles != null || users != null ) {
+
 					int pageSize = realRoleCount + realUserCount;
 					list = new ArrayList<Map<String, String>>(pageSize);
-					if (roles != null) {
-						for (Role aRole : roles) {
+
+					if( roles != null ) {
+						for(Role aRole : roles) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							aRecord.put("id", aRole.getId());
 							aRecord.put("type", ROLE_TYPE_VALUE);
@@ -1705,15 +1367,14 @@ public class UserAjax {
 							list.add(aRecord);
 						}
 					}
-					if (users != null) {
-						for (User aUser : users) {
+
+					if( users != null ) {
+						for( User aUser : users ) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							String fullName = aUser.getFullName();
-							fullName = (UtilMethods.isSet(fullName) ? fullName
-									: " ");
+							fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
 							String emailAddress = aUser.getEmailAddress();
-							emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress
-									: " ");
+							emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress : " ");
 							aRecord.put("id", aUser.getUserId());
 							aRecord.put("type", USER_TYPE_VALUE);
 							aRecord.put("name", fullName);
@@ -1721,34 +1382,39 @@ public class UserAjax {
 							list.add(aRecord);
 						}
 					}
+
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
 					list = new ArrayList<Map<String, String>>(0);
-				} // end if
-				Collections.sort(list, new Comparator<Map<String, String>>() {
+				} //end if
+
+				Collections.sort(list, new Comparator <Map<String, String>>(){
 
 					public int compare(Map<String, String> record1,
 							Map<String, String> record2) {
-						return record1.get("name").compareTo(
-								record2.get("name"));
+
+						return record1.get("name").compareTo(record2.get("name"));
 					}
 
+
+
 				});
-			} catch (Exception ex) {
-				Logger.warn(UsersAndRolesListTemplate.class,
-						"::perform -> Could not process list of roles and users.");
+			}
+			catch(Exception ex) {
+	    		Logger.warn(UsersAndRolesListTemplate.class, "::perform -> Could not process list of roles and users.");
 				list = new ArrayList<Map<String, String>>(0);
 			}
+
 			results.put("data", list);
 			results.put("total", totalItemCount);
-			return results;
-		}
-	}
 
-	/**
-	 * Helper classes. They implement the template method design pattern.
-	 */
+			return results;
+
+		}
+
+	}
+	// Helper classes. They implement the template method design pattern.
 	@SuppressWarnings("unused")
 	private abstract class RolesListTemplate {
 
@@ -1759,14 +1425,11 @@ public class UserAjax {
 		protected int limit;
 		protected boolean hideSystemRoles;
 
-		public abstract int getRoleCount(boolean hideSystemRoles)
-				throws NoSuchRoleException, SystemException;
+		public abstract int getRoleCount(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
+		public abstract List<Role> getRoles(boolean hideSystemRoles) throws NoSuchRoleException, SystemException;
 
-		public abstract List<Role> getRoles(boolean hideSystemRoles)
-				throws NoSuchRoleException, SystemException;
 
-		public RolesListTemplate(String inode, int permissionType,
-				String filter, int start, int limit, boolean hideSystemRoles) {
+		public RolesListTemplate(String inode, int permissionType, String filter, int start, int limit, boolean hideSystemRoles) {
 			this.inode = inode;
 			this.permissionType = permissionType;
 			this.filter = filter;
@@ -1776,69 +1439,81 @@ public class UserAjax {
 		}
 
 		public Map<String, Object> perform() {
-			ArrayList<Map<String, String>> list = null; // Keeps a list of roles
-														// and/or users
-			// Keeps the objects in container needed by the Ajax proxy
-			// (client-side)
-			Map<String, Object> results = new HashMap<String, Object>(2);
-			int totalItemCount = 0; // Keeps the grand total of items
-									// (No. of roles + No. of users)
+
+			ArrayList<Map<String, String>> list = null;						// Keeps a list of roles and/or users
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			int totalItemCount = 0;											// Keeps the grand total of items
+																			// (No. of roles + No. of users)
 			List<Role> roles = null;
+
 			int realRoleCount = 0;
-			// Step 1. Retrieve roles, beginning from "start" parameter, up to a
-			// number of "limit" items, filtered by "filter" parameter.
+
+
+			// Step 1. Retrieve roles, beginning from "start" parameter, up to a number of "limit" items, filtered by "filter" parameter.
 			try {
+
 				totalItemCount = getRoleCount(hideSystemRoles);
-				if (start < totalItemCount) {
+				if( start < totalItemCount ) {
 					roles = getRoles(hideSystemRoles);
 					realRoleCount = roles.size();
 				}
-				// Step 2. Retrieve users by matching name for the remaining of
-				// page, if needed.
-				if (realRoleCount < limit || limit < 0) {
-					// Since one page should be filled in with up to "limit"
-					// number of items, fill the remaining of page with users
-					int realStart = start - totalItemCount < 0 ? 0 : start
-							- totalItemCount;
-					int realLimit = limit - realRoleCount < 0 ? -1 : limit
-							- realRoleCount;
+
+			// Step 2. Retrieve users by matching name for the remaining of page, if needed.
+
+				if( realRoleCount < limit || limit < 0 ) {
+
+					// Since one page should be filled in with up to "limit" number of items, fill the remaining of page with users
+					int realStart = start - totalItemCount < 0 ? 0 : start - totalItemCount;
+					int realLimit = limit - realRoleCount < 0 ? -1 : limit - realRoleCount;
+
 				}
+
+
 				// Step 3. Get the CMS Admins
-				if (realRoleCount != 0 && (realRoleCount < limit || limit < 0)) {
-					Role CMSAdministratorRole = com.dotmarketing.business.APILocator
-							.getRoleAPI().loadCMSAdminRole();
-					List<User> CMSAdministrators = com.dotmarketing.business.APILocator
-							.getRoleAPI().findUsersForRole(
-									CMSAdministratorRole.getId());
+				if(realRoleCount != 0 && (realRoleCount < limit || limit < 0))
+				{
+					Role CMSAdministratorRole = com.dotmarketing.business.APILocator.getRoleAPI().loadCMSAdminRole();
+					List<User> CMSAdministrators = com.dotmarketing.business.APILocator.getRoleAPI().findUsersForRole(CMSAdministratorRole.getId());
 					String localFilter = filter.toLowerCase();
-					for (User administrator : CMSAdministrators) {
-						if (administrator.getFullName().toLowerCase()
-								.contains(filter)) {
+					for(User administrator : CMSAdministrators)
+					{
+						if(administrator.getFullName().toLowerCase().contains(filter))
+						{
+
 						}
 					}
 				}
-				try {
+
+				try
+				{
 					SortTool sortTool = new SortTool();
-				} catch (Exception ex) {
-					Logger.info(
-							UserAjax.class,
-							"couldn't sort the users by first name"
-									+ ex.getMessage());
+
+
 				}
-				try {
+				catch(Exception ex)
+				{
+					Logger.info(UserAjax.class,"couldn't sort the users by first name" + ex.getMessage());
+				}
+
+				try
+				{
 					SortTool sortTool = new SortTool();
-					roles = (List<Role>) sortTool.sort(roles.toArray(), "name");
-				} catch (Exception ex) {
-					Logger.info(UserAjax.class,
-							"couldn't sort the roles by name" + ex.getMessage());
+					roles = (List<Role>) sortTool.sort(roles.toArray(),"name");
+
 				}
-				// Step 4. Assemble all of this information into an appropriate
-				// container to the view
-				if (roles != null) {
-					int pageSize = realRoleCount;
+				catch(Exception ex)
+				{
+					Logger.info(UserAjax.class,"couldn't sort the roles by name" + ex.getMessage());
+				}
+
+				//Step 4. Assemble all of this information into an appropriate container to the view
+				if( roles != null  ) {
+
+					int pageSize = realRoleCount ;
 					list = new ArrayList<Map<String, String>>(pageSize);
-					if (roles != null) {
-						for (Role aRole : roles) {
+
+					if( roles != null ) {
+						for(Role aRole : roles) {
 							Map<String, String> aRecord = new HashMap<String, String>();
 							aRecord.put("id", aRole.getId());
 							aRecord.put("type", ROLE_TYPE_VALUE);
@@ -1847,36 +1522,39 @@ public class UserAjax {
 							list.add(aRecord);
 						}
 					}
+
+
 				}
 				// No roles nor users retrieved. So create an empty list.
 				else {
 					list = new ArrayList<Map<String, String>>(0);
-				} // end if
-				Collections.sort(list, new Comparator<Map<String, String>>() {
+				} //end if
+
+				Collections.sort(list, new Comparator <Map<String, String>>(){
 
 					public int compare(Map<String, String> record1,
 							Map<String, String> record2) {
-						return record1.get("name").compareTo(
-								record2.get("name"));
+
+						return record1.get("name").compareTo(record2.get("name"));
 					}
 
+
+
 				});
-			} catch (Exception ex) {
-				Logger.warn(UsersAndRolesListTemplate.class,
-						"::perform -> Could not process list of roles");
+			}
+			catch(Exception ex) {
+	    		Logger.warn(UsersAndRolesListTemplate.class, "::perform -> Could not process list of roles");
 				list = new ArrayList<Map<String, String>>(0);
 			}
+
 			results.put("data", list);
 			results.put("total", totalItemCount);
+
 			return results;
 		}
 	}
 
-	/**
-	 * 
-	 * @version 1.0
-	 *
-	 */
+
 	private abstract class UsersListTemplate {
 
 		protected String inode;
@@ -1886,11 +1564,9 @@ public class UserAjax {
 		protected int limit;
 
 		public abstract int getUserCount();
-
 		public abstract List<User> getUsers();
 
-		public UsersListTemplate(String inode, int permissionType,
-				String filter, int start, int limit) {
+		public UsersListTemplate(String inode, int permissionType, String filter, int start, int limit) {
 			this.inode = inode;
 			this.permissionType = permissionType;
 			this.filter = filter;
@@ -1899,63 +1575,61 @@ public class UserAjax {
 		}
 
 		public Map<String, Object> perform() {
-			ArrayList<Map<String, String>> list = null; // Keeps a list of users
-			// Keeps the objects in container needed by the Ajax proxy
-			// (client-side)
-			Map<String, Object> results = new HashMap<String, Object>(2);
-			int totalItemCount = 0; // Keeps the grand total of items
-									// (No. of users)
+
+			ArrayList<Map<String, String>> list = null;						// Keeps a list of users
+			Map<String, Object> results = new HashMap<String, Object>(2);	// Keeps the objects in container needed by the Ajax proxy (client-side)
+			int totalItemCount = 0;											// Keeps the grand total of items
+																			// (No. of users)
 			List<User> users = null;
 			int realUserCount = 0;
-			// Step 1. Retrieve users, beginning from "start" parameter, up to a
-			// number of "limit" items, filtered by "filter" parameter.
+
+			// Step 1. Retrieve users, beginning from "start" parameter, up to a number of "limit" items, filtered by "filter" parameter.
 			try {
+
 				totalItemCount = getUserCount();
-				if (start < totalItemCount) {
+				if( start < totalItemCount ) {
 					users = getUsers();
 					realUserCount = users.size();
 				}
-				// Step 2. Assemble all of this information into an appropriate
-				// container to the view
-				if (users != null) {
+
+			// Step 2. Assemble all of this information into an appropriate container to the view
+				if( users != null ) {
+
 					int pageSize = realUserCount;
 					list = new ArrayList<Map<String, String>>(pageSize);
-					for (User aUser : users) {
+
+					for( User aUser : users ) {
 						Map<String, String> aRecord = new HashMap<String, String>();
 						String fullName = aUser.getFullName();
-						fullName = (UtilMethods.isSet(fullName) ? fullName
-								: " ");
+						fullName = (UtilMethods.isSet(fullName) ? fullName : " ");
 						String emailAddress = aUser.getEmailAddress();
-						emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress
-								: " ");
+						emailAddress = (UtilMethods.isSet(emailAddress) ? emailAddress : " ");
 						aRecord.put("id", aUser.getUserId());
 						aRecord.put("type", USER_TYPE_VALUE);
 						aRecord.put("name", fullName);
-						aRecord.put("emailaddress", emailAddress);
+						aRecord.put("emailaddress",emailAddress);
 						list.add(aRecord);
 					}
 				}
 				// No users retrieved. So create an empty list.
 				else {
 					list = new ArrayList<Map<String, String>>(0);
-				} // end if
-			} catch (Exception ex) {
-				Logger.warn(UserAjax.class,
-						"::processUsersList -> Could not process list of users.");
+				} //end if
+			}
+			catch(Exception ex) {
+	    		Logger.warn(UserAjax.class, "::processUsersList -> Could not process list of users.");
 				list = new ArrayList<Map<String, String>>(0);
 			}
+
 			results.put("data", list);
 			results.put("total", totalItemCount);
+
 			return results;
+
 		}
+
 	}
 
-	/**
-	 * 
-	 * @return
-	 * @throws PortalException
-	 * @throws SystemException
-	 */
 	private User getUser() throws PortalException, SystemException {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
