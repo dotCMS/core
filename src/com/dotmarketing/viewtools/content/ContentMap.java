@@ -83,7 +83,7 @@ public class ContentMap {
 		this.host = host;
 		this.context = context;
 	}
-
+	
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -109,7 +109,23 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
+	
 	public Object get(String fieldVariableName) {
+		return get(fieldVariableName, true);
+	}
+	
+	/**
+	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
+	 * @param fieldVariableName The velocity Variable name from the structure.
+	 * @return
+	 */
+	
+	public Object getRaw(String fieldVariableName) {
+		return get(fieldVariableName, false);
+	}
+
+	
+	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
 			Object ret = null;
 			Field f = retriveField(fieldVariableName);
@@ -268,7 +284,7 @@ public class ContentMap {
 			}
 
 			//handle Velicty Code
-			if(ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
+			if(parseVelocity && ret != null && (f == null || f.getFieldType().equals(Field.FieldType.TEXT.toString()) || f.getFieldType().equals(Field.FieldType.TEXT_AREA.toString()) || f.getFieldType().equals(Field.FieldType.CUSTOM_FIELD.toString()) || f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) && (ret.toString().contains("#") || ret.toString().contains("$"))){
 				VelocityEngine ve = VelocityUtil.getEngine();
 				Template template = null;
 				StringWriter sw = new StringWriter();
