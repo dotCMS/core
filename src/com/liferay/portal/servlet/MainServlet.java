@@ -298,6 +298,10 @@ public class MainServlet extends ActionServlet {
 		// Shared session
 
 		HttpSession ses = req.getSession();
+		
+		String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
+
+		String cookiesHttpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)?"HttpOnly":"";
 
 		if (!GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL))) {
 			String sharedSessionId = CookieUtil.get(req.getCookies(), CookieKeys.SHARED_SESSION_ID);
@@ -309,22 +313,7 @@ public class MainServlet extends ActionServlet {
 
 				Cookie sharedSessionIdCookie = new Cookie(CookieKeys.SHARED_SESSION_ID, sharedSessionId);
 				sharedSessionIdCookie.setMaxAge(86400);
-
-				String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
-
-				if(cookiesSecureFlag.equals("always")) {
-					sharedSessionIdCookie.setSecure(true);
-				} else if(cookiesSecureFlag.equals("https")) {
-					sharedSessionIdCookie.setSecure(req.isSecure());
-				} else if(cookiesSecureFlag.equals("never")) {
-					sharedSessionIdCookie.setSecure(false);
-				}
-
-				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
-					sharedSessionIdCookie.setPath("/; HttpOnly;");
-				} else {
-					sharedSessionIdCookie.setPath("/");
-				}
+				sharedSessionIdCookie.setPath("/");
 
 				res.addCookie(sharedSessionIdCookie);
 
@@ -349,6 +338,27 @@ public class MainServlet extends ActionServlet {
 				SharedSessionPool.put(sharedSessionId, ses);
 			}
 		}
+		
+		
+		// COOKIES
+		
+		Cookie[] cookies = req.getCookies();
+		
+		if(cookies!=null) {
+			String headerStr = "";
+			for(Cookie cookie : cookies){
+
+				if(cookiesSecureFlag.equals("always") || (cookiesSecureFlag.equals("https") && req.isSecure())) {
+					headerStr = cookie.getName() + "=" + cookie.getValue() + "; secure; "+cookiesHttpOnly+" ;Path=/; Version="+cookie.getVersion();
+				} else { 
+					headerStr = cookie.getName() + "=" + cookie.getValue() + "; "+ cookiesHttpOnly+ ";Path=/; Version="+cookie.getVersion();
+				}
+
+				res.addHeader("SET-COOKIE", headerStr);
+			}
+		}
+		
+		// END COOKIES
 
 		// Test CAS auto login
 
