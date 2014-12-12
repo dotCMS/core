@@ -106,7 +106,7 @@
         );
 %>
     <input type="text" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>"
-        <%=(isNumber) ? "dojoType='dijit.form.NumberTextBox' style='width:120px;'" : "dojoType='dijit.form.TextBox' style='width:400px'" %>
+        <%=(isNumber) ? "dojoType='dijit.form.ValidationTextBox' data-dojo-props=\"regExp:'\\\\d*\\.?\\\\d*', invalidMessage:'Invalid data.'\" style='width:120px;'" : "dojoType='dijit.form.TextBox' style='width:400px'" %>
         value="<%= UtilMethods.htmlifyString(textValue) %>" <%= isReadOnly?"readonly=\"readonly\"":"" %> />
 <%
     }
