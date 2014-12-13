@@ -1496,15 +1496,17 @@ public class IntegrityUtil {
 		    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
 		    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
 		    String assetName = (String) result.get( "html_page" );
+		    String localInode = (String) result.get( "local_inode" );
 
             //We need only the last part of the url, not the whole path.
             String[] assetNamebits = assetName.split("/");
             assetName = assetNamebits[assetNamebits.length-1];
 
 		    htmlPageCache.remove(oldHtmlPageIdentifier);
+		    CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
 
 		 	//Fixing by SQL queries
-		    dc.setSQL("INSERT identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+		    dc.setSQL("INSERT into identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
 		    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
 		    		+ "FROM identifier WHERE id = ?");
 		    dc.addParam(newHtmlPageIdentifier);
