@@ -22,7 +22,13 @@
 
 package com.liferay.util;
 
+import java.util.Set;
+
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dotmarketing.util.Config;
 
 /**
  * <a href="CookieUtil.java.html"><b><i>View Source</i></b></a>
@@ -32,7 +38,10 @@ import javax.servlet.http.Cookie;
  *
  */
 public class CookieUtil {
-
+	
+	public static final String HTTP_ONLY = "HttpOnly";
+	public static final String SECURE = "secure";
+	
 	public static String get(Cookie[] cookies, String name) {
 		if ((cookies != null) && (cookies.length > 0)) {
 			for (int i = 0; i < cookies.length; i++) {
@@ -108,6 +117,55 @@ public class CookieUtil {
 		}
 
 		return cookie + tag.substring(1, tag.length()) + sub + ";";
+	}
+	
+	/*
+	 * Adds the secure and httpOnly flag to cookies depending on the config by adding the SET-COOKIE header to the response
+	 * @param req The HttpServletRequest object
+	 * @param res the HttpServletResponse object
+	 */
+	
+	public static void setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res) {
+		setCookiesSecurityHeaders(req, res, null);
+	}
+	
+	
+	/*
+	 * Adds the secure and httpOnly flag to cookies depending on the config by adding the SET-COOKIE header to the response
+	 * @param req The HttpServletRequest object
+	 * @param res the HttpServletResponse object
+	 * @cookies an optional list with the names of the cookies that will only be affected. 
+	 */
+	
+	public static void setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res, Set<String> cookies) {
+		
+		if(req.getCookies()!=null) {
+			StringBuilder headerStr = new StringBuilder();
+			for(Cookie cookie : req.getCookies()){
+				
+				if(cookies==null || cookies.remove(cookie.getName())) {
+
+					if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+							|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
+
+						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
+						else 
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(SECURE).append(";Path=/");
+
+					} else { 
+
+						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(HTTP_ONLY).append(";Path=/");
+						else 
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";Path=/");
+					}
+
+					res.addHeader("SET-COOKIE", headerStr.toString());
+
+				}
+			}
+		}
 	}
 
 }

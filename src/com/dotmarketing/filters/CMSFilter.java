@@ -27,15 +27,18 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.util.CookieUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.Xss;
+
 import org.apache.commons.logging.LogFactory;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -75,6 +78,11 @@ public class CMSFilter implements Filter {
         String uri = request.getRequestURI();
 
         uri = URLDecoder.decode(uri, "UTF-8");
+        
+     // Handle the DWR Cookie
+        HashSet<String> cookieToHandle = new HashSet<String>();
+        cookieToHandle.add("DWRSESSIONID");
+        CookieUtil.setCookiesSecurityHeaders(request, response, cookieToHandle);
 
 		Company company = PublicCompanyFactory.getDefaultCompany();
 
