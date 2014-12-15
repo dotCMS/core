@@ -394,6 +394,10 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						//Logger.warn(this, "Folder Iteration in progress Name [" + f.getName() + "], show on Menu Indicator [" + f.isShowOnMenu() + "]");
 						itemsList2.addAll(folderAPI.findMenuItems(f,
 								systemUser, true));
+						//Adding index.html, even it is not marked show on menu with parent folder has show on menu
+						HTMLPage indexPage = APILocator.getHTMLPageAPI().loadPageByPath(f.getPath()+"index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"), host);
+						if(UtilMethods.isSet(indexPage.getIdentifier()) && !indexPage.isShowOnMenu())
+							itemsList2.add(indexPage);
 					}
 				}
 
