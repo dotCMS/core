@@ -315,6 +315,8 @@ public class MainServlet extends ActionServlet {
 				sharedSessionIdCookie.setMaxAge(86400);
 				sharedSessionIdCookie.setPath("/");
 
+				sharedSessionIdCookie.setSecure(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure()));
 				res.addCookie(sharedSessionIdCookie);
 
 				_log.debug("Shared session id is " + sharedSessionId);
@@ -338,26 +340,11 @@ public class MainServlet extends ActionServlet {
 				SharedSessionPool.put(sharedSessionId, ses);
 			}
 		}
-		
-		
 		// COOKIES
 		
-		Cookie[] cookies = req.getCookies();
-		
-		if(cookies!=null) {
-			String headerStr = "";
-			for(Cookie cookie : cookies){
+		CookieUtil.setCookiesSecurityHeaders(req, res);
 
-				if(cookiesSecureFlag.equals("always") || (cookiesSecureFlag.equals("https") && req.isSecure())) {
-					headerStr = cookie.getName() + "=" + cookie.getValue() + "; secure; "+cookiesHttpOnly+" ;Path=/; Version="+cookie.getVersion();
-				} else { 
-					headerStr = cookie.getName() + "=" + cookie.getValue() + "; "+ cookiesHttpOnly+ ";Path=/; Version="+cookie.getVersion();
-				}
 
-				res.addHeader("SET-COOKIE", headerStr);
-			}
-		}
-		
 		// END COOKIES
 
 		// Test CAS auto login

@@ -125,8 +125,10 @@ public class CookieUtil {
 	 * @param res the HttpServletResponse object
 	 */
 	
-	public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res) {
-		return setCookiesSecurityHeaders(req, res, null);
+
+	public static void setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res) {
+		setCookiesSecurityHeaders(req, res, null);
+
 	}
 	
 	
@@ -137,71 +139,37 @@ public class CookieUtil {
 	 * @cookies an optional list with the names of the cookies that will only be affected. 
 	 */
 	
-	public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res, Set<String> cookies) {
-		
+
+	public static void setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res, Set<String> cookies) {
 		if(req.getCookies()!=null) {
 			StringBuilder headerStr = new StringBuilder();
 			for(Cookie cookie : req.getCookies()){
 				
 				if(cookies==null || cookies.remove(cookie.getName())) {
-					
-					String value = cookie.getValue();
-					
-					if(cookie.getName().equals("JSESSIONID")) {
-						value = req.getSession().getId();
-					} 
-						
 
 					if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
 							|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
 
 						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
-						else 
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(SECURE).append(";Path=/");
 
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
+						else 
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(SECURE).append(";Path=/");
 					} else { 
 
 						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(HTTP_ONLY).append(";Path=/");
+
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";").append(HTTP_ONLY).append(";Path=/");
 						else 
-							headerStr.append(cookie.getName()).append("=").append(value).append(";Path=/");
+							headerStr.append(cookie.getName()).append("=").append(cookie.getValue()).append(";Path=/");
 					}
 
 					res.addHeader("SET-COOKIE", headerStr.toString());
-					headerStr.setLength(0);
 
 				}
 			}
-		} 
-		
-		if(req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID")) {
-			StringBuilder headerStr = new StringBuilder();
-
-			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
-				String value = req.getSession().getId();
-				
-				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
-				else
-					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";Path=/");
-
-				res.addHeader("SET-COOKIE", headerStr.toString());
-			}
 		}
-		
-		return res;
-	}
-	
-	private static boolean containsCookie(Cookie[] cookies, String name) {
-		if(cookies==null) return false;
-		
-		for (Cookie cookie : cookies) {
-			if(cookie.getName().equalsIgnoreCase(name))
-				return true;
-		}
-		return false;
+
 	}
 
 }

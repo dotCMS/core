@@ -41,6 +41,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.CookieUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.Xss;
 
@@ -128,6 +130,14 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
+
+        uri = URLDecoder.decode(uri, "UTF-8");
+        
+     // Handle the DWR Cookie
+        HashSet<String> cookieToHandle = new HashSet<String>();
+        cookieToHandle.add("DWRSESSIONID");
+        CookieUtil.setCookiesSecurityHeaders(request, response, cookieToHandle);
+
 
 
 		// Checking if host is active
