@@ -307,26 +307,14 @@ public class MainServlet extends ActionServlet {
 			if (sharedSessionId == null) {
 				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
 
-				Cookie sharedSessionIdCookie = new Cookie(CookieKeys.SHARED_SESSION_ID, sharedSessionId);
-				sharedSessionIdCookie.setMaxAge(86400);
-
-				String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
-
-				if(cookiesSecureFlag.equals("always")) {
-					sharedSessionIdCookie.setSecure(true);
-				} else if(cookiesSecureFlag.equals("https")) {
-					sharedSessionIdCookie.setSecure(req.isSecure());
-				} else if(cookiesSecureFlag.equals("never")) {
-					sharedSessionIdCookie.setSecure(false);
-				}
-
-				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)) {
-					sharedSessionIdCookie.setPath("/; HttpOnly;");
-				} else {
-					sharedSessionIdCookie.setPath("/");
-				}
-
-				res.addCookie(sharedSessionIdCookie);
+				String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
+				
+				String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
+					
+				StringBuilder headerStr = new StringBuilder();
+				headerStr.append(CookieKeys.SHARED_SESSION_ID).append("=").append(sharedSessionId).append(";").append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=86400");
+				res.addHeader("SET-COOKIE", headerStr.toString());
 
 				_log.debug("Shared session id is " + sharedSessionId);
 			}
