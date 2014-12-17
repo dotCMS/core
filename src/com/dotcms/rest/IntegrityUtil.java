@@ -1538,6 +1538,13 @@ public class IntegrityUtil {
 		    dc.addParam(assetName);
 		    dc.addParam(newHtmlPageIdentifier);
 		    dc.loadResult();
+
+            dc.setSQL("UPDATE multi_tree "
+                    + "SET parent1 = ? "
+                    + "WHERE parent1 = ?");
+            dc.addParam(newHtmlPageIdentifier);
+            dc.addParam(oldHtmlPageIdentifier);
+            dc.loadResult();
 		}
 
 		discardConflicts(serverId, IntegrityType.HTMLPAGES);
