@@ -98,14 +98,13 @@
 							</button>
 							
 							
-	                        <button dojoType="dijit.form.ComboButton" disabled="<%=assets.size()>0?"false":"true" %>"  iconClass="downloadIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "download")) %>">
-	                            <span><%=LanguageUtil.get(pageContext, "download") %></span>
-		                        <div dojoType="dijit.Menu" id="menuItem-<%=bundle.getId()%>">
-		                            <div dojoType="dijit.MenuItem" iconClass="plusIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')"><%=LanguageUtil.get(pageContext, "download-for-Publish") %></div>
-		                            <div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')"><%=LanguageUtil.get(pageContext, "download-for-UnPublish") %></div>
-		                        </div>
-	                        </button>
-							
+	                        <button dojoType="dijit.form.Button" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')" iconClass="plusIcon">
+								<%=LanguageUtil.get(pageContext, "download-for-Publish") %>
+							</button>
+							<button dojoType="dijit.form.Button" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')" iconClass="deleteIcon">
+								<%=LanguageUtil.get(pageContext, "download-for-UnPublish") %>
+							</button>
+											
 						
 
 							<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="sServerIcon">
