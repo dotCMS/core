@@ -715,11 +715,11 @@ public class IntegrityUtil {
             String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
 
             //Compare the data from the CSV to the local database data and see if we have conflicts.
-            dc.setSQL("select lh.page_url as html_page, "
-            		+ "lh.inode as local_inode, "
-            		+ "ri.inode as remote_inode, "
-            		+ "li.id as local_identifier, "
-            		+ "ri.identifier as remote_identifier "
+            String selectSQL = "select lh.page_url as html_page, "
+                    + "lh.inode as local_inode, "
+                    + "ri.inode as remote_inode, "
+                    + "li.id as local_identifier, "
+                    + "ri.identifier as remote_identifier "
                     + "from identifier as li "
                     + "join htmlpage as lh "
                     + "on lh.identifier = li.id "
@@ -728,7 +728,13 @@ public class IntegrityUtil {
                     + "on li.asset_name = ri.asset_name "
                     + "and li.parent_path = ri.parent_path "
                     + "and li.host_inode = ri.host_identifier "
-                    + "and li.id <> ri.identifier");
+                    + "and li.id <> ri.identifier";
+
+            if(DbConnectionFactory.isOracle()) {
+                selectSQL = selectSQL.replaceAll(" as ", " ");
+            }
+
+            dc.setSQL(selectSQL);
 
             List<Map<String,Object>> results = dc.loadObjectResults();
 
@@ -742,24 +748,28 @@ public class IntegrityUtil {
                 	fullHtmlPage = " li.parent_path + li.asset_name ";
                 }
 
-                final String INSERT_INTO_RESULTS_TABLE = "insert into " + resultsTableName 
-                		+ " select " + fullHtmlPage + " as html_page, "
-                		+ "lh.inode as local_inode, "
-                		+ "ri.inode as remote_inode, "
-                		+ "li.id as local_identifier, "
-                		+ "ri.identifier as remote_identifier, "
-                		+ "'" + endpointId + "' "
-                        + "from identifier as li "
-                        + "join htmlpage as lh "
-                        + "on lh.identifier = li.id "
-                        + "and li.asset_type = 'htmlpage' "
-                        + "join " + tempTableName + " as ri "
-                        + "on li.asset_name = ri.asset_name "
-                        + "and li.parent_path = ri.parent_path "
-                        + "and li.host_inode = ri.host_identifier "
-                        + "and li.id <> ri.identifier";
+                String insertSQL = "insert into " + resultsTableName
+                    + " select " + fullHtmlPage + " as html_page, "
+                    + "lh.inode as local_inode, "
+                    + "ri.inode as remote_inode, "
+                    + "li.id as local_identifier, "
+                    + "ri.identifier as remote_identifier, "
+                    + "'" + endpointId + "' "
+                    + "from identifier as li "
+                    + "join htmlpage as lh "
+                    + "on lh.identifier = li.id "
+                    + "and li.asset_type = 'htmlpage' "
+                    + "join " + tempTableName + " as ri "
+                    + "on li.asset_name = ri.asset_name "
+                    + "and li.parent_path = ri.parent_path "
+                    + "and li.host_inode = ri.host_identifier "
+                    + "and li.id <> ri.identifier";
 
-                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+                if(DbConnectionFactory.isOracle()) {
+                    insertSQL = insertSQL.replaceAll(" as ", " ");
+                }
+
+                dc.executeStatement(insertSQL);
             }
 
             dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTMLPAGES));
