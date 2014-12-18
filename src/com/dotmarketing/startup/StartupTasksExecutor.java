@@ -277,6 +277,9 @@ public class StartupTasksExecutor {
 						// the db version.
 						try {
 //						    conn = DbConnectionFactory.getDataSource().getConnection();
+							if (conn != null && conn.isClosed()) {
+								conn = DbConnectionFactory.getDataSource().getConnection();
+							}
 						    conn.setAutoCommit(true);
 						    update = conn.prepareStatement("INSERT INTO db_version (db_version,date_update) VALUES (?,?)");
     						update.setInt(1, taskId);
