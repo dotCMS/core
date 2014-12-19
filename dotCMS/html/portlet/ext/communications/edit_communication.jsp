@@ -58,7 +58,11 @@
 <style media="all" type="text/css">
 	@import url(/html/portlet/ext/contentlet/field/edit_field.css);
 </style>
-<script language="javascript" type="text/javascript" src="/html/js/tinymce/jscripts/tiny_mce/tiny_mce_gzip.js"></script>
+<%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
+<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tiny_mce_gzip.js"></script>
+<%}else { %>
+<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
+<%}%>
 
 
 <script type='text/javascript' src='/dwr/interface/CampaignsAjax.js'></script>
