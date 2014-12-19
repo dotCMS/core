@@ -122,7 +122,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_2'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.4.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-codecs', version:'4.4.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.4.0_1'
