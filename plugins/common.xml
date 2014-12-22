@@ -28,6 +28,9 @@
 		<fileset dir="${basedir}/../../${target.root.dir}/../../lib">
 			<include name="**/*.jar" />
 		</fileset>
+		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib">
+			<include name="**/*.jar" />
+		</fileset>
 		<fileset dir="lib">
 			<include name="**/*.jar" />
 		</fileset>
