@@ -25,7 +25,7 @@
     </condition>
 
 	<path id="files-classpath">
-		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib">
+		<fileset dir="${basedir}/../../${target.root.dir}/../../lib">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="lib">
