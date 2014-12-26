@@ -19,6 +19,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -119,7 +120,7 @@ public class WorkingCache {
 
 		if (URI.endsWith("/")) {
 			//it's a folder path, so I add index.html at the end
-			URI += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+			URI += CMSFilter.CMS_INDEX_PAGE;
 		}
 
 		// lets try to lazy get it.
@@ -130,7 +131,7 @@ public class WorkingCache {
 		if(!InodeUtils.isSet(id.getInode())) 
 		{
 			//it's a folder path, so I add index.html at the end
-			URI += "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+			URI += "/" + CMSFilter.CMS_INDEX_PAGE;
 			id = APILocator.getIdentifierAPI().find( fake,URI);
 			if(!InodeUtils.isSet(id.getInode()))
 			{

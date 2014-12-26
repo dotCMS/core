@@ -817,7 +817,9 @@ public class BrowserAjax {
     	HashMap<String, Object> result = new HashMap<String, Object> ();
     	
     	String pageURL = page.getPageUrl();
-    	result.put("lastName", pageURL.substring(0, pageURL.lastIndexOf(".")));
+    	String lastName = (pageURL.lastIndexOf(".") > -1) ? pageURL.substring(0, pageURL.lastIndexOf(".")) : pageURL;
+    	
+    	result.put("lastName",lastName);
 
     	result.put("newName", newName);
     	result.put("inode", inode);

@@ -1090,7 +1090,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
      		}
 
 
-	     	if (currentName.lastIndexOf('.') != -1) {
+	     	if (currentName.lastIndexOf('.') != -1 && inodes[inode].type != 'htmlpage') {
 		     	changingNameExt = currentName.substring((currentName.lastIndexOf('.') + 1), currentName.length);
 		     	currentName = currentName.substring(0, currentName.lastIndexOf('.'));
 		     	lastName = currentName;
