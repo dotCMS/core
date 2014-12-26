@@ -9,6 +9,7 @@ import com.dotmarketing.util.Logger;
 public class HelloWorldPluginDeployer implements PluginDeployer {
 
 	public boolean deploy() {
+		final String H2CREATESQL = "CREATE TABLE `hello_world_bean` (`id` BIGINT  NOT NULL AUTO_INCREMENT,`name` VARCHAR(255) , PRIMARY KEY (`id`));";
 		final String PGCREATESQL = "CREATE TABLE hello_world_bean (id bigserial NOT NULL, JOB_NAME character varying(255) NOT NULL, CONSTRAINT hello_world_bean_pkey PRIMARY KEY (id));";
 		final String MYCREATESQL = "CREATE TABLE `hello_world_bean` (`id` BIGINT  NOT NULL AUTO_INCREMENT,`name` VARCHAR(255) , PRIMARY KEY (`id`));";
 		final String MSCREATESQL = "CREATE TABLE hello_world_bean ( id bigint NOT NULL IDENTITY (1, 1), name varchar(255) NOT NULL, primary key (id));";
@@ -24,21 +25,28 @@ public class HelloWorldPluginDeployer implements PluginDeployer {
 				"/\n;";
 		try{
 			DotConnect dc = new DotConnect();
-			if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.POSTGRESQL)){
+			if(DbConnectionFactory.isPostgres()){
 				dc.setSQL(PGCREATESQL);
 				try {
 					dc.loadResult();
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 				}
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MYSQL)){
+			}else if(DbConnectionFactory.isH2()){
+				dc.setSQL(H2CREATESQL);
+				try {
+					dc.loadResult();
+				} catch (DotDataException e) {
+					Logger.error(this, e.getMessage(), e);
+				}
+			}else if(DbConnectionFactory.isMySql()){
 				dc.setSQL(MYCREATESQL);
 				try {
 					dc.loadResult();
 				} catch (DotDataException e) {
 					Logger.error(this, e.getMessage(), e);
 				}
-			}else if(DbConnectionFactory.getDBType().equals(DbConnectionFactory.MSSQL)){
+			}else if(DbConnectionFactory.isMsSql()){
 				dc.setSQL(MSCREATESQL);
 				try {
 					dc.loadResult();

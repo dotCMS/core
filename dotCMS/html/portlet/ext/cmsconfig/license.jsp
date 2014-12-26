@@ -668,7 +668,7 @@
 							        	<div class="stepHeader"><%= LanguageUtil.get(pageContext, "global-step2") %> <small><%= LanguageUtil.get(pageContext, "request-license-step2-words") %></small></div>
 							        	<div class="stepBody">
 							        		<div id="getMeMyLicenseCode">
-												<p><%= LanguageUtil.get(pageContext, "request-license-paste-code") %></p>
+												<p><%= LanguageUtil.get(pageContext, "request-license-copy-code-to-portal") %></p>
 												<div style="word-wrap: break-word;font-family: monospace;">
 													<textarea id="licenseCode" style="width:100%;margin:auto;height:100px;font-family: monospace;border:1px solid silver;"></textarea>
 												</div>
