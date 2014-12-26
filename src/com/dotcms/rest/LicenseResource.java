@@ -236,7 +236,7 @@ public class LicenseResource extends WebResource {
     					.setResponse(new com.dotmarketing.util.json.JSONObject()
 							.put(ServerAction.ERROR_STATE, "Server did NOT respond on time"));
     				APILocator.getServerActionAPI().saveServerActionBean(resetLicenseServerActionBean);
-    				LicenseUtil.freeLicenseOnRepo(serial);
+				LicenseUtil.freeLicenseOnRepo(serial, remoteServerId);
     			
     			//If it was completed but we got some error, we need to alert it.
     			} else if(resetLicenseServerActionBean.isCompleted() 
