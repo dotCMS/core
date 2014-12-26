@@ -130,8 +130,6 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
-
-        uri = URLDecoder.decode(uri, "UTF-8");
         
      // Handle the DWR Cookie
         HashSet<String> cookieToHandle = new HashSet<String>();
