@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="java.util.HashMap"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
@@ -26,8 +27,13 @@
 	WorkflowAPI wapi = APILocator.getWorkflowAPI();
 
 	List<WorkflowTask> tasks = searcher.findTasks();
-	
-
+	List<Long> langs = new ArrayList<Long>();
+	for(Language l : APILocator.getLanguageAPI().getLanguages()){
+		langs.add(l.getId());
+	}
+	Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+	langs.remove(defaultLang.getId());
+	langs.add(0, defaultLang.getId());
 
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] { "/ext/workflows/view_workflow_tasks" });
@@ -143,15 +149,21 @@
             }
         %>
 		<%Contentlet contentlet = new Contentlet();
-
-			try{
-			 //contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,lang, user, true);
-			 contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true).get(0);
+			for(Long lang : langs){
+				try{
+				 	contentlet = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(),false,lang, APILocator.getUserAPI().getSystemUser(), true);
+				 	//contentlet = APILocator.getContentletAPI().search("+identifier: "+task.getWebasset(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true).get(0);
+				}
+				catch(Exception e){
+					Logger.debug(this.getClass(), e.getMessage());	
+				}
+				if(contentlet != null && UtilMethods.isSet(contentlet.getInode())){
+					break;
+				}
 			}
-			catch(Exception e){
-				Logger.error(this.getClass(), e.getMessage());	
-			}
-			%>
+			
+			
+		%>
 		<%WorkflowStep step = APILocator.getWorkflowAPI().findStep(task.getStatus()); %>
 		<tr class="alternate_1">
 			<td>
