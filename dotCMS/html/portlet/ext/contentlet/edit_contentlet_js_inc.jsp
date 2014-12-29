@@ -248,9 +248,9 @@ dojo.require("dojox.layout.ContentPane");
 			var fileName = document.getElementById("selectedwysiwyg_file").value;
 			var ident = document.getElementById("selectedIdentwysiwyg_file").value;
 			var fileFolder = document.getElementById("folderwysiwyg_file").value;
-			<% String ext = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-			var fileExt = getFileExtension(fileName).toString();
-			if(fileExt == '<%= ext %>'){
+			<% String ext = Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"); %>
+
+			if(fileName.lastIndexOf('<%=ext%>') + '<%=ext%>'.length == filename.length){
 				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = fileFolder + fileName;
 			}else{
 				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = /dotAsset/ + ident;

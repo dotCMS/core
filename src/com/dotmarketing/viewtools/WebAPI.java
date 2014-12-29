@@ -461,9 +461,7 @@ public class WebAPI implements ViewTool {
 
 	}
 
-	public String getPageFileExtension(){
-		return Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-	}
+
 
 	public int stringLength(String text){
 

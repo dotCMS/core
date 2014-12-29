@@ -26,7 +26,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.dotmarketing.viewtools.RequestWrapper;
@@ -286,7 +286,7 @@ public class VelocityUtil {
 	
 
 	
-	public static void makeBackendContext(Context context, HTMLPage htmlPage, String cmsTemplateInode, String idURI, HttpServletRequest request,
+	public static void makeBackendContext(Context context, IHTMLPage htmlPage, String cmsTemplateInode, String idURI, HttpServletRequest request,
 			boolean ADMIN_MODE, boolean EDIT_MODE, boolean PREVIEW_MODE, Host host) throws DotDataException {
 		context.put("context", context);
 
@@ -303,12 +303,7 @@ public class VelocityUtil {
 			context.put("HTMLPAGE_REDIRECT", htmlPage.getRedirect());
 			context.put("friendlyName", htmlPage.getFriendlyName());
 			context.put("pageTitle", htmlPage.getTitle());
-			Date moddate = null;
-			if (UtilMethods.isSet(htmlPage.getModDate())) {
-				moddate = htmlPage.getModDate();
-			} else {
-				moddate = htmlPage.getStartDate();
-			}
+			Date moddate = htmlPage.getModDate();
 
 			moddate = new Date(moddate.getTime());
 

@@ -21,6 +21,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
@@ -110,26 +111,20 @@ public class RefreshMenus {
 
 	}
 
+	
+	protected boolean _menusNulls(Object a, Object b) {
+	    return a==null || b==null;
+	}
 
-	public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile){
+	public static boolean shouldRefreshMenus(IFileAsset oldFile, IFileAsset newFile, boolean isNew){
 		try{
-			if(oldFile == null || newFile ==null){
-				return true;
-			}
-
-			else if(oldFile.isShowOnMenu() != newFile.isShowOnMenu()){
-				return true;
-			}
-			else if(oldFile.isShowOnMenu() == newFile.isShowOnMenu() && newFile.isShowOnMenu()){
-				if(oldFile.getTitle() != null && !oldFile.getTitle().equals(newFile.getTitle())){
-					return true;
-				}
-			}
-			return false;
-		}
-		//no previous version
-		catch(IndexOutOfBoundsException out){
-			return true;
+			return (oldFile==null || newFile==null)
+			       || (newFile.isShowOnMenu() && isNew)
+			       || !isNew && 
+			         (oldFile.isShowOnMenu() != newFile.isShowOnMenu()
+			          || (oldFile.isShowOnMenu() && newFile.isShowOnMenu() && 
+			              oldFile.getTitle() != null && !oldFile.getTitle().equals(newFile.getTitle()))
+			          || oldFile.getMenuOrder()!=newFile.getMenuOrder());
 		}
 		catch(Exception e){
 			Logger.warn(RefreshMenus.class, e.getMessage());
@@ -137,7 +132,21 @@ public class RefreshMenus {
 		}
 	}
 
-
+	public static boolean shouldRefreshMenus(IHTMLPage oldFile, IHTMLPage newFile, boolean isNew){
+        try{
+            return (oldFile==null || newFile==null)
+                    || (newFile.isShowOnMenu() && isNew)
+                    || !isNew && 
+                       (oldFile.isShowOnMenu() != newFile.isShowOnMenu()
+                        || (oldFile.isShowOnMenu() && newFile.isShowOnMenu() && 
+                            oldFile.getTitle() != null && !oldFile.getTitle().equals(newFile.getTitle()))
+                        || oldFile.getMenuOrder()!=newFile.getMenuOrder());
+        }
+        catch(Exception e){
+            Logger.warn(RefreshMenus.class, e.getMessage());
+            return true;
+        }
+    }
 
 
 

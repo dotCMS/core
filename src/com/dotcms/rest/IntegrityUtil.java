@@ -35,6 +35,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -84,6 +85,54 @@ public class IntegrityUtil {
 
         return csvFile;
 
+    }
+    
+    /**
+     * Creates CSV file with HTML Pages information from End Point server. 
+     * 
+     * @param outputFile
+     * @return
+     * @throws DotDataException
+     * @throws IOException
+     */
+    private File generateHtmlPagesToCheckCSV(String outputFile) throws DotDataException, IOException {
+        Connection conn = DbConnectionFactory.getConnection();
+        ResultSet rs = null;
+        PreparedStatement statement = null;
+        CsvWriter writer = null;
+        File csvFile = null;
+
+        try {
+            csvFile = new File(outputFile);
+            writer = new CsvWriter(new FileWriter(csvFile, true), '|');
+            statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
+			rs = statement.executeQuery();
+            int count = 0;
+
+            while (rs.next()) {
+                writer.write(rs.getString("inode"));
+                writer.write(rs.getString("identifier"));
+                writer.write(rs.getString("parent_path"));
+                writer.write(rs.getString("asset_name"));
+                writer.write(rs.getString("host_inode"));
+                writer.endRecord();
+                count++;
+
+                if(count==1000) {
+                    writer.flush();
+                    count = 0;
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(),e);
+        }finally {
+            try { if (rs != null) rs.close(); } catch (Exception e) { }
+            try { if ( statement!= null ) statement.close(); } catch (Exception e) { }
+            if(writer!=null) writer.close();
+        }
+
+        return csvFile;
     }
 
     private File generateStructuresToCheckCSV(String outputFile) throws DotDataException, IOException {
@@ -177,7 +226,9 @@ public class IntegrityUtil {
 
             String resultsTable = getResultsTableName(type);
 
-            if(type==IntegrityType.FOLDERS) {
+            if(type == IntegrityType.HTMLPAGES){
+                statement = conn.prepareStatement("select html_page, remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
+            } else if(type == IntegrityType.FOLDERS) {
 				statement = conn.prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
 			} else {
 				statement = conn.prepareStatement("select remote_inode, local_inode from " + resultsTable + " where endpoint_id = ?");
@@ -191,9 +242,13 @@ public class IntegrityUtil {
                 writer.write(rs.getString("remote_inode"));
                 writer.write(rs.getString("local_inode"));
 
-                if(type==IntegrityType.FOLDERS) {
+                if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
                 	writer.write(rs.getString("remote_identifier"));
                 	writer.write(rs.getString("local_identifier"));
+                }
+
+                if(type == IntegrityType.HTMLPAGES) {
+                    writer.write(rs.getString("html_page"));
                 }
 
                 writer.endRecord();
@@ -220,7 +275,7 @@ public class IntegrityUtil {
 
     private static void addToZipFile(String fileName, ZipOutputStream zos, String zipEntryName) throws Exception  {
 
-        System.out.println("Writing '" + fileName + "' to zip file");
+        Logger.info(IntegrityUtil.class, "Writing '" + fileName + "' to zip file");
 
         try {
 
@@ -280,10 +335,17 @@ public class IntegrityUtil {
 
     }
 
+    /**
+     * Creates all the CSV from End Point database table and store them inside zip file. 
+     * 
+     * @param endpointId
+     * @throws Exception
+     */
     public void generateDataToCheckZip(String endpointId) throws Exception {
         File foldersToCheckCsvFile = null;
         File structuresToCheckCsvFile = null;
         File schemesToCheckCsvFile = null;
+        File htmlPagesToCheckCsvFile = null;
         File zipFile = null;
 
         try {
@@ -310,10 +372,12 @@ public class IntegrityUtil {
             foldersToCheckCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName());
             structuresToCheckCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName());
             schemesToCheckCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName());
+            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName());
 
             addToZipFile(foldersToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToCheckCSVName());
             addToZipFile(structuresToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToCheckCSVName());
             addToZipFile(schemesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToCheckCSVName());
+            addToZipFile(htmlPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.HTMLPAGES.getDataToCheckCSVName());
 
             zos.close();
             fos.close();
@@ -330,6 +394,8 @@ public class IntegrityUtil {
                 structuresToCheckCsvFile.delete();
             if(schemesToCheckCsvFile!=null && schemesToCheckCsvFile.exists())
                 schemesToCheckCsvFile.delete();
+            if(htmlPagesToCheckCsvFile!=null && htmlPagesToCheckCsvFile.exists())
+            	htmlPagesToCheckCsvFile.delete();
 
         }
     }
@@ -588,6 +654,123 @@ public class IntegrityUtil {
             throw new Exception("Error running the Workflow Schemes Integrity Check", e);
         }
     }
+    
+    /**
+     * Checks possible conflicts with HTMLPages.
+     * 
+     * @param endpointId Information of the Server you want to examine. 
+     * @return
+     * @throws Exception
+     */
+    public Boolean checkHtmlPagesIntegrity(String endpointId) throws Exception {
+
+        try {
+
+            CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName(), '|');
+            
+            boolean tempCreated = false;
+            
+            DotConnect dc = new DotConnect();
+            String tempTableName = getTempTableName(endpointId, IntegrityType.HTMLPAGES);
+            String tempKeyword = getTempKeyword();
+
+            //Create a temporary table and insert all the records coming from the CSV file.
+            String createTempTable = "create " + tempKeyword + " table " + tempTableName 
+            		+ " (inode varchar(36) not null, "
+            		+ "identifier varchar(36) not null, "
+            		+ "parent_path varchar(255), "
+                    + "asset_name varchar(255), "
+                    + "host_identifier varchar(36) not null, "
+                    + "primary key (inode) )" 
+                    + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
+
+            if(DbConnectionFactory.isOracle()) {
+                createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+            }
+
+            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
+
+            while (htmlpages.readRecord()) {
+                if(!tempCreated) {
+                    dc.executeStatement(createTempTable);
+                    tempCreated = true;
+                }
+
+                String htmlPageInode = htmlpages.get(0);
+				String htmlPageIdentifier = htmlpages.get(1);
+				String htmlPageParentPath = htmlpages.get(2);
+				String htmlPageAssetName = htmlpages.get(3);
+				String htmlPageHostIdentifier = htmlpages.get(4);
+
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(htmlPageInode);
+				dc.addParam(htmlPageIdentifier);
+				dc.addParam(htmlPageParentPath);
+				dc.addParam(htmlPageAssetName);
+				dc.addParam(htmlPageHostIdentifier);
+				dc.loadResult();
+            }
+            htmlpages.close();
+
+            String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
+
+            //Compare the data from the CSV to the local database data and see if we have conflicts.
+            dc.setSQL("select lh.page_url as html_page, "
+            		+ "lh.inode as local_inode, "
+            		+ "ri.inode as remote_inode, "
+            		+ "li.id as local_identifier, "
+            		+ "ri.identifier as remote_identifier "
+                    + "from identifier as li "
+                    + "join htmlpage as lh "
+                    + "on lh.identifier = li.id "
+                    + "and li.asset_type = 'htmlpage' "
+                    + "join " + tempTableName + " as ri "
+                    + "on li.asset_name = ri.asset_name "
+                    + "and li.parent_path = ri.parent_path "
+                    + "and li.host_inode = ri.host_identifier "
+                    + "and li.id <> ri.identifier");
+
+            List<Map<String,Object>> results = dc.loadObjectResults();
+
+            //If we have conflicts, lets create a table out of them.
+            if(!results.isEmpty()) {
+                String fullHtmlPage = " li.parent_path || li.asset_name ";
+
+                if(DbConnectionFactory.isMySql()) {
+                	fullHtmlPage = " concat(li.parent_path,li.asset_name) ";
+                } else if(DbConnectionFactory.isMsSql()) {
+                	fullHtmlPage = " li.parent_path + li.asset_name ";
+                }
+
+                final String INSERT_INTO_RESULTS_TABLE = "insert into " + resultsTableName 
+                		+ " select " + fullHtmlPage + " as html_page, "
+                		+ "lh.inode as local_inode, "
+                		+ "ri.inode as remote_inode, "
+                		+ "li.id as local_identifier, "
+                		+ "ri.identifier as remote_identifier, "
+                		+ "'" + endpointId + "' "
+                        + "from identifier as li "
+                        + "join htmlpage as lh "
+                        + "on lh.identifier = li.id "
+                        + "and li.asset_type = 'htmlpage' "
+                        + "join " + tempTableName + " as ri "
+                        + "on li.asset_name = ri.asset_name "
+                        + "and li.parent_path = ri.parent_path "
+                        + "and li.host_inode = ri.host_identifier "
+                        + "and li.id <> ri.identifier";
+
+                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+            }
+
+            dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTMLPAGES));
+            results = dc.loadObjectResults();
+
+            return !results.isEmpty();
+            
+        } catch(Exception e) {
+            throw new Exception("Error running the HTML Pages Integrity Check", e);
+        }
+    }
 
     public void dropTempTables(String endpointId) throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -606,6 +789,11 @@ public class IntegrityUtil {
             if(doesTableExist(getTempTableName(endpointId, IntegrityType.SCHEMES))) {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
+            }
+            
+            if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTMLPAGES))) {
+                dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
+                dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
             }
 
         } catch (SQLException e) {
@@ -663,23 +851,29 @@ public class IntegrityUtil {
 
 			if(type==IntegrityType.FOLDERS) {
 				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
-			}
+			} else if(type==IntegrityType.HTMLPAGES) {
+                INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, html_page, endpoint_id) values(?,?,?,?,?,?)";
+            }
 
 			while (csvFile.readRecord()) {
 
-				//select f.inode, i.parent_path, i.asset_name, i.host_inode
 				String localInode = csvFile.get(0);
 				String remoteInode = csvFile.get(1);
 				dc.setSQL(INSERT_TEMP_TABLE);
 				dc.addParam(localInode);
 				dc.addParam(remoteInode);
 
-				if(type==IntegrityType.FOLDERS) {
+				if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
 					String localIdentifier = csvFile.get(2);
 					String remoteIdentifier = csvFile.get(3);
 					dc.addParam(localIdentifier);
 					dc.addParam(remoteIdentifier);
 				}
+
+                if(type == IntegrityType.HTMLPAGES) {
+                    String htmlPage = csvFile.get(4);
+                    dc.addParam(htmlPage);
+                }
 
 				dc.addParam(endpointId);
 				dc.loadResult();
@@ -690,6 +884,13 @@ public class IntegrityUtil {
         }
     }
 
+    /**
+     * Creates temporary TABLE for integrity checking purposes. 
+     * 
+     * @param endpointId
+     * @param type
+     * @return
+     */
     private String getTempTableName(String endpointId, IntegrityType type) {
 
         if(!UtilMethods.isSet(endpointId)) return null;
@@ -711,8 +912,12 @@ public class IntegrityUtil {
         return type.name().toLowerCase() + "_ir";
     }
 
+    /**
+     * Return Temporary word depending on the Database in the data source. 
+     * 
+     * @return
+     */
     private String getTempKeyword() {
-
         String tempKeyword = "temporary";
 
         if(DbConnectionFactory.isMsSql()) {
@@ -729,8 +934,6 @@ public class IntegrityUtil {
         String folderTable = getResultsTableName(IntegrityType.FOLDERS);
         String structuresTable = getResultsTableName(IntegrityType.STRUCTURES);
         String schemesTable = getResultsTableName(IntegrityType.SCHEMES);
-
-//		final String H2="SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"+tableName.toUpperCase()+"' + ";
 
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT 1 FROM " + folderTable+ " where endpoint_id = ?");
@@ -794,6 +997,8 @@ public class IntegrityUtil {
             fixStructures(endpointId);
         } else if(type == IntegrityType.SCHEMES) {
             fixSchemes(endpointId);
+        } else if(type == IntegrityType.HTMLPAGES) {
+            fixHtmlPages(endpointId);
         }
     }
     /**
@@ -1265,6 +1470,77 @@ public class IntegrityUtil {
             throw new DotDataException( e.getMessage(), e );
         }
     }
+    
+    /**
+     * Replace Identifier with same Identifier from the other server. 
+     * 
+     * @param serverId
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void fixHtmlPages ( String serverId ) throws DotDataException, DotSecurityException {
+    	
+    	DotConnect dc = new DotConnect();
+        String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
+        HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
+        //Get the information of the IR.
+		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.addParam( serverId );
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		
+		for ( Map<String, Object> result : results ) {
 
+			//String oldHtmlPageInode = (String) result.get( "local_inode" );
+		    //String newHtmlPageInode = (String) result.get( "remote_inode" );
+		    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
+		    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
+		    String assetName = (String) result.get( "html_page" );
+		    String localInode = (String) result.get( "local_inode" );
+
+            //We need only the last part of the url, not the whole path.
+            String[] assetNamebits = assetName.split("/");
+            assetName = assetNamebits[assetNamebits.length-1];
+
+		    htmlPageCache.remove(oldHtmlPageIdentifier);
+		    CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
+
+		 	//Fixing by SQL queries
+		    dc.setSQL("INSERT into identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+		    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
+		    		+ "FROM identifier WHERE id = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE htmlpage "
+		    		+ "SET identifier = ? "
+		    		+ "WHERE identifier = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE htmlpage_version_info "
+		    		+ "SET identifier = ? "
+		    		+ "WHERE identifier = ?");
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("DELETE FROM identifier "
+		    		+ "WHERE id = ?");
+		    dc.addParam(oldHtmlPageIdentifier);
+		    dc.loadResult();
+		    
+		    dc.setSQL("UPDATE identifier "
+		    		+ "SET asset_name = ? "
+		    		+ "WHERE id = ?");
+		    dc.addParam(assetName);
+		    dc.addParam(newHtmlPageIdentifier);
+		    dc.loadResult();
+		}
+
+		discardConflicts(serverId, IntegrityType.HTMLPAGES);
+    }
+    
 }

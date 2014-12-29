@@ -171,7 +171,8 @@
 		String[] strTypeNames = new String[]{"",LanguageUtil.get(pageContext, "Content"),
 				LanguageUtil.get(pageContext, "Widget"),
 				LanguageUtil.get(pageContext, "Form"),
-				LanguageUtil.get(pageContext, "File")};
+				LanguageUtil.get(pageContext, "File"),
+				LanguageUtil.get(pageContext, "HTMLPage")};
 
 		boolean enterprise = LicenseUtil.getLevel() > 199;
 

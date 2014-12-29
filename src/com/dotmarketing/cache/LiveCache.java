@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -40,6 +41,7 @@ import com.liferay.portal.model.User;
  * @author Jason Tesser
  *
  */
+@Deprecated
 public class LiveCache {
 
     /**
@@ -69,7 +71,7 @@ public class LiveCache {
 
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         //The default value for velocity page extension
-        String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+
 		// we use the identifier uri for our mappings.
         String ret = null;
         try{
@@ -87,21 +89,21 @@ public class LiveCache {
     		//if this is an index page, map its directories to it
     		if (UtilMethods.isSet(uri))
     		{
-    		  if(uri.endsWith("." + ext))
+    		if(CmsUrlUtil.getInstance().isPageAsset(asset))
     		  {
     		    Logger.debug(LiveCache.class, "Mapping: " + uri + " to " + uri);
 
     		    //Add the entry to the cache
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
-    			if(uri.endsWith("/index." + ext))
+    			if(uri.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")))
     			{
     			    //Add the entry to the cache
-    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);
-    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("/index." + ext)),uri, getPrimaryGroup() + "_" + hostId);
+    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
+    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))),uri, getPrimaryGroup() + "_" + hostId);
     				//Add the entry to the cache
-    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/index." + ext)) + " to " + uri);
-    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("index." + ext)),uri, getPrimaryGroup() + "_" + hostId);
+    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
+    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))),uri, getPrimaryGroup() + "_" + hostId);
     			}
 				ret = uri;
     		}
@@ -227,10 +229,10 @@ public class LiveCache {
 		    return _uri;
 		}
 
-		String ext = Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
+
 		if (URI.endsWith("/")) {
 			//it's a folder path, so I add index.{pages ext} at the end
-			URI += "index." + ext;
+			URI += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 
 			// try again with an index page this time
 			try{
@@ -258,7 +260,7 @@ public class LiveCache {
 			cache.put(getPrimaryGroup() + hostId + ":" + URI, WebKeys.Cache.CACHE_NOT_FOUND, getPrimaryGroup() + "_" + hostId);
 
 			//it's a folder path, so I add index.html at the end
-			URI += "/index." + ext;
+			URI += "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 			id = APILocator.getIdentifierAPI().find( fake, URI);
 			if(!InodeUtils.isSet(id.getInode()))
 			{

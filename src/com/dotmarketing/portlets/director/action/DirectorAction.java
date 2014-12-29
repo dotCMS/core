@@ -31,24 +31,23 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
@@ -58,9 +57,9 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.files.model.File;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -80,6 +79,33 @@ public class DirectorAction extends DotPortletAction {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private PermissionAPI perAPI = APILocator.getPermissionAPI();
+	
+	protected IHTMLPage loadPage(String inode, User user) throws DotDataException, DotSecurityException {
+	    Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+	    if(ident.getAssetType().equals("contentlet")) {
+	        return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
+	    }
+	    else {
+	        return (IHTMLPage) HibernateUtil.load(com.dotmarketing.portlets.htmlpages.model.HTMLPage.class, inode);
+	    }
+	}
+	
+	protected void updatePageModDate(IHTMLPage htmlPage, User user) throws DotStateException, DotDataException {
+	    //Updating the last mod user and last mod date of the page
+        if(htmlPage instanceof HTMLPage) {
+            HTMLPage ht=(HTMLPage)htmlPage;
+            ht.setModDate(new Date());
+            ht.setModUser(user.getUserId());
+            HibernateUtil.saveOrUpdate(htmlPage);
+        }
+        else if(htmlPage instanceof Contentlet) {
+            // updating version info version_ts should be enough
+            ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
+                    htmlPage.getIdentifier(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            versionInfo.setVersionTs(new Date());
+            APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);
+        }
+	}
 	
 	public void processAction(
 			 ActionMapping mapping, ActionForm form, PortletConfig config,
@@ -134,7 +160,7 @@ public class DirectorAction extends DotPortletAction {
 				Logger.debug(DirectorAction.class, "Director :: orderContentlet");
 
 				Container container = (Container) InodeFactory.getInode(req.getParameter("containerId"), Container.class);
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("pageId"), HTMLPage.class);
+				IHTMLPage htmlPage = loadPage(req.getParameter("pageId"),user);
 				boolean hasReadPermissionOnContainer = perAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
 				boolean hasWritePermissionOnPage = perAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, user, false);
 				
@@ -163,9 +189,21 @@ public class DirectorAction extends DotPortletAction {
 				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
 
 				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
-				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { "0" });
+				
+				String type=req.getParameter("HTMLPageType");
+				
+				if(type!=null && !type.equals("0")) {
+    				params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
+    				params.put("cmd",new String[] { "new" });
+    				params.put("selectedStructure", new String[] { type });
+    				params.put("lang", new String[] { Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) });
+    				params.put("referer", referer);
+				}
+				else {
+				    params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
+	                params.put("cmd",new String[] { "edit" });
+	                params.put("inode",new String[] { "0" });
+				}
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
 
@@ -174,34 +212,33 @@ public class DirectorAction extends DotPortletAction {
 			}
             
 			if (cmd!=null && cmd.equals("editHTMLPage")) {
-
+			    // this is specific to legacy html page 
+			    
 				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
 
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
-
-				Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-				//gets the current working asset
-				WebAsset workingHTMLPage = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
-
+				IHTMLPage htmlpage = loadPage(req.getParameter("htmlPage"), user);
+				
 				if ("unlockHTMLPage".equals(subcmd)) {
-					WebAssetFactory.unLockAsset(workingHTMLPage);
+					APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 				}
 
-				if (workingHTMLPage.isLocked() && !workingHTMLPage.getModUser().equals(user.getUserId())) {
-					req.setAttribute(WebKeys.HTMLPAGE_EDIT, workingHTMLPage);
+				if (htmlpage.isLocked() && !htmlpage.getModUser().equals(user.getUserId())) {
+					req.setAttribute(WebKeys.HTMLPAGE_EDIT, htmlpage);
 					setForward(req,"portlet.ext.director.unlock_htmlpage");
 					return;
 				}
-				else if (workingHTMLPage.isLocked()) {
+				else if (htmlpage.isLocked()) {
 					//it's locked by the same user
-					WebAssetFactory.unLockAsset(workingHTMLPage);
+				    APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 				}
 
 				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
+				params.put("struts_action",new String[] { 
+				        htmlpage instanceof HTMLPage ? "/ext/htmlpages/edit_htmlpage" 
+				                                     : "/ext/contentlet/edit_contentlet"});
 				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { workingHTMLPage.getInode() + "" });
-				params.put("referer",new String[] {UtilMethods.encodeURL(referer)});
+				params.put("inode",new String[] { htmlpage.getInode() });
+				params.put("referer",new String[] { referer });
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
 
@@ -212,7 +249,7 @@ public class DirectorAction extends DotPortletAction {
 
 				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
 
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
+				IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
 
 
 				java.util.Map params = new java.util.HashMap();
@@ -301,11 +338,12 @@ public class DirectorAction extends DotPortletAction {
 
 				Logger.debug(DirectorAction.class, "Director :: editTemplate");
 
-				HTMLPage htmlPage = new HTMLPage();
+				IHTMLPage htmlPage=new HTMLPage();
 				WebAsset workingTemplate = new Template();
 				if (req.getParameter("htmlPage")!=null) {
-					htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
-					workingTemplate = HTMLPageFactory.getHTMLPageTemplate(htmlPage, true);
+				    htmlPage = loadPage(req.getParameter("htmlPage"),user);
+				    workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
+				            htmlPage.getTemplateId(),user,false);
 				} else if (req.getParameter("template")!=null) {
 					workingTemplate = (Template) InodeFactory.getInode(req.getParameter("template"), Template.class);
 				}
@@ -328,7 +366,7 @@ public class DirectorAction extends DotPortletAction {
 				java.util.Map params = new java.util.HashMap();
 				params.put("struts_action",new String[] {"/ext/templates/edit_template"});
 				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { workingTemplate.getInode() + "" });
+				params.put("inode",new String[] { workingTemplate.getInode() });
 				params.put("referer",new String[] { referer });
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
@@ -341,12 +379,10 @@ public class DirectorAction extends DotPortletAction {
 
 				Logger.debug(DirectorAction.class, "Director :: publishHTMLPage");
 
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
-
 				java.util.Map params = new java.util.HashMap();
 				params.put("struts_action",new String[] {"/ext/htmlpages/publish_htmlpages"});
 				params.put("cmd",new String[] { "prepublish" });
-				params.put("publishInode",new String[] { htmlPage.getInode() + "" });
+				params.put("publishInode",new String[] { req.getParameter("htmlPage") });
 				params.put("referer",new String[] { referer });
 
 				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
@@ -407,12 +443,10 @@ public class DirectorAction extends DotPortletAction {
 				if (workingLink.isLocked() && !workingLink.getModUser().equals(user.getUserId())) {
 					req.setAttribute(WebKeys.LINK_EDIT, workingLink);
 					if (UtilMethods.isSet(popup)) {
-						Logger.debug(DirectorAction.class, "Going to SIX I have popup!!!!!!!!!!!!!!!!");
 						setForward(req,"portlet.ext.director.unlock_popup_link");
 						return;
 					}
 					else {
-						Logger.debug(DirectorAction.class, "Going to FIVE I dont have popup!!!!!!!!!!!!!!!!");
 						setForward(req,"portlet.ext.director.unlock_link");
 						return;
 					}
@@ -454,7 +488,7 @@ public class DirectorAction extends DotPortletAction {
 						contentlet = conAPI.find(cInode, user, true);	
 					}
 					Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-					HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
+					IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
 	
 					boolean hasPermissionOnContainer = perAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
 					if(Config.getBooleanProperty("SIMPLE_PAGE_CONTENT_PERMISSIONING", true))
@@ -485,10 +519,7 @@ public class DirectorAction extends DotPortletAction {
 	                    if(!duplicateContentCheck){
 	                    	MultiTreeFactory.saveMultiTree(mTree);
 	                    
-	                    	//Updating the last mod user and last mod date of the page
-	                    	htmlPage.setModDate(new Date());
-	                    	htmlPage.setModUser(user.getUserId());
-	                    	HibernateUtil.saveOrUpdate(htmlPage);
+	                    	updatePageModDate(htmlPage,user);
 	                    }
 	
 	                } else {
@@ -527,7 +558,7 @@ public class DirectorAction extends DotPortletAction {
 						contentlet = conAPI.find(cInode, user, true);	
 					}
 					Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-					HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
+					IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
 	
 					boolean hasPermissionOnPage = perAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user, false);
 					boolean hasPermissionOnContainer = perAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
@@ -551,10 +582,7 @@ public class DirectorAction extends DotPortletAction {
 					Logger.debug(DirectorAction.class, "multiTree=" + multiTree);
 					MultiTreeFactory.deleteMultiTree(multiTree);
 	
-					//Updating the last mod user and last mod date of the page
-	                htmlPage.setModDate(new Date());
-	                htmlPage.setModUser(user.getUserId());
-					HibernateUtil.saveOrUpdate(htmlPage);
+					updatePageModDate(htmlPage, user);
 				} catch (DotRuntimeException e) {
 					Logger.error(this, "Unable to remove content from page", e);
 				} finally {
@@ -570,9 +598,9 @@ public class DirectorAction extends DotPortletAction {
 				Logger.debug(DirectorAction.class, "Director :: makeHomePage");
 
 				if (InodeUtils.isSet(req.getParameter("htmlPage"))) {
-					HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
-					Folder folder = APILocator.getFolderAPI().findParentFolder(htmlPage, user, false);
-
+					IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
+					Folder folder = APILocator.getHTMLPageAssetAPI().getParentFolder(htmlPage);
+					
 					UserPreference up = UserPreferencesFactory.getUserPreferenceValue(user.getUserId(),WebKeys.USER_PREFERENCE_HOME_PAGE);
 
 					if (up.getId()>0) {
@@ -604,7 +632,7 @@ public class DirectorAction extends DotPortletAction {
 					contentlet = conAPI.find(cInode, user, true);	
 				}
 				Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
+				IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
 				
 				boolean hasPermissionOnPage = perAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user, false);
 				boolean hasPermissionOnContainer = perAPI.doesUserHavePermission(container, PERMISSION_READ, user, false);
@@ -675,7 +703,7 @@ public class DirectorAction extends DotPortletAction {
 					contentlet = conAPI.find(cInode, user, true);	
 				}
 				Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-				HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
+				IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
 				String staticContainer = req.getParameter("static");
 
 				boolean hasPermissionOnPage = perAPI.doesUserHavePermission(htmlPage, PERMISSION_CAN_ADD_CHILDREN, user, false);
@@ -763,6 +791,22 @@ public class DirectorAction extends DotPortletAction {
 				return;
 			}
 			
+			if(cmd!=null && cmd.equals("migrate")) {
+			    try {
+			        HibernateUtil.startTransaction();
+    			    HTMLPage htmlPage = (HTMLPage) HibernateUtil.load(HTMLPage.class, req.getParameter("htmlPage"));
+    			    APILocator.getHTMLPageAssetAPI().migrateLegacyPage(htmlPage, user, false);
+    			    HibernateUtil.commitTransaction();
+			    }
+			    catch(Exception ex) {
+			        HibernateUtil.rollbackTransaction();
+			        Logger.error(this, "can't migrate page inode "+req.getParameter("htmlPage"),ex);
+			    }
+			    
+			    _sendToReferral(req, res, referer);
+                return;
+			}
+			
 
 			Contentlet contentlet = new Contentlet();
 			String cInode = req.getParameter("contentlet");
@@ -773,8 +817,7 @@ public class DirectorAction extends DotPortletAction {
 				throw new DotStateException("Trying to edit an invalid contentlet - inode:" + cInode);
 			}
 			Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-			HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlPage"), HTMLPage.class);
-
+			
 			Logger.debug(DirectorAction.class, "contentlet=" + contentlet.getInode());
 
 			String contentletInode = "";
@@ -803,7 +846,7 @@ public class DirectorAction extends DotPortletAction {
 			String cmdAux = (cmd.equals("newedit") ? cmd : "edit");
 
 			params.put("cmd",new String[] { cmdAux });
-			params.put("htmlpage_inode",new String[] { htmlPage.getInode() + "" });
+			params.put("htmlpage_inode",new String[] { req.getParameter("htmlPage") });
 			params.put("contentcontainer_inode",new String[] { container.getInode() + "" });
 			params.put("inode",new String[] { contentletInode + "" });
 			if(InodeUtils.isSet(req.getParameter("selectedStructure"))){

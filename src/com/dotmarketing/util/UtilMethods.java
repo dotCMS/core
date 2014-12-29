@@ -1174,18 +1174,7 @@ public class UtilMethods {
         return myBytes;
     }
 
-    public static String cleanURI(String uri) {
-        // if we are looking for an index page
-        if (uri.indexOf(".") < 0) {
-            if (!uri.endsWith("/")) {
-                uri += "/";
-            }
 
-            uri += "index.html";
-        }
-
-        return uri;
-    }
 
     public static String cleanFileSystemPathURI(String path) {
         if (path.indexOf("..") != -1 && path.indexOf("WEB-INF") != -1 && path.indexOf("META-INF") != -1 && path.indexOf("!") != -1
