@@ -17,6 +17,7 @@ import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.logConsole.model.LogMapperCache;
@@ -87,7 +88,7 @@ public class CacheLocator extends Locator<CacheIndex>{
         public void put(final String key, final Object content, final String group) {
             dotcache.put(key, content, group);
             try {
-                if(!HibernateUtil.getSession().connection().getAutoCommit()) {
+                if(DbConnectionFactory.inTransaction()) {
                     HibernateUtil.addRollbackListener(new Runnable() {
                        public void run() {
                            dotcache.remove(key, group);

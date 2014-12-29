@@ -63,6 +63,8 @@ dojo.require("dojox.layout.ContentPane");
 
 	function cancelEdit() {
 
+		window.onbeforeunload=true;
+		
 		doesUserCancelledEdit = true;
 
 		if(isContentAutoSaving){ //To avoid storage of contentlet while user cancels.
@@ -372,6 +374,7 @@ dojo.require("dojox.layout.ContentPane");
 
 	function persistContent(isAutoSave, publish){
 
+		window.onbeforeunload=true;
 	   	var isAjaxFileUploading = false;
 	   	var alertFileAssetSize = false;
 	   	var size = 0;
@@ -904,6 +907,8 @@ dojo.require("dojox.layout.ContentPane");
 
     function unlockContent(contentletInode){
 
+		window.onbeforeunload=true;
+		
     	if(_hasUserChanged){
     		if(!confirm("<%=LanguageUtil.get(pageContext, "checkin-without-saving-changes")%>")){
     			return;

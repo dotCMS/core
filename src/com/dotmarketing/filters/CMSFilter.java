@@ -41,6 +41,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
+import com.liferay.portal.model.User;
+import com.liferay.util.CookieUtil;
 import com.liferay.util.FileUtil;
 import com.liferay.util.Xss;
 
@@ -54,6 +56,7 @@ public class CMSFilter implements Filter {
 
 	CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
+
 	enum IAm{
 		PAGE,
 		FOLDER,
@@ -64,7 +67,7 @@ public class CMSFilter implements Filter {
 	
 	
 	
-	
+	public static final String CMS_INDEX_PAGE = Config.getStringProperty("CMS_INDEX_PAGE", "index.html");
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
 
@@ -72,93 +75,24 @@ public class CMSFilter implements Filter {
 
 		HttpServletRequest request = (HttpServletRequest) req;
 		HttpServletResponse response = (HttpServletResponse) res;
-		HttpSession session = request.getSession(false);
 
 		final String uri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
 
-		String rewrite = null;
-		IAm iAm = IAm.NOTHING_IN_THE_CMS;
-		
-		/*
-		 * Here is a list of directories that we will ignore b/c of legacy code
-		 * and servlet mappings. This is a mess and should be much cleaner
-		 */
-		if (Xss.URIHasXSS(uri)) {
-			try {
-				rewrite = Xss.encodeForURL(uri);
-			} catch (EncodingException e) {
-				Logger.error(this, "Encoding failure. Unable to encode URI " + uri);
-				throw new ServletException(e.getMessage(), e);
-			}
-
-			response.sendRedirect(rewrite);
+		String xssRedirect = xssCheck(uri, request.getQueryString());
+		if(xssRedirect!=null){
+			response.sendRedirect(xssRedirect);
 			return;
 		}
-
-		if (request.getQueryString() != null && !UtilMethods.decodeURL(request.getQueryString()).equals(null)) {
-			// http://jira.dotmarketing.net/browse/DOTCMS-6141
-			if (request.getQueryString() != null && request.getQueryString().contains("\"")) {
-				response.sendRedirect(uri + "?" + StringEscapeUtils.escapeHtml(StringEscapeUtils.unescapeHtml(request.getQueryString())));
-				return;
-			}
-			if (Xss.ParamsHaveXSS(request)) {
-				response.sendRedirect(uri);
-				return;
-			}
-		}
 		
-		// if (excludeURI(uri)) {
-		// chain.doFilter(request, response);
-		// return;
-		// }
-
-		// set the preview mode
-		boolean ADMIN_MODE = false;
-
+		
+		IAm iAm = IAm.NOTHING_IN_THE_CMS;
+		
 		LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
-
-		if (session != null) {
-			// struts crappy messages have to be retrived from session
-			if (session.getAttribute(Globals.ERROR_KEY) != null) {
-				request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-				session.removeAttribute(Globals.ERROR_KEY);
-			}
-			if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-				request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-				session.removeAttribute(Globals.MESSAGE_KEY);
-			}
-			// set the preview mode
-			ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-
-			if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
-			}
-		}
+		
+		boolean _adminMode = isAdminMode(request, response);
+		
+		String rewrite = null;
 
 		/*
 		 * Getting host object form the session
@@ -196,6 +130,12 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
+        
+     // Handle the DWR Cookie
+        HashSet<String> cookieToHandle = new HashSet<String>();
+        cookieToHandle.add("DWRSESSIONID");
+        CookieUtil.setCookiesSecurityHeaders(request, response, cookieToHandle);
+
 
 
 		// Checking if host is active
@@ -207,7 +147,7 @@ public class CMSFilter implements Filter {
 			closeDbSilently();
 			throw new ServletException(e1);
 		}
-		if (!ADMIN_MODE && !hostlive) {
+		if (!_adminMode && !hostlive) {
 			try {
 				Company company = PublicCompanyFactory.getDefaultCompany();
 				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
@@ -247,8 +187,10 @@ public class CMSFilter implements Filter {
 				closeDbSilently();
 				return;
 			} else {
-				rewrite = uri + Config.getStringProperty("CMS_INDEX_PAGE", "index.html");
-				iAm = IAm.PAGE;
+				rewrite = uri + CMS_INDEX_PAGE;
+				if(urlUtil.isPageAsset(rewrite, host, languageId)){
+					iAm = IAm.PAGE;
+				}
 			}
 		}
 
@@ -290,139 +232,34 @@ public class CMSFilter implements Filter {
 	
 	
 	public void init(FilterConfig config) throws ServletException {
-
-		ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
+		this.ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
 
 	}
-
+	@Deprecated
 	private static Set<String> excludeList = null;
+	@Deprecated
 	private static final Integer mutex = new Integer(0);
 
+	
+	@Deprecated
 	private static void buildExcludeList() {
-		synchronized (mutex) {
-			if (excludeList != null)
-				return;
-
-			Set<String> set = new HashSet<String>();
-
-			// allow servlets to be called without a 404
-			set.add("^/servlet/");
-			set.add("^/servlets/");
-			// Load some defaults
-			set.add("^/portal/");
-			set.add("^/icon$");
-			set.add("^/dwr/");
-			set.add("^/titleServlet$");
-			set.add("^/TitleServlet$");
-			set.add("^/categoriesServlet$");
-			set.add("^/xspf$");
-			set.add("^/thumbnail$");
-			set.add("^/html/skin/");
-			set.add("^/webdav/");
-			set.add("^/dotAsset/");
-			set.add("^/JSONContent/");
-			set.add("^/resize_image$");
-			set.add("^/image/company_logo$");
-			set.add("^/dotScheduledJobs$");
-			set.add("^/dot_slideshow$");
-			set.add("^/redirect$");
-			set.add("^/imageShim$");
-			set.add("^/DotAjaxDirector/");
-			set.add("^/cmis/");
-			set.add("^/permalink/");
-			set.add("^/controlGif$");
-			set.add("^/Captcha.jpg$");
-			set.add("^/audioCaptcha.wav$");
-			// http://jira.dotmarketing.net/browse/DOTCMS-5187
-			set.add("^/admin$");
-			set.add("^/admin/");
-			set.add("^/edit$");
-			set.add("^/edit/");
-			set.add("^/dotTailLogServlet/");
-			// http://jira.dotmarketing.net/browse/DOTCMS-2178
-			set.add("^/contentAsset/");
-			// http://jira.dotmarketing.net/browse/DOTCMS-6753
-			set.add("^/JSONTags/");
-			set.add("^/spring/");
-			set.add("^/api/");
-			set.add("^/DOTLESS/");
-			set.add("^/DOTSASS/");
-
-			// Load exclusions from plugins
-			PluginAPI pAPI = APILocator.getPluginAPI();
-			List<String> pluginList = pAPI.getDeployedPluginOrder();
-			if (pluginList != null) {
-				for (String pluginID : pluginList) {
-					try {
-						String list = pAPI.loadPluginConfigProperty(pluginID, "cmsfilter.servlet.exclusions");
-						Logger.info(CMSFilter.class, "plugin " + pluginID + " cmsfilter.servlet.exclusions=" + list);
-						if (list != null) {
-							String[] items = list.split(",");
-							if (items != null && items.length > 0) {
-								for (String item : items) {
-									item = item.trim();
-									if (UtilMethods.isSet(item) && !set.contains(item)) {
-										set.add(item);
-									}
-								}
-							}
-						}
-					} catch (DotDataException e) {
-						Logger.debug(CMSFilter.class, "DotDataException: " + e.getMessage(), e);
-					}
-
-				}
-			}
-			excludeList = set;
-		}
+		// not needed anymore
 	}
-
+	
+	@Deprecated
 	public static void addExclude(String URLPattern) {
-		if (excludeList == null) {
-			buildExcludeList();
-		}
-		synchronized (excludeList) {
-			excludeList.add(URLPattern);
-		}
-	}
 
+		// not needed anymore
+	}
+	
+	@Deprecated
 	public static void removeExclude(String URLPattern) {
-		if (excludeList != null) {
-			synchronized (excludeList) {
-				excludeList.remove(URLPattern);
-			}
-		}
+		// not needed anymore
 	}
 
 	public static boolean excludeURI(String uri) {
 
-		if (uri.trim().equals("/c") || uri.endsWith(".php") || uri.trim().startsWith("/c/")
-				|| (uri.indexOf("/ajaxfileupload/upload") != -1)) {
-			return true;
-		}
-
-		if (excludeList == null)
-			buildExcludeList();
-
-		if (excludeList.contains(uri))
-			return true;
-
-		for (String exclusion : excludeList) {
-			if (RegEX.contains(uri, exclusion)) {
-				return true;
-			}
-		}
-
-		// finally, if we have the file, serve it
-		if (!"/".equals(uri)) {
-			File f = new File(FileUtil.getRealPath(uri));
-			if (f.exists()) {
-				return true;
-
-			}
-		}
-
-		return false;
+		return true;
 	}
 
 	private void closeDbSilently() {
@@ -432,12 +269,90 @@ public class CMSFilter implements Filter {
 
 		} finally {
 			try {
+				
 				DbConnectionFactory.closeConnection();
 			} catch (Exception e) {
 
 			}
 		}
+	}
+	
+	
+	
+	private boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
+		HttpSession session = request.getSession(false);
+		
+		// set the preview mode
+		boolean adminMode = false;
+
+		if (session != null) {
+			// struts crappy messages have to be retrived from session
+			if (session.getAttribute(Globals.ERROR_KEY) != null) {
+				request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
+				session.removeAttribute(Globals.ERROR_KEY);
+			}
+			if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
+				request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
+				session.removeAttribute(Globals.MESSAGE_KEY);
+			}
+			// set the preview mode
+			adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+
+			if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
+
+				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
+
+			}
+
+			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
+
+				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
+			}
+
+			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
+
+				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
+			}
+		}
+		return adminMode;
 
 	}
+	
+	private String xssCheck(String uri, String queryString) throws ServletException{
+		
+		String rewrite=null;
+		if (Xss.URIHasXSS(uri)) {
+			Logger.warn(this, "XSS Found in request URI: " +uri );
+			try {
+				rewrite = Xss.encodeForURL(uri);
+			} catch (EncodingException e) {
+				Logger.error(this, "Encoding failure. Unable to encode URI " + uri);
+				throw new ServletException(e.getMessage(), e);
+			}
+		}
+
+		else if (queryString != null && !UtilMethods.decodeURL(queryString).equals(null)) {
+			if (Xss.ParamsHaveXSS(queryString)) {
+				Logger.warn(this, "XSS Found in Query String: " +queryString);
+				rewrite=uri;
+			}
+		}
+		
+		return rewrite;
+	}
+	
+	
 
 }

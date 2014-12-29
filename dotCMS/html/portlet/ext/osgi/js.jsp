@@ -127,9 +127,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
-	start : function(bundleId){
+	start : function(jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=start&bundleId=" + bundleId,
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=start&bundleId=" + bundleId+"&jar=" + jarName,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 					if (dataOrError.indexOf("FAILURE") == 0) {
@@ -147,9 +147,9 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 		setTimeout(function() {mainAdmin.refresh();},7000);
 	},
 
-	stop : function(bundleId){
+	stop : function(jarName, bundleId){
 		var xhrArgs = {
-			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=stop&bundleId=" + bundleId,
+			url: "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=stop&bundleId=" + bundleId+"&jar=" + jarName,
 			handle : function(dataOrError, ioArgs) {
 				if (dojo.isString(dataOrError)) {
 					if (dataOrError.indexOf("FAILURE") == 0) {
@@ -170,13 +170,14 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
 	add : function(){
 		var fm = dojo.byId("addBundle");
 		var bundleUpload = fm.elements["bundleUpload"].value;
+		var jarName = bundleUpload.split(/(\\|\/)/g).pop();
 		if(bundleUpload){
         require(["dojo/io/iframe"], function(ioIframe){
             ioIframe.send({
                 // The form node, which contains the
                 // data. We also pull the URL and METHOD from it:
                 form: fm,
-                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add",
+                url : "/DotAjaxDirector/com.dotmarketing.portlets.osgi.AJAX.OSGIAJAX?cmd=add&jar=" + jarName,
                 method : "post",
                 // The used data format:
                 handleAs: "json",

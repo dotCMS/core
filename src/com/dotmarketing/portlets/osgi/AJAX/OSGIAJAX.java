@@ -39,7 +39,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
             }
 
             bundle.uninstall();
-        } catch ( BundleException e ) {
+          } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, "Unable to undeploy bundle [" + e.getMessage() + "]", e );
         }
 
@@ -49,10 +49,11 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         Boolean success = FileUtil.move( from, to );
         if ( success ) {
-            writeSuccess( response, "OSGI Bundle Undeployed" );
+        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Undeployed");
+            writeSuccess( response, "OSGI Bundle "+jar+ " Undeployed" );
         } else {
-            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle" );
-            writeError( response, "Error undeploying OSGI Bundle" );
+            Logger.error( OSGIAJAX.class, "Error undeploying OSGI Bundle "+jar );
+            writeError( response, "Error undeploying OSGI Bundle "+jar );
         }
     }
 
@@ -64,22 +65,25 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         Boolean success = from.renameTo( to );
         if ( success ) {
-            writeSuccess( response, "OSGI Bundle Loaded" );
+        	Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Loaded");
+            writeSuccess( response, "OSGI Bundle  "+jar+ " Loaded" );
         } else {
             Logger.error( OSGIAJAX.class, "Error Loading OSGI Bundle " + jar );
-            writeError( response, "Error Loading OSGI Bundle" );
+            writeError( response, "Error Loading OSGI Bundle" + jar );
         }
     }
 
     public void stop ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String bundleID = request.getParameter( "bundleId" );
+        String jar = request.getParameter( "jar" );
         try {
             try {
                 OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleID ) ).stop();
             } catch ( NumberFormatException e ) {
                 OSGIUtil.getInstance().getBundleContext().getBundle( bundleID ).stop();
             }
+            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Stopped");
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
             throw new ServletException( e.getMessage() + " Unable to stop bundle", e );
@@ -89,12 +93,14 @@ public class OSGIAJAX extends OSGIBaseAJAX {
     public void start ( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
 
         String bundleID = request.getParameter( "bundleId" );
+        String jar = request.getParameter( "jar" );
         try {
             try {
                 OSGIUtil.getInstance().getBundleContext().getBundle( new Long( bundleID ) ).start();
             } catch ( NumberFormatException e ) {
                 OSGIUtil.getInstance().getBundleContext().getBundle( bundleID ).start();
             }
+            Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Started");
         } catch ( BundleException e ) {
             Logger.error( OSGIAJAX.class, e.getMessage(), e );
             throw new ServletException( e.getMessage() + " Unable to start bundle", e );
@@ -106,6 +112,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         FileItemFactory factory = new DiskFileItemFactory();
         ServletFileUpload upload = new ServletFileUpload( factory );
         FileItemIterator iterator = null;
+        String jar = request.getParameter( "jar" );
         try {
             iterator = upload.getItemIterator( request );
             while ( iterator.hasNext() ) {
@@ -114,8 +121,8 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                 if ( item.getFieldName().equals( "bundleUpload" ) ) {
                     String fname = item.getName();
                     if ( !fname.endsWith( ".jar" ) ) {
-                        Logger.warn( this, "Cannot deplpy bundle as it is not a JAR" );
-                        writeError( response, "Cannot deplpy bundle as it is not a JAR" );
+                        Logger.warn( this, "Cannot deploy bundle as it is not a JAR" );
+                        writeError( response, "Cannot deploy bundle as it is not a JAR" );
                         break;
                     }
 
@@ -126,6 +133,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
                     IOUtils.closeQuietly( in );
                 }
             }
+          Logger.info( OSGIAJAX.class, "OSGI Bundle "+jar+ " Uploaded");
         } catch ( FileUploadException e ) {
             Logger.error( OSGIBaseAJAX.class, e.getMessage(), e );
             throw new IOException( e.getMessage(), e );
@@ -167,7 +175,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
         BufferedWriter writer = new BufferedWriter( new FileWriter( OSGIUtil.getInstance().FELIX_EXTRA_PACKAGES_FILE ) );
         writer.write( extraPackages );
         writer.close();
-
+        Logger.info( OSGIAJAX.class, "OSGI Extra Packages Saved");
         //Send a response
         writeSuccess( response, "OSGI Extra Packages Saved" );
     }
@@ -179,7 +187,7 @@ public class OSGIAJAX extends OSGIBaseAJAX {
 
         //Now we need to initialize it
         OSGIUtil.getInstance().initializeFramework();
-
+        
         //Send a respose
         writeSuccess( response, "OSGI Framework Restarted" );
     }

@@ -39,6 +39,7 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.apache.commons.validator.UrlValidator;
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHit;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
@@ -3434,6 +3435,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 try{
                     contentlet.setFloatProperty(field.getVelocityVarName(),new Float((String)value));
                 }catch (Exception e) {
+                	 if(value != null && value.toString().length() != 0){
+                  		contentlet.getMap().put(field.getVelocityVarName(),(String)value);
+                  	}
                     throw new DotContentletStateException("Unable to set string value as a Float");
                 }
             }
@@ -3483,6 +3487,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             		+" structureInode must be set");
         }
         Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        
+        
+        
+        
+        
+        
+        
         if(Structure.STRUCTURE_TYPE_FILEASSET==st.getStructureType()){
             if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
                 DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
@@ -3522,6 +3533,62 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         }
+        
+        
+        
+        
+        
+        if(Structure.STRUCTURE_TYPE_HTMLPAGE == st.getStructureType()){
+            if(contentlet.getHost()!=null && contentlet.getHost().equals(Host.SYSTEM_HOST) && (!UtilMethods.isSet(contentlet.getFolder()) || contentlet.getFolder().equals(FolderAPI.SYSTEM_FOLDER))){
+                DotContentletValidationException cve = new FileAssetValidationException("message.contentlet.fileasset.invalid.hostfolder");
+                cve.addBadTypeField(st.getFieldVar(FileAssetAPI.HOST_FOLDER_FIELD));
+                throw cve;
+            }
+        	try{
+	            Host host = APILocator.getHostAPI().find(contentlet.getHost(), APILocator.getUserAPI().getSystemUser(), false);
+	            Folder folder = null;
+	            if(UtilMethods.isSet(contentlet.getFolder())){
+	                folder=APILocator.getFolderAPI().find(contentlet.getFolder(), APILocator.getUserAPI().getSystemUser(), false);
+	            }
+	            else{
+	                folder=APILocator.getFolderAPI().findSystemFolder();
+	            }
+	            String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+	
+	            if(UtilMethods.isSet(url)){
+	        		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
+	        		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
+	        		Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
+	        		if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) ){
+	        	        DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.error.url.already.exists");
+	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+	                    throw cve;
+	                }
+	            }else{
+	                DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.url.required");
+	                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+	                throw cve;
+	            }
+	            UtilMethods.validateFileName(url);
+
+      
+        	}
+        	catch(DotDataException | DotSecurityException | IllegalArgumentException e){
+                DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.error.url.invalid");
+                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
+                throw cve;
+        	}
+        } 
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
@@ -3550,6 +3617,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     if(!(o instanceof Float)){
                         cve.addBadTypeField(field);
                         Logger.error(this,"A float contentlet must be of type Float");
+                        hasError = true;
+                        continue;
                     }
                 }else if(isFieldTypeLong(field)){
                     if(!(o instanceof Long || o instanceof Integer)){

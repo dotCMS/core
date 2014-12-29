@@ -1323,8 +1323,15 @@ dd.leftdl {
                     <td align="center">
                         <select name="cName" dojoType="dijit.form.ComboBox" autocomplete="true" value="<%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>">
                             <option selected="selected" value="all"><%= LanguageUtil.get(pageContext,"Flush-All-Caches") %></option>
-                            <% for(Object c : CacheLocator.getCacheIndexes()){ %>
-                                <option><%= c.toString() %></option>
+                            <% Object[] caches = (Object[])CacheLocator.getCacheIndexes();
+                            String[] indexValue = new String[caches.length];
+                            for (int i = 0; i<caches.length; i++) {
+                            	indexValue[i] = caches[i].toString();
+                            }
+                            java.util.Arrays.sort(indexValue); 
+                            
+                            for(String c : indexValue){ %>
+                                <option><%= c %></option>
                             <% } %>
                         </select>
                         <button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">

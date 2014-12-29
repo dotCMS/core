@@ -20,6 +20,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PublishFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.filters.CmsUrlUtil;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -260,7 +261,7 @@ public class LiveCache {
 			cache.put(getPrimaryGroup() + hostId + ":" + URI, WebKeys.Cache.CACHE_NOT_FOUND, getPrimaryGroup() + "_" + hostId);
 
 			//it's a folder path, so I add index.html at the end
-			URI += "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+			URI += "/" + CMSFilter.CMS_INDEX_PAGE;
 			id = APILocator.getIdentifierAPI().find( fake, URI);
 			if(!InodeUtils.isSet(id.getInode()))
 			{

@@ -1121,7 +1121,7 @@ function addKVPair(inode, key, val){
         for(i = 0; i < keyVal.length; i++){
             var keys = keyVal[i].split(',');
             for(j = 0; j < keys.length-1; j++){
-                if(keys[j]==k){
+            	if (keys[j].toUpperCase() == k.toUpperCase()) {
                     valid = false;
                 }
             }

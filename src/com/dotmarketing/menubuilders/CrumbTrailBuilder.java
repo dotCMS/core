@@ -17,6 +17,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.WebAssetFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -117,7 +118,7 @@ public class CrumbTrailBuilder implements ViewTool {
 			        
 					if (!pagePath.equals(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
 
-				        HTMLPage page = HTMLPageFactory.getLiveHTMLPageByPath(openPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"), host);
+				        HTMLPage page = HTMLPageFactory.getLiveHTMLPageByPath(openPath + CMSFilter.CMS_INDEX_PAGE, host);
 				        
 					    if (InodeUtils.isSet(page.getInode())) {
 							if (listItems.add(folder.getTitle())) {

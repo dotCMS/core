@@ -47,8 +47,8 @@
 
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
-	dt{height:30px;}
-	dd{height:30px;}
+	#filterTasksFrm dt{height:30px;}
+	#filterTasksFrm dd{height:30px;}
 </style>
 
 <%

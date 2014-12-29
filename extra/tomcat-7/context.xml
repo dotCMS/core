@@ -60,9 +60,9 @@
     -->
     <!-- MSSQL
     <Resource name="jdbc/dotCMSPool" auth="Container"
-          type="javax.sql.DataSource" driverClassName="net.sourceforge.jtds.jdbc.Driver"
-          url="jdbc:jtds:sqlserver://localhost:1433/dotcms"
-          username="{your db user}" password="{your db password}" maxActive="60" maxIdle="10" maxWait="60000"
+          type="javax.sql.DataSource" driverClassName="com.microsoft.sqlserver.jdbc.SQLServerDriver"
+          url="jdbc:sqlserver://{your server}.database.windows.net:1433;databaseName={your DB name}"
+          username="{your user}@{your server}" password="{your password}" maxActive="60" maxIdle="10" maxWait="60000"
           removeAbandoned="true" removeAbandonedTimeout="60" logAbandoned="true"
           testOnBorrow="true" validationQuery="SELECT 1" defaultTransactionIsolation="READ_COMMITTED"/>
     -->

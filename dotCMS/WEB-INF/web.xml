@@ -14,7 +14,10 @@
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->
 	<!-- DOTMARKETING FILTERS -->
-
+	<filter>
+		<filter-name>CookiesFilter</filter-name>
+		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
+	</filter>
 	<filter>
 		<filter-name>SalesForceFilter</filter-name>
 		<filter-class>com.dotcms.enterprise.salesforce.SalesForceFilter</filter-class>
@@ -91,15 +94,10 @@
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
     </filter>
-    <filter>
-        <filter-name>SessionCookieFilter</filter-name>
-        <filter-class>com.dotmarketing.filters.SessionCookieFilter</filter-class>
-    </filter>
 	<!--END DOTMARKETING FILTERS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
  <!-- END FILTERS -->
-
 	<!-- compression Mappings -->
 <!--
   <filter-mapping>
@@ -119,12 +117,14 @@
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
+	<filter-mapping>
+		<filter-name>CookiesFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTER-MAPPINGS -->
  <!-- END FILTER-MAPPINGS -->
 	<!--DOTMARKETING FILTER-MAPPINGS-->
-
 	<filter-mapping>
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/dotCMS/login</url-pattern>
@@ -137,7 +137,6 @@
 		<filter-name>SalesForceFilter</filter-name>
 		<url-pattern>/c</url-pattern>
 	</filter-mapping>
-
   <filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -228,10 +227,6 @@
 	</filter-mapping>
     <filter-mapping>
         <filter-name>UrlRewriteFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>SessionCookieFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 	<!--
@@ -434,6 +429,10 @@
 	      <param-name>compressor</param-name>
     	  <param-value>none</param-value>
 	  </init-param>
+	   <init-param>
+	      <param-name>crossDomainSessionSecurity</param-name>
+	      <param-value>false</param-value>
+	   </init-param>
 	</servlet>
 	<servlet>
 		<servlet-name>Captcha</servlet-name>

@@ -19,6 +19,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.ClientHandlerException;
 import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
 import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
 import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
@@ -988,7 +989,21 @@ public class IntegrityResource extends WebResource {
                 jsonResponse.put( "success", true );
                 jsonResponse.put( "message", "Conflicts fixed in Local Endpoint" );
 
-                clearStatus( request, endpointId );
+                // check if we still have other conflicts 
+        		
+                IntegrityType[] types = IntegrityType.values();
+                boolean isThereAnyConflict = false;
+
+                for (IntegrityType integrityType : types) {
+                	List<Map<String, Object>> results = integrityUtil.getIntegrityConflicts(endpointId, integrityType);
+                	if(!results.isEmpty()) {
+                		isThereAnyConflict = true;
+                		break;
+                	}
+                }
+
+                if(!isThereAnyConflict)
+                	clearStatus( request, endpointId );
 
             } else  if(whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
@@ -1027,6 +1042,11 @@ public class IntegrityResource extends WebResource {
             } else {
                 return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' has an invalid value.").build();
             }
+
+        }  catch(ClientHandlerException e) {
+        	Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
+        	return response( "Error fixing conflicts for endpoint: " + endpointId + ". Connection Refused. "
+        			+ "Remote Server seems to be down, or not acepting requests.", true );
 
         } catch ( Exception e ) {
         	try {
