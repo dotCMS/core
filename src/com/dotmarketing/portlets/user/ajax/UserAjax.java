@@ -9,9 +9,10 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.generic.SortTool;
+
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -29,6 +30,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.UserFirstNameException;
+import com.dotmarketing.exception.UserLastNameException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -50,7 +53,6 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Encryptor;
-
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class UserAjax {
@@ -105,12 +107,12 @@ public class UserAjax {
 
 		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
 
 		try {
 
-			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-			WebContext ctx = WebContextFactory.get();
-			HttpServletRequest request = ctx.getHttpServletRequest();
 			UserAPI uAPI = APILocator.getUserAPI();
 
 			User user = uAPI.createUser(userId, email);
@@ -124,6 +126,16 @@ public class UserAjax {
 
 			return user.getUserId();
 
+		} catch(UserFirstNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"));
+			throw e;
+		} catch(UserLastNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"));
+			throw e;
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Adding User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
@@ -140,12 +152,11 @@ public class UserAjax {
 
 		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+		
 		try {
-
-			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-			WebContext ctx = WebContextFactory.get();
-			HttpServletRequest request = ctx.getHttpServletRequest();
 			UserAPI uAPI = APILocator.getUserAPI();
 			PermissionAPI perAPI = APILocator.getPermissionAPI();
 			UserProxyAPI upAPI = APILocator.getUserProxyAPI();
@@ -181,6 +192,16 @@ public class UserAjax {
 
 			return userToSave.getUserId();
 
+		} catch(UserFirstNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-First-Name-Failed"));
+			throw e;
+		} catch(UserLastNameException e) {
+			ActivityLogger.logInfo(getClass(), "Error Updating User. Invalid Last Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
+			e.setMessage(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"User-Info-Save-Last-Name-Failed"));
+			throw e;
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());

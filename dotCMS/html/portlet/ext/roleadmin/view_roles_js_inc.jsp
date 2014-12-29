@@ -537,6 +537,8 @@
 			dojo.place("<li>" + roleKeyAlreadyExistsMesg + "</li>", "addRoleErrorMessagesList", "last");
 		} else if (exception.javaClassName == 'com.dotmarketing.business.DuplicateRoleException') {
 			dojo.place("<li>" + roleNameAlreadyExistsMesg + "</li>", "addRoleErrorMessagesList", "last");
+		} else if (exception.javaClassName == 'com.dotmarketing.exception.RoleNameException') {
+			dojo.place("<li>" + exception.message + "</li>", "addRoleErrorMessagesList", "last");
 		} else {
 			throw exception;
 		}

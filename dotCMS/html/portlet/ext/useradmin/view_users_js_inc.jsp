@@ -463,7 +463,15 @@
 			else {
 				showDotCMSErrorMessage(sameUserIdAlreadyRegisteredErrorMsg);
 			}
-		}else if(exception.javaClassName == 'com.dotmarketing.exception.DotDataException'){
+		}else if(exception.javaClassName == 'com.dotmarketing.exception.UserFirstNameException'){
+			dijit.byId("firstName").focus();
+			showDotCMSErrorMessage(exception.message);
+		}
+		else if(exception.javaClassName == 'com.dotmarketing.exception.UserLastNameException'){
+			dijit.byId("lastName").focus();
+			showDotCMSErrorMessage(exception.message);
+		}
+		else if(exception.javaClassName == 'com.dotmarketing.exception.DotDataException'){
 			showDotCMSErrorMessage(exception.message);
 		}else {
 			alert("Server error: " + exception);
