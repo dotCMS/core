@@ -167,6 +167,8 @@ public class UserAjax {
 	/**
 	 * Updates the personal information of a user. Validations regarding
 	 * password security policies are also enforced during the process.
+	 * Depending on where the call to this method was issued, re-authentication
+	 * might be required.
 	 * 
 	 * @param userId
 	 *            - The internal user ID.
@@ -179,8 +181,10 @@ public class UserAjax {
 	 *            - The user's email address.
 	 * @param password
 	 *            - The user's password.
-	 * @return The user ID of the recently saved user.
+	 * @return A {@link Map} with useful status information regarding the recent
+	 *         changes.
 	 * @throws DotRuntimeException
+	 *             A serious error has occurred.
 	 * @throws PortalException
 	 * @throws SystemException
 	 * @throws DotDataException
@@ -189,9 +193,9 @@ public class UserAjax {
 	 *             The current user does not have permissions to edit user's
 	 *             data.
 	 */
-	public String updateUser (String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
+	public Map<String, Object> updateUser(String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
 		DotDataException, DotSecurityException {
-
+		Map<String, Object> resultMap = null;
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
 
@@ -218,14 +222,18 @@ public class UserAjax {
 			}
 			userToSave.setFirstName(firstName);
 			userToSave.setLastName(lastName);
-			if(email != null)
+			if (email != null) {
 				userToSave.setEmailAddress(email);
+			}
+			boolean reauthenticationRequired = false;
 			boolean validatePassword = false;
 			if (password != null) {
 				// Password has changed, so it has to be validated
 				userToSave.setPassword(password);
 				userToSave.setPasswordEncrypted(false);
 				validatePassword = true;
+				// And re-authentication might be required
+				reauthenticationRequired = true;
 			}
 
 			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
@@ -238,9 +246,10 @@ public class UserAjax {
 
 			ActivityLogger.logInfo(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "User Updated", "Date: " + date + "; "+ "User:" + modUser.getUserId());
-
-
-			return userToSave.getUserId();
+			resultMap = new HashMap<String, Object>();
+			resultMap.put("userID", userToSave.getUserId());
+			resultMap.put("reauthenticate", reauthenticationRequired);
+			return resultMap;
 
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
