@@ -1,12 +1,15 @@
 package com.dotmarketing.business;
 
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -194,6 +197,10 @@ public class RoleAPIImpl implements RoleAPI {
 			if(role.isSystem() || role.isLocked()){
 				throw new DotStateException("Cannot save locked or system role");
 			}
+		}
+		
+		if(UtilMethods.isSet(role.getName()) && !ESAPI.validator().isValidInput("roleName", role.getName(), "RoleName", 50, false)) {
+			throw new RoleNameException();
 		}
 		
 		//Checking the role key does not already exist
