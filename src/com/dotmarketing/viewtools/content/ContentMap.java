@@ -206,7 +206,7 @@ public class ContentMap {
 					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
-						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), false);
+						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
 							FileAssetMap fam=new FileAssetMap();
 							FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(fileAsset);

@@ -57,7 +57,10 @@ public class ContentTool implements ViewTool {
 		this.context = ((ViewContext) initData).getVelocityContext();
 		this.req = ((ViewContext) initData).getRequest();
 		try {
-			user = userAPI.getLoggedInFrontendUser(req);
+			user = userAPI.getLoggedInUser(req);
+			if (user == null) {
+				user = userAPI.getLoggedInFrontendUser(req);
+			}
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
