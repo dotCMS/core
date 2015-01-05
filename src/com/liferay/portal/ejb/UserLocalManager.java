@@ -204,6 +204,25 @@ public interface UserLocalManager {
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException;
 
+	/**
+	 * Validates that the user information is valid or correct. For instance,
+	 * the first and last names are composed of allowed characters and no blank
+	 * spaces, the e-mail address is syntactically correct, etc.
+	 * 
+	 * @param userId
+	 *            - The user ID.
+	 * @param firstName
+	 *            - The user's first name.
+	 * @param lastName
+	 *            - The user's last name.
+	 * @param emailAddress
+	 *            - The user's e-mail address.
+	 * @param smsId
+	 * @throws com.liferay.portal.PortalException
+	 *             A validation error has occurred, which means one of the input
+	 *             values does not meet the required format or character set.
+	 * @throws com.liferay.portal.SystemException
+	 */
 	public void validate(java.lang.String userId, java.lang.String firstName,
 		java.lang.String lastName, java.lang.String emailAddress,
 		java.lang.String smsId)

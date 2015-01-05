@@ -609,11 +609,13 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		}
 	}
 
+	@Override
 	public void validate(
 			String userId, String firstName, String lastName,
 			String emailAddress, String smsId)
 		throws PortalException, SystemException {
-
+		firstName = firstName.replaceAll("\\s+", " ").trim();
+		lastName = lastName.replaceAll("\\s+", " ").trim();
 		if (Validator.isNull(firstName) || !ESAPI.validator().isValidInput("firstName", firstName, "UserName", 50, false)) {
 			throw new UserFirstNameException();
 		}
