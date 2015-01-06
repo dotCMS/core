@@ -81,6 +81,7 @@
 			<forward name="editUserAddressPage" path="/application/myaccount/edit_user_address.html" />
 			<forward name="editUserOrganizationPage" path="/application/myaccount/edit_user_organization.html" />
 			<forward name="editUserCategoriesPage" path="/application/myaccount/edit_user_categories.html" />
+			<forward name="reauthenticate" path="/dotCMS/logout" redirect="true" />
         </action>
        
 <action path="/editInterests"  type="com.dotmarketing.cms.myaccount.action.MyInterestsAction" name="myAccountForm" scope="request" validate="false" parameter="dispatch" input="/application/myaccount/my_interests.html" >
