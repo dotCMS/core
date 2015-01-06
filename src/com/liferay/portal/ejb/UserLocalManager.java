@@ -166,7 +166,25 @@ public interface UserLocalManager {
 		throws com.liferay.portal.PortalException, 
 			com.liferay.portal.SystemException;
 
-	
+	/**
+	 * Updates the specified user with the new information. It also makes sure
+	 * that some of the user data contains valid values, for example:
+	 * <ul>
+	 * <li>Only non-null values and valid characters. Invalid blank spaces will
+	 * be removed automatically, whereas invalid characters will be reported as
+	 * an error.</li>
+	 * <li>Make sure that new information does not already exist in the database
+	 * (e.g, the e-mail address).</li>
+	 * </ul>
+	 * 
+	 * @param user
+	 *            - The updated information of the user.
+	 * @return The {@link User} that has been updated.
+	 * @throws PortalException
+	 *             A validation error has occurred, which means the user data
+	 *             contains invalid values or incorrect format.
+	 * @throws SystemException
+	 */
 	public User updateUser(User user) throws PortalException, SystemException;
 	
 	public com.liferay.portal.model.User updateUser(java.lang.String userId,

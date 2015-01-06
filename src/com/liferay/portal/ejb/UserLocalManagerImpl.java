@@ -411,7 +411,16 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		return user;
 	}
 
-	public User updateUser(User user) throws PortalException, SystemException{
+	@Override
+	public User updateUser(User user) throws PortalException, SystemException {
+		if (Validator.isNotNull(user.getFirstName())) {
+			String firstName = user.getFirstName().replaceAll("\\s+", " ").trim();
+			user.setFirstName(firstName);
+		}
+		if (Validator.isNotNull(user.getLastName())) {
+			String lastName = user.getLastName().replaceAll("\\s+", " ").trim();
+			user.setLastName(lastName);
+		}
 		validate(user.getUserId(), user.getFirstName(), user.getLastName(), user.getEmailAddress(), user.getSmsId());
 		UserUtil.update(user);
 		return user;
@@ -614,8 +623,6 @@ public class UserLocalManagerImpl implements UserLocalManager {
 			String userId, String firstName, String lastName,
 			String emailAddress, String smsId)
 		throws PortalException, SystemException {
-		firstName = firstName.replaceAll("\\s+", " ").trim();
-		lastName = lastName.replaceAll("\\s+", " ").trim();
 		if (Validator.isNull(firstName) || !ESAPI.validator().isValidInput("firstName", firstName, "UserName", 50, false)) {
 			throw new UserFirstNameException();
 		}

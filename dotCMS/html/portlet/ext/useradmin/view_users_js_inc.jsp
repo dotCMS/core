@@ -441,14 +441,14 @@
 		}
 	}
 
-	//Callback from the server to confirm the user saved
-	function saveUserCallback (userId) {
-		if(userId) {
+	/* Callback from the server to confirm the user has been saved */
+	function saveUserCallback(status) {
+		if (status.userID) {
 			newUser = false;
 			userChanged = false;
 			passwordChanged = false;
 			showDotCMSSystemMessage(userSavedMsg);
-			editUser(userId);
+			editUser(status.userID);
 			filterUsersDelayed();
 		} else {
 			showDotCMSErrorMessage(userSaveFailedMsg);
