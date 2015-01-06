@@ -96,10 +96,9 @@ public class MyAccountAction extends DispatchAction {
 		userProxy.setTitle(form.getTitle());
 
 		// User Name and password
+		boolean reauthenticate = false;
 		if (!form.getNewPassword().equals("")
-				|| !user.getEmailAddress().equals(form.getEmailAddress())
-
-		) {
+				|| !user.getEmailAddress().equals(form.getEmailAddress())) {
 			if (!user.getPassword().equals(
 					PublicEncryptionFactory.digestString(form.getPassword()))) {
 				ActionErrors errors = new ActionErrors();
@@ -112,6 +111,7 @@ public class MyAccountAction extends DispatchAction {
 					.getNewPassword()));
 			user.setPasswordEncrypted(true);
 			user.setEmailAddress(form.getEmailAddress().trim().toLowerCase());
+			reauthenticate = true;
 		}
 
 		APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
@@ -152,8 +152,13 @@ public class MyAccountAction extends DispatchAction {
 		ae.add(ActionMessages.GLOBAL_MESSAGE, new ActionMessage(
 				"message.createaccount.success"));
 		saveMessages(request, ae);
-
-		return mapping.findForward("myAccountPage");
+		ActionForward forward = null;
+		if (reauthenticate) {
+			forward = mapping.findForward("reauthenticate");
+		} else {
+			forward = mapping.findForward("myAccountPage");
+		}
+		return forward;
 	}
 
 	private void loadUserInfoInRequest(MyAccountForm form, String userId,
