@@ -143,7 +143,7 @@ public class ServerAPIImpl implements ServerAPI {
 		for(Map<String, Object> lic : LicenseUtil.getLicenseRepoList()){
 			
 			if( serverId.equals((String)lic.get("serverid"))) {
-				LicenseUtil.freeLicenseOnRepo((String)lic.get("serial"));
+				LicenseUtil.freeLicenseOnRepo((String)lic.get("serial"), serverId);
 				break;
 			}
 		}
