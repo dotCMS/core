@@ -236,7 +236,6 @@ public class URLMapFilter implements Filter {
 					try {
 					    long sessionLang=WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 					    long defaultLang=APILocator.getLanguageAPI().getDefaultLanguage().getId();
-					    long languageId = Long.parseLong(request.getParameter("language_id"));
 					    boolean checkIndex=false;
 					  
                         if(request.getParameter("language_id")==null && Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",false)) {
