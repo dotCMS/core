@@ -1,15 +1,27 @@
 package com.dotmarketing.portlets.htmlpageasset.model;
 
+import java.io.Serializable;
 import java.util.Map;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
 
-public interface IHTMLPage extends Versionable,Permissionable {
+/**
+ * Represents an HTML page in dotCMS. As of version 3.1, HTML page are not 
+ * considered as {@link WebAsset} objects, but as {@link Contentlet} objects.
+ * 
+ * @author Jorge Urdaneta
+ * @version 1.1
+ * @since 08-28-2014
+ *
+ */
+public interface IHTMLPage extends Serializable, Versionable, Permissionable,
+		Treeable {
     
     String getIdentifier();
     void setIdentifier(String identifier);
@@ -57,4 +69,5 @@ public interface IHTMLPage extends Versionable,Permissionable {
     
     boolean isContent();
     int getMenuOrder();
+    
 }

@@ -15,7 +15,6 @@ import com.dotmarketing.beans.VersionInfo;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -27,14 +26,12 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageFactoryImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
@@ -165,25 +162,39 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-        List<IHTMLPage> pages=new ArrayList<IHTMLPage>();
-        
-        String liveWorkingDeleted = (live) ? " +live:true " :  (deleted)  ?" +working:true +deleted:true " : " +working:true -deleted:true";
-
-        for(Contentlet cont : APILocator.getContentletAPI().search(
-        		
-
-        		
-        		liveWorkingDeleted + 
-                    (parent instanceof Folder ? 
-                            " +conFolder:"+((Folder)parent).getInode()
-                         :  ((parent instanceof Host) ? 
-                                 " +conFolder:SYSTEM_FOLDER +conHost:"+((Host)parent).getIdentifier() : ""))
-                    +" +structureType:"+Structure.STRUCTURE_TYPE_HTMLPAGE, 
-                -1, 0, "modDate asc", user, respectFrontEndRoles)) {
-            pages.add(fromContentlet(cont));
-        }
-        return pages;
+		return getHTMLPages(parent, live, deleted, -1, 0, "", user,
+				respectFrontEndRoles);
     }
+
+	@Override
+	public List<IHTMLPage> getHTMLPages(Object parent, boolean live,
+			boolean deleted, int limit, int offset, String sortBy, User user,
+			boolean respectFrontEndRoles) throws DotDataException,
+			DotSecurityException {
+		List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
+		StringBuffer query = new StringBuffer();
+		String liveWorkingDeleted = (live) ? " +live:true "
+				: (deleted) ? " +working:true +deleted:true "
+						: " +working:true -deleted:true";
+		query.append(liveWorkingDeleted);
+		if (parent instanceof Folder) {
+			query.append(" +conFolder:" + ((Folder) parent).getInode());
+		} else if (parent instanceof Host) {
+			query.append(" +conFolder:SYSTEM_FOLDER +conHost:"
+					+ ((Host) parent).getIdentifier());
+		}
+		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_HTMLPAGE);
+		if (!UtilMethods.isSet(sortBy)) {
+			sortBy = "modDate asc";
+		}
+		List<Contentlet> contentlets = APILocator.getContentletAPI().search(
+				query.toString(), limit, offset, sortBy, user,
+				respectFrontEndRoles);
+		for (Contentlet cont : contentlets) {
+			pages.add(fromContentlet(cont));
+		}
+		return pages;
+	}
     
     @Override
     public List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {

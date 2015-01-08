@@ -28,6 +28,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -41,6 +43,7 @@ import com.liferay.portal.model.User;
 @Deprecated
 public class HTMLPageFactoryImpl implements HTMLPageFactory {
 	static HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
+	private static HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
 
 	public void save(HTMLPage htmlPage, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
 	    CacheLocator.getIdentifierCache().removeFromCacheByVersionable(htmlPage);
@@ -299,6 +302,147 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 			throw new DotRuntimeException(e.toString());
 		}
 
+		return assets;
+	}
+
+	@Override
+	public List<IHTMLPage> findIHtmlPages(User user, boolean includeArchived,
+			Map<String, Object> params, String hostId, String inode, String identifier, String parent,
+			int offset, int limit, String orderBy) throws DotSecurityException,
+			DotDataException {
+		PaginatedArrayList<IHTMLPage> assets = new PaginatedArrayList<IHTMLPage>();
+		List<Permissionable> toReturn = new ArrayList<Permissionable>();
+		int internalLimit = 500;
+		int internalOffset = 0;
+		boolean done = false;
+		StringBuffer conditionBuffer = new StringBuffer();
+		List<Object> paramValues = null;
+		if (params != null && params.size() > 0) {
+			conditionBuffer.append(" and (");
+			paramValues = new ArrayList<Object>();
+			int counter = 0;
+			for (Map.Entry<String, Object> entry : params.entrySet()) {
+				if (counter == 0) {
+					if (entry.getValue() instanceof String) {
+						if (entry.getKey().equalsIgnoreCase("inode")) {
+							conditionBuffer.append(" asset." + entry.getKey() + " = '" + entry.getValue() + "'");
+						} else {
+							conditionBuffer.append(" lower(asset." + entry.getKey() + ") like ? ");
+							paramValues.add("%" + ((String) entry.getValue()).toLowerCase() + "%");
+						}
+					} else {
+						conditionBuffer.append(" asset." + entry.getKey() + " = " + entry.getValue());
+					}
+				} else {
+					if (entry.getValue() instanceof String) {
+						if (entry.getKey().equalsIgnoreCase("inode")) {
+							conditionBuffer.append(" OR asset." + entry.getKey()+ " = '" + entry.getValue() + "'");
+						} else {
+							conditionBuffer.append(" OR lower(asset." + entry.getKey() + ") like ? ");
+							paramValues.add("%" + ((String) entry.getValue()).toLowerCase() + "%");
+						}
+					} else {
+						conditionBuffer.append(" OR asset." + entry.getKey() + " = " + entry.getValue());
+					}
+				}
+				counter += 1;
+			}
+			conditionBuffer.append(" ) ");
+		}
+		StringBuffer query = new StringBuffer();
+		query.append("select asset from asset in class " + HTMLPage.class.getName() + ", " +
+				"inode in class " + Inode.class.getName()+", identifier in class " + Identifier.class.getName() +
+				 ", htmlvi in class "+HTMLPageVersionInfo.class.getName());
+		if (UtilMethods.isSet(parent)) {
+			if (APILocator.getIdentifierAPI().find(parent).getAssetType().equals(new Template().getType())) {
+				query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id and asset.templateId = '"+parent+"' ");
+			} else {
+				query.append(" ,tree in class " + Tree.class.getName() + " where asset.inode = inode.inode " +
+					    "and asset.identifier = identifier.id and tree.parent = '"+parent+"' and tree.child=asset.inode");
+			}
+		} else {
+			query.append(" where asset.inode = inode.inode and asset.identifier = identifier.id");
+		}
+		if (!includeArchived) {
+		    query.append(" and identifier.id=htmlvi.identifier and htmlvi.workingInode=asset.inode and htmlvi.deleted=" + DbConnectionFactory.getDBFalse());
+		} else {
+			query.append(" and identifier.id=htmlvi.identifier and htmlvi.workingInode=asset.inode");
+		}
+		if (UtilMethods.isSet(hostId)) {
+			query.append(" and identifier.hostId = '" + hostId + "'");
+		}
+		if (UtilMethods.isSet(inode)) {
+			query.append(" and asset.inode = '" + inode + "'");
+		}
+		if (UtilMethods.isSet(identifier)) {
+			query.append(" and asset.identifier = '" + identifier + "'");
+		}
+		if (!UtilMethods.isSet(orderBy)) {
+			orderBy = "modDate desc";
+		}
+		List<HTMLPage> resultList = new ArrayList<HTMLPage>();
+		HibernateUtil dh = new HibernateUtil(HTMLPage.class);
+		String type;
+		int countLimit = 100;
+		int size = 0;
+		try {
+			type = ((Inode) HTMLPage.class.newInstance()).getType();
+			query.append(" and asset.type='" + type + "' " + conditionBuffer.toString() + " order by asset." + orderBy);
+			dh.setQuery(query.toString());
+			if (paramValues != null && paramValues.size() > 0) {
+				for (Object value : paramValues) {
+					dh.setParam((String) value);
+				}
+			}
+			while (!done) {
+				dh.setFirstResult(internalOffset);
+				dh.setMaxResults(internalLimit);
+				resultList = dh.list();
+				PermissionAPI permAPI = APILocator.getPermissionAPI();
+				toReturn.addAll(permAPI.filterCollection(resultList, PermissionAPI.PERMISSION_READ, false, user));
+				if (countLimit > 0 && toReturn.size() >= countLimit + offset) {
+					done = true;
+				} else if(resultList.size() < internalLimit) {
+					done = true;
+				}
+				internalOffset += internalLimit;
+			}
+			// Retrieve the new page types as IHTMLPage objects and add them to 
+			// the list of legacy pages
+			List<IHTMLPage> ihtmlPages = htmlPageAssetAPI.getHTMLPages(parent,
+					true, false, -1, 0, orderBy, user, false);
+			if (ihtmlPages != null && ihtmlPages.size() > 0) {
+				toReturn.addAll(ihtmlPages);
+			}
+			if (offset > toReturn.size()) {
+				size = 0;
+			} else if (countLimit > 0) {
+				int toIndex = offset + countLimit > toReturn.size() ? toReturn.size() : offset + countLimit;
+				size = toReturn.subList(offset, toIndex).size();
+			} else if (offset > 0) {
+				size = toReturn.subList(offset, toReturn.size()).size();
+			}
+			assets.setTotalResults(size);
+			if (limit != -1) {
+				int from = offset<toReturn.size()?offset:0;
+				int pageLimit = 0;
+				for (int i = from; i < toReturn.size(); i++){
+					if (pageLimit < limit) {
+						assets.add((IHTMLPage) toReturn.get(i));
+						pageLimit += 1;
+					} else {
+						break;
+					}
+				}
+			} else {
+				for (int i = 0; i < toReturn.size(); i++){
+					assets.add((IHTMLPage) toReturn.get(i));
+				}
+			}
+		} catch (Exception e) {
+			Logger.error(HTMLPageFactoryImpl.class, "findIHtmlPages failed:" + e, e);
+			throw new DotRuntimeException(e.toString());
+		}
 		return assets;
 	}
 

@@ -7,6 +7,13 @@
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.List" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.beans.PermissionAsset"%>
+<%@page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage"%>
+<%@page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage"%>
+<%@page import="com.dotmarketing.beans.WebAsset"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 
 <%
 Boolean hostChanged = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_HOST_CHANGED);
@@ -50,7 +57,11 @@ hostId = request.getParameter("host_id");
 
 %>
 
+<script src="/dwr/interface/StructureAjax.js" type="text/javascript"></script>
+
 <script language="Javascript">
+    dojo.require("dotcms.dojo.data.StructureReadStore");
+
     var view = "<%= java.net.URLEncoder.encode("(working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + ")","UTF-8") %>";
     
     function resetSearch() {
@@ -91,10 +102,49 @@ hostId = request.getParameter("host_id");
     		submitForm(form);
     	}
     }
-    function addAsset() {
-    	window.location.href = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /><portlet:param name="referer" value="<%=referer%>" /></portlet:actionURL>';
+    
+<%
+    com.dotmarketing.beans.Host myHost = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+%>
+    var myHost = '<%= (myHost != null) ? myHost.getHostname() : "" %>';
+
+    /* Displays the pop-up window where users can select the type of HTML Page they need */
+    function showPageAssetPopUp() {
+        var faDialog = dijit.byId("addPageAssetDialog");
+        if (faDialog) {
+            faDialog.destroyRecursive(true);
+        }
+        var pageAssetDialog = new dijit.Dialog({
+            id   : "addPageAssetDialog",
+            title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpage.dialog")) %>",
+            style: "width: 420px; height:130px; overflow: auto"
+        });
+        var dialogHtml = getHTMLPageAssetDialogHtml();
+        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%= APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost) %>' });
+		pageAssetDialog.attr("content", dialogHtml);
+		pageAssetDialog.show();
+	}
+
+	/* Contains the HTML code for the HTML page pop-up window */
+	function getHTMLPageAssetDialogHtml() {
+		return "<div>"
+				+ "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.htmlpage.you.wish.to.upload")) %>:</div>" +
+                "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='pageAssetStructureStore' dojoId='pageAssetStructureStoreDojo' structureType='<%= Structure.STRUCTURE_TYPE_HTMLPAGE %>'></span>"+
+                "<select id='defaultPageType' name='defaultPageType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='pageAssetStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name' value='${stInode}' invalidMessage='<%= LanguageUtil.get(pageContext, "Invalid-option-selected") %>'></select>"+
+                "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPageAssetButton' onclick='getSelectedpageAsset();'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
+                "</div>";
     }
-	
+    
+    /* Validates that the user has selected a correct HTML Page asset type before redirecting to the page creation page. */
+    function getSelectedpageAsset() {
+        var selected = dijit.byId('defaultPageType');
+        if (!selected) {
+            showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Please-select-a-valid-htmlpage-asset-type")) %>');
+        } else {
+        	top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="new" /></portlet:actionURL>&selectedStructure=' + selected +'&referer=<%= referer %>';
+        }
+    }
+
     function checkAll() {
     	var check = dijit.byId("checkAll").checked;
     	dojo.query('input[type=checkbox]', document).forEach(function(tag){
@@ -171,7 +221,7 @@ hostId = request.getParameter("host_id");
 		<input type="checkbox" dojoType="dijit.form.CheckBox" name="showDeleted" id="showDeleted" onClick="javascript:submitfm();" <%= (showDeleted!=null) && (showDeleted.equals("true")) ? "checked" : "" %> value="true">
 		<label for="showDeleted" style="font-size:85%;"><%= LanguageUtil.get(pageContext, "Show-Archived") %></label>
 		
-		<button dojoType="dijit.form.Button" onClick="javascript:addAsset(); return false;" iconClass="plusIcon">
+		<button dojoType="dijit.form.Button" onClick="javascript:showPageAssetPopUp(); return false;" iconClass="plusIcon">
 	        <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "add-html-page")) %>
 	    </button>
 	</div>
@@ -239,7 +289,7 @@ require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom
     //gets permissions listings
     java.util.List permissions = permAsset.getPermissions();
     //gets htmlpage
-    com.dotmarketing.portlets.htmlpages.model.HTMLPage htmlpage = (com.dotmarketing.portlets.htmlpages.model.HTMLPage) permAsset.getAsset();
+    IHTMLPage htmlpage = (IHTMLPage) permAsset.getPermissionableAsset();
     String pathToMe = permAsset.getPathToMe();
     if (pathToMe == null)
     continue;
@@ -264,18 +314,29 @@ require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom
 					<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= htmlpage.getInode() %>" value="<%= htmlpage.getInode() %>" onclick="togglePublish()" /> 
 				<% } %>
 			</td>
-			<td <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
+			<td <%if(!htmlpage.isArchived()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
 				<span class="pageIcon"></span>
 				<%=htmlpage.getTitle() %>
 			</td>
-			<td nowrap="true" <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
-			<td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=htmlpage.getPageUrl() %></td>
-            <td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=pathToMe %></td>
-            <td nowrap <%if(!htmlpage.isDeleted()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>><%=modDateFormat.format(htmlpage.getModDate()) %></td>
+			<% if (htmlpage instanceof WebAsset) { %>
+            <td nowrap="true" <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= htmlpage.getPageUrl() %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= pathToMe %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= modDateFormat.format(htmlpage.getModDate()) %></td>
+            <% } else {
+                Contentlet contenlet = (Contentlet) htmlpage;
+                String structureInode = contenlet.getStructureInode();
+                String contentletInode = contenlet.getInode();
+            %>
+            <td nowrap="true" <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= htmlpage.getPageUrl() %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= pathToMe %></td>
+            <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= modDateFormat.format(htmlpage.getModDate()) %></td>
+            <% } %>
         </tr>
         <script language="JavaScript">
             //popup div for the htmlpages
-            document.write(getHTMLPagePopUp('<%=k%>', '<%= CTX_PATH %>', '<%=htmlpage.getInode()%>', '<%=htmlpage.getIdentifier()%>', '0', '', '<%=referer%>', '<%=(htmlpage.isLive()) ? "1" : "0"%>', '<%=(htmlpage.isWorking()) ? "1" : "0"%>', '<%=(htmlpage.isDeleted()) ? "1" : "0"%>', '<%=(htmlpage.isLocked()) ? "1" : "0"%>', '<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>', '<%=user.getUserId()%>'));
+            document.write(getHTMLPagePopUp('<%=k%>', '<%= CTX_PATH %>', '<%=htmlpage.getInode()%>', '<%=htmlpage.getIdentifier()%>', '0', '', '<%=referer%>', '<%=(htmlpage.isLive()) ? "1" : "0"%>', '<%=(htmlpage.isWorking()) ? "1" : "0"%>', '<%=(htmlpage.isArchived()) ? "1" : "0"%>', '<%=(htmlpage.isLocked()) ? "1" : "0"%>', '<%=permissions.contains(PermissionAPI.PERMISSION_READ) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_WRITE) ? "1" : "0" %>', '<%=permissions.contains(PermissionAPI.PERMISSION_PUBLISH) ? "1" : "0" %>', '<%=user.getUserId()%>'));
         </script>
     <%} %>
 	<% if (htmlpagesSize ==0) { %>
@@ -289,8 +350,11 @@ require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom
 
 <div class="yui-gb buttonRow">
 	<div class="yui-u first" style="text-align:left;">
-		<% if (minIndex != 0) { %>
-			<button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/view_htmlpages" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) htmlpages.get(0)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="previous" /></portlet:renderURL>'" iconClass="previousIcon">
+		<% if (minIndex != 0) {
+		    PermissionAsset prevPage = ((PermissionAsset) htmlpages.get(0));
+            IHTMLPage prevHtmlPage = (IHTMLPage) prevPage.getPermissionableAsset();
+            %>
+			<button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/view_htmlpages" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber - 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= prevHtmlPage.getIdentifier() %>" /><portlet:param name="show" value="previous" /></portlet:renderURL>'" iconClass="previousIcon">
 				<%= LanguageUtil.get(pageContext, "Previous") %>
 			</button>
 		<% } %>&nbsp;
@@ -312,8 +376,11 @@ require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom
 		<%} %>
 	</div>
 	<div class="yui-u" style="text-align:right;">	
-		<% if (maxIndex < (minIndex + htmlpagesSize)) { %>
-	        <button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/view_htmlpages" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= ((com.dotmarketing.beans.PermissionAsset) htmlpages.get(htmlpages.size() - 1)).getAsset().getIdentifier() %>" /><portlet:param name="show" value="next" /></portlet:renderURL>'" iconClass="nextIcon">
+		<% if (maxIndex < (minIndex + htmlpagesSize)) {
+			PermissionAsset nextPage = ((PermissionAsset) htmlpages.get(htmlpages.size() - 1));
+		    IHTMLPage nextHtmlPage = (IHTMLPage) nextPage.getPermissionableAsset();
+		    %>
+	        <button dojoType="dijit.form.Button" onClick="window.location='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/view_htmlpages" /><portlet:param name="pageNumber" value="<%= String.valueOf(pageNumber + 1) %>" /><portlet:param name="orderby" value="<%= orderby %>" /><portlet:param name="fromAssetId" value="<%= nextHtmlPage.getIdentifier() %>" /><portlet:param name="show" value="next" /></portlet:renderURL>'" iconClass="nextIcon">
 				<%= LanguageUtil.get(pageContext, "Next") %>
 	    	</button>
 		<% } %>&nbsp;

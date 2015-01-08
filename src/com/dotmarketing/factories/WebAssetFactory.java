@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -24,6 +25,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
@@ -41,8 +43,9 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
-import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
@@ -61,8 +64,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 /**
  *
@@ -2014,7 +2015,7 @@ public class WebAssetFactory {
 		long totalCount = 0;
 	
 		AssetType type = AssetType.getObject(tableName.toUpperCase());
-		java.util.List<? extends WebAsset> elements = null;
+		java.util.List<? extends Permissionable> elements = null;
 		Map<String,Object> params = new HashMap<String, Object>();
 		if(UtilMethods.isSet(query)){				
 			params.put("title", query.toLowerCase().replace("\'","\\\'"));
@@ -2024,7 +2025,7 @@ public class WebAssetFactory {
 			if(UtilMethods.isSet(query)){				
 				params.put("pageUrl", query.toLowerCase());
 			}
-		    elements = htmlPageAPI.findHtmlPages(user, includeArchived, params, hostId,null,null, parent, offset, limit, orderBy);
+			elements = htmlPageAPI.findIHtmlPages(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.FILE_ASSET)){
 			if(UtilMethods.isSet(query)){				
 				params.put("fileName", query.toLowerCase().replace("\'","\\\'"));
@@ -2051,43 +2052,78 @@ public class WebAssetFactory {
 		
 		
 	    totalCount =  elements!=null?((PaginatedArrayList)elements).getTotalResults():0;
-		java.util.Iterator<? extends WebAsset> elementsIter = elements.iterator();
+	    java.util.Iterator<? extends Permissionable> elementsIter = elements.iterator();
 
 		while (elementsIter.hasNext()) {
-
-			WebAsset asset = elementsIter.next();
+			Permissionable asset = elementsIter.next();
+			PermissionAsset permAsset = new PermissionAsset();
 			Folder folderParent = null;
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
-			Host host=null;
-			try {
-				host = APILocator.getHostAPI().findParentHost(asset, user, false);
-			} catch (DotDataException e1) {
-				Logger.error(WebAssetFactory.class,"Could not load host : ",e1);
-			} catch (DotSecurityException e1) {
-				Logger.error(WebAssetFactory.class,"User does not have required permissions : ",e1);
-			}
-			if(host!=null){
-					if(host.isArchived()){
-					 continue;
+			Host host = null;
+			if (asset instanceof WebAsset) {
+				// For WebAsset objects
+				WebAsset webAsset = (WebAsset) asset;
+				if (!WebAssetFactory.isAbstractAsset(webAsset)) {
+					folderParent = APILocator.getFolderAPI()
+							.findParentFolder(webAsset, user, false);
+				}
+				try {
+					host = APILocator.getHostAPI().findParentHost(webAsset,
+							user, false);
+				} catch (DotDataException e1) {
+					Logger.error(WebAssetFactory.class,
+							"Could not load host : ", e1);
+				} catch (DotSecurityException e1) {
+					Logger.error(WebAssetFactory.class,
+							"User does not have required permissions : ", e1);
+				}
+				if (host != null) {
+					if (host.isArchived()) {
+						continue;
 					}
 				}
-			
+				if (!WebAssetFactory.isAbstractAsset(webAsset)) {
+					permAsset.setPathToMe(APILocator.getIdentifierAPI()
+							.find(folderParent).getPath());
+				} else {
+					permAsset.setPathToMe("");
+				}
+				if (asset instanceof IHTMLPage) {
+					permAsset.setPermissionableAsset(asset);
+				} else {
+					permAsset.setAsset(webAsset);
+				}
+			} else {
+				// For HTMLPage and IHTMLPage objects
+				IHTMLPage page = (IHTMLPage) asset;
+				folderParent = APILocator.getFolderAPI()
+						.findParentFolder((Treeable) asset, user, false);
+				try {
+					String pageHostId = APILocator.getIdentifierAPI()
+							.find(page.getIdentifier()).getHostId();
+					host = APILocator.getHostAPI().find(pageHostId, user, false);
+				} catch (DotDataException e1) {
+					Logger.error(WebAssetFactory.class,
+							"Could not load host : ", e1);
+				} catch (DotSecurityException e1) {
+					Logger.error(WebAssetFactory.class,
+							"User does not have required permissions : ", e1);
+				}
+				if (host != null) {
+					if (host.isArchived()) {
+						continue;
+					}
+				}
+				permAsset.setPathToMe(APILocator.getIdentifierAPI()
+						.find(folderParent).getPath());
+				permAsset.setPermissionableAsset(page);
+			}
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
 			} catch (DotDataException e) {
 				Logger.error(WebAssetFactory.class,"Could not load permissions : ",e);
 			}
-
-			PermissionAsset permAsset = new PermissionAsset();
-			if (!WebAssetFactory.isAbstractAsset(asset))
-				permAsset.setPathToMe(APILocator.getIdentifierAPI().find(folderParent).getPath());
-			else
-				permAsset.setPathToMe("");
 			permAsset.setPermissions(permissions);
-			permAsset.setAsset(asset);
 			paginatedEntries.add(permAsset);
 		}
 		
@@ -2095,6 +2131,5 @@ public class WebAssetFactory {
 		
 		return paginatedEntries;
 	}
-	
 
 }

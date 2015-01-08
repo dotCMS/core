@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
-import java.io.OutputStream;
 import java.util.Date;
 import java.util.List;
 
@@ -17,6 +16,14 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 
+/**
+ * Provides utility methods to interact with the upgraded version of HTML pages.
+ * 
+ * @author Jorge Urdaneta
+ * @version 1.1
+ * @since 08-28-2014
+ *
+ */
 public interface HTMLPageAssetAPI {
     
     static final String URL_FIELD="url";
@@ -81,6 +88,26 @@ public interface HTMLPageAssetAPI {
 
     List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
+	/**
+	 * Returns a list of HTML pages that meet the specified filtering criteria.
+	 * 
+	 * @param parent
+	 * @param live
+	 * @param deleted
+	 * @param limit
+	 * @param offset
+	 * @param sortBy
+	 * @param user
+	 * @param respectFrontEndRoles
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted,
+			int limit, int offset, String sortBy, User user,
+			boolean respectFrontEndRoles) throws DotDataException,
+			DotSecurityException;
+
     Folder getParentFolder(IHTMLPage htmlPage) throws DotDataException, DotSecurityException;
     
     HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions)  throws Exception;
@@ -96,4 +123,5 @@ public interface HTMLPageAssetAPI {
     boolean move(HTMLPageAsset page, Host host, User user)throws DotDataException, DotSecurityException;
 
     List<String> findUpdatedHTMLPageIdsByURI(Host host, String pattern, boolean include, Date startDate, Date endDate);
+    
 }
