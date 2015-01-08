@@ -493,23 +493,19 @@ var cmsfile=null;
 	}
 
 	function addGlossaryTerm(option) {
+		var insertValue = "$text.get('" + option + "')";
 		if(enabledWYSIWYG[glossaryTermId]) {
-			tinymce.EditorManager.get(glossaryTermId).save();
-		} else if (enabledCodeAreas[glossaryTermId]) {
-		}
-		var currentValue = dojo.byId(glossaryTermId).value;
-		dojo.byId(glossaryTermId).value = currentValue + "$text.get('" + option + "')";
-		var updatedValue = currentValue + "$text.get('" + option + "')";
-		if(enabledWYSIWYG[glossaryTermId]) {
-			tinymce.EditorManager.get(glossaryTermId).load();
-		} else if (enabledCodeAreas[glossaryTermId]) {
-			if(glossaryTermId==aceTextId){
-				textEditor[glossaryTermId].setValue(dojo.byId(glossaryTermId).value);
-				textEditor[glossaryTermId].clearSelection();				
-			} else {
-				editor.setValue(dojo.byId(glossaryTermId).value);
-				editor.clearSelection();
-			}
+			tinymce.EditorManager.get(glossaryTermId).selection.setContent(insertValue);
+		} else if (aceEditors[glossaryTermId]) {
+			aceEditors[glossaryTermId].insert(insertValue);
+		} else if(enabledCodeAreas[glossaryTermId]){
+			textEditor[glossaryTermId].insert(insertValue);
+		} else {
+			var txtArea = document.getElementById(glossaryTermId);
+			txtArea.value = txtArea.value.substring(0, txtArea.selectionStart) + insertValue + txtArea.value.substring(txtArea.selectionEnd, txtArea.value.length);
+            txtArea.focus();
+            txtArea.selectionStart = txtArea.selectionStart + insertValue.length;
+            txtArea.selectionEnd = txtArea.selectionStart + insertValue.length;
 		}
 		clearGlossaryTerms();
 	}
