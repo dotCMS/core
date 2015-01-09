@@ -161,9 +161,10 @@ public class CMSFilter implements Filter {
 
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
-			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri));
+			
+			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 			if (!UtilMethods.isSet(rewrite)) {
-				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri));
+				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.indexOf("//") > -1) {
 				response.sendRedirect(rewrite);
@@ -187,7 +188,7 @@ public class CMSFilter implements Filter {
 				closeDbSilently();
 				return;
 			} else {
-				rewrite = uri + CMS_INDEX_PAGE;
+				rewrite = rewrite + CMS_INDEX_PAGE;
 				if(urlUtil.isPageAsset(rewrite, host, languageId)){
 					iAm = IAm.PAGE;
 				}
