@@ -1107,79 +1107,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    @Override
     public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
-
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
-
-        ActivityLogger.logInfo(getClass(), "Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
         try {
         	delete(contentlets, user, respectFrontendRoles);
         } catch(DotDataException | DotSecurityException e) {
-        	ActivityLogger.logInfo(getClass(), "Error Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
-        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        			+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        	logContentletActivity(contentlets, "Error Deleting Content", user);
         	throw e;
         }
-
-        ActivityLogger.logInfo(getClass(), "Content Deleted", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-
     }
 
+    @Override
     public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles, boolean allVersions) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
-
-        String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
-		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
-		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
-		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
-		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
-		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
-		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
-		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
-
-        ActivityLogger.logInfo(getClass(), "Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
         try {
         	delete(contentlets, user, respectFrontendRoles, allVersions);
         } catch(DotDataException | DotSecurityException e) {
-        	ActivityLogger.logInfo(getClass(), "Error Deleting Content", "StartDate: " +contentPushPublishDate+ "; "
-        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-        			+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        	logContentletActivity(contentlets, "Error Deleting Content", user);
         	throw e;
         }
-
-        ActivityLogger.logInfo(getClass(), "Content Deleted", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-
     }
 
+    @Override
     public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(contentlets == null || contentlets.size() == 0){
             Logger.info(this, "No contents passed to delete so returning");
             return;
         }
+        logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
             if(contentlet.getInode().equals("")) {
+            	logContentletActivity(contentlet, "Error Deleting Content", user);
                 throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
             }
             canLock(contentlet, user);
@@ -1188,6 +1149,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         List<Contentlet> contentletsVersion = new ArrayList<Contentlet>();
 
         if(perCons.size() != contentlets.size()){
+        	logContentletActivity(contentlets, "Error Deleting Content", user);
             throw new DotSecurityException("User: "+ (user != null ? user.getUserId() : "Unknown") 
             		+" does not have permission to delete some or all of the contentlets");
         }
@@ -1219,6 +1181,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
             }
             if(cannotDelete && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
+            	logContentletActivity(con, "Error Deleting Content", user);
                 Logger.warn(this, "Cannot delete content that has a working copy in another language");
                 
                 String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
@@ -1252,6 +1215,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 }
                 MultiTreeFactory.deleteMultiTree(mt);
             }
+            logContentletActivity(con, "Content Deleted", user);
         }
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
@@ -4903,4 +4867,70 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	return fileAssetCont;
 
 	}
+
+	/**
+	 * Utility method used to log the different operations performed on a list
+	 * of {@link Contentlet} objects. The information of the operation will be
+	 * logged in the Activity Logger file.
+	 * 
+	 * @param contentlets
+	 *            - List of {@link Contentlet} objects whose information will be
+	 *            logged.
+	 * @param description
+	 *            - A small description of the operation being performed. E.g.,
+	 *            "Deleting Content", "Error Publishing Content", etc.
+	 * @param user
+	 *            - The currently logged in user.
+	 */
+	private void logContentletActivity(List<Contentlet> contentlets,
+			String description, User user) {
+		for (Contentlet content : contentlets) {
+			logContentletActivity(content, description, user);
+		}
+	}
+	
+	/**
+	 * Utility method used to log the different operations performed on
+	 * {@link Contentlet} objects. The information of the operation will be
+	 * logged in the Activity Logger file.
+	 * 
+	 * @param contentlet
+	 *            - The {@link Contentlet} whose information will be logged.
+	 * @param description
+	 *            - A small description of the operation being performed. E.g.,
+	 *            "Deleting Content", "Error Publishing Content", etc.
+	 * @param user
+	 *            - The currently logged in user.
+	 */
+	private void logContentletActivity(Contentlet contentlet,
+			String description, User user) {
+		String contentPushPublishDate = contentlet
+				.getStringProperty("wfPublishDate");
+		String contentPushPublishTime = contentlet
+				.getStringProperty("wfPublishTime");
+		String contentPushExpireDate = contentlet
+				.getStringProperty("wfExpireDate");
+		String contentPushExpireTime = contentlet
+				.getStringProperty("wfExpireTime");
+		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate) ? contentPushPublishDate
+				: "N/A";
+		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime) ? contentPushPublishTime
+				: "N/A";
+		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate) ? contentPushExpireDate
+				: "N/A";
+		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime) ? contentPushExpireTime
+				: "N/A";
+		ActivityLogger.logInfo(getClass(), description,
+				"StartDate: "
+						+ contentPushPublishDate
+						+ "; "
+						+ "EndDate: "
+						+ contentPushExpireDate
+						+ "; User:"
+						+ (user != null ? user.getUserId() : "Unknown")
+						+ "; ContentIdentifier: "
+						+ (contentlet != null ? contentlet.getIdentifier()
+								: "Unknown"), contentlet.getHost());
+	}
+
 }
