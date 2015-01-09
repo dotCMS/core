@@ -989,6 +989,16 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 				offset, limit, orderBy);
 	}
 
+	@Override
+	public List<IHTMLPage> findIHtmlPages(User user, boolean includeArchived,
+			Map<String, Object> params, String hostId, String inode,
+			String identifier, String parent, int offset, int limit,
+			String orderBy) throws DotSecurityException, DotDataException {
+		return FactoryLocator.getHTMLPageFactory().findIHtmlPages(user,
+				includeArchived, params, hostId, inode, identifier, parent,
+				offset, limit, orderBy);
+	}
+
 	public boolean movePage(HTMLPage page, Folder parent, User user,
 			boolean respectFrontendRoles) throws DotStateException,
 			DotDataException, DotSecurityException {

@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotmarketing.business.Permissionable;
 
 /**
  *
@@ -18,6 +19,9 @@ public class PermissionAsset implements Serializable, Comparable {
 
     /** identifier field */
     private Inode asset;
+    
+    /** identifier field */
+    private Permissionable permissionableAsset;
 
     /** identifier field */
     private String pathToMe;
@@ -40,6 +44,14 @@ public class PermissionAsset implements Serializable, Comparable {
 	public Inode getAsset() {
 		return asset;
 	}
+	
+	/**
+	 * Returns the permissionable asset.
+	 * @return WebAsset
+	 */
+	public Permissionable getPermissionableAsset() {
+		return this.permissionableAsset;
+	}
 
 	/**
 	 * Returns the permissions.
@@ -55,6 +67,14 @@ public class PermissionAsset implements Serializable, Comparable {
 	 */
 	public void setAsset(Inode asset) {
 		this.asset = asset;
+	}
+	
+	/**
+	 * Sets the permissionable asset.
+	 * @param asset The asset to set
+	 */
+	public void setPermissionableAsset(Permissionable asset) {
+		this.permissionableAsset = asset;
 	}
 
 	/**
