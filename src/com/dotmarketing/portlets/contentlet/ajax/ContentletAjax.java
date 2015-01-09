@@ -19,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotmarketing.beans.Host;
@@ -715,6 +714,8 @@ public class ContentletAjax {
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){
+							// date formatting from short date (dd/MM/yyyy) to Lucene date format
+							fieldValue = UtilMethods.shortDateToLuceneDate(fieldValue);
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
 							if(isStructField==false){
