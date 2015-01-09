@@ -6,6 +6,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
+import com.dotmarketing.util.UtilMethods;
 
 public class MyAccountForm extends ActionForm
 {
@@ -83,8 +84,18 @@ public class MyAccountForm extends ActionForm
 				errors.add("emailAddress", new ActionMessage ("error.form.mandatory", "Email Address"));
 			if (!emailAddress.matches("[^@]+@[^@]+"))
 				errors.add("emailAddress", new ActionMessage ("error.form.format", "Email Address"));
-			if (!newPassword.equals("") && !newPassword.equals(verifyPassword)) {
-					errors.add("newPassword", new ActionMessage ("error.form.verifyPassword"));
+			if (!UtilMethods.isSet(newPassword) || !UtilMethods.isSet(verifyPassword)) {
+				if (!UtilMethods.isSet(newPassword)) {
+					errors.add("newPassword", new ActionMessage("error.form.mandatory", "New Password"));
+				}
+				if (!UtilMethods.isSet(verifyPassword)) {
+					errors.add("verifyPassword", new ActionMessage("error.form.mandatory", "Verify Password"));
+				}
+			} else {
+				if (!newPassword.equals(verifyPassword)) {
+					errors.add("verifyPassword", new ActionMessage(
+							"error.form.verifyPassword"));
+				}
 			}
 		} else if (arg1.getParameter("dispatch").equals("saveUserAddress")) {
 			if (street1.equals(""))
