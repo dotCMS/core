@@ -124,6 +124,8 @@ public class UtilMethods {
     private static final java.text.SimpleDateFormat DATE_TO_LONG_PRETTY_HTML_DATE = new java.text.SimpleDateFormat("EEE, d MMM yyyy hh:mm a");
 
     private static final java.text.SimpleDateFormat DATE_TO_PRETTY_HTML_DATE_2 = new java.text.SimpleDateFormat("MMMM d, yyyy");
+    
+    private static final java.text.SimpleDateFormat DATE_TO_LUCENE_DATE = new java.text.SimpleDateFormat("yyyyMMdd*");
 
     static {
         _CC_MAPPINGS.put("AMEX", "American Express");
@@ -653,6 +655,22 @@ public class UtilMethods {
         GOOGLE_DATETIME_TO_DATE.setLenient(true);
         rDate = (java.util.Date) GOOGLE_DATETIME_TO_DATE.parse(d, pos);
         return rDate;
+    }
+    
+    /**
+     * Formats date text from short format (MM/dd/yyyy) to Lucene format
+     * @param d date text on short format
+     * @return date text on Lucene format
+     */
+    public static final String shortDateToLuceneDate(String d) {
+        java.util.Date rDate = null;
+        java.text.ParsePosition pos = new java.text.ParsePosition(0);
+        // parse short date
+        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("MM/dd/yyyy");
+        formatter.setLenient(true);
+        rDate = (java.util.Date) formatter.parse(d, pos);
+        // using lucene date
+        return DATE_TO_LUCENE_DATE.format(rDate);
     }
 
     public static final java.util.Date htmlToDate(java.util.Date rDate) {
