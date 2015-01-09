@@ -130,7 +130,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 		}*/
 	    StringBuffer sql = new StringBuffer("update contentlet set " );
         if(field.getFieldContentlet().indexOf("float") != -1){
-            sql.append("\""+field.getFieldContentlet()+"\"" + " = ");
+        	if(DbConnectionFactory.isMySql())
+       		 	sql.append(field.getFieldContentlet() + " = ");
+       	    else
+       	    	sql.append("\""+field.getFieldContentlet()+"\"" + " = "); 
         }else{
             sql.append(field.getFieldContentlet() + " = ");
         }
