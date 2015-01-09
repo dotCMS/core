@@ -45,6 +45,7 @@ public class CMSFilterUnitTest {
 		VirtualLink link2 = new VirtualLink();
 		VirtualLink link3 = new VirtualLink();
 		VirtualLink link4 = new VirtualLink();
+		VirtualLink link5 = new VirtualLink();
 
 		// build them up
 		try {
@@ -86,6 +87,12 @@ public class CMSFilterUnitTest {
 			link4.setUrl("demo.dotcms.com:/testLink4");
 			HibernateUtil.save(link4);
 
+			
+			link5.setActive(true);
+			link5.setTitle("test link5");
+			link5.setUri("products/");
+			link5.setUrl("/testLink5/");
+			HibernateUtil.save(link5);
 			
 			
 
@@ -137,6 +144,17 @@ public class CMSFilterUnitTest {
 			Assert.assertEquals(301, response.getStatus());
 			Logger.info(this.getClass(), "looking for http://demo.dotcms.com/about-us"+CMSFilter.CMS_INDEX_PAGE+", got;" + response.getRedirectLocation());
 			Assert.assertEquals("http://demo.dotcms.com/about-us/"+CMSFilter.CMS_INDEX_PAGE, response.getRedirectLocation());
+			
+			
+			Logger.info(this.getClass(), "/testLink5 should forward to /products/"+CMSFilter.CMS_INDEX_PAGE);
+			request = getMockRequest("demo.dotcms.com", "/testLink5/");
+			cmsFilter.doFilter(request, response, chain);
+			response = new MockResponseWrapper(Mockito.mock(HttpServletResponse.class));
+			Logger.info(this.getClass(), "looking for 200, got;" + response.getStatus());
+			Assert.assertEquals(200, response.getStatus());
+			Logger.info(this.getClass(), "looking for /products/"+CMSFilter.CMS_INDEX_PAGE+", got;" + request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+			Assert.assertEquals("/products/"+CMSFilter.CMS_INDEX_PAGE, request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE));
+			
 		
 		
 			

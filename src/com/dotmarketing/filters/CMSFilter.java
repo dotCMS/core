@@ -188,6 +188,8 @@ public class CMSFilter implements Filter {
 				closeDbSilently();
 				return;
 			} else {
+				if(!rewrite.startsWith("/")) 
+					rewrite = "/" + rewrite;
 				rewrite = rewrite + CMS_INDEX_PAGE;
 				if(urlUtil.isPageAsset(rewrite, host, languageId)){
 					iAm = IAm.PAGE;
