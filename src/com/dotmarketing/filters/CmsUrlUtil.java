@@ -111,7 +111,8 @@ public class CmsUrlUtil {
 			uri = uri.substring(0,uri.length()-1);
 		}
 			
-		
+		if(!uri.startsWith("/"))
+			uri = "/" + uri;
 		
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
@@ -129,6 +130,9 @@ public class CmsUrlUtil {
 	}
 
 	public boolean isVanityUrl(String uri, Host host) {
+		
+		if (uri.endsWith("/"))
+            uri = uri.substring(0, uri.length() - 1);
 
 		boolean isVanityURL = UtilMethods.isSet(VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + uri));
 		if (!isVanityURL) {
