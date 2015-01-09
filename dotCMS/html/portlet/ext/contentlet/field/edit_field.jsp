@@ -177,7 +177,7 @@
         	<label for="toggleEditor"><%= LanguageUtil.get(pageContext, "Toggle-Editor") %></label>
         </div>
         <br /> <br />
-        <div style="float: left;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>: <input
+        <div style="float: left; position: absolute; z-index: 10;"><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Language-Variables")) %>: <input
             type="text" id="glossary_term_<%= field.getVelocityVarName() %>"
             name="glossary_term_<%= field.getVelocityVarName() %>"
             class="form-text"
