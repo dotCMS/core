@@ -3493,6 +3493,12 @@
 		<display-name>Network Portlet</display-name>
 		<portlet-class>com.dotcms.rest.NetworkPortlet</portlet-class>
 	</portlet>
+	
+	<portlet>
+		<portlet-name>ES_SEARCH_PORTLET</portlet-name>
+		<display-name>ES Query Tool</display-name>
+		<portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>

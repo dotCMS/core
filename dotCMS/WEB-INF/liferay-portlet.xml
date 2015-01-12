@@ -132,5 +132,6 @@
 	<portlet id="EXT_EXPCONTENT_TOOL" struts-path="ext/escalation" narrow="true" />
 	<portlet id="EXT_BROKEN_LINKS" struts-path="ext/brokenlinks" narrow="true" />
     <portlet id="TIMEMACHINE" />
+    <portlet id="ES_SEARCH_PORTLET" />
 	<custom-user-attribute name="user.name.random" custom-class="com.liferay.portlet.CustomUserAttributes" />
 </portlets>

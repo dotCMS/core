@@ -1,25 +1,51 @@
 {
- 	"content": {
- 	     "date_detection" : false,
- 	     "_source": { 
- 	       "excludes" : ["metadata.*"] 
-		 },
-	     "dynamic_templates": [
-	          {
-	              "template_1": {
-					"_all": { 
-					    "indexAnalyzer": "whitespace", 
-					    "searchAnalyzer": "whitespace", 
-					    "store": "false",
-					    "type": "string"
-					},
+    "content": {
+        "date_detection": false,
+        "_source": {
+            "excludes": [
+                "metadata.*"
+            ]
+        },
+        "dynamic_templates": [
+            {
+                "template_1": {
+                    "_all": {
+                        "indexAnalyzer": "whitespace",
+                        "searchAnalyzer": "whitespace",
+                        "store": "false",
+                        "type": "string"
+                    },
                     "match": "*_dotraw",
                     "mapping": {
-                         "type": "string",
-                         "index" : "not_analyzed"
+                        "type": "string",
+                        "index": "not_analyzed"
                     }
-	              }
-	         }
-	    ]
-	}
+                }
+            },
+            {
+                "geomapping": {
+                    "match": "*latlon",
+                    "mapping": {
+                        "type": "geo_point"
+                    }
+                }
+            },
+            {
+                "geomapping_2": {
+                    "match": "*latlong",
+                    "mapping": {
+                        "type": "geo_point"
+                    }
+                }
+            },
+            {
+                "ipaddress": {
+                    "match": "*ipaddress",
+                    "mapping": {
+                        "type": "ip"
+                    }
+                }
+            }
+        ]
+    }
 }

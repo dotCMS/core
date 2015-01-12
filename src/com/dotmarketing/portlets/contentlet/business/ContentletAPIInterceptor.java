@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.util.*;
 
 import com.dotcms.content.business.DotMappingException;
+import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -2256,4 +2258,41 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
             post.publishAssociated(contentlet,isNew,isNewVersion);
         }
     }
+    
+    @Override
+    public ESSearchResults esSearch(String esQuery, boolean live, User user,
+    		boolean respectFrontendRoles) throws DotSecurityException,
+    		DotDataException {
+    	for(ContentletAPIPreHook pre : preHooks){
+             boolean preResult = pre.esSearch(esQuery, live, user, respectFrontendRoles);
+             if(!preResult){
+                 Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                 throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+             }
+         }
+    	 	ESSearchResults ret = conAPI.esSearch(esQuery, live, user, respectFrontendRoles);
+         for(ContentletAPIPostHook post : postHooks){
+             post.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+         }
+         return ret;
+    }
+    
+    @Override
+    public SearchResponse esSearchRaw(String esQuery, boolean live, User user,
+    		boolean respectFrontendRoles) throws DotSecurityException,
+    		DotDataException {
+    	for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+    	SearchResponse ret = conAPI.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+        for(ContentletAPIPostHook post : postHooks){
+            post.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+        }
+        return ret;
+    }
+    
 }
