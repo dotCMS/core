@@ -84,10 +84,7 @@ public class URLMapFilter implements Filter {
 		HttpSession session = request.getSession();
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
-		if(CMSFilter.excludeURI(uri)){
-			chain.doFilter(req, res);
-			return;
-		}
+
 		/*
 		 * Getting host object form the session
 		 */
