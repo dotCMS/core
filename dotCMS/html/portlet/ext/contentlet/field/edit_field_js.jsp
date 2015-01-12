@@ -85,7 +85,9 @@
 			toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
     		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
     		image_advtab: true,
-    		file_browser_callback: 'cmsFileBrowser'
+    		file_picker_callback: function(callback, value, meta) {
+    			cmsFileBrowser(callback, value, meta);
+    		}
     		
 		});
 	}
@@ -402,11 +404,11 @@ var cmsfile=null;
 	var wysiwyg_url;
 	var wysiwyg_type;
 	var wysiwyg_win;
+	var tinyMCEFilePickerCallback;
 
-	function cmsFileBrowser(field_name, url, type, win) {
-		wysiwyg_win = win;
-		wysiwyg_field_name = field_name;
-		if(type=="image"){
+	function cmsFileBrowser(callback, value, meta) {
+		tinyMCEFilePickerCallback=callback;
+		if(meta.filetype=="image"){
 			cmsFileBrowserImage.show();
 		}
 		else{
@@ -573,11 +575,7 @@ var cmsfile=null;
 		var ext=file.extension;
 
 		var ident =file.identifier;
-		wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
-
-		if(wysiwyg_field_name == 'src'){
-			wysiwyg_win.ImageDialog.showPreviewImage("/contentAsset/raw-data/" + ident + "/fileAsset");
-		}
+		tinyMCEFilePickerCallback("/contentAsset/raw-data/" + ident + "/fileAsset", {alt: file.description});
 	}
 	function addFileCallback(file) {
 		var ident
@@ -586,10 +584,9 @@ var cmsfile=null;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
 		if(fileExt == '<%= extension %>'){
-			document.getElementById(wysiwyg_field_name).value = file.pageURI;
+			tinyMCEFilePickerCallback(file.pageURI, {});
 		}else {
-
-			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+			tinyMCEFilePickerCallback("/contentAsset/raw-data/" + ident + "/fileAsset", {});
 		}
 	}
 
