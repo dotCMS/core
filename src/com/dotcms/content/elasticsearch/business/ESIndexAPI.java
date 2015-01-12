@@ -22,10 +22,12 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import com.dotcms.repackage.org.elasticsearch.common.collect.ImmutableOpenMap;
+import com.dotcms.repackage.org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
@@ -40,9 +42,9 @@ import com.dotcms.repackage.org.elasticsearch.action.admin.indices.delete.Delete
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.open.OpenIndexRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.optimize.OptimizeRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.optimize.OptimizeResponse;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequestBuilder;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequestBuilder;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndicesStatusRequest;
 import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
@@ -192,7 +194,7 @@ public class ESIndexAPI {
 					+ " shards optimized");
 			return true;
 		} catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage());
 		}
 	}
 
@@ -213,7 +215,7 @@ public class ESIndexAPI {
 
             return res.isAcknowledged();
 		} catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage());
 		}
 	}
 
@@ -460,10 +462,10 @@ public class ESIndexAPI {
      * @param settings
      * @param shards
      * @return
-     * @throws ElasticSearchException
+     * @throws ElasticsearchException
      * @throws IOException
      */
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticSearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards) throws ElasticsearchException, IOException {
 
 		AdminLogger.log(this.getClass(), "createIndex",
                 "Trying to create index: " + indexName + " with shards: " + shards);
@@ -503,7 +505,7 @@ public class ESIndexAPI {
 		return createIndexResponse;
 	}
 
-	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticSearchException, IOException {
+	public synchronized CreateIndexResponse createIndex(String indexName, String settings, int shards, String type, String mapping) throws ElasticsearchException, IOException {
 
 		//Seems like the method is not longer used
 		// but I still will add the log just in case
@@ -656,15 +658,17 @@ public class ESIndexAPI {
         try{
             Client client=new ESClient().getClient();
             ClusterStateRequest clusterStateRequest = Requests.clusterStateRequest()
-                    .filterRoutingTable(true)
-                    .filterNodes(true)
-                    .filteredIndices(indexNames);
+                    .routingTable(true)
+                    .nodes( true )
+                    .indices( indexNames );
             MetaData md=client.admin().cluster().state(clusterStateRequest)
                                                 .actionGet(30000).getState().metaData();
 
-            for(IndexMetaData imd : md)
-                for(AliasMetaData amd : imd.aliases().values())
-                    alias.put(imd.index(), amd.alias());
+            for ( IndexMetaData imd : md ) {
+                for ( ObjectCursor<AliasMetaData> aliasCursor : imd.aliases().values() ) {
+                    alias.put( imd.index(), aliasCursor.value.alias() );
+                }
+            }
 
             return alias;
          } catch (Exception e) {
@@ -705,13 +709,14 @@ public class ESIndexAPI {
 
     public List<String> getClosedIndexes() {
         Client client=new ESClient().getClient();
-        Map<String,IndexMetaData> indexState=client.admin().cluster().prepareState().execute().actionGet()
+        ImmutableOpenMap<String,IndexMetaData> indexState=client.admin().cluster().prepareState().execute().actionGet()
                                                            .getState().getMetaData().indices();
         List<String> closeIdx=new ArrayList<String>();
-        for(String idx : indexState.keySet()) {
-            IndexMetaData idxM=indexState.get(idx);
-            if(idxM.getState().equals(State.CLOSE))
-                closeIdx.add(idx);
+        for ( ObjectCursor<String> idx : indexState.keys() ) {
+            IndexMetaData idxM = indexState.get( idx.value );
+            if ( idxM.getState().equals( State.CLOSE ) ) {
+                closeIdx.add( idx.value );
+            }
         }
         return closeIdx;
     }

@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -46,7 +46,7 @@ public class SiteSearchJobImpl {
         this.status = status;
     }
     @SuppressWarnings("unchecked")
-    public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticSearchException, IOException {
+    public void run(JobExecutionContext jobContext) throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
         if(LicenseUtil.getLevel()<200)
             return;
         

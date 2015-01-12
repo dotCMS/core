@@ -5,7 +5,7 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.search.facet.Facet;
 import org.quartz.SchedulerException;
 
@@ -28,7 +28,7 @@ public interface SiteSearchAPI {
 
 	void deactivateIndex(String indexName) throws DotDataException, IOException;
 
-	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticSearchException, IOException; 
+	boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException;
 
 	
 	List<ScheduledTask> getTasks() throws SchedulerException;

@@ -18,7 +18,7 @@ import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.count.CountRequestBuilder;
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchRequestBuilder;
@@ -726,7 +726,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected Contentlet find(String inode) throws ElasticSearchException, DotStateException, DotDataException, DotSecurityException {
+	protected Contentlet find(String inode) throws ElasticsearchException, DotStateException, DotDataException, DotSecurityException {
 		Contentlet con = cc.get(inode);
 		if (con != null && InodeUtils.isSet(con.getInode())) {
 			if(CACHE_404_CONTENTLET.equals(con.getInode())){
@@ -746,7 +746,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 			return contentlet;
 		} catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage());
 		}*/
 		com.dotmarketing.portlets.contentlet.business.Contentlet fatty = null;
         try{
@@ -771,7 +771,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     @Override
-    protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticSearchException {
+    protected List<Contentlet> findAllCurrent ( int offset, int limit ) throws ElasticsearchException {
 
         QueryBuilder builder = QueryBuilders.matchAllQuery();
 
@@ -785,7 +785,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             try {
                 cons.add( find( hit.field("inode").getValue().toString() ) );
             } catch ( Exception e ) {
-                throw new ElasticSearchException( e.getMessage(), e );
+                throw new ElasticsearchException( e.getMessage(), e );
             }
         }
 
@@ -877,7 +877,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 			return null;
 		}
 		catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage());
 
 		}
 	}
@@ -939,12 +939,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
 				try {
 					cons.add(find(hits.getAt(i).field("inode").getValue().toString()));
 				} catch (Exception e) {
-					throw new ElasticSearchException(e.getMessage(),e);
+					throw new ElasticsearchException(e.getMessage(),e);
 				}
 			}
 			return cons;
 		} catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage());
+			throw new ElasticsearchException(e.getMessage());
 		}
 	}
 
@@ -1213,7 +1213,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
         					QueryBuilders.queryString(query)).cache(true)));*/
 			/* this is a match_all query with a separated filter */
 			return client.prepareSearch().setQuery(QueryBuilders.matchAllQuery())
-					.setFilter(FilterBuilders.queryFilter(
+					.setPostFilter(FilterBuilders.queryFilter(
 							QueryBuilders.queryString(query)).cache(true));
 		}
 		else {
@@ -1309,7 +1309,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 
 	@Override
-	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticSearchException, DotSecurityException {
+	protected void removeUserReferences(String userId) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    DotConnect dc = new DotConnect();
         User systemUser = null;
         try {
@@ -1395,7 +1395,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 	@Override
-	protected void removeFolderReferences(Folder folder) throws DotDataException, DotStateException, ElasticSearchException, DotSecurityException {
+	protected void removeFolderReferences(Folder folder) throws DotDataException, DotStateException, ElasticsearchException, DotSecurityException {
 	    //Folder parentFolder = null;
 	    Identifier folderId = null;
         try{
