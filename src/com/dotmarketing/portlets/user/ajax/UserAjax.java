@@ -105,7 +105,6 @@ public class UserAjax {
 	 * 
 	 * @param userId
 	 *            - The internal user ID.
-	 * @param newUserID
 	 * @param firstName
 	 *            - The user's first name.
 	 * @param lastName
@@ -114,7 +113,8 @@ public class UserAjax {
 	 *            - The user's email address.
 	 * @param password
 	 *            - The user's password.
-	 * @return The user ID of the recently added user.
+	 * @return A {@link Map} with useful status information regarding the
+	 *         recently added user.
 	 * @throws DotDataException
 	 *             An error occurred during the user data update process.
 	 * @throws DotRuntimeException
@@ -124,7 +124,7 @@ public class UserAjax {
 	 *             The current user does not have permissions to edit user's
 	 *             data.
 	 */
-	public String addUser (String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		User modUser = getUser();
 		String date = DateUtil.getCurrentDate();
@@ -137,7 +137,7 @@ public class UserAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 
 		boolean localTransaction = false;
-		
+		Map<String, Object> resultMap = null;
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 			UserAPI uAPI = APILocator.getUserAPI();
@@ -155,7 +155,9 @@ public class UserAjax {
 			if (localTransaction) {
 				HibernateUtil.commitTransaction();
 			}
-			return user.getUserId();
+			resultMap = new HashMap<String, Object>();
+			resultMap.put("userID", user.getUserId());
+			return resultMap;
 		} catch(UserFirstNameException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding User. Invalid First Name", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
 			AdminLogger.log(getClass(), "Error Updating User", "Date: " + date + ";  "+ "User:" + modUser.getUserId());
