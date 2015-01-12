@@ -936,6 +936,11 @@
 				var containerperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_12", user)%>;
 				var templateperm = <%= APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_13", user)%>;
 
+				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addFolder(\'' + selectedFolder + '\', \'' + referer + '\')">';
+                htmlCode += '<span class="folderAddIcon"></span>&nbsp;';
+                htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Folder")) %>';
+                htmlCode += '</div>';
+                
 				htmlCode += '<div dojoType="dijit.MenuItem" onclick="addHTMLPage(\'' + objId + '\',\'' + referer + '\')">';
 				htmlCode += '<span class="newPageIcon"></span>&nbsp;';
 				htmlCode += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page")) %>';
