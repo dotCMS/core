@@ -5,6 +5,7 @@ import java.util.Set;
 
 import com.dotcms.rest.EnvironmentResource;
 import com.dotcms.rest.RestExamplePortlet;
+import com.dotcms.rest.elasticsearch.ESContentResourcePortlet;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected static Set<Class<?>> REST_CLASSES = null;
@@ -35,6 +36,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
 					REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
+					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
 				}
 			}
 		}
