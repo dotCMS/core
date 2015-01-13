@@ -255,7 +255,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			StringBuffer perms = new StringBuffer();
 			addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
 			if (perms != null && perms.length() > 0) {
-				srb.setFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(perms.toString())).cache(true));
+				srb.setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(perms.toString())).cache(true));
 			}
 		}
 

@@ -11,6 +11,7 @@ import java.util.Map;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
+import com.dotcms.repackage.org.elasticsearch.indices.IndexMissingException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -18,8 +19,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsRequest;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.UpdateSettingsResponse;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsRequest;
+import com.dotcms.repackage.org.elasticsearch.action.admin.indices.settings.put.UpdateSettingsResponse;
 import com.dotcms.repackage.org.elasticsearch.client.Client;
 import com.dotcms.repackage.org.elasticsearch.common.settings.ImmutableSettings;
 import com.dotcms.repackage.org.elasticsearch.node.Node;
@@ -78,6 +79,12 @@ public class ESClient {
                                                 .endObject()
                                                 .endObject().string()
                                 ) ).actionGet();
+                    } catch ( IndexMissingException e ) {
+                        /*
+                        Updating settings without Indices will throw this exception but should be only visible on start when the
+                        just created node does not have any created indices, for this case call the setReplicasSettings method after the indices creation.
+                         */
+                        Logger.warn( ESClient.class, "Unable to set ES property auto_expand_replicas: [No indices found]" );
                     } catch ( Exception e ) {
                         Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
                     }
@@ -93,11 +100,33 @@ public class ESClient {
         }
     }
 
-	public void shutDownNode(){
-		if(_nodeInstance != null){
-			_nodeInstance.close();
-		}
-	}
+    public void shutDownNode () {
+        if ( _nodeInstance != null ) {
+            _nodeInstance.close();
+        }
+    }
+
+    /**
+     * This method will update the "auto_expand_replicas" setting for the IndicesAdminClient
+     */
+    public void setReplicasSettings () {
+
+        if ( _nodeInstance != null && !_nodeInstance.isClosed() ) {
+
+            try {
+                UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
+                        new UpdateSettingsRequest().settings(
+                                jsonBuilder().startObject()
+                                        .startObject( "index" )
+                                        .field( "auto_expand_replicas", "0-all" )
+                                        .endObject()
+                                        .endObject().string()
+                        ) ).actionGet();
+            } catch ( Exception e ) {
+                Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
+            }
+        }
+    }
 
 	private  void loadConfig(){
 		Iterator<String> it = Config.getKeys();

@@ -25,7 +25,7 @@ import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
 import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
 import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.ListenableActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.mapping.put.PutMappingResponse;
@@ -84,10 +84,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @param type
 	 * @param mapping
 	 * @return
-	 * @throws ElasticSearchException
+	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-    public  boolean putMapping(String indexName, String type, String mapping) throws ElasticSearchException, IOException{
+    public  boolean putMapping(String indexName, String type, String mapping) throws ElasticsearchException, IOException{
 
     	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
     	return lis.actionGet().isAcknowledged();
@@ -99,15 +99,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	 * @param type
 	 * @param mapping
 	 * @return
-	 * @throws ElasticSearchException
+	 * @throws ElasticsearchException
 	 * @throws IOException
 	 */
-    public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticSearchException, IOException{
+    public  boolean putMapping(String indexName, String type, String mapping, String settings) throws ElasticsearchException, IOException{
     	ListenableActionFuture<PutMappingResponse> lis = new ESClient().getClient().admin().indices().preparePutMapping().setIndices(indexName).setType(type).setSource(mapping).execute();
     	return lis.actionGet().isAcknowledged();
     }
 
-    public  boolean setSettings(String indexName,   String settings) throws ElasticSearchException, IOException{
+    public  boolean setSettings(String indexName,   String settings) throws ElasticsearchException, IOException{
     	new ESClient().getClient().admin().indices().prepareUpdateSettings().setSettings(settings).setIndices( indexName).execute().actionGet();
     	return true;
     }
@@ -119,10 +119,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
      * @param index
      * @param type
      * @return
-     * @throws ElasticSearchException
+     * @throws ElasticsearchException
      * @throws IOException
      */
-    public  String getMapping(String index, String type) throws ElasticSearchException, IOException{
+    public  String getMapping(String index, String type) throws ElasticsearchException, IOException{
 
     	return new ESClient().getClient().admin().cluster().state(new ClusterStateRequest())
         .actionGet().getState().metaData().indices()

@@ -12,7 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.org.elasticsearch.ElasticSearchException;
+import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.exists.indices.IndicesExistsRequest;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
@@ -89,11 +89,11 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 
 
-	public synchronized boolean createContentIndex(String indexName) throws ElasticSearchException, IOException {
+	public synchronized boolean createContentIndex(String indexName) throws ElasticsearchException, IOException {
 		return createContentIndex(indexName, 0);
 	}
 	@Override
-	public synchronized boolean createContentIndex(String indexName, int shards) throws ElasticSearchException, IOException {
+	public synchronized boolean createContentIndex(String indexName, int shards) throws ElasticsearchException, IOException {
 
 		CreateIndexResponse cir = iapi.createIndex(indexName, null, shards);
 		int i = 0;
@@ -107,7 +107,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 			}
 
 			if(i++ > 300){
-				throw new ElasticSearchException("index timed out creating");
+				throw new ElasticsearchException("index timed out creating");
 			}
 		}
 
@@ -131,10 +131,10 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	 * and /live_TIMESTAMP with (aliases live_read, live_write, workinglive)
 	 *
 	 * @return the timestamp string used as suffix for indices
-	 * @throws ElasticSearchException if Murphy comes arround
+	 * @throws ElasticsearchException if Murphy comes arround
 	 * @throws DotDataException
 	 */
-	private synchronized String initIndex() throws ElasticSearchException, DotDataException {
+	private synchronized String initIndex() throws ElasticsearchException, DotDataException {
 	    if(indexReady()) return "";
 		try {
 		    final String timeStamp=timestampFormatter.format(new Date());
@@ -142,10 +142,14 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		    final String workingIndex=ES_WORKING_INDEX_NAME+"_"+timeStamp;
 		    final String liveIndex=ES_LIVE_INDEX_NAME+ "_" + timeStamp;
 
-            final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+            ESClient esClient = new ESClient();
+            final IndicesAdminClient iac = esClient.getClient().admin().indices();
 
             createContentIndex(workingIndex,0);
             createContentIndex(liveIndex,0);
+
+            //Updating the "auto_expand_replicas" setting
+            esClient.setReplicasSettings();
 
             IndiciesInfo info=new IndiciesInfo();
             info.working=workingIndex;
@@ -154,7 +158,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
             return timeStamp;
 		} catch (Exception e) {
-			throw new ElasticSearchException(e.getMessage(), e);
+			throw new ElasticsearchException(e.getMessage(), e);
 		}
 
 	}
@@ -164,9 +168,9 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 	 * and write aliases pointing to both old and new indexes
 	 * @return the timestamp string used as suffix for indices
 	 * @throws DotDataException
-	 * @throws ElasticSearchException
+	 * @throws ElasticsearchException
 	 */
-	public synchronized String setUpFullReindex() throws ElasticSearchException, DotDataException {
+	public synchronized String setUpFullReindex() throws ElasticsearchException, DotDataException {
 	    if(indexReady()) {
     	    try {
 
@@ -194,7 +198,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
                 return timeStamp;
             } catch (Exception e) {
-                throw new ElasticSearchException(e.getMessage(), e);
+                throw new ElasticsearchException(e.getMessage(), e);
             }
 	    }
 	    else
@@ -246,7 +250,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             optimize(list);
 
 	    } catch (Exception e) {
-            throw new ElasticSearchException(e.getMessage(), e);
+            throw new ElasticsearchException(e.getMessage(), e);
         }
 	}
 
@@ -427,7 +431,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 
 	        	    }
 	        	    catch(Exception ex) {
-	        	        throw new ElasticSearchException(ex.getMessage(),ex);
+	        	        throw new ElasticsearchException(ex.getMessage(),ex);
 	        	    }
 	            }
 	        };
@@ -489,7 +493,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
             iapi.moveIndexBackToCluster(rel);
 
         } catch (Exception e) {
-            throw new ElasticSearchException(e.getMessage(), e);
+            throw new ElasticsearchException(e.getMessage(), e);
         }
     }
 
