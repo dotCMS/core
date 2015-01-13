@@ -15,6 +15,7 @@ public class HTMLPageWrapper {
     private Identifier pageId;
     private VersionInfo vi;
     private Operation operation;
+    private String parentId;
 
     public HTMLPageWrapper ( HTMLPage page, Identifier pageId ) {
         this.page = page;
@@ -71,6 +72,14 @@ public class HTMLPageWrapper {
 
     public void setMultiTree ( List<Map<String, Object>> multiTree ) {
         this.multiTree = multiTree;
+    }
+    
+    public void setParentId(String parentId){
+    	this.parentId = parentId;
+    }
+    
+    public String getParentId(){
+    	return parentId;
     }
 
 }

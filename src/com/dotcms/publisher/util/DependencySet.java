@@ -110,7 +110,7 @@ public class DependencySet extends HashSet<String> {
 				        for(Language lang : APILocator.getLanguageAPI().getLanguages()) {
                             ContentletVersionInfo info=APILocator.getVersionableAPI().getContentletVersionInfo(assetId, lang.getId());
                             if(info!=null && InodeUtils.isSet(info.getIdentifier())) {
-                                modified = modified || assetModDate.before(info.getVersionTs()); 
+                                modified = modified || (null == info.getVersionTs()) || assetModDate.before(info.getVersionTs()); 
                             }
 				        }
 				    }
