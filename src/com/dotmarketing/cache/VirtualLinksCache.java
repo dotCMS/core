@@ -46,7 +46,7 @@ public class VirtualLinksCache {
         		return null;
         	}
         	else{
-        		return realLink;
+        		return fixRelativeLinks(realLink);
         	}
         }
         
@@ -61,6 +61,7 @@ public class VirtualLinksCache {
 
 		if(vl != null && InodeUtils.isSet(vl.getInode())) 
 		{
+
 			addPathToCache(vl);
 		} else {
 
@@ -68,7 +69,7 @@ public class VirtualLinksCache {
             return null;
 		}
 
-        return vl.getUri();
+        return fixRelativeLinks(vl.getUri());
 
     }
     
@@ -131,4 +132,18 @@ public class VirtualLinksCache {
     	return key.replace('/', '|');
     	
     }
+    
+    
+    private static String fixRelativeLinks(String uri){
+		// if the link relative, store it in cache absolutely
+
+		if(uri!=null && !uri.contains("//") && !uri.startsWith("/")){
+			uri=  "/" + uri;
+		}
+    	return uri;
+    	
+    }
+    
+    
+    
 }
