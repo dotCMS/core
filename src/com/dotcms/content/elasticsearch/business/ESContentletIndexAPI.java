@@ -142,10 +142,14 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
 		    final String workingIndex=ES_WORKING_INDEX_NAME+"_"+timeStamp;
 		    final String liveIndex=ES_LIVE_INDEX_NAME+ "_" + timeStamp;
 
-            final IndicesAdminClient iac = new ESClient().getClient().admin().indices();
+            ESClient esClient = new ESClient();
+            final IndicesAdminClient iac = esClient.getClient().admin().indices();
 
             createContentIndex(workingIndex,0);
             createContentIndex(liveIndex,0);
+
+            //Updating the "auto_expand_replicas" setting
+            esClient.setReplicasSettings();
 
             IndiciesInfo info=new IndiciesInfo();
             info.working=workingIndex;
