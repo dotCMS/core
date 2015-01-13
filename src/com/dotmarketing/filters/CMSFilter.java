@@ -170,21 +170,19 @@ public class CMSFilter implements Filter {
 			if (!UtilMethods.isSet(rewrite)) {
 				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 			}
-			if (UtilMethods.isSet(rewrite) && rewrite.indexOf("//") > -1) {
+			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
 				response.sendRedirect(rewrite);
 				closeDbSilently();
 				return;
 			}
 			if (UtilMethods.isSet(rewrite)) {
-				
-				if(rewrite!=null && rewrite.indexOf('?')>-1){
+				if(rewrite!=null && rewrite.contains("?")){
 					String[] arr = rewrite.split("\\?",2);
 					rewrite = arr[0];
 					if(arr.length>1){
 						queryString= arr[1];
 					}
 				}
-				
 				if (urlUtil.isFileAsset(rewrite, host, languageId)) {
 					iAm= IAm.FILE;
 				} else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
@@ -199,8 +197,6 @@ public class CMSFilter implements Filter {
 			if (!uri.endsWith("/")) {
 				if(UtilMethods.isSet(queryString)){
 					response.sendRedirect(uri + "/?" + queryString);
-					closeDbSilently();
-					return;
 				}
 				else{
 					response.sendRedirect(uri +"/" );
@@ -209,8 +205,7 @@ public class CMSFilter implements Filter {
 				return;
 			} else {
 				if(UtilMethods.isSet(rewrite)) {
-					if(!rewrite.startsWith("/")) 
-						rewrite = "/" + rewrite;
+
 					rewrite = rewrite + CMS_INDEX_PAGE;
 				} else {
 					rewrite = uri + CMS_INDEX_PAGE;
