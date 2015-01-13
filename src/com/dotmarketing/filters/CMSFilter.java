@@ -2,6 +2,7 @@ package com.dotmarketing.filters;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.net.URLDecoder;
 import java.util.HashSet;
 import java.util.List;
@@ -92,7 +93,6 @@ public class CMSFilter implements Filter {
 		
 		boolean _adminMode = isAdminMode(request, response);
 		
-		String rewrite = null;
 
 		/*
 		 * Getting host object form the session
@@ -158,11 +158,15 @@ public class CMSFilter implements Filter {
 			}
 			return;
 		}
-
+		
+		
+		String rewrite = null;
+		String queryString = request.getQueryString();
 		// if a vanity URL
 		if (iAm == IAm.VANITY_URL) {
 			
 			rewrite = VirtualLinksCache.getPathFromCache(host.getHostname() + ":" + ("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
+
 			if (!UtilMethods.isSet(rewrite)) {
 				rewrite = VirtualLinksCache.getPathFromCache(("/".equals(uri) ? "/cmsHomePage" : uri.endsWith("/")?uri.substring(0, uri.length() - 1):uri));
 			}
@@ -172,6 +176,15 @@ public class CMSFilter implements Filter {
 				return;
 			}
 			if (UtilMethods.isSet(rewrite)) {
+				
+				if(rewrite!=null && rewrite.indexOf('?')>-1){
+					String[] arr = rewrite.split("\\?",2);
+					rewrite = arr[0];
+					if(arr.length>1){
+						queryString= arr[1];
+					}
+				}
+				
 				if (urlUtil.isFileAsset(rewrite, host, languageId)) {
 					iAm= IAm.FILE;
 				} else if (urlUtil.isPageAsset(rewrite, host, languageId)) {
@@ -184,7 +197,14 @@ public class CMSFilter implements Filter {
 
 		if (iAm == IAm.FOLDER) {
 			if (!uri.endsWith("/")) {
-				response.sendRedirect(uri + "/");
+				if(UtilMethods.isSet(queryString)){
+					response.sendRedirect(uri + "/?" + queryString);
+					closeDbSilently();
+					return;
+				}
+				else{
+					response.sendRedirect(uri +"/" );
+				}
 				closeDbSilently();
 				return;
 			} else {
@@ -224,7 +244,14 @@ public class CMSFilter implements Filter {
 
 			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
 			// Serving a page through the velocity servlet
-			request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+			
+			StringWriter forward = new StringWriter();
+			forward.append("/servlets/VelocityServlet");
+			if(UtilMethods.isSet(queryString)){
+				forward.append('?');
+				forward.append(queryString);
+			}
+			request.getRequestDispatcher(forward.toString()).forward(request, response);
 			return;
 		}
 
