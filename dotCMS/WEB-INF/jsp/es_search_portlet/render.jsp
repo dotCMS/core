@@ -127,126 +127,137 @@ function refreshPane(){
    	        }
    	    });
 }
+
+function showEsHelpDialog(){
+	var esSearch = dijit.byId("esSearchHelpDia");
+	esSearch.show();
+	
+}
+
+
+
 </script>
 <div class="portlet-wrapper">
-				<div style='text-align:center;padding:20px;'>
-	
-				</div>
-			<table class="listingTable" style="width:70%">	
-				<tr>
-					<th valign="top"><strong><%= LanguageUtil.get(pageContext, "ES Query") %> :</strong></th>
-					<td>
-					
-						<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;font-family:monospace;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea>
-					
-					</td>
-				</tr>
-				<tr>
-					<th><strong><%= LanguageUtil.get(pageContext, "Live") %> :</strong></th>
-					<td nowrap="nowrap">
-					
-						<input dojoType="dijit.form.CheckBox" name="live"  id="live" type="checkbox" value="true" <%=live ? "checked=true" : ""%>
+	<div style='text-align:center;padding:20px;'>
+
+	</div>
+	<table class="listingTable" style="width:70%">	
+		<tr>
+			<th valign="top"><strong><%= LanguageUtil.get(pageContext, "ES Query") %> :</strong></th>
+			<td valign="top" style="vertical-align: top;">
+			
+				<textarea dojoType="dijit.form.Textarea" name="query" style="width:500px;min-height: 150px;font-family:monospace;" id="query" type="text"><%=UtilMethods.htmlifyString(query)%></textarea>
+			
+				<button type="button" iconClass="helpIcon" onClick="showEsHelpDialog()" dojoType="dijit.form.Button" value="Help"><%= LanguageUtil.get(pageContext, "Help") %></button>
 				
-					</td>
-				</tr>
+			</td>
+		</tr>
+		<tr>
+			<th><strong><%= LanguageUtil.get(pageContext, "Live") %> :</strong></th>
+			<td nowrap="nowrap">
+			
+				<input dojoType="dijit.form.CheckBox" name="live"  id="live" type="checkbox" value="true" <%=live ? "checked=true" : ""%>
+		
+			</td>
+		</tr>
+	
+		<tr>
+			<th><strong><%= LanguageUtil.get(pageContext, "User ID or Email") %> :</strong></th>
+			<td nowrap="nowrap">
+			
+				<input name="userid" id="userid"  type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40"   dojoType="dijit.form.TextBox"  />
+	
+	
+			</td>
+		</tr>
+	</table>
 
-				<tr>
-					<th><strong><%= LanguageUtil.get(pageContext, "User ID or Email") %> :</strong></th>
-					<td nowrap="nowrap">
+	
+	<div style='text-align:center;padding:20px;'>
+		<button type="button" id="submitButton"  iconClass="queryIcon" onClick="refreshPane()" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Query") %></button>
+	</div>
+
+	<%if(UtilMethods.isSet(cons)){ %>
+		<table class="listingTable" style="width:70%;padding-bottom:20px">	
+			<tr>
+				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
+				<td style="width:100%">
+					<%=cons.getQueryTook()%> ms <%= LanguageUtil.get(pageContext, "query") %><br>
+					<%=cons.getPopulationTook()%> ms <%= LanguageUtil.get(pageContext, "population") %><br>
 					
-						<input name="userid" id="userid"  type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40"   dojoType="dijit.form.TextBox"  />
+				</td>
+			</tr>
+	
+			<tr>
+				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Query-is") %> :</strong></th>
+				<td>
+					<%=cons.getQuery()%>
+	
+	
+				</td>
+			</tr>
+			<tr>
+				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
+				<td>
+				<%=cons.getCount() %> of <%=cons.getTotalResults()%>
+	
+	
+				</td>
+			</tr>
+		</table>
+		<div style='text-align:center;padding:20px;'>
+	
+		</div>
+	<%} %>
 
-
-					</td>
-				</tr>
-			</table>
-
+	<%if(cons!=null && cons.size() >0){ %>
+	
+			<table class="listingTable" style="width:70%;"">	
+				<tr><th colspan="3">
+				
+	
+					<h2>Results</h2>
+				</th></tr>
+	
+				<% for (Object x : cons){%>
+					<%Contentlet c =(Contentlet) x;%>
 			
-			<div style='text-align:center;padding:20px;'>
-				<button type="button" id="submitButton" onClick="refreshPane()" dojoType="dijit.form.Button" value="Submit"><%= LanguageUtil.get(pageContext, "Submit") %></button>
-			</div>
-			
-			<%if(UtilMethods.isSet(cons)){ %>
-				<table class="listingTable" style="width:70%;padding-bottom:20px">	
-					<tr>
-						<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Took") %> :</strong></th>
-						<td style="width:100%">
-							<%=cons.getQueryTook()%> ms <%= LanguageUtil.get(pageContext, "query") %><br>
-							<%=cons.getPopulationTook()%> ms <%= LanguageUtil.get(pageContext, "population") %><br>
+						<tr>
+							<td><strong><%= counter %>.</td>
+							<td width="100"><strong><%= LanguageUtil.get(pageContext, "Title") %>:</strong></td>
 							
-						</td>
-					</tr>
-	
-					<tr>
-						<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Query-is") %> :</strong></th>
-						<td>
-							<%=cons.getQuery()%>
-	
-	
-						</td>
-					</tr>
-					<tr>
-						<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Showing Hits") %> :</strong></th>
-						<td>
-						<%=cons.getCount() %> of <%=cons.getTotalResults()%>
-	
-	
-						</td>
-					</tr>
-				</table>
-				<div style='text-align:center;padding:20px;'>
-	
-				</div>
-			<%} %>
 			
-			<%if(cons!=null && cons.size() >0){ %>
-
-					<table class="listingTable" style="width:70%;"">	
-						<tr><th colspan="3">
-						
-
-							<h2>Results</h2>
-						</th></tr>
+							
+							
+							<td>
+									<%=c.getTitle() %>
+			
+							</td>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
+							<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
+							<td width="90%"><%=c.getInode() %></td>
+						</tr>
+						<tr>
+							<td>&nbsp;</td>
+							<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
+							<td><%= c.getIdentifier() %></td>
+						</tr>
+						<tr >
+							<td>&nbsp;</td>
+							<td colspan=2>
+								<div style="padding:20px;"><%= UtilMethods.makeHtmlSafe(c.getMap().toString()) %></div>
+							</td>
+						</tr>
+						<%	counter++;%>
+					<%}%>
+			</table>
+		<div style='text-align:center;padding:20px;'>
 	
-						<% for (Object x : cons){%>
-							<%Contentlet c =(Contentlet) x;%>
-					
-								<tr>
-									<td><strong><%= counter %>.</td>
-									<td width="100"><strong><%= LanguageUtil.get(pageContext, "Title") %>:</strong></td>
-									
-					
-									
-									
-									<td>
-											<%=c.getTitle() %>
-					
-									</td>
-								</tr>
-								<tr>
-									<td>&nbsp;</td>
-									<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
-									<td width="90%"><%=c.getInode() %></td>
-								</tr>
-								<tr>
-									<td>&nbsp;</td>
-									<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
-									<td><%= c.getIdentifier() %></td>
-								</tr>
-								<tr >
-									<td>&nbsp;</td>
-									<td colspan=2>
-										<div style="padding:20px;"><%= UtilMethods.makeHtmlSafe(c.getMap().toString()) %></div>
-									</td>
-								</tr>
-								<%	counter++;%>
-							<%}%>
-					</table>
-				<div style='text-align:center;padding:20px;'>
-	
-				</div>
-				
-			<%} %>
+		</div>
+		
+	<%} %>
 
 	<%if(cons!= null && cons.getFacets() !=null){ %>
 		<table class="listingTable" style="width:70%;"">	
@@ -329,204 +340,8 @@ function refreshPane(){
 
 	<%}%>
 	
-	
-	<%if(cons == null){ %>
-	<table 	class="listingTable" style="width:70%;">	
-	<tr>
-		<th >
-			<h2>Examples</h2>
-		</th>
-	</tr>
-	<tr>
-		<td>
 		
-			<pre style="font-family: monospace;font-size: 10pt">
-//Match All
-{
-    "query" : {
-        "match_all" : {}
-    }
-}
-
-
-// Match gas
-{
-    "query": {
-        "bool": {
-            "must": {
-                "term": {
-                    "_all": "gas"
-                }
-            }
-        }
-    }
-}
-
-// curl for the same results
-curl -XGET http://localhost:8080/api/es/search -d '{
-    "query": {
-        "bool": {
-            "must": {
-                "term": {
-                    "_all": "gas"
-                }
-            }
-        }
-    }
-}'
-
-
-
-// facet on the news.tags field
-{
-    "query" : { "query_string" : {"query" : "gas*"} },
-    "facets" : {
-        "tags" : { "terms" : {"field" : "news.tags"} }
-    }
-}
-
-
-// curl for the same results
-curl -XGET http://localhost:8080/api/es/raw -d '
-	{
-	    "query" : { "query_string" : {"query" : "gas*"} },
-	    "facets" : {
-	        "tags" : { "terms" : {"field" : "news.tags"} }
-	    }
-	}
-'
-
-
-
-
-
-// suggest based on title
-{
-  "suggest" : {
-    "title-suggestions" : {
-      "text" : "gs pric rollrcoater",
-      "term" : {
-        "size" : 3,
-        "field" : "title"
-      }
-    }
-  }
-}
-
-// curl for the same results
-curl -XGET http://localhost:8080/api/es/raw -d '
-	{
-	  "suggest" : {
-	    "title-suggestions" : {
-	      "text" : "gs pric rollrcoater",
-	      "term" : {
-	        "size" : 3,
-	        "field" : "title"
-	      }
-	    }
-	  }
-	}
-'
-
-
-
-// filter news by distance away
-// (For this example to work you need to add a field to the news structure 
-// that uses latlon as its velocity variable name.
-// it can be a text field with a value of ""42.648899,-71.165497)
-{
-    "query": {
-        "filtered": {
-            "query": {
-                "match_all": {}
-            },
-            "filter": {
-                "geo_distance": {
-                    "distance": "20km",
-                    "news.latlon": {
-                        "lat": 37.776,
-                        "lon": -122.41
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-// filter news by distance away part 2
-// (For this example to work you need to add a field to the news structure 
-// that uses latlon as its velocity variable name.
-// it can be a text field with a value of ""42.648899,-71.165497)
-{
-    "query": {
-        "filtered": {
-            "query": {
-                "match_all": {}
-            },
-            "filter": {
-                "geo_distance": {
-                    "distance": "20km",
-                    "news.latlon": {
-                        "lat": 42.648899,
-                        "lon": -71.165497
-                    }
-                }
-            }
-        }
-    }
-}
-
-
-// sort news by distance away
-// (For this example to work you need to add a field to the news structure 
-// that uses latlon as its velocity variable name.
-// it can be a text field with a value of ""42.648899,-71.165497)
-{
-    "sort" : [
-        {
-            "_geo_distance" : {
-                "news.latlon" : {
-                    "lat" : 42,
-                    "lon" : -71
-                },
-                "order" : "asc",
-                "unit" : "km"
-            }
-        }
-    ],
-    "query" : {
-        "term" : { "title" : "gas" }
-    }
-}
-
-
-
-
-// query using a range
-{
-    "query": {
-        "bool": {
-            "must": {
-                "term": {
-                    "title": "gas"
-                }
-            },
-            "must_not": {
-                "range": {
-                    "languageid": {
-                        "from": 2,
-                        "to": 20
-                    }
-                }
-            }
-        }
-    }
-}
-		</pre>
-</td>
-</tr>
-</table>
-
-<%} %>
+	<div id="esSearchHelpDia" title="ElasticSearch Help" dojoType="dijit.Dialog" style="display: none;width:80%;height:80%;overflow: scroll;">
+		<jsp:include page="/WEB-INF/jsp/es_search_portlet/es-search-help.jsp"></jsp:include>
+	</div>
 </div>
