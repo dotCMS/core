@@ -108,15 +108,22 @@ public class InitServlet extends HttpServlet {
         if(Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false)){
 
         	Logger.info(this, "   Clustering    : Enabled");
-        	//		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
-        	try{
-        		((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
-        		Logger.info(this, "     Ping Sent");
-        	}
-        	catch(Exception e){
-        		Logger.error(this, "   Ping Error: " + e.getMessage());
 
-        	}
+            //Get the current license level
+            int licenseLevel = LicenseUtil.getLevel();
+            if ( licenseLevel > 100 ) {
+                //		Logger.info(this, "   Server        :" + Config.getIntProperty("DIST_INDEXATION_SERVER_ID", 0)  + " of cluster " + Config.getStringProperty("DIST_INDEXATION_SERVERS_IDS", "...unknown"));
+                try {
+                    /*
+                     Without a license this testCluster call will fail as the LicenseManager calls the ClusterFactory.removeNodeFromCluster()
+                     if a license is not found.
+                     */
+                    ((DotGuavaCacheAdministratorImpl) CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
+                    Logger.info( this, "     Ping Sent" );
+                } catch ( Exception e ) {
+                    Logger.error( this, "   Ping Error: " + e.getMessage() );
+                }
+            }
         }
         else{
         	Logger.info(this, "   Clustering    : Disabled");

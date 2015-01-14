@@ -40,8 +40,6 @@ import com.dotcms.repackage.org.jboss.cache.Region;
 import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapper;
 import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapperMBean;
 import com.dotcms.repackage.org.jgroups.Address;
-import com.dotcms.repackage.org.jgroups.ChannelClosedException;
-import com.dotcms.repackage.org.jgroups.ChannelNotConnectedException;
 import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotcms.repackage.org.jgroups.Message;
 import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
@@ -182,7 +180,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 				channel = new JChannel(classLoader.getResource(cacheFile));
 				channel.setReceiver(this);
 				channel.connect("dotCMSCluster");
-				channel.setOpt(JChannel.LOCAL, false);
+				channel.setDiscardOwnMessages( true );
 				useJgroups = true;
 				Logger.info(this,channel.toString(true));
 				Logger.info(this, "Ending JGroups Cluster Setup");
@@ -515,9 +513,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 		try {
 			channel.send(msg);
 			Logger.info(this, "Sending Ping to Cluster " + new Date());
-		} catch (ChannelNotConnectedException e) {
-			Logger.error(DotJBCacheAdministratorImpl.class,e.getMessage(),e);
-		} catch (ChannelClosedException e) {
+		} catch (Exception e) {
 			Logger.error(DotJBCacheAdministratorImpl.class,e.getMessage(),e);
 		}
 	}
