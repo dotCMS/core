@@ -3009,8 +3009,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
                     }
 				}
-				
-				if (contentlet.isLive()) {
+				boolean isLive = false;
+				if (contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+					try {
+						isLive = contentlet.isLive();
+					} catch (DotStateException e) {
+						// Cache miss, remove HTML page entry
+						CacheLocator.getIdentifierCache()
+								.removeFromCacheByIdentifier(
+										contentlet.getIdentifier());
+					}
+				} else {
+					isLive = contentlet.isLive();
+				}
+				if (isLive) {
 				    publishAssociated(contentlet, isNewContent, createNewVersion);
 				} else {
 				    if (!isNewContent) {
@@ -3062,7 +3074,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				String velocityResourcePath = "working/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
 				if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
 					CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
-				if(contentlet.isLive()){
+				if (isLive) {
 					velocityResourcePath = "live/" + contentlet.getIdentifier() + "_" + contentlet.getLanguageId() + "." + Config.getStringProperty("VELOCITY_CONTENT_EXTENSION","content");
 					if(CacheLocator.getVeloctyResourceCache().isMiss(velocityResourcePath))
 						CacheLocator.getVeloctyResourceCache().remove(velocityResourcePath);
