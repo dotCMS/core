@@ -15,7 +15,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String STRUCTURE_INODE = "c541abb1-69b3-4bc5-8430-5e09e5239cc8";
 	
 	// MYSQL
-	private final String MYSQL_STRUCTURE_EXISTS = "SELECT inode FROM dotcms.structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8';";
+	private final String MYSQL_STRUCTURE_EXISTS = "SELECT inode FROM structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8';";
 	
 	private final String MYSQL_INSERT_STRUCTURE_INODE = "INSERT INTO inode" +
 										  		  		"(`inode`, `owner`, `idate`, `type`) VALUES " +
@@ -48,6 +48,24 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 												 "hint,default_value,fixed,read_only,searchable,unique_,mod_date) " +
 												 "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW());";
 	
+	// H2
+	private final String H2_STRUCTURE_EXISTS = "SELECT inode FROM structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8';";
+	private final String H2_INSERT_STRUCTURE_INODE = "INSERT INTO inode" +
+		  											 "(inode, owner, idate, type) VALUES " +
+		  											 "(?, 'system', CURRENT_TIME(), 'structure');";
+	private final String H2_INSERT_STRUCTURE = "INSERT INTO structure"+
+											   "(inode,name,description,default_structure,structuretype,system," +
+											   "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
+											   "(?,'HTMLPage Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
+											   "'SYSTEM_FOLDER',NOW());";
+	private final String H2_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', CURRENT_TIME(), 'field');";
+	private final String H2_INSERT_FIELD = "INSERT INTO field " +
+											"(inode,structure_inode,field_name,field_type,field_relation_type,field_contentlet," +
+											"required,indexed,listed,velocity_var_name,sort_order,field_values,regex_check," +
+											"hint,default_value,fixed,read_only,searchable,unique_,mod_date) " +
+											"VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIME());";
+	
+	
 	
     @Override
     public boolean forceRun() {
@@ -56,6 +74,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
     		dc.setSQL(MYSQL_STRUCTURE_EXISTS);
     	else if(DbConnectionFactory.isPostgres())
     		dc.setSQL(POSTGRESQL_STRUCTURE_EXISTS);
+    	else if(DbConnectionFactory.isH2())
+    		dc.setSQL(H2_STRUCTURE_EXISTS);
     	List<Map<String, Object>> results = null;
 		try {
 			results = dc.loadObjectResults();
@@ -78,6 +98,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	    		dc.setSQL(MYSQL_INSERT_STRUCTURE_INODE);
 	    	else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_STRUCTURE_INODE);
+	    	else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_STRUCTURE_INODE);
 			dc.addParam(STRUCTURE_INODE);
 			dc.loadResult();
 			
@@ -86,6 +108,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_STRUCTURE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_STRUCTURE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_STRUCTURE);
 			dc.addParam(STRUCTURE_INODE);
 			dc.loadResult();
 	    	
@@ -95,6 +119,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+	        else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("c623cd2f-6653-47d8-9825-1153061ea088");
 			dc.loadResult();
 	        
@@ -102,6 +128,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("c623cd2f-6653-47d8-9825-1153061ea088"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Title"); // name
@@ -128,6 +156,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("23b5f1be-935e-442e-be48-1cf2d1c96d71");
 			dc.loadResult();
 	        
@@ -135,6 +165,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("23b5f1be-935e-442e-be48-1cf2d1c96d71"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Host or Folder"); // name
@@ -161,6 +193,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("a1bfbb4f-b78b-4197-94e7-917f4e812043");
 			dc.loadResult();
 	        
@@ -168,6 +202,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("a1bfbb4f-b78b-4197-94e7-917f4e812043"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Url"); // name
@@ -194,6 +230,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("e633ab20-0aa1-4ed1-b052-82a711af61df");
 			dc.loadResult();
 	        
@@ -201,6 +239,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("e633ab20-0aa1-4ed1-b052-82a711af61df"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Cache TTL"); // name
@@ -227,6 +267,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("bf73876b-8517-4123-a0ec-d862ba6e8797");
 			dc.loadResult();
 	        
@@ -234,6 +276,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("bf73876b-8517-4123-a0ec-d862ba6e8797"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Template"); // name
@@ -260,6 +304,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("1aa4bbc6-d30e-4b43-8f13-d6e8f2a58a52");
 			dc.loadResult();
 	        
@@ -267,6 +313,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("1aa4bbc6-d30e-4b43-8f13-d6e8f2a58a52"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Advance Properties"); // name
@@ -293,6 +341,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("99ac031c-7d72-4b08-bedd-37a71b594950");
 			dc.loadResult();
 	        
@@ -300,6 +350,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("99ac031c-7d72-4b08-bedd-37a71b594950"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Show on Menu"); // name
@@ -326,6 +378,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("1677ca4f-e46f-449f-ae59-4952fb567e5e");
 			dc.loadResult();
 	        
@@ -333,6 +387,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("1677ca4f-e46f-449f-ae59-4952fb567e5e"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Sort Order"); // name
@@ -359,6 +415,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 	        else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+	        else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("d8a7431e-140d-4076-bf07-17fdfad6a14e");
 			dc.loadResult();
 	        
@@ -366,6 +424,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("d8a7431e-140d-4076-bf07-17fdfad6a14e"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Friendly Name"); // name
@@ -393,6 +453,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("ba99667c-87be-44cd-82b6-4aa7bb157ac7");
 			dc.loadResult();
 	        
@@ -400,6 +462,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("ba99667c-87be-44cd-82b6-4aa7bb157ac7"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Redirect Url"); // name
@@ -427,6 +491,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("b0d65eee-b050-4fa2-bcf6-4016dc4e20af");
 			dc.loadResult();
 	        
@@ -434,6 +500,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("b0d65eee-b050-4fa2-bcf6-4016dc4e20af"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("HTTPS Required"); // name
@@ -460,6 +528,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("dfc5f28d-d47e-4007-869a-f2d5cfbc3d39");
 			dc.loadResult();
 	        
@@ -467,6 +537,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("dfc5f28d-d47e-4007-869a-f2d5cfbc3d39"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("SEO Description"); // name
@@ -494,6 +566,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("f00b3844-820d-4967-9f8e-0cce68d22b13");
 			dc.loadResult();
 	        
@@ -501,6 +575,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("f00b3844-820d-4967-9f8e-0cce68d22b13"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("SEO Keywords"); // name
@@ -528,6 +604,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD_INODE);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD_INODE);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD_INODE);
 			dc.addParam("c50906a6-dafb-4348-a185-a9334448813c");
 			dc.loadResult();
 	        
@@ -535,6 +613,8 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 				dc.setSQL(MYSQL_INSERT_FIELD);
 			else if(DbConnectionFactory.isPostgres())
 	    		dc.setSQL(POSTGRESQL_INSERT_FIELD);
+			else if(DbConnectionFactory.isH2())
+	    		dc.setSQL(H2_INSERT_FIELD);
 			dc.addParam("c50906a6-dafb-4348-a185-a9334448813c"); // inode
 			dc.addParam("c541abb1-69b3-4bc5-8430-5e09e5239cc8"); // str inode
 			dc.addParam("Page Metadata"); // name
