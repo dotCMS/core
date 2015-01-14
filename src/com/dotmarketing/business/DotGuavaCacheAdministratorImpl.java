@@ -29,8 +29,6 @@ import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.jboss.cache.Fqn;
 import com.dotcms.repackage.org.jgroups.Address;
-import com.dotcms.repackage.org.jgroups.ChannelClosedException;
-import com.dotcms.repackage.org.jgroups.ChannelNotConnectedException;
 import com.dotcms.repackage.org.jgroups.Event;
 import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotcms.repackage.org.jgroups.Message;
@@ -296,11 +294,11 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			channel.setReceiver(this);
 			
 			channel.connect(Config.getStringProperty("CACHE_JGROUPS_GROUP_NAME","dotCMSCluster"));
-			channel.setOpt(JChannel.LOCAL, false);
-			useJgroups = true;
+            channel.setDiscardOwnMessages( true );
+            useJgroups = true;
 			channel.send(new Message(null, null, TEST_MESSAGE));
 			Address channelAddress = channel.getAddress();
-			PhysicalAddress physicalAddr = (PhysicalAddress)channel.downcall(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
+			PhysicalAddress physicalAddr = (PhysicalAddress)channel.down(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
 			String[] addrParts = physicalAddr.toString().split(":");
 			String usedPort = addrParts[addrParts.length-1];
 
@@ -830,10 +828,8 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		if (v.toString().equals(TEST_MESSAGE)) {
 			Logger.info(this, "Received Message Ping " + new Date());
 			try {
-				channel.send(null, null, "ACK");
-			} catch (ChannelNotConnectedException e) {
-				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
-			} catch (ChannelClosedException e) {
+				channel.send(null, "ACK");
+			} catch (Exception e) {
 				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 			}
 		
@@ -907,20 +903,15 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		try {
 			channel.send(msg);
 			Logger.info(this, "Sending Ping to Cluster " + new Date());
-		} catch (ChannelNotConnectedException e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
-		} catch (ChannelClosedException e) {
+		} catch (Exception e) {
 			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 		}
 	}
 
 	public void testNode(Address nodeAdr) {
 		try {
-			channel.send(nodeAdr, null, "TESTNODE");
-		} catch (ChannelNotConnectedException e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
-		} catch (ChannelClosedException e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+			channel.send(nodeAdr, "TESTNODE");
+		} catch (Exception e) {
 		}
 	}
 
