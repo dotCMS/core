@@ -17,16 +17,16 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	// MYSQL
 	private final String MYSQL_STRUCTURE_EXISTS = "SELECT inode FROM dotcms.structure WHERE inode='c541abb1-69b3-4bc5-8430-5e09e5239cc8';";
 	
-	private final String MYSQL_INSERT_STRUCTURE_INODE = "INSERT INTO dotcms.inode" +
+	private final String MYSQL_INSERT_STRUCTURE_INODE = "INSERT INTO inode" +
 										  		  		"(`inode`, `owner`, `idate`, `type`) VALUES " +
 										  		  		"(?, 'system', NOW(), 'structure');";
-	private final String MYSQL_INSERT_STRUCTURE = "INSERT INTO dotcms.structure"+
+	private final String MYSQL_INSERT_STRUCTURE = "INSERT INTO structure"+
 												  "(`inode`,`name`,`description`,`default_structure`,`structuretype`,`system`," +
 												  "`fixed`,`velocity_var_name`,`host`,`folder`,`mod_date`)VALUES" +
 												  "(?,'HTMLPage Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
 												  "'SYSTEM_FOLDER',NOW());";
-	private final String MYSQL_INSERT_FIELD_INODE = "INSERT INTO dotcms.inode(`inode`, `owner`, `idate`, `type`) VALUES(?,'', NOW(), 'field');";
-	private final String MYSQL_INSERT_FIELD = "INSERT INTO dotcms.field " +
+	private final String MYSQL_INSERT_FIELD_INODE = "INSERT INTO inode(`inode`, `owner`, `idate`, `type`) VALUES(?,'', NOW(), 'field');";
+	private final String MYSQL_INSERT_FIELD = "INSERT INTO field " +
 											  "(`inode`,`structure_inode`,`field_name`,`field_type`,`field_relation_type`,`field_contentlet`," +
 											  "`required`,`indexed`,`listed`,`velocity_var_name`,`sort_order`,`field_values`,`regex_check`," +
 											  "`hint`,`default_value`,`fixed`,`read_only`,`searchable`,`unique_`,`mod_date`) " +
