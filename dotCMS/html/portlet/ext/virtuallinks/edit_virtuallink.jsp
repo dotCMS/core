@@ -173,7 +173,8 @@ function pageSelected(page) {
 			<%= LanguageUtil.get(pageContext, "URL") %>:
 		</dt>
 		<dd>
-			<%String showUrl = UtilMethods.webifyString((vl.getUrl() != null && vl.getUrl().split(":").length>1) ? vl.getUrl().split(":")[1] : vl.getUrl());%>
+			<%String showUrl = UtilMethods.webifyString((vl.getUrl() != null && vl.getUrl().split(":").length>1) ? vl.getUrl().split(":")[1] : vl.getUrl());
+			         showUrl = UtilMethods.isSet(showUrl)?showUrl:UtilMethods.isSet(vfm.getUrl())?UtilMethods.webifyString(vfm.getUrl()):"";%>
 			<input id="url" type="text" name="url"  value="<%=showUrl %>"
 		    dojoType="dijit.form.TextBox"
 		    trim="true"
@@ -186,7 +187,8 @@ function pageSelected(page) {
 			<%= LanguageUtil.get(pageContext, "Enter-URL-to-Redirect-To") %>:
 		</dt>
 		<dd>
-			<input id="vlUri" type="text" name="uri"  value="<%=UtilMethods.webifyString(vl.getUri()) %>"
+			<%String uriValue = UtilMethods.isSet(vl.getUri())?UtilMethods.webifyString(vl.getUri()):UtilMethods.isSet(vfm.getUri())?UtilMethods.webifyString(vfm.getUri()):"";%>
+			<input id="vlUri" type="text" name="uri"  value="<%=uriValue %>"
 			dojoType="dijit.form.TextBox"
 			trim="true"
 			required="true" style="width: 250px;"
