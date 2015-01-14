@@ -2,11 +2,14 @@ package com.dotmarketing.portlets.virtuallinks.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
+import com.dotcms.repackage.org.owasp.esapi.ESAPI;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.Constants;
 
 
@@ -42,7 +45,13 @@ public class VirtualLinkForm extends ValidatorForm {
     
     public ActionErrors validate(ActionMapping mapping, HttpServletRequest request) {
         if(request.getParameter("cmd")!=null && request.getParameter("cmd").equals(Constants.ADD)) {
-            return super.validate(mapping, request);
+        
+        	ActionErrors errors = super.validate(mapping, request);
+        	
+            if(UtilMethods.isSet(url) && (url.trim().equals("/") || !ESAPI.validator().isValidInput("vanityURL", url, "HTTPURI", 2000, false) ))
+            	errors.add("url", new ActionMessage("message.virtuallink.invalid.URL"));
+            
+            return errors;
         }
         return null;
     }
