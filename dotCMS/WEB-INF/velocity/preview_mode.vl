@@ -9,7 +9,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
-		<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+		<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 		<title>dotCMS Site Editor | url: ${_baseURI}</title>
 		<style type="text/css">
 			@import "/html/common/css.jsp"; 
@@ -76,26 +76,29 @@
 		</div>
 	</body>
 	<script type="text/javascript">
-		    var mainIframe=document.getElementById('frameMain').contentWindow;
-			dojo.connect(mainIframe, 'onscroll', function(){ 
+	    var mainIframe=document.getElementById('frameMain').contentWindow;
+		dojo.connect(mainIframe, 'onscroll', function(){ 
 			dojo.query(".dotControls").forEach(function(node, index, arr){
-            if(dojo.style(node, 'display') != "none") {
-            //need to get the inode from the id property of the node. Starts from element 8 of the string, control-(inode)
-            var inode = node.id.substr(8);
-            var sender = window.frames[1].document.getElementById("controlAnchor"+inode);
-            var senderCoords = dojo.coords (sender);	
-			var posh = senderCoords.y + senderCoords.h;
-		    dojo.style(node, {top: posh+'px' });
-			}});
+            	if(dojo.style(node, 'display') != "none") {
+	            	//need to get the inode from the id property of the node. Starts from element 8 of the string, control-(inode)
+	            	var inode = node.id.substr(8);
+	            	var sender = window.frames[1].document.getElementById("controlAnchor"+inode);
+	            	var senderCoords = dojo.coords (sender);	
+					var posh = senderCoords.y + senderCoords.h;
+			    	dojo.style(node, {top: posh+'px' });
+				}
+            });
 			dojo.query(".dotNoteBox").forEach(function(node, index, arr){
-            if(dojo.style(node, 'display') != "none") {
-            //need to get the inode from the id property of the node. Starts from element 14 of the string, control-notes-(inode)
-            var inode = node.id.substr(14);
-            var sender = window.frames[1].document.getElementById("containerNotes"+inode);
-            var senderCoords = dojo.coords (sender);	
-			var posh = senderCoords.y + senderCoords.h;
-		    dojo.style(node, {top: posh+'px' });
-			}});});
+           		if(dojo.style(node, 'display') != "none") {
+           			//need to get the inode from the id property of the node. Starts from element 14 of the string, control-notes-(inode)
+           			var inode = node.id.substr(14);
+          			 	var sender = window.frames[1].document.getElementById("containerNotes"+inode);
+           			var senderCoords = dojo.coords (sender);	
+					var posh = senderCoords.y + senderCoords.h;
+	    			dojo.style(node, {top: posh+'px' });
+				}
+           	});
+		});
 		dojo.ready(resetFrameWidth);
 	</script>
 </html>

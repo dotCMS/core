@@ -227,7 +227,7 @@ public class DirectorAction extends DotPortletAction {
 					setForward(req,"portlet.ext.director.unlock_htmlpage");
 					return;
 				}
-				else if (htmlpage.isLocked()) {
+				else if (htmlpage.isLocked() && htmlpage instanceof HTMLPage) {
 					//it's locked by the same user
 				    APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 				}

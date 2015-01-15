@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ActivityLogger;
@@ -45,9 +46,18 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 			IHTMLPage webAsset;
 			String inode=req.getParameter("inode");
             Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-            if(ident.getAssetType().equals("contentlet")) {
-                webAsset = APILocator.getHTMLPageAssetAPI().fromContentlet(
+            boolean contentLocked = false;
+            if("contentlet".equals(ident.getAssetType())) {
+                Contentlet contentlet = APILocator.getHTMLPageAssetAPI().fromContentlet(
                         APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 0, user, false));
+                
+                
+                if(APILocator.getContentletAPI().canLock(contentlet, user) && contentlet.isLocked()){
+                	contentLocked = true;
+                }
+                	
+                webAsset =(IHTMLPage) contentlet;
+                
             }
             else {
                 webAsset = (HTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ident, user, false);
@@ -66,11 +76,18 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 
 			// gets the session object for the messages
 			HttpSession session = hreq.getSession();
-
-			session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-			session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-			session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
-
+			if(!contentLocked){
+				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+				session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+			}
+			else{
+				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+				session.setAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION, "true");
+				
+			}
+			
 			IHTMLPage htmlPage = _previewHTMLPages(req, user);
 
 			ActivityLogger.logInfo(this.getClass(), "Preview HTMLpage action", "User " + user.getPrimaryKey() + " preview page " + htmlPage.getURI(), HostUtil.hostNameUtil(req, _getUser(req)));

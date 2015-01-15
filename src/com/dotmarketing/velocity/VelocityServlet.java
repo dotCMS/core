@@ -564,6 +564,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
                          APILocator.getContentletAPI().findContentletByIdentifier(
                             id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+			context.put("dotPageContent", htmlPage);
 		}
 		else {
 		    htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
@@ -602,9 +603,6 @@ public abstract class VelocityServlet extends HttpServlet {
 		context.put("livePage", "0");
 		
 
-			
-		context.put("dotPageContent", htmlPage);
-		
 		
 		
 		// get the containers for the page and stick them in context
@@ -811,6 +809,7 @@ public abstract class VelocityServlet extends HttpServlet {
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
                          APILocator.getContentletAPI().findContentletByIdentifier(
                             id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+    		context.put("dotPageContent", htmlPage);
         }
         else {
             htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
@@ -835,7 +834,7 @@ public abstract class VelocityServlet extends HttpServlet {
         
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
         context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
-        
+
         boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission( 
                 APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true), 
                 PERMISSION_WRITE, backendUser ) 
