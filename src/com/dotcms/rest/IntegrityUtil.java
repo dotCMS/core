@@ -95,7 +95,7 @@ public class IntegrityUtil {
      * @throws DotDataException
      * @throws IOException
      */
-    private File generateHtmlPagesToCheckCSV(String outputFile) throws DotDataException, IOException {
+    private File generateHtmlPagesToCheckCSV(String outputFile, IntegrityType type) throws DotDataException, IOException {
         Connection conn = DbConnectionFactory.getConnection();
         ResultSet rs = null;
         PreparedStatement statement = null;
@@ -105,7 +105,13 @@ public class IntegrityUtil {
         try {
             csvFile = new File(outputFile);
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
-            statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
+            if (type.equals(IntegrityType.HTMLPAGES)) {
+            	// Query the legacy pages
+            	statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
+            } else {
+            	// Query the new content pages pages
+            	statement = conn.prepareStatement("SELECT c.identifier, c.inode, i.parent_path, i.asset_name, i.host_inode FROM contentlet c INNER JOIN structure s ON (c.structure_inode = s.inode) INNER JOIN identifier i ON (i.id = c.identifier) WHERE s.structuretype = 5");
+            }
 			rs = statement.executeQuery();
             int count = 0;
 
@@ -346,6 +352,7 @@ public class IntegrityUtil {
         File structuresToCheckCsvFile = null;
         File schemesToCheckCsvFile = null;
         File htmlPagesToCheckCsvFile = null;
+        File contentPagesToCheckCsvFile = null;
         File zipFile = null;
 
         try {
@@ -372,13 +379,13 @@ public class IntegrityUtil {
             foldersToCheckCsvFile = integrityUtil.generateFoldersToCheckCSV(outputPath + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName());
             structuresToCheckCsvFile = integrityUtil.generateStructuresToCheckCSV(outputPath + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName());
             schemesToCheckCsvFile = integrityUtil.generateSchemesToCheckCSV(outputPath + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName());
-            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName());
-
+            htmlPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName(), IntegrityType.HTMLPAGES);
+            contentPagesToCheckCsvFile = integrityUtil.generateHtmlPagesToCheckCSV(outputPath + File.separator + IntegrityType.CONTENTPAGES.getDataToCheckCSVName(), IntegrityType.CONTENTPAGES);
             addToZipFile(foldersToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.FOLDERS.getDataToCheckCSVName());
             addToZipFile(structuresToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.STRUCTURES.getDataToCheckCSVName());
             addToZipFile(schemesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.SCHEMES.getDataToCheckCSVName());
             addToZipFile(htmlPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.HTMLPAGES.getDataToCheckCSVName());
-
+            addToZipFile(contentPagesToCheckCsvFile.getAbsolutePath(), zos, IntegrityType.CONTENTPAGES.getDataToCheckCSVName());
             zos.close();
             fos.close();
         } catch (Exception e) {
@@ -396,7 +403,10 @@ public class IntegrityUtil {
                 schemesToCheckCsvFile.delete();
             if(htmlPagesToCheckCsvFile!=null && htmlPagesToCheckCsvFile.exists())
             	htmlPagesToCheckCsvFile.delete();
-
+			if (contentPagesToCheckCsvFile != null
+					&& contentPagesToCheckCsvFile.exists()) {
+				contentPagesToCheckCsvFile.delete();
+			}
         }
     }
 
@@ -663,122 +673,163 @@ public class IntegrityUtil {
      * @throws Exception
      */
     public Boolean checkHtmlPagesIntegrity(String endpointId) throws Exception {
+		try {
+			DotConnect dc = new DotConnect();
+			checkPages(endpointId, IntegrityType.HTMLPAGES);
+			checkPages(endpointId, IntegrityType.CONTENTPAGES);
+			dc.setSQL("select * from "
+					+ getResultsTableName(IntegrityType.HTMLPAGES));
+			List<Map<String, Object>> results = dc.loadObjectResults();
+			return !results.isEmpty();
+		} catch (Exception e) {
+			throw new Exception("Error running the HTML Pages Integrity Check",
+					e);
+		}
+    }
 
-        try {
+    /**
+     * Checks the existence of conflicts with the legacy HTML pages.
+     * 
+     * @param endpointId
+     * @throws IOException
+     * @throws SQLException
+     * @throws DotDataException
+     */
+	private void checkPages(String endpointId, IntegrityType type) throws IOException,
+			SQLException, DotDataException {
+    	CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToCheckCSVName(), '|');
+        
+        DotConnect dc = new DotConnect();
+        String tempTableName = getTempTableName(endpointId, type);
+        String tempKeyword = getTempKeyword();
 
-            CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.HTMLPAGES.getDataToCheckCSVName(), '|');
+        //Create a temporary table and insert all the records coming from the CSV file.
+        String createTempTable = "create " + tempKeyword + " table " + tempTableName 
+        		+ " (inode varchar(36) not null, "
+        		+ "identifier varchar(36) not null, "
+        		+ "parent_path varchar(255), "
+                + "asset_name varchar(255), "
+                + "host_identifier varchar(36) not null, "
+                + "primary key (inode) )" 
+                + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
+
+        if(DbConnectionFactory.isOracle()) {
+            createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+        }
+
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
+
+        dc.executeStatement(createTempTable);
+        while (htmlpages.readRecord()) {
+            String htmlPageInode = htmlpages.get(0);
+			String htmlPageIdentifier = htmlpages.get(1);
+			String htmlPageParentPath = htmlpages.get(2);
+			String htmlPageAssetName = htmlpages.get(3);
+			String htmlPageHostIdentifier = htmlpages.get(4);
+
+			dc.setSQL(INSERT_TEMP_TABLE);
+			dc.addParam(htmlPageInode);
+			dc.addParam(htmlPageIdentifier);
+			dc.addParam(htmlPageParentPath);
+			dc.addParam(htmlPageAssetName);
+			dc.addParam(htmlPageHostIdentifier);
+			dc.loadResult();
+        }
+        htmlpages.close();
+
+        String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
+
+        //Compare the data from the CSV to the local database data and see if we have conflicts.
+        String selectSQL = null;
+        if (type.equals(IntegrityType.HTMLPAGES)) {
+        	// Query the legacy pages
+			selectSQL = "select lh.page_url as html_page, "
+					+ "lh.inode as local_inode, "
+					+ "ri.inode as remote_inode, "
+					+ "li.id as local_identifier, "
+					+ "ri.identifier as remote_identifier "
+					+ "from identifier as li " + "join htmlpage as lh "
+					+ "on lh.identifier = li.id "
+					+ "and li.asset_type = 'htmlpage' " + "join "
+					+ tempTableName + " as ri "
+					+ "on li.asset_name = ri.asset_name "
+					+ "and li.parent_path = ri.parent_path "
+					+ "and li.host_inode = ri.host_identifier "
+					+ "and li.id <> ri.identifier";
+        } else {
+        	// Query the new content pages
+			selectSQL = "SELECT "
+					+ "li.asset_name as html_page, lc.inode as local_inode, t.inode as remote_inode, "
+					+ "lc.identifier as local_identifier, t.identifier as remote_identifier "
+					+ "FROM "
+					+ "contentlet lc "
+					+ "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
+					+ "INNER JOIN identifier li ON (li.id = lc.identifier and li.asset_type = 'contentlet') "
+					+ "INNER JOIN "
+					+ tempTableName
+					+ " t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
+					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier)";
+		}
+
+        if(DbConnectionFactory.isOracle()) {
+            selectSQL = selectSQL.replaceAll(" as ", " ");
+        }
+
+        dc.setSQL(selectSQL);
+
+        List<Map<String,Object>> results = dc.loadObjectResults();
+
+        //If we have conflicts, lets create a table out of them.
+        if(!results.isEmpty()) {
+            String fullHtmlPage = " li.parent_path || li.asset_name ";
+
+            if(DbConnectionFactory.isMySql()) {
+            	fullHtmlPage = " concat(li.parent_path,li.asset_name) ";
+            } else if(DbConnectionFactory.isMsSql()) {
+            	fullHtmlPage = " li.parent_path + li.asset_name ";
+            }
+
+            String insertSQL = null;
+            if (type.equals(IntegrityType.HTMLPAGES)) {
+            	// Query the legacy pages
+	            insertSQL = "insert into " + resultsTableName
+	                + " select " + fullHtmlPage + " as html_page, "
+	                + "lh.inode as local_inode, "
+	                + "ri.inode as remote_inode, "
+	                + "li.id as local_identifier, "
+	                + "ri.identifier as remote_identifier, "
+	                + "'" + endpointId + "' "
+	                + "from identifier as li "
+	                + "join htmlpage as lh "
+	                + "on lh.identifier = li.id "
+	                + "and li.asset_type = 'htmlpage' "
+	                + "join " + tempTableName + " as ri "
+	                + "on li.asset_name = ri.asset_name "
+	                + "and li.parent_path = ri.parent_path "
+	                + "and li.host_inode = ri.host_identifier "
+	                + "and li.id <> ri.identifier";
+            } else {
+            	// Query the new content pages
+            	insertSQL = "insert into " + resultsTableName + " "
+            			+ "select " + fullHtmlPage + " as html_page, "
+            			+ "lc.inode as local_inode, t.inode as remote_inode, "
+            			+ "lc.identifier as local_identifier, t.identifier as remote_identifier, "
+            			+ "'" + endpointId + "' "
+            			+ "FROM "
+    					+ "contentlet lc "
+    					+ "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
+    					+ "INNER JOIN identifier li ON (li.id = lc.identifier and li.asset_type = 'contentlet') "
+    					+ "INNER JOIN "
+    					+ tempTableName + " "
+    					+ "t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
+    					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier)";
+            }
             
-            boolean tempCreated = false;
-            
-            DotConnect dc = new DotConnect();
-            String tempTableName = getTempTableName(endpointId, IntegrityType.HTMLPAGES);
-            String tempKeyword = getTempKeyword();
-
-            //Create a temporary table and insert all the records coming from the CSV file.
-            String createTempTable = "create " + tempKeyword + " table " + tempTableName 
-            		+ " (inode varchar(36) not null, "
-            		+ "identifier varchar(36) not null, "
-            		+ "parent_path varchar(255), "
-                    + "asset_name varchar(255), "
-                    + "host_identifier varchar(36) not null, "
-                    + "primary key (inode) )" 
-                    + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
-
             if(DbConnectionFactory.isOracle()) {
-                createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
+                insertSQL = insertSQL.replaceAll(" as ", " ");
             }
 
-            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
-
-            while (htmlpages.readRecord()) {
-                if(!tempCreated) {
-                    dc.executeStatement(createTempTable);
-                    tempCreated = true;
-                }
-
-                String htmlPageInode = htmlpages.get(0);
-				String htmlPageIdentifier = htmlpages.get(1);
-				String htmlPageParentPath = htmlpages.get(2);
-				String htmlPageAssetName = htmlpages.get(3);
-				String htmlPageHostIdentifier = htmlpages.get(4);
-
-				dc.setSQL(INSERT_TEMP_TABLE);
-				dc.addParam(htmlPageInode);
-				dc.addParam(htmlPageIdentifier);
-				dc.addParam(htmlPageParentPath);
-				dc.addParam(htmlPageAssetName);
-				dc.addParam(htmlPageHostIdentifier);
-				dc.loadResult();
-            }
-            htmlpages.close();
-
-            String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
-
-            //Compare the data from the CSV to the local database data and see if we have conflicts.
-            String selectSQL = "select lh.page_url as html_page, "
-                    + "lh.inode as local_inode, "
-                    + "ri.inode as remote_inode, "
-                    + "li.id as local_identifier, "
-                    + "ri.identifier as remote_identifier "
-                    + "from identifier as li "
-                    + "join htmlpage as lh "
-                    + "on lh.identifier = li.id "
-                    + "and li.asset_type = 'htmlpage' "
-                    + "join " + tempTableName + " as ri "
-                    + "on li.asset_name = ri.asset_name "
-                    + "and li.parent_path = ri.parent_path "
-                    + "and li.host_inode = ri.host_identifier "
-                    + "and li.id <> ri.identifier";
-
-            if(DbConnectionFactory.isOracle()) {
-                selectSQL = selectSQL.replaceAll(" as ", " ");
-            }
-
-            dc.setSQL(selectSQL);
-
-            List<Map<String,Object>> results = dc.loadObjectResults();
-
-            //If we have conflicts, lets create a table out of them.
-            if(!results.isEmpty()) {
-                String fullHtmlPage = " li.parent_path || li.asset_name ";
-
-                if(DbConnectionFactory.isMySql()) {
-                	fullHtmlPage = " concat(li.parent_path,li.asset_name) ";
-                } else if(DbConnectionFactory.isMsSql()) {
-                	fullHtmlPage = " li.parent_path + li.asset_name ";
-                }
-
-                String insertSQL = "insert into " + resultsTableName
-                    + " select " + fullHtmlPage + " as html_page, "
-                    + "lh.inode as local_inode, "
-                    + "ri.inode as remote_inode, "
-                    + "li.id as local_identifier, "
-                    + "ri.identifier as remote_identifier, "
-                    + "'" + endpointId + "' "
-                    + "from identifier as li "
-                    + "join htmlpage as lh "
-                    + "on lh.identifier = li.id "
-                    + "and li.asset_type = 'htmlpage' "
-                    + "join " + tempTableName + " as ri "
-                    + "on li.asset_name = ri.asset_name "
-                    + "and li.parent_path = ri.parent_path "
-                    + "and li.host_inode = ri.host_identifier "
-                    + "and li.id <> ri.identifier";
-
-                if(DbConnectionFactory.isOracle()) {
-                    insertSQL = insertSQL.replaceAll(" as ", " ");
-                }
-
-                dc.executeStatement(insertSQL);
-            }
-
-            dc.setSQL("select * from "+getResultsTableName(IntegrityType.HTMLPAGES));
-            results = dc.loadObjectResults();
-
-            return !results.isEmpty();
-            
-        } catch(Exception e) {
-            throw new Exception("Error running the HTML Pages Integrity Check", e);
+            dc.executeStatement(insertSQL);
         }
     }
 
@@ -804,6 +855,11 @@ public class IntegrityUtil {
             if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTMLPAGES))) {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
+            }
+            
+            if(doesTableExist(getTempTableName(endpointId, IntegrityType.CONTENTPAGES))) {
+                dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.CONTENTPAGES));
+                dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.CONTENTPAGES));
             }
 
         } catch (SQLException e) {
@@ -1492,72 +1548,130 @@ public class IntegrityUtil {
     	
     	DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
-        HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
 
         //Get the information of the IR.
 		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		
-		for ( Map<String, Object> result : results ) {
-
-			//String oldHtmlPageInode = (String) result.get( "local_inode" );
-		    //String newHtmlPageInode = (String) result.get( "remote_inode" );
-		    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
-		    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
-		    String assetName = (String) result.get( "html_page" );
-		    String localInode = (String) result.get( "local_inode" );
-
-            //We need only the last part of the url, not the whole path.
-            String[] assetNamebits = assetName.split("/");
-            assetName = assetNamebits[assetNamebits.length-1];
-
-		    htmlPageCache.remove(oldHtmlPageIdentifier);
-		    CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
-
-		 	//Fixing by SQL queries
-		    dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
-		    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
-		    		+ "FROM identifier WHERE id = ?");
-		    dc.addParam(newHtmlPageIdentifier);
-		    dc.addParam(oldHtmlPageIdentifier);
-		    dc.loadResult();
-		    
-		    dc.setSQL("UPDATE htmlpage "
-		    		+ "SET identifier = ? "
-		    		+ "WHERE identifier = ?");
-		    dc.addParam(newHtmlPageIdentifier);
-		    dc.addParam(oldHtmlPageIdentifier);
-		    dc.loadResult();
-		    
-		    dc.setSQL("UPDATE htmlpage_version_info "
-		    		+ "SET identifier = ? "
-		    		+ "WHERE identifier = ?");
-		    dc.addParam(newHtmlPageIdentifier);
-		    dc.addParam(oldHtmlPageIdentifier);
-		    dc.loadResult();
-		    
-		    dc.setSQL("DELETE FROM identifier "
-		    		+ "WHERE id = ?");
-		    dc.addParam(oldHtmlPageIdentifier);
-		    dc.loadResult();
-		    
-		    dc.setSQL("UPDATE identifier "
-		    		+ "SET asset_name = ? "
-		    		+ "WHERE id = ?");
-		    dc.addParam(assetName);
-		    dc.addParam(newHtmlPageIdentifier);
-		    dc.loadResult();
-
-            dc.setSQL("UPDATE multi_tree "
-                    + "SET parent1 = ? "
-                    + "WHERE parent1 = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.loadResult();
+		for (Map<String, Object> result : results) {
+			String oldIdentifier = (String) result.get("local_identifier");
+			Identifier identifier = APILocator.getIdentifierAPI().find(
+					oldIdentifier);
+			if ("htmlpage".equals(identifier.getAssetType())) {
+				fixLegacyPageConflicts(result);
+			} else {
+				fixContentPageConflicts(result);
+			}
 		}
 
 		discardConflicts(serverId, IntegrityType.HTMLPAGES);
     }
+
+	/**
+     * 
+     * @param result
+     * @throws DotDataException
+     */
+	private void fixLegacyPageConflicts(Map<String, Object> result)
+			throws DotDataException {
+    	HTMLPageCache htmlPageCache = CacheLocator.getHTMLPageCache();
+    	DotConnect dc = new DotConnect();
+	    String oldHtmlPageIdentifier = (String) result.get( "local_identifier" );
+	    String newHtmlPageIdentifier = (String) result.get( "remote_identifier" );
+	    String assetName = (String) result.get( "html_page" );
+	    String localInode = (String) result.get( "local_inode" );
+
+        //We need only the last part of the url, not the whole path.
+        String[] assetNamebits = assetName.split("/");
+        assetName = assetNamebits[assetNamebits.length-1];
+
+	    htmlPageCache.remove(oldHtmlPageIdentifier);
+	    CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
+
+	 	//Fixing by SQL queries
+	    dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+	    		+ "SELECT ? , parent_path, 'TEMP_ASSET_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
+	    		+ "FROM identifier WHERE id = ?");
+	    dc.addParam(newHtmlPageIdentifier);
+	    dc.addParam(oldHtmlPageIdentifier);
+	    dc.loadResult();
+	    
+	    dc.setSQL("UPDATE htmlpage "
+	    		+ "SET identifier = ? "
+	    		+ "WHERE identifier = ?");
+	    dc.addParam(newHtmlPageIdentifier);
+	    dc.addParam(oldHtmlPageIdentifier);
+	    dc.loadResult();
+	    
+	    dc.setSQL("UPDATE htmlpage_version_info "
+	    		+ "SET identifier = ? "
+	    		+ "WHERE identifier = ?");
+	    dc.addParam(newHtmlPageIdentifier);
+	    dc.addParam(oldHtmlPageIdentifier);
+	    dc.loadResult();
+	    
+	    dc.setSQL("DELETE FROM identifier "
+	    		+ "WHERE id = ?");
+	    dc.addParam(oldHtmlPageIdentifier);
+	    dc.loadResult();
+	    
+	    dc.setSQL("UPDATE identifier "
+	    		+ "SET asset_name = ? "
+	    		+ "WHERE id = ?");
+	    dc.addParam(assetName);
+	    dc.addParam(newHtmlPageIdentifier);
+	    dc.loadResult();
+
+        dc.setSQL("UPDATE multi_tree "
+                + "SET parent1 = ? "
+                + "WHERE parent1 = ?");
+        dc.addParam(newHtmlPageIdentifier);
+        dc.addParam(oldHtmlPageIdentifier);
+        dc.loadResult();
+    }
+
+	/**
+	 * 
+	 * @param result
+	 * @throws DotDataException
+	 */
+	private void fixContentPageConflicts(Map<String, Object> result)
+			throws DotDataException {
+		DotConnect dc = new DotConnect();
+		String oldHtmlPageIdentifier = (String) result.get("local_identifier");
+		String newHtmlPageIdentifier = (String) result.get("remote_identifier");
+		String assetName = (String) result.get("html_page");
+		String localInode = (String) result.get("local_inode");
+		// Get the asset name (last part of the url)
+		String[] assetNamebits = assetName.split("/");
+		assetName = assetNamebits[assetNamebits.length - 1];
+		CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
+		CacheLocator.getContentletCache().remove(oldHtmlPageIdentifier);
+		// Fix conflict through SQL queries
+		dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+				+ "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
+				+ "FROM identifier WHERE id = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		dc.setSQL("UPDATE contentlet " + "SET identifier = ? "
+				+ "WHERE identifier = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		dc.setSQL("UPDATE contentlet_version_info " + "SET identifier = ? "
+				+ "WHERE identifier = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		dc.setSQL("DELETE FROM identifier " + "WHERE id = ?");
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		dc.setSQL("UPDATE identifier " + "SET asset_name = ? " + "WHERE id = ?");
+		dc.addParam(assetName);
+		dc.addParam(newHtmlPageIdentifier);
+		dc.loadResult();
+	}
     
 }

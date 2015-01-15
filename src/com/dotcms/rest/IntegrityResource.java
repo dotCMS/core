@@ -78,7 +78,11 @@ public class IntegrityResource extends WebResource {
         
         HTMLPAGES("push_publish_integrity_html_pages_conflicts",
                 "HtmlPagesToCheck.csv",
-                "HtmlPagesToFix.csv");
+                "HtmlPagesToFix.csv"),
+        
+        CONTENTPAGES("push_publish_integrity_content_pages_conflicts",
+                        "ContentPagesToCheck.csv",
+                        "ContentPagesToFix.csv");
 
         private String label;
         private String dataToCheckCSVName;
