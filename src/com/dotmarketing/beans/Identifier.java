@@ -141,7 +141,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 
 	/**
 	 * Sets the uRI.
-	 * 
+	 * IMPORTANT HTML Pages as content should NOT be calling this method.  It is handled in the VersionableAPI   
 	 * @param uRI
 	 *            The uRI to set
 	 */
