@@ -156,7 +156,7 @@ public class VersionableAPIImpl implements VersionableAPI {
         if(ident.getAssetType().equals("contentlet")) {
             Contentlet cont=(Contentlet)ver;
             ContentletVersionInfo cinfo=vfac.getContentletVersionInfo(cont.getIdentifier(), cont.getLanguageId());
-            return cinfo.isDeleted();
+            return (cinfo !=null && cinfo.isDeleted());
         }
         else {
             VersionInfo info = vfac.getVersionInfo(ver.getVersionId());

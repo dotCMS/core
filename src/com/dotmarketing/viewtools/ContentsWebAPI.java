@@ -1377,4 +1377,65 @@ public class ContentsWebAPI implements ViewTool {
 
 		return result;
 	}
+	
+	/**
+	 * Returns if a contentlet (found by Inode) is locked
+	 * @param inode
+	 * @return
+	 */
+	public boolean isLocked(String inode){
+		try {
+			Contentlet contentlet = conAPI.find(inode, backuser, false);
+			return contentlet.isLocked();
+		} catch (Exception e) {
+			Logger.warn(ContentsWebAPI.class, "isLocked error : " + inode + " : " + e.toString());
+		}
+		return false;
+	}
+	
+	/**
+	 * Returns if a contentlet (found by identifier) is locked, 
+	 * @param inode
+	 * @return
+	 */
+	public boolean isLocked(String identifier, long lang){
+		try {
+			Contentlet contentlet = conAPI.findContentletByIdentifier(identifier, false, lang, backuser, false);
+			return contentlet.isLocked();
+		} catch (Exception e) {
+			Logger.warn(ContentsWebAPI.class, "isLocked error : " + identifier + " : " + e.toString());
+		}
+		return false;
+	}
+	
+	/**
+	 * Returns if a contentlet can be locked by the current user
+	 * @param inode
+	 * @return
+	 */
+	public boolean canLock(String inode){
+		try {
+			Contentlet contentlet = conAPI.find(inode, backuser, false);
+			return conAPI.canLock(contentlet, backuser);
+		} catch (Exception e) {
+			Logger.warn(ContentsWebAPI.class, "canlock error : " + inode + " : " + e.toString());
+		}
+		return false;
+	}
+	
+	/**
+	 * Returns if a contentlet (found by Inode) is locked
+	 * @param inode
+	 * @return
+	 */
+	public boolean isContent(String inode){
+		try {
+			Contentlet contentlet = conAPI.find(inode, backuser, false);
+			return contentlet !=null && contentlet.getInode() !=null;
+		} catch (Exception e) {
+			Logger.warn(ContentsWebAPI.class, "isLocked error : " + inode + " : " + e.toString());
+		}
+		return false;
+	}
+	
 }
