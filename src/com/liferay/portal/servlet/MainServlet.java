@@ -299,10 +299,6 @@ public class MainServlet extends ActionServlet {
 
 		HttpSession ses = req.getSession();
 		
-		String cookiesSecureFlag = Config.getStringProperty("COOKIES_SECURE_FLAG", "https");
-
-		String cookiesHttpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", true)?"HttpOnly":"";
-
 		if (!GetterUtil.getBoolean(PropsUtil.get(PropsUtil.TCK_URL))) {
 			String sharedSessionId = CookieUtil.get(req.getCookies(), CookieKeys.SHARED_SESSION_ID);
 
@@ -311,13 +307,14 @@ public class MainServlet extends ActionServlet {
 			if (sharedSessionId == null) {
 				sharedSessionId = PwdGenerator.getPassword(PwdGenerator.KEY1 + PwdGenerator.KEY2, 12);
 
-				Cookie sharedSessionIdCookie = new Cookie(CookieKeys.SHARED_SESSION_ID, sharedSessionId);
-				sharedSessionIdCookie.setMaxAge(86400);
-				sharedSessionIdCookie.setPath("/");
-
-				sharedSessionIdCookie.setSecure(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure()));
-				res.addCookie(sharedSessionIdCookie);
+				String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
+				
+				String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
+					
+				StringBuilder headerStr = new StringBuilder();
+				headerStr.append(CookieKeys.SHARED_SESSION_ID).append("=").append(sharedSessionId).append(";").append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=86400");
+				res.addHeader("SET-COOKIE", headerStr.toString());
 
 				_log.debug("Shared session id is " + sharedSessionId);
 			}
@@ -340,12 +337,6 @@ public class MainServlet extends ActionServlet {
 				SharedSessionPool.put(sharedSessionId, ses);
 			}
 		}
-		// COOKIES
-		
-		CookieUtil.setCookiesSecurityHeaders(req, res);
-
-
-		// END COOKIES
 
 		// Test CAS auto login
 

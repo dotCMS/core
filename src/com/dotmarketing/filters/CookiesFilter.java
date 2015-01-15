@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.liferay.util.CookieUtil;
+import com.liferay.util.ParamUtil;
 
 
 public class CookiesFilter implements Filter {

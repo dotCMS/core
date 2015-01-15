@@ -29,6 +29,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Config;
+import com.liferay.portal.util.CookieKeys;
 
 /**
  * <a href="CookieUtil.java.html"><b><i>View Source</i></b></a>
@@ -149,6 +150,9 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 				if(cookies==null || cookies.remove(cookie.getName())) {
 					
 					String value = cookie.getValue();
+					
+					if(cookie.getName().equals(CookieKeys.ID)) 
+						continue;
 					
 					if(cookie.getName().equals("JSESSIONID")) {
 						value = req.getSession().getId();

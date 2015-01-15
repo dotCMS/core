@@ -130,13 +130,6 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
-        
-     // Handle the DWR Cookie
-        HashSet<String> cookieToHandle = new HashSet<String>();
-        cookieToHandle.add("DWRSESSIONID");
-        CookieUtil.setCookiesSecurityHeaders(request, response, cookieToHandle);
-
-
 
 		// Checking if host is active
 
