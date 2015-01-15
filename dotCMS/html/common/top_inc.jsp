@@ -33,7 +33,7 @@ THIS FILE AND ITS INCLUDES
 	<meta content="0" http-equiv="Expires" />
 	<meta name="Expire" content="Now" />
 	
-	<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon" />
+	<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 	 
 	<style type="text/css">

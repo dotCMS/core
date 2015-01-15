@@ -19,7 +19,7 @@
 <%
     boolean isCommunity = LicenseUtil.getLevel()==100;
     String licenseMessage = null;
-    String licenseURL = "http://www.dotcms.com/buy-now";
+    String licenseURL = "http://dotcms.com/buy-now";
     List<Layout> layoutListForLicenseManager=null;
     try {
         if (isCommunity) {
@@ -725,7 +725,7 @@ dojo.require("dojo.cookie");
 				<div style="text-align:center;font-size:77%;color:#999;"><%=LanguageUtil.get(pageContext, "Toll-Free") %>+1 877-936-8267</div>
 				<div style="text-align:center;font-size:146.5%;color:#999;"><%=LanguageUtil.get(pageContext, "or") %></div>
 				<div style="text-align:center;">
-					<a href="http://www.dotcms.org/enterprise/" target="_blank"><%=LanguageUtil.get(pageContext, "Click-here-to-login-to-your-account") %></a>
+					<a href="http://dotcms.org/enterprise/" target="_blank"><%=LanguageUtil.get(pageContext, "Click-here-to-login-to-your-account") %></a>
 				</div>
 			</td>
 		</tr></table>

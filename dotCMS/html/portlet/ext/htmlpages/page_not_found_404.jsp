@@ -7,7 +7,7 @@
 	
 <html>  
 <head> 
-<link rel="shortcut icon" href="//www.dotcms.com/global/favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="//dotcms.com/favicon.ico" type="image/x-icon">
 <title>dotCMS: <%= LanguageUtil.get(pageContext, "404-page-not-found") %></title>
 
 <style media="all" type="text/css">
@@ -44,7 +44,7 @@
 
 <div class="shadowBox">
 	<div>
-			<a href="http://www.dotcms.org"><img src="/html/images/skin/logo.gif?code=404" width="208" height="63" hspace="10" border="0" alt="dotCMS content management system" title="dotCMS content management system"  /></a>
+			<a href="http://dotcms.com"><img src="/html/images/skin/logo.gif?code=404" width="208" height="63" hspace="10" border="0" alt="dotCMS content management system" title="dotCMS content management system"  /></a>
 	</div>
 	<div class="callOutBox">
 		<h2><%= LanguageUtil.get(pageContext, "CMS-Page-not-found-Create-it-now") %></h2>

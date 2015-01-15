@@ -519,7 +519,7 @@ var cmsfile=null;
 
 	//Other functions
 	function popUpMacroHelp(){
-		openwin = window.open('http://www.dotcms.org/documentation/dotCMSMacros',"newin","menubar=1,width=1100,height=750,scrollbars=1,toolbar=1,status=0,resizable=1");
+		openwin = window.open('http://dotcms.com/docs/latest/CreatingMacros',"newin","menubar=1,width=1100,height=750,scrollbars=1,toolbar=1,status=0,resizable=1");
 	}
 
 	function updateHostFolderValues(field){

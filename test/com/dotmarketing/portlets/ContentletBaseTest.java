@@ -558,7 +558,7 @@ public class ContentletBaseTest extends TestBase {
         menuLink.setTarget( "_blank" );
         menuLink.setTitle( "JUnit MenuLink Test" );
         menuLink.setType( "links" );
-        menuLink.setUrl( "www.dotcms.org" );
+        menuLink.setUrl( "dotcms.com" );
         menuLink.setFriendlyName( "JUnit Test Menu Link" );
         menuLink.setIDate( new Date() );
         menuLink.setInternalLinkIdentifier( "" );

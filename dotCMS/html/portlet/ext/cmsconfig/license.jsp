@@ -485,7 +485,7 @@
 
 
 
-<form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://www.dotcms.com/licensing/request-a-license-3/">
+<form name="trialLicenseForm" id="trialLicenseForm" method="POST" target="trialRequestWindow" action="https://dotcms.com/licensing/request-a-license-3/">
 	<input type="hidden" value="" name="trialLicenseRequestCode" id="trialLicenseRequestCode">
 </form>	
 

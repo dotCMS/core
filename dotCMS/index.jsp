@@ -150,7 +150,7 @@ else{
 			<h1>Getting Started with dotCMS</h1>
 		</div>
 		<div id="logo">
-			<a href="http://www.dotcms.org"><img src="http://www.dotcms.org/portal/images/dotcms_logo.gif?code=noHomePage" width="241" height="60" hspace="10" border="0" alt="dotCMS content management system" title="dotCMS content management system"  /></a>
+			<a href="http://dotcms.com"><img src="http://www.dotcms.org/portal/images/dotcms_logo.gif?code=noHomePage" width="241" height="60" hspace="10" border="0" alt="dotCMS content management system" title="dotCMS content management system"  /></a>
 		</div>
 	
 		<br clear="all"/>

@@ -924,7 +924,7 @@
 
   <%
   String licenseMessage = LanguageUtil.get(pageContext, "Go-Enterprise-To-Access") + "!" ;
-  String licenseURL = "http://www.dotcms.com/buy-now";
+  String licenseURL = "http://dotcms.com/buy-now";
   List<Layout> layoutListForLicenseManager=APILocator.getLayoutAPI().findAllLayouts();
   for (Layout layoutForLicenseManager:layoutListForLicenseManager) {
       List<String> portletIdsForLicenseManager=layoutForLicenseManager.getPortletIds();

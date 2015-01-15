@@ -20,7 +20,7 @@
 				</li>
 			<%}%>
 			<li style="list-style: square;padding-bottom:5px;">
-				<a href="http://www.dotcms.com/contact-us" target="_blank">
+				<a href="http://dotcms.com/contact-us" target="_blank">
 					<%=LanguageUtil.get(pageContext, "Contact-Us-for-more-Information") %>
 				</a>
 			</li>

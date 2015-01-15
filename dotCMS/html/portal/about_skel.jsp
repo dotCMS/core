@@ -33,7 +33,7 @@
 
 		<%= LanguageUtil.format(pageContext, "please-email-all-questions-to", "<b>" + company.getEmailAddress() + "</b>", false) %><br><br>
 
-		More information about dotCMS is available at <a href="http://www.dotcms.org" target="_blank">http://www.dotcms.org</a>.
+		More information about dotCMS is available at <a href="http://dotcms.com" target="_blank">http://dotcms.com</a>.
 
 		</font>
 	</td>
