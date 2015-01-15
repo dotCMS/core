@@ -70,6 +70,7 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.CookieUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.ParamUtil;
 import com.liferay.util.Validator;
@@ -338,20 +339,18 @@ public class LoginAction extends Action {
 			}
 						
 			ses.removeAttribute("_failedLoginName");
-			Cookie idCookie = new Cookie(CookieKeys.ID,UserManagerUtil.encryptUserId(userId));
-			idCookie.setPath("/");
 
+			String secure = Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())?CookieUtil.SECURE:"";
 			
-			if (rememberMe) {
-				idCookie.setMaxAge(31536000);
-			}
-			else {
-				idCookie.setMaxAge(0);
-			}
+			String httpOnly = Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)?CookieUtil.HTTP_ONLY:"";
 			
-
-
-			res.addCookie(idCookie);
+			String maxAge = rememberMe?"31536000":"0";
+				
+			StringBuilder headerStr = new StringBuilder();
+			headerStr.append(CookieKeys.ID).append("=").append(UserManagerUtil.encryptUserId(userId)).append(";")
+				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
+			res.addHeader("SET-COOKIE", headerStr.toString());
 
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_PRE), req, res);
 			EventsProcessor.process(PropsUtil.getArray(PropsUtil.LOGIN_EVENTS_POST), req, res);
