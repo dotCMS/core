@@ -19,7 +19,15 @@
                 List<String> portletIDs = layouts[l].getPortletIds();
                 boolean isSelectedTab = (layout != null && layouts !=null && layout.getId().equals(layouts[l].getId()));
                 PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletIDs.get(0), layouts[l].getId(), false);
-                String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();%>
+                String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
+                
+                Portlet portlet = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(0));
+                Object object = Class.forName(portlet.getPortletClass()).newInstance();
+                if(object instanceof BaseRestPortlet){
+                    tabHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
+            	}
+                
+                %>
 
 
 
