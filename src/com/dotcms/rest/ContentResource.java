@@ -38,7 +38,6 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -51,7 +50,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -233,6 +234,86 @@ public class ContentResource extends WebResource {
 		return responseResource.response( jo.toString() );
 	}
 	
+
+	@PUT
+	@Path ("/canLock/{params:.*}")
+	@Produces (MediaType.APPLICATION_JSON)
+	public Response canLockContent(@Context HttpServletRequest request,  @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+
+		InitDataObject initData = init(params, true, request, false);
+		Map<String, String> paramsMap = initData.getParamsMap();
+		String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
+		String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
+
+		String id = paramsMap.get(RESTParams.ID.getValue());
+
+		String inode = paramsMap.get(RESTParams.INODE.getValue());
+		
+		
+		ResourceResponse responseResource = new ResourceResponse( paramsMap );
+		JSONObject jo = new JSONObject();
+		User user = initData.getUser();
+		
+
+		long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		boolean live = (paramsMap.get(RESTParams.LIVE.getValue()) == null || ! "false".equals(paramsMap.get(RESTParams.LIVE.getValue())));
+
+		if(paramsMap.get(RESTParams.LANGUAGE.getValue()) != null){
+			try{
+				lang= Long.parseLong(language)	;
+			}
+			catch(Exception e){
+				Logger.warn(this.getClass(), "Invald language passed in, defaulting to, well, the default");
+			}
+		}
+		
+		
+		Contentlet contentlet = (inode!=null) 
+				? APILocator.getContentletAPI().find(inode, user, live) 
+						:APILocator.getContentletAPI().findContentletByIdentifier(id,live, lang,  user, live);
+		if(contentlet==null || contentlet.getIdentifier()==null){
+			jo.append("message", "contentlet not found");
+			jo.append("return", 404);
+			
+	        Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_NOT_FOUND);
+	        return  responseBuilder.entity(jo).build();
+		}else{
+			if(!UtilMethods.isSet(inode)){
+				inode = contentlet.getInode();
+			}
+			if(!UtilMethods.isSet(id)){
+				id = contentlet.getIdentifier();
+			}	
+					
+			boolean canLock = false;
+            try{
+            	canLock = APILocator.getContentletAPI().canLock(contentlet, user);
+            }
+            catch(DotLockException e){
+            	canLock=false;
+            }
+            jo.put("canLock", canLock);
+            jo.put("locked", contentlet.isLocked());
+            ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(id, contentlet.getLanguageId());
+            if(contentlet.isLocked()){
+            	jo.put("lockedBy", cvi.getLockedBy());
+            	jo.put("lockedOn", cvi.getLockedOn());
+            	jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.getLockedBy()));
+            	
+            	
+            }
+	
+			if(UtilMethods.isSet(callback)){
+				jo.put("callback", callback);
+			}
+			jo.put("inode", inode);
+			jo.put("id", id);
+			jo.put("return", 200);
+			//Creating an utility response object
+		}
+		
+		return responseResource.response( jo.toString() );
+	}
 	
 	@PUT
 	@Path ("/unlock/{params:.*}")

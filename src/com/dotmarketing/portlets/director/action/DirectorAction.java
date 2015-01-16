@@ -222,7 +222,7 @@ public class DirectorAction extends DotPortletAction {
 					APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
 				}
 
-				if (htmlpage.isLocked() && !htmlpage.getModUser().equals(user.getUserId())) {
+				if (htmlpage.isLocked() && !htmlpage.getModUser().equals(user.getUserId())  &&  htmlpage instanceof HTMLPage) {
 					req.setAttribute(WebKeys.HTMLPAGE_EDIT, htmlpage);
 					setForward(req,"portlet.ext.director.unlock_htmlpage");
 					return;

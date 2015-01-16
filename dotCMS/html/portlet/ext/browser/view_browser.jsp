@@ -45,9 +45,6 @@
 
 	function  resizeBrowser(){
 
-		if(browserLoaded) return;
-		browserLoaded=true;
-
         var viewport = dojo.window.getBox();
 	    var viewport_height = viewport.h;
 
@@ -58,10 +55,15 @@
 	    if(bc != undefined){
 	    	bc.resize();
 	    }
+	    console.log("resizing browser")
 	}
 	// need the timeout for back buttons
-	setTimeout(resizeBrowser, 50);
-	dojo.addOnLoad(resizeBrowser);
+
+	dojo.addOnLoad(function(){
+		resizeBrowser();
+		setTimeout(resizeBrowser, 50);
+		setTimeout(resizeBrowser, 500);
+	});
 
 	dojo.require("dojox.form.uploader.plugins.Flash");
 
