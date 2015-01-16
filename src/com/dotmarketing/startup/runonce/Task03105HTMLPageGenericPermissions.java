@@ -12,9 +12,12 @@ import java.util.List;
 public class Task03105HTMLPageGenericPermissions extends AbstractJDBCStartupTask {
 
     private static final String UPDATE_QUERY =
-            "update permission_reference set permission_type = '"
-                    + IHTMLPage.class.getCanonicalName()
-                    + "' where permission_type = 'com.dotmarketing.portlets.htmlpages.model.HTMLPage'";
+            "update permission_reference set permission_type = "
+                    + "'" + IHTMLPage.class.getCanonicalName() + "'"
+                    + " where permission_type = 'com.dotmarketing.portlets.htmlpages.model.HTMLPage';\n" +
+            "update permission set permission_type = "
+                    + "'" + IHTMLPage.class.getCanonicalName() + "'"
+                    + " where permission_type = 'com.dotmarketing.portlets.htmlpages.model.HTMLPage';";
 
     @Override
     public boolean forceRun () {

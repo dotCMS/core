@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 /** 
  * 	@author Hibernate CodeGenerator
@@ -65,9 +68,17 @@ public class PermissionReference implements Serializable {
 		return type;
 	}
 
-	public void setType(String type) {
-		this.type = type;
-	}
+    public void setType ( String type ) {
+
+        if ( type != null && (type.equals( HTMLPage.class.getCanonicalName() ) || type.equals( HTMLPageAsset.class.getCanonicalName() )) ) {
+            /*
+            Required because hibernate on selects is mapping to specific classes and we are
+            trying to apply the same time of permissions to all the HTML pages types we have.
+             */
+            type = IHTMLPage.class.getCanonicalName();
+        }
+        this.type = type;
+    }
 
 	public String toString() {
         return ToStringBuilder.reflectionToString(this);
