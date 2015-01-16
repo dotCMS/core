@@ -266,27 +266,6 @@ var editButtonRow="editContentletButtonRow";
 			<div id="properties" dojoType="dijit.layout.ContentPane" style="padding:0;" title="<%= LanguageUtil.get(pageContext, "Content") %>" onShow="showEditButtonsRow()">
 		<%}%>
 
-		<!-- START Left Column -->
-			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
-		
-				<%if (InodeUtils.isSet(structure.getInode())) {%>
-					<%--If the user has permissions to publish--%>
-					<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
-					<%--Then the save and publish button should appear--%>
-		
-					<div class="gradient2">
-						<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
-					</div>
-		
-					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
-					<div id="contentletActionsHanger">
-						<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
-					</div>
-				<% } %>
-				</div>
-		
-		<!-- END Left Column -->
-		
 		<!-- START Right Column -->
 			<div class="wrapperRight" style="position:relative;">
 					<div class="fieldWrapper">&nbsp;</div>
@@ -500,8 +479,26 @@ var editButtonRow="editContentletButtonRow";
 
 </liferay:box>
 
-
-
+<!-- START Left Column -->
+			 <div class="buttonRow-left lineRight" id="editContentletButtonRow">
+		
+				<%if (InodeUtils.isSet(structure.getInode())) {%>
+					<%--If the user has permissions to publish--%>
+					<%--A special case happens when the contentlet is new and CMS owner has permissions to publish --%>
+					<%--Then the save and publish button should appear--%>
+		
+					<div class="gradient2">
+						<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_basic_properties.jsp" />
+					</div>
+		
+					<div class="gradient title"><%=LanguageUtil.get(pageContext, "Actions") %></div>
+					<div id="contentletActionsHanger">
+						<%@ include file="/html/portlet/ext/contentlet/contentlet_actions_inc.jsp" %>
+					</div>
+				<% } %>
+				</div>
+		
+		<!-- END Left Column -->
 
 </html:form>
 
@@ -514,6 +511,15 @@ var editButtonRow="editContentletButtonRow";
 <script type="text/javascript">
 	dojo.addOnLoad(function () {
 		dojo.style(dijit.byId('savingContentDialog').closeButtonNode, 'visibility', 'hidden');
+		document.getElementById("properties").insertBefore(document.getElementById(editButtonRow), document.getElementById("properties").firstChild);
+
+		var tab =dijit.byId("mainTabContainer");
+ 		dojo.connect(tab, 'selectChild',
+ 				function (evt) {
+ 				 	selectedTab = tab.selectedChildWidget;
+ 				 	if(selectedTab.id == "properties" || selectedTab.id == "MetadataTab")
+ 				 		document.getElementById(selectedTab.id).insertBefore(document.getElementById(editButtonRow), document.getElementById(selectedTab.id).firstChild);
+ 				});
 	});
 
 	var onBeforeUnloadHandle = dojo.connect(dijit.byId('mainTabContainer'), "onkeypress", activateOnBeforeUnload);
