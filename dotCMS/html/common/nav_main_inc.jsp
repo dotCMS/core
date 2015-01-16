@@ -5,6 +5,14 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 
 <%@page import="java.util.List"%><%@page import="com.dotmarketing.util.UtilMethods"%>
+<script>
+var portletTabMap = {};
+
+<%for(int l=0;l< layouts.length ;l++){
+	  List<String> portletIDs = layouts[l].getPortletIds();%>
+	  portletTabMap['<%=portletIDs.get(0)%>'] = <%=l%>; 
+<%} %> 
+</script>
 <div id="menu">
         <ul class="level1 horizontal" id="root">
 
@@ -27,7 +35,7 @@
                     tabHREF =  "javascript:dotAjaxNav.show('/api/portlet/"+ portletIDs.get(0) + "/', '" + l + "');";
             	}
                 
-                %>
+                %> 
 
 
 
@@ -131,9 +139,11 @@ dojo.require("dojo.hash");
 
                 reload : function(){
                         if(dojo.hash()  ){
-                                var hashValue = decodeURIComponent(dojo.hash());
-                                console.log("reloading" + hashValue);
-                                dotAjaxNav.show(hashValue);
+	                        var hashValue = decodeURIComponent(dojo.hash());
+	                        console.log("reloading" + hashValue);
+	                        var portletId = hashValue.split("/api/portlet/")[1];
+	                        portletId = portletId.substring(0, portletId.indexOf("/"));
+	                        dotAjaxNav.show(hashValue, portletTabMap[portletId]);
                         }
                 },
 
