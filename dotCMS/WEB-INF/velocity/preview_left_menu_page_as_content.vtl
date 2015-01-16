@@ -235,33 +235,6 @@
 
     }
     
-    function firePageWorkflow(workflowAction){
-
-    	var data = {"inode":"$dotPageContent.inode","action":workflowAction};
- 
-		console.log(JSON.stringify(data));
-    	var xhrArgs = {
-    			url : "/api/workflow/fire/",
-    			handleAs : "json",
-    			putData: JSON.stringify(data),
-    			
-    			headers: { 
-    		        'Accept': 'application/json',
-    		        'Content-Type': 'application/json' 
-    		    },
-    			sync: false,
-    			load : function(data) {
-    				console.log(data);
-    				refreshIfrome();
-    			},
-    			error : function(error) {
-    				console.log(error);
-    			}
-    		}
-
-    	var deferred = dojo.xhrPut(xhrArgs);
-    }
-    
     function fireLockPage(){
     	var xhrArgs = {
     			url : "/api/content/lock/inode/$dotPageContent.inode" ,
@@ -313,7 +286,7 @@
     
     function toggleLock(lock){
 
-    	if(lock){
+    	if(lock && $iCanLock){
     		dojo.byId("previewModeTools").innerHTML=dojo.byId("lockedPageToolsTmpl").innerHTML;
     		dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"inline-block"});
 			var edit = dijit.byId("editModeTab");
@@ -599,99 +572,112 @@
 
 
 
-      <div id="lockedPageToolsTmpl" style="display:none">
-		<a href="#" onclick="fireUnlockPage()">
-			<span class="unlockIcon"></span> $languagewebapi.getFromUserLanguage("Release-Lock")
-		</a>
-		#if(!$mandatory)
-        	#if($PUBLISH_HTMLPAGE_PERMISSION)
-                <a href="javascript: publishAll();">
-                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
-                </a>
-                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-                    #if($REMOTE_PUBLISH_END_POINTS)
-                        <a href="javascript: remotePublishCall();">
-                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
-                        </a>
-	                #end
-	                 <a href="javascript: addToBundleCall();">
-	                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+    <div id="lockedPageToolsTmpl" style="display:none">
+    	#if($iCanLock)
+			<a href="#" onclick="fireUnlockPage()">
+				<span class="unlockIcon"></span> $languagewebapi.getFromUserLanguage("Release-Lock")
+			</a>
+			#if(!$mandatory)
+	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+	                <a href="javascript: publishAll();">
+	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
 	                </a>
-                #end
-            #end
-        #end
-           
+	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
+	                    #if($REMOTE_PUBLISH_END_POINTS)
+	                        <a href="javascript: remotePublishCall();">
+	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+	                        </a>
+		                #end
+		                 <a href="javascript: addToBundleCall();">
+		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+		                </a>
+	                #end
+	            #end
+	        #end
+	           
 
-		#foreach($a in $wfActions)
-			#if($a.requiresCheckout())
-				#set($actionlets = $workflowtool.findActionClasses($a))
-				#set($hasPushPublishActionlet = false)
-				#foreach($actionlet in $actionlets)
-					#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
-						#set($hasPushPublishActionlet = true)
+			#foreach($a in $wfActions)
+				#if($a.requiresCheckout())
+					#set($actionlets = $workflowtool.findActionClasses($a))
+					#set($hasPushPublishActionlet = false)
+					#foreach($actionlet in $actionlets)
+						#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
+							#set($hasPushPublishActionlet = true)
+						#end
+						
 					#end
-					
+				
+					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
+				
+					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
+								<span class="$a.icon"></span>
+						$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName()))
+					</a>
+	
 				#end
-			
-				#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-			
-				<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
-							<span class="$a.icon"></span>
-					$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage($a.getName()))
-				</a>
-
 			#end
+		#else
+		 <span class="disabled">
+			<span class="lockIcon" style=""></span>
+			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
+		</span>
 		#end
-		
 		
 	</div>
 	
 	
 	
     <div id="unLockedPageToolsTmpl" style="display:none">
-		<div  id="lockBtn">
-			<a href="#" onclick="fireLockPage()">
-				<span class="lockIcon"></span> $languagewebapi.getFromUserLanguage("Make-Editable")
-			</a>
-		</div>
-		#if(!$mandatory)
-        	#if($PUBLISH_HTMLPAGE_PERMISSION)
-                <a href="javascript: publishAll();">
-                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
-                </a>
-                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
-                    #if($REMOTE_PUBLISH_END_POINTS)
-                        <a href="javascript: remotePublishCall();">
-                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
-                        </a>
-	                #end
-	                 <a href="javascript: addToBundleCall();">
-	                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+	    #if($iCanLock)
+			<div  id="lockBtn">
+				<a href="#" onclick="fireLockPage()">
+					<span class="lockIcon"></span> $languagewebapi.getFromUserLanguage("Make-Editable")
+				</a>
+			</div>
+			#if(!$mandatory)
+	        	#if($PUBLISH_HTMLPAGE_PERMISSION)
+	                <a href="javascript: publishAll();">
+	                	<span class="publishIcon"></span> $languagewebapi.getFromUserLanguage("modes.Publish-Page")
 	                </a>
-                #end
-            #end
-           #end
-           
-		#foreach($a in $wfActions)
-			#if(!$a.requiresCheckout())
-				#set($actionlets = $workflowtool.findActionClasses($a))
-				#set($hasPushPublishActionlet = false)
-				#foreach($actionlet in $actionlets)
-					#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
-						#set($hasPushPublishActionlet = true)
+	                #if($REMOTE_PUBLISH_HTMLPAGE_PERMISSION)
+	                    #if($REMOTE_PUBLISH_END_POINTS)
+	                        <a href="javascript: remotePublishCall();">
+	                            <span class="sServerIcon"></span> $languagewebapi.getFromUserLanguage("modes.Remote-Publish-Page")
+	                        </a>
+		                #end
+		                 <a href="javascript: addToBundleCall();">
+		                	<span class="bundleIcon"></span> $languagewebapi.getFromUserLanguage("modes.Add-To-Bundle-Page")
+		                </a>
+	                #end
+	            #end
+	           #end
+	           
+			#foreach($a in $wfActions)
+				#if(!$a.requiresCheckout())
+					#set($actionlets = $workflowtool.findActionClasses($a))
+					#set($hasPushPublishActionlet = false)
+					#foreach($actionlet in $actionlets)
+						#if($actionlet.actionlet && $actionlet.getActionlet().getClass().contains("PushPublishActionlet"))
+							#set($hasPushPublishActionlet = true)
+						#end
+						
 					#end
+				
+					#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
+				
+	
+					<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
+						<span class="$a.icon"></span>
+							$UtilMethods.escapeSingleQuotes($text.get($a.getName()))
+					</a>
 					
 				#end
-			
-				#set($popup = ($hasPushPublishActionlet || $a.isAssignable() || $a.isCommentable() || $UtilMethods.isSet($a.getCondition())))
-			
-
-				<a href="#" onclick="parent.fireOffWorkflow('$a.id', $popup)">
-					<span class="$a.icon"></span>
-						$UtilMethods.escapeSingleQuotes($text.get($a.getName()))
-				</a>
-				
 			#end
+		#else
+		 <span class="disabled">
+			<span class="lockIcon" style=""></span>
+			$UtilMethods.escapeSingleQuotes($languagewebapi.getFromUserLanguage("message.htmlpage.locked.page"))
+		</span>
 		#end
 	</div>
 
