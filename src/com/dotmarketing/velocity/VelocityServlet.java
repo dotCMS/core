@@ -1180,7 +1180,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	 *         cached or caching is not available, returns <code>null</code>.
 	 */
 	private String getPageCacheKey(HttpServletRequest request) {
-		if (LicenseUtil.getLevel() < 100) {
+		if (LicenseUtil.getLevel() <= 100) {
 			return null;
 		}
 		// don't cache posts
