@@ -26,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
@@ -483,7 +484,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			permissionFactory.savePermission(p, permissionable);
 
 			//Default pages permissions
-			p = new Permission(HTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
+			p = new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), cmsAnonymousRole.getId(), PermissionAPI.PERMISSION_READ, true);
 			permissionFactory.savePermission(p, permissionable);
 
 			//Default content permissions
@@ -809,9 +810,9 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			return;
 		}
 
-		java.util.List<HTMLPage> list = (java.util.List<HTMLPage>)HTMLPageFactory.getLiveHTMLPages();
+		java.util.List<HTMLPage> list = HTMLPageFactory.getLiveHTMLPages();
 
-		for(HTMLPage htmlPage : list) {
+		for(IHTMLPage htmlPage : list) {
 			permissionFactory.getPermissions(htmlPage, true);
 		}
 

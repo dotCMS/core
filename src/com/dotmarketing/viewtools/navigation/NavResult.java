@@ -7,6 +7,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.tools.ViewRenderTool;
@@ -328,7 +329,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     
     public String getEnclosingPermissionClassName() {
         if(type.equals("htmlpage"))
-            return HTMLPage.class.getCanonicalName();
+            return IHTMLPage.class.getCanonicalName();
         if(type.equals("link"))
             return Link.class.getCanonicalName();
         if(type.equals("folder"))

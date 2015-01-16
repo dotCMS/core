@@ -12,6 +12,8 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
+<%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
+<%@page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -21,8 +23,7 @@
 </style>
 <%}%>
 
-
-<%@page import="com.dotmarketing.portlets.structure.model.Structure"%><script type="text/javascript">
+<script type="text/javascript">
 
 	//I18n Messages
 	var hostsWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Hosts")) %>';
@@ -73,7 +74,7 @@
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= Template.TEMPLATE_LAYOUTS_CANONICAL_NAME %>'
-	var pageClassName = '<%= HTMLPage.class.getCanonicalName() %>'
+	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
 	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>'

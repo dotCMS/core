@@ -43,8 +43,8 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -440,12 +440,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	private final String deleteHTMLPageReferencesSQL =
 			"delete from permission_reference where exists (" +
 			"	" + selectChildrenHTMLPageSQL + " and" +
-			"	permission_type = '" + HTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id)";
+			"	permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id)";
 
 	private final String deleteHTMLPageReferencesOnAddSQL =
 		"delete from permission_reference where exists (" +
 		selectChildrenHTMLPageSQL + " and " +
-		" permission_type = '" + HTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id) " +
+		" permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id) " +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
 			" from folder join identifier on (folder.identifier = identifier.id) " +
@@ -477,13 +477,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select nextval('permission_reference_seq'), ") +
-				"	identifier.id, ?, '" + HTMLPage.class.getCanonicalName() + "' " +
+				"	identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		identifier.id not in (" +
 		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
-		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 				"		) and " +
 				"		identifier.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -1404,7 +1404,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						}
 
 						ran03=true;
-					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
+					} else if (p.getType().equals(IHTMLPage.class.getCanonicalName()) && !ran04) {
 
 						// Update html page references
 
@@ -2368,10 +2368,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				HibernateUtil persistenceService = new HibernateUtil();
 
 				if(p.isBitPermission()) {
-					Permission pToDel = null;
 
-					pToDel = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
-					if( pToDel != null )
+                    Permission pToDel = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
+					if( pToDel != null && InodeUtils.isSet( pToDel.getInode() ) )
 					{
 						HibernateUtil.delete(pToDel);
 						Logger.debug(this.getClass(), String.format("deletePermission: %s deleted successful!", p.toString()));
@@ -2389,7 +2388,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					persistenceService.setParam(p.getRoleId());
 					persistenceService.setParam(p.getType());
 					Permission bitPermission = (Permission) persistenceService.load();
-					if (bitPermission != null) {
+					if (bitPermission != null && InodeUtils.isSet( bitPermission.getInode() ) ) {
 						bitPermission.setPermission((bitPermission.getPermission() ^ p.getPermission()) & bitPermission.getPermission());
 						if (bitPermission.getPermission() == 0)
 							HibernateUtil.delete(bitPermission);
@@ -2439,16 +2438,20 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					type = Host.class.getCanonicalName();
 				}else if(permissionable instanceof FileAsset ||
 				        (permissionable instanceof Contentlet &&
-				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)){
-				    type = File.class.getCanonicalName();
-				}else if(permissionable instanceof Event){
+				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)) {
+                    type = File.class.getCanonicalName();
+                } else if ( permissionable instanceof IHTMLPage ||
+                        (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                    type = IHTMLPage.class.getCanonicalName();
+                }else if(permissionable instanceof Event){
 					type = Contentlet.class.getCanonicalName();
 				}else if(permissionable instanceof Identifier){
 					Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
 					Logger.error(this, "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
 					if(perm!=null){
-						if(perm instanceof HTMLPage){
-							type = HTMLPage.class.getCanonicalName();
+                        if ( perm instanceof IHTMLPage ||
+                                (perm instanceof Contentlet && ((Contentlet) perm).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                            type = IHTMLPage.class.getCanonicalName();
 						}else if(perm instanceof Container){
 							type = Container.class.getCanonicalName();
 						}else if(perm instanceof File){
@@ -3171,16 +3174,16 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		//HTML pages
 
 		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
-				HTMLPage.class.getCanonicalName(), role.getId());
+				IHTMLPage.class.getCanonicalName(), role.getId());
 
 		//Assigning inheritable permissions to the permissionable if needed
 		List<Permission> permissionablePagesPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
-				HTMLPage.class.getCanonicalName());
+				IHTMLPage.class.getCanonicalName());
 		if(permissionablePagesPermissions.size() > 0) {
 			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
-					HTMLPage.class.getCanonicalName(), role.getId());
+					IHTMLPage.class.getCanonicalName(), role.getId());
 			if(permissionToUpdate == null) {
-				permissionToUpdate = new Permission(HTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+				permissionToUpdate = new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
 			}
 			if(inheritablePermission != null)
 				permissionToUpdate.setPermission(inheritablePermission.getPermission());

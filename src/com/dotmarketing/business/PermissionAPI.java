@@ -14,7 +14,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -44,7 +44,7 @@ public interface PermissionAPI {
 	String INDIVIDUAL_PERMISSION_TYPE = "individual";
 
 	static Map<String, String> permissionTypes= new HashMap<String, String>(){{
-		put("HTMLPAGES", HTMLPage.class.getCanonicalName());
+		put("HTMLPAGES", IHTMLPage.class.getCanonicalName());
 		put("CONTAINERS", Container.class.getCanonicalName());
 		put("FILES", File.class.getCanonicalName());
 		put("FOLDERS", Folder.class.getCanonicalName());
@@ -57,7 +57,7 @@ public interface PermissionAPI {
    }};
 
    public enum PermissionableType {
-	   HTMLPAGES(HTMLPage.class.getCanonicalName()),
+	   HTMLPAGES(IHTMLPage.class.getCanonicalName()),
 	   CONTAINERS(Container.class.getCanonicalName()),
 	   FILES(File.class.getCanonicalName()),
 	   FOLDERS(Folder.class.getCanonicalName()),
