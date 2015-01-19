@@ -2144,6 +2144,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	        
 	        for (Contentlet c : related.getRecords()) {
 	            if (child) {
+	                for (Tree currentTree: contentParents) {
+				if (currentTree.getRelationType().equals(rel.getRelationTypeValue()) && c.getIdentifier().equals(currentTree.getParent())) {
+					positionInParent = currentTree.getTreeOrder();
+				}
+			}
+
 	                newTree = new Tree(c.getIdentifier(), contentlet.getIdentifier(), rel.getRelationTypeValue(), positionInParent);
 	            } else {
 	                newTree = new Tree(contentlet.getIdentifier(), c.getIdentifier(), rel.getRelationTypeValue(), treePosition);
