@@ -10,6 +10,7 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -18,7 +19,6 @@ import javax.servlet.jsp.PageContext;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
@@ -32,6 +32,9 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory;
 import com.dotmarketing.portlets.mailinglists.factories.MailingListFactory;
@@ -105,7 +108,12 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
         String uri = null;
         Host host = null;
         if (req.getParameter("htmlpage") != null) {
-            HTMLPage myHTMLPage = (HTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), HTMLPage.class);
+        	Contentlet contentlet = APILocator.getContentletAPI().find(req.getParameter("htmlpage"), systemUser, false);
+        	IHTMLPage myHTMLPage = null;
+        	if (contentlet!=null){
+        		myHTMLPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+        	}else
+        		myHTMLPage = (IHTMLPage) InodeFactory.getInode(req.getParameter("htmlpage"), HTMLPage.class);
             uri = APILocator.getIdentifierAPI().find(myHTMLPage).getURI();
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             req.setAttribute("htmlPage", myHTMLPage);
@@ -113,7 +121,7 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
             //Identifier id = (Identifier) InodeFactory.getInode(req.getParameter("pageIdentifier"), Identifier.class);
         	Identifier id = APILocator.getIdentifierAPI().find(req.getParameter("pageIdentifier"));
             uri = id.getURI();
-            HTMLPage myHTMLPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
+            IHTMLPage myHTMLPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
 			host = hostAPI.findParentHost(myHTMLPage, systemUser, false);
             req.setAttribute("htmlPage", myHTMLPage);
         }
@@ -129,7 +137,7 @@ public class ViewHTMLPageViewsAction extends DotPortletAction {
             }
                         
             Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-            HTMLPage myHTMLPage = (HTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
+            IHTMLPage myHTMLPage = (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(),false);
             req.setAttribute("htmlPage", myHTMLPage);
             if (!InodeUtils.isSet(id.getInode())) {
 
