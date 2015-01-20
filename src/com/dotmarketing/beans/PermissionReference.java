@@ -73,7 +73,7 @@ public class PermissionReference implements Serializable {
         if ( type != null && (type.equals( HTMLPage.class.getCanonicalName() ) || type.equals( HTMLPageAsset.class.getCanonicalName() )) ) {
             /*
             Required because hibernate on selects is mapping to specific classes and we are
-            trying to apply the same time of permissions to all the HTML pages types we have.
+            trying to apply the same type of permissions to all the HTML pages types we have.
              */
             type = IHTMLPage.class.getCanonicalName();
         }
