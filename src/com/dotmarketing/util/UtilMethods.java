@@ -1218,7 +1218,8 @@ public class UtilMethods {
                 || fileName.indexOf(":") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf(";") != -1 || fileName.indexOf("&") != -1
                 || fileName.indexOf("?") != -1 || fileName.indexOf("$") != -1 || fileName.indexOf("*") != -1 || fileName.indexOf("\"") != -1
                 || fileName.indexOf("/") != -1 || fileName.indexOf("[") != -1 || fileName.indexOf("]") != -1 || fileName.indexOf("=") != -1
-                || fileName.indexOf("|") != -1 || fileName.indexOf(",") != -1) {
+                || fileName.indexOf("|") != -1 || fileName.indexOf(",") != -1 || fileName.indexOf("#") != -1 || fileName.indexOf("{") != -1
+                || fileName.indexOf("}") != -1) {
             throw new IllegalArgumentException("Invalid Filename passed in: " + fileName);
 
         } else {
