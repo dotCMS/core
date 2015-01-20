@@ -12,7 +12,8 @@
 <%@page import="com.dotmarketing.business.LayoutAPI"%>
 
 <%
-	com.dotmarketing.portlets.htmlpages.model.HTMLPage myHTMLPage = (com.dotmarketing.portlets.htmlpages.model.HTMLPage) request.getAttribute("htmlPage");
+
+	com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage myHTMLPage = (com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage) request.getAttribute("htmlPage");
 	Host host = APILocator.getHostAPI().findParentHost(myHTMLPage, APILocator.getUserAPI().getSystemUser(), false);
 	String pageUrl = request.getParameter("pageURL");
 	//Mailing list parameters
