@@ -22,6 +22,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -67,6 +68,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
@@ -82,6 +84,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	private FieldAPI fAPI;
 	private HostWebAPI hostAPI;
 	private FolderAPI fldrAPI;
+	private UserAPI userAPI;
+	private FolderAPI folderAPI;
+	private IdentifierAPI identAPI;
 
 	private static DateFormat eventRecurrenceStartDateF = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	private static DateFormat eventRecurrenceEndDateF = new SimpleDateFormat("yyyy-MM-dd");
@@ -93,6 +98,9 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		fAPI = APILocator.getFieldAPI();
 		hostAPI = WebAPILocator.getHostWebAPI();
 		fldrAPI = APILocator.getFolderAPI();
+		this.userAPI = APILocator.getUserAPI();
+		this.folderAPI = APILocator.getFolderAPI();
+		this.identAPI = APILocator.getIdentifierAPI();
 	}
 	/*
 	 * 	(non-Javadoc)
@@ -509,7 +517,15 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				currentContentlet.setBoolProperty("live", true);
 			}
 
-
+			// Perform some validations before saving it
+			if (currentContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				String status = validateNewContentPage(currentContentlet);
+				if (UtilMethods.isSet(status)) {
+					String msg = LanguageUtil.get(user, status);
+					throw new DotRuntimeException(msg);
+				}
+			}
+			
 			if(!isAutoSave){
 
 				currentContentlet.setInode(null);
@@ -562,6 +578,90 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
             if(!isAutoSave)
                 SessionMessages.add(req, "message", "message.contentlet.published");
         }
+	}
+
+	/**
+	 * Validates the new/modified page taken into account the following
+	 * criteria:
+	 * <ol>
+	 * <li>The URL does not exist for another page.</li>
+	 * <li>The URL does not match an existing folder.</li>
+	 * <li>The URL does not match an asset file.</li>
+	 * </ol>
+	 * 
+	 * @param contentPage
+	 *            - The content page as a {@link Contentlet} object.
+	 * @return If the page is valid, returns <code>null</code>. Otherwise,
+	 *         returns the message key containing the description of the error.
+	 * @throws DotRuntimeException
+	 *             If the user does not have permissions to perform the required
+	 *             action, or if a problem occurred when interacting with the
+	 *             database.
+	 */
+	private String validateNewContentPage(Contentlet contentPage) {
+		String parentFolderId = contentPage.getFolder();
+		String pageUrl = contentPage.getMap().get("url").toString();
+		String status = null;
+		try {
+			User systemUser = userAPI.getSystemUser();
+			Folder parentFolder = folderAPI.find(parentFolderId, systemUser,
+					false);
+			if (parentFolder != null
+					&& InodeUtils.isSet(parentFolder.getInode())) {
+				Host host = hostAPI.find(parentFolder.getHostId(), systemUser,
+						true);
+				String parentFolderPath = parentFolder.getPath();
+				if (UtilMethods.isSet(parentFolderPath)) {
+					if (!parentFolderPath.startsWith("/")) {
+						parentFolderPath = "/" + parentFolderPath;
+					}
+					if (!parentFolderPath.endsWith("/")) {
+						parentFolderPath = parentFolderPath + "/";
+					}
+					String fullPageUrl = parentFolderPath + pageUrl;
+					if (!pageUrl.endsWith(".html")) {
+						List<Identifier> folders = identAPI
+								.findByURIPattern("folder", fullPageUrl, false,
+										false, true, host);
+						if (folders.size() > 0) {
+							// Found a folder with same path
+							status = "message.htmlpage.error.htmlpage.exists.folder";
+						}
+					}
+					if (!UtilMethods.isSet(status)) {
+						Identifier i = identAPI.find(host, fullPageUrl);
+						if (i != null && InodeUtils.isSet(i.getId())) {
+							Contentlet contentInReceiver = conAPI
+									.findContentletByIdentifier(i.getId(),
+											true, contentPage.getLanguageId(),
+											systemUser, false);
+							if (contentInReceiver.getStructure()
+									.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+								// Found a file asset with same path
+								status = "message.htmlpage.error.htmlpage.exists.file";
+							} else if (!contentPage.getIdentifier().equals(
+									i.getId())) {
+								// Found a page with the same path
+								status = "message.htmlpage.error.htmlpage.exists";
+							}
+						}
+					}
+				}
+			}
+		} catch (DotDataException e) {
+			Logger.debug(this,
+					"Error trying to retreive information from page '"
+							+ contentPage.getIdentifier() + "'");
+			throw new DotRuntimeException("Page information is not valid", e);
+		} catch (DotSecurityException e) {
+			Logger.debug(this,
+					"Current user has no permission to perform the selected action on page '"
+							+ contentPage.getIdentifier() + "'");
+			throw new DotRuntimeException(
+					"Current user has no permission to perform the selected action",
+					e);
+		}
+		return status;
 	}
 
 	private void handleEventRecurrence(Map<String, Object> contentletFormData, Contentlet contentlet) throws DotRuntimeException, ParseException{
