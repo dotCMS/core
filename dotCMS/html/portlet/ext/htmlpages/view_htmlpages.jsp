@@ -314,20 +314,32 @@ require([ "dijit/focus", "dojo/dom", "dojo/domReady!" ], function(focusUtil, dom
 					<input dojoType="dijit.form.CheckBox" type="checkbox" name="publishInode" id="publishInode<%= htmlpage.getInode() %>" value="<%= htmlpage.getInode() %>" onclick="togglePublish()" /> 
 				<% } %>
 			</td>
-			<td <%if(!htmlpage.isArchived()){%>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%=htmlpage.getInode()%>&r=<%=UUIDGenerator.generateUuid()%>&userId=<%=user.getUserId()%>&referer=<%=referer%>'"<%} %>>
-				<span class="pageIcon"></span>
-				<%=htmlpage.getTitle() %>
-			</td>
-			<% if (htmlpage instanceof WebAsset) { %>
+			<%
+               boolean isLegacyPage = false;
+               Contentlet contenlet = null;
+               String structureInode = null;
+               String contentletInode = null;
+               if (htmlpage instanceof WebAsset) {
+                   isLegacyPage = true;
+               } else {
+                   contenlet = (Contentlet) htmlpage;
+                   structureInode = contenlet.getStructureInode();
+                   contentletInode = contenlet.getInode();
+               }
+               if (isLegacyPage) { %>
+            <td <% if (!htmlpage.isArchived()) { %>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>>
+            <% } else { %>
+            <td <% if (!htmlpage.isArchived()) { %>onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>>           
+            <% } %>
+            <span class="pageIcon"></span>
+                <%= htmlpage.getTitle() %>
+            </td>
+            <% if (isLegacyPage) { %>
             <td nowrap="true" <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
             <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= htmlpage.getPageUrl() %></td>
             <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= pathToMe %></td>
             <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=<%= htmlpage.getInode() %>&r=<%= UUIDGenerator.generateUuid() %>&userId=<%= user.getUserId() %>&referer=<%= referer %>'"<%} %>><%= modDateFormat.format(htmlpage.getModDate()) %></td>
-            <% } else {
-                Contentlet contenlet = (Contentlet) htmlpage;
-                String structureInode = contenlet.getStructureInode();
-                String contentletInode = contenlet.getInode();
-            %>
+            <% } else { %>
             <td nowrap="true" <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= com.dotmarketing.util.UtilHTML.getStatusIcons(htmlpage) %></td>
             <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= htmlpage.getPageUrl() %></td>
             <td nowrap <% if (!htmlpage.isArchived()) { %> onclick="javascript:window.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&selectedStructure=<%= structureInode %>&inode=<%= contentletInode %>&referer=<%= referer %>'"<%} %>><%= pathToMe %></td>
