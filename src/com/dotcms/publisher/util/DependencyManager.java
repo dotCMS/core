@@ -536,12 +536,40 @@ public class DependencyManager {
 				foldersSet.add(folder.getInode());
 				
 				
-				IHTMLPage workingPage = iden.getAssetType().equals("htmlpage") ? 
-				        APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false) :
-				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, false, 0, user, false));
-				IHTMLPage livePage = iden.getAssetType().equals("htmlpage") ?
-				        APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false) :
-				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, true, 0, user, false));
+				// looking for working version (must exists)
+				IHTMLPage workingPage = null;
+				
+				if(iden.getAssetType().equals("htmlpage")){ 
+					workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
+				}else{
+					Contentlet contentlet = null;
+					try{
+						contentlet = APILocator.getContentletAPI().findContentletByIdentifier(pageId, false, 0, user, false);
+					} catch (DotContentletStateException e) {
+						// content not found message is already displayed on console
+						Logger.debug(this, e.getMessage(),e);
+					}
+					if(contentlet != null)
+						workingPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				}
+				
+				// looking for live version (might not exists)
+				IHTMLPage livePage = null;
+				
+				if(iden.getAssetType().equals("htmlpage")){
+					livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
+				}else{
+					Contentlet contentlet = null;
+					try{
+						contentlet = APILocator.getContentletAPI().findContentletByIdentifier(pageId, true, 0, user, false);
+					} catch (DotContentletStateException e) {
+						// content not found message is already displayed on console
+						Logger.debug(this, e.getMessage(),e);
+					}
+					if(contentlet != null)
+						livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet); 
+				}
+				            
 
 				// working template working page
 				Template workingTemplateWP = null;
