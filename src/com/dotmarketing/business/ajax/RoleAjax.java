@@ -47,7 +47,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -745,7 +745,7 @@ public class RoleAjax {
 		// DOTCMS - 3755
 		if(permissions.get("pages") != null) {
 			int permission = Integer.parseInt(permissions.get("pages"));
-			permissionsToSave.add(new Permission(HTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+			permissionsToSave.add(new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
 		}
 		if(permissions.get("structures") != null) {
 			int permission = Integer.parseInt(permissions.get("structures"));

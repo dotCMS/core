@@ -17,6 +17,7 @@
 <%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
+<%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -112,7 +113,7 @@
 	var containerClassName = '<%= Container.class.getCanonicalName() %>'
 	var templateClassName = '<%= Template.class.getCanonicalName() %>'
 	var templateLayoutClassName = '<%= Template.TEMPLATE_LAYOUTS_CANONICAL_NAME %>'
-	var pageClassName = '<%= HTMLPage.class.getCanonicalName() %>'
+	var pageClassName = '<%= IHTMLPage.class.getCanonicalName() %>'
 	var fileClassName = '<%= File.class.getCanonicalName() %>'
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';

@@ -7,6 +7,9 @@ import java.util.Map;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 
 /** 
  * 	@author Hibernate CodeGenerator
@@ -34,7 +37,7 @@ public class Permission implements Serializable {
 
     /** full constructor */
     public Permission(String type, String inode, String roleid, int permission) {
-    	this.type = type;
+        setType( type );
         this.inode = inode;
         this.roleId = roleid;
         this.permission = permission;
@@ -159,9 +162,17 @@ public class Permission implements Serializable {
 	 * chain of inheritance 
 	 * @param type
 	 */
-	public void setType(String type) {
-		this.type = type;
-	}
+    public void setType ( String type ) {
+
+        if ( type != null && (type.equals( HTMLPage.class.getCanonicalName() ) || type.equals( HTMLPageAsset.class.getCanonicalName() )) ) {
+            /*
+            Required because hibernate on selects is mapping to specific classes and we are
+            trying to apply the same type of permissions to all the HTML pages types we have.
+             */
+            type = IHTMLPage.class.getCanonicalName();
+        }
+        this.type = type;
+    }
 
 	/**
 	 * Returns the type of permission

@@ -26,7 +26,8 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	private static final long serialVersionUID = 1895228885287457403L;
 
 	public static final String ASSET_TYPE_FOLDER = "folder";
-
+	public static final String ASSET_TYPE_HTML_PAGE = "htmlpage";
+	public static final String ASSET_TYPE_CONTENTLET = "contentlet";
 
 	public Identifier() {
 	}
