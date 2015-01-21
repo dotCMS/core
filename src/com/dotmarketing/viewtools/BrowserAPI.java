@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -316,8 +317,15 @@ public class BrowserAPI {
 					if(page instanceof Contentlet) {
 					    pageMap.put("identifier", page.getIdentifier());
 		                pageMap.put("inode", page.getInode());
-		                pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+					    pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+					    
+					    Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet)page).getLanguageId());
+					    
+					    pageMap.put("languageCode", lang.getLanguageCode());
+		                pageMap.put("countryCode", lang.getCountryCode());
 		                pageMap.put("isLocked", page.isLocked());
+		            
+		              
 					}
 					
 					returnList.add(pageMap);

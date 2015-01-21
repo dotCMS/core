@@ -50,8 +50,8 @@ public class PreviewHTMLPageAction extends DotPortletAction {
             boolean contentLocked = false;
             boolean iCanLock = false;
             if("contentlet".equals(ident.getAssetType())) {
-                Contentlet contentlet = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                        APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), false, 0, user, false));
+               
+                Contentlet contentlet = APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().find(inode, user, false));
                 
                 try{
                 	iCanLock = APILocator.getContentletAPI().canLock(contentlet, user);
@@ -115,9 +115,9 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 		// gets html page being previewed
 		IHTMLPage htmlPage = (IHTMLPage) req.getAttribute(WebKeys.HTMLPAGE_EDIT);
 
-		String language = req.getParameter("language");
-		if (!UtilMethods.isSet(language)) {
-			language = req.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+		Long language = null;
+		if (htmlPage instanceof Contentlet) {
+			language = ((Contentlet) htmlPage).getLanguageId();
 		}
 
 		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);

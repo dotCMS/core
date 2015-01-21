@@ -861,16 +861,28 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    		name = shortenString(name, 30)
 	    		var friendlyName = shortenLongWords(asset.friendlyName, 30);
 	    		var modUserName = shortenString(asset.modUserName, 20);
-
+				console.log(asset)
+				var languageIconHTML = (asset.type=='htmlpage' && asset.isContentlet)
+					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode+ ".gif\" width=\"16px\" height=\"11px\" />":""; 
+	    		
 				var html = 	'<tr id="' + asset.inode + '-TR">\n' +
 						   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +
-							'		<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-							'			<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-							'			&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>\n' +
-							'		</a>\n' +
+									'<table style="width:100%">' +
+						   				'<tr>' +
+						   					'<td style="padding:0px; border-top:0px">' +
+												'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+												'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+												'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+												'</a>' +
+											'</td>' +
+											'<td style="text-align:right; border-top:0px">'+languageIconHTML+'</td>' +
+										' </tr>' +
+									'</table>' +
 							'	</td>\n' +
 							'	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
 							'		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
+							
+							
 				if (asset.showOnMenu > 0) {
 					html = html + '>';
 				}

@@ -384,6 +384,8 @@ public class VersionableAPIImpl implements VersionableAPI {
                 info.setWorkingInode(versionable.getInode());
                 vfac.saveContentletVersionInfo(info, true);
             }
+            
+            CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(info.getIdentifier(),cont.getLanguageId());
         }
         else {
             VersionInfo info = vfac.findVersionInfoFromDb(ident);
