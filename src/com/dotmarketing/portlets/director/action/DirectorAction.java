@@ -197,7 +197,7 @@ public class DirectorAction extends DotPortletAction {
     				params.put("cmd",new String[] { "new" });
     				params.put("selectedStructure", new String[] { type });
     				params.put("lang", new String[] { Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) });
-    				params.put("referer", referer);
+    				params.put("referer", new String[] { referer });
 				}
 				else {
 				    params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});
