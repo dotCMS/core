@@ -72,12 +72,10 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
      //Events Handlers
 
-	 //Displaying current host
-<%
-		com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request);
-%>
      var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
      var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+     
+     var selectedLang = '<%= APILocator.getLanguageAPI().getDefaultLanguage().getId() %>';
 
 	//Dragging Events
 
@@ -628,7 +626,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    	Element.show('loadingContentListing');
 
 		    selectedFolder = folder.inode;
-	     	BrowserAjax.openFolderContent (folder.inode, '', showArchived, selectFolderContentCallBack);
+	     	BrowserAjax.openFolderContent (folder.inode, '', showArchived, selectedLang, selectFolderContentCallBack);
 		}
 
 		if(folder.open) {
@@ -687,15 +685,18 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
 		    //Showing the loading message
 	    	Element.show('loadingContentListing');
-	    	BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectFolderContentCallBack);
+	    	BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
 	    }
 	 }
 
 	 //Left click over folder left hand side
-     function treeFolderSelected(inode) {
+     function treeFolderSelected(inode, lang) {
 
-     	if (selectedFolder == inode)
+     	if (selectedFolder == inode && selectedLang == lang)
      		return;
+     	
+     	if(!lang)
+     		lang = selectedLang;
 
      	//Changing icons and css classes
 	    if (isInodeSet(selectedFolder) && selectedFolder!=activeHost &&  $(selectedFolder + '-TreeREF') != null) {
@@ -716,7 +717,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    Element.show('loadingContentListing');
 
 	    //Calling ajax
-     	BrowserAjax.openFolderContent (inode, '', showArchived, selectFolderContentCallBack);
+     	BrowserAjax.openFolderContent (inode, '', showArchived, lang, selectFolderContentCallBack);
 
      	//Opening folder at the left side
      	if(!openFolders.contains(inode)) {
@@ -859,25 +860,18 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    		//processing asset description and name to avoid long words that break the column width
 	    		name = shortenLongWords(name, 30)
 	    		name = shortenString(name, 30)
-	    		var friendlyName = shortenLongWords(asset.friendlyName, 30);
+	    		var title = shortenLongWords(asset.title, 30);
 	    		var modUserName = shortenString(asset.modUserName, 20);
-				console.log(asset)
-				var languageIconHTML = (asset.type=='htmlpage' && asset.isContentlet)
-					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode+ ".gif\" width=\"16px\" height=\"11px\" />":""; 
+				var languageHTML = (asset.type=='htmlpage' && asset.isContentlet)
+					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode + 
+							".gif\" width=\"16px\" height=\"11px\" /><span id='"+asset.inode+"-LangSPAN'>&nbsp;"+asset.languageCode+ "_" +asset.countryCode+"</span>":""; 
 	    		
 				var html = 	'<tr id="' + asset.inode + '-TR">\n' +
 						   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +
-									'<table style="width:100%">' +
-						   				'<tr>' +
-						   					'<td style="padding:0px; border-top:0px">' +
-												'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
-												'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
-												'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
-												'</a>' +
-											'</td>' +
-											'<td style="text-align:right; border-top:0px">'+languageIconHTML+'</td>' +
-										' </tr>' +
-									'</table>' +
+									'<a class="assetRef" id="' + asset.inode + '-DIV" href="javascript:;">\n' +
+									'<span class="uknIcon ' + assetIcon + '" id="' + asset.inode + '-ContentIcon"></span>\n' +
+									'&nbsp;<span id="' + asset.inode + '-NameSPAN" >' + name + '</span>' +
+									'</a>' +
 							'	</td>\n' +
 							'	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
 							'		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
@@ -894,7 +888,15 @@ dojo.require("dotcms.dojo.push.PushHandler");
 							'	<td class="statusTD" id="' + asset.inode + '-StatusTD">\n' +
 							getStatusHTML (asset) +
 							'	</td>\n' +
-							'	<td class="descriptionTD" id="' + asset.inode + '-StatusTD">' + friendlyName + '</td>\n' +
+							'	<td style="padding:0px" class="descriptionTD" id="' + asset.inode + '-DescriptionTD">' +
+									'<table style="width:100%;">' +
+							   				'<tr style="height:15px">' +
+						   					'<td style="padding:0px; border-top:0px; width:60px;">'+ languageHTML +
+											'</td>' +
+											'<td style="text-align:left; border-top:0px">'+title+'</td>' +
+										' </tr>' +
+									'</table>' + 
+								'</td>\n' +
 							'	<td class="modUserTD" id="' + asset.inode + '-ModUserTD">' + modUserName + '</td>\n' +
 							'	<td class="modDateTD" id="' + asset.inode + '-ModDateTD">' + assetPrettyDate + '</td>\n' +
 							'</tr>\n';
@@ -1053,7 +1055,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    //Showing the loading message
 	    Element.show('loadingContentListing');
 
-	 	BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectFolderContentCallBack);
+	 	BrowserAjax.openFolderContent (selectedFolder, '', showArchived, selectedLang, selectFolderContentCallBack);
      }
 
      function changeContentSort (sortField) {
@@ -1064,7 +1066,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		    //Showing the loading message
 		    Element.show('loadingContentListing');
 
-		 	BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, selectFolderContentCallBack);
+		 	BrowserAjax.openFolderContent (selectedFolder, sortField, showArchived, selectedLang, selectFolderContentCallBack);
 		 }
 	 }
 

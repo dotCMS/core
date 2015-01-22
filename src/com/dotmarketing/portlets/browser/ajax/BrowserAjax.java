@@ -243,7 +243,7 @@ public class BrowserAjax {
 
 
     @SuppressWarnings("unchecked")
-	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived) throws DotHibernateException, DotSecurityException, DotDataException {
+	public List<Map<String, Object>> openFolderContent (String parentInode, String sortBy, boolean showArchived, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
         activeFolderInode = parentInode;
         this.lastSortBy = sortBy;
@@ -255,12 +255,12 @@ public class BrowserAjax {
     		this.lastSortBy = sortBy;
     	}
 
-        Map<String, Object> resultsMap = getFolderContent(parentInode, 0, -1, "", null, null, showArchived, false, false, this.lastSortBy, this.lastSortDirectionDesc);
+        Map<String, Object> resultsMap = getFolderContent(parentInode, 0, -1, "", null, null, showArchived, false, false, this.lastSortBy, this.lastSortDirectionDesc, languageId);
         return (List<Map<String, Object>>) resultsMap.get("list");
     }
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
-			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks) throws DotHibernateException, DotSecurityException, DotDataException {
+			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
@@ -275,7 +275,7 @@ public class BrowserAjax {
 			session.setAttribute(SELECTED_BROWSER_PATH_OBJECT, selectedBrowserPathObject);
 		}
 
-		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks);
+		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
 	}
 
 	private String[] getSelectedBrowserPathArray(String folderId) {
@@ -308,13 +308,13 @@ public class BrowserAjax {
 	}
 
 	public Map<String, Object> getFolderContent (String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
-			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc) throws DotHibernateException, DotSecurityException, DotDataException {
+			List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, long languageId) throws DotHibernateException, DotSecurityException, DotDataException {
 
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
 
-		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc);
+		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
 
 	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
