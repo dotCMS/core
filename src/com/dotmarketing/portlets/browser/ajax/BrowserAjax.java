@@ -276,7 +276,7 @@ public class BrowserAjax {
 			session.setAttribute(SELECTED_BROWSER_PATH_OBJECT, selectedBrowserPathObject);
 		}
 		
-		session.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+		req.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
 	}
@@ -317,7 +317,7 @@ public class BrowserAjax {
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
 		
-		req.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+		req.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, Long.toString(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
