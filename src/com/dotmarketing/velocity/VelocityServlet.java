@@ -144,9 +144,6 @@ public abstract class VelocityServlet extends HttpServlet {
         RequestWrapper request  = new RequestWrapper( req );
         request.setRequestUri(uri);
 		
-
-        
-        
 		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
@@ -309,12 +306,13 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 		request.setAttribute("idInode", id.getInode());
-
+		
 		IHTMLPage htmlPage; 
 		if(id.getAssetType().equals("contentlet")) {
+			
 		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
 		                APILocator.getContentletAPI()
-		                 .findContentletByIdentifier(id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+		                 .findContentletByIdentifier(id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
 		}
 		else {
     		htmlPage = (IHTMLPage) APILocator.getVersionableAPI()
@@ -414,7 +412,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		    if(ident.getAssetType().equals("contentlet")) {
     		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
     		                APILocator.getContentletAPI().findContentletByIdentifier(
-    		                  ident.getId(), true, 0, APILocator.getUserAPI().getSystemUser(), false));
+    		                  ident.getId(), true, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
     		    }
     		    else {
     		        page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
@@ -563,7 +561,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		if(id.getAssetType().equals("contentlet")) {
 		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
                          APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
 			context.put("dotPageContent", htmlPage);
 		}
 		else {
@@ -808,7 +806,7 @@ public abstract class VelocityServlet extends HttpServlet {
         if(id.getAssetType().equals("contentlet")) {
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
                          APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
     		context.put("dotPageContent", htmlPage);
         }
         else {
@@ -1104,7 +1102,7 @@ public abstract class VelocityServlet extends HttpServlet {
         if(id.getAssetType().equals("contentlet")) {
             htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
                          APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, 0, APILocator.getUserAPI().getSystemUser(), false));
+                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
         }
         else {
             htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
@@ -1210,7 +1208,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		try {
 		    if(id.getAssetType().equals("contentlet")) {
 		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-		                APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, 0, user, true));
+		                APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, getLanguageId(request), user, true));
 		    }
 		    else {
 		        page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user, true);
@@ -1228,6 +1226,18 @@ public abstract class VelocityServlet extends HttpServlet {
 		sb.append(page.getInode());
 		sb.append("_" + page.getModDate().getTime());
 		return sb.toString();
+	}
+	
+	private static long getLanguageId(HttpServletRequest request) {
+		long languageId = 0;
+		
+		try {
+			languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
+		} catch(NumberFormatException e) {
+			Logger.info(VelocityServlet.class, "Bad languageId passed in");
+		}
+		
+		return languageId;
 	}
 
 }

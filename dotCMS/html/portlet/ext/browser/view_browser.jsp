@@ -84,6 +84,10 @@
 <%
 Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 String languageId = String.valueOf(defaultLang.getId());
+
+if(request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)!= null){ 
+	languageId = (String) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+}
 List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
 %>

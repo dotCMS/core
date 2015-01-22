@@ -64,6 +64,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.BrowserAPI;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -274,6 +275,8 @@ public class BrowserAjax {
 			} catch (Exception e) {}
 			session.setAttribute(SELECTED_BROWSER_PATH_OBJECT, selectedBrowserPathObject);
 		}
+		
+		session.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
 	}
@@ -313,6 +316,8 @@ public class BrowserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
+		
+		req.getSession().setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
