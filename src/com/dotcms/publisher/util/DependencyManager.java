@@ -518,8 +518,10 @@ public class DependencyManager {
 			List<String> idsToWork=new ArrayList<String>();
 			idsToWork.addAll(htmlPagesSet);
 			for( String contId : contentsSet) {
-			    if(APILocator.getContentletAPI().findContentletByIdentifier(contId, false, 0, user, false)
-			            .getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				
+				List<Contentlet> c = APILocator.getContentletAPI().search("+identifier:"+contId, 0, 0, "moddate", user, false);
+				
+			    if(c!=null && !c.isEmpty() && c.get(0).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
 			        idsToWork.add(contId);
 			    }
 			}
@@ -538,10 +540,12 @@ public class DependencyManager {
 				
 				IHTMLPage workingPage = iden.getAssetType().equals("htmlpage") ? 
 				        APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false) :
-				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, false, 0, user, false));
+				            APILocator.getHTMLPageAssetAPI().fromContentlet(
+				            		APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:false", 0, 0, "moddate", user, false).get(0));
 				IHTMLPage livePage = iden.getAssetType().equals("htmlpage") ?
 				        APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false) :
-				            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(pageId, true, 0, user, false));
+				        	APILocator.getHTMLPageAssetAPI().fromContentlet(
+				            		APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false).get(0));
 
 				// working template working page
 				Template workingTemplateWP = null;

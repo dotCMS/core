@@ -347,7 +347,7 @@
 
         </div>
 
-        <div class="buttonBoxRight">
+        <div class="buttonBoxRightTopPadding">
              <div id="addNewMenu"></div>
         </div>
 

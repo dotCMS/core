@@ -74,7 +74,7 @@
 
 </script>
 
-<div id="addNewDropDownButtonDiv" class="buttonBoxRightSiteBrowser">
+<div id="addNewDropDownButtonDiv" class="buttonBoxRightTopPadding">
 </div>
 	
 <div class="buttonBoxLeft">
@@ -91,7 +91,7 @@ if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROW
 List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
 %>
-<div id="combo_zone2" class="buttonBoxRightSiteBrowser" style="margin-right:120px;">
+<div id="combo_zone2" class="buttonBoxRightTopPadding" style="margin-right:120px;">
 	<input id="language_id" />
 </div>
 <%@include file="../contentlet/languages_select_inc.jsp" %>
