@@ -82,15 +82,6 @@
 			dataType:'constant',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.hidden")) %>'
 		},{
-
-			id: 'host or folder',
-			displayName: '<%= LanguageUtil.get(pageContext, "Host-Folder") %>',
-			label: '<span class="folderGlobeIcon"></span> <%= LanguageUtil.get(pageContext, "Host-Folder") %>',
-			imageurl: '/html/images/icons/folder-open-globe.png',
-			show:['elementSelect','required','labelRow','displayType','hintText','userSearchable'],
-			dataType:'system_field',
-			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.host or folder")) %>'
-		},{
 			id: 'image',
 			displayName: '<%= LanguageUtil.get(pageContext, "Image") %>',
 			label: '<span class="imageIcon"></span> <%= LanguageUtil.get(pageContext, "Image") %>',
@@ -147,6 +138,14 @@
 			show:['elementSelect','required','labelRow','valueRow','textAreaValues','displayType','defaultText','hintText','userSearchable','indexed','listed','dataTypeRow','unique','radioText','radioBool','radioDecimal','radioNumber'],
 			dataType:'text',
 			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.select")) %>'
+		},{
+			id: 'host or folder',
+			displayName: '<%= LanguageUtil.get(pageContext, "Host-Folder") %>',
+			label: '<span class="folderGlobeIcon"></span> <%= LanguageUtil.get(pageContext, "Host-Folder") %>',
+			imageurl: '/html/images/icons/folder-open-globe.png',
+			show:['elementSelect','required','labelRow','displayType','hintText','userSearchable'],
+			dataType:'system_field',
+			helpText:'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "field.type.help.host or folder")) %>'
 		},{
 			id: 'tab_divider',
 			displayName: '<%= LanguageUtil.get(pageContext, "Tab-Divider") %>',
