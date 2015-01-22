@@ -16,6 +16,7 @@ public class PushContentWrapper implements ContentWrapper {
     private ContentletVersionInfo info;
     private Contentlet content;
     private Identifier id;
+    private List<Map<String, Object>> multiTree;
     private List<Map<String, Object>> tree;
     private List<Tag> tags;
     private Operation operation;
@@ -76,5 +77,13 @@ public class PushContentWrapper implements ContentWrapper {
 	public void setLanguage(Language language) {
 		this.language = language;
 	}
+
+    public List<Map<String, Object>> getMultiTree () {
+        return multiTree;
+    }
+
+    public void setMultiTree ( List<Map<String, Object>> multiTree ) {
+        this.multiTree = multiTree;
+    }
 
 }
