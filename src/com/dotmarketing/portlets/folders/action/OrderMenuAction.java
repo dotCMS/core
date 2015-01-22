@@ -31,6 +31,8 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
@@ -246,7 +248,7 @@ public class OrderMenuAction extends DotPortletAction {
 						((WebAsset) asset).setSortOrder(i);
 						ret.add(((WebAsset) asset));
 					}
-					if (APILocator.getFileAssetAPI().isFileAsset(c)) {
+					if (APILocator.getFileAssetAPI().isFileAsset(c) || asset.getType().equals("contentlet")) {
 						ret.add(c);
 						c.setSortOrder(i);
 						APILocator.getContentletAPI().refresh(c);
