@@ -538,15 +538,40 @@ public class DependencyManager {
 				foldersSet.add(folder.getInode());
 				
 				
-				IHTMLPage workingPage = iden.getAssetType().equals("htmlpage") ? 
-				        APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false) :
-				            APILocator.getHTMLPageAssetAPI().fromContentlet(
-				            		APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:false", 0, 0, "moddate", user, false).get(0));
-				IHTMLPage livePage = iden.getAssetType().equals("htmlpage") ?
-				        APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false) :
-				        	APILocator.getHTMLPageAssetAPI().fromContentlet(
-				            		APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false).get(0));
-
+				// looking for working version (must exists)
+				IHTMLPage workingPage = null;
+				
+				if(iden.getAssetType().equals("htmlpage")){ 
+					workingPage = APILocator.getHTMLPageAPI().loadWorkingPageById(pageId, user, false);
+				}else{
+					Contentlet contentlet = null;
+					try{
+						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +working:true", 0, 0, "moddate", user, false).get(0);
+					} catch (DotContentletStateException e) {
+						// content not found message is already displayed on console
+						Logger.debug(this, e.getMessage(),e);
+					}
+					if(contentlet != null)
+						workingPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				}
+				
+				// looking for live version (might not exists)
+				IHTMLPage livePage = null;
+				
+				if(iden.getAssetType().equals("htmlpage")){
+					livePage = APILocator.getHTMLPageAPI().loadLivePageById(pageId, user, false);
+				}else{
+					Contentlet contentlet = null;
+					try{
+						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false).get(0);
+					} catch (DotContentletStateException e) {
+						// content not found message is already displayed on console
+						Logger.debug(this, e.getMessage(),e);
+					}
+					if(contentlet != null)
+						livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet); 
+				}
+				            
 				// working template working page
 				Template workingTemplateWP = null;
 				// live template working page

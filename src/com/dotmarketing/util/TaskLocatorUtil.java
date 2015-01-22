@@ -96,6 +96,7 @@ import com.dotmarketing.startup.runonce.Task03100HTMLPageAsContentChanges;
 import com.dotmarketing.startup.runonce.Task03055RemoveLicenseManagerPortlet;
 import com.dotmarketing.startup.runonce.Task03060AddClusterServerAction;
 import com.dotmarketing.startup.runonce.Task03065AddHtmlPageIR;
+import com.dotmarketing.startup.runonce.Task03105HTMLPageGenericPermissions;
 
 
 public class TaskLocatorUtil {
@@ -195,6 +196,7 @@ public class TaskLocatorUtil {
         ret.add(Task03060AddClusterServerAction.class);
 		ret.add(Task03065AddHtmlPageIR.class);
         ret.add(Task03100HTMLPageAsContentChanges.class);
+        ret.add(Task03105HTMLPageGenericPermissions.class);
         return ret;
     }
 

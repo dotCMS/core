@@ -125,6 +125,8 @@ public class EditFieldAction extends DotPortletAction {
 										.isElementConstant(field))
 								|| ((structure.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) && fAPI
 										.isElementConstant(field))
+                                || ((structure.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) && fAPI
+										.isElementConstant(field))
 								|| ((structure.getStructureType() == Structure.STRUCTURE_TYPE_FORM) && fAPI
 										.isElementConstant(field))) {
 							field.setValues(fieldForm.getValues());

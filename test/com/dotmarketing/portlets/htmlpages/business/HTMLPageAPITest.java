@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -230,7 +231,7 @@ public class HTMLPageAPITest extends TestBase {
     		role = roleAPI.save(role);
 
     		List<Permission> newSetOfPermissions = new ArrayList<Permission>();
-    		newSetOfPermissions.add(new Permission(HTMLPage.class.getCanonicalName(), folderWithPerms.getPermissionId(), role.getId(),
+    		newSetOfPermissions.add(new Permission(IHTMLPage.class.getCanonicalName(), folderWithPerms.getPermissionId(), role.getId(),
     				PermissionAPI.PERMISSION_READ, true));
 
     		PermissionAPI permAPI = APILocator.getPermissionAPI();
@@ -245,7 +246,7 @@ public class HTMLPageAPITest extends TestBase {
 
     		Permission pageReadPerm = assetPermissions.get(0);
 
-    		assertTrue(pageReadPerm.getType().equals(HTMLPage.class.getCanonicalName()) && pageReadPerm.getPermission()==1);
+    		assertTrue(pageReadPerm.getType().equals(IHTMLPage.class.getCanonicalName()) && pageReadPerm.getPermission()==1);
 
     	} catch (Exception e) {
     		try {

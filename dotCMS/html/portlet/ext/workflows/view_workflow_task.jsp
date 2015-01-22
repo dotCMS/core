@@ -35,6 +35,8 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
+<%@page import="com.dotmarketing.exception.DotSecurityException"%>
+<%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 
 <%
 
@@ -232,7 +234,18 @@
 </style>
 
 <div class="yui-ge" style="margin:20px;">
-
+<%
+	boolean hasPermission = false;
+	ContentletAPI conApi = APILocator.getContentletAPI();
+	try {
+		Contentlet content = conApi.find(contentlet.getInode(),
+				user, false);
+		hasPermission = true;
+	} catch (DotSecurityException dse) {
+		hasPermission = false;
+	}
+	if (hasPermission) {
+%>
 <!-- START Task Overview -->
 	<div class="yui-u first">
 
@@ -545,6 +558,30 @@
 	<!-- END History Tab -->
 </div>
 </div>
+<%
+	} else {
+%>
+	<table border="0" cellpadding="4" cellspacing="0" width="100%" height="300">
+	    <tr>
+	        <td align="center">
+	            <table border="0" cellpadding="8" cellspacing="0">
+	                <tr>
+	                    <td>
+	                        <center>
+	                            <%= LanguageUtil.get(pageContext, "dont-have-permissions-msg") %>
+	                            <br>&nbsp;<br>
+	                            <button dojoType="dijit.form.Button" onclick="history.back();" iconClass="cancelIcon">
+	                                <%= LanguageUtil.get(pageContext, "try-again") %>
+	                        </button>
+	                    </td>
+	                </tr>
+	            </table>
+	        </td>
+	    </tr>
+	</table>
+<%
+	}
+%>
 </liferay:box>
 
 <div id="savingContentDialog" dojoType="dijit.Dialog" disableCloseButton="true" title="<%= LanguageUtil.get(pageContext, "Workflow") %>" style="display: none;">

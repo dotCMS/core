@@ -130,25 +130,25 @@ function validate() {
 	<div id="wfDivWrapperForDojo">
 		<div style="margin:auto;width:500px;">
 			<div class="fieldWrapper">
-				<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</div>
+				<div class="fieldName"><%= LanguageUtil.get(pageContext, "Perform-Workflow") %>:</div>
 				<div class="fieldValue"><%=action.getName() %></div>
 				<div class="clear"></div>
 			</div>
 			<%if(action.isCommentable()){ %>
 				<div class="fieldWrapper">
-					<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
+					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
 					<div class="fieldValue"><textarea name="taskCommentsAux" id="taskCommentsAux" cols=40 rows=8 style="min-height:100px;" dojoType="dijit.form.Textarea"></textarea></div>
 					<div class="clear"></div>
 				</div>
 			<%}else{ %>
 				<div class="fieldWrapper">
-					<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
+					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Comments") %>: </div>
 					<div class="fieldValue"><%= LanguageUtil.get(pageContext, "None") %></div>
 					<div class="clear"></div>
 				</div>
 			<%} %>
 				<div class="fieldWrapper">
-					<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Assignee") %>: </div>
+					<div class="fieldName"><%= LanguageUtil.get(pageContext, "Assignee") %>: </div>
 					<div class="fieldValue">
 						<%if(action.isAssignable()){ %>
 							<select id="taskAssignmentAux" name="taskAssignmentAux" dojoType="dijit.form.FilteringSelect"
@@ -168,7 +168,7 @@ function validate() {
 				%>
 
 					<div class="fieldWrapper">
-						<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "Publish") %>: </div>
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "Publish") %>: </div>
 						<div class="fieldValue">
 							<input
 								type="text"
@@ -189,7 +189,7 @@ function validate() {
 						<div class="clear"></div>
 					</div>
 					<div class="fieldWrapper">
-						<div class="fieldName" style="width: 120px"><%= LanguageUtil.get(pageContext, "publisher_Expire") %>: </div>
+						<div class="fieldName"><%= LanguageUtil.get(pageContext, "publisher_Expire") %>: </div>
 						<div class="fieldValue">
 							<input
 								type="text"
@@ -213,7 +213,7 @@ function validate() {
 						<div class="clear"></div>
 					</div>
 					<div class="fieldWrapper">
-						<div class="fieldName" style="width: 120px">
+						<div class="fieldName" >
 							<%=LanguageUtil.get(pageContext,
 									"publisher_dialog_choose_environment")%>:
 						</div>

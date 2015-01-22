@@ -43,8 +43,9 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -402,9 +403,24 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenHTMLPageSQL =
-		"select distinct identifier.id from identifier where " +
-		" asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ?";
+    private final String selectChildrenHTMLPageSQL =
+            "select distinct li.id from identifier li where" +
+                " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
+            " UNION ALL" +
+                " SELECT distinct li.id FROM identifier li" +
+                    " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " AND li.host_inode = ? and li.parent_path like ?";
+    private final String selectChildrenHTMLPageOnPermissionsSQL =
+            "select distinct li.id from identifier li" +
+                    " JOIN permission_reference ON permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = li.id" +
+                    " AND li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
+            " UNION ALL" +
+                    " SELECT distinct li.id FROM identifier li" +
+                    " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " JOIN permission_reference ON permission_type = '" + IHTMLPage.class.getCanonicalName() + "' and asset_id = li.id" +
+                    " AND li.host_inode = ? and li.parent_path like ?";
 
 	/*
 	 * To load html pages identifiers that are children of a host and have inheritable permissions
@@ -412,10 +428,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
-        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) where " +
-        " asset_type='htmlpage' and identifier.host_inode = ? and identifier.parent_path like ? " +
-        " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
+    private final String selectChildrenHTMLPageWithIndividualPermissionsSQL =
+            "select distinct li.id from identifier li join permission on (inode_id = li.id) where " +
+                    " li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ? " +
+                    " and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+            " UNION ALL" +
+                    " SELECT distinct li.id from identifier li" +
+                        " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                        " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                        " JOIN permission lp ON (lp.inode_id = li.id) " +
+                        " AND li.host_inode = ? and li.parent_path like ? n" +
+                        " AND lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
 	 * To remove all permissions of html pages of a given parent folder
@@ -437,15 +460,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 3. host the pages belong to
 	 * 4. same as 2
 	 */
-	private final String deleteHTMLPageReferencesSQL =
-			"delete from permission_reference where exists (" +
-			"	" + selectChildrenHTMLPageSQL + " and" +
-			"	permission_type = '" + HTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id)";
+    private final String deleteHTMLPageReferencesSQL =
+            "delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")";
 
 	private final String deleteHTMLPageReferencesOnAddSQL =
-		"delete from permission_reference where exists (" +
-		selectChildrenHTMLPageSQL + " and " +
-		" permission_type = '" + HTMLPage.class.getCanonicalName() + "' and asset_id = identifier.id) " +
+		"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") " +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
 			" from folder join identifier on (folder.identifier = identifier.id) " +
@@ -477,13 +496,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"select permission_reference_seq.NEXTVAL, ":
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
 				"select nextval('permission_reference_seq'), ") +
-				"	identifier.id, ?, '" + HTMLPage.class.getCanonicalName() + "' " +
+				"	identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		identifier.id not in (" +
 		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
-		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + HTMLPage.class.getCanonicalName() + "'" +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 				"		) and " +
 				"		identifier.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
@@ -705,11 +724,15 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 1. The host id
 	 * 2. Parent folder like path E.G. '/about/%' pass '%' if you want all from the host
 	 */
-	private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
-        "select distinct identifier.id from identifier join permission on (inode_id = identifier.id) " +
-        " where asset_type='contentlet' and permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
-        " and identifier.id <> identifier.host_inode and identifier.host_inode = ? " +
-        " and identifier.parent_path like ?";
+    private final String selectChildrenContentWithIndividualPermissionsByPathSQL =
+            "select distinct li.id from identifier li" +
+                " join permission lp on (lp.inode_id = li.id) " +
+                " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                " INNER JOIN structure ls ON (lc.structure_inode = ls.inode)" +
+                " where li.asset_type='contentlet' and lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "' " +
+                " AND ls.structuretype <> " + Structure.STRUCTURE_TYPE_HTMLPAGE +
+                " and li.id <> li.host_inode and li.host_inode = ? " +
+                " and li.parent_path like ?";
 
 	/*
 	 * To load content identifiers that are of the type of a structure
@@ -1404,7 +1427,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						}
 
 						ran03=true;
-					} else if (p.getType().equals(HTMLPage.class.getCanonicalName()) && !ran04) {
+					} else if (p.getType().equals(IHTMLPage.class.getCanonicalName()) && !ran04) {
 
 						// Update html page references
 
@@ -1414,6 +1437,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(parentHost.getPermissionId());
 						// Under any folder
 						dc.addParam(path + "%");
+                        dc.addParam(parentHost.getPermissionId());
+                        dc.addParam(path + "%");
 						dc.addParam(parentHost.getPermissionId());
 						dc.addParam(path + "%");
 						dc.addParam(path);
@@ -1427,6 +1452,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.addParam(parentHost.getPermissionId());
 						// Under any folder
 						dc.addParam(path + "%");
+                        dc.addParam(parentHost.getPermissionId());
+                        dc.addParam(path + "%");
 						dc.addParam(path + "%");
 						dc.loadResult();
 
@@ -1436,6 +1463,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     						dc.setSQL(selectChildrenHTMLPageSQL,MAX_IDS_CLEAR-idsToClear.size());
     						dc.addParam(parentHost.getPermissionId());
     						dc.addParam(path + "%");
+                            dc.addParam(parentHost.getPermissionId());
+                            dc.addParam(path + "%");
     						idsToClear.addAll(dc.loadResults());
 						}
 
@@ -2368,10 +2397,9 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				HibernateUtil persistenceService = new HibernateUtil();
 
 				if(p.isBitPermission()) {
-					Permission pToDel = null;
 
-					pToDel = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
-					if( pToDel != null )
+                    Permission pToDel = findPermissionByInodeAndRole(p.getInode(), p.getRoleId(), p.getType());
+					if( pToDel != null && InodeUtils.isSet( pToDel.getInode() ) )
 					{
 						HibernateUtil.delete(pToDel);
 						Logger.debug(this.getClass(), String.format("deletePermission: %s deleted successful!", p.toString()));
@@ -2389,7 +2417,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					persistenceService.setParam(p.getRoleId());
 					persistenceService.setParam(p.getType());
 					Permission bitPermission = (Permission) persistenceService.load();
-					if (bitPermission != null) {
+					if (bitPermission != null && InodeUtils.isSet( bitPermission.getInode() ) ) {
 						bitPermission.setPermission((bitPermission.getPermission() ^ p.getPermission()) & bitPermission.getPermission());
 						if (bitPermission.getPermission() == 0)
 							HibernateUtil.delete(bitPermission);
@@ -2439,16 +2467,20 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					type = Host.class.getCanonicalName();
 				}else if(permissionable instanceof FileAsset ||
 				        (permissionable instanceof Contentlet &&
-				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)){
-				    type = File.class.getCanonicalName();
-				}else if(permissionable instanceof Event){
+				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)) {
+                    type = File.class.getCanonicalName();
+                } else if ( permissionable instanceof IHTMLPage ||
+                        (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                    type = IHTMLPage.class.getCanonicalName();
+                }else if(permissionable instanceof Event){
 					type = Contentlet.class.getCanonicalName();
 				}else if(permissionable instanceof Identifier){
 					Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
 					Logger.error(this, "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
 					if(perm!=null){
-						if(perm instanceof HTMLPage){
-							type = HTMLPage.class.getCanonicalName();
+                        if ( perm instanceof IHTMLPage ||
+                                (perm instanceof Contentlet && ((Contentlet) perm).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
+                            type = IHTMLPage.class.getCanonicalName();
 						}else if(perm instanceof Container){
 							type = Container.class.getCanonicalName();
 						}else if(perm instanceof File){
@@ -2741,16 +2773,22 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.setSQL(deleteHTMLPageReferencesSQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
+            dc.addParam(host.getPermissionId());
+            dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			dc.setSQL(deleteHTMLPagePermissionsSQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
+            dc.addParam(host.getPermissionId());
+            dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Pointing the children containers to reference the current host
 			dc.setSQL(insertHTMLPageReferencesSQL);
 			dc.addParam(permissionable.getPermissionId());
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
+            dc.addParam(host.getPermissionId());
+            dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Retrieving the list of htmlpages changed to clear their caches
@@ -2758,6 +2796,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     			dc.setSQL(selectChildrenHTMLPageSQL, MAX_IDS_CLEAR-idsToClear.size());
     			dc.addParam(host.getPermissionId());
     			dc.addParam(isHost?"%":folderPath+"%");
+                dc.addParam(host.getPermissionId());
+                dc.addParam(isHost?"%":folderPath+"%");
     			idsToClear.addAll(dc.loadResults());
 			}
 
@@ -3169,18 +3209,17 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		}
 
 		//HTML pages
-
-		inheritablePermission = filterInheritablePermission(allPermissions, permissionsPermissionable.getPermissionId(),
-				HTMLPage.class.getCanonicalName(), role.getId());
+        inheritablePermission = filterInheritablePermission( allPermissions, permissionsPermissionable.getPermissionId(),
+                IHTMLPage.class.getCanonicalName(), role.getId() );
 
 		//Assigning inheritable permissions to the permissionable if needed
 		List<Permission> permissionablePagesPermissions = filterOnlyInheritablePermissions(permissionablePermissions, permissionable.getPermissionId(),
-				HTMLPage.class.getCanonicalName());
+				IHTMLPage.class.getCanonicalName());
 		if(permissionablePagesPermissions.size() > 0) {
 			Permission permissionToUpdate = filterInheritablePermission(permissionablePermissions, permissionsPermissionable.getPermissionId(),
-					HTMLPage.class.getCanonicalName(), role.getId());
+					IHTMLPage.class.getCanonicalName(), role.getId());
 			if(permissionToUpdate == null) {
-				permissionToUpdate = new Permission(HTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
+				permissionToUpdate = new Permission(IHTMLPage.class.getCanonicalName(), permissionable.getPermissionId(), role.getId(), 0, true);
 			}
 			if(inheritablePermission != null)
 				permissionToUpdate.setPermission(inheritablePermission.getPermission());
@@ -3192,17 +3231,32 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		dc.setSQL(selectChildrenHTMLPageWithIndividualPermissionsSQL);
 		dc.addParam(host.getPermissionId());
 		dc.addParam(isHost ? "%" : folderPath + "%");
+        dc.addParam(host.getPermissionId());
+        dc.addParam(isHost ? "%" : folderPath + "%");
 		idsToUpdate = dc.loadResults();
-		HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
 		permission = 0;
 		if (inheritablePermission != null) {
 			permission = inheritablePermission.getPermission();
 		}
 		for (Map<String, String> idMap : idsToUpdate) {
 			String id = idMap.get("id");
-			Permissionable childPermissionable;
+			Permissionable childPermissionable = null;
 			try {
-				childPermissionable = pageAPI.loadWorkingPageById(id, systemUser, false);
+
+                //Find the identifier related to this Permissionable
+                Identifier identifier = APILocator.getIdentifierAPI().find( id );
+                if ( identifier != null ) {
+                    if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_HTML_PAGE ) ) {
+                        HTMLPageAPI pageAPI = APILocator.getHTMLPageAPI();
+                        childPermissionable = pageAPI.loadWorkingPageById( id, systemUser, false );
+                    } else if ( identifier.getAssetType().equals( Identifier.ASSET_TYPE_CONTENTLET ) ) {
+                        HTMLPageAssetAPI htmlPageAssetAPI = APILocator.getHTMLPageAssetAPI();
+                        //Get the contentlet and the HTMLPage asset object related to the given permissionable id
+                        Contentlet pageWorkingVersion = APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false );
+                        childPermissionable = htmlPageAssetAPI.fromContentlet( pageWorkingVersion );
+                    }
+                }
+
 			} catch (DotSecurityException e) {
 				Logger.error(PermissionBitFactoryImpl.class, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);

@@ -149,7 +149,7 @@
                                             inode = contentlet.getInode();
                                             structureName = contentlet.getStructure().getName();
                                         }
-                                    } else {
+                                    } else if (!assetType.equals("category")) {
                                         title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
                                         if (title.equals( assetType )) {
                                             title = "";

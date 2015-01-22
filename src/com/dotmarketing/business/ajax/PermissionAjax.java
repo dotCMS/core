@@ -40,7 +40,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -231,7 +231,7 @@ public class PermissionAjax {
 				}
 				String pagesPermission = permission.get("pagesPermission");
 				if(pagesPermission != null) {
-					newSetOfPermissions.add(new Permission(HTMLPage.class.getCanonicalName(), asset.getPermissionId(), roleId,
+					newSetOfPermissions.add(new Permission(IHTMLPage.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(pagesPermission), true));
 				}
 				String foldersPermission = permission.get("foldersPermission");
