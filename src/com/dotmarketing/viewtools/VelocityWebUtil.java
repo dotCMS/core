@@ -74,15 +74,23 @@ public class VelocityWebUtil implements ViewTool {
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
 		StringWriter sw = new StringWriter();
-		
+		String threadName = Thread.currentThread().getName();
 		if(this.debug){
 			Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);			
 		}
-		template = ve.getTemplate(templatePath);
+		try{
+		    Thread.currentThread().setName(threadName  + " >" + templatePath);
+			template = ve.getTemplate(templatePath);
 		
-		template.merge(ctx, sw);
 
-		return sw.toString();
+
+			template.merge(ctx, sw);
+			return sw.toString();
+		}
+		finally{
+		    Thread.currentThread().setName(threadName);
+		}
+
 		
 	}
 	
@@ -91,14 +99,18 @@ public class VelocityWebUtil implements ViewTool {
 		VelocityServlet.velocityCtx.set(ctx);
 		VelocityEngine ve = VelocityUtil.getEngine();
 		Template template = null;
+		String threadName = Thread.currentThread().getName();
+		try{
+		    Thread.currentThread().setName(threadName  + " >" + templatePath);
+			if(this.debug){
+				Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);			
+			}
 		
-		if(this.debug){
-			Logger.info(VelocityWebUtil.class, _logVariable + ": " + templatePath);			
+			template = ve.getTemplate(templatePath);
+			template.merge(ctx, response.getWriter());
+		}finally{
+		    Thread.currentThread().setName(threadName);
 		}
-		
-		template = ve.getTemplate(templatePath);
-		template.merge(ctx, response.getWriter());
-
 	}
 	
 	
