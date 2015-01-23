@@ -253,7 +253,7 @@ table.workflowInfo td{vertical-align:top;width:100%;}
 
 .buttonBoxLeft{position:absolute;left:35px;height:35px;z-index:10;line-height:30px;}
 .buttonBoxRight{position:absolute;right:35px;height:35px;z-index:10;line-height:33px;}
-.buttonBoxRightSiteBrowser{position:absolute;right:25px;height:35px;z-index:10;line-height:33px;padding-top:7px}
+.buttonBoxRightTopPadding{position:absolute;right:25px;height:35px;z-index:10;line-height:33px;padding-top:7px}
 
 .buttonBoxLeftRightPane{position:absolute;right:800px;height:35px;z-index:10;line-height:33px;padding-top:7px}
 
