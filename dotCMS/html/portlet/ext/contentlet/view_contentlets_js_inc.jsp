@@ -1677,7 +1677,7 @@
                 row.appendChild(th);
 
                 th = document.createElement('th');
-                th.setAttribute("style","min-width:120px;");
+                th.setAttribute("style","width:60px;");
                 th.innerHTML = '&nbsp;';
                 row.appendChild(th);
 
@@ -1753,7 +1753,7 @@
 
                                         for (var n = 0; n < languages.length; ++n) {
                                                 if (languages[n][0] == languageId) {
-                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;" + languages[n][3] + "&nbsp;" + "(" + languages[n][2] + ")";
+                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;" + languages[n][1] + "_" + languages[n][2];
                                                         //locale = languages[n][1] + "_" + languages[n][2];
                                                         break;
                                                 }

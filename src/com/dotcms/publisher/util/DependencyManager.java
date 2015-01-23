@@ -518,8 +518,10 @@ public class DependencyManager {
 			List<String> idsToWork=new ArrayList<String>();
 			idsToWork.addAll(htmlPagesSet);
 			for( String contId : contentsSet) {
-			    if(APILocator.getContentletAPI().findContentletByIdentifier(contId, false, 0, user, false)
-			            .getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+				
+				List<Contentlet> c = APILocator.getContentletAPI().search("+identifier:"+contId, 0, 0, "moddate", user, false);
+				
+			    if(c!=null && !c.isEmpty() && c.get(0).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
 			        idsToWork.add(contId);
 			    }
 			}
@@ -544,7 +546,7 @@ public class DependencyManager {
 				}else{
 					Contentlet contentlet = null;
 					try{
-						contentlet = APILocator.getContentletAPI().findContentletByIdentifier(pageId, false, 0, user, false);
+						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +working:true", 0, 0, "moddate", user, false).get(0);
 					} catch (DotContentletStateException e) {
 						// content not found message is already displayed on console
 						Logger.debug(this, e.getMessage(),e);
@@ -561,7 +563,7 @@ public class DependencyManager {
 				}else{
 					Contentlet contentlet = null;
 					try{
-						contentlet = APILocator.getContentletAPI().findContentletByIdentifier(pageId, true, 0, user, false);
+						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false).get(0);
 					} catch (DotContentletStateException e) {
 						// content not found message is already displayed on console
 						Logger.debug(this, e.getMessage(),e);
@@ -570,7 +572,6 @@ public class DependencyManager {
 						livePage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet); 
 				}
 				            
-
 				// working template working page
 				Template workingTemplateWP = null;
 				// live template working page

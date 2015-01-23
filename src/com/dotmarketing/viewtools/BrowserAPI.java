@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.folders.business.ChildrenCondition;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
@@ -47,22 +48,32 @@ public class BrowserAPI {
     private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
-    		List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks ) throws DotSecurityException, DotDataException {
-    	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks);
+    		List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId ) throws DotSecurityException, DotDataException {
+    	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
     }
 
     public Map<String, Object> getFolderContent ( User usr, String folderId, int offset, int maxResults, String filter, List<String> mimeTypes,
-                                                  List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc ) throws DotSecurityException, DotDataException {
-    	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc);
+                                                  List<String> extensions, boolean showArchived, boolean noFolders, boolean onlyFiles, String sortBy, boolean sortByDesc, long languageId ) throws DotSecurityException, DotDataException {
+    	return getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, true, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
     }
-
+    
     public Map<String, Object> getFolderContent(User user, String folderId,
 			int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
 			boolean onlyFiles, String sortBy, boolean sortByDesc)
 			throws DotSecurityException, DotDataException {
 
-    	return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, false);
+    	return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, false, 0);
+
+    }
+
+    public Map<String, Object> getFolderContent(User user, String folderId,
+			int offset, int maxResults, String filter, List<String> mimeTypes,
+			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
+			boolean onlyFiles, String sortBy, boolean sortByDesc, long languageId)
+			throws DotSecurityException, DotDataException {
+
+    	return getFolderContent(user, folderId, offset, maxResults, filter, mimeTypes, extensions, showWorking, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, false, languageId);
 
     }
     
@@ -187,7 +198,7 @@ public class BrowserAPI {
 	public Map<String, Object> getFolderContent(User user, String folderId,
 			int offset, int maxResults, String filter, List<String> mimeTypes,
 			List<String> extensions, boolean showWorking, boolean showArchived, boolean noFolders,
-			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks)
+			boolean onlyFiles, String sortBy, boolean sortByDesc, boolean excludeLinks, long languageId)
 			throws DotSecurityException, DotDataException {
 
 		if (!UtilMethods.isSet(sortBy)) {
@@ -282,6 +293,12 @@ public class BrowserAPI {
 			}
 
 			for (IHTMLPage page : pages) {
+				
+				boolean isContentlet = page instanceof Contentlet;
+				// include only pages for the given language
+				if(isContentlet && languageId > 0 && ((Contentlet)page).getLanguageId()!= languageId)
+					continue;
+				
 				List<Integer> permissions = new ArrayList<Integer>();
 				try {
 					permissions = permissionAPI.getPermissionIdsFromRoles(page, roles, user);
@@ -313,11 +330,18 @@ public class BrowserAPI {
     	                pageMap.put("contentEditable", wfdata.contentEditable);
 					}
 					
-					if(page instanceof Contentlet) {
+					if(isContentlet) {
 					    pageMap.put("identifier", page.getIdentifier());
 		                pageMap.put("inode", page.getInode());
-		                pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+					    pageMap.put("languageId", ((Contentlet)page).getLanguageId());
+					    
+					    Language lang = APILocator.getLanguageAPI().getLanguage(((Contentlet)page).getLanguageId());
+					    
+					    pageMap.put("languageCode", lang.getLanguageCode());
+		                pageMap.put("countryCode", lang.getCountryCode());
 		                pageMap.put("isLocked", page.isLocked());
+		            
+		              
 					}
 					
 					returnList.add(pageMap);

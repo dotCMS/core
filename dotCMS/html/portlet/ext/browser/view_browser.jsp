@@ -2,6 +2,8 @@
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.db.DbConnectionFactory"%>
+<%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
+<%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 
 
 
@@ -28,6 +30,9 @@
 <script src='/dwr/util.js' type='text/javascript'></script>
 <script src="/dwr/interface/BrowserAjax.js" type="text/javascript"></script>
 <script src="/dwr/interface/StructureAjax.js" type="text/javascript"></script>
+
+<% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
 <%@ include file="/html/portlet/ext/browser/view_browser_js_inc.jsp"%>
 <%@ include file="/html/portlet/ext/browser/view_browser_menus_js_inc.jsp"%>
 
@@ -69,12 +74,53 @@
 
 </script>
 
- 	<div id="addNewDropDownButtonDiv" class="buttonBoxRight">
-  	</div>
+<div id="addNewDropDownButtonDiv" class="buttonBoxRightTopPadding">
+</div>
+	
+<div class="buttonBoxLeft">
+	<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
+</div>
 
- 	<div class="buttonBoxLeft">
-		<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
-  	</div>
+<%
+Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+String languageId = String.valueOf(defaultLang.getId());
+
+if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE)!= null){ 
+	languageId = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE);
+}
+List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+
+%>
+<div id="combo_zone2" class="buttonBoxRightTopPadding" style="margin-right:120px;">
+	<input id="language_id" />
+</div>
+<%@include file="../contentlet/languages_select_inc.jsp" %>
+
+<script>
+
+var counter=0;
+
+function doSearch() {
+	
+	var selectedFolder = document.getElementsByClassName("folderSelected")[0];
+	var lang = dijit.byId("language_id").get('value');
+	
+	if(selectedFolder) {
+		var folderId = selectedFolder.id;
+		folderId = folderId.split("-TreeREF")[0];
+		treeFolderSelected(folderId, lang);	
+	} else if(counter>0) {
+		var hostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+		treeFolderSelected(hostId, lang);	
+	}
+	
+	selectedLang = lang;
+	
+	counter++;
+	
+}
+</script>
+
 
 
 <div dojoType="dijit.layout.BorderContainer" design="sidebar" gutters="false" liveSplitters="true" id="borderContainer" class="shadowBox headerBox" style="white-space: nowrap">
@@ -90,6 +136,8 @@
 	</div>
 
      <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin-top:35px;" region="center" class="rightContentPane" id="rightContentPane">
+     	
+	  	
 		<table class="browserTable" id="assetListBodyTD">
 			<thead id="assetListHead">
 				<tr>
@@ -98,7 +146,7 @@
 					</th>
 					<th><a href="javascript: changeContentSort('sortOrder');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Menu") %></a></th>
 					<th><%= LanguageUtil.get(pageContext, "Status") %></th>
-					<th><%= LanguageUtil.get(pageContext, "Description") %></th>
+					<th></th>
 					<th><a href="javascript: changeContentSort('modUser');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-User") %></a></th>
 					<th><a href="javascript: changeContentSort('modDate');" style="text-decoration: underline"><%= LanguageUtil.get(pageContext, "Mod-Date") %></a></th>
 				</tr>
