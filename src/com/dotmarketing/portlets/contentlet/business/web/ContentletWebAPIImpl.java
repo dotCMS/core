@@ -43,6 +43,7 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -630,19 +631,25 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					}
 					if (!UtilMethods.isSet(status)) {
 						Identifier i = identAPI.find(host, fullPageUrl);
+						
 						if (i != null && InodeUtils.isSet(i.getId())) {
-							Contentlet contentInReceiver = conAPI
-									.findContentletByIdentifier(i.getId(),
-											true, contentPage.getLanguageId(),
-											systemUser, false);
-							if (contentInReceiver.getStructure()
-									.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
-								// Found a file asset with same path
-								status = "message.htmlpage.error.htmlpage.exists.file";
-							} else if (!contentPage.getIdentifier().equals(
-									i.getId())) {
-								// Found a page with the same path
-								status = "message.htmlpage.error.htmlpage.exists";
+							try {
+								Contentlet contentInReceiver = conAPI
+										.findContentletByIdentifier(i.getId(),
+												true, contentPage.getLanguageId(),
+												systemUser, false);
+								if (contentInReceiver.getStructure()
+										.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+									// Found a file asset with same path
+									status = "message.htmlpage.error.htmlpage.exists.file";
+								} else if (!contentPage.getIdentifier().equals(
+										i.getId())) {
+									// Found a page with the same path
+									status = "message.htmlpage.error.htmlpage.exists";
+								}
+
+							} catch(DotContentletStateException e) {
+								Logger.info(getClass(), "Page with same URI and same language does not exist, so we are OK");
 							}
 						}
 					}
