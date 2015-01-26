@@ -20,6 +20,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotcms.rest.IntegrityResource.IntegrityType;
@@ -33,6 +34,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -44,7 +46,32 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
+/**
+ * During the push publish process, user structures such as Folders, Content
+ * Types (f.k.a Structures), Schemes, Legacy Pages, or Content Pages, might
+ * already exist in a given receiver environment. This will cause the publishing
+ * process to fail given that the structures seem to be the same, BUT the
+ * identifier is different compared to each other.
+ * <p>
+ * This utility class provides a mechanism to check and resolve situations where
+ * one or more of those user structures have conflicts. The solution is to
+ * generate a list of conflicts for the users the check it out, and make a
+ * decision. If they want to fix the conflicts, the system will make sure the
+ * user structures have the same Identifier (and sometimes the Inode) in both
+ * sender and receiver servers.
+ * </p>
+ * <p>
+ * The {@link IntegrityResource} class exposes the main methods of this class as
+ * REST services.
+ * </p>
+ * 
+ * @author Daniel Silva
+ * @version 1.5
+ * @since 06-23-2014
+ *
+ */
 public class IntegrityUtil {
 
     private File generateFoldersToCheckCSV(String outputFile) throws DotDataException, IOException {
@@ -89,14 +116,20 @@ public class IntegrityUtil {
 
     }
     
-    /**
-     * Creates CSV file with HTML Pages information from End Point server. 
-     * 
-     * @param outputFile
-     * @return
-     * @throws DotDataException
-     * @throws IOException
-     */
+	/**
+	 * Creates CSV file with either the HTML Pages or Content Pages information
+	 * from End Point server.
+	 * 
+	 * @param outputFile
+	 *            - The file containing the list of pages.
+	 * @param type
+	 *            - The type of page to retrieve: Legacy Page of Content Page.
+	 * @return a {@link File} with the page information.
+	 * @throws DotDataException
+	 *             An error occurred when querying the database.
+	 * @throws IOException
+	 *             An error occurred when writing to the file.
+	 */
     private File generateHtmlPagesToCheckCSV(String outputFile, IntegrityType type) throws DotDataException, IOException {
         Connection conn = DbConnectionFactory.getConnection();
         ResultSet rs = null;
@@ -112,7 +145,14 @@ public class IntegrityUtil {
             	statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
             } else {
             	// Query the new content pages pages
-            	statement = conn.prepareStatement("SELECT c.identifier, c.inode, i.parent_path, i.asset_name, i.host_inode FROM contentlet c INNER JOIN structure s ON (c.structure_inode = s.inode) INNER JOIN identifier i ON (i.id = c.identifier) WHERE s.structuretype = 5");
+				String query = "SELECT "
+						+ "c.identifier, c.inode, i.parent_path, i.asset_name, i.host_inode "
+						+ "FROM "
+						+ "contentlet c "
+						+ "INNER JOIN contentlet_version_info cvi ON (c.inode = cvi.working_inode) "
+						+ "INNER JOIN structure s ON (c.structure_inode = s.inode AND s.structuretype = 5) "
+						+ "INNER JOIN identifier i ON (i.id = c.identifier)";
+            	statement = conn.prepareStatement(query);
             }
 			rs = statement.executeQuery();
             int count = 0;
@@ -689,14 +729,23 @@ public class IntegrityUtil {
 		}
     }
 
-    /**
-     * Checks the existence of conflicts with the legacy HTML pages.
-     * 
-     * @param endpointId
-     * @throws IOException
-     * @throws SQLException
-     * @throws DotDataException
-     */
+	/**
+	 * Checks the existence of conflicts with both the legacy HTML pages and
+	 * Content Pages.
+	 * 
+	 * @param endpointId
+	 *            - The ID of the endpoint where conflicts will be detected.
+	 * @param type
+	 *            - The type of HTML asset to check: Legacy Page, or Content
+	 *            Page.
+	 * @throws IOException
+	 *             An error occurred when reading the file containing the page
+	 *             data.
+	 * @throws SQLException
+	 *             There's a syntax error in a SQL statement.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 */
 	private void checkPages(String endpointId, IntegrityType type) throws IOException,
 			SQLException, DotDataException {
     	CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToCheckCSVName(), '|');
@@ -1640,7 +1689,34 @@ public class IntegrityUtil {
 	 * <p>
 	 * This method is the same for solving both local and remote conflicts. The
 	 * only difference is in what server (either the sender or the receiver)
-	 * this method is called.
+	 * this method is called and the distribution of data fields, which is
+	 * handled by a previous method. Bearing this in mind, the conflict
+	 * resolution process performs the following plain SQL queries (the
+	 * execution order is very important to avoid foreign key conflicts):
+	 * <ol>
+	 * <li>Create the <code>Inode</code> and <code>Identifier</code> records,
+	 * which <b>MUST EXIST</b> before a contentlet (content page) can be
+	 * created. Initially, the <code>asset_Name</code> of the new Identifier
+	 * will have a temporary name.</li>
+	 * <li>Create the new <code>Contentlet</code> and
+	 * <code>Contentlet_Version_Info</code> records <b>WITHOUT DELETING</b> the
+	 * old page records. Otherwise, exceptions will be thrown regarding foreign
+	 * key constraints with several other tables.</li>
+	 * <li>Delete the old <code>Contentlet_Version_Info</code> and
+	 * <code>Contentlet</code> records.</li>
+	 * <li>Update all the existing versions of the page in the
+	 * <code>Contentlet</code> table so they point to the new identifier.</li>
+	 * <li>Delete the old <code>Identifier</code> and <code>Inode</code>
+	 * records.</li>
+	 * <li>Update the <code>Identifier</code> record with the correct
+	 * <code>asset_name</code>.</li>
+	 * <li>Update the <code>Multi_Tree</code> records so that the change in the
+	 * identifier does not cause the page content to be missing.</li>
+	 * <li>Remove the old page entries from <code>Contentlet</code> and
+	 * <code>Identifier</code> cache. This also includes removing the entries
+	 * for any existing versions of the page so that older versions of the page
+	 * can be brought back under the new identifier without any errors.</li>
+	 * </ol>
 	 * </p>
 	 * 
 	 * @param pageData
@@ -1648,9 +1724,12 @@ public class IntegrityUtil {
 	 *            when the conflict was detected.
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
+	 * @throws DotSecurityException
+	 *             The current user does not have permission to perform this
+	 *             action.
 	 */
 	private void fixContentPageConflicts(Map<String, Object> pageData)
-			throws DotDataException {
+			throws DotDataException, DotSecurityException {
 		DotConnect dc = new DotConnect();
 		String oldHtmlPageIdentifier = (String) pageData
 				.get("local_identifier");
@@ -1658,34 +1737,98 @@ public class IntegrityUtil {
 				.get("remote_identifier");
 		String assetName = (String) pageData.get("html_page");
 		String localInode = (String) pageData.get("local_inode");
-		// Get the asset name (last part of the url)
-		String[] assetNamebits = assetName.split("/");
-		assetName = assetNamebits[assetNamebits.length - 1];
-		CacheLocator.getContentletCache().remove(localInode);
-		// Fix conflict through SQL queries
+		String remoteInode = (String) pageData.get("remote_inode");
+		String[] assetUrl = assetName.split("/");
+		assetName = assetUrl[assetUrl.length - 1];
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
+		User systemUser = APILocator.getUserAPI().getSystemUser();
+		Contentlet existingContentPage = contentletAPI.find(localInode,
+				systemUser, false);
+		// Add the new Identifier with a temporary asset name
 		dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
 				+ "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
 				+ "FROM identifier WHERE id = ?");
 		dc.addParam(newHtmlPageIdentifier);
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.loadResult();
-		dc.setSQL("UPDATE contentlet " + "SET identifier = ? "
-				+ "WHERE identifier = ?");
+		// Insert the new Inode record so it can be used in the contentlet
+		dc.setSQL("INSERT INTO inode(inode, owner, idate, type) "
+				+ "SELECT ?, owner, idate, type "
+				+ "FROM inode i WHERE i.inode = ?");
+		dc.addParam(remoteInode);
+		dc.addParam(localInode);
+		dc.loadResult();
+		// Insert the new Contentlet record with the new Inode
+		dc.setSQL("INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
+				+ "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
+				+ "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.working_inode) WHERE c.identifier = ?");
+		dc.addParam(remoteInode);
 		dc.addParam(newHtmlPageIdentifier);
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.loadResult();
-		dc.setSQL("UPDATE contentlet_version_info " + "SET identifier = ? "
-				+ "WHERE identifier = ?");
+		// Insert the new Contentlet_version_info record with the new Inode
+		dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+				+ "SELECT ? , lang, ?, ?, deleted, locked_by, locked_on, version_ts "
+				+ "FROM contentlet_version_info WHERE identifier = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(remoteInode);
+		dc.addParam(remoteInode);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		// Remove the old Contentlet_version_info record
+		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ?");
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		// Remove the conflicting version of the Contentlet record
+		dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ?");
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.addParam(localInode);
+		dc.loadResult();
+		// Update previous version of the Contentlet with new Identifier
+		dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
 		dc.addParam(newHtmlPageIdentifier);
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.loadResult();
-		dc.setSQL("DELETE FROM identifier " + "WHERE id = ?");
+		// Remove the old Identifier record
+		dc.setSQL("DELETE FROM identifier WHERE id = ?");
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.loadResult();
-		dc.setSQL("UPDATE identifier " + "SET asset_name = ? " + "WHERE id = ?");
+		// Remove the old Inode record
+		dc.setSQL("DELETE FROM inode WHERE inode = ?");
+		dc.addParam(localInode);
+		dc.loadResult();
+		// Update the Identifier with the correct asset name
+		dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
 		dc.addParam(assetName);
 		dc.addParam(newHtmlPageIdentifier);
 		dc.loadResult();
+		// Update the content references in the page with the new Identifier
+		dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.loadResult();
+		// Add a new Lucene index for the updated page
+		Contentlet newContentPage = new Contentlet();
+		newContentPage.setStructureInode(existingContentPage
+				.getStructureInode());
+		contentletAPI.copyProperties(newContentPage,
+				existingContentPage.getMap());
+		newContentPage.setIdentifier(newHtmlPageIdentifier);
+		newContentPage.setInode(remoteInode);
+		indexAPI.addContentToIndex(newContentPage);
+		// Remove the Lucene index for the old page
+		indexAPI.removeContentFromIndex(existingContentPage);
+		// Clear cache entries of ALL versions of the Contentlet too
+		CacheLocator.getContentletCache().remove(localInode);
+		CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
+		dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ?");
+		dc.addParam(newHtmlPageIdentifier);
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		for (Map<String, Object> result : results) {
+			String historyInode = (String) result.get("inode");
+			CacheLocator.getContentletCache().remove(historyInode);
+		}
 	}
     
 }
