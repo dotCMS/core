@@ -107,7 +107,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 		return folder;
 	}
 
-	public Host getParentHost(HTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException {
+	public Host getParentHost(IHTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		HostAPI hostAPI = APILocator.getHostAPI();
 
 		Folder folder = APILocator.getFolderAPI().findParentFolder(object, APILocator.getUserAPI().getSystemUser(),false);

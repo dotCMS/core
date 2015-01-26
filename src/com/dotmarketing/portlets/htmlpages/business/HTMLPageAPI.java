@@ -323,7 +323,7 @@ public interface HTMLPageAPI {
 	 * @throws DotDataException
 	 * @throws DotIdentifierStateException
 	 */
-	public Host getParentHost(HTMLPage object)
+	public Host getParentHost(IHTMLPage object)
 			throws DotIdentifierStateException, DotDataException,
 			DotSecurityException;
 
@@ -453,7 +453,7 @@ public interface HTMLPageAPI {
 	 * @throws DotStateException
 	 * @throws DotSecurityException
 	 */
-	public String getHTML(HTMLPage htmlPage, boolean liveMode,
+	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
 

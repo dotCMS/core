@@ -667,7 +667,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 		return htmlPageFactory.getParentFolder(object);
 	}
 
-	public Host getParentHost(HTMLPage object)
+	public Host getParentHost(IHTMLPage object)
 			throws DotIdentifierStateException, DotDataException,
 			DotSecurityException {
 		return htmlPageFactory.getParentHost(object);
@@ -944,7 +944,7 @@ public class HTMLPageAPIImpl extends BaseWebAssetAPI implements HTMLPageAPI {
 	}
 
 	// http://jira.dotmarketing.net/browse/DOTCMS-3392
-	public String getHTML(HTMLPage htmlPage, boolean liveMode,
+	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
 		String uri = htmlPage.getURI();
