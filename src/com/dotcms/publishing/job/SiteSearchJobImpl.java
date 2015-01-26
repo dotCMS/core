@@ -16,6 +16,7 @@ import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
+import com.dotcms.enterprise.publishing.bundlers.HTMLPageAsContentBundler;
 import com.dotcms.enterprise.publishing.bundlers.StaticHTMLPageBundler;
 import com.dotcms.enterprise.publishing.bundlers.URLMapBundler;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
@@ -199,7 +200,9 @@ public class SiteSearchJobImpl {
             else if(bs.getBundlerClass().equals(FileAssetBundler.class.getName()))
                 filesCount+=bs.getTotal();
             else if(bs.getBundlerClass().equals(URLMapBundler.class.getName()))
-                urlmapCount+=bs.getTotal();
+            	urlmapCount+=bs.getTotal();
+            else if(bs.getBundlerClass().equals(HTMLPageAsContentBundler.class.getName()))
+            	pagesCount+=bs.getTotal();
         }
 
 
