@@ -109,18 +109,37 @@ public class HTMLPageFactory {
 		return list;
 	}
 
-	
 
-	public static Template getHTMLPageTemplate(HTMLPage htmlpage) throws DotStateException, DotDataException, DotSecurityException{
-		return APILocator.getTemplateAPI().findWorkingTemplate(htmlpage.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-	}
+    /**
+     * Returns the working version of the template used by a given html page
+     *
+     * @param htmlpage
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static Template getHTMLPageTemplate ( IHTMLPage htmlpage ) throws DotStateException, DotDataException, DotSecurityException {
+        return APILocator.getTemplateAPI().findWorkingTemplate( htmlpage.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
+    }
 
-	public static Template getHTMLPageTemplate(HTMLPage page, boolean previewMode) throws DotStateException, DotDataException, DotSecurityException {
-		if (previewMode) 
-		    return APILocator.getTemplateAPI().findWorkingTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-		else
-		    return APILocator.getTemplateAPI().findLiveTemplate(page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false);
-	}
+    /**
+     * Returns the template used by a given html page
+     *
+     * @param page
+     * @param previewMode True to get the working version, False for the live version
+     * @return
+     * @throws DotStateException
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static Template getHTMLPageTemplate ( IHTMLPage page, boolean previewMode ) throws DotStateException, DotDataException, DotSecurityException {
+        if ( previewMode ) {
+            return APILocator.getTemplateAPI().findWorkingTemplate( page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
+        } else {
+            return APILocator.getTemplateAPI().findLiveTemplate( page.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
+        }
+    }
 
 	public static Template getWorkingNotLiveHTMLPageTemplate(HTMLPage page) throws DotDataException, DotStateException, DotSecurityException{
 		Template t = getHTMLPageTemplate(page,true);

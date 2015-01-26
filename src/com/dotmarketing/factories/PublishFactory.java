@@ -1,15 +1,5 @@
 package com.dotmarketing.factories;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -30,19 +20,21 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.services.ContainerServices;
-import com.dotmarketing.services.ContentletMapServices;
-import com.dotmarketing.services.ContentletServices;
-import com.dotmarketing.services.PageServices;
-import com.dotmarketing.services.TemplateServices;
+import com.dotmarketing.services.*;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
+
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 /**
  *
@@ -53,15 +45,25 @@ public class PublishFactory {
 	private static PermissionAPI permissionAPI  = APILocator.getPermissionAPI();
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public static void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
 	}
 
-	public static boolean publishAsset(Inode webAsset,HttpServletRequest req) throws WebAssetException, DotSecurityException, DotDataException
-	{
-		User user = null;
+    /**
+     * This method publish a given and asset and its related assets, if a user is passed the method will check permissions to publish,
+     * if the user doesn't have permission to publish one of the related assets then that one will be skipped.
+     *
+     * @param webAsset
+     * @param req
+     * @return
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static boolean publishAsset(Inode webAsset,HttpServletRequest req) throws WebAssetException, DotSecurityException, DotDataException {
+		User user;
 		try {
 			user = PortalUtil.getUser(req);
 		} catch (Exception e1) {
@@ -71,6 +73,47 @@ public class PublishFactory {
 		
 		return publishAsset(webAsset, user, false);
 	}
+
+    /**
+     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
+     * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
+     * call this method after publish the legacy HTMLPage.
+     *
+     * @param htmlPage
+     * @param req
+     * @return
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static boolean publishHTMLPage ( IHTMLPage htmlPage, HttpServletRequest req ) throws WebAssetException, DotSecurityException, DotDataException {
+        return publishHTMLPage( htmlPage, new java.util.ArrayList(), req );
+    }
+
+    /**
+     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
+     * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
+     * call this method after publish the legacy HTMLPage.
+     *
+     * @param htmlPage
+     * @param relatedNotPublished
+     * @param req
+     * @return
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static boolean publishHTMLPage ( IHTMLPage htmlPage, List relatedNotPublished, HttpServletRequest req ) throws WebAssetException, DotSecurityException, DotDataException {
+        User user;
+        try {
+            user = PortalUtil.getUser( req );
+        } catch ( Exception e1 ) {
+            Logger.error( PublishFactory.class, "publishAsset: Cannot obtain the user from the request.", e1 );
+            return false;
+        }
+
+        return publishHTMLPage( htmlPage, relatedNotPublished, user, false );
+    }
 
 	
 	/**
@@ -180,52 +223,13 @@ public class PublishFactory {
 
 		}
 
-		if (webAsset instanceof HTMLPage) 
+		if (webAsset instanceof IHTMLPage)
 		{
-
-		    Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing");
-
-		    List relatedNotPublished = new ArrayList();
-		    relatedNotPublished = getUnpublishedRelatedAssets(webAsset, relatedNotPublished, user, respectFrontendRoles);
-		    
-		    //Publishing related pieces of content
-		    for(Object asset : relatedNotPublished) {
-		    	if(asset instanceof Contentlet) {
-					Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet)asset).getInode());
-					try {
-						Contentlet c = (Contentlet)asset;
-						if(!APILocator.getWorkflowAPI().findSchemeForStruct(c.getStructure()).isMandatory()){
-							conAPI.publish((Contentlet)asset, user, false);
-						}
-					} catch (DotSecurityException e) {
-						//User has no permission to publish the content in the page so we just skip it
-						Logger.debug(PublishFactory.class, "publish html page: User has no permission to publish the content inode = " + ((Contentlet)asset).getInode() + " in the page, skipping it.");
-					}		    		
-		    	}else if(asset instanceof Template){
-		    		Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template)asset).getInode());
-		    		publishAsset((Template)asset,user, respectFrontendRoles,false);
-		    	}
-		    }
-
-		    LiveCache.removeAssetFromCache((WebAsset) webAsset);
-			LiveCache.addToLiveAssetToCache((WebAsset) webAsset);
-			WorkingCache.removeAssetFromCache((WebAsset) webAsset);
-			WorkingCache.addToWorkingAssetToCache((WebAsset) webAsset);
-			//writes the htmlpage to a live directory under velocity folder
-			PageServices.invalidate((HTMLPage)webAsset);
-
-            //Refreshing the menues
-			
-			
-			if(RefreshMenus.shouldRefreshMenus((HTMLPage)webAsset)){
-				Folder folder = (Folder) APILocator.getFolderAPI().findParentFolder((Treeable)webAsset,user,false);
-				if(folder != null){
-					RefreshMenus.deleteMenu(folder);
-					CacheLocator.getNavToolCache().removeNav(folder.getHostId(),folder.getInode());
-				}
-			}
-            CacheLocator.getHTMLPageCache().remove((HTMLPage) webAsset);
-
+            //Get the unpublish content related to this HTMLPage
+            List relatedNotPublished = new ArrayList();
+            relatedNotPublished = getUnpublishedRelatedAssets( webAsset, relatedNotPublished, user, respectFrontendRoles );
+            //Publish the page
+            publishHTMLPage( (IHTMLPage) webAsset, relatedNotPublished, user, respectFrontendRoles );
 		}
 
 		if (webAsset instanceof Folder) {
@@ -301,6 +305,75 @@ public class PublishFactory {
 		return true;
 
 	}
+
+    /**
+     * Publishes a given html page (if is HTMLPageAsset) and its related content (Applies to the legacy and new HTML pages).<br/>
+     * <strong>NOTE: </strong> Don't call this method directly for legacy HTMLPages, instead call publishAsset, that publishAsset method will
+     * call this method after publish the legacy HTMLPage.
+     *
+     * @param htmlPage
+     * @param relatedNotPublished
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws WebAssetException
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
+    public static boolean publishHTMLPage(IHTMLPage htmlPage, List relatedNotPublished, User user, boolean respectFrontendRoles ) throws WebAssetException, DotSecurityException, DotDataException {
+
+        Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- Publishing");
+
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        //Publishing related pieces of content
+        for ( Object asset : relatedNotPublished ) {
+            if ( asset instanceof Contentlet ) {
+                Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing my Contentlet Child=" + ((Contentlet) asset).getInode() );
+                try {
+                    Contentlet c = (Contentlet) asset;
+                    if ( !APILocator.getWorkflowAPI().findSchemeForStruct( c.getStructure() ).isMandatory() ) {
+                        contentletAPI.publish( (Contentlet) asset, user, false );
+                    }
+                } catch ( DotSecurityException e ) {
+                    //User has no permission to publish the content in the page so we just skip it
+                    Logger.debug( PublishFactory.class, "publish html page: User has no permission to publish the content inode = " + ((Contentlet) asset).getInode() + " in the page, skipping it." );
+                }
+            } else if ( asset instanceof Template ) {
+                Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- Publishing Template =" + ((Template) asset).getInode() );
+                publishAsset( (Template) asset, user, respectFrontendRoles, false );
+            }
+        }
+
+        //writes the htmlpage to a live directory under velocity folder
+        PageServices.invalidate(htmlPage);
+
+        //Cleaning the cache
+        if (htmlPage instanceof HTMLPage) {
+
+            LiveCache.removeAssetFromCache( htmlPage );
+            LiveCache.addToLiveAssetToCache( htmlPage );
+            WorkingCache.removeAssetFromCache( htmlPage );
+            WorkingCache.addToWorkingAssetToCache( htmlPage );
+
+            //Refreshing the menues
+            if ( RefreshMenus.shouldRefreshMenus( (HTMLPage) htmlPage ) ) {
+                Folder folder = APILocator.getFolderAPI().findParentFolder( htmlPage, user, false );
+                if ( folder != null ) {
+                    RefreshMenus.deleteMenu( folder );
+                    CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
+                }
+            }
+            CacheLocator.getHTMLPageCache().remove( htmlPage );
+        }
+
+        if ( htmlPage instanceof HTMLPageAsset ) {
+            //And finally publish the page
+            APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
+        }
+
+        return true;
+    }
 	
 	@SuppressWarnings("unchecked")
 	public static List getUnpublishedRelatedAssets(Inode webAsset, List relatedAssets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -348,73 +421,9 @@ public class PublishFactory {
 
 		}
 
-		if (webAsset instanceof HTMLPage) {
-
-		    Logger.debug(PublishFactory.class, "*****I'm an HTML Page -- PrePublishing");
-
-			//gets working (not published) template parent for this html page
-			Template templateParent = HTMLPageFactory.getHTMLPageTemplate((HTMLPage)webAsset,true);
-
-			if (InodeUtils.isSet(templateParent.getInode())) {
-				
-				if(!templateParent.isLive() && (permissionAPI.doesUserHavePermission(templateParent, PERMISSION_PUBLISH, user, respectFrontendRoles) || !checkPublishPermissions)) {
-					relatedAssets.add(templateParent);
-				}
-
-
-				//gets all live container children				
-				java.util.List<Container> identifiers = APILocator.getTemplateAPI().getContainersInTemplate(templateParent, APILocator.getUserAPI().getSystemUser(), false);
-				java.util.Iterator<Container> identifiersIter = identifiers.iterator();
-				while (identifiersIter.hasNext()) {
-
-					Container container = (Container)identifiersIter.next();
-
-                    List categories = InodeFactory.getParentsOfClass(container, Category.class);
-					List contentlets = null;
-
-					if (categories.size() == 0) {
-					    Logger.debug(PublishFactory.class, "*******HTML Page PrePublishing Static Container");
-					    Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(webAsset);
-					    Identifier idenContainer = APILocator.getIdentifierAPI().find(container);
-					    try{
-					    	contentlets = conAPI.findPageContentlets(idenHtmlPage.getInode(),idenContainer.getInode(),null, true, -1, APILocator.getUserAPI().getSystemUser(), false);
-					    }catch (Exception e) {
-							 Logger.error(PublishFactory.class,"Unable to get contentlets on page",e);
-							 contentlets = new ArrayList<Contentlet>();
-						}
-                    }
-                    else {
-
-            		    Logger.debug(PublishFactory.class, "*******HTML Page PrePublishing Dynamic Container");
-                        Iterator catsIter = categories.iterator();
-                        Set contentletSet = new HashSet();
-
-                        String condition = "working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-                        String sort = (container.getSortContentletsBy() == null) ? "sort_order" : container.getSortContentletsBy();
-
-                        while (catsIter.hasNext()) {
-                            Category category = (Category) catsIter.next();
-                            List contentletsChildren = InodeFactory.getChildrenClassByConditionAndOrderBy(category,
-                                    Contentlet.class, condition, sort);
-                            if (contentletsChildren != null && contentletsChildren.size() > 0) {
-                                contentletSet.addAll(contentletsChildren);
-                            }
-                        }
-                        contentlets = new ArrayList();
-                        contentlets.addAll(contentletSet);
-                    }
-					java.util.Iterator contentletsIter = contentlets.iterator();
-					while (contentletsIter.hasNext()) {
-						//publishes each one
-						Contentlet contentlet = (Contentlet)contentletsIter.next();
-						if(!contentlet.isLive() && (permissionAPI.doesUserHavePermission(contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles) || !checkPublishPermissions)) {
-							relatedAssets.add(contentlet);
-						}
-					}
-				}
-
-			}
-
+		if (webAsset instanceof IHTMLPage ) {
+            //Search for the unpublished related content to this HTML page
+            getUnpublishedRelatedAssetsForPage( (IHTMLPage) webAsset, relatedAssets, checkPublishPermissions, user, respectFrontendRoles );
 		}
 
 		if (webAsset instanceof Folder) {
@@ -474,5 +483,85 @@ public class PublishFactory {
 
 		return relatedAssets;
 	}
+
+    /**
+     * Returns a List of unpublished related content to a given HTML page
+     *
+     * @param htmlPage
+     * @param relatedAssets
+     * @param checkPublishPermissions
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public static List getUnpublishedRelatedAssetsForPage ( IHTMLPage htmlPage, List relatedAssets, boolean checkPublishPermissions, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
+
+        Logger.debug( PublishFactory.class, "*****I'm an HTML Page -- PrePublishing" );
+
+        ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        //gets working (not published) template parent for this html page
+        Template templateParent = APILocator.getTemplateAPI().findWorkingTemplate( htmlPage.getTemplateId(), APILocator.getUserAPI().getSystemUser(), false );
+        if ( InodeUtils.isSet( templateParent.getInode() ) ) {
+
+            if ( !templateParent.isLive() && (permissionAPI.doesUserHavePermission( templateParent, PERMISSION_PUBLISH, user, respectFrontendRoles ) || !checkPublishPermissions) ) {
+                relatedAssets.add( templateParent );
+            }
+
+            //gets all live container children
+            java.util.List<Container> identifiers = APILocator.getTemplateAPI().getContainersInTemplate( templateParent, APILocator.getUserAPI().getSystemUser(), false );
+            java.util.Iterator<Container> identifiersIter = identifiers.iterator();
+            while ( identifiersIter.hasNext() ) {
+
+                Container container = identifiersIter.next();
+
+                List categories = InodeFactory.getParentsOfClass( container, Category.class );
+                List contentlets;
+
+                if ( categories.size() == 0 ) {
+                    Logger.debug( PublishFactory.class, "*******HTML Page PrePublishing Static Container" );
+                    Identifier idenHtmlPage = APILocator.getIdentifierAPI().find( htmlPage );
+                    Identifier idenContainer = APILocator.getIdentifierAPI().find( container );
+                    try {
+                        contentlets = contentletAPI.findPageContentlets( idenHtmlPage.getInode(), idenContainer.getInode(), null, true, -1, APILocator.getUserAPI().getSystemUser(), false );
+                    } catch ( Exception e ) {
+                        Logger.error( PublishFactory.class, "Unable to get contentlets on page", e );
+                        contentlets = new ArrayList<Contentlet>();
+                    }
+                } else {
+
+                    Logger.debug( PublishFactory.class, "*******HTML Page PrePublishing Dynamic Container" );
+                    Iterator catsIter = categories.iterator();
+                    Set contentletSet = new HashSet();
+
+                    String condition = "working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse();
+                    String sort = (container.getSortContentletsBy() == null) ? "sort_order" : container.getSortContentletsBy();
+
+                    while ( catsIter.hasNext() ) {
+                        Category category = (Category) catsIter.next();
+                        List contentletsChildren = InodeFactory.getChildrenClassByConditionAndOrderBy( category, Contentlet.class, condition, sort );
+                        if ( contentletsChildren != null && contentletsChildren.size() > 0 ) {
+                            contentletSet.addAll( contentletsChildren );
+                        }
+                    }
+                    contentlets = new ArrayList();
+                    contentlets.addAll( contentletSet );
+                }
+                java.util.Iterator contentletsIter = contentlets.iterator();
+                while ( contentletsIter.hasNext() ) {
+                    //publishes each one
+                    Contentlet contentlet = (Contentlet) contentletsIter.next();
+                    if ( !contentlet.isLive() && (permissionAPI.doesUserHavePermission( contentlet, PERMISSION_PUBLISH, user, respectFrontendRoles ) || !checkPublishPermissions) ) {
+                        relatedAssets.add( contentlet );
+                    }
+                }
+            }
+
+        }
+
+        return relatedAssets;
+    }
 
 }

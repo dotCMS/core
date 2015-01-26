@@ -1,33 +1,24 @@
 package com.dotmarketing.portlets.htmlpages.action;
 
-import java.net.URLDecoder;
-
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
+
+import java.net.URLDecoder;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
@@ -77,61 +68,102 @@ public class PublishHTMLPagesAction extends DotPortletAction {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private void _prePublishHTMLPages(ActionRequest req, User user) throws Exception {
+    /**
+     * Prepares the Publishing process verifying if the HTMLPage have un-published content and notifying about it
+     * to the user.
+     *
+     * @param req
+     * @param user
+     * @throws Exception
+     */
+    @SuppressWarnings( "unchecked" )
+    private void _prePublishHTMLPages ( ActionRequest req, User user ) throws Exception {
 
-		String[] publishInode = req.getParameterValues("publishInode");
+        String[] publishInode = req.getParameterValues( "publishInode" );
 
-		if (publishInode == null)
-			return;
+        if ( publishInode == null )
+            return;
 
-		// calls the publish factory to get related assets
-		java.util.List relatedAssets = new java.util.ArrayList();
-		java.util.List relatedWorkflows = new java.util.ArrayList();
+        // calls the publish factory to get related assets
+        java.util.List relatedAssets = new java.util.ArrayList();
+        java.util.List relatedWorkflows = new java.util.ArrayList();
 
-		for (int i = 0; i < publishInode.length; i++) {
+        for ( String pageInode : publishInode ) {
 
-			HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode(publishInode[i], HTMLPage.class);
+            //First lets verify if is a new HTMLPage (as content)
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( pageInode, user, false );
+            if ( htmlPageContentlet != null && InodeUtils.isSet( htmlPageContentlet.getInode() ) ) {
+                HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPageContentlet );
+                relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, true, user, false );
+            } else {//THIS MUST BE A LEGACY HTML PAGE
+                HTMLPage htmlPage = (HTMLPage) InodeFactory.getInode( pageInode, HTMLPage.class );
+                if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {
+                    relatedAssets = PublishFactory.getUnpublishedRelatedAssets( htmlPage, relatedAssets, true, user, false );
+                }
+            }
+        }
 
-			if (InodeUtils.isSet(htmlPage.getInode())) {
-				// calls the asset factory edit
+        req.setAttribute( WebKeys.HTMLPAGE_RELATED_WORKFLOWS, relatedWorkflows );
+        req.setAttribute( WebKeys.HTMLPAGE_RELATED_ASSETS, relatedAssets );
+    }
 
-				// relatedWorkflows.addAll(WorkflowMessageFactory.getWorkflowMessageByHTMLPageWaitingForPublish(htmlPage));
-				relatedAssets = PublishFactory.getUnpublishedRelatedAssets(htmlPage, relatedAssets, true, user, false);
+    /**
+     * Publish a HTMLPage page along with any un-published content it have
+     *
+     * @param req
+     * @param user
+     * @throws Exception
+     */
+    private void _publishHTMLPages ( ActionRequest req, User user ) throws Exception {
 
-			}
-		}
-		req.setAttribute(WebKeys.HTMLPAGE_RELATED_WORKFLOWS, relatedWorkflows);
-		req.setAttribute(WebKeys.HTMLPAGE_RELATED_ASSETS, relatedAssets);
+        String[] publishInode = req.getParameterValues( "publishInode" );
 
-	}
+        if ( publishInode == null )
+            return;
 
-	private void _publishHTMLPages(ActionRequest req, User user) throws Exception {
+        ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 
-		String[] publishInode = req.getParameterValues("publishInode");
+        for ( String pageInode : publishInode ) {
 
-		if (publishInode == null)
-			return;
+            java.util.List relatedAssets = new java.util.ArrayList();
 
-		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+            //First lets verify if is a new HTMLPage (as content)
+            Contentlet htmlPageContentlet = APILocator.getContentletAPI().find( pageInode, user, false );
+            if ( htmlPageContentlet != null && InodeUtils.isSet( htmlPageContentlet.getInode() ) ) {
+                HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPageContentlet );
+                relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, true, user, false );
 
-		for (int i = 0; i < publishInode.length; i++) {
-			HTMLPage htmlpage = (HTMLPage) InodeFactory.getInode(publishInode[i], HTMLPage.class);
+                try {
 
-			if (InodeUtils.isSet(htmlpage.getInode())) {
-				// calls the asset factory edit
-				try {
-					PublishFactory.publishAsset(htmlpage, reqImpl.getHttpServletRequest());
-					ActivityLogger.logInfo(PublishFactory.class, "Publishing HTMLpage action", "User " + user + " publishing page " + htmlpage.getURI(), HostUtil.hostNameUtil(req, _getUser(req)));
-					SessionMessages.add(reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published");
-				} catch (WebAssetException wax) {
-					Logger.error(this, wax.getMessage(), wax);
-					SessionMessages.add(reqImpl.getHttpServletRequest(), "error", "message.webasset.published.failed");
-				}
-			}
-		}
+                    //Publish the content related to this page along with the page
+                    PublishFactory.publishHTMLPage( htmlPageAsset, relatedAssets, reqImpl.getHttpServletRequest() );
 
-	}
+                    ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user + " publishing page " + htmlPageAsset.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
+                    SessionMessages.add( reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published" );
+                } catch ( WebAssetException wax ) {
+                    Logger.error( this, wax.getMessage(), wax );
+                    SessionMessages.add( reqImpl.getHttpServletRequest(), "error", "message.webasset.published.failed" );
+                }
+            } else {
+                HTMLPage htmlpage = (HTMLPage) InodeFactory.getInode( pageInode, HTMLPage.class );
+                if ( InodeUtils.isSet( htmlpage.getInode() ) ) {
 
+                    try {
+
+                        //Publish the content related to this page along with the page
+                        PublishFactory.publishAsset( htmlpage, reqImpl.getHttpServletRequest() );
+
+                        ActivityLogger.logInfo( PublishFactory.class, "Publishing HTMLpage action", "User " + user + " publishing page " + htmlpage.getURI(), HostUtil.hostNameUtil( req, _getUser( req ) ) );
+                        SessionMessages.add( reqImpl.getHttpServletRequest(), "message", "message.htmlpage_list.published" );
+                    } catch ( WebAssetException wax ) {
+                        Logger.error( this, wax.getMessage(), wax );
+                        SessionMessages.add( reqImpl.getHttpServletRequest(), "error", "message.webasset.published.failed" );
+                    }
+                }
+            }
+
+        }
+
+    }
 
 }
