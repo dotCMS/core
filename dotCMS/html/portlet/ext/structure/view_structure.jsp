@@ -308,19 +308,19 @@ var deleteLabel = "";
 			<th width="40%">
 				<a href="<portlet:actionURL>
 				<portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='upper(name)' /><portlet:param name='direction' value='asc'/>
+				<portlet:param name='orderBy' value='name' /><portlet:param name='direction' value='asc'/>
 				</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Structure-Name") %></a>
 			</th>
 			<th width="10%">
 				<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='structuretype, upper(name)' /><portlet:param name='direction' value='asc'/>
+				<portlet:param name='orderBy' value='structuretype, name' /><portlet:param name='direction' value='asc'/>
 				</portlet:actionURL>" >
 				<%= LanguageUtil.get(pageContext, "Variable") %></a>
 
 			</th>
 			<th width="30%" >
 				<a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_structure' />
-				<portlet:param name='orderBy' value='upper(description)' /><portlet:param name='direction' value='asc'/>
+				<portlet:param name='orderBy' value='description' /><portlet:param name='direction' value='asc'/>
 				</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Description") %></a>
 			</th>
 			<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Entries") %></th>

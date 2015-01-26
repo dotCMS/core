@@ -68,7 +68,7 @@ public class ViewStructureAction extends DotPortletAction {
 
 		try {
 			String orderby = req.getParameter("orderBy");
-			if (!UtilMethods.isSet(orderby)) {
+			if (!UtilMethods.isSet(orderby) || orderby.equals("name")) {
 				orderby = "upper(name)";
 			}
 			String direction = req.getParameter("direction");
