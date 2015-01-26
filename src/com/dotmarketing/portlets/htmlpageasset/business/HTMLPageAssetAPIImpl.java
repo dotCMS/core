@@ -230,13 +230,28 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
+    public List<IHTMLPage> getLiveHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException {
+        return getHTMLPages( parent, true, false, user, respectFrontEndRoles );
+    }
+
+    @Override
     public List<IHTMLPage> getWorkingHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         return getHTMLPages(parent, false, false, user, respectFrontEndRoles);
     }
 
     @Override
+    public List<IHTMLPage> getWorkingHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException {
+        return getHTMLPages( parent, false, false, user, respectFrontEndRoles );
+    }
+
+    @Override
     public List<IHTMLPage> getDeletedHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
         return getHTMLPages(parent, false, true, user, respectFrontEndRoles);
+    }
+
+    @Override
+    public List<IHTMLPage> getDeletedHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException {
+        return getHTMLPages( parent, false, true, user, respectFrontEndRoles );
     }
 
     @Override

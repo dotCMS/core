@@ -610,6 +610,18 @@ import com.liferay.portal.model.User;
 	 */
 	public abstract List<HTMLPage> getLiveHTMLPages(Folder parent,User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
+    /**
+     * Returns the a list of live HTML pages living directly under a given host
+     *
+     * @param host
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public abstract List<HTMLPage> getLiveHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotDataException, DotSecurityException;
+
 	/**
 	 *
 	 * @param parent
