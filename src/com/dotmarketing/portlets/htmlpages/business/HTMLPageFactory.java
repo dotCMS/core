@@ -29,7 +29,7 @@ public interface HTMLPageFactory {
 
 	public Folder getParentFolder(HTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException;
 
-	public Host getParentHost(HTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException;
+	public Host getParentHost(IHTMLPage object) throws DotIdentifierStateException, DotDataException, DotSecurityException;
 
 	public HTMLPage loadWorkingPageById(String pageId) throws DotDataException;
 	
