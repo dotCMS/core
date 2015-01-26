@@ -267,7 +267,7 @@ public class BrowserAPI {
 			// Getting the html pages directly under the parent folder or host
 			List<IHTMLPage> pages = new ArrayList<IHTMLPage>();
 			try {
-				if (parent != null) {
+				if (parent != null) {//For folders
 					if(!showWorking) {
 						pages.addAll(folderAPI.getLiveHTMLPages(parent, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
@@ -275,18 +275,25 @@ public class BrowserAPI {
 					else {
 						pages.addAll(folderAPI.getHTMLPages(parent, true, false, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(parent, user, false));
-						//pages.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(parent, user, false));
 					}
 
 					if(showArchived) {
 						pages.addAll(folderAPI.getHTMLPages(parent, true, showArchived, user, false));
 						pages.addAll(APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages(parent, user, false));
 					}
-				} else {
-					pages.addAll(folderAPI.getHTMLPages(host, true,
-							showArchived, user, false));
-					pages.addAll(APILocator.getHTMLPageAssetAPI().getHTMLPages(host,true,showArchived, user, false));
+				} else {//For hosts
+                    if ( !showWorking ) {
+                        pages.addAll( folderAPI.getLiveHTMLPages( host, user, false ) );
+                        pages.addAll( APILocator.getHTMLPageAssetAPI().getLiveHTMLPages( host, user, false ) );
+                    } else {
+                        pages.addAll( folderAPI.getHTMLPages( host, true, false, user, false ) );
+                        pages.addAll( APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages( host, user, false ) );
+                    }
 
+                    if ( showArchived ) {
+                        pages.addAll( folderAPI.getHTMLPages( host, true, showArchived, user, false ) );
+                        pages.addAll( APILocator.getHTMLPageAssetAPI().getDeletedHTMLPages( host, user, false ) );
+                    }
 				}
 			} catch (Exception e1) {
 				Logger.error(this, "Could not load HTMLPages : ", e1);

@@ -82,9 +82,45 @@ public interface HTMLPageAssetAPI {
 
     List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
+    /**
+     * Returns the a list of live HTML pages living directly under a given host
+     *
+     * @param parent
+     * @param user
+     * @param respectFrontEndRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<IHTMLPage> getLiveHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException;
+
     List<IHTMLPage> getWorkingHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
+    /**
+     * Returns the a list of working HTML pages living directly under a given host
+     *
+     * @param parent
+     * @param user
+     * @param respectFrontEndRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<IHTMLPage> getWorkingHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException;
+
     List<IHTMLPage> getDeletedHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns the a list of archived HTML pages living directly under a given host
+     *
+     * @param parent
+     * @param user
+     * @param respectFrontEndRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<IHTMLPage> getDeletedHTMLPages ( Host parent, User user, boolean respectFrontEndRoles ) throws DotDataException, DotSecurityException;
 
     List<IHTMLPage> getHTMLPages(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 

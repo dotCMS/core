@@ -860,6 +860,19 @@ public class FolderAPIImpl implements FolderAPI  {
 
 		return papi.filterCollection(list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user);
 	}
+
+    public List<HTMLPage> getLiveHTMLPages ( Host host, User user, boolean respectFrontEndPermissions ) throws DotDataException, DotSecurityException {
+        if ( !papi.doesUserHavePermission( host, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions ) ) {
+            throw new DotSecurityException( "User " + user + " does not have permission to read  " + host.getHostname() );
+        }
+        ChildrenCondition cond = new ChildrenCondition();
+        cond.live = true;
+        cond.deleted = false;
+        List list = ffac.getChildrenClass( host, HTMLPage.class, cond );
+
+        return papi.filterCollection( list, PermissionAPI.PERMISSION_READ, respectFrontEndPermissions, user );
+    }
+
 	public List<HTMLPage> getLiveHTMLPages(Folder parent, User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		if (!papi.doesUserHavePermission(parent, PermissionAPI.PERMISSION_READ, user,respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + user + " does not have permission to read  " + parent.getName());
