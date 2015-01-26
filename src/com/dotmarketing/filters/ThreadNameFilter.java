@@ -61,7 +61,7 @@ public class ThreadNameFilter implements Filter {
 			String queryString = request.getQueryString();
 			boolean adminMode = (request.getSession(false) != null && request.getSession().getAttribute(
 					com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-	
+			String referer = request.getHeader("Referer");
 			StringWriter sw = new StringWriter();
 			sw.append("url:");
 			sw.append(request.getMethod());
@@ -73,6 +73,11 @@ public class ThreadNameFilter implements Filter {
 			sw.append(request.getRemoteAddr());
 			sw.append(" | Admin:" + adminMode);
 			sw.append(" | start:" + df.format(startDate.get()));
+			if(referer!=null&& referer.length()>0){
+				sw.append("  ref:");
+				sw.append(referer.replace('"', '\''));
+			}
+			
 			if(queryString!=null&& queryString.length()>0){
 				sw.append("  ?");
 				sw.append(queryString.replace('"', '\''));
