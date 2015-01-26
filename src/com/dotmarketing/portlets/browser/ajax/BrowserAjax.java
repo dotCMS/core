@@ -168,7 +168,7 @@ public class BrowserAjax {
 
     /**
      * Action called every time a user opens a folder using the + (left hand side)
-     * @param parentInode Parent folder to be opened
+     * @param hostId
      * @return The subtree structure of folders
      * @throws SystemException
      * @throws PortalException
@@ -1126,43 +1126,80 @@ public class BrowserAjax {
         }
     }
 
-    public boolean publishAsset (String inode) throws WebAssetException, Exception {
+    /**
+     * Publish a given asset, in case of html pages can be published only if there is not related to it
+     * unpublished content.
+     *
+     * @param inode
+     * @return
+     * @throws Exception
+     */
+    public boolean publishAsset ( String inode ) throws Exception {
+
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
         Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user))
-    		throw new DotRuntimeException("The user doesn't have the required permissions.");
+    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user)) {
+            throw new DotRuntimeException( "The user doesn't have the required permissions." );
+        }
 
-    	if(id!=null && id.getAssetType().equals("contentlet")){
-    		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		APILocator.getContentletAPI().publish(cont, user, false);
-    		return true;
-    	}
+        HTMLPageAsset htmlPageAsset = null;
+        if ( id != null && id.getAssetType().equals( "contentlet" ) ) {
+            Contentlet cont = APILocator.getContentletAPI().find( inode, user, false );
 
-		java.util.List relatedAssets = new java.util.ArrayList();
-        Inode inodeObj = InodeFactory.getInode(inode,Inode.class);
+            //Verify if it is a HTMLPage, if not let do a normal contentlet publish
+            if (cont.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( cont );
+            } else {
+                APILocator.getContentletAPI().publish( cont, user, false );
+                return true;
+            }
+        }
 
+        /*
+        Verify if we have unpublish content related to this page
+         */
+        java.util.List relatedAssets = new java.util.ArrayList();
         HTMLPage htmlPage = null;
-
-        if( inodeObj instanceof HTMLPage ) {
-        	htmlPage =(HTMLPage)inodeObj;
+        if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
+            relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
+        } else {//Verify for legacy HTMLPages
+            htmlPage = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
+            if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {
+                relatedAssets = PublishFactory.getUnpublishedRelatedAssets( htmlPage, relatedAssets, user, false );
+            }
         }
 
-        if (htmlPage != null && InodeUtils.isSet(htmlPage.getInode())) {
-			relatedAssets = PublishFactory.getUnpublishedRelatedAssets(htmlPage,relatedAssets, user, false);
-        }
+        //Only publish the content if there is not related unpublished content
+        if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
 
-        if ((relatedAssets == null) || (relatedAssets.size() == 0)) {
-	    	Inode asset = inodeObj;
+            /*
+            Publishing the HTMLPage
+             */
+            if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Publish for the new HTMLPages as content
 
-	        if (!permissionAPI.doesUserHavePermission(asset, PERMISSION_PUBLISH, user))
-				throw new Exception("The user doesn't have the required permissions.");
+                if ( !permissionAPI.doesUserHavePermission( htmlPageAsset, PERMISSION_PUBLISH, user ) ) {
+                    throw new Exception( "The user doesn't have the required permissions." );
+                }
 
-	        return PublishFactory.publishAsset(asset, req);
+                //Publish the page
+                return PublishFactory.publishHTMLPage( htmlPageAsset, req );
+            } else if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {//Publish for the legacy HTMLPages
+
+                if ( !permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user ) ) {
+                    throw new Exception( "The user doesn't have the required permissions." );
+                }
+
+                //Publish the legacy HTMLPage
+                return PublishFactory.publishAsset( htmlPage, req );
+            }
+
         } else {
-        	throw new Exception("Related assets needs to be published");
+            throw new Exception( "Related assets needs to be published" );
         }
+
+        return false;
     }
 
     public boolean unPublishAsset (String inode) throws Exception {
