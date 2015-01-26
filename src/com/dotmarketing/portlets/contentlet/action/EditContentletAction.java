@@ -2004,6 +2004,13 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 										+ "' ", currentHost);
 							}catch (DotContentletStateException e) {
 								stateError = true;
+							}catch(DotStateException dse){
+								if(dse.getMessage().equals("No live version Contentlet. Call setLive first")){
+									if(contentlets.size() < 2)
+										throw dse;
+								}else{
+									throw dse;
+								}
 							}catch(DotDataException de){
 								HibernateUtil.rollbackTransaction();
 								throw de;
