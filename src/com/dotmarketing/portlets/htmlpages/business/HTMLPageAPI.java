@@ -323,7 +323,7 @@ public interface HTMLPageAPI {
 	 * @throws DotDataException
 	 * @throws DotIdentifierStateException
 	 */
-	public Host getParentHost(HTMLPage object)
+	public Host getParentHost(IHTMLPage object)
 			throws DotIdentifierStateException, DotDataException,
 			DotSecurityException;
 
