@@ -204,7 +204,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                       dc.addObject( identifier ); //asset
                       dc.addParam( new Date() ); // entered date
-                      dc.addObject( 1 ); // language id
+                      dc.addObject( 1 ); // language id //TODO: We are not using this property, we will try to push the content regardless of the language
 
                       if(UtilMethods.isSet(operationDate)) {
                     	  dc.addParam( operationDate );
