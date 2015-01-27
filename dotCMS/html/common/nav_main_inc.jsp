@@ -6,12 +6,8 @@
 
 <%@page import="java.util.List"%><%@page import="com.dotmarketing.util.UtilMethods"%>
 <script>
-var portletTabMap = {};
+var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refreshing to retrieve the proper tabId based on the portletId
 
-<%for(int l=0;l< layouts.length ;l++){
-	  List<String> portletIDs = layouts[l].getPortletIds();%>
-	  portletTabMap['<%=portletIDs.get(0)%>'] = <%=l%>; 
-<%} %> 
 </script>
 <div id="menu">
         <ul class="level1 horizontal" id="root">
@@ -25,6 +21,10 @@ var portletTabMap = {};
 
 
                 List<String> portletIDs = layouts[l].getPortletIds();
+                
+                // fill
+               	%><script>portletTabMap['<%=portletIDs.get(0)%>'] = <%=l%></script><%
+                
                 boolean isSelectedTab = (layout != null && layouts !=null && layout.getId().equals(layouts[l].getId()));
                 PortletURLImpl portletURLImpl = new PortletURLImpl(request, portletIDs.get(0), layouts[l].getId(), false);
                 String tabHREF = portletURLImpl.toString() + "&dm_rlout=1&r=" + System.currentTimeMillis();
@@ -54,7 +54,7 @@ var portletTabMap = {};
                                                         Portlet p = (Portlet) APILocator.getPortletAPI().findPortlet(portletIDs.get(i));
 
 
-
+                                                     	%><script>portletTabMap['<%=portletIDs.get(i)%>'] = <%=l%></script><%
 
 
                                                         portletURLImpl = new PortletURLImpl(request, portletIDs.get(i), layouts[l].getId(), false);
@@ -113,7 +113,7 @@ dojo.require("dojo.hash");
                 constructor : function() {},
 
                 show : function(href, tabId) {
-
+                	
                         var r = Math.floor(Math.random() * 1000000000);
                         if (href.indexOf("?") > -1) {
                                 href = href + "&r=" + r;
@@ -140,7 +140,6 @@ dojo.require("dojo.hash");
                 reload : function(){
                         if(dojo.hash()  ){
 	                        var hashValue = decodeURIComponent(dojo.hash());
-	                        console.log("reloading" + hashValue);
 	                        var portletId = hashValue.split("/api/portlet/")[1];
 	                        portletId = portletId.substring(0, portletId.indexOf("/"));
 	                        dotAjaxNav.show(hashValue, portletTabMap[portletId]);
@@ -315,7 +314,9 @@ dojo.require("dojo.hash");
 
         }
         dojo.addOnLoad (smallifyMenu);
-        dojo.addOnLoad (dotAjaxNav.reload);
+        dojo.addOnLoad(function(){
+            dotAjaxNav.reload();
+        });
         dojo.connect(window, "onresize", this, "smallifyMenu");
 
 
