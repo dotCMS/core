@@ -535,14 +535,20 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
+		
+		
+		if(cache.is404(contentlet)) return new WorkflowTask();
 		WorkflowTask task = cache.getTask(contentlet);
 		if (task == null) {
 			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
 			hu.setQuery("from workflow_task in class com.dotmarketing.portlets.workflows.model.WorkflowTask where webasset = ?");
 			hu.setParam(contentlet.getIdentifier());
 			task = (WorkflowTask) hu.load();
-			if (task != null) {
+			if (task != null && task.getId()!=null) {
 				cache.addTask(contentlet, task);
+			}
+			else{
+				cache.add404Task(contentlet);
 			}
 		}
 		return task;

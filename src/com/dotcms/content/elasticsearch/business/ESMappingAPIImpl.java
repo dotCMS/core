@@ -54,6 +54,8 @@ import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
@@ -286,7 +288,23 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             m.put("conFolder", conFolder!=null && InodeUtils.isSet(conFolder.getInode()) ? conFolder.getInode() : con.getFolder());
             m.put("parentPath", ident.getParentPath());
             m.put("path", ident.getPath());
-
+            
+            try{
+            	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
+            	if(task!=null && task.getId()!=null){
+            		m.put("wfcreatedBy", task.getCreatedBy());
+                    m.put("wfassign", task.getAssignedTo());
+            		m.put("wfstep", task.getStatus());
+            		m.put("wfModDate", datetimeFormat.format(task.getModDate()));
+            	}
+            			
+            }
+            catch(DotDataException e){
+            	Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
+            }
+            
+            
+            
             if(UtilMethods.isSet(ident.getSysPublishDate()))
                 m.put("pubdate", datetimeFormat.format(ident.getSysPublishDate()));
             else

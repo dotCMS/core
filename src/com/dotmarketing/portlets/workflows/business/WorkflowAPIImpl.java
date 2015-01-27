@@ -819,7 +819,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 					}
 				}
 			}
-
+			APILocator.getContentletAPI().refresh(processor.getContentlet());
 			if(local){
 				HibernateUtil.commitTransaction();
 			}
