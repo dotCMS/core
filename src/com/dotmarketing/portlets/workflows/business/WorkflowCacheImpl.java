@@ -17,7 +17,7 @@ import com.dotmarketing.util.UtilMethods;
 public class WorkflowCacheImpl extends WorkflowCache {
 
 	private DotCacheAdministrator cache;
-
+	final static String FOUR_OH_FOUR_TASK = "404WorkflowTask";
 	public WorkflowCacheImpl() {
 		cache = CacheLocator.getCacheAdministrator();
 	}
@@ -144,11 +144,25 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		
 	}
 
+	protected boolean is404(Contentlet contentlet){
+		String taskId=null;
+		try {
+			taskId = (String) cache.get(contentlet.getIdentifier(), TASK_GROUP);
+		} catch (DotCacheException e) {
+			Logger.error(this.getClass(), e.getMessage());
+		}
+		return (FOUR_OH_FOUR_TASK.equals(taskId));
+
+		
+	}
+	
 	 protected WorkflowTask getTask(Contentlet contentlet){
 		
 			WorkflowTask task = null;
 			try {
 				String taskId = (String) cache.get(contentlet.getIdentifier(), TASK_GROUP);
+				
+
 				task = (WorkflowTask) cache.get(taskId, TASK_GROUP);
 			} catch (Exception e) {
 				Logger.debug(this.getClass(), e.getMessage());
@@ -202,16 +216,21 @@ public class WorkflowCacheImpl extends WorkflowCache {
 
 
 	}
-	 
-	 
+	@Override
+	protected void add404Task(Contentlet contentlet) {
+		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())){
+			 return;
+		 }
+		// Add the key to the cache
+		cache.put(contentlet.getIdentifier(), FOUR_OH_FOUR_TASK, TASK_GROUP);
+		return;
+	}
 	 
 	protected WorkflowTask addTask(Contentlet contentlet, WorkflowTask task) {
 		 if(contentlet ==null || !UtilMethods.isSet(contentlet.getIdentifier())
 				 || task ==null || !UtilMethods.isSet(task.getId()) ){
 			 return null;
 		 }
-
-
 		// Add the key to the cache
 		cache.put(contentlet.getIdentifier(), task.getId(), TASK_GROUP);
 		return addTask(task);

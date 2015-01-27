@@ -58,5 +58,7 @@ public abstract class WorkflowCache implements Cachable{
 	public String[] getGroups() {
 		return new String[]{PRIMARY_GROUP, TASK_GROUP, STEP_GROUP};
 	}
-	
+
+	abstract protected void add404Task(Contentlet contentlet) ;
+	abstract protected boolean is404(Contentlet contentlet);
 }
