@@ -12,9 +12,9 @@
 #if($inframe && $inframe.contains("mainFrame=true"))
 	<html>
 		<head>
-			<meta http-equiv="refresh" content="0; url=${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end">
+			<!--  meta http-equiv="refresh" content="0; url=${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end"-->
 			<script>
-					window.top.location.href = "${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end";
+					window.top.location.replace("${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end");
 			</script>
 		</head>
 	</html>
