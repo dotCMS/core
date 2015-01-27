@@ -549,7 +549,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 			dc.addParam("HTMLPage Asset:friendlyName"); //relation
 			dc.addParam("text7"); // contentlet
 			dc.addParam(true); // require
-			dc.addParam(false); // indexed
+			dc.addParam(true); // indexed
 			dc.addParam(true); // listed
 			dc.addParam("friendlyname"); // velocity name
 			dc.addParam(9); // sort order
