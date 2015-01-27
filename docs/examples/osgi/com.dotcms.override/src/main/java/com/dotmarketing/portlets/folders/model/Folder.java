@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
@@ -20,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.struts.FolderForm;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -280,6 +280,46 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
         //TODO: New code in this class!
 
         return id!=null?id.getPath():null;
+    }
+
+    public boolean equals(Object o){
+        if (o == null)
+            return false;
+        if (this == o)
+            return true;
+        if(o instanceof Folder){
+            if(!this.name.equals(((Folder) o).name))
+                return false;
+            if(!this.defaultFileType.equals(((Folder) o).defaultFileType))
+                return false;
+            if(this.sortOrder != ((Folder) o).sortOrder)
+                return false;
+            if(this.showOnMenu != ((Folder) o).showOnMenu)
+                return false;
+            if(!this.hostId.equals(((Folder) o).hostId))
+                return false;
+            if(!this.title.equals(((Folder) o).title))
+                return false;
+            if(!this.filesMasks.equals(((Folder) o).filesMasks))
+                return false;
+        }else if(o instanceof FolderForm){
+            if(!this.name.equals(((FolderForm) o).getName()))
+                return false;
+            if(!this.defaultFileType.equals(((FolderForm) o).getDefaultFileType()))
+                return false;
+            if(this.sortOrder != ((FolderForm) o).getSortOrder())
+                return false;
+            if(!this.hostId.equals(((FolderForm) o).getHostId()))
+                return false;
+            if(!this.title.equals(((FolderForm) o).getTitle()))
+                return false;
+            if(!this.filesMasks.equals(((FolderForm) o).getFilesMasks()))
+                return false;
+            if(!this.showOnMenu == ((FolderForm) o).isShowOnMenu())
+                return false;
+        }else
+            return false;
+        return true;
     }
 
 }

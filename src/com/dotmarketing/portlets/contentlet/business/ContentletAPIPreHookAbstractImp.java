@@ -558,6 +558,14 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+    public boolean esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
+    public boolean esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
 	public boolean deleteOldContent(Date deleteFrom) {
 		return true;
 	}

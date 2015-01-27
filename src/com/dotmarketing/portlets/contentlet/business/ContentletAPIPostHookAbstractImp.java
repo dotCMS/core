@@ -445,7 +445,13 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 
     public void isInodeIndexed ( String inode, boolean live, boolean returnValue ) {
     }
-    
+
+    public void esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    }
+
+    public void esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+    }
+
     @Override
     public void publishAssociated(Contentlet contentlet, boolean isNew)
             throws DotSecurityException, DotDataException,
