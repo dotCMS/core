@@ -1,13 +1,17 @@
 package com.dotcms.publisher.business;
 
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import java.io.StringWriter;
+import java.util.List;
 
 public class PublishAuditUtil {
 
@@ -51,7 +55,7 @@ public class PublishAuditUtil {
     }
 
     /**
-     * Searches and returns for a given Identifier a Contentlet using the default language
+     * Searches and returns for a given Identifier a Contentlet giving priority to the default language
      *
      * @param identifier
      * @return
@@ -62,8 +66,35 @@ public class PublishAuditUtil {
 
         User user = APILocator.getUserAPI().getSystemUser();
 
-        //Get the Contentlet for the default language
-        return APILocator.getContentletAPI().findContentletByIdentifier( identifier, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false );
+        Identifier contentletIdentifier = APILocator.getIdentifierAPI().find( identifier );
+        if ( contentletIdentifier == null ) {
+            throw new DotContentletStateException( "Unable to find Contentle with Identifier [" + identifier + "]" );
+        }
+
+        //Getting the default language
+        Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+
+        /*
+        We may added a contentlet that exist only in a NON default language so
+        assuming the content will always exist in the default language is wrong.
+         */
+        List<Contentlet> allLanguages = APILocator.getContentletAPI().search( "+identifier:" + identifier, 0, 0, "moddate", user, false );
+
+        /*
+        For display purposes we are trying to return the contentlet with the default language, if
+        nothing found for the default language just return the first one.
+         */
+        Contentlet foundContentlet = null;
+        for ( Contentlet contentlet : allLanguages ) {
+            if ( contentlet.getLanguageId() == defaultLanguage.getId() ) {
+                foundContentlet = contentlet;
+            }
+        }
+        if ( foundContentlet == null ) {
+            foundContentlet = allLanguages.get( 0 );
+        }
+
+        return foundContentlet;
     }
 
     public static PublishAuditUtil getInstance () {
