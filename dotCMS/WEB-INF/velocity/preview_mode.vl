@@ -6,6 +6,25 @@
 #if($UtilMethods.isSet($request.getAttribute("com.dotmarketing.clickstream.uri.override")))
 	#set($_baseURI =	$request.getAttribute("com.dotmarketing.clickstream.uri.override"))
 #end
+
+##if have been loaded in the mainFrame
+#set($inframe=$request.getHeader("Referer"))
+#if($inframe && $inframe.contains("mainFrame=true"))
+	<html>
+		<head>
+			<meta http-equiv="refresh" content="0; url=${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end">
+			<script>
+					window.top.location.href = "${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end";
+			</script>
+		</head>
+	</html>
+	#stop
+#end
+
+
+
+
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
