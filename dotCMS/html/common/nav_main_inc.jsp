@@ -6,7 +6,7 @@
 
 <%@page import="java.util.List"%><%@page import="com.dotmarketing.util.UtilMethods"%>
 <script>
-var portletTabMap = {}; // this holds a Map<>
+var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refreshing to retrieve the proper tabId based on the portletId
 
 </script>
 <div id="menu">
