@@ -299,8 +299,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             	}
             			
             }
-            catch(Exception e){
-            	Logger.error(this.getClass(), "unable to add workflow info to index:" + e);
+            catch(DotDataException e){
+            	Logger.error(this.getClass(), "unable to add workflow info to index:" + e, e);
             }
             
             

@@ -537,7 +537,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	public WorkflowTask findTaskByContentlet(Contentlet contentlet) throws DotDataException {
 		
 		
-		if(cache.is404(contentlet)) return null;
+		if(cache.is404(contentlet)) return new WorkflowTask();
 		WorkflowTask task = cache.getTask(contentlet);
 		if (task == null) {
 			final HibernateUtil hu = new HibernateUtil(WorkflowTask.class);
