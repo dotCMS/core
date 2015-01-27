@@ -291,9 +291,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             
             try{
             	WorkflowTask task = APILocator.getWorkflowAPI().findTaskByContentlet(con);
-            	if(task!=null){
+            	if(task!=null && task.getId()!=null){
+            		m.put("wfcreatedBy", task.getCreatedBy());
                     m.put("wfassign", task.getAssignedTo());
             		m.put("wfstep", task.getStatus());
+            		m.put("wfModDate", datetimeFormat.format(task.getModDate()));
             	}
             			
             }
