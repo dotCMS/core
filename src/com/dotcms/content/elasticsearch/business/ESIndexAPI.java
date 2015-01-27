@@ -649,7 +649,7 @@ public class ESIndexAPI {
             if(getAliasToIndexMap(APILocator.getSiteSearchAPI().listIndices()).get(alias)==null) {
                 Client client=new ESClient().getClient();
                 IndicesAliasesRequest req=new IndicesAliasesRequest();
-                req.addAlias(indexName, alias);
+                req.addAlias(alias, indexName);
                 client.admin().indices().aliases(req).actionGet(30000L);
             }
          } catch (Exception e) {
