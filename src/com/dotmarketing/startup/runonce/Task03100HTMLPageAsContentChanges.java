@@ -325,7 +325,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 			dc.addParam("text4"); // contentlet
 			dc.addParam(true); // require
 			dc.addParam(true); // indexed
-			dc.addParam(true); // listed
+			dc.addParam(false); // listed
 			dc.addParam("cachettl"); // velocity name
 			dc.addParam(4); // sort order
 			dc.addParam("$velutil.mergeTemplate('/static/htmlpage_assets/cachettl_custom_field.vtl')"); // values
@@ -550,7 +550,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 			dc.addParam("text7"); // contentlet
 			dc.addParam(true); // require
 			dc.addParam(true); // indexed
-			dc.addParam(true); // listed
+			dc.addParam(false); // listed
 			dc.addParam("friendlyname"); // velocity name
 			dc.addParam(9); // sort order
 			dc.addParam(""); // values
@@ -596,7 +596,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 			dc.addParam("text8"); // contentlet
 			dc.addParam(false); // require
 			dc.addParam(true); // indexed
-			dc.addParam(true); // listed
+			dc.addParam(false); // listed
 			dc.addParam("redirecturl"); // velocity name
 			dc.addParam(10); // sort order
 			dc.addParam("$velutil.mergeTemplate('/static/htmlpage_assets/redirect_custom_field.vtl')"); // values
