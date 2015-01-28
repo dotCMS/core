@@ -794,7 +794,7 @@
 
 
       <!-- STRUCTURE & FIELD-->
-      <action path="/ext/structure/view_structure" type="com.dotmarketing.portlets.structure.action.ViewStructureAction" name="" input="portlet.ext.structure.view" validate="false" scope="request">
+      <action path="/ext/structure/view_structure" type="com.dotmarketing.portlets.structure.action.ViewStructureAction" name="StructureForm" input="portlet.ext.structure.view" validate="false" scope="request">
          <forward name="portlet.ext.structure.view" path="portlet.ext.structure.view" />
          <forward name="portlet.ext.structure.view_structure" path="portlet.ext.structure.view_structure" />
       </action>
