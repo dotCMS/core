@@ -1205,6 +1205,19 @@ public class FolderFactoryImpl extends FolderFactory {
 								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
 							}
 						}
+					}else if(item instanceof IHTMLPage){
+						IHTMLPage asset = ((IHTMLPage) item);
+						title = asset.getTitle();
+						title = retrieveTitle(title, user);
+						inode = asset.getInode();
+						if (asset.isShowOnMenu()) {
+							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+								show = false;
+							}
+							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+							}
+						}
 					}else{
 						WebAsset asset = ((WebAsset) item);
 						title = asset.getTitle();

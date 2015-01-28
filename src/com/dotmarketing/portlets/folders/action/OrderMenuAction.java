@@ -110,10 +110,11 @@ public class OrderMenuAction extends DotPortletAction {
 						CacheLocator.getNavToolCache().removeNavByPath(id.getHostId(), id.getPath());
 					}
 					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
-					String folderId = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getIdentifier();
-					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderId);
+					String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
+					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
 				}
 				
+				CacheLocator.getNavToolCache().clearCache();
 				return;
 			}
 
