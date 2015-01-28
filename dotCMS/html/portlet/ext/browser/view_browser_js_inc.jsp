@@ -2221,7 +2221,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	 };
 
 	 function removeClass (id, className) {
-	 	var actualClassName = $(id).className;
+	 	var actualClassName = "";
+	 	if($(id))
+	 		actualClassName = $(id).className;
 	 	if (actualClassName.indexOf(className) > -1) {
 	 		var newClassName = "";
 	 		if (actualClassName.indexOf(className) > 0)
@@ -2233,14 +2235,19 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	 }
 
 	 function addClass (id, className) {
-	 	if (!hasClass (id, className)) {
-		 	var actualClassName = $(id).className;
-		 	$(id).className = actualClassName + ' ' + className;
+		if (!hasClass (id, className)) {
+	 		var actualClassName = "";
+		 	if($(id)){
+		 		actualClassName = $(id).className;
+			 	$(id).className = actualClassName + ' ' + className;
+		 	}
 		 }
 	 }
 
 	 function hasClass (id, className) {
-	 	var actualClassName = $(id).className;
+		 var actualClassName = "";
+		 	if($(id))
+		 		actualClassName = $(id).className;
 	 	if (actualClassName.indexOf(className) > -1)
 	 		return true;
 	 	return false;
