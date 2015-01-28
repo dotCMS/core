@@ -193,7 +193,7 @@
             var begin = counters["begin"];
             var end = counters["end"];
     		var totalPages = counters["totalPages"];
-
+    		
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
@@ -1676,10 +1676,12 @@
                 th.innerHTML = '&nbsp;';
                 row.appendChild(th);
 
-                th = document.createElement('th');
-                th.setAttribute("style","width:60px;");
-                th.innerHTML = '&nbsp;';
-                row.appendChild(th);
+				if(languages.length>1) {
+	                th = document.createElement('th');
+	                th.setAttribute("style","width:70px;");
+	                th.innerHTML = '&nbsp;';
+	                row.appendChild(th);
+                }
 
                 for (var i = 0; i < headers.length; i++) {
                         var header = headers[i];
@@ -1747,13 +1749,13 @@
                                 var cell = row.insertCell (row.cells.length);
                                 //console.log(headers[j]);
                                 cell.setAttribute("align","left");
-                                if (j == 0) {
+                                if (j == 0 && languages.length>1) {
                                         languageId = cellData["languageId"];
                                         locale = "";
-
+                                        	
                                         for (var n = 0; n < languages.length; ++n) {
                                                 if (languages[n][0] == languageId) {
-                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;" + languages[n][1] + "_" + languages[n][2];
+                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
                                                         //locale = languages[n][1] + "_" + languages[n][2];
                                                         break;
                                                 }

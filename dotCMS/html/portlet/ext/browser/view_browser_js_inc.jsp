@@ -862,9 +862,9 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	    		name = shortenString(name, 30)
 	    		var title = shortenLongWords(asset.title, 30);
 	    		var modUserName = shortenString(asset.modUserName, 20);
-				var languageHTML = (asset.type=='htmlpage' && asset.isContentlet)
+				var languageHTML = (asset.type=='htmlpage' && asset.isContentlet && multipleLanguages)
 					?"<img src=\"/html/images/languages/"+asset.languageCode+ "_" +asset.countryCode + 
-							".gif\" width=\"16px\" height=\"11px\" /><span id='"+asset.inode+"-LangSPAN'>&nbsp;"+asset.languageCode+ "_" +asset.countryCode+"</span>":""; 
+							".gif\" width=\"16px\" height=\"11px\" /><span id='"+asset.inode+"-LangSPAN'>&nbsp;("+asset.languageCode+ "_" +asset.countryCode+")</span>":""; 
 	    		
 				var html = 	'<tr id="' + asset.inode + '-TR">\n' +
 						   	'	<td class="nameTD" id="' + asset.inode + '-NameTD">' +

@@ -47,6 +47,7 @@
 <script>
 
 	var browserLoaded = false;
+	var multipleLanguages = false;
 
 	function  resizeBrowser(){
 
@@ -90,11 +91,17 @@ if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROW
 }
 List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 
+if(UtilMethods.isSet(languages) && languages.size()>1) {
 %>
+<script>
+multipleLanguages = true;
+</script>
 <div id="combo_zone2" class="buttonBoxRightTopPadding" style="margin-right:120px;">
 	<input id="language_id" />
 </div>
 <%@include file="../contentlet/languages_select_inc.jsp" %>
+
+<% } %>
 
 <script>
 
