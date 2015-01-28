@@ -184,7 +184,7 @@
 
 
 ##dot parse
-#macro(dotParse $_dotParsePath)
+#macro(oldDotParse $_dotParsePath)
   #if ($UtilMethods.isSet($list))
     #if (!$UtilMethods.isSet($_dotParseListHeap))
       #set ($_dotParseListHeap = $contents.getEmptyList())
@@ -269,9 +269,9 @@
 ##parse
 #macro( parseContainer $containerIdentifier )
    #if($EDIT_MODE || $PREVIEW_MODE)
-		$velutil.mergeTemplate("/working/${containerIdentifier}.container")
+		$velutil.mergeTemplate("/working/${containerIdentifier}.container", $response)
    #else
-		$velutil.mergeTemplate("/live/${containerIdentifier}.container")
+		$velutil.mergeTemplate("/live/${containerIdentifier}.container", $response)
    #end
 #end
 
