@@ -421,7 +421,7 @@
 <div class="clear"></div>
 
 <!-- Start Languages -->
-    #if($languages.size() > 1)
+    #if($availablePageLangs.size() > 0)
         <div class="lang">
 
             <div id="combo_zone2">
@@ -436,7 +436,7 @@
                   #set($imageURL="/html/images/languages/all.gif")
                   #set($style="background-image:url(URLHERE);width:16px;height:11px;margin:3px 5px;display:inline-block;vertical-align:middle")
                   #set($first=true)
-                  #foreach($lang in $languages)
+                  #foreach($lang in $availablePageLangs)
                       #set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
                       #set($display="${lang.language} (${lang.countryCode})")
                       #if($first)

@@ -71,6 +71,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
@@ -559,9 +560,13 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		IHTMLPage htmlPage; 
 		if(id.getAssetType().equals("contentlet")) {
-		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                         APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
+			Contentlet contentlet = APILocator.getContentletAPI()
+					.findContentletByIdentifier(id.getId(), false,
+							getLanguageId(request),
+							APILocator.getUserAPI().getSystemUser(), false);
+		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+			List<Language> availablePageLangs = getAvailableContentPageLanguages(contentlet);
+			context.put("availablePageLangs", availablePageLangs);
 			context.put("dotPageContent", htmlPage);
 		}
 		else {
@@ -804,10 +809,14 @@ public abstract class VelocityServlet extends HttpServlet {
 
         IHTMLPage htmlPage; 
         if(id.getAssetType().equals("contentlet")) {
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                         APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
-    		context.put("dotPageContent", htmlPage);
+			Contentlet contentlet = APILocator.getContentletAPI()
+					.findContentletByIdentifier(id.getId(), false,
+							getLanguageId(request),
+							APILocator.getUserAPI().getSystemUser(), false);
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+			List<Language> availablePageLangs = getAvailableContentPageLanguages(contentlet);
+			context.put("availablePageLangs", availablePageLangs);
+            context.put("dotPageContent", htmlPage);
         }
         else {
             htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
@@ -1240,4 +1249,40 @@ public abstract class VelocityServlet extends HttpServlet {
 		return languageId;
 	}
 
+	/**
+	 * Retrieves the list of languages a given Content Page ({@link Contentlet})
+	 * is available on. This is useful for keeping users from selecting a page
+	 * language that has no associated content at the moment.
+	 * 
+	 * @param contentlet
+	 *            - The Content Page.
+	 * @return The {@link List} of languages the content page is available on.
+	 */
+	private List<Language> getAvailableContentPageLanguages(
+			Contentlet contentlet) {
+		List<Language> languages = new ArrayList<Language>();
+		List<Language> systemLanguages = APILocator.getLanguageAPI()
+				.getLanguages();
+		for (Language language : systemLanguages) {
+			if (language.getId() != contentlet.getLanguageId()) {
+				try {
+					Contentlet content = APILocator.getContentletAPI()
+							.findContentletByIdentifier(
+									contentlet.getIdentifier(), false,
+									language.getId(),
+									APILocator.getUserAPI().getSystemUser(),
+									false);
+				} catch (Exception e) {
+					Logger.info(
+							VelocityServlet.class,
+							"The page is not available in language "
+									+ language.getId() + ". Just keep going.");
+					continue;
+				}
+			}
+			languages.add(language);
+		}
+		return languages;
+	}
+	
 }
