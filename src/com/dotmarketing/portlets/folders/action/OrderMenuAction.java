@@ -114,7 +114,6 @@ public class OrderMenuAction extends DotPortletAction {
 					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
 				}
 				
-				CacheLocator.getNavToolCache().clearCache();
 				return;
 			}
 
