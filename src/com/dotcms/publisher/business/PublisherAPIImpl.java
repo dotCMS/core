@@ -14,12 +14,15 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.viewtools.HTMLPageWebAPI;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 
@@ -196,6 +199,19 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
+                              
+                              // lets check if we have an htmlpage
+                              List<Contentlet> contents = APILocator.getContentletAPIImpl().findAllVersions(iden, user, false);
+                              
+                              if(contents!=null && !contents.isEmpty()) {
+                            	  try {
+                            		  APILocator.getHTMLPageAssetAPI().fromContentlet(contents.get(0)); //if no exception, we have an htmlpage
+                            		  type = "htmlpage";
+                            	  } catch (Exception e) {
+                            		  Logger.info(PublisherAPIImpl.class, "checking if content was an htmlpage");
+                            	  }
+                              }
+                              
                           }
                       }
 

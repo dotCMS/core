@@ -521,18 +521,15 @@ public class RemotePublishAjaxAction extends AjaxAction {
         PublisherAPI pubAPI = PublisherAPI.getInstance();
 
         List<PublishQueueElement> tempBundleContents = pubAPI.getQueueElementsByBundleId( bundleId );
-        List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); // all assets but contentlets
+        List<PublishQueueElement> assetsToPublish = new ArrayList<PublishQueueElement>(); 
 
         for ( PublishQueueElement c : tempBundleContents ) {
-            if ( !c.getType().equals( "contentlet" ) ) {
                 assetsToPublish.add( c );
-            }
         }
 
         pconf.setDownloading( true );
         pconf.setOperation(operation);
 
-        // all types of assets in the queue but contentlets are passed here, which are passed through lucene queries
         pconf.setAssets( assetsToPublish );
         //Queries creation
         pconf.setLuceneQueries( PublisherUtil.prepareQueries( tempBundleContents ) );
