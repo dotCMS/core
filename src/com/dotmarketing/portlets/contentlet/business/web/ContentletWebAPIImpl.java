@@ -631,25 +631,31 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 					}
 					if (!UtilMethods.isSet(status)) {
 						Identifier i = identAPI.find(host, fullPageUrl);
-						
 						if (i != null && InodeUtils.isSet(i.getId())) {
 							try {
-								Contentlet contentInReceiver = conAPI
+								Contentlet existingContent = conAPI
 										.findContentletByIdentifier(i.getId(),
-												true, contentPage.getLanguageId(),
+												true,
+												contentPage.getLanguageId(),
 												systemUser, false);
-								if (contentInReceiver.getStructure()
+								if (existingContent.getStructure()
 										.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
 									// Found a file asset with same path
 									status = "message.htmlpage.error.htmlpage.exists.file";
-								} else if (!contentPage.getIdentifier().equals(
-										i.getId())) {
-									// Found a page with the same path
+								} else {
+									// Found page with same path and language
 									status = "message.htmlpage.error.htmlpage.exists";
 								}
-
-							} catch(DotContentletStateException e) {
-								Logger.info(getClass(), "Page with same URI and same language does not exist, so we are OK");
+							} catch (DotContentletStateException e) {
+								// If it's a brand new page...
+								if (!UtilMethods.isSet(contentPage
+										.getIdentifier())) {
+									// Found page with same path
+									status = "message.htmlpage.error.htmlpage.exists";
+								} else {
+									Logger.info(getClass(),
+											"Page with same URI and same language does not exist, so we are OK");
+								}
 							}
 						}
 					}
