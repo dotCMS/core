@@ -64,7 +64,6 @@
 
         var languages = new Array();
         var language;
-        var multipleLanguages = false;
 
         <%for (Language language: languages) {%>
                 language = new Array(<%= language.getId() %>, "<%= language.getLanguageCode() %>", "<%= language.getCountryCode() %>", "<%= language.getLanguage() %>", "<%= language.getCountry() %>");
