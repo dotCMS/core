@@ -177,7 +177,7 @@ dojo.require("dojo.hash");
 
                         console.log("navigating to:" + hashValue)
                         myCp.attr("href", hashValue);
-                        myCp.refresh();
+                        //myCp.refresh(); GIT-7098
 
                         dojo.parser.parse(this.hangerDiv);
                 },
