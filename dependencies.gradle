@@ -21,7 +21,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version:'1.2.5_1'
     compile group: 'com.dotcms.lib', name: 'dot.backport-util-concurrent', version:'3.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.bsf', version:'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.bsh', version:'2.0b4_2'
     compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version:'1.8.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version:'0.9_1'
     compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version:'0.9_1'
