@@ -639,10 +639,10 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 												contentPage.getLanguageId(),
 												systemUser, false);
 								if (existingContent.getStructure()
-										.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+										.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && existingContent.getIdentifier() != contentPage.getIdentifier()) {
 									// Found a file asset with same path
 									status = "message.htmlpage.error.htmlpage.exists.file";
-								} else {
+								} else if(existingContent.getIdentifier() != contentPage.getIdentifier()){
 									// Found page with same path and language
 									status = "message.htmlpage.error.htmlpage.exists";
 								}

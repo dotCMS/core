@@ -39,6 +39,7 @@ import com.dotmarketing.util.JBossRulesUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -236,6 +237,9 @@ public class CMSFilter implements Filter {
 			StringWriter forward = new StringWriter();
 			forward.append("/servlets/VelocityServlet");
 			if(UtilMethods.isSet(queryString)){
+				if(queryString.indexOf(WebKeys.HTMLPAGE_LANGUAGE)==-1) {
+					queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
+				}
 				forward.append('?');
 				forward.append(queryString);
 			}
