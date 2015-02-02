@@ -70,4 +70,6 @@ public interface IHTMLPage extends Serializable, Versionable, Permissionable,
     boolean isContent();
     int getMenuOrder();
     
+    long getLanguageId();
+    
 }

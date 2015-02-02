@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -27,6 +28,7 @@ import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
@@ -215,7 +217,7 @@ public class EmailFactory {
 		Context context = VelocityUtil.getBasicContext();
 		context.put("user", user);
 		context.put("UtilMethods", new UtilMethods());
-		context.put("language", "1");
+		context.put("language", Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
 		context.put("password", newPassword);
 
 		Host host = hostAPI.find(hostId, user, true);
@@ -225,11 +227,13 @@ public class EmailFactory {
 
 		String idInode = APILocator.getIdentifierAPI().find(host, Config
 				.getStringProperty("PATH_FORGOT_PASSWORD_EMAIL")).getInode();
+		
+		String languageStr = "_" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 
 		try {
 			String message = "";
 			try {
-				Template t = UtilMethods.getVelocityTemplate("live/"+ idInode+ "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+				Template t = UtilMethods.getVelocityTemplate("live/"+ idInode+ languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
 				t.merge(context, writer);
 				Logger
 				.debug(EmailFactory.class, "writer:"
@@ -564,13 +568,26 @@ public class EmailFactory {
 		//Case when a html page template is passed as parameter
 		if(UtilMethods.isSet(templatePath))
 		{
-			String idInode = APILocator.getIdentifierAPI().find(host,templatePath).getInode();
+			Identifier id = APILocator.getIdentifierAPI().find(host,templatePath);
+			String idInode = id.getInode();
+			
+			String languageId = Long.toString((APILocator.getLanguageAPI().getDefaultLanguage().getId()));
+			
+			try {
+				if(UtilMethods.isSet(parameters.get("languageId"))) {
+					languageId = (String) parameters.get("languageId");
+				}
+			} catch(ClassCastException e) {
+				Logger.info(EmailFactory.class, "Error parsing languageId");
+			}
+			
+			String languageStr = "_" + languageId;
 
 			Template t = null;
 
 			try {
 				if(InodeUtils.isSet(idInode)) {
-					t = UtilMethods.getVelocityTemplate("live/"+ idInode+ "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
+					t = UtilMethods.getVelocityTemplate("live/"+ idInode + languageStr + "."+ Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION")); 
 				} else {
 					t = UtilMethods.getVelocityTemplate(templatePath); 
 				}

@@ -737,11 +737,17 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 					+ idInode);
 
 			requestProxy.setAttribute("velocityContext", context);
+			
+			String langStr = "_" + Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+			
+			if(UtilMethods.isSet(contentId)) {
+				langStr = "_" + APILocator.getContentletAPI().find(contentId, user, false).getLanguageId();
+			}
 
 			String VELOCITY_HTMLPAGE_EXTENSION = Config
 					.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
-			String vTempalate = (liveMode) ? "/live/" + idInode + "."
-					+ VELOCITY_HTMLPAGE_EXTENSION : "/working/" + idInode + "."
+			String vTempalate = (liveMode) ? "/live/" + idInode + langStr + "."
+					+ VELOCITY_HTMLPAGE_EXTENSION : "/working/" + idInode + langStr + "."
 					+ VELOCITY_HTMLPAGE_EXTENSION;
 
 			ve.getTemplate(vTempalate).merge(context, out);

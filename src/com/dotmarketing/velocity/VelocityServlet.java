@@ -309,7 +309,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		request.setAttribute("idInode", id.getInode());
 		
 		IHTMLPage htmlPage; 
-		String languageStr = "";
+		String languageStr = "_" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		if(id.getAssetType().equals("contentlet")) {
 			
 			long languageId = getLanguageId(request);

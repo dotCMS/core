@@ -308,7 +308,7 @@ public class PageServices {
 		try {
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
+				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 				
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
