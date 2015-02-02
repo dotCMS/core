@@ -304,7 +304,7 @@ dojo.declare("dotcms.dijit.form.HostFolderFilteringSelect", [dijit._Widget, diji
 		if(!this.selectedItem) {
 			this.reset();
 		} else {
-			this._selectItem(this.selectedItem, event);
+			this._selectItem(this.selectedItem);
 		}
 
 		for(idx in this.hosts) {

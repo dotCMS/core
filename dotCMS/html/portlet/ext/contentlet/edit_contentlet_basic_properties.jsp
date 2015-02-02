@@ -235,6 +235,14 @@
 								var langElement = document.getElementById("languageId");
 							*/
 							if(url.indexOf("lang=<%=contentletForm.getLanguageId()%>&") <0){
+								if(url.indexOf("host=") <0){
+									if(dojo.byId('hostId')){
+										url = url + "&host=" + dojo.byId('hostId').value;
+									}
+									if(dojo.byId('folderInode')){
+										url = url + "&folder=" + dojo.byId('folderInode').value;
+									}
+								}
 								window.location=url;
 							}
 						}
