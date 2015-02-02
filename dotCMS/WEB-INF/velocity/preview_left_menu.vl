@@ -305,7 +305,7 @@
     			<span class="newPageIcon"></span> $languagewebapi.getFromUserLanguage("modes.Create-New-Page")
 			</a>
 			
-			#if(! $HTMLPAGE_IS_CONTENT)
+			#if((! $HTMLPAGE_IS_CONTENT ) && ($cmsuser.isCMSAdmin($cmsuser.getLoggedInUser($request))))
 			
 			<a href="javascript: migrate();">
                 <span class="repeatIcon"></span> $languagewebapi.getFromUserLanguage("modes.Migrate-To-Content")

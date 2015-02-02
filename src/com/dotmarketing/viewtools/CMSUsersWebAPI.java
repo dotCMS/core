@@ -461,7 +461,25 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 	
 	
-	
+	/**
+	 * This method return true|false if the user has
+	 * a CMSAdmin role
+	 * @param user User
+	 * 
+	 */
+	public boolean isCMSAdmin(User user) {
+		boolean retVal = false;
+		if(!UtilMethods.isSet(user)){
+			return retVal;
+		}
+		try {
+			retVal = APILocator.getUserAPI().isCMSAdmin(user);
+		} catch (DotDataException e) {
+			Logger.error(this, e.getMessage(), e);
+			return retVal;
+		}
+		return retVal;
+	}	
 	
 	
 	
