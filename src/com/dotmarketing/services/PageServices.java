@@ -308,9 +308,11 @@ public class PageServices {
 		try {
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
+				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
+				
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	            String filePath = realFolderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
+	            String filePath = realFolderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
 	                velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 	            }
@@ -356,7 +358,8 @@ public class PageServices {
 		if (velocityRootPath.startsWith("/WEB-INF")) {
 			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 		}
-		String filePath = folderPath + identifier.getInode() + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
+		String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
+		String filePath = folderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
 		velocityRootPath += java.io.File.separator;
 		java.io.File f  = new java.io.File(velocityRootPath + filePath);
 		f.delete();
