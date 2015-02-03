@@ -14,6 +14,7 @@
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotcms.publisher.business.DotPublisherException"%>
+<%@page import="com.dotmarketing.business.DotStateException"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotcms.publisher.business.PublisherAPI"%>
 <%@page import="java.util.List"%>
@@ -298,7 +299,18 @@
 							<%String assetTitle = PublishAuditUtil.getInstance().getTitle(assetType, id); %>
                             <%if (assetTitle.equals( assetType )) {%>
                                 <%=assetType %>
-                            <%} else {%>
+                            <%} else {
+                            	if(assetType.equals("contentlet")) {
+                            		Contentlet con = PublishAuditUtil.getInstance().findContentletByIdentifier(id);
+                            		try {
+                            			APILocator.getHTMLPageAssetAPI().fromContentlet(con);
+                            			assetType = "htmlpage"; // content is an htmlpage
+                            		} catch(DotStateException e) {
+                            			// not an htmlpage 
+                            		}
+                            	}
+                            %>
+                            	
                                 <strong><%= assetType%></strong> : <%=StringEscapeUtils.escapeHtml(assetTitle)%>
                             <%}%>
 

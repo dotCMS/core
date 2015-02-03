@@ -10,6 +10,8 @@
 <%@page import="com.dotcms.publisher.business.PublishAuditAPI"%>
 <%@ page import="com.dotcms.publisher.environment.bean.Environment"%>
 <%@ page import="com.dotcms.publisher.bundle.bean.Bundle"%>
+<%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
+<%@page import="com.dotmarketing.business.DotStateException"%>
 
 <%
     String bundleId = request.getParameter("bundle");
@@ -33,6 +35,17 @@
             for ( String id : currentEndpointHistory.getAssets().keySet() ) {
                 assetType = currentEndpointHistory.getAssets().get( id );
                 assetTitle = PublishAuditUtil.getInstance().getTitle( assetType, id );
+                
+                if(assetType.equals("contentlet")) {
+            		Contentlet con = PublishAuditUtil.getInstance().findContentletByIdentifier(id);
+            		try {
+            			APILocator.getHTMLPageAssetAPI().fromContentlet(con);
+            			assetType = "htmlpage"; // content is an htmlpage
+            		} catch(DotStateException e) {
+            			// not an htmlpage 
+            		}
+            	}
+                
                 break;
 
             }

@@ -8,7 +8,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.io.StringWriter;
@@ -25,11 +24,9 @@ public class PublishAuditUtil {
 
             User user = APILocator.getUserAPI().getSystemUser();
 
-            if ("host".equals( assetType ) ) {
-                sw.append( APILocator.getContentletAPI().findContentletByIdentifier( id, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false ).getTitle() );
-            } else if("contentlet".equals( assetType)) {
-            	 sw.append( findContentletByIdentifier(id).getTitle() );
-        	}else if ( "folder".equals( assetType ) ) {
+            if ( "contentlet".equals( assetType ) || "host".equals( assetType ) ) {
+                sw.append( findContentletByIdentifier(id).getTitle() );
+            } else if ( "folder".equals( assetType ) ) {
                 sw.append( APILocator.getFolderAPI().find( id, user, false ).getName() );
             } else if ( "osgi".equals( assetType ) ) {
                 sw.append( id );
@@ -42,13 +39,7 @@ public class PublishAuditUtil {
             } else if ( "containers".equals( assetType ) ) {
                 sw.append( APILocator.getContainerAPI().getWorkingContainerById( id, user, false ).getTitle() );
             } else if ( "htmlpage".equals( assetType ) ) {
-            	// lets check if it is content or legacy page
-            	Contentlet c = findContentletByIdentifier(id);
-            	if(c!=null && UtilMethods.isSet(c.getInode())) {
-            		sw.append(c.getTitle()); // we have a page as content
-            	} else {
-            		sw.append( APILocator.getHTMLPageAPI().loadWorkingPageById( id, user, false ).getTitle() );
-            	}
+                sw.append( APILocator.getHTMLPageAPI().loadWorkingPageById( id, user, false ).getTitle() );
             } else if ( "category".equals( assetType ) ) {
                 sw.append( APILocator.getCategoryAPI().find( id, user, false ).getCategoryName() );
             } else if ( "links".equals( assetType ) ) {
