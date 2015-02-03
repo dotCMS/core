@@ -410,7 +410,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 			// Retrieve the new page types as IHTMLPage objects and add them to 
 			// the list of legacy pages
 			List<IHTMLPage> ihtmlPages = htmlPageAssetAPI.getHTMLPages(parent,
-					true, false, -1, 0, orderBy, user, false);
+					false, includeArchived, -1, 0, orderBy, user, false);
 			if (ihtmlPages != null && ihtmlPages.size() > 0) {
 				toReturn.addAll(ihtmlPages);
 			}

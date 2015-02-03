@@ -50,6 +50,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
+import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -210,7 +211,28 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		} else if (parent instanceof Host) {
 			query.append(" +conFolder:SYSTEM_FOLDER +conHost:"
 					+ ((Host) parent).getIdentifier());
-		}
+		// if not a folder or host the filtering is done by template (parent) 
+		}else if (parent instanceof String)
+			if(!((String)parent).isEmpty()){
+				// list of content types (htmlpage type)
+				List<Structure> structures = StructureFactory.getStructures("structureType="+Structure.STRUCTURE_TYPE_HTMLPAGE, "", 0, 0, "");
+				StringBuilder structuresList = new StringBuilder();
+				boolean notOR = true;
+				
+				// creates a list of content types with the template field e.g. htmlpageasset.template:## OR newpages.template:##
+				for(Structure structure: structures){
+					if(notOR){
+						notOR=!notOR;
+					}else
+						structuresList.append(" OR ");
+					structuresList.append(structure.getVelocityVarName());
+					structuresList.append(".template:");
+					structuresList.append((String)parent);					
+				}
+				if(structuresList.length()>0)
+					query.append(" +("+ structuresList.toString().trim()+")" );
+			}
+		
 		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_HTMLPAGE);
 		if (!UtilMethods.isSet(sortBy)) {
 			sortBy = "modDate asc";

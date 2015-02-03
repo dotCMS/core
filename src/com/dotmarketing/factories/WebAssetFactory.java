@@ -2095,6 +2095,7 @@ public class WebAssetFactory {
 			} else {
 				// For HTMLPage and IHTMLPage objects
 				IHTMLPage page = (IHTMLPage) asset;
+				String pathToFolderParent = APILocator.getIdentifierAPI().find(page).getParentPath();
 				folderParent = APILocator.getFolderAPI()
 						.findParentFolder((Treeable) asset, user, false);
 				try {
@@ -2113,8 +2114,11 @@ public class WebAssetFactory {
 						continue;
 					}
 				}
-				permAsset.setPathToMe(APILocator.getIdentifierAPI()
-						.find(folderParent).getPath());
+				if(folderParent!=null)
+					permAsset.setPathToMe(APILocator.getIdentifierAPI()
+							.find(folderParent).getPath());
+				else
+					permAsset.setPathToMe(pathToFolderParent);
 				permAsset.setPermissionableAsset(page);
 			}
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
