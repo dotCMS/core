@@ -1070,7 +1070,7 @@ function deleteEnvPushHistory(envId) {
         width:800px;
     }
 </style>
-<div id="integrityResultsDialog" style="width: 850px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
+<div id="integrityResultsDialog" style="width: 850px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" onCancel="closeIntegrityResultsDialog(selectedEndpointId)" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
 
     <div id="integrityResultsTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 

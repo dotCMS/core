@@ -14,8 +14,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -146,7 +148,7 @@ public class IntegrityUtil {
             } else {
             	// Query the new content pages pages
 				String query = "SELECT "
-						+ "c.identifier, c.inode, i.parent_path, i.asset_name, i.host_inode "
+						+ "c.identifier, c.inode, i.parent_path, i.asset_name, i.host_inode, c.language_id "
 						+ "FROM "
 						+ "contentlet c "
 						+ "INNER JOIN contentlet_version_info cvi ON (c.inode = cvi.working_inode) "
@@ -163,6 +165,13 @@ public class IntegrityUtil {
                 writer.write(rs.getString("parent_path"));
                 writer.write(rs.getString("asset_name"));
                 writer.write(rs.getString("host_inode"));
+                if (type.equals(IntegrityType.CONTENTPAGES)) {
+                	// Include language ID for new pages
+                	writer.write(rs.getString("language_id"));
+                } else {
+                	// Pass meaningless value for legacy pages
+                	writer.write("0");
+                }
                 writer.endRecord();
                 count++;
 
@@ -275,7 +284,7 @@ public class IntegrityUtil {
             String resultsTable = getResultsTableName(type);
 
             if(type == IntegrityType.HTMLPAGES){
-                statement = conn.prepareStatement("select html_page, remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
+                statement = conn.prepareStatement("select html_page, remote_inode, local_inode, remote_identifier, local_identifier, language_id from " + resultsTable + " where endpoint_id = ?");
             } else if(type == IntegrityType.FOLDERS) {
 				statement = conn.prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
 			} else {
@@ -297,6 +306,7 @@ public class IntegrityUtil {
 
                 if(type == IntegrityType.HTMLPAGES) {
                     writer.write(rs.getString("html_page"));
+                    writer.write(rs.getString("language_id"));
                 }
 
                 writer.endRecord();
@@ -753,6 +763,7 @@ public class IntegrityUtil {
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId, type);
         String tempKeyword = getTempKeyword();
+        String integerKeyword = getIntegerKeyword();
 
         //Create a temporary table and insert all the records coming from the CSV file.
         String createTempTable = "create " + tempKeyword + " table " + tempTableName 
@@ -761,6 +772,7 @@ public class IntegrityUtil {
         		+ "parent_path varchar(255), "
                 + "asset_name varchar(255), "
                 + "host_identifier varchar(36) not null, "
+                + "language_id " + integerKeyword + " not null, "
                 + "primary key (inode) )" 
                 + (DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":"");
 
@@ -768,7 +780,7 @@ public class IntegrityUtil {
             createTempTable=createTempTable.replaceAll("varchar\\(", "varchar2\\(");
         }
 
-        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?,?)";
 
         dc.executeStatement(createTempTable);
         while (htmlpages.readRecord()) {
@@ -777,6 +789,7 @@ public class IntegrityUtil {
 			String htmlPageParentPath = htmlpages.get(2);
 			String htmlPageAssetName = htmlpages.get(3);
 			String htmlPageHostIdentifier = htmlpages.get(4);
+			String htmlPageLanguage = htmlpages.get(5);
 
 			dc.setSQL(INSERT_TEMP_TABLE);
 			dc.addParam(htmlPageInode);
@@ -784,6 +797,7 @@ public class IntegrityUtil {
 			dc.addParam(htmlPageParentPath);
 			dc.addParam(htmlPageAssetName);
 			dc.addParam(htmlPageHostIdentifier);
+			dc.addParam(new Long(htmlPageLanguage));
 			dc.loadResult();
         }
         htmlpages.close();
@@ -798,7 +812,7 @@ public class IntegrityUtil {
 					+ "lh.inode as local_inode, "
 					+ "ri.inode as remote_inode, "
 					+ "li.id as local_identifier, "
-					+ "ri.identifier as remote_identifier "
+					+ "ri.identifier as remote_identifier, ri.language_id "
 					+ "from identifier as li " + "join htmlpage as lh "
 					+ "on lh.identifier = li.id "
 					+ "and li.asset_type = 'htmlpage' " + "join "
@@ -811,7 +825,8 @@ public class IntegrityUtil {
         	// Query the new content pages
 			selectSQL = "SELECT "
 					+ "li.asset_name as html_page, lc.inode as local_inode, t.inode as remote_inode, "
-					+ "lc.identifier as local_identifier, t.identifier as remote_identifier "
+					+ "lc.identifier as local_identifier, t.identifier as remote_identifier, "
+					+ "lc.language_id "
 					+ "FROM "
 					+ "identifier li "
 					+ "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') "
@@ -820,7 +835,8 @@ public class IntegrityUtil {
 					+ "INNER JOIN "
 					+ tempTableName
 					+ " t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
-					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier)";
+					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
+					+ "AND lc.language_id = t.language_id)";
 		}
 
         if(DbConnectionFactory.isOracle()) {
@@ -850,7 +866,7 @@ public class IntegrityUtil {
 	                + "ri.inode as remote_inode, "
 	                + "li.id as local_identifier, "
 	                + "ri.identifier as remote_identifier, "
-	                + "'" + endpointId + "' "
+	                + "'" + endpointId + "', ri.language_id "
 	                + "from identifier as li "
 	                + "join htmlpage as lh "
 	                + "on lh.identifier = li.id "
@@ -866,7 +882,7 @@ public class IntegrityUtil {
             			+ "select " + fullHtmlPage + " as html_page, "
             			+ "lc.inode as local_inode, t.inode as remote_inode, "
             			+ "lc.identifier as local_identifier, t.identifier as remote_identifier, "
-            			+ "'" + endpointId + "' "
+            			+ "'" + endpointId + "', " + "t.language_id as language_id "
             			+ "FROM "
     					+ "identifier li "
     					+ "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') "
@@ -875,7 +891,8 @@ public class IntegrityUtil {
     					+ "INNER JOIN "
     					+ tempTableName + " "
     					+ "t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
-    					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier)";
+    					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
+    					+ "AND lc.language_id = t.language_id)";
             }
             
             if(DbConnectionFactory.isOracle()) {
@@ -886,7 +903,7 @@ public class IntegrityUtil {
         }
     }
 
-    public void dropTempTables(String endpointId) throws DotDataException {
+	public void dropTempTables(String endpointId) throws DotDataException {
         DotConnect dc = new DotConnect();
         try {
 
@@ -971,7 +988,7 @@ public class IntegrityUtil {
 			if(type==IntegrityType.FOLDERS) {
 				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
 			} else if(type==IntegrityType.HTMLPAGES) {
-                INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, html_page, endpoint_id) values(?,?,?,?,?,?)";
+				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, html_page, endpoint_id, language_id) values(?,?,?,?,?,?,?)";
             }
 
 			while (csvFile.readRecord()) {
@@ -995,6 +1012,10 @@ public class IntegrityUtil {
                 }
 
 				dc.addParam(endpointId);
+				if (type == IntegrityType.HTMLPAGES) {
+                    String languageId = csvFile.get(5);
+                    dc.addParam(new Long(languageId));
+                }
 				dc.loadResult();
 			}
 
@@ -1590,20 +1611,44 @@ public class IntegrityUtil {
         }
     }
     
-    /**
-     * Replace Identifier with same Identifier from the other server. 
-     * 
-     * @param serverId
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+	/**
+	 * Replace Identifier with same Identifier from the other server. For the
+	 * new Content Pages, it is necessary to take the following 2 situations
+	 * into consideration:
+	 * <ol>
+	 * <li>If the page to fix only has one specified language, fix all existing
+	 * versions.</li>
+	 * <li>If the page to fix only has more than one language, fix the versions
+	 * <b>ONE BY ONE</b>. Otherwise, the second time the next language is found,
+	 * the old identifier will not be present anymore since it was already
+	 * changed, which will cause an issue.</li>
+	 * </ol>
+	 * 
+	 * @param serverId
+	 *            - The ID of the endpoint where the data will be fixed.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotSecurityException
+	 *             The current user does not have permission to perform this
+	 *             ation.
+	 */
     public void fixHtmlPages ( String serverId ) throws DotDataException, DotSecurityException {
     	DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
         //Get the information of the IR.
-		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode, language_id FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
+		Map<String, Integer> versionCount = new HashMap<String, Integer>();
+		for (Map<String, Object> result : results) {
+			String oldIdentifier = (String) result.get("local_identifier");
+			if (versionCount.containsKey(oldIdentifier)) {
+				int counter = versionCount.get(oldIdentifier);
+				versionCount.put(oldIdentifier, counter + 1);
+			} else {
+				versionCount.put(oldIdentifier, 1);
+			}
+		}
 		for (Map<String, Object> result : results) {
 			String oldIdentifier = (String) result.get("local_identifier");
 			Identifier identifier = APILocator.getIdentifierAPI().find(
@@ -1611,7 +1656,13 @@ public class IntegrityUtil {
 			if ("htmlpage".equals(identifier.getAssetType())) {
 				fixLegacyPageConflicts(result);
 			} else {
-				fixContentPageConflicts(result);
+				int counter = versionCount.get(oldIdentifier);
+				boolean fixAllVersions = counter == 1 ? true : false;
+				fixContentPageConflicts(result, fixAllVersions);
+				if (!fixAllVersions) {
+					// Decrease version counter if greater than 1
+					versionCount.put(oldIdentifier, counter - 1);
+				}
 			}
 		}
 		discardConflicts(serverId, IntegrityType.HTMLPAGES);
@@ -1722,14 +1773,19 @@ public class IntegrityUtil {
 	 * @param pageData
 	 *            - A {@link Map} with the page information that was captured
 	 *            when the conflict was detected.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, all existing versions of the page will
+	 *            be updated in order to keep data consistency. Otherwise, ONLY
+	 *            the specified page and language will be updated.
 	 * @throws DotDataException
 	 *             An error occurred when interacting with the database.
 	 * @throws DotSecurityException
 	 *             The current user does not have permission to perform this
 	 *             action.
 	 */
-	private void fixContentPageConflicts(Map<String, Object> pageData)
-			throws DotDataException, DotSecurityException {
+	private void fixContentPageConflicts(Map<String, Object> pageData,
+			boolean fixAllVersions) throws DotDataException,
+			DotSecurityException {
 		DotConnect dc = new DotConnect();
 		String oldHtmlPageIdentifier = (String) pageData
 				.get("local_identifier");
@@ -1738,6 +1794,13 @@ public class IntegrityUtil {
 		String assetName = (String) pageData.get("html_page");
 		String localInode = (String) pageData.get("local_inode");
 		String remoteInode = (String) pageData.get("remote_inode");
+		Long languageId = new Long(0);
+		if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
+			BigDecimal lang = (BigDecimal) pageData.get("language_id");
+			languageId = new Long(lang.toPlainString());
+		} else {
+			languageId = (Long) pageData.get("language_id");
+		}
 		String[] assetUrl = assetName.split("/");
 		assetName = assetUrl[assetUrl.length - 1];
 		ContentletAPI contentletAPI = APILocator.getContentletAPI();
@@ -1745,13 +1808,18 @@ public class IntegrityUtil {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Contentlet existingContentPage = contentletAPI.find(localInode,
 				systemUser, false);
-		// Add the new Identifier with a temporary asset name
-		dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
-				+ "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
-				+ "FROM identifier WHERE id = ?");
+		dc.setSQL("SELECT id FROM identifier WHERE id = ?");
 		dc.addParam(newHtmlPageIdentifier);
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.loadResult();
+		List<Map<String, Object>> results = dc.loadObjectResults();
+		// If not existing, add the new Identifier with a temporary asset name
+		if (results == null || results.size() == 0) {
+			dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
+					+ "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
+					+ "FROM identifier WHERE id = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+		}
 		// Insert the new Inode record so it can be used in the contentlet
 		dc.setSQL("INSERT INTO inode(inode, owner, idate, type) "
 				+ "SELECT ?, owner, idate, type "
@@ -1761,8 +1829,8 @@ public class IntegrityUtil {
 		dc.loadResult();
 		// Insert the new Contentlet record with the new Inode
 		String contentletQuery = "INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
-				+ "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
-				+ "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.working_inode) WHERE c.identifier = ?";
+				+ "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, ?, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
+				+ "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.working_inode) WHERE c.identifier = ? and c.language_id = ?";
 		if (DbConnectionFactory.isMySql()) {
 			// Use correct escape char when using reserved words as column names
 			contentletQuery = contentletQuery.replaceAll("\"", "`");
@@ -1770,48 +1838,78 @@ public class IntegrityUtil {
 		dc.setSQL(contentletQuery);
 		dc.addParam(remoteInode);
 		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(languageId);
 		dc.addParam(oldHtmlPageIdentifier);
+		dc.addParam(languageId);
 		dc.loadResult();
 		// Insert the new Contentlet_version_info record with the new Inode
 		dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-				+ "SELECT ? , lang, ?, ?, deleted, locked_by, locked_on, version_ts "
-				+ "FROM contentlet_version_info WHERE identifier = ?");
+				+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
+				+ "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
 		dc.addParam(newHtmlPageIdentifier);
+		dc.addParam(languageId);
 		dc.addParam(remoteInode);
 		dc.addParam(remoteInode);
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.loadResult();
-		// Remove the old Contentlet_version_info record
-		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ?");
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.loadResult();
-		// Remove the conflicting version of the Contentlet record
-		dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ?");
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.addParam(localInode);
+		dc.addParam(languageId);
 		dc.loadResult();
-		// Update previous version of the Contentlet with new Identifier
-		dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
-		dc.addParam(newHtmlPageIdentifier);
+		// Remove the old Contentlet_version_info record
+		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
 		dc.addParam(oldHtmlPageIdentifier);
+		dc.addParam(languageId);
+		dc.addParam(localInode);
 		dc.loadResult();
-		// Remove the old Identifier record
-		dc.setSQL("DELETE FROM identifier WHERE id = ?");
+		// Remove the conflicting version of the Contentlet record
+		dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
 		dc.addParam(oldHtmlPageIdentifier);
+		dc.addParam(localInode);
+		dc.addParam(languageId);
 		dc.loadResult();
+		// If fixing all versions, or last version of the same Identifier		
+		if (fixAllVersions) {
+			// Update other Contentlet languages with new Identifier
+			dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+			// Update previous version of the Contentlet_version_info with new
+			// Identifier
+			dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+			// Remove the old Identifier record
+			dc.setSQL("DELETE FROM identifier WHERE id = ?");
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+			// Update the Identifier with the correct asset name
+			dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
+			dc.addParam(assetName);
+			dc.addParam(newHtmlPageIdentifier);
+			dc.loadResult();
+			// Update the content references in the page with the new Identifier
+			dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.loadResult();
+		} else {
+			// Update other Contentlet languages with new Identifier
+			dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ? AND language_id = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.addParam(languageId);
+			dc.loadResult();
+			// Update previous version of the Contentlet_version_info with new
+			// Identifier
+			dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ? AND lang = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(oldHtmlPageIdentifier);
+			dc.addParam(languageId);
+		}
 		// Remove the old Inode record
 		dc.setSQL("DELETE FROM inode WHERE inode = ?");
 		dc.addParam(localInode);
-		dc.loadResult();
-		// Update the Identifier with the correct asset name
-		dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
-		dc.addParam(assetName);
-		dc.addParam(newHtmlPageIdentifier);
-		dc.loadResult();
-		// Update the content references in the page with the new Identifier
-		dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
-		dc.addParam(newHtmlPageIdentifier);
-		dc.addParam(oldHtmlPageIdentifier);
 		dc.loadResult();
 		// Add a new Lucene index for the updated page
 		Contentlet newContentPage = new Contentlet();
@@ -1827,13 +1925,42 @@ public class IntegrityUtil {
 		// Clear cache entries of ALL versions of the Contentlet too
 		CacheLocator.getContentletCache().remove(localInode);
 		CacheLocator.getIdentifierCache().removeFromCacheByInode(localInode);
-		dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ?");
-		dc.addParam(newHtmlPageIdentifier);
-		List<Map<String, Object>> results = dc.loadObjectResults();
-		for (Map<String, Object> result : results) {
+		// Refresh all or only language-specific versions of the page
+		if (fixAllVersions) {
+			dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ?");
+			dc.addParam(newHtmlPageIdentifier);
+		} else {
+			dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ? AND language_id = ?");
+			dc.addParam(newHtmlPageIdentifier);
+			dc.addParam(languageId);
+		}
+		List<Map<String, Object>> versions = dc.loadObjectResults();
+		for (Map<String, Object> result : versions) {
 			String historyInode = (String) result.get("inode");
 			CacheLocator.getContentletCache().remove(historyInode);
 		}
+	}
+
+	/**
+	 * Returns the correct numeric data type for the language ID, depending on
+	 * the current database.
+	 * 
+	 * @return The database-dependent keyword to represent the language ID.
+	 */
+	private String getIntegerKeyword() {
+		String keyword = null;
+		if (DbConnectionFactory.isH2()) {
+			keyword = "bigint";
+		} else if (DbConnectionFactory.isPostgres()) {
+			keyword = "int8";
+		} else if (DbConnectionFactory.isMySql()) {
+			keyword = "bigint";
+		} else if (DbConnectionFactory.isMsSql()) {
+			keyword = "numeric(19,0)";
+		} else if (DbConnectionFactory.isOracle()) {
+			keyword = "number(19,0)";
+		}
+		return keyword;
 	}
     
 }

@@ -371,6 +371,13 @@ public class IntegrityResource extends WebResource {
 
                                 IntegrityUtil integrityUtil = new IntegrityUtil();
                                 try {
+                                	HibernateUtil.startTransaction();
+                                	integrityUtil.discardConflicts(endpointId, IntegrityType.FOLDERS);
+                                    integrityUtil.discardConflicts(endpointId, IntegrityType.STRUCTURES);
+                                    integrityUtil.discardConflicts(endpointId, IntegrityType.SCHEMES);
+                                    integrityUtil.discardConflicts(endpointId, IntegrityType.HTMLPAGES);
+                                    HibernateUtil.commitTransaction();
+                                    
                                     HibernateUtil.startTransaction();
 
                                     foldersConflicts = integrityUtil.checkFoldersIntegrity(endpointId);
