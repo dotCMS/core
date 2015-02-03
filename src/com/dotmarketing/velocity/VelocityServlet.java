@@ -309,11 +309,16 @@ public abstract class VelocityServlet extends HttpServlet {
 		request.setAttribute("idInode", id.getInode());
 		
 		IHTMLPage htmlPage; 
+		String languageStr = "_" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		if(id.getAssetType().equals("contentlet")) {
+			
+			long languageId = getLanguageId(request);
 			
 		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
 		                APILocator.getContentletAPI()
-		                 .findContentletByIdentifier(id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
+		                 .findContentletByIdentifier(id.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false));
+		    
+		    languageStr = "_" + languageId;
 		}
 		else {
     		htmlPage = (IHTMLPage) APILocator.getVersionableAPI()
@@ -332,7 +337,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		if (request.getParameter("leftMenu") != null) {
 			template = VelocityUtil.getEngine().getTemplate("/preview_left_menu.vl");
 		} else if (request.getParameter("mainFrame") != null) {
-			template = VelocityUtil.getEngine().getTemplate("/live/" + id.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION);
+			template = VelocityUtil.getEngine().getTemplate("/live/" + id.getInode() + languageStr + "." + VELOCITY_HTMLPAGE_EXTENSION);
 		} else {
 			template = VelocityUtil.getEngine().getTemplate("/preview_mode.vl");
 		}
@@ -409,6 +414,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
     		IHTMLPage page = null;
+    		
     		try {
     		    if(ident.getAssetType().equals("contentlet")) {
     		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
@@ -502,7 +508,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
     
     		try {
-    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
     		} catch (Throwable e) {
     			Logger.warn(this, "can't do live mode merge", e);
     		}

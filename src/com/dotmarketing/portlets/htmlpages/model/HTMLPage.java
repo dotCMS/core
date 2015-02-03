@@ -61,6 +61,8 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
     private String seoDescription;
     
     private String templateId;
+    
+    private long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
    
     public long getCacheTTL() {
 		return cacheTTL;
@@ -368,5 +370,11 @@ public class HTMLPage extends WebAsset implements Serializable, Comparable, IHTM
     public int getMenuOrder() {
         return getSortOrder();
     }
+
+	@Override
+	public long getLanguageId() {
+		return languageId;
+	}
+    
 	
 }

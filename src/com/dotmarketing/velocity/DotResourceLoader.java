@@ -391,13 +391,22 @@ public class DotResourceLoader extends ResourceLoader {
     			}
             }
         }else if (arg0.endsWith(VELOCITY_HTMLPAGE_EXTENSION)) {
+        	String language = "";
+            if (x.indexOf("_") > -1) {
+                Logger.debug(this,"x=" + x);
+                language = x.substring(x.indexOf("_") + 1, x.length());
+                Logger.debug(this,"language=" + language);
+                x = x.substring(0, x.indexOf("_"));
+                Logger.debug(this,"x=" + x);
+            }
+            
             try {
             	Identifier identifier = APILocator.getIdentifierAPI().find(x);
             	VersionableAPI versionableAPI=APILocator.getVersionableAPI();
                 IHTMLPage page = null;
                 if(identifier.getAssetType().equals("contentlet")) {
                     page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                            APILocator.getContentletAPI().findContentletByIdentifier(x, !preview, 0, user, true));
+                            APILocator.getContentletAPI().findContentletByIdentifier(x, !preview, Long.parseLong(language), user, true));
                 }
                 else {
                     if (preview) {

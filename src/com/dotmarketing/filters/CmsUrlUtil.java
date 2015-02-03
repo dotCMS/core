@@ -77,6 +77,9 @@ public class CmsUrlUtil {
 	}
 
 	public boolean isFileAsset(String uri, Host host, Long languageId) {
+		
+		// languageId is not used now, but will be used in future functionality. Issue #7141
+		
 		Identifier id;
 		try {
 			id = APILocator.getIdentifierAPI().find(host, uri);
@@ -91,7 +94,7 @@ public class CmsUrlUtil {
 		}
 		if ("contentlet".equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
+				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
 				Contentlet c = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
 				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET);
 			} catch (Exception e) {

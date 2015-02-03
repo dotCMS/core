@@ -15,6 +15,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -27,6 +28,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
@@ -120,25 +122,23 @@ public class NavTool implements ViewTool {
                 	final String httpsProtocol = "https://";
                     IHTMLPage itemPage=(IHTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
-                    IHTMLPage page = null;
-                    page = ident.getAssetType().equals("contentlet") ?
-                            APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident.getId(), true, 0, APILocator.getUserAPI().getSystemUser(), false))
-                            : APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-                    String redirectUri = page.getRedirect();
+                    
+                    String redirectUri = itemPage.getRedirect();
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemPage.getTitle());
                     if(UtilMethods.isSet(redirectUri) && !redirectUri.startsWith("/")){
                         if(redirectUri.startsWith(httpsProtocol) || redirectUri.startsWith(httpProtocol)){
                       	  nav.setHref(redirectUri);	
                         }else{
-                      	  	if(page.isHttpsRequired())
+                      	  	if(itemPage.isHttpsRequired())
                       	  		nav.setHref(httpsProtocol+redirectUri);	
                     		else	
                     			nav.setHref(httpProtocol+redirectUri);
                         }
                       	
                       }else{
-                      	nav.setHref(ident.getURI());
+                      	nav.setHref(itemPage.isContent()?ident.getURI()+"?"+WebKeys.HTMLPAGE_LANGUAGE+"="+((Contentlet)itemPage).getLanguageId()
+                      			:ident.getURI());
                       }
                     nav.setOrder(itemPage.getMenuOrder());
                     nav.setType("htmlpage");
