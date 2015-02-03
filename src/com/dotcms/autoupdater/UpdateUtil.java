@@ -176,12 +176,58 @@ public class UpdateUtil {
     public static String getBuildVersion ( Properties props ) {
 
         String minor = props.getProperty( "dotcms.release.build" );
-
         if ( minor != null && minor.equals( "" ) ) {
             minor = null;
         }
 
         return minor;
+    }
+
+    /**
+     * Returns the tomcat version used on the version we want to upgrade
+     *
+     * @param props
+     * @return
+     */
+    public static String getTomcatVersion ( Properties props ) {
+
+        String version = props.getProperty( "tomcat7.install.version" );
+        if ( version != null && version.equals( "" ) ) {
+            version = null;
+        }
+
+        return version;
+    }
+
+    /**
+     * Returns the dotCMS home path relative to the distribution
+     *
+     * @param props
+     * @return
+     */
+    public static String getDotcmsHome ( Properties props ) {
+
+        String homePath = props.getProperty( "target.root" );
+        if ( homePath != null && homePath.equals( "" ) ) {
+            homePath = null;
+        }
+
+        return homePath;
+    }
+
+    /**
+     * Reads and returns the properties for the bin/build.conf properties file
+     *
+     * @return
+     * @throws IOException
+     */
+    public static Properties getBuildConfiguration ( String distributionPath ) throws IOException {
+
+        Properties properties = new Properties();
+        String confFilePath = distributionPath + File.separator + UpdateAgent.FOLDER_HOME_BIN + File.separator + "build.conf";
+        properties.load( new FileInputStream( confFilePath ) );
+
+        return properties;
     }
 
     public static String getFileMayorVersion ( File zipFile, String dotcmsPath ) throws IOException, UpdateException {

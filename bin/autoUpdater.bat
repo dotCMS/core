@@ -64,7 +64,7 @@ goto setArgs
 echo %CMD_LINE_ARGS%|findstr /i "url" >nul:
 if %errorlevel%==1 goto :url_not_found
 :url_not_found
-set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -url http://www.dotcms.com/app/servlets/upgrade2x""
+set CMD_LINE_ARGS= ""%CMD_LINE_ARGS% -url http://www.dotcms.com/app/servlets/upgrade3x""
 
 
 echo %CMD_LINE_ARGS%|findstr /i "home" >nul:
