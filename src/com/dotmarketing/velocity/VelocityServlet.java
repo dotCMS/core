@@ -414,6 +414,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
     		IHTMLPage page = null;
+    		
     		try {
     		    if(ident.getAssetType().equals("contentlet")) {
     		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
@@ -507,7 +508,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
     
     		try {
-    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
     		} catch (Throwable e) {
     			Logger.warn(this, "can't do live mode merge", e);
     		}

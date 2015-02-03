@@ -436,7 +436,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 
 		try {
 			VelocityEngine ve = VelocityUtil.getEngine();
-			ve.getTemplate("/" + location + "/" + pageIdent + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, sw);
+			ve.getTemplate("/" + location + "/" + pageIdent + "_" + language + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, sw);
 			ITextRenderer renderer = new ITextRenderer();
 			DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 			documentBuilderFactory.setValidating(false);
