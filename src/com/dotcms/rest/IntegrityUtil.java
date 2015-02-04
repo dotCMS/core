@@ -1844,11 +1844,10 @@ public class IntegrityUtil {
 		dc.loadResult();
 		// Insert the new Contentlet_version_info record with the new Inode
 		dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-				+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
+				+ "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
 				+ "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
 		dc.addParam(newHtmlPageIdentifier);
 		dc.addParam(languageId);
-		dc.addParam(remoteInode);
 		dc.addParam(remoteInode);
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.addParam(localInode);
