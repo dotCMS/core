@@ -76,10 +76,12 @@ public class PostProcess {
             Process process = runtime.exec( filePath );//Execute the script
             process.waitFor();//Causes the current thread to wait, if necessary, until the process represented by this Process object has terminated.
 
-            BufferedReader buf = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
-            String line;
-            while ( (line = buf.readLine()) != null ) {
-                UpdateAgent.logger.info( line ); //If something to log
+            if ( UpdateAgent.isDebug ) {
+                BufferedReader buf = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
+                String line;
+                while ( (line = buf.readLine()) != null ) {
+                    UpdateAgent.logger.info( line ); //If something to log
+                }
             }
 
             return true;
