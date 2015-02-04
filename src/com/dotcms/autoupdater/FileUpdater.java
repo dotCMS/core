@@ -220,7 +220,7 @@ public class FileUpdater {
 
             logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
 
-            if ( postProcess.postProcess() ) {
+            if ( postProcess.postProcess( true ) ) {
                 logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
             } else {
                 String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
