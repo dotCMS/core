@@ -1,11 +1,9 @@
 package com.dotcms.autoupdater;
 
-import java.security.cert.X509Certificate;
-
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotcms.autoupdater.UpdateAgent;
-
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
 import com.sun.net.ssl.X509TrustManager;
+
+import java.security.cert.X509Certificate;
 
  
  public class AuthSSLX509TrustManager implements X509TrustManager
