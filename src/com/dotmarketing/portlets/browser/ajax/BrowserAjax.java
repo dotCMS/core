@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
@@ -55,6 +56,8 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -86,8 +89,7 @@ public class BrowserAjax {
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
 	private FileAPI fileAPI = APILocator.getFileAPI();
 	private ContentletAPI contAPI = APILocator.getContentletAPI();
-	private WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-
+	private LanguageAPI languageAPI = APILocator.getLanguageAPI();
 	private BrowserAPI browserAPI = new BrowserAPI();
 
 	String activeHostId = "";
@@ -320,6 +322,203 @@ public class BrowserAjax {
 		req.getSession().setAttribute(WebKeys.HTMLPAGE_BROWSER_LANGUAGE, Long.toString(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
+	}
+
+	/**
+	 * Retrieves the list of contents under the specified folder. This specific
+	 * implementation will only have one identifier per entry. This means that,
+	 * for elements such as the new content pages, the list will not contain all
+	 * the entries for all the available languages, but only the page in the
+	 * default language, or the page in the next available language (one single 
+	 * entry per identifier).
+	 * 
+	 * @param folderId
+	 *            - The identifier of the folder whose contents will be
+	 *            retrieved.
+	 * @param offset
+	 *            - The result offset.
+	 * @param maxResults
+	 *            - The maximum amount of results to return.
+	 * @param filter
+	 *            - The parameter used to filter the results.
+	 * @param mimeTypes
+	 *            - The allowed MIME types.
+	 * @param extensions
+	 *            - The allowed extensions.
+	 * @param showArchived
+	 *            - If <code>true</code>, retrieve archived elements too.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param noFolders
+	 *            - If <code>true</code>, retrieve everything except for
+	 *            folders. Otherwise, set to <code>false</code>.
+	 * @param onlyFiles
+	 *            - If <code>true</code>, retrieve only file elements.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param sortBy
+	 *            - The sorting parameter.
+	 * @param sortByDesc
+	 * @param excludeLinks
+	 *            - If <code>true</code>, include Links as part of the results.
+	 *            Otherwise, set to <code>false</code>.
+	 * @return a {@link Map} containing the information of the elements under
+	 *         the given folder.
+	 * @throws DotHibernateException
+	 *             An error occurred during a Hibernate transaction.
+	 * @throws DotSecurityException
+	 *             The current user does not have permission to perform this
+	 *             action.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 */
+	public Map<String, Object> getFolderContent(String folderId, int offset,
+			int maxResults, String filter, List<String> mimeTypes,
+			List<String> extensions, boolean showArchived, boolean noFolders,
+			boolean onlyFiles, String sortBy, boolean sortByDesc,
+			boolean excludeLinks) throws DotHibernateException,
+			DotSecurityException, DotDataException {
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest req = ctx.getHttpServletRequest();
+		User usr = getUser(req);
+		req.getSession().setAttribute(WebKeys.HTMLPAGE_BROWSER_LANGUAGE,
+				Long.toString(this.languageAPI.getDefaultLanguage().getId()));
+		long getAllLanguages = 0;
+		Map<String, Object> results = browserAPI.getFolderContent(usr,
+				folderId, offset, maxResults, filter, mimeTypes, extensions,
+				showArchived, noFolders, onlyFiles, sortBy, sortByDesc,
+				excludeLinks, getAllLanguages);
+		pageListCleanup((List<Map<String, Object>>) results.get("list"));
+		return results;
+	}
+
+	/**
+	 * The list of content pages under a folder contains all the legacy pages
+	 * and the new content pages. The latter might include the page identifier
+	 * several times, representing all the available languages for a single
+	 * page.
+	 * <p>
+	 * This method takes that list and <i>leaves only one identifier per
+	 * page</i>. This unique record represents either the page with the default
+	 * language ID, or the page with the next language ID in the list of system
+	 * languages.
+	 * </p>
+	 * 
+	 * @param results
+	 *            - The full list of pages under a given path/directory.
+	 */
+	private void pageListCleanup(List<Map<String, Object>> results) {
+		Map<String, Integer> pageLangCounter = new HashMap<String, Integer>();
+		// Examine only the pages with more than 1 assigned language
+		for (Map<String, Object> pageInfo : results) {
+			if ((boolean) pageInfo.get("isContentlet")) {
+				String ident = (String) pageInfo.get("identifier");
+				if (pageLangCounter.containsKey(ident)) {
+					int counter = pageLangCounter.get(ident);
+					pageLangCounter.put(ident, counter + 1);
+				} else {
+					pageLangCounter.put(ident, 1);
+				}
+			}
+		}
+		Set<String> identifierSet = pageLangCounter.keySet();
+		for (String identifier : identifierSet) {
+			int counter = pageLangCounter.get(identifier);
+			if (counter > 1) {
+				long defaultLang = this.languageAPI.getDefaultLanguage()
+						.getId();
+				// Remove all languages except the default one
+				boolean isDeleted = removeAdditionalLanguages(identifier,
+						results, defaultLang);
+				if (!isDeleted) {
+					// Otherwise, leave only the next available language
+					List<Language> languages = this.languageAPI.getLanguages();
+					for (Language language : languages) {
+						if (language.getId() != defaultLang) {
+							isDeleted = removeAdditionalLanguages(identifier,
+									results, language.getId());
+							if (isDeleted) {
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Removes all other pages from the given list that ARE NOT associated to
+	 * the specified language ID. In the end, the list will contain one page per
+	 * identifier with either the default language ID or the next available
+	 * language.
+	 * 
+	 * @param identifier
+	 *            - The identifier of the page to clean up in the list.
+	 * @param resultList
+	 *            - The list of all pages that will be displayed.
+	 * @param languageId
+	 *            - The language ID of the page that will remain in the list.
+	 * @return If <code>true</code>, the identifier with the specified language
+	 *         ID was successfully cleaned up. If <code>false</code>, the
+	 *         identifier is not associated to the specified language ID and was
+	 *         not removed from the list.
+	 */
+	private boolean removeAdditionalLanguages(String identifier,
+			List<Map<String, Object>> resultList, long languageId) {
+		boolean removeOtherLangs = false;
+		for (int i = 0; i < resultList.size(); i++) {
+			Map<String, Object> pageInfo = resultList.get(i);
+			if ((boolean) pageInfo.get("isContentlet")) {
+				String ident = (String) pageInfo.get("identifier");
+				if (identifier.equals(ident)) {
+					long langId = (long) pageInfo.get("languageId");
+					// If specified language is found, remove all others
+					if (languageId == langId) {
+						removeOtherLangs = true;
+						break;
+					}
+				}
+			}
+		}
+		if (removeOtherLangs) {
+			removeLangOtherThan(resultList, identifier, languageId);
+		}
+		return removeOtherLangs;
+	}
+
+	/**
+	 * Removes all the pages from the list that are not associated to the
+	 * specified language. In the end, the list will contain one page per
+	 * identifier.
+	 * 
+	 * @param resultList
+	 *            - The list of pages that will be displayed.
+	 * @param identifier
+	 *            - The identifier for the page to lookup in the list.
+	 * @param languageId
+	 *            - The language ID that <b>MUST REMAIN</b> in the list.
+	 */
+	private void removeLangOtherThan(List<Map<String, Object>> resultList,
+			String identifier, long languageId) {
+		List<Integer> itemsToRemove = new ArrayList<Integer>();
+		for (int i = 0; i < resultList.size(); i++) {
+			Map<String, Object> pageInfo = resultList.get(i);
+			if ((boolean) pageInfo.get("isContentlet")) {
+				String ident = (String) pageInfo.get("identifier");
+				if (identifier.equals(ident)) {
+					long langId = (long) pageInfo.get("languageId");
+					if (languageId != langId) {
+						itemsToRemove.add(i);
+					}
+				}
+			}
+		}
+		int deletionCounter = 0;
+		for (int index : itemsToRemove) {
+			// Adjust index based on previous deletions
+			int indexAfterDeletion = index - deletionCounter;
+			resultList.remove(indexAfterDeletion);
+			deletionCounter++;
+		}
 	}
 
 	public void saveFileAction(String selectedItem,String wfActionAssign,String wfActionId,String wfActionComments, String wfConId, String wfPublishDate,
