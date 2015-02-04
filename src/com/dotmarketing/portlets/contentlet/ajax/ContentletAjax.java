@@ -714,8 +714,10 @@ public class ContentletAjax {
 							}
 						}
 						else if( fieldbcontentname.startsWith("date") ){
-							// date formatting from short date (dd/MM/yyyy) to Lucene date format
-							fieldValue = UtilMethods.shortDateToLuceneDate(fieldValue);
+							try{
+								// date formatting from short date (dd/MM/yyyy) to Lucene date format
+								fieldValue = UtilMethods.shortDateToLuceneDate(fieldValue);
+							}catch(Exception e){}
 							luceneQuery.append("+" + st.getVelocityVarName() +"."+ fieldVelocityVarName + ":" + fieldValue + " ");
 						} else {
 							if(isStructField==false){
