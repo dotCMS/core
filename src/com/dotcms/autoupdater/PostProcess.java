@@ -67,14 +67,15 @@ public class PostProcess {
 
         try {
             Runtime runtime = Runtime.getRuntime();
-            Process process;
+
+            //If Unix we need the script with the proper permissions in order to be able to execute it
             if ( !isWindows ) {
-                process = runtime.exec( new String[] { "/bin/bash", "-c", filePath } );
-            } else {
-                process = runtime.exec( "cmd /c start " + filePath );
+                runtime.exec( "chmod 755 " + filePath ).waitFor();
             }
 
+            Process process = runtime.exec( filePath );//Execute the script
             process.waitFor();//Causes the current thread to wait, if necessary, until the process represented by this Process object has terminated.
+
             BufferedReader buf = new BufferedReader( new InputStreamReader( process.getInputStream() ) );
             String line;
             while ( (line = buf.readLine()) != null ) {
