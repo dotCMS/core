@@ -795,7 +795,6 @@
                source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true"
                memoryinitialsize="256m" memorymaximumsize="512m" >
             <classpath refid="autoupdater-classpath" />
-            <classpath refid="files-classpath" />
             <include name="com/dotcms/autoupdater/**"/>
         </javac>
         <copy file="${src.dir}/com/dotcms/autoupdater/update.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/update.properties" />
