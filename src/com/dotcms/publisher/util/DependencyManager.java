@@ -15,6 +15,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
@@ -174,7 +175,7 @@ public class DependencyManager {
 				}
 			} else if(asset.getType().equals("containers")) {
 				try {
-					Container c = APILocator.getContainerAPI().getLiveContainerById(asset.getAsset(), user, false);
+					Container c = (Container) APILocator.getVersionableAPI().findLiveVersion(asset.getAsset(), user, false);
 
 					if(c == null) {
 						c = APILocator.getContainerAPI().getWorkingContainerById(asset.getAsset(), user, false);
@@ -725,12 +726,12 @@ public class DependencyManager {
 
 				containerList.clear();
 
-                Container workingContainer = APILocator.getContainerAPI().getWorkingContainerById( id, user, false );
+                Container workingContainer = (Container) APILocator.getVersionableAPI().findWorkingVersion(id, user, false);
                 if ( workingContainer != null ) {
                     containerList.add( workingContainer );
                 }
 
-                Container liveContainer = APILocator.getContainerAPI().getLiveContainerById( id, user, false );
+                Container liveContainer = (Container) APILocator.getVersionableAPI().findLiveVersion(id, user, false);
                 if ( liveContainer != null ) {
                     containerList.add( liveContainer );
                 }
