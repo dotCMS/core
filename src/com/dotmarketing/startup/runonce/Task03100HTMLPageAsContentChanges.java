@@ -23,7 +23,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String MYSQL_INSERT_STRUCTURE = "INSERT INTO structure"+
 												  "(`inode`,`name`,`description`,`default_structure`,`structuretype`,`system`," +
 												  "`fixed`,`velocity_var_name`,`host`,`folder`,`mod_date`)VALUES" +
-												  "(?,'HTMLPage Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
+												  "(?,'Page Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
 												  "'SYSTEM_FOLDER',NOW());";
 	private final String MYSQL_INSERT_FIELD_INODE = "INSERT INTO inode(`inode`, `owner`, `idate`, `type`) VALUES(?,'', NOW(), 'field');";
 	private final String MYSQL_INSERT_FIELD = "INSERT INTO field " +
@@ -39,7 +39,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String POSTGRESQL_INSERT_STRUCTURE = "INSERT INTO structure"+
 													 "(inode,name,description,default_structure,structuretype,system," +
 													 "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
-													 "(?,'HTMLPage Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
+													 "(?,'Page Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
 													 "'SYSTEM_FOLDER',NOW());";
 	private final String POSTGRESQL_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', NOW(), 'field');";
 	private final String POSTGRESQL_INSERT_FIELD = "INSERT INTO field " +
@@ -56,7 +56,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String H2_INSERT_STRUCTURE = "INSERT INTO structure"+
 											   "(inode,name,description,default_structure,structuretype,system," +
 											   "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
-											   "(?,'HTMLPage Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
+											   "(?,'Page Asset','Default Structure for Pages',false,5,false,true,'htmlpageasset','SYSTEM_HOST'," +
 											   "'SYSTEM_FOLDER',CURRENT_TIME());";
 	private final String H2_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', CURRENT_TIME(), 'field');";
 	private final String H2_INSERT_FIELD = "INSERT INTO field " +
@@ -73,7 +73,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String ORACLE_INSERT_STRUCTURE = "INSERT INTO structure"+
 											       "(inode,name,description,default_structure,structuretype,system," +
 											       "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
-											       "(?,'HTMLPage Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
+											       "(?,'Page Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
 											       "'SYSTEM_FOLDER',CURRENT_DATE)";
 	private final String ORACLE_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', CURRENT_DATE, 'field')";
 	private final String ORACLE_INSERT_FIELD = "INSERT INTO field " +
@@ -90,7 +90,7 @@ public class Task03100HTMLPageAsContentChanges implements StartupTask {
 	private final String MSSQL_INSERT_STRUCTURE = "INSERT INTO structure"+
 											      "(inode,name,description,default_structure,structuretype,system," +
 											      "fixed,velocity_var_name,host,folder,mod_date)VALUES" +
-											      "(?,'HTMLPage Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
+											      "(?,'Page Asset','Default Structure for Pages',0,5,0,1,'htmlpageasset','SYSTEM_HOST'," +
 											      "'SYSTEM_FOLDER',GETDATE())";
 	private final String MSSQL_INSERT_FIELD_INODE = "INSERT INTO inode(inode, owner, idate, type) VALUES(?,'', GETDATE(), 'field')";
 	private final String MSSQL_INSERT_FIELD = "INSERT INTO field " +
