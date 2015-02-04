@@ -358,7 +358,7 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 
 
 // HTML Page Flyout
-function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId) {
+function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,isLegacyPage) {
 	var strHTML = '';
 		strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -370,16 +370,29 @@ function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, refere
 			if (((live=="1") || (working=="1")) && (read=="1"))  {
 					var actionLabel = (write=="1") ?  '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Open-Edit")) %>': '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View"))%>';
 
-					if (isInodeSet(parentId)) {
-						strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
-						strHTML += actionLabel;
-						strHTML += '</div>';
-			        }
-					else {
-						strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
-						strHTML += actionLabel;
-						strHTML += '</div>';
-		    	    }
+					if(isLegacyPage){
+						if (isInodeSet(parentId)) {
+							strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
+							strHTML += actionLabel;
+							strHTML += '</div>';
+				        }
+						else {
+							strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
+							strHTML += actionLabel;
+							strHTML += '</div>';
+			    	    }
+					}else{
+						if (isInodeSet(parentId)) {
+							strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
+							strHTML += actionLabel;
+							strHTML += '</div>';
+				        }
+						else {
+							strHTML += '<div dojoType="dijit.MenuItem" iconClass="pagePropIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&r=<%=r%>&userId=' + userId + '&referer=' + referer + openNodes + '\';">';
+							strHTML += actionLabel;
+							strHTML += '</div>';
+			    	    }
+					}
 			}
 
 		}
