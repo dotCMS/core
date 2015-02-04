@@ -563,7 +563,11 @@ public class DependencyManager {
 				}else{
 					Contentlet contentlet = null;
 					try{
-						contentlet = APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false).get(0);
+						List<Contentlet> result = APILocator.getContentletAPI().search("+identifier:"+pageId+" +live:true", 0, 0, "moddate", user, false);
+						if(!result.isEmpty()) {
+							contentlet = result.get(0);
+						}
+						
 					} catch (DotContentletStateException e) {
 						// content not found message is already displayed on console
 						Logger.debug(this, e.getMessage(),e);
