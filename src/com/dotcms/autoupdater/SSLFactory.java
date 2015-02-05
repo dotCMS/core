@@ -1,39 +1,24 @@
 package com.dotcms.autoupdater;
 
 
- 
- import java.io.IOException;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.ConnectTimeoutException;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.params.HttpConnectionParams;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
+import com.sun.net.ssl.*;
+
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-
-import com.dotcms.repackage.org.apache.commons.httpclient.ConnectTimeoutException;
-import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpConnectionParams;
-import com.dotcms.repackage.org.apache.commons.httpclient.protocol.ControllerThreadSocketFactory;
-import com.dotcms.repackage.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
-import com.dotcms.repackage.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotcms.autoupdater.AuthSSLInitializationError;
-import com.dotcms.autoupdater.AuthSSLX509TrustManager;
-import com.dotcms.autoupdater.Messages;
-import com.dotcms.autoupdater.UpdateAgent;
-
-import com.sun.net.ssl.KeyManager;
-import com.sun.net.ssl.KeyManagerFactory;
-import com.sun.net.ssl.SSLContext;
-import com.sun.net.ssl.TrustManager;
-import com.sun.net.ssl.TrustManagerFactory;
-import com.sun.net.ssl.X509TrustManager;
 
 	  
 

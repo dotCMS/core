@@ -40,16 +40,8 @@ public class PostProcess {
         return distributionHome;
     }
 
-    public void setDistributionHome ( String distributionHome ) {
-        this.distributionHome = distributionHome;
-    }
-
     public String getDotcmsHome () {
         return dotcmsHome;
-    }
-
-    public void setDotcmsHome ( String dotcmsHome ) {
-        this.dotcmsHome = dotcmsHome;
     }
 
 }

@@ -73,7 +73,7 @@ SOURCE="-url"
 if echo "$CMD_LINE_ARGS" | grep -q -- "$SOURCE"; then
   echo "url parameter not found setting default";
 else
-  CMD_LINE_ARGS="$CMD_LINE_ARGS -url http://www.dotcms.com/app/servlets/upgrade2x"
+  CMD_LINE_ARGS="$CMD_LINE_ARGS -url http://www.dotcms.com/app/servlets/upgrade3x"
 fi
 
 

@@ -1,8 +1,5 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.autoupdater.ActivityIndicator;
-import com.dotcms.autoupdater.UpdateAgent;
-
 public class ActivityIndicator extends Thread {
 	private  String[] progressIndicators= { "-" , "\\" , "|" , "/" };
 	private  int i=0;

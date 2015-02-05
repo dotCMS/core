@@ -1,9 +1,9 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.org.apache.commons.cli.*;
-import com.dotcms.repackage.org.apache.commons.httpclient.*;
-import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
-import com.dotcms.repackage.org.apache.log4j.*;
+import com.dotcms.repackage.commons_cli_1_2.org.apache.commons.cli.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.*;
+import com.dotcms.repackage.commons_httpclient_3_1.org.apache.commons.httpclient.methods.PostMethod;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.*;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -30,6 +30,7 @@ public class UpdateAgent {
     public static String FOLDER_HOME_DOTSERVER = "dotserver";
     public static String FOLDER_HOME_BIN = "bin";
     public static String FOLDER_HOME_PLUGINS = "plugins";
+    public static String FOLDER_HOME_DOCS = "docs";
     public static String FOLDER_HOME_UPDATER = "autoupdater";
     public static String FOLDER_HOME_BACK_UP = "backup";
     //private String backupFile;
@@ -80,10 +81,17 @@ public class UpdateAgent {
             proxyPass = line.getOptionValue( UpdateOptions.PROXY_PASS );
             url = line.getOptionValue( UpdateOptions.URL, updateOptions.getDefault( "update.url", "" ) );
             distributionPath = line.getOptionValue( UpdateOptions.HOME, System.getProperty( "user.dir" ) );
-            dotcmsHomePath = line.getOptionValue( UpdateOptions.DOTCMS_HOME, System.getProperty( "user.dir" ) );
+            dotcmsHomePath = line.getOptionValue( UpdateOptions.DOTCMS_HOME, null );
 
             //Initializing properties
             configureLogger( line );
+
+            //If the dotCMS path was not specified by the user lets try to find out where is it
+            if ( dotcmsHomePath == null ) {
+                //In the properties of the bin/build.conf file we have the relative path of the dotCMS home, relative to the distribution
+                Properties confProperties = UpdateUtil.getBuildConfiguration( distributionPath );
+                dotcmsHomePath = UpdateUtil.getDotcmsHome( confProperties );
+            }
 
             updateOptions.setHomeFolder( distributionPath );
             updateOptions.setUpdateFilesFolder( distributionPath + File.separator + FOLDER_HOME_UPDATER + File.separator + "updates" );
@@ -102,10 +110,13 @@ public class UpdateAgent {
             checkHome( getDistributionPath() + File.separator + getDotcmsHomePath() );
             checkRequisites( getDistributionPath() );
 
+            //Get the properties found in the com/liferay/portal/util/build.properties file
+            Properties properties = getJarProps();
+
             newMinor = "";
             newVersion = "";
             String version = getVersion();
-            String minor = UpdateUtil.getBuildVersion( getJarProps() );
+            String minor = UpdateUtil.getBuildVersion( properties );
             /*SimpleDateFormat sdf = new SimpleDateFormat( "yyyMMdd_HHmm" );
             backupFile = line.getOptionValue( UpdateOptions.BACKUP, "update_backup_b" + minor + "_" + sdf.format( new Date() ) + ".zip" );
             if ( !backupFile.endsWith( ".zip" ) ) {
@@ -395,7 +406,14 @@ public class UpdateAgent {
         logger = Logger.getLogger( UpdateAgent.class );
     }
 
-    private File findJarFile () throws IOException, UpdateException {
+    /**
+     * Searches and returns the dotCMS jar found in the distribution the user wants to upgrade
+     *
+     * @return
+     * @throws IOException
+     * @throws UpdateException
+     */
+    private File findMainJarFile () throws IOException, UpdateException {
 
         String[] libDirs = new String[]{
                 File.separator + "common" + File.separator + "lib",
@@ -440,10 +458,18 @@ public class UpdateAgent {
         return dotCMSjars[0];
     }
 
-
+    /**
+     * Reads and returns the properties found in the com/liferay/portal/util/build.properties file
+     *
+     * @return
+     * @throws IOException
+     * @throws UpdateException
+     */
     private Properties getJarProps () throws IOException, UpdateException {
 
-        JarFile jar = new JarFile( findJarFile() );
+        //First we need to find the dotCMS jar
+        JarFile jar = new JarFile( findMainJarFile() );
+        //Then just read the properties
         JarEntry entry = jar.getJarEntry( "com/liferay/portal/util/build.properties" );
         Properties props = new Properties();
         InputStream in = jar.getInputStream( entry );

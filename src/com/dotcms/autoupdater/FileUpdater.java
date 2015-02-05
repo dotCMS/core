@@ -1,12 +1,12 @@
 package com.dotcms.autoupdater;
 
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.liferay.util.FileUtil;
+import com.dotcms.repackage.tika_app_1_3.org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Properties;
 
 /**
  * This class backups and updates the file system.
@@ -74,7 +74,7 @@ public class FileUpdater {
     }
 
     /**
-     * Method that will handler the update process itself, unziping the download file on the .dotserver/ directory and aplying the required changes in there
+     * Method that will handle the update process itself, unziping the downloaded file on the .dotserver/ directory and aplying the required changes in there
      *
      * @return
      * @throws IOException
@@ -100,14 +100,24 @@ public class FileUpdater {
             //Apply the update on the distribution folders
             applyUpdateFor( UpdateAgent.FOLDER_HOME_DOTSERVER, null );//.dotserver
             applyUpdateFor( UpdateAgent.FOLDER_HOME_PLUGINS, null );//.plugins
+            applyUpdateFor( UpdateAgent.FOLDER_HOME_DOCS, null );//.docs
             //The bin folder is a special case as it have files we can delete or even update, like the autoUpdater.sh or the build.conf
-            applyUpdateFor( UpdateAgent.FOLDER_HOME_BIN, new String[]{"build.conf", "build.conf.bat", "autoUpdater.sh", "autoUpdater.bat"} );//.bin
+            applyUpdateFor( UpdateAgent.FOLDER_HOME_BIN, new String[] { "autoUpdater.sh", "autoUpdater.bat" } );//.bin
+
+            /*
+             Now we need to find out the new dotCMS war home, could have changed if for
+             example we upgrade the tomcat version.
+
+             In the properties of the bin/build.conf file we have the relative path of the dotCMS home, relative to the distribution
+             */
+            Properties confProperties = UpdateUtil.getBuildConfiguration( distributionHome );
+            String newHome = UpdateUtil.getDotcmsHome( confProperties );
 
             //++++++++++++++++++++++++++++++++++++++++++++++++++++++++
             //Now copy back the assets contents
             String assets = "assets";
             File assetsFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + assets );
-            File destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + assets );
+            File destFolder = new File( distributionHome + File.separator + newHome + File.separator + assets );
             logger.debug( "Copying back backed assets folder: " + assetsFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
             //Copying using hardlinks
             FileUtil.copyDirectory( assetsFolder, destFolder );
@@ -116,7 +126,7 @@ public class FileUpdater {
             //Now copy back the dotsecure contents
             String dotsecure = "dotsecure";
             File dotsecureFolder = new File( backUpPath + File.separator + dotcmsHome + File.separator + dotsecure );
-            destFolder = new File( distributionHome + File.separator + dotcmsHome + File.separator + dotsecure );
+            destFolder = new File( distributionHome + File.separator + newHome + File.separator + dotsecure );
             logger.debug( "Copying back backed dotsecure folder: " + dotsecureFolder.getAbsolutePath() + " to: " + destFolder.getAbsolutePath() );
             //Copying using hardlinks
             FileUtil.copyDirectory( dotsecureFolder, destFolder );
@@ -211,20 +221,7 @@ public class FileUpdater {
             logger.info( Messages.getString( "UpdateAgent.debug.start.validation" ) );
 
             if ( postProcess.postProcess( true ) ) {
-
                 logger.info( Messages.getString( "UpdateAgent.debug.end.validation" ) );
-
-                //Boolean success = true;
-
-                logger.debug( "Finished to clean update process traces." );
-
-                /*if ( !success ) {
-                    String error = Messages.getString( "UpdateAgent.error.ant.clean" );
-                    if ( !UpdateAgent.isDebug ) {
-                        error += Messages.getString( "UpdateAgent.text.use.verbose", UpdateAgent.logFile );
-                    }
-                    throw new UpdateException( error, UpdateException.ERROR );
-                }*/
             } else {
                 String error = Messages.getString( "UpdateAgent.error.plugin.incompatible" );
                 if ( !UpdateAgent.isDebug ) {

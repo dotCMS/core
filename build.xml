@@ -30,7 +30,7 @@
     <property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
     <property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
     <property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
-    <property name="agent.version" value="30"/>
+    <property name="agent.version" value="31"/>
 
     <property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
     <property name="plugin.jar.deploy.dir.default" value="${basedir}/../../dotCMS/WEB-INF/lib" />
@@ -174,6 +174,7 @@
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
         <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+            <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
@@ -793,7 +794,7 @@
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
                source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true"
                memoryinitialsize="256m" memorymaximumsize="512m" >
-            <classpath refid="files-classpath" />
+            <classpath refid="autoupdater-classpath" />
             <include name="com/dotcms/autoupdater/**"/>
         </javac>
         <copy file="${src.dir}/com/dotcms/autoupdater/update.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/update.properties" />
