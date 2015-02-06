@@ -65,9 +65,22 @@ public class CmsUrlUtil {
 		}
 		if ("contentlet".equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
-				Contentlet c = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
-				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
+
+                ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), languageId );
+                if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+                    /*
+                    If we found nothing with the given language it does not mean is not a page,
+                    could be a page but it does not exist for the given language.
+                    Trying with the default language, only if the given language is not already the default one.
+                     */
+                    if ( languageId != APILocator.getLanguageAPI().getDefaultLanguage().getId() ) {
+
+                        languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                        cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), languageId );
+                    }
+                }
+                Contentlet c = APILocator.getContentletAPI().find( cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false );
+                return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Unable to find" + uri);
 				return false;

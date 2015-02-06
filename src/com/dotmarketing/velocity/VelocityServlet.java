@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -413,21 +414,47 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
-    		IHTMLPage page = null;
-    		
-    		try {
-    		    if(ident.getAssetType().equals("contentlet")) {
-    		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-    		                APILocator.getContentletAPI().findContentletByIdentifier(
-    		                  ident.getId(), true, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
-    		    }
-    		    else {
-    		        page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-    		    }
-    		} catch (Exception e) {
-    			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + ident.getInode() + " because " + e.getMessage());
-    			return;
-    		}
+    		IHTMLPage page;
+
+            try {
+                if ( ident.getAssetType().equals( "contentlet" ) ) {
+
+                    Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+                    long currentLanguageId = getLanguageId( request );
+
+                    Contentlet htmlPage;
+                    try {
+                        htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
+                                ident.getId(), true, currentLanguageId, APILocator.getUserAPI().getSystemUser(), false );
+                    } catch ( DotContentletStateException e ) {
+                        htmlPage = null;//Contentlet not found
+                    }
+
+                    /*
+                    If nothing found and the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is true lets
+                    try to return the page using the default language.
+                     */
+                    if ( (htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ))
+                            && com.dotmarketing.viewtools.LanguageWebAPI.canDefaultPageToDefaultLanguage()
+                            && currentLanguageId != defaultLanguageId ) {
+
+                        //Trying with the default language, only if the given language is not already the default one.
+                        htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
+                                ident.getId(), true, defaultLanguageId, APILocator.getUserAPI().getSystemUser(), false );
+                    }
+                    //At this point if nothing found throw an exception
+                    if ( htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ) ) {
+                        throw new ResourceNotFoundException( "Not live version found for page [" + ident.getInode() + "]" );
+                    }
+
+                    page = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPage );
+                } else {
+                    page = APILocator.getHTMLPageAPI().loadLivePageById( ident.getInode(), APILocator.getUserAPI().getSystemUser(), false );
+                }
+            } catch ( Exception e ) {
+                Logger.error( this, "Unable to load live version of page: " + ident.getInode() + " because " + e.getMessage() );
+                throw e;
+            }
     
     		// Check if the page is visible by a CMS Anonymous role
     		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {
