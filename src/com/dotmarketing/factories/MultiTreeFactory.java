@@ -16,11 +16,20 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+
 /**
- *
- * @author  will
+ * This class provides utility routines to interact with the Multi-Tree
+ * structures in the system. A Multi-Tree represents the relationship between a
+ * Legacy or Content Page, a container, and a contentlet.
+ * <p>
+ * Therefore, the content of a page can be described as the sum of several
+ * Multi-Tree records which represent each piece of information contained in it.
+ * </p>
+ * 
+ * @author will
  */
 public class MultiTreeFactory {
 
@@ -211,14 +220,50 @@ public class MultiTreeFactory {
 		//return new java.util.ArrayList();
 	}
 
+	/**
+	 * Saves a multi-tree construct using the default language in the system. A
+	 * muti-tree is usually composed of the following five parts:
+	 * <ol>
+	 * <li>The identifier of the Content Page or Legacy Page.</li>
+	 * <li>The identifier of the container in the page.</li>
+	 * <li>The identifier of the contentlet itself.</li>
+	 * <li>The type of content relation.</li>
+	 * <li>The order in which this construct is added to the database.</li>
+	 * </ol>
+	 * 
+	 * @param o
+	 *            - The multi-tree structure.
+	 */
 	public static void saveMultiTree(MultiTree o) {
+		saveMultiTree(o, APILocator.getLanguageAPI().getDefaultLanguage()
+				.getId());
+	}
+
+	/**
+	 * Saves a Multi-Tree construct using the default language in the system. A
+	 * Muti-Tree is usually composed of the following five parts:
+	 * <ol>
+	 * <li>The identifier of the Content Page or Legacy Page.</li>
+	 * <li>The identifier of the container in the page.</li>
+	 * <li>The identifier of the contentlet itself.</li>
+	 * <li>The type of content relation.</li>
+	 * <li>The order in which this construct is added to the database.</li>
+	 * </ol>
+	 * 
+	 * @param o
+	 *            - The Multi-Tree structure.
+	 * @param languageId
+	 *            - The language ID of the content page this contentlet will be
+	 *            associated to.
+	 */
+	public static void saveMultiTree(MultiTree o, long languageId) {
 	    if(!InodeUtils.isSet(o.getChild()) | !InodeUtils.isSet(o.getParent1()) || !InodeUtils.isSet(o.getParent2())) throw new DotRuntimeException("Make sure your Multitree is set!");
 		try {
 			HibernateUtil.saveOrUpdate(o);
 			
 			Identifier ident=APILocator.getIdentifierAPI().find(o.getParent1());
 			if(ident.getAssetType().equals("contentlet")) {
-			    ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
+			    ContentletVersionInfo vi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), languageId);
 			    vi.setVersionTs(new Date());
 			    APILocator.getVersionableAPI().saveContentletVersionInfo(vi);
 			}

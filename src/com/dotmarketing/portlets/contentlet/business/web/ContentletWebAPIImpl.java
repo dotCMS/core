@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.business.web;
 
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -47,9 +48,11 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -186,9 +189,21 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		return ((cont!=null) ? cont.getInode() : null);
 	}
 
-
-
-
+	/**
+	 * Creates the relationship between a given Legacy or Content Page, a
+	 * container, and its new or existing contentlet.
+	 * 
+	 * @param contentletFormData
+	 *            - The information passed down after form submission.
+	 * @param user
+	 *            - The user performing this action.
+	 * @param isAutoSave
+	 *            -
+	 * @throws Exception
+	 *             It can be thrown if the user does not have the permission to
+	 *             perform this action, or if an error occurred during the save
+	 *             process.
+	 */
 	private void _addToParents(Map<String, Object> contentletFormData, User user,boolean isAutoSave) throws Exception {
 
 		Logger.debug(this, "Inside AddContentletToParentsAction");
@@ -252,7 +267,39 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						Logger.debug(this, "MTree is null!!! Creating new one!");
 						MultiTree mTree = new MultiTree(htmlParentId.getInode(), containerIdentifier.getInode(),
 														contenletIdentifier.getInode(),null,contentletCount);
-						MultiTreeFactory.saveMultiTree(mTree);
+						Contentlet htmlContentlet = conAPI.find(htmlpage_inode,
+								user, false);
+						String pageIdentifier = htmlContentlet.getIdentifier();
+						long contentletLang = contentlet.getLanguageId();
+						if (htmlContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+							ContentletVersionInfo versionInfo = APILocator
+									.getVersionableAPI()
+									.getContentletVersionInfo(pageIdentifier,
+											contentletLang);
+							if (versionInfo != null) {
+								MultiTreeFactory.saveMultiTree(mTree,
+										contentlet.getLanguageId());
+							} else {
+								// The language in the page and the contentlet 
+								// do not match
+								String language = APILocator.getLanguageAPI()
+										.getLanguage(contentletLang)
+										.getLanguage();
+								Logger.error(this,
+										"Creating MultiTree failed: Contentlet with identifier "
+												+ pageIdentifier
+												+ " does not exist in "
+												+ language);
+								String msg = MessageFormat
+										.format(LanguageUtil
+												.get(user,
+														"message.htmlpage.error.addcontent.invalidlanguage"),
+												language);
+								throw new DotRuntimeException(msg);
+							}
+						} else {
+							MultiTreeFactory.saveMultiTree(mTree);
+						}
 					}
 
 				}

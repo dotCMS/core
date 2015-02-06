@@ -1460,16 +1460,6 @@ public class ContentletAjax {
 			        }
 			    }
 			}
-
-			HttpSession ses = req.getSession();
-			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-
-			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
-				}
-				tempBinaryImageInodes.clear();
-			}
 		}
 
 		catch (DotContentletValidationException ve) {
@@ -1613,6 +1603,7 @@ public class ContentletAjax {
 		}
 
 		finally{
+			
 		    if(saveContentErrors.size()>0) {
                 try {
                     HibernateUtil.rollbackTransaction();
@@ -1635,6 +1626,31 @@ public class ContentletAjax {
 				callbackData.put("saveContentErrors", saveContentErrors);
 				SessionMessages.clear(req.getSession());
 
+			}
+			// If an error occurred, manually delete all other uploaded binary 
+		    // files since they were not included in the Hibernate transaction
+			try {
+				HttpSession ses = req.getSession();
+				List<String> tempBinaryImageInodes = (List<String>) ses
+						.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
+				if (UtilMethods.isSet(tempBinaryImageInodes)
+						&& tempBinaryImageInodes.size() > 0) {
+					for (String inode : tempBinaryImageInodes) {
+						Contentlet contentlet = conAPI.find(inode, APILocator
+								.getUserAPI().getSystemUser(), false);
+						if (contentlet != null) {
+							conAPI.delete(contentlet, APILocator.getUserAPI()
+									.getSystemUser(), false, true);
+						}
+					}
+					tempBinaryImageInodes.clear();
+				}
+			} catch (DotContentletStateException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
+			} catch (DotDataException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
+			} catch (DotSecurityException e1) {
+				Logger.warn(this, "Could not delete temporary image inode", e1);
 			}
 		}
 
