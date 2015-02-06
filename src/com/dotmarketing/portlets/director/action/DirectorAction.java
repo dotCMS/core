@@ -27,6 +27,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
 
 import java.net.URLDecoder;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -71,6 +72,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.ParamUtil;
@@ -89,24 +91,77 @@ public class DirectorAction extends DotPortletAction {
 	        return (IHTMLPage) HibernateUtil.load(com.dotmarketing.portlets.htmlpages.model.HTMLPage.class, inode);
 	    }
 	}
-	
+
+	/**
+	 * Updates the modification date of the page that has been recently
+	 * modified, i.e., the version info of the page using the default language 
+	 * in the system.
+	 * 
+	 * @param htmlPage
+	 *            - The Legacy or Content Page that has changed.
+	 * @param user
+	 *            - The user performing this action.
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 *             An error occurred when persisting the changes in the
+	 *             database.
+	 */
 	protected void updatePageModDate(IHTMLPage htmlPage, User user) throws DotStateException, DotDataException {
-	    //Updating the last mod user and last mod date of the page
-        if(htmlPage instanceof HTMLPage) {
-            HTMLPage ht=(HTMLPage)htmlPage;
-            ht.setModDate(new Date());
-            ht.setModUser(user.getUserId());
-            HibernateUtil.saveOrUpdate(htmlPage);
-        }
-        else if(htmlPage instanceof Contentlet) {
-            // updating version info version_ts should be enough
-            ContentletVersionInfo versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(
-                    htmlPage.getIdentifier(), APILocator.getLanguageAPI().getDefaultLanguage().getId());
-            versionInfo.setVersionTs(new Date());
-            APILocator.getVersionableAPI().saveContentletVersionInfo(versionInfo);
-        }
+		updatePageModDate(htmlPage, user, APILocator.getLanguageAPI()
+				.getDefaultLanguage().getId());
 	}
 	
+	/**
+	 * Updates the modification date of the page that has been recently
+	 * modified, i.e., the version info of the page.
+	 * 
+	 * @param htmlPage
+	 *            - The Legacy or Content Page that has changed.
+	 * @param user
+	 *            - The user performing this action.
+	 * @param languageId
+	 *            - The language ID of the content being saved.
+	 * @throws DotStateException
+	 * @throws DotDataException
+	 *             An error occurred when persisting the changes in the
+	 *             database.
+	 */
+	protected void updatePageModDate(IHTMLPage htmlPage, User user,
+			long languageId) throws DotStateException, DotDataException {
+		if (htmlPage instanceof HTMLPage) {
+			HTMLPage ht = (HTMLPage) htmlPage;
+			ht.setModDate(new Date());
+			ht.setModUser(user.getUserId());
+			HibernateUtil.saveOrUpdate(htmlPage);
+		} else if (htmlPage.isContent()) {
+			ContentletVersionInfo versionInfo = APILocator.getVersionableAPI()
+					.getContentletVersionInfo(htmlPage.getIdentifier(),
+							languageId);
+			versionInfo.setVersionTs(new Date());
+			APILocator.getVersionableAPI().saveContentletVersionInfo(
+					versionInfo);
+		}
+	}
+
+	/**
+	 * Represents the entry point to a series of actions that can be performed
+	 * on contentlets, pages, file assets, templates, and so on.
+	 * 
+	 * @param mapping
+	 *            - The Struts action mapping.
+	 * @param form
+	 *            - The HTML form that was submitted to this action.
+	 * @param config
+	 *            - The configuration of the portlet that triggered the request.
+	 * @param req
+	 *            - The HTTP request object. Contains important information such
+	 *            as the command and/or sub-command to execute, the referrer
+	 *            page, etc.
+	 * @param res
+	 *            - The HTTP response object.
+	 * @throws Exception
+	 *             An error occurred during the execution of a command.
+	 */
 	public void processAction(
 			 ActionMapping mapping, ActionForm form, PortletConfig config,
 			 ActionRequest req, ActionResponse res)
@@ -518,9 +573,41 @@ public class DirectorAction extends DotPortletAction {
 	                    	
 	                    }
 	                    if(!duplicateContentCheck){
-	                    	MultiTreeFactory.saveMultiTree(mTree);
-	                    
-	                    	updatePageModDate(htmlPage,user);
+							if (htmlPage.isContent()) {
+								ContentletVersionInfo versionInfo = APILocator
+										.getVersionableAPI()
+										.getContentletVersionInfo(
+												htmlPage.getIdentifier(),
+												contentlet.getLanguageId());
+								if (versionInfo != null) {
+									MultiTreeFactory.saveMultiTree(mTree,
+											contentlet.getLanguageId());
+									updatePageModDate(htmlPage, user,
+											contentlet.getLanguageId());
+								} else {
+									// The language in the page and the 
+									// contentlet do not match
+									long contentletLang = contentlet
+											.getLanguageId();
+									String language = APILocator.getLanguageAPI()
+											.getLanguage(contentletLang)
+											.getLanguage();
+									Logger.error(this,
+											"Creating MultiTree failed: Contentlet with identifier "
+													+ htmlPage.getIdentifier()
+													+ " does not exist in "
+													+ language);
+									String msg = MessageFormat
+											.format(LanguageUtil
+													.get(user,
+															"message.htmlpage.error.addcontent.invalidlanguage"),
+													language);
+									throw new DotRuntimeException(msg);
+								}
+							} else {
+								MultiTreeFactory.saveMultiTree(mTree);
+								updatePageModDate(htmlPage, user);
+							}
 	                    }
 	
 	                } else {
