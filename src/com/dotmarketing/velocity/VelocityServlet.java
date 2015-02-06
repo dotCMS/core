@@ -454,10 +454,15 @@ public abstract class VelocityServlet extends HttpServlet {
                             && com.dotmarketing.viewtools.LanguageWebAPI.canDefaultPageToDefaultLanguage()
                             && currentLanguageId != defaultLanguageId ) {
 
-                        //Trying with the default language, only if the given language is not already the default one.
-                        htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
-                                ident.getId(), true, defaultLanguageId, APILocator.getUserAPI().getSystemUser(), false );
-                    }
+						try {
+							//Trying with the default language, only if the given language is not already the default one.
+							htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
+									ident.getId(), true, defaultLanguageId, APILocator.getUserAPI().getSystemUser(), false );
+						} catch ( DotContentletStateException e ) {
+							//Nothing found, there is not page in the default language for a fallback, in this case we can NOT avoid a 404
+							throw new ResourceNotFoundException( "Not live version with default language found for page [" + ident.getInode() + "]" );
+						}
+					}
                     //At this point if nothing found throw an exception
                     if ( htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ) ) {
                         throw new ResourceNotFoundException( "Not live version found for page [" + ident.getInode() + "]" );
