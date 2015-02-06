@@ -403,7 +403,7 @@ public class DotResourceLoader extends ResourceLoader {
             try {
             	Identifier identifier = APILocator.getIdentifierAPI().find(x);
             	VersionableAPI versionableAPI=APILocator.getVersionableAPI();
-                IHTMLPage page = null;
+                IHTMLPage page;
                 if(identifier.getAssetType().equals("contentlet")) {
                     page = APILocator.getHTMLPageAssetAPI().fromContentlet(
                             APILocator.getContentletAPI().findContentletByIdentifier(x, !preview, Long.parseLong(language), user, true));

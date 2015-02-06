@@ -30,6 +30,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.business.*;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -47,11 +49,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -366,13 +364,35 @@ public abstract class VelocityServlet extends HttpServlet {
 	    try {
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = hostWebAPI.getCurrentHost(request);
-    
-    		// Map with all identifier inodes for a given uri.
+
+			//Find the current language
+			long currentLanguageId = getLanguageId( request );
+			Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+			// Map with all identifier inodes for a given uri.
     		//
     		// Checking the path is really live using the livecache
-    		String cachedUri = LiveCache.getPathFromCache(uri, host);
-    
-    		// if we still have nothing, check live cache first (which has a 404 cache )
+			String cachedUri = null;
+			try {
+				/*
+				First search using the current language.
+				WE COULD HAVE A PAGE THAT DOES NOT EXIST IN THE DEFAULT LANGUAGE, ALWAYS USE THE LANGUAGE ID
+				 */
+				cachedUri = LiveCache.getPathFromCache( uri, host, currentLanguageId );
+			} catch ( DotContentletStateException e ) {
+
+				//Nothing found with the given language...
+
+				if ( currentLanguageId != defaultLanguageId ) {
+					//Now trying with the default language
+					try {
+						cachedUri = LiveCache.getPathFromCache( uri, host, defaultLanguageId );
+					} catch ( DotContentletStateException e1 ) {
+						//Ok, we found nothing....
+					}
+				}
+			}
+			// if we still have nothing, check live cache first (which has a 404 cache )
     		if (cachedUri == null) {
     			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
     		}
@@ -413,21 +433,49 @@ public abstract class VelocityServlet extends HttpServlet {
     		}
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
     
-    		IHTMLPage page = null;
-    		
-    		try {
-    		    if(ident.getAssetType().equals("contentlet")) {
-    		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-    		                APILocator.getContentletAPI().findContentletByIdentifier(
-    		                  ident.getId(), true, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
-    		    }
-    		    else {
-    		        page = APILocator.getHTMLPageAPI().loadLivePageById(ident.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-    		    }
-    		} catch (Exception e) {
-    			Logger.error(HTMLPageWebAPI.class, "unable to load live version of page: " + ident.getInode() + " because " + e.getMessage());
-    			return;
-    		}
+    		IHTMLPage page;
+
+            try {
+                if ( ident.getAssetType().equals( "contentlet" ) ) {
+
+                    Contentlet htmlPage;
+                    try {
+                        htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
+                                ident.getId(), true, currentLanguageId, APILocator.getUserAPI().getSystemUser(), false );
+                    } catch ( DotContentletStateException e ) {
+                        htmlPage = null;//Contentlet not found
+                    }
+
+                    /*
+                    If nothing found and the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is true lets
+                    try to return the page using the default language.
+                     */
+                    if ( (htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ))
+                            && com.dotmarketing.viewtools.LanguageWebAPI.canDefaultPageToDefaultLanguage()
+                            && currentLanguageId != defaultLanguageId ) {
+
+						try {
+							//Trying with the default language, only if the given language is not already the default one.
+							htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
+									ident.getId(), true, defaultLanguageId, APILocator.getUserAPI().getSystemUser(), false );
+						} catch ( DotContentletStateException e ) {
+							//Nothing found, there is not page in the default language for a fallback, in this case we can NOT avoid a 404
+							throw new ResourceNotFoundException( "Not live version with default language found for page [" + ident.getInode() + "]" );
+						}
+					}
+                    //At this point if nothing found throw an exception
+                    if ( htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ) ) {
+                        throw new ResourceNotFoundException( "Not live version found for page [" + ident.getInode() + "]" );
+                    }
+
+                    page = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPage );
+                } else {
+                    page = APILocator.getHTMLPageAPI().loadLivePageById( ident.getInode(), APILocator.getUserAPI().getSystemUser(), false );
+                }
+            } catch ( Exception e ) {
+                Logger.error( this, "Unable to load live version of page: " + ident.getInode() + " because " + e.getMessage() );
+                throw e;
+            }
     
     		// Check if the page is visible by a CMS Anonymous role
     		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {

@@ -88,8 +88,17 @@ public class LanguageWebAPI implements ViewTool {
 	public static boolean canDefaultWidgetToDefaultLanguage() {
         return Config.getBooleanProperty("DEFAULT_WIDGET_TO_DEFAULT_LANGUAGE",true);
     }
-	
-	/**
+
+    /**
+     * Return if the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE property is activated or not, defaults to true
+     *
+     * @return
+     */
+    public static boolean canDefaultPageToDefaultLanguage () {
+        return Config.getBooleanProperty( "DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true );
+    }
+
+    /**
 	 * Return if the content can be use as a default to all languages.
 	 * It is a conjuntion of canDefaultContentToDefaultLanguage(),
 	 * wherever it is a form widget and canDefaultWidgetToDefaultLanguage()
