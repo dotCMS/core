@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
@@ -48,11 +49,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.BlockPageCache;
 import com.dotmarketing.business.BlockPageCache.PageCacheParameters;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
@@ -367,13 +364,35 @@ public abstract class VelocityServlet extends HttpServlet {
 	    try {
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = hostWebAPI.getCurrentHost(request);
-    
-    		// Map with all identifier inodes for a given uri.
+
+			//Find the current language
+			long currentLanguageId = getLanguageId( request );
+			Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+			// Map with all identifier inodes for a given uri.
     		//
     		// Checking the path is really live using the livecache
-    		String cachedUri = LiveCache.getPathFromCache(uri, host);
-    
-    		// if we still have nothing, check live cache first (which has a 404 cache )
+			String cachedUri = null;
+			try {
+				/*
+				First search using the current language.
+				WE COULD HAVE A PAGE THAT DOES NOT EXIST IN THE DEFAULT LANGUAGE, ALWAYS USE THE LANGUAGE ID
+				 */
+				cachedUri = LiveCache.getPathFromCache( uri, host, currentLanguageId );
+			} catch ( DotContentletStateException e ) {
+
+				//Nothing found with the given language...
+
+				if ( currentLanguageId != defaultLanguageId ) {
+					//Now trying with the default language
+					try {
+						cachedUri = LiveCache.getPathFromCache( uri, host, defaultLanguageId );
+					} catch ( DotContentletStateException e1 ) {
+						//Ok, we found nothing....
+					}
+				}
+			}
+			// if we still have nothing, check live cache first (which has a 404 cache )
     		if (cachedUri == null) {
     			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
     		}
@@ -418,9 +437,6 @@ public abstract class VelocityServlet extends HttpServlet {
 
             try {
                 if ( ident.getAssetType().equals( "contentlet" ) ) {
-
-                    Long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-                    long currentLanguageId = getLanguageId( request );
 
                     Contentlet htmlPage;
                     try {
