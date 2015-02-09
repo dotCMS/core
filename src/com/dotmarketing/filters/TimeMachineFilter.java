@@ -15,9 +15,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.HostWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -33,12 +34,15 @@ public class TimeMachineFilter implements Filter {
     public static final String TM_LANG_VAR="tm_lang";
     public static final String TM_HOST_VAR="tm_host";
     
+    CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+    
     
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
 		HttpServletRequest req = (HttpServletRequest) request;
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
+		
 		
 		if(!uri.startsWith("/"))
 		    uri="/"+uri;
@@ -48,7 +52,10 @@ public class TimeMachineFilter implements Filter {
 			req.getSession().removeAttribute(TM_LANG_VAR);
 			req.getSession().removeAttribute(TM_HOST_VAR);
 		}
-		if(req.getSession().getAttribute("tm_date")!=null && !CMSFilter.excludeURI(uri)) {
+		
+		
+		if(req.getSession().getAttribute("tm_date")!=null && urlUtil.amISomething(uri,(Host)req.getSession().getAttribute("tm_host")
+				,Long.parseLong((String)req.getSession().getAttribute("tm_lang")))) {
 			
 			com.liferay.portal.model.User user = null;
 			
@@ -114,8 +121,8 @@ public class TimeMachineFilter implements Filter {
 		    	if(!uri.endsWith("/")){
 		    		uri+="/";
 		    	}
-		    	
-		    	
+
+
 		        uri+=Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
 		        file=new java.io.File(ConfigUtils.getTimeMachinePath()+java.io.File.separator+
 			            "tm_"+date.getTime()+java.io.File.separator+

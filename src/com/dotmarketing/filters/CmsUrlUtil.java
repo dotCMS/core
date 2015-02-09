@@ -230,5 +230,10 @@ public class CmsUrlUtil {
 
 		return false;
 	}
+	
+	public boolean amISomething(String uri, Host host, Long languageId) {
+		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host) 
+				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
+	}
 
 }

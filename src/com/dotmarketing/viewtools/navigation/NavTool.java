@@ -60,7 +60,11 @@ public class NavTool implements ViewTool {
         }
     }
     
-    protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
+    protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException { 
+    	return getNav(host, path, String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
+    }
+    
+    protected static NavResult getNav(Host host, String path, String languageId) throws DotDataException, DotSecurityException {
         
         if(path != null && path.contains(".")){
         	path = path.substring(0, path.lastIndexOf("/"));
@@ -122,7 +126,7 @@ public class NavTool implements ViewTool {
                 	final String httpsProtocol = "https://";
                     IHTMLPage itemPage=(IHTMLPage)item;
                     ident=APILocator.getIdentifierAPI().find(itemPage);
-                    
+
                     String redirectUri = itemPage.getRedirect();
                     NavResult nav=new NavResult(folder.getInode(),host.getIdentifier());
                     nav.setTitle(itemPage.getTitle());
@@ -137,13 +141,15 @@ public class NavTool implements ViewTool {
                         }
                       	
                       }else{
-                      	nav.setHref(itemPage.isContent()?ident.getURI()+"?"+WebKeys.HTMLPAGE_LANGUAGE+"="+((Contentlet)itemPage).getLanguageId()
-                      			:ident.getURI());
+                      	nav.setHref(ident.getURI());
                       }
                     nav.setOrder(itemPage.getMenuOrder());
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
-                    children.add(nav);
+                    
+                    if(!itemPage.isContent() || (itemPage.isContent() && String.valueOf(((IHTMLPage)itemPage).getLanguageId()).equals(languageId) )) {
+                    	children.add(nav);
+                    }
                 }
                 else if(item instanceof Link) {
                     Link itemLink=(Link)item;
@@ -186,17 +192,34 @@ public class NavTool implements ViewTool {
     
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
         
-        Host host=currenthost;
-        if(path.startsWith("//")) {
-            List<RegExMatch> find = RegEX.find(path, "^//(\\w+)/(.+)");
-            if(find.size()==1) {
-                String hostname=find.get(0).getGroups().get(0).getMatch();
-                path="/"+find.get(0).getGroups().get(1).getMatch();
-                host=APILocator.getHostAPI().findByName(hostname, user, false);
-            }
-        }
+        Host host=getHostFromPath(path);
+        
+        if(host==null)
+        	host = currenthost;
         
         return getNav(host,path);
     }
     
+    public NavResult getNav(String path, String languageId) throws DotDataException, DotSecurityException {
+        
+    	Host host=getHostFromPath(path);
+
+    	if(host==null)
+    		host = currenthost;
+
+        return getNav(host,path,languageId);
+    }
+    
+    private Host getHostFromPath(String path) throws DotDataException, DotSecurityException{
+    	if(path.startsWith("//")) {
+            List<RegExMatch> find = RegEX.find(path, "^//(\\w+)/(.+)");
+            if(find.size()==1) {
+                String hostname=find.get(0).getGroups().get(0).getMatch();
+                path="/"+find.get(0).getGroups().get(1).getMatch();
+                return APILocator.getHostAPI().findByName(hostname, user, false);
+            }
+        }
+    	
+    	return null;
+    }
 }
