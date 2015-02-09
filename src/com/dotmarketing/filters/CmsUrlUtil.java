@@ -9,6 +9,7 @@ import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -200,6 +201,11 @@ public class CmsUrlUtil {
 		}
 
 		return false;
+	}
+	
+	public boolean amISomething(String uri, Host host, Long languageId) {
+		return (urlUtil.isFileAsset(uri, host, languageId) || urlUtil.isVanityUrl(uri, host) 
+				|| urlUtil.isPageAsset(uri, host, languageId) || urlUtil.isFolder(uri, host));
 	}
 
 }

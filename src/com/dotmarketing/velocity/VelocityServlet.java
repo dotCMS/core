@@ -65,6 +65,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
+import com.dotmarketing.filters.TimeMachineFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -412,7 +413,7 @@ public abstract class VelocityServlet extends HttpServlet {
     			signedIn = true;
     		}
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
-    
+    		
     		IHTMLPage page = null;
     		
     		try {
@@ -506,9 +507,10 @@ public abstract class VelocityServlet extends HttpServlet {
     		Context context = VelocityUtil.getWebContext(request, response);
     		request.setAttribute("velocityContext", context);
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
-    
+    		
     		try {
-    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId() + "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId()
+    					+ "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
     		} catch (Throwable e) {
     			Logger.warn(this, "can't do live mode merge", e);
     		}
