@@ -18,7 +18,7 @@
 	<%}else if(asset instanceof Contentlet){%>
 		<%if( ((Contentlet) asset).getStructureInode().equals(APILocator.getHostAPI().findSystemHost().getStructureInode())){ %>
 			 <%= LanguageUtil.get(pageContext, "Host") %>: <b><%= ((Contentlet) asset).getTitle() %></b>
-		<%}else{ %>
+		<%}else if(!((Contentlet) asset).getPermissionId().isEmpty()) { %>
 			 <%= LanguageUtil.get(pageContext, "Content") %>: <b><%= ((Contentlet) asset).getTitle() %></b>		
 		<%} %>
 	<%}else if(asset instanceof Structure){%>
