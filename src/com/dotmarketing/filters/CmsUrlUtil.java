@@ -8,14 +8,15 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.filters.CMSFilter.IAm;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.util.List;
 
 public class CmsUrlUtil {
 	private static CmsUrlUtil urlUtil;
@@ -66,9 +67,36 @@ public class CmsUrlUtil {
 		}
 		if ("contentlet".equals(id.getAssetType())) {
 			try {
-				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo(id.getId(), languageId);
-				Contentlet c = APILocator.getContentletAPI().find(cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
-				return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
+
+				//Get the list of languages use by the application
+				List<Language> languages = APILocator.getLanguageAPI().getLanguages();
+
+				//First try with the given language
+				ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), languageId );
+				if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+
+					for ( Language language : languages ) {
+						/*
+						If we found nothing with the given language it does not mean is not a page,
+						could be just a page but it does not exist for the given language.
+						Trying with the other languages use in the app.
+						 */
+						if ( languageId != language.getId() ) {
+							cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), language.getId() );
+							if ( cinfo != null && !cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+								//Found it
+								break;
+							}
+						}
+					}
+
+				}
+				if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+					return false;//At this point we know is not a page
+				} else {
+					Contentlet c = APILocator.getContentletAPI().find( cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false );
+					return (c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE);
+				}
 			} catch (Exception e) {
 				Logger.error(this.getClass(), "Unable to find" + uri);
 				return false;
