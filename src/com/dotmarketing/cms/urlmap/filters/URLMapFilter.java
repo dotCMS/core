@@ -25,8 +25,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.logging.LogFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -58,6 +56,15 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+/**
+ * This filter handles all requests regarding URL Maps. These URL maps on
+ * content structures are used to create friendly URLs for SEO.
+ * 
+ * @author root
+ * @version 1.2
+ * @since 03-22-2012
+ *
+ */
 public class URLMapFilter implements Filter {
 
 	private List<PatternCache> patternsCache = new ArrayList<PatternCache>();
@@ -73,6 +80,13 @@ public class URLMapFilter implements Filter {
 
 	}
 
+	/**
+	 * Runs the filter validations on the current request.
+	 * 
+	 * @param req
+	 * @param res
+	 * @param chain
+	 */
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException,
 			ServletException {
 		
@@ -153,28 +167,6 @@ public class URLMapFilter implements Filter {
 			}
 	
 			List<ContentletSearch> cons = null;
-			Collections.sort(patternsCache, new Comparator<PatternCache>(){
-				public int compare(PatternCache o1, PatternCache o2) {
-					String regex1 = o1.getRegEx();
-					String regex2 = o2.getRegEx();
-					if(!regex1.endsWith("/")){
-						regex1+="/";
-					}
-					if(!regex2.endsWith("/")){
-						regex2+="/";
-					}
-				
-					int regExLength1 = getSlashCount(regex1);
-			    	int regExLength2 = getSlashCount(regex2);
-					if(regExLength1 < regExLength2){
-			    	    return 1;
-			    	}else if(regExLength1 > regExLength2){
-			    	    return -1;
-			        }else{
-			    	    return 0;  
-			        }
-				}
-			});
 			for (PatternCache pc : patternsCache) {
 				List<RegExMatch> matches = RegEX.findForUrlMap(url, pc.getRegEx());
 				if (matches != null && matches.size() > 0) {
@@ -316,6 +308,18 @@ public class URLMapFilter implements Filter {
 		urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);
 	}
 
+	/**
+	 * Builds the list of URL maps and sorts them by the number of slashes in
+	 * the URL (highest to lowest). This method is called only when a new URL 
+	 * map is added, and is marked as <code>synchronized</code> to avoid data 
+	 * inconsistency.
+	 * 
+	 * @return A <code>String</code> containing a Regex, which contains all the
+	 *         URL maps in the system.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
 	private synchronized String buildCacheObjects() throws DotDataException {
 		List<SimpleStructureURLMap> urlMaps = StructureFactory.findStructureURLMapPatterns();
 		StringBuilder masterRegEx = new StringBuilder();
@@ -345,7 +349,27 @@ public class URLMapFilter implements Filter {
 			masterRegEx.append(regEx);
 			first = false;
 		}
-
+		Collections.sort(this.patternsCache, new Comparator<PatternCache>() {
+			public int compare(PatternCache o1, PatternCache o2) {
+				String regex1 = o1.getRegEx();
+				String regex2 = o2.getRegEx();
+				if (!regex1.endsWith("/")) {
+					regex1 += "/";
+				}
+				if (!regex2.endsWith("/")) {
+					regex2 += "/";
+				}
+				int regExLength1 = getSlashCount(regex1);
+				int regExLength2 = getSlashCount(regex2);
+				if (regExLength1 < regExLength2) {
+					return 1;
+				} else if (regExLength1 > regExLength2) {
+					return -1;
+				} else {
+					return 0;
+				}
+			}
+		});
 		StructureCache.addURLMasterPattern(masterRegEx.toString());
 		return masterRegEx.toString();
 	}
