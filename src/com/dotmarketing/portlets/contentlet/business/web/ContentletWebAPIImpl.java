@@ -34,6 +34,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.EmailFactory;
@@ -285,7 +286,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 								String language = APILocator.getLanguageAPI()
 										.getLanguage(contentletLang)
 										.getLanguage();
-								Logger.error(this,
+								Logger.debug(this,
 										"Creating MultiTree failed: Contentlet with identifier "
 												+ pageIdentifier
 												+ " does not exist in "
@@ -295,7 +296,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 												.get(user,
 														"message.htmlpage.error.addcontent.invalidlanguage"),
 												language);
-								throw new DotRuntimeException(msg);
+								throw new DotLanguageException(msg);
 							}
 						} else {
 							MultiTreeFactory.saveMultiTree(mTree);
@@ -923,7 +924,8 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 	}
 
 	private void _handleException(Exception ae, boolean autocommit) {
-		if(!(ae instanceof DotContentletValidationException)){
+		
+		if(!(ae instanceof DotContentletValidationException) && !(ae instanceof DotLanguageException)){
 			Logger.warn(this, ae.toString(), ae);
 		}else{
 			Logger.debug(this, ae.toString(), ae);
