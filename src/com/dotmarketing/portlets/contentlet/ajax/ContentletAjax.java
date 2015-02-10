@@ -36,6 +36,7 @@ import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotLanguageException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
@@ -1586,6 +1587,12 @@ public class ContentletAjax {
         catch ( PublishStateException pe ) {
             String errorString = LanguageUtil.get( user, pe.getMessage() );
             saveContentErrors.add( errorString );
+        }
+		catch ( DotLanguageException e ) {
+            saveContentErrors.add( e.getMessage() );
+            callbackData.put( "saveContentErrors", saveContentErrors );
+            callbackData.put( "referer", referer );
+            return callbackData;
         }
         catch ( Exception e ) {
             Logger.error( this, e.getMessage(), e );
