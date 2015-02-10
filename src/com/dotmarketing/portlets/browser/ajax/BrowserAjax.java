@@ -1414,6 +1414,7 @@ public class BrowserAjax {
 
         	if(id!=null && id.getAssetType().equals("contentlet")){
         		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
+        		cont.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
         		APILocator.getContentletAPI().unpublish(cont, user, false);
         		ret = true;
         	}else{
@@ -1518,6 +1519,7 @@ public class BrowserAjax {
 
     	if(id!=null && id.getAssetType().equals("contentlet")){
     		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
+    		cont.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
     		APILocator.getContentletAPI().delete(cont, user, false);
     		return true;
     	}
@@ -2082,6 +2084,26 @@ public class BrowserAjax {
 		result.put("path", new String[]{"root"});
 		result.put("currentFolder", null);
 		return result;
+	}
+	
+	public boolean deleteHTMLPagePreCheck(String htmlPageInode) throws Exception{
+    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser(req);
+
+
+        Identifier id  = APILocator.getIdentifierAPI().findFromInode(htmlPageInode);
+    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user))
+    		throw new DotRuntimeException("The user doesn't have the required permissions.");
+
+    	if(id!=null && id.getAssetType().equals("contentlet")){
+    		for(Contentlet con : APILocator.getContentletAPI().getSiblings(id.getId())){
+    			if(!con.getInode().equals(htmlPageInode) && con.isLive())
+    				return false;
+    		}    		
+    		return true;
+    	}else{
+    		return true;
+    	}
 	}
 
 }

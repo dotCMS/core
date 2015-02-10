@@ -1436,6 +1436,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
+        
+        
+        for (Contentlet contentlet : contentletsVersion) {
+            indexAPI.removeContentFromIndex(contentlet);
+            CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
+        }
 
         // jira.dotmarketing.net/browse/DOTCMS-1073
         deleteBinaryFiles(contentletsVersion,null);

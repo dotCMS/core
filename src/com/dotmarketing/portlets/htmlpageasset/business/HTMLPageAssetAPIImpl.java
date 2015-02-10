@@ -183,6 +183,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
                 pa.setFolder(folder.getInode());
             }catch(Exception e){
+            	pa=new HTMLPageAsset();
                 Logger.warn(this, "Unable to convert contentlet to page asset " + con, e);
             }
         }
@@ -241,7 +242,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 				query.toString(), limit, offset, sortBy, user,
 				respectFrontEndRoles);
 		for (Contentlet cont : contentlets) {
-			pages.add(fromContentlet(cont));
+			if(UtilMethods.isSet(fromContentlet(cont).getInode()))
+				pages.add(fromContentlet(cont));
 		}
 		return pages;
 	}
