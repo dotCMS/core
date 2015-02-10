@@ -310,9 +310,7 @@ public class TimeMachineAjaxAction extends IndexAjaxAction {
 
                     try {
                         //Create a new notification to inform the snapshot was created
-                        String notificationMessage = LanguageUtil.get( getUser().getLocale(), "TIMEMACHINE-SNAPSHOT-CREATED" );
-                        Notification notification = new Notification( notificationMessage, NotificationLevel.INFO, getUser().getUserId() );
-                        APILocator.getNotificationAPI().saveNotification( notification );
+                        APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( getUser().getLocale(), "TIMEMACHINE-SNAPSHOT-CREATED" ), NotificationLevel.INFO, getUser().getUserId() );
                     } catch ( Exception e ) {
                         Logger.error( this, "Error creating notification after creation of the Time machine Snapshot.", e );
                     }

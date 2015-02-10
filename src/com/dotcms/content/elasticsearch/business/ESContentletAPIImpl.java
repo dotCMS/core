@@ -1331,8 +1331,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 Logger.warn(this, "Cannot delete content that has a working copy in another language");
                 
                 String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
-            	Notification n = new Notification(notificationMessage, NotificationLevel.INFO, user.getUserId());
-            	APILocator.getNotificationAPI().saveNotification(n);
+            	APILocator.getNotificationAPI().generateNotification(notificationMessage, NotificationLevel.INFO, user.getUserId());
             	
                 perCons.remove(con);
                 break;

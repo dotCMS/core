@@ -541,8 +541,7 @@ public class HostAPIImpl implements HostAPI {
 					try {
 						String errorMessage = LanguageUtil.format(user.getLocale(), "notifications_host_deletion_error",new String[]{host.getHostname()},false);
 						errorMessage += e.getMessage();
-						Notification n = new Notification(errorMessage, NotificationLevel.ERROR, user.getUserId());
-						APILocator.getNotificationAPI().saveNotification(n);
+						APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, user.getUserId());
 
 					} catch (LanguageException e1) {
 						Logger.error(HostAPIImpl.class, "error formating notification", e);

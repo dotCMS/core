@@ -127,8 +127,7 @@ public class IdentifierDateJob implements Job {
 			}
 			//Send Notification
 			String notificationMessage = LanguageUtil.get(user.getLocale(), "notifications_structure_identifiers_updated");
-			Notification n = new Notification(notificationMessage, NotificationLevel.INFO, user.getUserId());
-			APILocator.getNotificationAPI().saveNotification(n);
+			APILocator.getNotificationAPI().generateNotification(notificationMessage, NotificationLevel.INFO, user.getUserId());
 			
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);

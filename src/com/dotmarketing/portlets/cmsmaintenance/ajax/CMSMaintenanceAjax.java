@@ -21,9 +21,10 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+
 import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -59,6 +60,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
 import com.dotmarketing.portlets.files.model.FileAssetVersionInfo;
+import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPageVersionInfo;
 import com.dotmarketing.portlets.links.model.LinkVersionInfo;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -223,6 +225,26 @@ public class CMSMaintenanceAjax {
 		} catch(Exception e) {
 			Logger.error(getClass(), e.getMessage(), e);
 			result = "Could not delete the pushed assets. " + e.getMessage();
+		}
+
+		return result;
+	}
+	
+	public String migrateHTMLPagesToContent() throws PortalException, SystemException, DotDataException,DotSecurityException {
+
+		validateUser();
+		
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		
+		String result = "success";
+
+		try {
+			
+			APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
+			
+		} catch(Exception e) {
+			Logger.error(getClass(), e.getMessage(), e);
+			result = "Could not migrate HTML Pages. " + e.getMessage();
 		}
 
 		return result;

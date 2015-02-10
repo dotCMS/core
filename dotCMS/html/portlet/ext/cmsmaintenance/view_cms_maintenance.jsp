@@ -313,22 +313,6 @@ function doDeleteContentlets(){
 		}
 }
 
-function doDeletePushedAssets(){
-	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-assets") %>")){
-		 	$("deletePushedAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-pushed-assets") %></b></font>';
-		 	$("deleteContentletButton").disabled = true;
-			CMSMaintenanceAjax.deletePushedAssets(doDeletePushedAssetsCallback);
-		}
-}
-
-function doDeletePushedAssetsCallback(result) {
-	if(result!=null && result=="success") {
-		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"pushed-assets-were-succesfully-deleted")) %>';
-	} else {
-		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"push-assets-could-not-be-deleted")) %>';
-	}
-}
-
 function doDeleteContentletsCallback(contentlets){
 
     var message="";
@@ -371,6 +355,40 @@ function doDeleteContentletsCallback(contentlets){
 	document.getElementById("deleteContentletMessage").innerHTML=message;
 	document.getElementById("deleteContentletButton").disabled = false;
 }
+
+function doDeletePushedAssets(){
+	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-assets") %>")){
+		 	$("deletePushedAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-pushed-assets") %></b></font>';
+		 	$("deletePushAssetsButton").disabled = true;
+			CMSMaintenanceAjax.deletePushedAssets(doDeletePushedAssetsCallback);
+		}
+}
+
+function doDeletePushedAssetsCallback(result) {
+	if(result!=null && result=="success") {
+		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"pushed-assets-were-succesfully-deleted")) %>';
+	} else {
+		document.getElementById("deletePushedAssetsMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"push-assets-could-not-be-deleted")) %>';
+	}
+}
+
+function doConvertPagesToContent(){
+	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-migrate-pages") %>")){
+		 	$("convertPagesMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></font>';
+		 	$("convertPagesButton").disabled = true;
+			CMSMaintenanceAjax.migrateHTMLPagesToContent(doConvertPagesToContentCallback);
+		}
+}
+
+function doConvertPagesToContentCallback(result) {
+	if(result!=null && result=="success") {
+		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %>';
+	} else {
+		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %>';
+	}
+}
+
+
 
 function doDropAssets(){
    var dateInput = dijit.byId('removeassetsdate');
@@ -1665,6 +1683,25 @@ dd.leftdl {
                     </td>
                     <td align="center">
                       <button dojoType="dijit.form.Button" onClick="doDeletePushedAssets();"  id="deletePushAssetsButton" iconClass="deleteIcon">
+                         <%= LanguageUtil.get(pageContext,"Execute") %>
+                      </button>
+                    </td>
+                </tr>
+
+            </table>
+            
+             <table class="listingTable">
+                <tr>
+                    <th><%= LanguageUtil.get(pageContext,"Convert-Pages-To-Content") %></th>
+                    <th style="text-align:center;white-space:nowrap;" width="350"><%= LanguageUtil.get(pageContext,"Action") %></th>
+                </tr>
+                <tr>
+                    <td>
+                        <p><%= LanguageUtil.get(pageContext,"This-utility-will-migrate-all-htmlpages-to-content") %></p>
+                         <div align="center"  id="convertPagesMessage"></div>
+                    </td>
+                    <td align="center">
+                      <button dojoType="dijit.form.Button" onClick="doConvertPagesToContent();"  id="convertPagesButton" iconClass="repeatIcon">
                          <%= LanguageUtil.get(pageContext,"Execute") %>
                       </button>
                     </td>

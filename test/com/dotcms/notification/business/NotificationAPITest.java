@@ -11,6 +11,7 @@ import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.liferay.portal.model.User;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -28,7 +29,7 @@ public class NotificationAPITest extends TestBase  {
 
 		try {
 			HibernateUtil.startTransaction();
-			APILocator.getNotificationAPI().saveNotification(n);
+			FactoryLocator.getNotificationFactory().saveNotification(n);
 			Notification lastest = APILocator.getNotificationAPI().findNotification(n.getId());
 			assertTrue(n.getMessage().equals(lastest.getMessage()));
 
@@ -55,7 +56,7 @@ public class NotificationAPITest extends TestBase  {
 			for(int i=0; i<10; i++) {
 				Notification n = new Notification("NotificationTest"+i, NotificationLevel.ERROR, sysuser.getUserId());
 				n.setId(UUID.randomUUID().toString());
-				APILocator.getNotificationAPI().saveNotification(n);
+				FactoryLocator.getNotificationFactory().saveNotification(n);
 			}
 
 			assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(sysuser.getUserId())==10);
@@ -85,7 +86,7 @@ public class NotificationAPITest extends TestBase  {
 			for(int i=0; i<10; i++) {
 				Notification n = new Notification("NotificationTest"+i, NotificationLevel.ERROR, sysuser.getUserId());
 				n.setId(UUID.randomUUID().toString());
-				APILocator.getNotificationAPI().saveNotification(n);
+				FactoryLocator.getNotificationFactory().saveNotification(n);
 			}
 
 			List<Notification> notifications = APILocator.getNotificationAPI().getNotifications(sysuser.getUserId(), 0, 5);

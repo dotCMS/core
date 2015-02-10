@@ -3,11 +3,12 @@ package com.dotcms.notifications.business;
 import java.util.List;
 
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.exception.DotDataException;
 
 public interface NotificationAPI {
 
-	void saveNotification(Notification notification) throws DotDataException;
+	void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException;
 
 	Notification findNotification(String notificationId) throws DotDataException;
 
