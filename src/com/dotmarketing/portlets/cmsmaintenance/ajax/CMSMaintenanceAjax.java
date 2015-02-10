@@ -234,11 +234,13 @@ public class CMSMaintenanceAjax {
 
 		validateUser();
 		
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		
 		String result = "success";
 
 		try {
 			
-			APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(APILocator.getUserAPI().getSystemUser(), false);
+			APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
 			
 		} catch(Exception e) {
 			Logger.error(getClass(), e.getMessage(), e);

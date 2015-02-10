@@ -359,7 +359,7 @@ function doDeleteContentletsCallback(contentlets){
 function doDeletePushedAssets(){
 	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-assets") %>")){
 		 	$("deletePushedAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-pushed-assets") %></b></font>';
-		 	$("deleteContentletButton").disabled = true;
+		 	$("deletePushAssetsButton").disabled = true;
 			CMSMaintenanceAjax.deletePushedAssets(doDeletePushedAssetsCallback);
 		}
 }
@@ -373,9 +373,9 @@ function doDeletePushedAssetsCallback(result) {
 }
 
 function doConvertPagesToContent(){
-	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-assets") %>")){
-		 	$("deletePushedAssetsMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-pushed-assets") %></b></font>';
-		 	$("deleteContentletButton").disabled = true;
+	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-migrate-pages") %>")){
+		 	$("convertPagesMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></font>';
+		 	$("convertPagesButton").disabled = true;
 			CMSMaintenanceAjax.migrateHTMLPagesToContent(doConvertPagesToContentCallback);
 		}
 }

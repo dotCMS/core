@@ -329,7 +329,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     				int limit = 100;
     				List<HTMLPage> elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset, limit, null);
 
-    				while(elements.isEmpty()) {
+    				while(!elements.isEmpty()) {
     					int migrated = 0;
 
     					for (HTMLPage htmlPage : elements) {
@@ -340,12 +340,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     						migrated++;
 
-    						if(migrated==elements.size() || (migrated>0 && migrated%100==0) )
+    						if(migrated==elements.size() || (migrated>0 && migrated%100==0) ) {
     							HibernateUtil.commitTransaction();
+    							elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
+    						}
     					}
 
-    					elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
-    				}
+    					}
 
     				//Create a new notification to inform the pages were migrated
     				APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ), NotificationLevel.INFO, user.getUserId() );
