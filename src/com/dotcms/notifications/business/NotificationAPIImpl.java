@@ -3,6 +3,7 @@ package com.dotcms.notifications.business;
 import java.util.List;
 
 import com.dotcms.notifications.bean.Notification;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
@@ -15,13 +16,14 @@ public class NotificationAPIImpl implements NotificationAPI {
 	public NotificationAPIImpl() {
 		notificationFactory = FactoryLocator.getNotificationFactory();
 	}
-
-	public void saveNotification(Notification notification) throws DotDataException {
-		notificationFactory.saveNotification(notification);
+	
+	public void generateNotification(String message, NotificationLevel level, String userId) throws DotDataException {
+		Notification n = new Notification(message, level, userId);
+		notificationFactory.saveNotification(n);
 	}
 
 	public Notification findNotification(String notificationId) throws DotDataException {
-		return notificationFactory.findNotification(notificationId);
+		return notificationFactory.findNotification(notificationId); 
 	}
 
 	public void deleteNotification(String notificationId) throws DotDataException {

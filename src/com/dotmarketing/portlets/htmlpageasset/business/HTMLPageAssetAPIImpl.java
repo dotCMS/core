@@ -17,6 +17,8 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
@@ -39,6 +41,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -64,6 +67,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.velocity.VelocityServlet;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
@@ -315,6 +319,58 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         newpage.setModDate(legacyPage.getModDate());
         return newpage;
     }
+    
+    @Override
+    public void migrateAllLegacyPages(final User user, boolean respectFrontEndPermissions) throws Exception {
+    	new Thread() {
+    		public void run() {
+    			try {
+    				int offset = 0;
+    				int limit = 100;
+    				List<HTMLPage> elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset, limit, null);
+
+    				while(elements.isEmpty()) {
+    					int migrated = 0;
+
+    					for (HTMLPage htmlPage : elements) {
+    						if(migrated==0)
+    							HibernateUtil.startTransaction();
+
+    						migrateLegacyPage(htmlPage, user, false);
+
+    						migrated++;
+
+    						if(migrated==elements.size() || (migrated>0 && migrated%100==0) )
+    							HibernateUtil.commitTransaction();
+    					}
+
+    					elements = APILocator.getHTMLPageAPI().findHtmlPages(APILocator.getUserAPI().getSystemUser(), true, null, null, null, null, null, offset+limit, limit, null);
+    				}
+
+    				//Create a new notification to inform the pages were migrated
+    				APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ), NotificationLevel.INFO, user.getUserId() );
+
+    			}
+
+    			catch(Exception ex) {
+    				try {
+                        HibernateUtil.rollbackTransaction();
+                    } catch (DotHibernateException e1) {
+                        Logger.warn(this, e1.getMessage(),e1);
+                    }
+    			}
+    			finally {
+    				try {
+                        HibernateUtil.closeSession();
+                    } catch (DotHibernateException e) {
+                        Logger.error(LicenseUtil.class, "can't close session after adding to cluster",e);
+                    }
+    			}
+    		}
+    	}.start();
+
+    }
+        
     
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {
