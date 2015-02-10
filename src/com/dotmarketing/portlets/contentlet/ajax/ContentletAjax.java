@@ -913,11 +913,11 @@ public class ContentletAjax {
 			                        :  (s.getStructureType() ==3)
 		                        	? "formIcon"
 				                        :  (s.getStructureType() ==4)
-			                        	? UtilMethods.getFileExtension( ident.getURI()) + "Icon"
+			                        	? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
 		                        			: "pageIcon";
 					                        
 			String typeStringToShow = s.getName() ;
-			searchResult.put("__type__", "<div class='typeCCol'><span class='uknIcon " + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
+			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
 
