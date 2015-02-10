@@ -761,7 +761,7 @@
 			
 			if (write && archived)
 	        {
-	            strHTML += '<a href="javascript: deleteHTMLPage(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	            strHTML += '<a href="javascript: deleteHTMLPagePreCheck(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 	                strHTML += '<span class="stopIcon"></span>';
 	                strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
 	            strHTML += '</a>';

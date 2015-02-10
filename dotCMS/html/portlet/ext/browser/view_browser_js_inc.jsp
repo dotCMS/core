@@ -2027,6 +2027,30 @@ dojo.require("dotcms.dojo.push.PushHandler");
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page-deleted")) %>');
 		}
 	}
+	
+	function deleteHTMLPagePreCheck(objId, referer)
+	{
+		var dataFromBrowser = {"objId":objId,"referer":referer};
+
+		var callMetaData = { 
+		  callback:deleteHTMLPagePreCheckCallback, 
+		  arg: dataFromBrowser
+		};
+
+		BrowserAjax.deleteHTMLPagePreCheck(objId, callMetaData);
+	}
+	
+	function deleteHTMLPagePreCheckCallback (response, dataFromBrowser)
+	{
+		if (!response) {
+			if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.htmlpage.with.other.live.versions.delete")) %>"))
+			{
+				BrowserAjax.deleteAsset(dataFromBrowser.objId, deleteHTMLPageCallback);
+			}
+		} else {
+			deleteHTMLPage(dataFromBrowser.objId, dataFromBrowser.referer);
+		}
+	}
 
 	//Link
 	function deleteLink(objId, referer) {
