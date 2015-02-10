@@ -1692,21 +1692,26 @@
                                 if(dijit.byId("checkAll")){
                                         dijit.byId("checkAll").destroy();
                                 }
+                                th.setAttribute("valign","bottom");
+                                th.setAttribute("nowrap","true");
                                 th.innerHTML = '<input type="checkbox" dojoType="dijit.form.CheckBox" name="checkAll" id="checkAll" onclick="checkUncheckAll()">&nbsp;&nbsp;' + getHeader(header);
                                 row.appendChild(th);
                         } else {
                         th.innHTML =
                                 th.innerHTML = getHeader(header);
+                                th.setAttribute("valign","bottom");
                                 row.appendChild(th);
                         }
                 }
                 th = document.createElement('th');
-                th.setAttribute("style","text-align:center;");
+				th.setAttribute("valign","bottom");
+				th.style.width="120px";
                 th.innerHTML = "<a href=\"javascript: doSearch (1, 'modUser')\"><%= LanguageUtil.get(pageContext, "Last-Editor") %></a>";
                 row.appendChild(th);
 
                 th = document.createElement('th');
-                th.setAttribute("style","text-align:center;");
+				th.setAttribute("valign","bottom");
+				th.style.width="120px";
                 th.innerHTML = "<a class=\"beta\" href=\"javascript: doSearch (1, 'modDate')\"><%= LanguageUtil.get(pageContext, "Last-Edit-Date") %></a>";
                 row.appendChild(th);
 
@@ -1750,13 +1755,13 @@
                                 //console.log(headers[j]);
                                 cell.setAttribute("align","left");
                                 if (j == 0 && languages.length>1) {
+                                		cell.setAttribute("nowrap","true");
                                         languageId = cellData["languageId"];
                                         locale = "";
                                         	
                                         for (var n = 0; n < languages.length; ++n) {
                                                 if (languages[n][0] == languageId) {
-                                                        locale = "<img src=\"/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif\" width=\"16px\" height=\"11px\" />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
-                                                        //locale = languages[n][1] + "_" + languages[n][2];
+                                                        locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
                                                         break;
                                                 }
                                         }
@@ -1766,6 +1771,7 @@
 
                                         cell.innerHTML = locale;
                                         var cell = row.insertCell (row.cells.length);
+
                                         var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
 
                                 } else {
@@ -1777,10 +1783,9 @@
                                         cell.innerHTML = value;
                         }
                         var cell = row.insertCell (row.cells.length);
-                        cell.setAttribute("nowrap","true");
                         cell.innerHTML = cellData["modUser"];
                         cell.style.whiteSpace="nowrap";
-                        cell.style.textAlign="center";
+
                         var cell = row.insertCell (row.cells.length);
                         cell.setAttribute("nowrap","true");
                         cell.style.textAlign="right";

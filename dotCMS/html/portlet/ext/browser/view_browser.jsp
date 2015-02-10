@@ -5,7 +5,18 @@
 <%@ page import="com.dotmarketing.portlets.languagesmanager.model.Language" %>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 
+<% 
 
+com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); 
+Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
+String languageId = String.valueOf(defaultLang.getId());
+
+if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE)!= null){ 
+	languageId = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE);
+}
+List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+
+%>
 
 <div id="messagesTable" style="display: none;">
 	<span class="exclamation"></span>
@@ -31,7 +42,7 @@
 <script src="/dwr/interface/BrowserAjax.js" type="text/javascript"></script>
 <script src="/dwr/interface/StructureAjax.js" type="text/javascript"></script>
 
-<% com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHost(request); %>
+
 
 <%@ include file="/html/portlet/ext/browser/view_browser_js_inc.jsp"%>
 <%@ include file="/html/portlet/ext/browser/view_browser_menus_js_inc.jsp"%>
@@ -72,7 +83,27 @@
 	});
 
 	dojo.require("dojox.form.uploader.plugins.Flash");
+	var counter=0;
 
+	function doSearch() {
+		
+		var selectedFolder = document.getElementsByClassName("folderSelected")[0];
+		var lang = dijit.byId("language_id").get('value');
+		
+		if(selectedFolder) {
+			var folderId = selectedFolder.id;
+			folderId = folderId.split("-TreeREF")[0];
+			treeFolderSelected(folderId, lang);	
+		} else if(counter>0) {
+			var hostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
+			treeFolderSelected(hostId, lang);	
+		}
+		
+		selectedLang = lang;
+		
+		counter++;
+		
+	}
 </script>
 
 <div id="addNewDropDownButtonDiv" class="buttonBoxRightTopPadding">
@@ -82,51 +113,13 @@
 	<b><%= LanguageUtil.get(pageContext, "Sites-and-Folders") %></b>
 </div>
 
-<%
-Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
-String languageId = String.valueOf(defaultLang.getId());
+<%if(UtilMethods.isSet(languages) && languages.size()>1) {%>
+	<script>
+		multipleLanguages = true;
+	</script>
 
-if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE)!= null){ 
-	languageId = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE);
-}
-List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
+<%}%>
 
-if(UtilMethods.isSet(languages) && languages.size()>1) {
-%>
-<script>
-multipleLanguages = true;
-</script>
-<div id="combo_zone2" class="buttonBoxRightTopPadding" style="margin-right:120px;">
-	<input id="language_id" />
-</div>
-<%@include file="../contentlet/languages_select_inc.jsp" %>
-
-<% } %>
-
-<script>
-
-var counter=0;
-
-function doSearch() {
-	
-	var selectedFolder = document.getElementsByClassName("folderSelected")[0];
-	var lang = dijit.byId("language_id").get('value');
-	
-	if(selectedFolder) {
-		var folderId = selectedFolder.id;
-		folderId = folderId.split("-TreeREF")[0];
-		treeFolderSelected(folderId, lang);	
-	} else if(counter>0) {
-		var hostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
-		treeFolderSelected(hostId, lang);	
-	}
-	
-	selectedLang = lang;
-	
-	counter++;
-	
-}
-</script>
 
 
 
@@ -142,8 +135,11 @@ function doSearch() {
 
 	</div>
 
-     <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin-top:35px;" region="center" class="rightContentPane" id="rightContentPane">
-     	
+     <div dojoType="dijit.layout.ContentPane" splitter="true" style="margin:6px 0px 43px 6px" region="center" class="rightContentPane" id="rightContentPane">
+     	<div id="combo_zone2" >
+			<input id="language_id" />
+		</div>
+		<%@include file="../contentlet/languages_select_inc.jsp" %>
 	  	
 		<table class="browserTable" id="assetListBodyTD">
 			<thead id="assetListHead">

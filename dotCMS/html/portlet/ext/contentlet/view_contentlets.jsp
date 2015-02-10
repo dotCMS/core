@@ -227,7 +227,9 @@
                					? "gearIcon"
            						:	(s.getStructureType() ==3)
            						? "formIcon"
-           								: "fileIcon";
+                   						:	(s.getStructureType() ==4)
+                   						? "fileIcon"
+                   								: "pageIcon";
 
 
 
