@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI"%>
 <%@page import="com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI"%>
@@ -12,6 +13,14 @@
 
 <%
 Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+
+
+String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+	selectedLang = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
+}
+
+
 %>
 <script type="text/javascript" src="/dwr/interface/HostAjax.js"></script>
 
@@ -75,8 +84,11 @@ dojo.require("dotcms.dojo.push.PushHandler");
      var myHost = '<%= (myHost != null) ? myHost.getHostname() :""%>';
      var myHostId = '<%= (myHost != null) ? myHost.getIdentifier() : "" %>';
      
-     var selectedLang = '<%= APILocator.getLanguageAPI().getDefaultLanguage().getId() %>';
+     var selectedLang = '<%= selectedLang %>';
 
+
+    	 
+    	 
 	//Dragging Events
 
      var AssetsDragObserver = Class.create();

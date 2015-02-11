@@ -45,11 +45,11 @@
     String orderBy = "modDate desc";
     Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
     String languageId = String.valueOf(defaultLang.getId());
-    if(request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
-        selectedLanguage = (Language)request.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
+    if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+    	languageId = (String)session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
     }
-    long selectedLanguageId = selectedLanguage.getId();
-    String lanId = request.getParameter("language");
+
+
 
 	String structureSelected = "";
 	if(UtilMethods.isSet(request.getParameter("structure_id"))){
@@ -91,13 +91,7 @@
 		if(UtilMethods.isSet(lastSearch.get("orderBy"))){
 			orderBy = (String) lastSearch.get("orderBy");
 		}
-		if (fieldsSearch.containsKey("languageId")) {
-			languageId = ((String) fieldsSearch.get("languageId")).trim();
-		}else if (!fieldsSearch.isEmpty()){
-			languageId = "0";
-		}else if(lanId != null){
-			languageId = lanId;
-		}
+
 	}
 
         if(!InodeUtils.isSet(structureSelected)){

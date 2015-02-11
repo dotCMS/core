@@ -116,8 +116,7 @@ public class ViewContentletAction extends DotPortletAction {
 		}
 
 		if(req.getParameter("selected_lang") != null){
-			Language language = APILocator.getLanguageAPI().getLanguage(new Long(req.getParameter("selected_lang")));
-			req.setAttribute(WebKeys.LANGUAGE_SEARCHED, language);
+			((RenderRequestImpl)req).getHttpServletRequest().getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, req.getParameter("selected_lang"));
 		}
 		List<Language> languages = langAPI.getLanguages();
 		req.setAttribute(WebKeys.LANGUAGES, languages);

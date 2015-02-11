@@ -11,8 +11,8 @@ com.dotmarketing.beans.Host myHost =  WebAPILocator.getHostWebAPI().getCurrentHo
 Language defaultLang = APILocator.getLanguageAPI().getDefaultLanguage();
 String languageId = String.valueOf(defaultLang.getId());
 
-if(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE)!= null){ 
-	languageId = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_BROWSER_LANGUAGE);
+if(session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED)!= null){
+	languageId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.LANGUAGE_SEARCHED);
 }
 List<Language> languages = (List<Language>)request.getAttribute (com.dotmarketing.util.WebKeys.LANGUAGES);
 

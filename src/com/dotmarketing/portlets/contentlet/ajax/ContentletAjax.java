@@ -581,6 +581,7 @@ public class ContentletAjax {
 		Category category=null;
 		String categoriesvalues="";
 		boolean first = true;
+		boolean allLanguages = true;
 		for (String cat : categories) {
 			 try {
 				 category=catAPI.find(cat, currentUser, false);
@@ -609,7 +610,10 @@ public class ContentletAjax {
 				}else{
 					fieldsSearch.put(fieldName, fieldValue);
 				}
-
+				if(fieldName.equalsIgnoreCase("languageId")){
+					sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
+					allLanguages = false;
+				}
 				if(fieldName.equalsIgnoreCase("conhost")){
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
@@ -757,6 +761,9 @@ public class ContentletAjax {
 
 				}
 			}
+		}
+		if(allLanguages){
+			sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
 		}
 
 		if(UtilMethods.isSet(categoriesvalues)){

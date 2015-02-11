@@ -277,8 +277,8 @@ public class BrowserAjax {
 			} catch (Exception e) {}
 			session.setAttribute(SELECTED_BROWSER_PATH_OBJECT, selectedBrowserPathObject);
 		}
-		
-		req.getSession().setAttribute(WebKeys.HTMLPAGE_BROWSER_LANGUAGE, Long.toString(languageId));
+
+		req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, excludeLinks, languageId);
 	}
@@ -319,7 +319,7 @@ public class BrowserAjax {
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
 		
-		req.getSession().setAttribute(WebKeys.HTMLPAGE_BROWSER_LANGUAGE, Long.toString(languageId));
+		req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(languageId));
 
 		return browserAPI.getFolderContent(usr, folderId, offset, maxResults, filter, mimeTypes, extensions, showArchived, noFolders, onlyFiles, sortBy, sortByDesc, languageId);
 	}
@@ -379,8 +379,8 @@ public class BrowserAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest req = ctx.getHttpServletRequest();
 		User usr = getUser(req);
-		req.getSession().setAttribute(WebKeys.HTMLPAGE_BROWSER_LANGUAGE,
-				Long.toString(this.languageAPI.getDefaultLanguage().getId()));
+		//Language selectedLang = APILocator.getLanguageAPI().getLanguage(languageId);
+		//req.getSession().setAttribute(WebKeys.LANGUAGE_SEARCHED, selectedLang);
 		long getAllLanguages = 0;
 		Map<String, Object> results = browserAPI.getFolderContent(usr,
 				folderId, offset, maxResults, filter, mimeTypes, extensions,
