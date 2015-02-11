@@ -437,7 +437,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                         " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
                         " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
                         " JOIN permission lp ON (lp.inode_id = li.id) " +
-                        " AND li.host_inode = ? and li.parent_path like ? n" +
+                        " AND li.host_inode = ? and li.parent_path like ?" +
                         " AND lp.permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'";
 
 	/*
