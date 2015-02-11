@@ -246,12 +246,14 @@ public class DirectorAction extends DotPortletAction {
 				java.util.Map params = new java.util.HashMap();
 				
 				String type=req.getParameter("HTMLPageType");
+				String language = UtilMethods.isSet(req.getParameter("language"))?req.getParameter("language")
+						:Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 				
 				if(type!=null && !type.equals("0")) {
     				params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
     				params.put("cmd",new String[] { "new" });
     				params.put("selectedStructure", new String[] { type });
-    				params.put("lang", new String[] { Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId()) });
+    				params.put("lang", new String[] { language });
     				params.put("referer", new String[] { referer });
 				}
 				else {
