@@ -126,7 +126,8 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	private String VELOCITY_HTMLPAGE_EXTENSION = "dotpage";
 
-
+	private boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
+	
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
 
@@ -225,10 +226,11 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		} catch (ResourceNotFoundException rnfe) {
 
-			// response.sendError(404);
-			request.setAttribute(Constants.SERVE_URL, request.getRequestURI());
-			request.getRequestDispatcher("/localResourceServlet").forward(request, response);
-
+			response.sendError(404);
+			return;
+			//request.setAttribute(Constants.SERVE_URL, request.getRequestURI());
+			//request.getRequestDispatcher("/localResourceServlet").forward(request, response);
+			
 		} catch (ParseErrorException pee) {
 			Logger.error(this, "Template Parse Exception : " + pee.toString(), pee);
 			try {
@@ -307,23 +309,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 		request.setAttribute("idInode", id.getInode());
 		
-		IHTMLPage htmlPage; 
-		String languageStr = "_" + APILocator.getLanguageAPI().getDefaultLanguage().getId();
-		if(id.getAssetType().equals("contentlet")) {
-			
-			long languageId = getLanguageId(request);
-			
-		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-		                APILocator.getContentletAPI()
-		                 .findContentletByIdentifier(id.getId(), false, languageId, APILocator.getUserAPI().getSystemUser(), false));
-		    
-		    languageStr = "_" + languageId;
-		}
-		else {
-    		htmlPage = (IHTMLPage) APILocator.getVersionableAPI()
-    				.findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-		}
-		
+		IHTMLPage htmlPage = getPage(id, request, false);
+		String languageStr = "_" + getLanguageId(request);
 		VelocityUtil.makeBackendContext(context, htmlPage, "", id.getURI(), request, true, false, false, host);
 
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
@@ -435,49 +422,8 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
 
     
-    		IHTMLPage page;
-
-            try {
-                if ( ident.getAssetType().equals( "contentlet" ) ) {
-
-                    Contentlet htmlPage;
-                    try {
-                        htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
-                                ident.getId(), true, currentLanguageId, APILocator.getUserAPI().getSystemUser(), false );
-                    } catch ( DotContentletStateException e ) {
-                        htmlPage = null;//Contentlet not found
-                    }
-
-                    /*
-                    If nothing found and the DEFAULT_PAGE_TO_DEFAULT_LANGUAGE is true lets
-                    try to return the page using the default language.
-                     */
-                    if ( (htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ))
-                            && com.dotmarketing.viewtools.LanguageWebAPI.canDefaultPageToDefaultLanguage()
-                            && currentLanguageId != defaultLanguageId ) {
-
-						try {
-							//Trying with the default language, only if the given language is not already the default one.
-							htmlPage = APILocator.getContentletAPI().findContentletByIdentifier(
-									ident.getId(), true, defaultLanguageId, APILocator.getUserAPI().getSystemUser(), false );
-						} catch ( DotContentletStateException e ) {
-							//Nothing found, there is not page in the default language for a fallback, in this case we can NOT avoid a 404
-							throw new ResourceNotFoundException( "Not live version with default language found for page [" + ident.getInode() + "]" );
-						}
-					}
-                    //At this point if nothing found throw an exception
-                    if ( htmlPage == null || !InodeUtils.isSet( htmlPage.getInode() ) ) {
-                        throw new ResourceNotFoundException( "Not live version found for page [" + ident.getInode() + "]" );
-                    }
-
-                    page = APILocator.getHTMLPageAssetAPI().fromContentlet( htmlPage );
-                } else {
-                    page = APILocator.getHTMLPageAPI().loadLivePageById( ident.getInode(), APILocator.getUserAPI().getSystemUser(), false );
-                }
-            } catch ( Exception e ) {
-                Logger.error( this, "Unable to load live version of page: " + ident.getInode() + " because " + e.getMessage() );
-                throw e;
-            }
+    		IHTMLPage page = getPage(ident, request, true);
+    		String languageStr = "_" + getLanguageId(request);
     
     		// Check if the page is visible by a CMS Anonymous role
     		if (!permissionAPI.doesUserHavePermission(page, PERMISSION_READ, user, true)) {
@@ -615,20 +561,9 @@ public abstract class VelocityServlet extends HttpServlet {
 		response.setContentType(CHARSET);
 		Context context = VelocityUtil.getWebContext(request, response);
 
-		IHTMLPage htmlPage; 
-		if(id.getAssetType().equals("contentlet")) {
-			Contentlet contentlet = APILocator.getContentletAPI()
-					.findContentletByIdentifier(id.getId(), false,
-							getLanguageId(request),
-							APILocator.getUserAPI().getSystemUser(), false);
-		    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-			List<Language> availablePageLangs = getAvailableContentPageLanguages(contentlet);
-			context.put("availablePageLangs", availablePageLangs);
-			context.put("dotPageContent", htmlPage);
-		}
-		else {
-		    htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, user, true);
-		}
+		IHTMLPage htmlPage = getPage(id, request, false);
+		String languageStr = "_" + getLanguageId(request);
+		
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -864,21 +799,8 @@ public abstract class VelocityServlet extends HttpServlet {
         response.setContentType( CHARSET );
         Context context = VelocityUtil.getWebContext( request, response );
 
-        IHTMLPage htmlPage; 
-        if(id.getAssetType().equals("contentlet")) {
-			Contentlet contentlet = APILocator.getContentletAPI()
-					.findContentletByIdentifier(id.getId(), false,
-							getLanguageId(request),
-							APILocator.getUserAPI().getSystemUser(), false);
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
-			List<Language> availablePageLangs = getAvailableContentPageLanguages(contentlet);
-			context.put("availablePageLangs", availablePageLangs);
-            context.put("dotPageContent", htmlPage);
-        }
-        else {
-            htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
-                    APILocator.getUserAPI().getSystemUser(), false);
-        }
+		IHTMLPage htmlPage = getPage(id, request, false);
+
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
         // to check user has permission to write on this page
@@ -1161,19 +1083,10 @@ public abstract class VelocityServlet extends HttpServlet {
 
 		// Getting the identifier from the uri
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
-
+		long langId = getLanguageId(request);
 		request.setAttribute("idInode", String.valueOf(id.getInode()));
 		
-		IHTMLPage htmlPage; 
-        if(id.getAssetType().equals("contentlet")) {
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                         APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), false, getLanguageId(request), APILocator.getUserAPI().getSystemUser(), false));
-        }
-        else {
-            htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
-                    APILocator.getUserAPI().getSystemUser(), false);
-        }
+		IHTMLPage htmlPage = getPage(id, request, false);
 
 		return htmlPage.isArchived();
 	}
@@ -1242,8 +1155,10 @@ public abstract class VelocityServlet extends HttpServlet {
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The page cache key if the page can be cached. If it can't be
 	 *         cached or caching is not available, returns <code>null</code>.
+	 * @throws DotSecurityException 
+	 * @throws DotDataException 
 	 */
-	private String getPageCacheKey(HttpServletRequest request) {
+	private String getPageCacheKey(HttpServletRequest request) throws DotDataException, DotSecurityException {
 		if (LicenseUtil.getLevel() <= 100) {
 			return null;
 		}
@@ -1270,21 +1185,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		
 		User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 
-		IHTMLPage page = null;
-		try {
-		    if(id.getAssetType().equals("contentlet")) {
-		        page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-		                APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), true, getLanguageId(request), user, true));
-		    }
-		    else {
-		        page = APILocator.getHTMLPageAPI().loadLivePageById(idInode, user, true);
-		    }
-		} catch (Exception e) {
-			Logger.error(HTMLPageWebAPI.class,
-					"unable to load live version of page: " + idInode
-							+ " because " + e.getMessage());
-			return null;
-		}
+		IHTMLPage page = getPage(id, request, false);
 		if (page == null || page.getCacheTTL() < 1) {
 			return null;
 		}
@@ -1295,10 +1196,11 @@ public abstract class VelocityServlet extends HttpServlet {
 	}
 	
 	private static long getLanguageId(HttpServletRequest request) {
-		long languageId = 0;
+		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		
 		try {
-			languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
+			if(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)!=null)
+				languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
 		} catch(NumberFormatException e) {
 			Logger.info(VelocityServlet.class, "Bad languageId passed in");
 		}
@@ -1320,6 +1222,13 @@ public abstract class VelocityServlet extends HttpServlet {
 		List<Language> languages = new ArrayList<Language>();
 		List<Language> systemLanguages = APILocator.getLanguageAPI()
 				.getLanguages();
+		
+		
+		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE){
+			return systemLanguages;
+		}
+		
+		
 		for (Language language : systemLanguages) {
 			if (language.getId() != contentlet.getLanguageId()) {
 				try {
@@ -1341,5 +1250,57 @@ public abstract class VelocityServlet extends HttpServlet {
 		}
 		return languages;
 	}
+	
+	
+	
+	
+	
+	/**
+	 * This returns the proper ihtml page based on id, state and language
+	 * @param id
+	 * @param request
+	 * @param live
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	private IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live) throws DotDataException, DotSecurityException{
+		
+		long langId = getLanguageId(request);
+		request.setAttribute("idInode", String.valueOf(id.getInode()));
+		
+		IHTMLPage htmlPage; 
+        if(id.getAssetType().equals("contentlet")) {
+        	try{
+            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+                         APILocator.getContentletAPI().findContentletByIdentifier(
+                            id.getId(), live, langId, APILocator.getUserAPI().getSystemUser(), false));
+        	
+        	}
+        	catch(DotStateException dse){
+        		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && langId!= APILocator.getLanguageAPI().getDefaultLanguage().getId()){
+	                    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
+	                            APILocator.getContentletAPI().findContentletByIdentifier(
+	                               id.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false));
+	        	}
+        		else{
+        			throw dse;
+        		}
+
+        	}
+        }
+        else {
+            htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
+                    APILocator.getUserAPI().getSystemUser(), false);
+        }
+		
+		return htmlPage;
+		
+		
+		
+	}
+	
+	
+	
 	
 }
