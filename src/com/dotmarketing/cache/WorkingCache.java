@@ -104,8 +104,16 @@ public class WorkingCache {
 	    return getPathFromCache (URI, host.getIdentifier());
 	}
 
+    public static String getPathFromCache(String URI, Host host, Long langId) throws DotStateException, DotDataException, DotSecurityException{
+	    return getPathFromCache (URI, host.getIdentifier(), langId);
+	}
+    
+    public static String getPathFromCache(String URI, String hostId) throws DotStateException, DotDataException, DotSecurityException{
+	    return getPathFromCache (URI, hostId, null);
+	}
+
 	    //Working cache methods
-	public static String getPathFromCache(String URI, String hostId) throws DotStateException, DotDataException, DotSecurityException{
+	public static String getPathFromCache(String URI, String hostId, Long langId) throws DotStateException, DotDataException, DotSecurityException{
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		String _uri = null;
 		try{
@@ -140,7 +148,11 @@ public class WorkingCache {
 		}
 
 		if(id.getAssetType().equals("contentlet")){
-		   com.dotmarketing.portlets.contentlet.model.Contentlet cont =  APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+			com.dotmarketing.portlets.contentlet.model.Contentlet cont;
+			if(!UtilMethods.isSet(langId))
+				cont =  APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false);
+			else
+				cont =  APILocator.getContentletAPI().findContentletByIdentifier(id.getId(), false, langId, APILocator.getUserAPI().getSystemUser(), false);
 		   if(cont!=null && InodeUtils.isSet(cont.getInode()))
 			{
 				Logger.debug(WorkingCache.class, "Lazy Preview Mapping: " + id.getURI() + " to " + URI);

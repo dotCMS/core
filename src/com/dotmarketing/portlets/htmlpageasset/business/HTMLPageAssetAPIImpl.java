@@ -690,9 +690,16 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		String idInode = APILocator.getIdentifierAPI().find(host, uri)
 				.getInode();
 
-		// Checking the path is really live using the livecache
-		String cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
-				: WorkingCache.getPathFromCache(uri, host);
+		String cachedUri;
+		if(UtilMethods.isSet(langId)){
+			// Checking the path is really live using the livecache
+			cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host, langId)
+					: WorkingCache.getPathFromCache(uri, host, langId);
+		}else{
+			// Checking the path is really live using the livecache
+						cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
+								: WorkingCache.getPathFromCache(uri, host);
+		}
 
 		// if we still have nothing.
 		if (!InodeUtils.isSet(idInode) || cachedUri == null) {
