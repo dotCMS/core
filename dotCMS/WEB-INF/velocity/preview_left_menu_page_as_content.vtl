@@ -421,6 +421,10 @@
 <div class="clear"></div>
 
 <!-- Start Languages -->
+	#if($languagewebapi.canDefaultPageToDefaultLanguage())
+		#set($availablePageLangs=$languages) 
+	#end
+
     #if($availablePageLangs.size() > 0)
         <div class="lang">
 
@@ -532,6 +536,7 @@
     <input type="hidden" name="category" id="category" value="">
     <input type="hidden" name="parentFolder" id="parentFolder" value="">
     <input type="hidden" name="HTMLPageType" id="HTMLPageType" value="">
+    <input type="hidden" name="language" id="language" value="$language">
 </form>
 </div>
 
