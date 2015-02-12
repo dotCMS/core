@@ -1012,6 +1012,7 @@
 
         <mkdir dir="${tomcat7.home}/webapps/ROOT/META-INF"/>
         <copy file="extra/tomcat-7/context.xml" tofile="${tomcat7.home}/webapps/ROOT/META-INF/context.xml"/>
+    	<delete dir="${tomcat7.home}/webapps/ROOT/WEB-INF/classes/com"/>
     </target>
 
     <target name="move-war-jboss7" depends="undeploy-war-jboss7" description="Moves the generated war under the build folder to the jboss deployments folder.">
@@ -1087,6 +1088,8 @@
         </move>
 
         <delete dir="${tomcat7.home}/temp"/>
+        <delete dir="${tomcat7.home}/webapps/ROOT/WEB-INF/classes/com"/>
+    	
     </target>
 
     <target name="clone-pull-tomcat7">

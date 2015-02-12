@@ -436,8 +436,15 @@
                   #set($imageURL="/html/images/languages/all.gif")
                   #set($style="background-image:url(URLHERE);width:16px;height:11px;margin:3px 5px;display:inline-block;vertical-align:middle")
                   #set($first=true)
-                  #foreach($lang in $availablePageLangs)
-                      #set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
+                  #foreach($displayedLang in $availablePageLangs)
+                  	  #set($lang=$displayedLang.language)
+                  	  
+                  	  #if($displayedLang.greyedOut)
+                  	  	#set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}_gray.gif")
+                  	  #else
+                  	  	#set($imageURL="/html/images/languages/${lang.languageCode}_${lang.countryCode}.gif")
+                  	  #end
+                      
                       #set($display="${lang.language} (${lang.countryCode})")
                       #if($first)
                         #set($first=false)
