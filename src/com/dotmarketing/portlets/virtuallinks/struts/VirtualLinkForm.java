@@ -48,7 +48,7 @@ public class VirtualLinkForm extends ValidatorForm {
         
         	ActionErrors errors = super.validate(mapping, request);
         	
-            if(UtilMethods.isSet(url) && (url.trim().equals("/") || !ESAPI.validator().isValidInput("vanityURL", url, "HTTPURI", 2000, false) ))
+            if(UtilMethods.isSet(url) && (url.trim().equals("/") || !ESAPI.validator().isValidInput("vanityURL", url, "HTTPVanityURL", 2000, false) ))
             	errors.add("url", new ActionMessage("message.virtuallink.invalid.URL"));
             
             return errors;
