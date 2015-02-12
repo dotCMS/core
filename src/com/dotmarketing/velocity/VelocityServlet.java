@@ -32,6 +32,7 @@ import javax.servlet.http.HttpSession;
 
 import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
+
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -70,6 +71,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -187,7 +189,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 			// ### VALIDATE ARCHIVE ###
-			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request, uri)) {
+			if ((EDIT_MODE || PREVIEW_MODE) && isArchive(request, response, uri)) {
 				PREVIEW_MODE = true;
 				EDIT_MODE = false;
 				request.setAttribute("archive", true);
@@ -309,7 +311,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		Identifier id = APILocator.getIdentifierAPI().find(host, uri);
 		request.setAttribute("idInode", id.getInode());
 		
-		IHTMLPage htmlPage = getPage(id, request, false);
+		IHTMLPage htmlPage = getPage(id, request, false, context);
 		String languageStr = "_" + getLanguageId(request);
 		VelocityUtil.makeBackendContext(context, htmlPage, "", id.getURI(), request, true, false, false, host);
 
@@ -422,7 +424,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
 
     
-    		IHTMLPage page = getPage(ident, request, true);
+    		IHTMLPage page = getPage(ident, request, true, VelocityUtil.getWebContext(request, response));
     		String languageStr = "_" + getLanguageId(request);
     
     		// Check if the page is visible by a CMS Anonymous role
@@ -482,7 +484,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString);
 			
     		boolean buildCache = false;
-    		String key = getPageCacheKey(request);
+    		String key = getPageCacheKey(request, response);
     		if (key != null) {
     			String cachedPage = CacheLocator.getBlockPageCache().get(page, cacheParameters);
     			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
@@ -561,8 +563,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		response.setContentType(CHARSET);
 		Context context = VelocityUtil.getWebContext(request, response);
 
-		IHTMLPage htmlPage = getPage(id, request, false);
-		String languageStr = "_" + getLanguageId(request);
+		IHTMLPage htmlPage = getPage(id, request, false, context);
+		context.put("dotPageContent", htmlPage);
 		
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
@@ -799,7 +801,8 @@ public abstract class VelocityServlet extends HttpServlet {
         response.setContentType( CHARSET );
         Context context = VelocityUtil.getWebContext( request, response );
 
-		IHTMLPage htmlPage = getPage(id, request, false);
+		IHTMLPage htmlPage = getPage(id, request, false, context);
+		context.put("dotPageContent", htmlPage);
 
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -1056,7 +1059,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	// THE WEB.XML FILE
 	protected abstract void _setClientVariablesOnContext(HttpServletRequest request, ChainedContext context);
 
-	private boolean isArchive(HttpServletRequest request, String uri) throws PortalException, SystemException, DotDataException, DotSecurityException {
+	private boolean isArchive(HttpServletRequest request, HttpServletResponse response, String uri) throws PortalException, SystemException, DotDataException, DotSecurityException {
 
 
 
@@ -1086,7 +1089,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		long langId = getLanguageId(request);
 		request.setAttribute("idInode", String.valueOf(id.getInode()));
 		
-		IHTMLPage htmlPage = getPage(id, request, false);
+		IHTMLPage htmlPage = getPage(id, request, false, VelocityUtil.getWebContext(request, response));
 
 		return htmlPage.isArchived();
 	}
@@ -1158,7 +1161,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
 	 */
-	private String getPageCacheKey(HttpServletRequest request) throws DotDataException, DotSecurityException {
+	private String getPageCacheKey(HttpServletRequest request, HttpServletResponse response) throws DotDataException, DotSecurityException {
 		if (LicenseUtil.getLevel() <= 100) {
 			return null;
 		}
@@ -1185,7 +1188,7 @@ public abstract class VelocityServlet extends HttpServlet {
 		
 		User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 
-		IHTMLPage page = getPage(id, request, false);
+		IHTMLPage page = getPage(id, request, false, VelocityUtil.getWebContext(request, response));
 		if (page == null || page.getCacheTTL() < 1) {
 			return null;
 		}
@@ -1217,22 +1220,17 @@ public abstract class VelocityServlet extends HttpServlet {
 	 *            - The Content Page.
 	 * @return The {@link List} of languages the content page is available on.
 	 */
-	private List<Language> getAvailableContentPageLanguages(
+	private List<DisplayedLanguage> getAvailableContentPageLanguages(
 			Contentlet contentlet) {
-		List<Language> languages = new ArrayList<Language>();
-		List<Language> systemLanguages = APILocator.getLanguageAPI()
-				.getLanguages();
+		List<DisplayedLanguage> languages = new ArrayList<DisplayedLanguage>();
+		List<DisplayedLanguage> allDisplayLanguages = new ArrayList<DisplayedLanguage>(); 
 		
+		boolean doesContentHaveDefaultLang = false;
 		
-		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE){
-			return systemLanguages;
-		}
-		
-		
-		for (Language language : systemLanguages) {
+		for (Language language : APILocator.getLanguageAPI().getLanguages()) {
 			if (language.getId() != contentlet.getLanguageId()) {
 				try {
-					Contentlet content = APILocator.getContentletAPI()
+					APILocator.getContentletAPI()
 							.findContentletByIdentifier(
 									contentlet.getIdentifier(), false,
 									language.getId(),
@@ -1243,11 +1241,29 @@ public abstract class VelocityServlet extends HttpServlet {
 							VelocityServlet.class,
 							"The page is not available in language "
 									+ language.getId() + ". Just keep going.");
+					
+					if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+						allDisplayLanguages.add(new DisplayedLanguage(language, true));
+					} 
+					
 					continue;
 				}
 			}
-			languages.add(language);
+			if(language.getId()==APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+				doesContentHaveDefaultLang = true;
+			}
+			
+			languages.add(new DisplayedLanguage(language, false));
+			
+			if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+				allDisplayLanguages.add(new DisplayedLanguage(language, false));
+			} 
 		}
+		
+		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && doesContentHaveDefaultLang){
+			return allDisplayLanguages;
+		}
+		
 		return languages;
 	}
 	
@@ -1264,31 +1280,40 @@ public abstract class VelocityServlet extends HttpServlet {
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	private IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live) throws DotDataException, DotSecurityException{
+	private IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live, Context context) throws DotDataException, DotSecurityException{
 		
 		long langId = getLanguageId(request);
 		request.setAttribute("idInode", String.valueOf(id.getInode()));
 		
 		IHTMLPage htmlPage; 
-        if(id.getAssetType().equals("contentlet")) {
-        	try{
-            htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-                         APILocator.getContentletAPI().findContentletByIdentifier(
-                            id.getId(), live, langId, APILocator.getUserAPI().getSystemUser(), false));
-        	
-        	}
-        	catch(DotStateException dse){
-        		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && langId!= APILocator.getLanguageAPI().getDefaultLanguage().getId()){
-	                    htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(
-	                            APILocator.getContentletAPI().findContentletByIdentifier(
-	                               id.getId(), live, APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getUserAPI().getSystemUser(), false));
-	        	}
-        		else{
-        			throw dse;
-        		}
+		if(id.getAssetType().equals("contentlet")) {
+			
+			Contentlet contentlet = null;
 
-        	}
-        }
+			try{
+				contentlet = APILocator.getContentletAPI()
+						.findContentletByIdentifier(id.getId(), live,
+								langId,
+								APILocator.getUserAPI().getSystemUser(), false);
+				htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+
+			}
+			catch(DotStateException dse){
+				if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && langId!= APILocator.getLanguageAPI().getDefaultLanguage().getId()){
+					contentlet = APILocator.getContentletAPI()
+							.findContentletByIdentifier(id.getId(), live,
+									APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+									APILocator.getUserAPI().getSystemUser(), false);
+					htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				}
+				else{
+					throw dse;
+				}
+
+			}
+			
+			context.put("availablePageLangs", getAvailableContentPageLanguages(contentlet));
+		}
         else {
             htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, 
                     APILocator.getUserAPI().getSystemUser(), false);
@@ -1299,8 +1324,6 @@ public abstract class VelocityServlet extends HttpServlet {
 		
 		
 	}
-	
-	
 	
 	
 }
