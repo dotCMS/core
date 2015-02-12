@@ -461,10 +461,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 2
 	 */
     private final String deleteHTMLPageReferencesSQL =
-            "delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")";
+			(DbConnectionFactory.isMySql() ?
+					"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C )" :
+					"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")");
 
 	private final String deleteHTMLPageReferencesOnAddSQL =
-		"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") " +
+		(DbConnectionFactory.isMySql() ?
+				"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C ) " :
+				"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") ") +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
 			" from folder join identifier on (folder.identifier = identifier.id) " +
