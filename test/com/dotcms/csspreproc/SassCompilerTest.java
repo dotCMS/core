@@ -74,7 +74,7 @@ public class SassCompilerTest {
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         tt1 = System.currentTimeMillis() - tt1;
         
-        Assert.assertEquals(expectedOutput.trim(), response.trim());
+        Assert.assertEquals(expectedOutput.trim(), response.substring(0,response.lastIndexOf("}")+1).trim());
         
         // now it should take less time as its in cache now
         for(int x=0; x<10; x++) {
@@ -98,7 +98,8 @@ public class SassCompilerTest {
         APILocator.getContentletAPI().publish(asset, sysuser, false);
         APILocator.getContentletAPI().isInodeIndexed(asset.getInode(),true);
         
-        Assert.assertEquals(expectedOutput.replace("blue", "green").trim(), IOUtils.toString(cssURL.openStream(),"UTF-8").trim());
+        response = IOUtils.toString(cssURL.openStream(),"UTF-8");
+        Assert.assertEquals(expectedOutput.replace("blue", "green").trim(), response.substring(0,response.lastIndexOf("}")+1).trim());
         
         
         // check every asset is in cache
@@ -174,8 +175,7 @@ public class SassCompilerTest {
         
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/file5.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
-        
-        Assert.assertEquals("someclass{width:30}", response.trim());
+        Assert.assertEquals("someclass{width:30}", response.substring(0,response.lastIndexOf("}")+1).trim());
         
     }
     
@@ -205,7 +205,7 @@ public class SassCompilerTest {
         URL cssURL = new URL(baseURL + "/DOTSASS/" + runId + "/a/b/c/fabc.css");
         String response =  IOUtils.toString(cssURL.openStream(),"UTF-8");
         
-        Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.trim());
+        Assert.assertEquals(".a{color:green}.ab{color:black}.abc{color:white}", response.substring(0,response.lastIndexOf("}")+1).trim());
     }
     
     protected Contentlet newFile(File file, Folder f, Host host) throws Exception {
