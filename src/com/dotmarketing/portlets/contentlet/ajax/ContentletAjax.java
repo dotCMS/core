@@ -582,6 +582,7 @@ public class ContentletAjax {
 		Category category=null;
 		String categoriesvalues="";
 		boolean first = true;
+		boolean allLanguages = true;
 		for (String cat : categories) {
 			 try {
 				 category=catAPI.find(cat, currentUser, false);
@@ -610,7 +611,10 @@ public class ContentletAjax {
 				}else{
 					fieldsSearch.put(fieldName, fieldValue);
 				}
-
+				if(fieldName.equalsIgnoreCase("languageId")){
+					sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
+					allLanguages = false;
+				}
 				if(fieldName.equalsIgnoreCase("conhost")){
 					if(!filterSystemHost  && !fieldValue.equals(Host.SYSTEM_HOST)){
 						try {
@@ -759,6 +763,9 @@ public class ContentletAjax {
 				}
 			}
 		}
+		if(allLanguages){
+			sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
+		}
 
 		if(UtilMethods.isSet(categoriesvalues)){
 			luceneQuery.append("+(" + categoriesvalues + ") " );
@@ -867,9 +874,8 @@ public class ContentletAjax {
 		Contentlet con;
 		for (int i = 0; ((i < perPage) && (i < hits.size())); ++i) {
 			con = hits.get(i);
-
+			Identifier ident=APILocator.getIdentifierAPI().find(con);
 			if(!con.isLive()) {
-    			Identifier ident=APILocator.getIdentifierAPI().find(con);
     			if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before(new Date()))
     			    expiredInodes.add(con.getInode()); // it is unpublished and can't be manualy published
 			}
@@ -913,12 +919,12 @@ public class ContentletAjax {
 			                :  (s.getStructureType() ==2)
 			                ? "gearIcon"
 			                        :  (s.getStructureType() ==3)
-			                        ? "formIcon"
-			                                : "fileIcon";
-			String typeStringToShow = s.getName() + " - " + s.getVelocityVarName();
-			if(s.getName().trim().replace(" ", "").toLowerCase().equals(s.getVelocityVarName().toLowerCase())){
-				typeStringToShow = s.getName();
-			}
+		                        	? "formIcon"
+				                        :  (s.getStructureType() ==4)
+			                        	? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
+		                        			: "pageIcon";
+					                        
+			String typeStringToShow = s.getName() ;
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 			String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());
@@ -988,7 +994,7 @@ public class ContentletAjax {
 			searchResult.put("locked", locked.toString());
 			searchResult.put("structureInode", con.getStructureInode());
 			searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
-			searchResult.put("contentStructureType", ""+con.getStructure().getStructureType());
+			searchResult.put("contentStructureType", "x"+con.getStructure().getStructureType());
 
 			// Workflow Actions
 

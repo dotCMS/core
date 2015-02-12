@@ -9,10 +9,9 @@
 
 ##if have been loaded in the mainFrame
 #set($inframe=$request.getHeader("Referer"))
-#if($inframe && $inframe.contains("mainFrame=true"))
+#if($!inframe && ($inframe.contains("mainFrame=") || $inframe.contains("leftMenu=")))
 	<html>
 		<head>
-			<!--  meta http-equiv="refresh" content="0; url=${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end"-->
 			<script>
 					window.top.location.replace("${_baseURI}#if($UtilMethods.isSet($queryString))?${queryString}#end");
 			</script>
