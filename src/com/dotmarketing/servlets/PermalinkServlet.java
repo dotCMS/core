@@ -20,6 +20,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.IdentifierCache;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TrackbackFactory;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -131,8 +132,8 @@ public class PermalinkServlet extends HttpServlet {
 					Logger.info(PermalinkServlet.class, e.getMessage());
 				}
 
-			} else if(iden.getURI().endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")) ||
-					iden.getURI().endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))){
+			} else if(iden.getURI().endsWith(CMSFilter.CMS_INDEX_PAGE) ||
+					iden.getURI().endsWith(CMSFilter.CMS_INDEX_PAGE)){
 				/*Check if is a page and redirect to the specified page*/
 				redirect = redirect+UtilMethods.encodeURIComponent(iden.getURI());
 			}else{

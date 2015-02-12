@@ -97,14 +97,14 @@ public class LiveCache {
     		    //Add the entry to the cache
     			cache.put(getPrimaryGroup() + hostId + ":" + uri,uri, getPrimaryGroup() + "_" + hostId);
 
-    			if(uri.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")))
+    			if(uri.endsWith(CMSFilter.CMS_INDEX_PAGE))
     			{
     			    //Add the entry to the cache
-    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
-    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))),uri, getPrimaryGroup() + "_" + hostId);
+    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + CMSFilter.CMS_INDEX_PAGE)) + " to " + uri);
+    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("/" + CMSFilter.CMS_INDEX_PAGE)),uri, getPrimaryGroup() + "_" + hostId);
     				//Add the entry to the cache
-    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) + " to " + uri);
-    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))),uri, getPrimaryGroup() + "_" + hostId);
+    			    Logger.debug(LiveCache.class, "Mapping: " + uri.substring(0,uri.lastIndexOf("/" + CMSFilter.CMS_INDEX_PAGE)) + " to " + uri);
+    				cache.put(getPrimaryGroup() + hostId + ":" + uri.substring(0,uri.lastIndexOf("" + CMSFilter.CMS_INDEX_PAGE)),uri, getPrimaryGroup() + "_" + hostId);
     			}
 				ret = uri;
     		}
@@ -233,7 +233,7 @@ public class LiveCache {
 
 		if (URI.endsWith("/")) {
 			//it's a folder path, so I add index.{pages ext} at the end
-			URI += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+			URI += CMSFilter.CMS_INDEX_PAGE;
 
 			// try again with an index page this time
 			try{

@@ -4,6 +4,7 @@
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="java.util.*"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
+<%@page import="com.dotmarketing.filters.CMSFilter"%>
 <%
 
 String catCount = (String) request.getAttribute("counter");
@@ -250,7 +251,7 @@ dojo.require("dojox.layout.ContentPane");
 			var fileName = document.getElementById("selectedwysiwyg_file").value;
 			var ident = document.getElementById("selectedIdentwysiwyg_file").value;
 			var fileFolder = document.getElementById("folderwysiwyg_file").value;
-			<% String ext = Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"); %>
+			<% String ext = CMSFilter.CMS_INDEX_PAGE; %>
 
 			if(fileName.lastIndexOf('<%=ext%>') + '<%=ext%>'.length == filename.length){
 				wysiwyg_win.document.forms[0].elements[wysiwyg_field_name].value = fileFolder + fileName;
