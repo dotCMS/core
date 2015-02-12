@@ -1357,46 +1357,50 @@ public class BrowserAjax {
         }
 
         /*
-        Verify if we have unpublish content related to this page
+		Verify if we have unpublish content related to this page
          */
-        java.util.List relatedAssets = new java.util.ArrayList();
-        HTMLPage htmlPage = null;
-        if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
-            relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
-        } else {//Verify for legacy HTMLPages
-            htmlPage = (HTMLPage) InodeFactory.getInode( inode, HTMLPage.class );
-            if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {
-                relatedAssets = PublishFactory.getUnpublishedRelatedAssets( htmlPage, relatedAssets, user, false );
-            }
-        }
+		java.util.List relatedAssets = new java.util.ArrayList();
+		Inode asset = null;
+		if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Verify for HTMLPages as content
+			relatedAssets = PublishFactory.getUnpublishedRelatedAssetsForPage( htmlPageAsset, relatedAssets, false, user, false );
+		} else {
 
-        //Only publish the content if there is not related unpublished content
-        if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
+			asset = InodeFactory.getInode( inode, Inode.class );
+
+			//Verify if it is a legacy HTMLPage and have unpublished content
+			if ( (asset != null && InodeUtils.isSet( asset.getInode() ))
+					&& asset instanceof HTMLPage ) {
+				relatedAssets = PublishFactory.getUnpublishedRelatedAssets( asset, relatedAssets, user, false );
+			}
+		}
+
+		//Only publish the content if there is not related unpublished content
+		if ( (relatedAssets == null) || (relatedAssets.size() == 0) ) {
 
             /*
-            Publishing the HTMLPage
+			Publishing the HTMLPage
              */
-            if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Publish for the new HTMLPages as content
+			if ( htmlPageAsset != null && InodeUtils.isSet( htmlPageAsset.getInode() ) ) {//Publish for the new HTMLPages as content
 
-                if ( !permissionAPI.doesUserHavePermission( htmlPageAsset, PERMISSION_PUBLISH, user ) ) {
-                    throw new Exception( "The user doesn't have the required permissions." );
-                }
+				if ( !permissionAPI.doesUserHavePermission( htmlPageAsset, PERMISSION_PUBLISH, user ) ) {
+					throw new Exception( "The user doesn't have the required permissions." );
+				}
 
-                //Publish the page
-                return PublishFactory.publishHTMLPage( htmlPageAsset, req );
-            } else if ( htmlPage != null && InodeUtils.isSet( htmlPage.getInode() ) ) {//Publish for the legacy HTMLPages
+				//Publish the page
+				return PublishFactory.publishHTMLPage( htmlPageAsset, req );
+			} else if ( asset != null && InodeUtils.isSet( asset.getInode() ) ) {//Publish for all the other asset types including legacy HTMLPages
 
-                if ( !permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, user ) ) {
-                    throw new Exception( "The user doesn't have the required permissions." );
-                }
+				if ( !permissionAPI.doesUserHavePermission( asset, PERMISSION_PUBLISH, user ) ) {
+					throw new Exception( "The user doesn't have the required permissions." );
+				}
 
-                //Publish the legacy HTMLPage
-                return PublishFactory.publishAsset( htmlPage, req );
-            }
+				//Publish the legacy HTMLPage
+				return PublishFactory.publishAsset( asset, req );
+			}
 
-        } else {
-            throw new Exception( "Related assets needs to be published" );
-        }
+		} else {
+			throw new Exception( "Related assets needs to be published" );
+		}
 
         return false;
     }
