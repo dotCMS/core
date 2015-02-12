@@ -562,6 +562,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setTitle(name);
 				f.setShowOnMenu(false);
 				f.setSortOrder(0);
+				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
 				f.setDefaultFileType(StructureCache.getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
 				Identifier newIdentifier = new Identifier();

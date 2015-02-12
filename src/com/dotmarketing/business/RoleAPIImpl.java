@@ -198,8 +198,7 @@ public class RoleAPIImpl implements RoleAPI {
 				throw new DotStateException("Cannot save locked or system role");
 			}
 		}
-		
-		if(UtilMethods.isSet(role.getName()) && !ESAPI.validator().isValidInput("roleName", role.getName(), "RoleName", 50, false)) {
+		if(!UtilMethods.isSet(role.getName())  && !ESAPI.validator().isValidInput("roleName", role.getName(), "RoleName", 100, false)) {
 			throw new RoleNameException();
 		}
 		
