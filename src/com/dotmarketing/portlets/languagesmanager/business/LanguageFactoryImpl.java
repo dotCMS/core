@@ -150,22 +150,23 @@ public class LanguageFactoryImpl extends LanguageFactory {
 	@Override
     @SuppressWarnings("unchecked")
 	protected List<Language> getLanguages() {
+        List<Language> list = CacheLocator.getLanguageCache().getLanguages();
+        if(list!=null){
+        	return list;
+        }
         try {
-        	Language defaultLang = getDefaultLanguage();
+
 
             HibernateUtil dh = new HibernateUtil(Language.class);
             dh.setQuery("from language in class com.dotmarketing.portlets.languagesmanager.model.Language order by id");
 
-            List<Language> list = dh.list();
+            list = dh.list();
             List<Language> copy = new ArrayList<Language>(list);
-            for(Language l : copy) {
-            	if(l.getId() == defaultLang.getId()) {
-            		list.remove(l);
-            		list.add(0, l);
-            	}
-            }
-            return list;
+
+            CacheLocator.getLanguageCache().putLanguages(copy);
+            return copy;
         } catch (DotHibernateException e) {
+        	CacheLocator.getLanguageCache().putLanguages(null);
             Logger.error(LanguageFactoryImpl.class, "getLanguages failed:" + e, e);
             throw new DotRuntimeException(e.toString());
         }
