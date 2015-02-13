@@ -1853,7 +1853,13 @@ public class IntegrityUtil {
 		dc.addParam(localInode);
 		dc.addParam(languageId);
 		dc.loadResult();
-		// Remove the old Contentlet_version_info record
+		// Remove the live_inode references from Contentlet_version_info
+		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND live_inode = ?");
+		dc.addParam(oldHtmlPageIdentifier);
+		dc.addParam(languageId);
+		dc.addParam(localInode);
+		dc.loadResult();
+		// Remove the working_inode references from Contentlet_version_info
 		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.addParam(languageId);
