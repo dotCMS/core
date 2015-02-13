@@ -1237,7 +1237,7 @@ public abstract class VelocityServlet extends HttpServlet {
 									APILocator.getUserAPI().getSystemUser(),
 									false);
 				} catch (Exception e) {
-					Logger.info(
+					Logger.debug(
 							VelocityServlet.class,
 							"The page is not available in language "
 									+ language.getId() + ". Just keep going.");
