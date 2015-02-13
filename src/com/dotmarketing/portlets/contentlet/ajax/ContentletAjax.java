@@ -612,7 +612,9 @@ public class ContentletAjax {
 					fieldsSearch.put(fieldName, fieldValue);
 				}
 				if(fieldName.equalsIgnoreCase("languageId")){
-					sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
+					if (UtilMethods.isSet(sess)) {
+						sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(fieldValue));
+					}
 					allLanguages = false;
 				}
 				if(fieldName.equalsIgnoreCase("conhost")){
@@ -764,7 +766,9 @@ public class ContentletAjax {
 			}
 		}
 		if(allLanguages){
-			sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
+			if (UtilMethods.isSet(sess)) {
+				sess.setAttribute(WebKeys.LANGUAGE_SEARCHED, String.valueOf(0));
+			}
 		}
 
 		if(UtilMethods.isSet(categoriesvalues)){
