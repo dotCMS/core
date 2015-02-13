@@ -26,6 +26,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.menubuilders.StaticMenuBuilder;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -190,12 +191,12 @@ public class NavigationWebAPI implements ViewTool {
 		Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 
 		//Checking if it's the end of the url and we are requesting a page
-		if (openPath.equals(fullPath) && openPath.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
+		if (openPath.equals(fullPath) && openPath.endsWith(CMSFilter.CMS_INDEX_PAGE)) {
 			getPageTrail(stringbuffer, fullPath, crumbTitle, request);
 		} else {
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(openPath, host, user, true);
 
-			String tempPath = openPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+			String tempPath = openPath + CMSFilter.CMS_INDEX_PAGE;
 
 			if ((tempPath.equals(fullPath)) ||
 				(!UtilMethods.isSet(LiveCache.getPathFromCache(tempPath, host.getIdentifier()))))
@@ -634,7 +635,7 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1, addSpans,isFirstItem, firstItemClass, isLastItem, lastItemClass, menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(path)).append(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")).append("\">");
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(path)).append(CMSFilter.CMS_INDEX_PAGE).append("\">");
 						stringbuf.append((addSpans?"<span>":"")).append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append((addSpans?"</span>":"")).append("</a></li>");
 
 					}
@@ -1024,7 +1025,7 @@ public class NavigationWebAPI implements ViewTool {
 		folderChildPath = folderChildPath.substring(0, folderChildPath.lastIndexOf("/"));
 
 		Host host = WebAPILocator.getHostWebAPI().findParentHost(thisFolder, user, true);//DOTCMS-4099
-		Identifier id = APILocator.getIdentifierAPI().find(host,thisFolderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"));
+		Identifier id = APILocator.getIdentifierAPI().find(host,thisFolderPath + CMSFilter.CMS_INDEX_PAGE);
 		if(id != null && InodeUtils.isSet(id.getInode()))
 			stringbuf.append("<a href=\"" + UtilMethods.encodeURIComponent(thisFolderPath) + "\">");
 		stringbuf.append(UtilHTML.escapeHTMLSpecialChars(thisFolder.getTitle()));
@@ -1047,7 +1048,7 @@ public class NavigationWebAPI implements ViewTool {
 						stringbuf = buildSubFolderSiteMapMenu(stringbuf, folderChildChild2, numberOfLevels, currentLevel + 1,orderDirection,menuIdPrefix);
 					} else {
 
-						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath())).append(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))
+						stringbuf.append("<li><a href=\"").append(UtilMethods.encodeURIComponent(APILocator.getIdentifierAPI().find(folderChildChild2).getPath())).append(CMSFilter.CMS_INDEX_PAGE)
 						        .append("\">");
 						stringbuf.append(UtilHTML.escapeHTMLSpecialChars(folderChildChild2.getTitle())).append("</a></li>");
 

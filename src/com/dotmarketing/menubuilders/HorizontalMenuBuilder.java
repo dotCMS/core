@@ -20,6 +20,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
@@ -370,7 +371,7 @@ public class HorizontalMenuBuilder implements ViewTool {
 		}
 		else {
 			stringbuf.append("<li id=\"" + folderChildChild.getName()+ "\">");
-			if (linkFolders) stringbuf.append("<a href=\"" + folderPath + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">"); 
+			if (linkFolders) stringbuf.append("<a href=\"" + folderPath + CMSFilter.CMS_INDEX_PAGE + "\">"); 
 		}
 
 		//if it uses an image or text.
@@ -408,7 +409,7 @@ public class HorizontalMenuBuilder implements ViewTool {
 						} catch (Exception e) {
 							Logger.debug(HorizontalMenuBuilder.class,e.getMessage());
 						} 
-						stringbuf.append("<li><a href=\"" + path + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">\n");
+						stringbuf.append("<li><a href=\"" + path + CMSFilter.CMS_INDEX_PAGE + "\">\n");
 						stringbuf.append(folderChildChild2.getTitle() + "</a></li>\n");
 					}
 					else {

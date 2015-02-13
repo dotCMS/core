@@ -33,6 +33,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -437,7 +438,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							HTMLPage page = (HTMLPage) itemChild;
 							Logger.debug(this, "Folder Page Configuration " + page.getURI());
 							if (page.isLive() && !page.isDeleted()) {
-								String indexPageConfiguration = "/"+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+								String indexPageConfiguration = "/"+ CMSFilter.CMS_INDEX_PAGE;
 								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
 
 								if (pathToPageUrl.endsWith(indexPageConfiguration)) {
@@ -535,9 +536,9 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 		Identifier id = identAPI.loadFromCache(host, folderIdent.getURI()
 				+ "/"
-				+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"));
+				+ CMSFilter.CMS_INDEX_PAGE);
 
-		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/" + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index")) + "], Identifier Check ["
+		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/" + CMSFilter.CMS_INDEX_PAGE) + "], Identifier Check ["
 		 + (id != null) + "], Children Count [" + itemsChildrenList2.size() + "], Host Identifier [" + host.getIdentifier() + "], Identifier " +
 		 ((id != null) ? id.getInode() : "") + "]");
 
@@ -613,7 +614,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 					Identifier childChild2Ident = identAPI.find(page2
 							.getIdentifier());
 					if (page2.isLive() && !page2.isDeleted()) {
-						String indexPageConfiguration = "/"+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+						String indexPageConfiguration = "/"+ CMSFilter.CMS_INDEX_PAGE;
 
 						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
 
@@ -626,7 +627,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 						stringbuf = "<url><loc>" + pathToPageUrl + "</loc><lastmod>" + modifiedDateStringValue + "</lastmod><changefreq>daily</changefreq></url>\n";
 
-						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out " + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + " extension [" + pathToPageUrl + "]");
+						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out " + CMSFilter.CMS_INDEX_PAGE + " extension [" + pathToPageUrl + "]");
 
 						writeFile(stringbuf);
 

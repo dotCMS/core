@@ -6,6 +6,7 @@
 
 package com.dotmarketing.beans;
 
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.util.Config;
 
 
@@ -142,7 +143,7 @@ public class SearchResult extends Object implements java.io.Serializable {
 		String url1 = ((SearchResult)arg0).getUrl();
 		String url2 = this.getUrl();
 		
-		String indexPage = Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+		String indexPage = CMSFilter.CMS_INDEX_PAGE;
 		
 		if (url1 !=null) url1 = url1.replaceAll(indexPage,"");
 		if (url2 !=null) url2 = url2.replaceAll(indexPage,"");

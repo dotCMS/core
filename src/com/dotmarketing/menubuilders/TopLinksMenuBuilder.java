@@ -19,6 +19,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderFactory;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -106,7 +107,7 @@ public class TopLinksMenuBuilder implements ViewTool {
                 stringbuf.append("#else\n");
 				stringbuf.append("<a ");
                 stringbuf.append("#end \n");
-				stringbuf.append("href=\"" + UtilMethods.encodeURIComponent(itemChildPath) + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index") + "\">"); 
+				stringbuf.append("href=\"" + UtilMethods.encodeURIComponent(itemChildPath) + CMSFilter.CMS_INDEX_PAGE + "\">"); 
 				stringbuf.append(((Folder)itemChild).getTitle());
 				stringbuf.append("</a>");
 			}

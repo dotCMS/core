@@ -116,7 +116,7 @@ public class CrumbTrailBuilder implements ViewTool {
 			        Logger.debug(CrumbTrailBuilder.class, "getTrail: Page Path=" + pagePath);
 			        Logger.debug(CrumbTrailBuilder.class, "getTrail: Path=" + openPath);
 			        
-					if (!pagePath.equals(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
+					if (!pagePath.equals(CMSFilter.CMS_INDEX_PAGE)) {
 
 				        HTMLPage page = HTMLPageFactory.getLiveHTMLPageByPath(openPath + CMSFilter.CMS_INDEX_PAGE, host);
 				        

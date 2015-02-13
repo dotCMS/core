@@ -59,6 +59,7 @@ import com.dotmarketing.cms.wiki.utils.WikiUtils;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -303,10 +304,10 @@ public class HTMLPDFServlet extends VelocityServlet {
 				}
 				if (!external) {
 
-					if (!pointer.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
+					if (!pointer.endsWith(CMSFilter.CMS_INDEX_PAGE)) {
 						if (!pointer.endsWith("/"))
 							pointer += "/";
-						pointer += Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+						pointer += CMSFilter.CMS_INDEX_PAGE;
 
 					}
 					pageID = pointer;
@@ -384,18 +385,18 @@ public class HTMLPDFServlet extends VelocityServlet {
 					pageID = "/"
 							+ path[1]
 							+ "/"
-							+ Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+							+ CMSFilter.CMS_INDEX_PAGE;
 					uri=pageID;
 
 				}
 			}
 
 			if (pageID.endsWith("/")) {
-				uri = pageID + Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+				uri = pageID + CMSFilter.CMS_INDEX_PAGE;
 			} else {
-				if (!pageID.endsWith(Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index"))) {
+				if (!pageID.endsWith(CMSFilter.CMS_INDEX_PAGE)) {
 					uri = pageID
-							+ "/" +Config.getStringProperty("DEFUALT_DIRECTORY_INDEX_PAGE", "index");
+							+ "/" +CMSFilter.CMS_INDEX_PAGE;
 				}
 			}
 			try {
