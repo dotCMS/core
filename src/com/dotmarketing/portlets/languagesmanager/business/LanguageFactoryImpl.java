@@ -168,8 +168,8 @@ public class LanguageFactoryImpl extends LanguageFactory {
 					list.add(0, l);
 			   	}
 			}
-            CacheLocator.getLanguageCache().putLanguages(copy);
-            return copy;
+            CacheLocator.getLanguageCache().putLanguages(list);
+            return list;
         } catch (DotHibernateException e) {
         	CacheLocator.getLanguageCache().putLanguages(null);
             Logger.error(LanguageFactoryImpl.class, "getLanguages failed:" + e, e);
