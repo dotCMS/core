@@ -155,14 +155,19 @@ public class LanguageFactoryImpl extends LanguageFactory {
         	return list;
         }
         try {
-
+        	Language defaultLang = getDefaultLanguage();
 
             HibernateUtil dh = new HibernateUtil(Language.class);
             dh.setQuery("from language in class com.dotmarketing.portlets.languagesmanager.model.Language order by id");
 
             list = dh.list();
             List<Language> copy = new ArrayList<Language>(list);
-
+            for(Language l : copy) {
+			   	if(l.getId() == defaultLang.getId()) {
+			   		list.remove(l);
+					list.add(0, l);
+			   	}
+			}
             CacheLocator.getLanguageCache().putLanguages(copy);
             return copy;
         } catch (DotHibernateException e) {
