@@ -461,10 +461,14 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 2
 	 */
     private final String deleteHTMLPageReferencesSQL =
-            "delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")";
+			(DbConnectionFactory.isMySql() ?
+					"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C )" :
+					"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ")");
 
 	private final String deleteHTMLPageReferencesOnAddSQL =
-		"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") " +
+		(DbConnectionFactory.isMySql() ?
+				"delete from permission_reference where exists ( select id FROM (" + selectChildrenHTMLPageOnPermissionsSQL + ") AS C ) " :
+				"delete from permission_reference where exists (" + selectChildrenHTMLPageOnPermissionsSQL + ") ") +
 		"and (reference_id in (" +
 			"select distinct folder.inode " +
 			" from folder join identifier on (folder.identifier = identifier.id) " +
@@ -499,12 +503,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				"	identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
-				"		identifier.id not in (" +
+				"		li.id not in (" +
 		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
 		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
 		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
 				"		) and " +
-				"		identifier.id not in (" +
+				"		li.id not in (" +
 				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
 				"		) " +
 				"	) " +
