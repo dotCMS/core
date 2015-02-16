@@ -121,9 +121,14 @@
 			self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/edit_template" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + referer + openNodes;
 		}
 	}
-	function deleteHTMLPage(objId,parentId,openNodes,referer) {
+	function deleteHTMLPage(objId,parentId,openNodes,referer,isLegacyPage) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.delete.selected.htmlpage")) %>')) {
-			self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=delete&parent=' + parentId + "&inode=" + objId + '&referer=' + referer + openNodes;
+			if(isLegacyPage){
+				self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /></portlet:actionURL>&cmd=delete&parent=' + parentId + "&inode=" + objId + '&referer=' + referer + openNodes;
+			}else{
+				self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /></portlet:actionURL>&cmd=delete&parent=' + parentId + "&inode=" + objId + '&referer=' + referer + openNodes;
+			}
+			
 		}
 	}
 	function deleteContentlet(objId,openNodes,referer, contentStructureType, structure_id) {

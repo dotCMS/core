@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.action;
 
 import java.io.PrintWriter;
+import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -138,6 +139,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
+		
+		if ((referer != null) && (referer.length() != 0)) {
+			referer = URLDecoder.decode(referer, "UTF-8");
+		}
 
 		Logger.debug(this, "EditContentletAction cmd=" + cmd);
 		
