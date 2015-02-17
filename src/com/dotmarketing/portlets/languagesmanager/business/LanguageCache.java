@@ -39,4 +39,8 @@ public abstract class LanguageCache implements Cachable{
     protected abstract void removeLanguageKeys(String langCode, String countryCode);
 
     protected abstract void setLanguageKeys(String langCode, String countryCode, List<LanguageKey> keys);
+
+    public abstract List<Language> getLanguages()  ;
+    
+    public abstract void putLanguages(List<Language> langs);
 }

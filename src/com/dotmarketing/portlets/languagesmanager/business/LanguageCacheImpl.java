@@ -14,6 +14,26 @@ import com.dotmarketing.util.Logger;
  */
 public class LanguageCacheImpl extends LanguageCache {
 
+	private static final String ALL_LANGUAGES_KEY="ALL_LANGUAGES_KEY";
+	@Override
+    public List<Language> getLanguages()  {
+	
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    	
+    	
+		try {
+			return (List<Language>) cache.get( ALL_LANGUAGES_KEY, getPrimaryGroup());
+		} catch (DotCacheException e) {
+			return null;
+		}
+    	
+    	
+    }
+    public void putLanguages(List<Language> languages) {
+    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    	cache.put(ALL_LANGUAGES_KEY, languages, getPrimaryGroup());
+    	
+    }
     public void addLanguage(Language l) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		long id = l.getId();
@@ -22,6 +42,7 @@ public class LanguageCacheImpl extends LanguageCache {
 		cache.put(getPrimaryGroup() + id, l, getPrimaryGroup());
         cache.put(getPrimaryGroup() + idSt, l, getPrimaryGroup());
         cache.put(getPrimaryGroup() + languageKey, l, getPrimaryGroup());
+        cache.remove(getPrimaryGroup() , ALL_LANGUAGES_KEY);
         
 	}
     
@@ -102,6 +123,7 @@ public class LanguageCacheImpl extends LanguageCache {
         cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + idSt,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + languageKey,getPrimaryGroup());
+        cache.remove(getPrimaryGroup() , ALL_LANGUAGES_KEY);
     }
 
     public void clearCache(){
