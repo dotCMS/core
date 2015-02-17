@@ -420,25 +420,37 @@ function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, refere
 	    }
 
 		if ((live=="1") && (publish=="1")) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			if(isLegacyPage){
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			}else{
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="unpublishIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			}
 	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unpublish")) %>';
 			strHTML += '</div>';
 		}
 		if ((live!="1") && (working=="1") && (publish=="1")) {
 			if (deleted!="1") {
-				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteHTMLPage(\'' + objId + '\',\'' + parentId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\');">';
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="archiveIcon" onClick="deleteHTMLPage(\'' + objId + '\',\'' + parentId + '\',\'' + openNodes + '\',\'' + escape(referer) + '\',' + isLegacyPage + ');">';
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Archive")) %>';
 				strHTML += '</div>';
 			}
 			else {
-				strHTML += '<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+				if(isLegacyPage){
+					strHTML += '<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+				}else{
+					strHTML += '<div dojoType="dijit.MenuItem" iconClass="unarchiveIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+				}
 				strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Un-Archive")) %>';
 				strHTML += '</div>';
 			}
 		}
 
 		if ((locked=="1") && (write=="1")) {
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="unlockIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			if(isLegacyPage){
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="unlockIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			}else{
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="unlockIcon" onClick="top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';">';
+			}
 	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Unlock")) %>';
 			strHTML += '</div>';
 		}
@@ -455,7 +467,11 @@ function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, refere
 
 		if ((deleted == "1") && (write == "1"))
 		{
-			strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.htmlpage.confirm.delete")) %>\')){top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';}">';
+			if(isLegacyPage){
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.htmlpage.confirm.delete")) %>\')){top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';}">';
+			}else{
+				strHTML += '<div dojoType="dijit.MenuItem" iconClass="deleteIcon" onClick="if(confirm(\'<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.htmlpage.confirm.delete")) %>\')){top.location=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&inode=' + objId + '&referer=' + referer + openNodes + '\';}">';
+			}
 			strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Delete-Page")) %>';
 			strHTML += '</div>';
 		}
