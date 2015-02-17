@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -255,6 +256,18 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public List<Contentlet> search(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles, int requiredPermission) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Adds the permissions query fragment to the given query based on the given user and roles
+	 *
+	 * @param buffy
+	 * @param user
+	 * @param roles
+	 * @param respectFrontendRoles
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
@@ -1461,8 +1474,33 @@ public interface ContentletAPI {
 	 * @throws DotStateException
 	 */
 	public void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException;
-	
-	public com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
-	
-	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
+
+	/**
+	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
+	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
+	 *
+	 * @param esQuery
+	 * @param live
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Executes a given Elastic Search query.
+	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
+	 *
+	 * @param esQuery
+	 * @param live
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
 }

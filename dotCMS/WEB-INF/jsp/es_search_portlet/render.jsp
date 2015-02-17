@@ -26,7 +26,23 @@
 <%@page import="com.liferay.portal.util.WebKeys"%>
 <%@page import="com.dotmarketing.util.URLEncoder"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
+<%@ page import="com.dotcms.enterprise.LicenseUtil" %>
 
+<%if( LicenseUtil.getLevel() < 200){ %>
+	<div class="portlet-wrapper">
+		<div class="subNavCrumbTrail">
+			<ul id="subNavCrumbUl">
+				<li class="lastCrumb">
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.ES_SEARCH_PORTLET")%></a>
+				</li>
+
+			</ul>
+			<div class="clear"></div>
+		</div>
+		<jsp:include page="/WEB-INF/jsp/es_search_portlet/not_licensed.jsp"></jsp:include>
+
+	</div>
+<%return;}%>
 
 <%
 User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);

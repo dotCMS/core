@@ -8,6 +8,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.exception.DotDataException;
@@ -565,6 +566,10 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
     public boolean esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
         return true;
     }
+
+	public boolean addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+		return true;
+	}
 
 	public boolean deleteOldContent(Date deleteFrom) {
 		return true;

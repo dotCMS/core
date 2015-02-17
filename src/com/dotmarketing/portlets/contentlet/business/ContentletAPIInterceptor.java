@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Interceptor;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -1528,6 +1529,22 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 			post.search(luceneQuery, limit, offset, sortBy, user, respectFrontendRoles,requiredPermission,c);
 		}
 		return c;
+	}
+
+	@Override
+	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
+
+		for ( ContentletAPIPreHook pre : preHooks ) {
+			boolean preResult = pre.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
+			if ( !preResult ) {
+				Logger.error( this, "The following prehook failed " + pre.getClass().getName() );
+				throw new DotRuntimeException( "The following prehook failed " + pre.getClass().getName() );
+			}
+		}
+		conAPI.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
+		for ( ContentletAPIPostHook post : postHooks ) {
+			post.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
+		}
 	}
 
 	/* (non-Javadoc)

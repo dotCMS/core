@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -451,6 +452,9 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 
     public void esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
     }
+
+	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{
+	}
 
     @Override
     public void publishAssociated(Contentlet contentlet, boolean isNew)
