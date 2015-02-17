@@ -195,8 +195,14 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
 
 		if(host==null) return null;
-
-		Folder folder = fc.getFolderByPathAndHost(path, host);
+		Folder folder =null;
+		if(path.equals("/") || path.equals("/System folder")) {
+			folder = fc.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
+		}
+		else{
+			folder = fc.getFolderByPathAndHost(path, host);
+		}
+		
 		if(folder ==null){
 			String parentPath;
 			String assetName;
