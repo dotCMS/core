@@ -1444,12 +1444,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                         dc.addParam(parentHost.getPermissionId());
                         dc.addParam(path + "%");
 						dc.addParam(parentHost.getPermissionId());
-						dc.addParam(path + "%");
+						dc.addParam( path + "%" );
 						dc.addParam(path);
 						dc.loadResult();
 
 						// Adding new references to the new host
-						dc.setSQL(this.insertHTMLPageReferencesSQL);
+						dc.setSQL( this.insertHTMLPageReferencesSQL );
 						// Insert new references pointing to the host
 						dc.addParam(permissionable.getPermissionId());
 						// Under the same host
@@ -2469,11 +2469,12 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 								((Contentlet)permissionable).getStructure().getVelocityVarName() != null &&
 								((Contentlet)permissionable).getStructure().getVelocityVarName().equals("Host"))){
 					type = Host.class.getCanonicalName();
-				}else if(permissionable instanceof FileAsset ||
-				        (permissionable instanceof Contentlet &&
-				         ((Contentlet)permissionable).getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET)) {
-                    type = File.class.getCanonicalName();
-                } else if ( permissionable instanceof IHTMLPage ||
+				} else if ( permissionable instanceof FileAsset ) {//This is to handle just the case of legacy files
+					type = File.class.getCanonicalName();
+				} else if ( permissionable instanceof Contentlet &&
+						((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
+					type = Contentlet.class.getCanonicalName();
+				} else if ( permissionable instanceof IHTMLPage ||
                         (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) ) {
                     type = IHTMLPage.class.getCanonicalName();
                 }else if(permissionable instanceof Event){
@@ -2777,13 +2778,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.setSQL(deleteHTMLPageReferencesSQL);
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
-            dc.addParam(host.getPermissionId());
-            dc.addParam(isHost?"%":folderPath+"%");
+            dc.addParam( host.getPermissionId() );
+            dc.addParam( isHost ? "%" : folderPath + "%" );
 			dc.loadResult();
-			dc.setSQL(deleteHTMLPagePermissionsSQL);
-			dc.addParam(host.getPermissionId());
+			dc.setSQL( deleteHTMLPagePermissionsSQL );
+			dc.addParam( host.getPermissionId() );
 			dc.addParam(isHost?"%":folderPath+"%");
-            dc.addParam(host.getPermissionId());
+            dc.addParam( host.getPermissionId() );
             dc.addParam(isHost?"%":folderPath+"%");
 			dc.loadResult();
 			//Pointing the children containers to reference the current host
