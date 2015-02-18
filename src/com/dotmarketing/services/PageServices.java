@@ -177,6 +177,8 @@ public class PageServices {
 			else {
 				c = (Container) APILocator.getVersionableAPI().findLiveVersion(ident.getIdentifier(),APILocator.getUserAPI().getSystemUser(),false);
 			}
+
+            if(c == null) continue;
 			//sets container to load the container file
 			sb.append("#set ($container").append(ident.getIdentifier() ).append( " = \"" ).append( folderPath ).append( ident.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION") ).append( "\" )");
 
