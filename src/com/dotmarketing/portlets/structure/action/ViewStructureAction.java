@@ -141,6 +141,16 @@ public class ViewStructureAction extends DotPortletAction {
 			count = StructureFactory.getStructuresCount(queryCondition);
 			req.setAttribute(countWebKey, new Integer(count));
 			req.setAttribute(viewWebKey, structures);
+			if(UtilMethods.isSet(req.getParameter("direction"))){
+				if(req.getParameter("direction").equals("asc"))
+					req.setAttribute("direction", "desc");
+				else if(req.getParameter("direction").equals("desc"))
+					req.setAttribute("direction", "asc");
+				else
+					req.setAttribute("direction", "desc");
+			}else{
+				req.setAttribute("direction", "desc");
+			}
 		} catch (Exception e) {
 			req.setAttribute(viewWebKey, structures);
 			Logger.error(this, "Exception e =" + e.getMessage(), e);
