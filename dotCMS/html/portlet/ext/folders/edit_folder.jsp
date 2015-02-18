@@ -83,7 +83,7 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 		title = title.replace(/-{2,}/g, "-");
 		ele.value = title;
 		<% if (parentFolder != null) { %>
-		 	dojo.byId("pathToFolder").value = <%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>+title;
+		 	dojo.byId("pathToFolder").value = "<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>"+title;
 		<% } else { %>
 		 	dojo.byId("pathToFolder").value = "/"+title;
 		<% } %>
@@ -167,6 +167,16 @@ dojo.require("dotcms.dojo.data.StructureReadStore");
 					<% } %>
 					<!--<html:hidden property="name" />-->
 				</dd>
+    		<%}else{%>
+	    		<dt><%= LanguageUtil.get(pageContext, "Path-To-Folder") %>:</dt>
+					<dd>
+						<% if (parentFolder != null) { %>
+							<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="<%= APILocator.getIdentifierAPI().find(parentFolder).getPath() %>" />
+						<% } else { %>
+							<input id="pathToFolder" readonly="true" style="width:250px;border:0;" value="/" />
+						<% } %>
+						<!--<html:hidden property="name" />-->
+					</dd>
     		<%}%>
 
 			<dt><%= LanguageUtil.get(pageContext, "Title") %>:</dt>
