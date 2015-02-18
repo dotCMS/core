@@ -379,9 +379,9 @@ $import.read("/html/common/messages_inc.jsp")
 
 	function addPage(){
 	 	document.getElementById('htmlPage').value='0';
-		form = document.getElementById('submitParent');
-	        form.cmd.value="editHTMLPage";
-	        form.submit();
+        document.getElementById('cmd').value="newHTMLPage";
+        document.getElementById('HTMLPageType').value="${HTMLPAGE_ASSET_STRUCTURE_TYPE}";
+        document.getElementById('submitParent').submit();
 	}
 
 	function editPage(){

@@ -68,6 +68,7 @@ import com.dotmarketing.filters.TimeMachineFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
@@ -581,8 +582,8 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "REMOTE_PUBLISH_END_POINTS", new Boolean( hasEndPoints ) );
         context.put( "canAddForm", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
-        
-        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : "0");
+
+        context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
         
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
