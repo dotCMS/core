@@ -187,6 +187,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
                 o.setCountryCode(o.getCountryCode().toUpperCase());
             }
 			HibernateUtil.saveOrUpdate(o);
+			CacheLocator.getLanguageCache().clearCache();
 		} catch (DotHibernateException e) {
             Logger.error(LanguageFactoryImpl.class, "saveLanguage failed to save the language.", e);
             throw new DotRuntimeException(e.toString(), e);
