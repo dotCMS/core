@@ -9,6 +9,8 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPIImpl;
+import com.dotcms.enterprise.ESSeachAPI;
+import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.ServerActionAPIImplProxy;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
 import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
@@ -334,6 +336,10 @@ public class APILocator extends Locator<APIIndex>{
 	    return (ServerActionAPI)getInstance(APIIndex.SERVER_ACTION_API);
 	}
 
+	public static ESSeachAPI getEsSearchAPI () {
+		return (ESSeachAPI) getInstance( APIIndex.ES_SEARCH_API );
+	}
+
 
 	private static Object getInstance(APIIndex index) {
 
@@ -423,7 +429,8 @@ enum APIIndex
 
 	HTMLPAGE_ASSET_API,
 
-	SERVER_ACTION_API;
+	SERVER_ACTION_API,
+	ES_SEARCH_API;
 
 
 	Object create() {
@@ -483,6 +490,7 @@ enum APIIndex
 
 		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
+		case ES_SEARCH_API: return new ESSearchProxy();
 
 		
 		}
