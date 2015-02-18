@@ -10,11 +10,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
@@ -26,6 +28,8 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -38,10 +42,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
 
-	@POST
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	@Produces("application/json")
-	public Response search(@Context HttpServletRequest request) {
+	public Response search(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
 
 		InitDataObject initData = init(null, true, request, false);
 
@@ -62,13 +67,8 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		ObjectMapper mapper = new ObjectMapper();
 		try {
 			
-			
-			
-			
-			
-			String esQuery = IOUtils.toString(request.getInputStream());
 
-			ESSearchResults esresult = esapi.esSearch(esQuery, live, user, live);
+			ESSearchResults esresult = esapi.esSearch(esQuery.toString(), live, user, live);
 			
 			JSONObject json = new JSONObject();
 			JSONArray jsonCons = new JSONArray();
@@ -111,17 +111,17 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	}
 
-	@GET
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	@Produces("application/json")
-	public Response searchGet(@Context HttpServletRequest request) {
-		return search(request);
-
+	public Response searchPost(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
+		return search(request, esQuery);
 	}
-
+	
 	@GET
 	@Path("raw")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchRawGet(@Context HttpServletRequest request) {
 		return searchRaw(request);
 
@@ -129,7 +129,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	@POST
 	@Path("raw")
-	@Produces("application/json")
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchRaw(@Context HttpServletRequest request) {
 
 		InitDataObject initData = init(null, true, request, false);
