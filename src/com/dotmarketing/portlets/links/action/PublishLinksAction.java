@@ -65,6 +65,7 @@ public class PublishLinksAction extends DotPortletAction {
 		ActionRequestImpl reqImpl = (ActionRequestImpl)req;
 		
 		if (publishInode!=null) {
+			boolean isArchived = true;
 			for (int i=0;i<publishInode.length;i++) {
 				Link link = (Link) InodeFactory.getInode(publishInode[i],Link.class);
 		
@@ -72,13 +73,19 @@ public class PublishLinksAction extends DotPortletAction {
 					//calls the asset factory edit
 					
 					try{
-						PublishFactory.publishAsset(link,reqImpl.getHttpServletRequest());
-						SessionMessages.add(req, "message", "message.link_list.published");
+						if(!link.isArchived()){
+							PublishFactory.publishAsset(link,reqImpl.getHttpServletRequest());
+							SessionMessages.add(req, "message", "message.link_list.published");
+							isArchived = false;
+						}
 					}catch(WebAssetException wax){
 						Logger.error(this, wax.getMessage(),wax);
 						SessionMessages.add(req, "error", "message.webasset.published.failed");
 					}
 				}
+			}
+			if(isArchived){
+				SessionMessages.add(req, "error", "message.webasset.cannot.published.archived");
 			}
 
 		}	
