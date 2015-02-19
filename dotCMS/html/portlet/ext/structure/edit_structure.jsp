@@ -984,6 +984,14 @@ function disableFormFields(){
 	function editFieldVariables(fieldId){
 		fieldVariablesAdmin.showFieldVariables(fieldId,true);
 	}
+	
+	dojo.connect(dojo.byId("TabOneAndAHalf"), "onkeypress", function(e){
+        var key = e.keyCode || e.charCode;
+        var k = dojo.keys;
+        if (key == 13) {
+        	addNewStructure();
+        }
+	});
 </script>
 
 <div id="dependenciesDialog" dojoType="dijit.Dialog" style="display:none; width: 1000px;" draggable="true"
