@@ -50,6 +50,10 @@ def taskDescription = """
             As snapshot: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
             As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/dotCMS/dotCMS/starter_20140805.zip
 
+         Ant Tooling jar
+            Name convention: ant-tooling_version.jar -> ant-tooling_1.1.jar
+            As release: gradle -b deploy.gradle uploadArchives -PgroupId=com.dotcms -Prelease=true -Pusername=username -Ppassword=XYZ -Pfile=/project/path/ant-tooling/build/libs/ant-tooling_1.1.jar
+
     NOTE:
         For a known gradle bug we can not use the default snapshot behaviour and right now each snapshot have to be an artifact:
             http://issues.gradle.org/browse/GRADLE-2784
