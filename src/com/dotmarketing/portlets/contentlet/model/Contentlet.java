@@ -678,6 +678,10 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		return "contentlet";
 	}
 
+    public Boolean isHTMLPage() {
+        return getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
+    }
+
 	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *

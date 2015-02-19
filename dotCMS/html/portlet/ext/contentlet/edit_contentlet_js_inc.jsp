@@ -559,12 +559,14 @@ dojo.require("dojox.layout.ContentPane");
 
 
 		// if we have a referer and the contentlet comes back checked in
-	 	if(data["referer"] != null && data["referer"] != '' && !data["contentletLocked"] ) {
+	 	if((data["referer"] != null && data["referer"] != '' && !data["contentletLocked"]) || data["htmlPageReferer"] != null ) {
 
 			<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FORM){%>
 				self.location = data["referer"]+"&structure_id=<%=structure.getInode()%>&content_inode=" + data["contentletInode"];
 			<%}else{%>
-					if(data["sourceReferer"]){
+                    if(data["isHtmlPage"]){
+                        self.location = data["htmlPageReferer"];
+                    } else if(data["sourceReferer"]){
 						self.location = data["referer"] + "&content_inode=" + data["contentletInode"]+"&referer=" + escape(data["sourceReferer"]);
 					}else{
 						self.location = data["referer"] + "&content_inode=" + data["contentletInode"];

@@ -52,6 +52,7 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.hostadmin.business.CopyHostContentUtil;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
@@ -1386,12 +1387,21 @@ public class ContentletAjax {
 		}
 
 		try {
-			newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user);
-			Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
-			if(contentlet != null){
+
+            newInode = contentletWebAPI.saveContent(contentletFormData,isAutoSave,isCheckin,user);
+
+            Contentlet contentlet = (Contentlet) contentletFormData.get(WebKeys.CONTENTLET_EDIT);
+
+            if(contentlet != null){
 				callbackData.put("contentletIdentifier", contentlet.getIdentifier());
 				callbackData.put("contentletInode", contentlet.getInode());
 				callbackData.put("contentletLocked", contentlet.isLocked());
+                callbackData.put("isHtmlPage", contentlet.isHTMLPage());
+
+                if(contentlet.isHTMLPage()) {
+                    HTMLPageAsset page = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+                    callbackData.put("htmlPageReferer", page.getURI() + "?" + WebKeys.HTMLPAGE_LANGUAGE + "=" + page.getLanguageId() + "&host_id=" + page.getHost());
+                }
 
 			}
 
@@ -1691,6 +1701,7 @@ public class ContentletAjax {
 			}else{
 		          	referer = referer+"&language="+language;
 		    }
+
 		}
 		if(!isAutoSave){
 			if(InodeUtils.isSet(newInode) && !conAPI.isInodeIndexed(newInode)){
