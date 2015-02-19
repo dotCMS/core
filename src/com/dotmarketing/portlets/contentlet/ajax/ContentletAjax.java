@@ -998,7 +998,7 @@ public class ContentletAjax {
 			searchResult.put("locked", locked.toString());
 			searchResult.put("structureInode", con.getStructureInode());
 			searchResult.put("workflowMandatory", String.valueOf(APILocator.getWorkflowAPI().findSchemeForStruct(con.getStructure()).isMandatory()));
-			searchResult.put("contentStructureType", "x"+con.getStructure().getStructureType());
+			searchResult.put("contentStructureType", ""+con.getStructure().getStructureType());
 
 			// Workflow Actions
 
