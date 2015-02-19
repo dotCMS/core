@@ -35,6 +35,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -68,7 +69,7 @@ import com.liferay.portal.model.User;
  * The {@link IntegrityResource} class exposes the main methods of this class as
  * REST services.
  * </p>
- * 
+ *
  * @author Daniel Silva
  * @version 1.5
  * @since 06-23-2014
@@ -117,11 +118,11 @@ public class IntegrityUtil {
         return csvFile;
 
     }
-    
+
 	/**
 	 * Creates CSV file with either the HTML Pages or Content Pages information
 	 * from End Point server.
-	 * 
+	 *
 	 * @param outputFile
 	 *            - The file containing the list of pages.
 	 * @param type
@@ -144,7 +145,8 @@ public class IntegrityUtil {
             writer = new CsvWriter(new FileWriter(csvFile, true), '|');
             if (type.equals(IntegrityType.HTMLPAGES)) {
             	// Query the legacy pages
-            	statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
+            	statement = conn.prepareStatement("select distinct hvi.working_inode, hvi.live_inode, h.identifier, i.parent_path, i.asset_name, i.host_inode " +
+                        "from htmlpage h join identifier i on h.identifier = i.id join htmlpage_version_info hvi on i.id = hvi.identifier");
             } else {
             	// Query the new content pages pages
 				String query = "SELECT DISTINCT "
@@ -160,13 +162,8 @@ public class IntegrityUtil {
             int count = 0;
 
             while (rs.next()) {
-                if (type.equals(IntegrityType.CONTENTPAGES)) {
-                    writer.write(rs.getString("working_inode"));
-                    writer.write(rs.getString("live_inode"));
-                } else {
-                    writer.write(rs.getString("inode"));
-                }
-
+                writer.write(rs.getString("working_inode"));
+                writer.write(rs.getString("live_inode"));
                 writer.write(rs.getString("identifier"));
                 writer.write(rs.getString("parent_path"));
                 writer.write(rs.getString("asset_name"));
@@ -400,8 +397,8 @@ public class IntegrityUtil {
     }
 
     /**
-     * Creates all the CSV from End Point database table and store them inside zip file. 
-     * 
+     * Creates all the CSV from End Point database table and store them inside zip file.
+     *
      * @param endpointId
      * @throws Exception
      */
@@ -722,11 +719,11 @@ public class IntegrityUtil {
             throw new Exception("Error running the Workflow Schemes Integrity Check", e);
         }
     }
-    
+
     /**
      * Checks possible conflicts with HTMLPages.
-     * 
-     * @param endpointId Information of the Server you want to examine. 
+     *
+     * @param endpointId Information of the Server you want to examine.
      * @return
      * @throws Exception
      */
@@ -748,7 +745,7 @@ public class IntegrityUtil {
 	/**
 	 * Checks the existence of conflicts with both the legacy HTML pages and
 	 * Content Pages.
-	 * 
+	 *
 	 * @param endpointId
 	 *            - The ID of the endpoint where conflicts will be detected.
 	 * @param type
@@ -765,7 +762,7 @@ public class IntegrityUtil {
 	private void checkPages(String endpointId, IntegrityType type) throws IOException,
 			SQLException, DotDataException {
     	CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToCheckCSVName(), '|');
-        
+
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId, type);
         String tempKeyword = getTempKeyword();
@@ -774,26 +771,16 @@ public class IntegrityUtil {
         //Create a temporary table and insert all the records coming from the CSV file.
         StringBuilder createTempTable = new StringBuilder();
 
-        if(type.equals(IntegrityType.CONTENTPAGES)) {
-            createTempTable.append("create ").append(tempKeyword).append(" table ").append(tempTableName)
-                    .append(" (working_inode varchar(36) not null")
-                    .append(", live_inode varchar(36) not null ")
-                    .append(", identifier varchar(36) not null ")
-                    .append(", parent_path varchar(255)")
-                    .append(", asset_name varchar(255)")
-                    .append(", host_identifier varchar(36) not null")
-                    .append(", language_id ").append(integerKeyword).append(" not null")
-                    .append(", primary key (working_inode) )").append((DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":""));
-        } else {
-            createTempTable.append("create ").append(tempKeyword).append(" table ").append(tempTableName)
-                    .append(" (inode varchar(36) not null")
-                    .append(", identifier varchar(36) not null ")
-                    .append(", parent_path varchar(255)")
-                    .append(", asset_name varchar(255)")
-                    .append(", host_identifier varchar(36) not null")
-                    .append(", language_id ").append(integerKeyword).append(" not null")
-                    .append(", primary key (inode) )").append((DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":""));
-        }
+        createTempTable.append("create ").append(tempKeyword).append(" table ").append(tempTableName)
+                .append(" (working_inode varchar(36) not null")
+                .append(", live_inode varchar(36) not null ")
+                .append(", identifier varchar(36) not null ")
+                .append(", parent_path varchar(255)")
+                .append(", asset_name varchar(255)")
+                .append(", host_identifier varchar(36) not null")
+                .append(", language_id ").append(integerKeyword).append(" not null")
+                .append(", primary key (working_inode) )").append((DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : ""));
+
 
         String createTempTableStr = createTempTable.toString();
 
@@ -801,38 +788,26 @@ public class IntegrityUtil {
             createTempTableStr=createTempTableStr.replaceAll("varchar\\(", "varchar2\\(");
         }
 
-        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + (type.equals(IntegrityType.CONTENTPAGES)?" values(?,?,?,?,?,?,?)":" values(?,?,?,?,?,?)");
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?,?,?)";
 
         dc.executeStatement(createTempTableStr);
         while (htmlpages.readRecord()) {
 
-            int i = 0;
-
             String workingInode = null;
             String liveInode = null;
-            String htmlPageInode = null;
 
-            if (type.equals(IntegrityType.CONTENTPAGES)) {
-                workingInode = htmlpages.get(i);
-                liveInode = htmlpages.get(++i);
-            } else {
-                htmlPageInode = htmlpages.get(i);
-            }
+            workingInode = htmlpages.get(0);
+            liveInode = htmlpages.get(1);
 
-            String htmlPageIdentifier = htmlpages.get(++i);
-            String htmlPageParentPath = htmlpages.get(++i);
-            String htmlPageAssetName = htmlpages.get(++i);
-            String htmlPageHostIdentifier = htmlpages.get(++i);
-            String htmlPageLanguage = htmlpages.get(++i);
+            String htmlPageIdentifier = htmlpages.get(2);
+            String htmlPageParentPath = htmlpages.get(3);
+            String htmlPageAssetName = htmlpages.get(4);
+            String htmlPageHostIdentifier = htmlpages.get(5);
+            String htmlPageLanguage = htmlpages.get(6);
             dc.setSQL(INSERT_TEMP_TABLE);
 
-            if (type.equals(IntegrityType.CONTENTPAGES)) {
-                dc.addParam(workingInode);
-                dc.addParam(liveInode);
-            } else {
-                dc.addParam(htmlPageInode);
-            }
-
+            dc.addParam(workingInode);
+            dc.addParam(liveInode);
             dc.addParam(htmlPageIdentifier);
             dc.addParam(htmlPageParentPath);
             dc.addParam(htmlPageAssetName);
@@ -844,7 +819,7 @@ public class IntegrityUtil {
         }
         htmlpages.close();
 
-        String resultsTableName = getResultsTableName(type);
+        String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
 
         //Compare the data from the CSV to the local database data and see if we have conflicts.
         String selectSQL = null;
@@ -852,7 +827,7 @@ public class IntegrityUtil {
         	// Query the legacy pages
 			selectSQL = "select lh.page_url as html_page, "
 					+ "lh.inode as local_inode, "
-					+ "ri.inode as remote_inode, "
+					+ "ri.working_inode as remote_inode, "
 					+ "li.id as local_identifier, "
 					+ "ri.identifier as remote_identifier, ri.language_id "
 					+ "from identifier as li " + "join htmlpage as lh "
@@ -938,7 +913,7 @@ public class IntegrityUtil {
     					+ "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
     					+ "AND lc.language_id = t.language_id)";
             }
-            
+
             if(DbConnectionFactory.isOracle()) {
                 insertSQL = insertSQL.replaceAll(" as ", " ");
             }
@@ -965,12 +940,12 @@ public class IntegrityUtil {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.SCHEMES));
             }
-            
+
             if(doesTableExist(getTempTableName(endpointId, IntegrityType.HTMLPAGES))) {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.HTMLPAGES));
             }
-            
+
             if(doesTableExist(getTempTableName(endpointId, IntegrityType.CONTENTPAGES))) {
                 dc.executeStatement("truncate table " + getTempTableName(endpointId, IntegrityType.CONTENTPAGES));
                 dc.executeStatement("drop table " + getTempTableName(endpointId, IntegrityType.CONTENTPAGES));
@@ -1069,8 +1044,8 @@ public class IntegrityUtil {
     }
 
     /**
-     * Creates temporary TABLE for integrity checking purposes. 
-     * 
+     * Creates temporary TABLE for integrity checking purposes.
+     *
      * @param endpointId
      * @param type
      * @return
@@ -1097,8 +1072,8 @@ public class IntegrityUtil {
     }
 
     /**
-     * Return Temporary word depending on the Database in the data source. 
-     * 
+     * Return Temporary word depending on the Database in the data source.
+     *
      * @return
      */
     private String getTempKeyword() {
@@ -1654,7 +1629,7 @@ public class IntegrityUtil {
             throw new DotDataException( e.getMessage(), e );
         }
     }
-    
+
 	/**
 	 * Replace Identifier with same Identifier from the other server. For the
 	 * new Content Pages, it is necessary to take the following 2 situations
@@ -1667,7 +1642,7 @@ public class IntegrityUtil {
 	 * the old identifier will not be present anymore since it was already
 	 * changed, which will cause an issue.</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param serverId
 	 *            - The ID of the endpoint where the data will be fixed.
 	 * @throws DotDataException
@@ -1680,7 +1655,7 @@ public class IntegrityUtil {
     	DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
         //Get the information of the IR.
-		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_working_inode, remote_working_inode, language_id FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, language_id FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		Map<String, Integer> versionCount = new HashMap<String, Integer>();
@@ -1722,7 +1697,7 @@ public class IntegrityUtil {
 	 * only difference is in what server (either the sender or the receiver)
 	 * this method is called.
 	 * </p>
-	 * 
+	 *
 	 * @param pageData
 	 *            - A {@link Map} with the page information that was generated
 	 *            when the conflict was detected.
@@ -1813,7 +1788,7 @@ public class IntegrityUtil {
 	 * can be brought back under the new identifier without any errors.</li>
 	 * </ol>
 	 * </p>
-	 * 
+	 *
 	 * @param pageData
 	 *            - A {@link Map} with the page information that was captured
 	 *            when the conflict was detected.
@@ -1855,7 +1830,12 @@ public class IntegrityUtil {
 		ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Contentlet existingWorkingContentPage = contentletAPI.find(localWorkingInode,systemUser, false);
-        Contentlet existingLiveContentPage = contentletAPI.find(localLiveInode,systemUser, false);
+        Contentlet existingLiveContentPage = null;
+
+        try {
+            existingLiveContentPage = contentletAPI.find(localLiveInode, systemUser, false);
+        } catch(DotHibernateException e) { /*No Live Version*/ }
+
 		dc.setSQL("SELECT id FROM identifier WHERE id = ?");
 		dc.addParam(newHtmlPageIdentifier);
 		List<Map<String, Object>> results = dc.loadObjectResults();
@@ -1917,7 +1897,7 @@ public class IntegrityUtil {
 
 		// Insert the new Contentlet_version_info record with the new Inode
 
-        if(!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
+        if(UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
             dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
                     + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
                     + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
@@ -1929,7 +1909,7 @@ public class IntegrityUtil {
             dc.addParam(localWorkingInode);
             dc.addParam(languageId);
             dc.loadResult();
-        } else {
+        } else  {
             dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
                     + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
                     + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
@@ -1942,20 +1922,12 @@ public class IntegrityUtil {
             dc.loadResult();
         }
 
-		// Remove the live_inode references from Contentlet_version_info
-        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
-            dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND live_inode = ?");
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.addParam(languageId);
-            dc.addParam(localLiveInode);
-            dc.loadResult();
-        }
-		// Remove the working_inode references from Contentlet_version_info
-		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.addParam(languageId);
-		dc.addParam(localWorkingInode);
-		dc.loadResult();
+        // Remove the live_inode references from Contentlet_version_info
+        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
+        dc.addParam(oldHtmlPageIdentifier);
+        dc.addParam(languageId);
+        dc.addParam(localWorkingInode);
+        dc.loadResult();
 
 		// Remove the conflicting version of the Contentlet record
 		dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
@@ -1964,7 +1936,7 @@ public class IntegrityUtil {
 		dc.addParam(languageId);
 		dc.loadResult();
 
-        if(localWorkingInode!=localLiveInode) {
+        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
             // Remove the conflicting version of the Contentlet record
             dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
             dc.addParam(oldHtmlPageIdentifier);
@@ -1973,7 +1945,7 @@ public class IntegrityUtil {
             dc.loadResult();
         }
 
-		// If fixing all versions, or last version of the same Identifier		
+		// If fixing all versions, or last version of the same Identifier
 		if (fixAllVersions) {
 			// Update other Contentlet languages with new Identifier
 			dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
@@ -2019,7 +1991,7 @@ public class IntegrityUtil {
 		dc.addParam(localWorkingInode);
 		dc.loadResult();
 
-        if(localWorkingInode!=localLiveInode) {
+        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
             // Remove the old Inode record
             dc.setSQL("DELETE FROM inode WHERE inode = ?");
             dc.addParam(localLiveInode);
@@ -2036,7 +2008,7 @@ public class IntegrityUtil {
         newWorkingContentPage.setInode(remoteWorkingInode);
 		indexAPI.addContentToIndex(newWorkingContentPage);
 
-        if(remoteWorkingInode!=remoteLiveInode) {
+        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
             Contentlet newLiveContentPage = new Contentlet();
             newWorkingContentPage.setStructureInode(existingLiveContentPage
                     .getStructureInode());
@@ -2051,20 +2023,20 @@ public class IntegrityUtil {
 		// Remove the Lucene index for the old page
 		indexAPI.removeContentFromIndex(existingWorkingContentPage);
 
-        if(!existingWorkingContentPage.getInode().equals(existingLiveContentPage.getInode())) {
+        if(UtilMethods.isSet(existingLiveContentPage) && !existingWorkingContentPage.getInode().equals(existingLiveContentPage.getInode())) {
             indexAPI.removeContentFromIndex(existingLiveContentPage);
         }
 
 		// Clear cache entries of ALL versions of the Contentlet too
 		CacheLocator.getContentletCache().remove(localWorkingInode);
 
-        if(localWorkingInode!=localLiveInode) {
+        if(UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)) {
             CacheLocator.getContentletCache().remove(localLiveInode);
         }
 
         CacheLocator.getIdentifierCache().removeFromCacheByInode(localWorkingInode);
 
-        if(localWorkingInode!=localLiveInode) {
+        if(UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)) {
             CacheLocator.getIdentifierCache().removeFromCacheByInode(localLiveInode);
         }
 		// Refresh all or only language-specific versions of the page
@@ -2086,7 +2058,7 @@ public class IntegrityUtil {
 	/**
 	 * Returns the correct numeric data type for the language ID, depending on
 	 * the current database.
-	 * 
+	 *
 	 * @return The database-dependent keyword to represent the language ID.
 	 */
 	private String getIntegerKeyword() {
@@ -2104,5 +2076,5 @@ public class IntegrityUtil {
 		}
 		return keyword;
 	}
-    
+
 }

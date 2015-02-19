@@ -795,8 +795,15 @@ public class IntegrityResource extends WebResource {
                         break;
                 }
 
-                columns.add("local_inode");
-                columns.add("remote_inode");
+                if(integrityType==IntegrityType.HTMLPAGES) {
+                    columns.add("local_working_inode");
+                    columns.add("remote_working_inode");
+                    columns.add("local_live_inode");
+                    columns.add("remote_live_inode");
+                } else {
+                    columns.add("local_inode");
+                    columns.add("remote_inode");
+                }
 
                 errorContent.put( "columns", columns.toArray() );
 

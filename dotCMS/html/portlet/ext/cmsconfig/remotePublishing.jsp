@@ -565,7 +565,7 @@ function populateTabContent(contentData, id) {
             }
             altRow=!altRow;
             columns.forEach(function (column) {
-                htmlContent += '<td valign="top" nowrap="nowrap">' + value[column] + "</td>";
+                htmlContent += '<td valign="top" nowrap="nowrap" style="font-size:10px">' + value[column] + "</td>";
             });
             htmlContent += '</tr>';
         });
@@ -1070,11 +1070,11 @@ function deleteEnvPushHistory(envId) {
         width:800px;
     }
 </style>
-<div id="integrityResultsDialog" style="width: 850px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" onCancel="closeIntegrityResultsDialog(selectedEndpointId)" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
+<div id="integrityResultsDialog" style="width: 1120px" dojoAttachPoint="dialog" dojoType="dijit.Dialog" onCancel="closeIntegrityResultsDialog(selectedEndpointId)" title="<%= LanguageUtil.get(pageContext, "CheckIntegrity") %>">
 
     <div id="integrityResultsTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
-        <div id="structuresTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
+        <div id="structuresTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "structures") %>" >
             <div id="structuresTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="structuresFixButton"
@@ -1087,7 +1087,7 @@ function deleteEnvPushHistory(envId) {
             </div>
         </div>
 
-        <div id="foldersTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
+        <div id="foldersTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "folders") %>" >
             <div id="foldersTabContentDiv" style="height:280px">No Results</div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="foldersFixButton"
@@ -1100,7 +1100,7 @@ function deleteEnvPushHistory(envId) {
             </div>
         </div>
 
-        <div id="schemesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
+        <div id="schemesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Workflows") %>" >
             <div id="schemesTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="schemesFixButton"
@@ -1113,7 +1113,7 @@ function deleteEnvPushHistory(envId) {
             </div>
         </div>
         
-        <div id="htmlPagesTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "htmlpages") %>" >
+        <div id="htmlPagesTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "htmlpages") %>" >
             <div id="htmlPagesTabContentDiv"></div>
             <div class="buttonRow">
                 <button dojoType="dijit.form.Button" id="htmlPagesFixButton"
