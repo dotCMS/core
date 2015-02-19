@@ -419,7 +419,8 @@
     			}
     			dia = new dijit.Dialog({
     				id			:	"contentletWfDialog",
-    				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>"
+    				title		: 	"<%=LanguageUtil.get(pageContext, "Workflow-Actions")%>",
+    				style		:	"width:520px;height:400px;"
     				});
 
 
@@ -429,7 +430,8 @@
 
     			}
     			myCp = new dojox.layout.ContentPane({
-    				id 			: "contentletWfCP"
+    				id 			: "contentletWfCP",
+    				style		:	"width:500px;height:400px;margin:auto;"
     			}).placeAt("contentletWfDialog");
 
     			dia.show();
