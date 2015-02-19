@@ -147,7 +147,7 @@ public class IntegrityUtil {
             	statement = conn.prepareStatement("select h.inode, h.identifier, i.parent_path, i.asset_name, i.host_inode from htmlpage h join identifier i on h.identifier = i.id");
             } else {
             	// Query the new content pages pages
-				String query = "SELECT DISTINCT"
+				String query = "SELECT DISTINCT "
 						+ "c.identifier, cvi.working_inode, cvi.live_inode, i.parent_path, i.asset_name, i.host_inode, c.language_id "
 						+ "FROM "
 						+ "contentlet c "
@@ -783,7 +783,7 @@ public class IntegrityUtil {
                     .append(", asset_name varchar(255)")
                     .append(", host_identifier varchar(36) not null")
                     .append(", language_id ").append(integerKeyword).append(" not null")
-                    .append(", primary key (inode) )").append((DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":""));
+                    .append(", primary key (working_inode) )").append((DbConnectionFactory.isOracle()?" ON COMMIT PRESERVE ROWS ":""));
         } else {
             createTempTable.append("create ").append(tempKeyword).append(" table ").append(tempTableName)
                     .append(" (inode varchar(36) not null")
@@ -814,16 +814,16 @@ public class IntegrityUtil {
 
             if (type.equals(IntegrityType.CONTENTPAGES)) {
                 workingInode = htmlpages.get(i);
-                liveInode = htmlpages.get(i++);
+                liveInode = htmlpages.get(++i);
             } else {
                 htmlPageInode = htmlpages.get(i);
             }
 
-            String htmlPageIdentifier = htmlpages.get(i++);
-            String htmlPageParentPath = htmlpages.get(i++);
-            String htmlPageAssetName = htmlpages.get(i++);
-            String htmlPageHostIdentifier = htmlpages.get(i++);
-            String htmlPageLanguage = htmlpages.get(i++);
+            String htmlPageIdentifier = htmlpages.get(++i);
+            String htmlPageParentPath = htmlpages.get(++i);
+            String htmlPageAssetName = htmlpages.get(++i);
+            String htmlPageHostIdentifier = htmlpages.get(++i);
+            String htmlPageLanguage = htmlpages.get(++i);
             dc.setSQL(INSERT_TEMP_TABLE);
 
             if (type.equals(IntegrityType.CONTENTPAGES)) {
@@ -844,7 +844,7 @@ public class IntegrityUtil {
         }
         htmlpages.close();
 
-        String resultsTableName = getResultsTableName(IntegrityType.HTMLPAGES);
+        String resultsTableName = getResultsTableName(type);
 
         //Compare the data from the CSV to the local database data and see if we have conflicts.
         String selectSQL = null;
@@ -865,7 +865,7 @@ public class IntegrityUtil {
 					+ "and li.id <> ri.identifier";
         } else {
         	// Query the new content pages
-			selectSQL = "SELECT "
+			selectSQL = "SELECT DISTINCT "
 					+ "li.asset_name as html_page, lcvi.working_inode as local_working_inode, lcvi.live_inode as local_live_inode, "
                     + "t.working_inode as remote_working_inode, t.live_inode as remote_live_inode, "
 					+ "lc.identifier as local_identifier, t.identifier as remote_identifier, "
@@ -903,7 +903,7 @@ public class IntegrityUtil {
             String insertSQL = null;
             if (type.equals(IntegrityType.HTMLPAGES)) {
             	// Query the legacy pages
-	            insertSQL = "insert into " + resultsTableName
+	            insertSQL = "insert into " + resultsTableName + " (html_page, local_working_inode, remote_working_inode, local_identifier, remote_identifier, endpoint_id, language_id) "
 	                + " select " + fullHtmlPage + " as html_page, "
 	                + "lh.inode as local_inode, "
 	                + "ri.inode as remote_inode, "
@@ -922,7 +922,7 @@ public class IntegrityUtil {
             } else {
             	// Query the new content pages
             	insertSQL = "insert into " + resultsTableName + " "
-            			+ "select " + fullHtmlPage + " as html_page, "
+            			+ "select DISTINCT " + fullHtmlPage + " as html_page, "
             			+ "lcvi.working_inode as local_working_inode, lcvi.live_inode as local_live_inode, "
                         + "t.working_inode as remote_working_inode, t.live_inode as remote_live_inode, "
             			+ "lc.identifier as local_identifier, t.identifier as remote_identifier, "
@@ -1680,7 +1680,7 @@ public class IntegrityUtil {
     	DotConnect dc = new DotConnect();
         String tableName = getResultsTableName( IntegrityType.HTMLPAGES );
         //Get the information of the IR.
-		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_inode, remote_inode, language_id FROM " + tableName + " WHERE endpoint_id = ?" );
+		dc.setSQL( "SELECT html_page, local_identifier, remote_identifier, local_working_inode, remote_working_inode, language_id FROM " + tableName + " WHERE endpoint_id = ?" );
 		dc.addParam( serverId );
 		List<Map<String, Object>> results = dc.loadObjectResults();
 		Map<String, Integer> versionCount = new HashMap<String, Integer>();
@@ -1738,7 +1738,7 @@ public class IntegrityUtil {
 		String newHtmlPageIdentifier = (String) pageData
 				.get("remote_identifier");
 		String assetName = (String) pageData.get("html_page");
-		String localInode = (String) pageData.get("local_inode");
+		String localInode = (String) pageData.get("local_working_inode");
 		// We need only the last part of the url, not the whole path.
 		String[] assetNamebits = assetName.split("/");
 		assetName = assetNamebits[assetNamebits.length - 1];
@@ -1876,7 +1876,7 @@ public class IntegrityUtil {
 		dc.addParam(localWorkingInode);
         dc.loadResult();
 
-        if(remoteWorkingInode!=remoteLiveInode) {
+        if(!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type) "
                     + "SELECT ?, owner, idate, type "
                     + "FROM inode i WHERE i.inode = ?");
@@ -1901,7 +1901,7 @@ public class IntegrityUtil {
 		dc.addParam(languageId);
 		dc.loadResult();
 
-        if(remoteWorkingInode!=remoteLiveInode) {
+        if(!remoteWorkingInode.equals(remoteLiveInode)  && UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
             contentletQuery = "INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
                     + "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, ?, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
                     + "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.live_inode) WHERE c.identifier = ? and c.language_id = ?";
@@ -1916,43 +1916,47 @@ public class IntegrityUtil {
         }
 
 		// Insert the new Contentlet_version_info record with the new Inode
-		dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-				+ "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
-				+ "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
-		dc.addParam(newHtmlPageIdentifier);
-		dc.addParam(languageId);
-		dc.addParam(remoteWorkingInode);
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.addParam(localWorkingInode);
-		dc.addParam(languageId);
-		dc.loadResult();
 
-        if(remoteWorkingInode!=remoteLiveInode) {
+        if(!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
             dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
-                    + "FROM contentlet_version_info WHERE identifier = ? AND live_inode = ? AND lang = ?");
+                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
+                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
             dc.addParam(newHtmlPageIdentifier);
             dc.addParam(languageId);
+            dc.addParam(remoteWorkingInode);
             dc.addParam(remoteLiveInode);
             dc.addParam(oldHtmlPageIdentifier);
-            dc.addParam(localLiveInode);
+            dc.addParam(localWorkingInode);
+            dc.addParam(languageId);
+            dc.loadResult();
+        } else {
+            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
+                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+            dc.addParam(newHtmlPageIdentifier);
+            dc.addParam(languageId);
+            dc.addParam(remoteWorkingInode);
+            dc.addParam(oldHtmlPageIdentifier);
+            dc.addParam(localWorkingInode);
             dc.addParam(languageId);
             dc.loadResult();
         }
 
-
 		// Remove the live_inode references from Contentlet_version_info
-		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND live_inode = ?");
-		dc.addParam(oldHtmlPageIdentifier);
-		dc.addParam(languageId);
-		dc.addParam(localLiveInode);
-		dc.loadResult();
+        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
+            dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND live_inode = ?");
+            dc.addParam(oldHtmlPageIdentifier);
+            dc.addParam(languageId);
+            dc.addParam(localLiveInode);
+            dc.loadResult();
+        }
 		// Remove the working_inode references from Contentlet_version_info
 		dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
 		dc.addParam(oldHtmlPageIdentifier);
 		dc.addParam(languageId);
 		dc.addParam(localWorkingInode);
 		dc.loadResult();
+
 		// Remove the conflicting version of the Contentlet record
 		dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
 		dc.addParam(oldHtmlPageIdentifier);
