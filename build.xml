@@ -91,7 +91,7 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="../../${target.root}/WEB-INF/lib">
-            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
             <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
@@ -101,7 +101,7 @@
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
         <fileset dir="${lib.app}">
-            <include name="dot.ant-tooling-ukv_*.jar" />
+            <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
             <include name="dot.tika-app-1.3_*.jar" />
         </fileset>
