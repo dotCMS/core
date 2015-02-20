@@ -20,6 +20,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
@@ -177,7 +179,6 @@ public class LinkCheckerAPITest extends TestBase {
     @Test
     public void findInvalidLinks() throws Exception {
 
-
         //////////////////////////
         // basic external links //
         //////////////////////////
@@ -219,33 +220,10 @@ public class LinkCheckerAPITest extends TestBase {
         Folder Fa=APILocator.getFolderAPI().findFolderByPath("/a_test/", host, sysuser, false);
         Folder Fab=APILocator.getFolderAPI().findFolderByPath("/a_test/b_test", host, sysuser, false);
 
-        HTMLPage page1=new HTMLPage();
-        page1.setFriendlyName("index");
-        page1.setPageUrl("index."+pageExt);
-        page1.setTitle("index page");
-        page1.setTemplateId(template.getIdentifier());
-        page1=APILocator.getHTMLPageAPI().saveHTMLPage(page1, template, Fa, sysuser, false);
-        
-        HTMLPage page2=new HTMLPage();
-        page2.setFriendlyName("something");
-        page2.setPageUrl("something."+pageExt);
-        page2.setTitle("something");
-        page2.setTemplateId(template.getIdentifier());
-        page2=APILocator.getHTMLPageAPI().saveHTMLPage(page2, template, Fa, sysuser, false);
-        
-        HTMLPage page3=new HTMLPage();
-        page3.setFriendlyName("index");
-        page3.setPageUrl("index."+pageExt);
-        page3.setTitle("index page");
-        page3.setTemplateId(template.getIdentifier());
-        page3=APILocator.getHTMLPageAPI().saveHTMLPage(page3, template, Fab, sysuser, false);
-        
-        HTMLPage page4=new HTMLPage();
-        page4.setFriendlyName("something");
-        page4.setPageUrl("something."+pageExt);
-        page4.setTitle("something");
-        page4.setTemplateId(template.getIdentifier());
-        page4=APILocator.getHTMLPageAPI().saveHTMLPage(page4, template, Fab, sysuser, false);
+        IHTMLPage page1=createDummyPage("index","index", "index", template, Fa, null,false);
+        IHTMLPage page2=createDummyPage("something","something", "something", template, Fa, null,false);
+        IHTMLPage page3=createDummyPage("index","index", "index", template, Fab, null,false);
+        IHTMLPage page4=createDummyPage("something","something", "something", template, Fab, null,false);
         
         extlinks=new String[] {
             page1.getURI(), page2.getURI(), page3.getURI(), page4.getURI(), // direct hit!
@@ -338,12 +316,7 @@ public class LinkCheckerAPITest extends TestBase {
         // now lets add some salt here. If the content is added in a page in host2 it
         // should break the internal links
         Folder home=APILocator.getFolderAPI().createFolders("/home/", host2, sysuser, false);
-        HTMLPage page5=new HTMLPage();
-        page5.setFriendlyName("something");
-        page5.setPageUrl("something."+pageExt);
-        page5.setTitle("something");
-        page5.setTemplateId(template.getIdentifier());
-        page5=APILocator.getHTMLPageAPI().saveHTMLPage(page5, template, home, sysuser, false);
+        IHTMLPage page5=createDummyPage("something","something", "something", template, home, null, false);
 
         con=new Contentlet();
         con.setStringProperty("html", "<html><body>" +
@@ -369,67 +342,23 @@ public class LinkCheckerAPITest extends TestBase {
         for(InvalidLink link : invalids)
             assertTrue(links.remove(link.getUrl()));
         
-        
-        // new htmls
+		///////////////////////////////////////
+		// Content htmlpages                 //
+		///////////////////////////////////////
         
         APILocator.getFolderAPI().createFolders("/a_html_asset_test/b_html_asset_test/", host, sysuser, false);
         Folder Fahtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/", host, sysuser, false);
         Folder Fabhtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/b_html_asset_test", host, sysuser, false);
         
-        Contentlet contentAsset1=new Contentlet();
-        contentAsset1.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentAsset1.setHost(host.getIdentifier());
-        contentAsset1.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "index");
-        contentAsset1.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "index");
-        contentAsset1.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "index page");
-        contentAsset1.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-        contentAsset1.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
-        contentAsset1.setFolder(Fahtml.getInode());
-        contentAsset1=APILocator.getContentletAPI().checkin(contentAsset1, sysuser, false);
-        //APILocator.getContentletAPI().isInodeIndexed(pageAsset1.getInode());
-        
-        Contentlet contentAsset2=new Contentlet();
-        contentAsset2.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentAsset2.setHost(host.getIdentifier());
-        contentAsset2.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "something");
-        contentAsset2.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "something");
-        contentAsset2.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "something page");
-        contentAsset2.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-        contentAsset2.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
-        contentAsset2.setFolder(Fahtml.getInode());
-        contentAsset2=APILocator.getContentletAPI().checkin(contentAsset2, sysuser, false);
-                
-        Contentlet contentAsset3=new Contentlet();
-        contentAsset3.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentAsset3.setHost(host.getIdentifier());
-        contentAsset3.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "index");
-        contentAsset3.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "index");
-        contentAsset3.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "index page");
-        contentAsset3.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-        contentAsset3.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
-        contentAsset3.setFolder(Fabhtml.getInode());
-        contentAsset3=APILocator.getContentletAPI().checkin(contentAsset3, sysuser, false);
-        
-        Contentlet contentAsset4=new Contentlet();
-        contentAsset4.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        contentAsset4.setHost(host.getIdentifier());
-        contentAsset4.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "something");
-        contentAsset4.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "something");
-        contentAsset4.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "something page");
-        contentAsset4.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-        contentAsset4.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
-        contentAsset4.setFolder(Fabhtml.getInode());
-        contentAsset4=APILocator.getContentletAPI().checkin(contentAsset4, sysuser, false);
-        
-        HTMLPageAsset pageAsset1 = APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset1);
-        HTMLPageAsset pageAsset2 = APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset2);
-        HTMLPageAsset pageAsset3 = APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset3);
-        HTMLPageAsset pageAsset4 = APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset4);
+        IHTMLPage page6=createDummyPage("index","index", "index", template, Fahtml, host, true);
+        IHTMLPage page7=createDummyPage("something","something", "something", template, Fahtml, host,true);
+        IHTMLPage page8=createDummyPage("index","index", "index", template, Fabhtml, host, true);
+        IHTMLPage page9=createDummyPage("something","something", "something", template, Fabhtml, host, true);
         extlinks=new String[] {
-            pageAsset1.getURI(), pageAsset2.getURI(),pageAsset3.getURI(), pageAsset4.getURI(), // direct hit!
+        	page6.getURI(), page7.getURI(),page8.getURI(), page9.getURI(), // direct hit!
             "/a_html_asset_test/", "/a_html_asset_test/b_html_asset_test", // should be good as it hits index page
             "/a_html_asset_test/notnotnot_exists",  // a bad one!
-            pageAsset2.getURI()+"?a=1&b=2" // with query string
+            page7.getURI()+"?a=1&b=2" // with query string
         };
 
         sb=new StringBuilder("<html><body>\n");
@@ -448,6 +377,25 @@ public class LinkCheckerAPITest extends TestBase {
         assertEquals(invalids.size(),1);
         assertEquals(invalids.get(0).getUrl(),"/a_html_asset_test/notnotnot_exists");
           
+        // content on host2 referencing pages on host
+        con=new Contentlet();
+        con.setStringProperty("html", "<html><body>" +
+        		              "<a href='"+page6.getURI()+"'>thislink</a>" +
+        		              "<a href='"+page7.getURI()+"'>thislink</a>" +
+        		              "<a href='"+page8.getURI()+"'>thislink</a>" +
+        				      "</body></html>");
+        con.setStructureInode(structure.getInode());
+        con.setHost(host2.getIdentifier());
+        con=APILocator.getContentletAPI().checkin(con, sysuser, false);
+        APILocator.getContentletAPI().isInodeIndexed(con.getInode());
+
+        // now all those links should be broken
+        invalids = APILocator.getLinkCheckerAPI().findInvalidLinks(con);
+        assertTrue(invalids!=null);
+        assertEquals(3,invalids.size());
+        links=new HashSet<String>(Arrays.asList(new String[] {page6.getURI(),page7.getURI(),page8.getURI()}));
+        for(InvalidLink link : invalids)
+            assertTrue(links.remove(link.getUrl()));
     }
 
     @Test
@@ -473,5 +421,31 @@ public class LinkCheckerAPITest extends TestBase {
     @Test
     public void findAllCount() {
 
+    }
+    
+    private IHTMLPage createDummyPage(String friendlyName, String URL, String title, Template template, Folder folder, Host host, boolean isContent) throws DotDataException, DotSecurityException{
+    	if(isContent){
+    		Contentlet contentAsset=new Contentlet();
+            contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+            contentAsset.setHost(host.getIdentifier());
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, friendlyName);
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, URL);
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, title);
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
+            contentAsset.setFolder(folder.getInode());
+            contentAsset=APILocator.getContentletAPI().checkin(contentAsset, sysuser, false);
+            
+            return APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset);
+    	}
+    	
+    	HTMLPage page=new HTMLPage();
+        page.setFriendlyName(friendlyName);
+        page.setPageUrl(URL+"."+pageExt);
+        page.setTitle(title);
+        page.setTemplateId(template.getIdentifier());
+        page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
+    	
+    	return page; 	
     }
 }
