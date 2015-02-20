@@ -24,6 +24,7 @@ public class NotificationAPITest extends TestBase  {
 	@Test
 	public void testSaveDeleteNotification() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
+		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
 		Notification n = new Notification("NotificationTest1", NotificationLevel.ERROR, sysuser.getUserId());
 		n.setId(UUID.randomUUID().toString());
 
@@ -50,7 +51,8 @@ public class NotificationAPITest extends TestBase  {
 	@Test
 	public void testNewNotificationsCount() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
-
+		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
+		
 		try {
 			HibernateUtil.startTransaction();
 			for(int i=0; i<10; i++) {
@@ -58,7 +60,6 @@ public class NotificationAPITest extends TestBase  {
 				n.setId(UUID.randomUUID().toString());
 				FactoryLocator.getNotificationFactory().saveNotification(n);
 			}
-
 			assertTrue(APILocator.getNotificationAPI().getNewNotificationsCount(sysuser.getUserId())==10);
 
 			APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
@@ -79,7 +80,8 @@ public class NotificationAPITest extends TestBase  {
 	@Test
 	public void testGetPaginatedNotifications() throws Exception {
 		User sysuser=APILocator.getUserAPI().getSystemUser();
-
+		APILocator.getNotificationAPI().deleteNotifications(sysuser.getUserId());
+		
 		try {
 			HibernateUtil.startTransaction();
 
