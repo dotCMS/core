@@ -2,6 +2,7 @@
 .browserTable th{font-weight:bold;padding:7px 8px;}
 .browserTable td{padding:6px 10px;border-top: 1px dotted silver;cursor: pointer;white-space: nowrap;}
 .browserTable td a{text-decoration: none; color: black;}
+.browserTableStatus td{padding:0px; border-top: 0px; cursor: pointer;white-space: nowrap;}
 
 .contentRowSelected {background: #E0E9F6;}
 .contentRowRoller {background: #E0E9F6;}

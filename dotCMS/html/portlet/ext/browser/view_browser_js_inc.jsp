@@ -944,19 +944,30 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	 }
 
 	 function getStatusHTML (asset) {
-		var html = 	'';
+		var html = 	'<table class="browserTableStatus"><tr>';
+
+        //if(!v.isLive() && v.isWorking() && (!v.isArchived() && v.isWorking())){
+
+        if(!asset.live && asset.working) {
+            html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="workingIcon"></span></td>\n';
+        } else {
+            html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
+        }
+
 	 	if (asset.deleted) {
-	 		html += '		<span id="' + asset.inode + '-StatusArchIMG" class="archivedIcon"></span>\n';
-	 	} else if (asset.live) {
-	 		html +=	'		<span id="' + asset.inode + '-StatusLiveIMG" class="liveIcon"></span>\n';
-	 	} else if (asset.working) {
-	 		html +=	'		<span id="' + asset.inode + '-StatusWorkIMG" class="workingIcon"></span>\n';
-	 	}
-	 	html +=		'		&nbsp;\n';
+	 		html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="archivedIcon"></span></td>\n';
+	 	} else if (asset.hasLiveVersion) {
+            html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="liveIcon"></span></td>\n';
+        } else {
+            html += '		<td><span id="' + asset.inode + '-StatusArchIMG" class="greyDotIcon" style="opacity:.4"></span></td>\n';
+        }
+
 	 	if (asset.locked)
-			html +=	'		<span id="' + asset.inode + '-StatusLockedIMG" class="lockIcon"><span>\n';
+			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="lockIcon"><span></td>\n';
 		else
-			html +=	'		<span id="' + asset.inode + '-StatusLockedIMG" class="shimIcon"></span>\n';
+			html +=	'		<td><span id="' + asset.inode + '-StatusLockedIMG" class="shimIcon"></span></td>\n';
+
+        html += "</tr></table>";
 		return html;
 	 }
 
