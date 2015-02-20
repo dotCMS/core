@@ -1,4 +1,4 @@
-<div style="padding:10px;">
+<div style="margin:10px;">
 <h1>Elasticsearch in dotCMS</h1>
 
 
@@ -140,7 +140,7 @@ $results.response&lt;br&gt;
 <h2><a name="#esPortletRest"></a>RESTful api</h2>
 <hr>
 <p>You can also pull contents from elasticsearch using the RESTful api - here we are curling for results from the command line </p>
-<pre><code>curl -XGET http://localhost:8080/api/es/search -d '{
+<pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/search -d '{
     "query": {
         "bool": {
             "must": {
@@ -153,7 +153,7 @@ $results.response&lt;br&gt;
 }'
 </code></pre>
 <p>curl for facets (the /api/es/raw endpoint gives you the the raw SearchResponse directly from ElasticSearch)</p>
-<pre><code>curl -XGET http://localhost:8080/api/es/raw -d '
+<pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/raw -d '
     {
         "query" : { "query_string" : {"query" : "gas*"} },
         "facets" : {
@@ -167,7 +167,7 @@ $results.response&lt;br&gt;
 
 
 <p>curl for suggestions (Did you mean?)</p>
-<pre><code>curl -XGET http://localhost:8080/api/es/raw -d '
+<pre><code>curl -H "Content-Type: application/json" -XPOST http://localhost:8080/api/es/raw -d '
     {
       "suggest" : {
         "title-suggestions" : {
@@ -197,7 +197,7 @@ $results.response&lt;br&gt;
             "filter": {
                 "geo_distance": {
                     "distance": "20km",
-                    "news.latlon": {
+                    "news.latlong": {
                         "lat": 37.776,
                         "lon": -122.41
                     }
@@ -220,7 +220,7 @@ $results.response&lt;br&gt;
             "filter": {
                 "geo_distance": {
                     "distance": "20km",
-                    "news.latlon": {
+                    "news.latlong": {
                         "lat": 42.648899,
                         "lon": -71.165497
                     }
@@ -238,7 +238,7 @@ $results.response&lt;br&gt;
     "sort" : [
         {
             "_geo_distance" : {
-                "news.latlon" : {
+                "news.latlong" : {
                     "lat" : 42,
                     "lon" : -71
                 },
@@ -252,4 +252,6 @@ $results.response&lt;br&gt;
     }
 }</code></pre>
 
+
+<div style="height:300px"></div>
 </div>

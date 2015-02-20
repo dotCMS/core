@@ -356,8 +356,10 @@ function showEsHelpDialog(){
 
 	<%}%>
 	
+
+</div>
+
 		
-	<div id="esSearchHelpDia" title="ElasticSearch Help" dojoType="dijit.Dialog" style="display: none;width:80%;height:80%;overflow: scroll;">
-		<jsp:include page="/WEB-INF/jsp/es_search_portlet/es-search-help.jsp"></jsp:include>
-	</div>
+<div id="esSearchHelpDia" title="ElasticSearch Help" dojoType="dijit.Dialog">
+	<jsp:include page="/WEB-INF/jsp/es_search_portlet/es-search-help.jsp"></jsp:include>
 </div>
