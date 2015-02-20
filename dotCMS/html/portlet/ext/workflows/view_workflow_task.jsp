@@ -111,17 +111,7 @@
 	dojo.require('dotcms.dijit.FileBrowserDialog');
 	dojo.require("dotcms.dijit.ContentPreviewDialog");
 	var contentPreview = new dotcms.dijit.ContentPreviewDialog({contentletId:"<%=contentlet.getInode()%>"});
-	function addComment () {
-		var comment = document.getElementById("addCommentText").value;
-		//document.getElementById("addCommentDiv").style.display = "none";
 
-		document.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-									<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
-									<portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
-									<portlet:param name="cmd" value="add_comment" />
-									<portlet:param name="referer" value="<%= referer %>" />
-								</portlet:actionURL>&comment='+comment;
-	}
 	function showAssign () {
 		document.getElementById("assignSelect").selectedIndex = -1;
 		document.getElementById("assignDiv").style.display = "";
@@ -251,9 +241,8 @@
 
 		<table class="listingTable">
 			<tr>
-				<th colspan="2" valign="bottom">
+				<th colspan="2" valign="top">
 					<div>
-						<div style="font-size:14pt;font-weight:normal;padding:5px;"><span class="documentIcon"></span>&nbsp;<a href="javascript:doEdit()"><%= contentlet.getTitle() %></a>
 						<div style="float:right;border:1px solid silver;background: white;padding:5px;">
 							<%if (contentlet.isLive()) {%>
 					            <span class="liveIcon"></span>
@@ -267,9 +256,26 @@
 					        	<span class="lockIcon"  title="<%=UtilMethods.javaScriptify(u.getFullName()) %>"></span>
 					   		<%} %>
 						</div>
-
+						
+						
+						<div style="font-size:14pt;font-weight:normal;padding:5px;">
+							<% if(structure.getStructureType() ==1){ %>
+								<span class="structureIcon"></span>
+							<%}else if(structure.getStructureType() ==2){ %>
+								<span class="gearIcon"></span>
+							<%}else if(structure.getStructureType() ==3){ %>
+								<span class="formIcon"></span>
+							<%}else if(structure.getStructureType() ==4){ %>
+								<span class="documentIcon"></span>
+							<%}else if(structure.getStructureType() ==5){ %>
+								<span class="pageIcon"></span>
+						    <%} %>
+							<a href="javascript:doEdit()"><%= contentlet.getTitle() %></a>
 						</div>
-						<div style="padding:5px;padding-left:10px;"><%=LanguageUtil.get(pageContext, "Step") %> : <span style="font-size:12pt;font-weight:normal"><%=step.getName()%></span></div>
+						<div style="padding:5px;padding-left:10px;">
+						<%=LanguageUtil.get(pageContext, "Type") %> :
+						
+						<span style="font-size:12pt;font-weight:normal"><%=structure.getName()%>  &gt; <%=step.getName()%></span></div>
 					</div>
 				</th>
 			</tr>
@@ -396,38 +402,43 @@
 
 
 
-				<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
+		<jsp:include page="/html/portlet/ext/contentlet/view_contentlet_popup_inc.jsp"></jsp:include>
 
 
 
 
 
 
-
-
-		</div>
-	<!-- START Comments Tab -->
-		<div id="TabOne" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Comments") %>">
 
 			<div class="buttonRow" style="text-align:right;">
 				<% if (!step.isResolved()) { %>
 					<div dojoType="dijit.form.DropDownButton" iconClass="plusIcon">
 						<span><%= LanguageUtil.get(pageContext, "Add-a-Comment") %></span>
 						<div dojoType="dijit.TooltipDialog" id="dialog1" title="Login Form" execute="addComment();">
-							<textarea id="addCommentText" class="mceNoEditor" rows="4" cols="60"></textarea>
+							<form id="commentFormlet" method="post" action="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
+									<portlet:param name="struts_action" value="/ext/workflows/edit_workflow_task" />
+									<portlet:param name="inode" value="<%= String.valueOf(task.getInode()) %>" />
+								</portlet:actionURL>">
+							<input type="hidden" name="referer" value="<%= referer %>">
+							<input type="hidden" name="cmd" value="add_comment">
+							
+							<textarea id="comment" name="comment" class="mceNoEditor" rows="4" cols="60"></textarea>
 							<div class="buttonRow">
-                                <button dojoType="dijit.form.Button" type="button" onClick="addComment();" iconClass="infoIcon">
+                                <button dojoType="dijit.form.Button" type="button" onClick="dojo.byId('commentFormlet').submit()" iconClass="infoIcon">
 								    <%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Add-Comment")) %>
                                 </button>
 							</div>
+							</form>
 						</div>
 					</div>
 				<%}%>
 			</div>
 
 
-				<table class="listingTable">
-
+			<table class="listingTable">
+				<tr>
+					<th colspan=10><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Comments")) %></th>
+				</tr>
 				<%
 				    String str_style2="";
 					int y =0;
@@ -447,8 +458,8 @@
 					<tr <%=str_style2 %>>
 						<td>
 							<p>
-								<strong><%= LanguageUtil.get(pageContext, "Comment-By") %>:</strong> <%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %><br/>
-								<strong><%= LanguageUtil.get(pageContext, "Created") %>:</strong> <%= DateUtil.prettyDateSince(comment.getCreationDate()) %>
+								<%= APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()) == null ? "": APILocator.getRoleAPI().loadRoleById(comment.getPostedBy()).getName() %> &nbsp;(<%= DateUtil.prettyDateSince(comment.getCreationDate()) %>)<br/>
+
 								<div style="font-size: 10pt;margin:5px;margin-top:0px;"><%= comment.getComment() %><%if (commentsIt.hasNext()) { %><% } %></div>
 							</p>
 						</td>
@@ -463,7 +474,7 @@
 					</tr>
 				<% } %>
 
-				</table>
+			</table>
 
 			<!-- END Comments -->
 
