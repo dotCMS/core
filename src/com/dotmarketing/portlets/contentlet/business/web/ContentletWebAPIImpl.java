@@ -268,11 +268,13 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 						Logger.debug(this, "MTree is null!!! Creating new one!");
 						MultiTree mTree = new MultiTree(htmlParentId.getInode(), containerIdentifier.getInode(),
 														contenletIdentifier.getInode(),null,contentletCount);
+						
 						Contentlet htmlContentlet = conAPI.find(htmlpage_inode,
-								user, false);
-						String pageIdentifier = htmlContentlet.getIdentifier();
-						long contentletLang = contentlet.getLanguageId();
-						if (htmlContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+								user, false);						
+						if (UtilMethods.isSet(htmlContentlet) && UtilMethods.isSet(htmlContentlet.getInode())
+								&& (htmlContentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE)) {
+							String pageIdentifier = htmlContentlet.getIdentifier();
+							long contentletLang = contentlet.getLanguageId();
 							ContentletVersionInfo versionInfo = APILocator
 									.getVersionableAPI()
 									.getContentletVersionInfo(pageIdentifier,
