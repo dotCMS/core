@@ -38,6 +38,8 @@ import com.liferay.portal.util.PortalUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
 /**
  * @author David
  */
@@ -466,9 +468,16 @@ public class StructureAjax {
 
 	}
 
-	public Map<String, Object> getStructureDetails(String StructureInode){
-		Map<String, Object> structureDetails = new HashMap<String, Object>();
+	public Map<String, Object> getStructureDetails(String StructureInode) throws PortalException, SystemException, DotDataException {
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = userWebAPI.getLoggedInUser(req);
+
 		Structure str = StructureCache.getStructureByInode(StructureInode);
+
+        if(!APILocator.getPermissionAPI().doesUserHavePermission(str, PERMISSION_READ, user, false))
+            return  new HashMap<String, Object>();
+
+		Map<String, Object> structureDetails = new HashMap<String, Object>();
 		structureDetails.put("inode", StructureInode);
 		structureDetails.put("name", str.getName());
 		structureDetails.put("velocityVarName", str.getVelocityVarName());

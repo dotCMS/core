@@ -10,6 +10,8 @@
 <%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
+<%@ page import="com.dotmarketing.business.CacheLocator" %>
+<%@ page import="static com.dotmarketing.business.PermissionAPI.PERMISSION_READ" %>
 
 <%
 Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
@@ -1710,8 +1712,14 @@ dojo.require("dotcms.dojo.push.PushHandler");
             style: "width: 420px; height:130px; overflow: auto"
         });
 		var dialogHtml = getFileAssetDialogHtml(folderMap, fileAssetTypeMap);
-		dialogHtml = dojo.string.substitute(dialogHtml, { stInode:fileAssetTypeMap.inode, folderInode:folderMap.inode, isMultiple:isMultiple});
-		fileAssetDialog.attr("content", dialogHtml);
+
+        if(!fileAssetTypeMap.inode) {
+            fileAssetTypeMap.inode = 0;
+        }
+
+        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:fileAssetTypeMap.inode, folderInode:folderMap.inode, isMultiple:isMultiple});
+
+        fileAssetDialog.attr("content", dialogHtml);
 		fileAssetDialog.show();
 	}
 
@@ -1737,7 +1745,16 @@ dojo.require("dotcms.dojo.push.PushHandler");
             style: "width: 420px; height:130px; overflow: auto"
         });
         var dialogHtml = getHTMLPageAssetDialogHtml();
-        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%=APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost)%>', folderInode:folderMap.inode });
+
+        <%
+             String defaultPageSt = "0";
+             Structure defaultHTMLPageST = StructureCache.getStructureByInode(APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost));
+             if(APILocator.getPermissionAPI().doesUserHavePermission(defaultHTMLPageST, PERMISSION_READ, user, false)) {
+               defaultPageSt = defaultHTMLPageST.getInode();
+             }
+        %>
+
+        dialogHtml = dojo.string.substitute(dialogHtml, { stInode:'<%=defaultPageSt%>', folderInode:folderMap.inode });
         pageAssetDialog.attr("content", dialogHtml);
         pageAssetDialog.show();
     }
