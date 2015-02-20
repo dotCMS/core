@@ -350,6 +350,8 @@ public class BrowserAPI {
 		            
 		              
 					}
+
+                    pageMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(page));
 					
 					returnList.add(pageMap);
 				}
