@@ -74,7 +74,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				CheckoutContentActionlet.class,
 				UnpublishContentActionlet.class,
 				PublishContentActionlet.class,
-				PublishHTMLPageRelatedContentActionlet.class,
 				NotifyAssigneeActionlet.class,
 				UnarchiveContentActionlet.class,
 				ResetTaskActionlet.class,
