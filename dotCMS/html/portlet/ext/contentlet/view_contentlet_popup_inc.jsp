@@ -138,41 +138,30 @@ if(!hasPermissions) {
 	String content_css = "content_css : \"" + Config.getStringProperty("WYSIWYG_CSS", "/html/css/tiny_mce.css") + "\",";
 %>
 
-<%if(Config.getBooleanProperty("ENABLE_GZIP",true)){ %>
-<script type="text/javascript" src="/html/js/tinymce/js/tinymce/tiny_mce_gzip.js"></script>
-<%}else { %>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
-<%}%>
+
 
 <script type="text/javascript">
-	function setupTinyMce(){
-		if(<%=Config.getBooleanProperty("ENABLE_GZIP",true) %>){
-			tinyMCE_GZ.init({
-				themes : "advanced",
-				plugins : "noneditable",
-				languages : '<%= user.getLanguageId().substring(0,2) %>',
-				disk_cache : true,
-				readonly:true,
-				<%=content_css%>
-			});
-		}else{
-			tinymce.init({
-				mode : "textareas",
-				editor_deselector : "mceNoEditor",
-				theme : "advanced",
-				readonly:true,
-				plugins : "noneditable",
-				languages : '<%= user.getLanguageId().substring(0,2) %>',
-				disk_cache : true,
-				<%=content_css%>
-			});
-		}
-	}
 
-	dojo.ready(function(){
-		setupTinyMce();
-
+	tinymce.init({
+	    selector: "textarea",
+	    toolbar: "mybutton",
+	    toolbar: false,
+	    menubar: false,
+	    preview_styles:false,
+	    setup: function(editor) {
+	        editor.addMenuItem('myitem', {
+	            text: 'My menu item',
+	            context: 'tools',
+	            onclick: function() {
+	                editor.insertContent('Some content');
+	            }
+	        });
+	    }
 	});
+	
+
+
 </script>
 
 
@@ -229,6 +218,17 @@ if(!hasPermissions) {
 						<%= content.getTitle()%>
 					</td>
 				</tr>
+				<%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET || structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE ){ %>
+				<%session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true"); %>		
+				<tr class="tRow">
+					<td class="fColumn">
+						<%= LanguageUtil.get(pageContext, "url") %>
+					</td>
+					<td>
+						<a href="<%= id.getPath()%>?host_id=<%=content.getHost() %>&com.dotmarketing.htmlpage.language=<%=content.getLanguageId() %>" target="_blank"><%= id.getPath()%></a>
+					</td>
+				</tr>
+				<%} %>
 				<tr class="tRow">
 					<td class="fColumn">
 						<%= LanguageUtil.get(pageContext, "Identifier") %>
@@ -323,7 +323,15 @@ if(!hasPermissions) {
 						continue;	
 				}
 				
-				if(content ==null || !UtilMethods.isSet( content.get(field.getVelocityVarName()))){
+				if(content ==null 
+						|| !UtilMethods.isSet( content.get(field.getVelocityVarName()))
+						|| capi.getFieldValue(content, field) ==null 
+						|| !UtilMethods.isSet(capi.getFieldValue(content, field).toString().trim())
+								
+								
+						
+						
+						){
 					continue;	
 				}%>
 				
@@ -387,6 +395,7 @@ if(!hasPermissions) {
 						
 						<%--   TextArea --%>
 						<% if (field.getFieldType().equals(Field.FieldType.TEXT_AREA.toString())){ %>
+	
 							<div style="max-height: 150px; width: 500px;font-size:12px;vertical-align: top;overflow:auto;">
 						    	<%=(UtilMethods.isSet(capi.getFieldValue(content, field))
 						    			? UtilMethods.xmlEscape(String.valueOf(capi.getFieldValue(content, field))) 

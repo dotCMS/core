@@ -202,6 +202,8 @@
 							<span class="formIcon"></span>
 						<%}else if(structure.getStructureType() ==4){ %>
 							<span class="documentIcon"></span>
+						<%}else if(structure.getStructureType() ==5){ %>
+							<span class="pageIcon"></span>
 					    <%} %>
 						<%=StructureCache.getStructureByInode(structure.getInode() ).getName()%>
 					</h3>
