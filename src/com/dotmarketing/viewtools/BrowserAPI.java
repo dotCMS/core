@@ -483,6 +483,8 @@ public class BrowserAPI {
 				fileMap.put("isContentlet", true);
 			}
 
+            fileMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(file));
+
 			returnList.add(fileMap);
 		}
 
