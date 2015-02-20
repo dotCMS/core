@@ -287,7 +287,7 @@ public class IntegrityUtil {
             String resultsTable = getResultsTableName(type);
 
             if(type == IntegrityType.HTMLPAGES){
-                statement = conn.prepareStatement("select html_page, remote_inode, local_inode, remote_identifier, local_identifier, language_id from " + resultsTable + " where endpoint_id = ?");
+                statement = conn.prepareStatement("select html_page, remote_working_inode, local_working_inode, remote_live_inode, local_live_inode, remote_identifier, local_identifier, language_id from " + resultsTable + " where endpoint_id = ?");
             } else if(type == IntegrityType.FOLDERS) {
 				statement = conn.prepareStatement("select remote_inode, local_inode, remote_identifier, local_identifier from " + resultsTable + " where endpoint_id = ?");
 			} else {
@@ -299,8 +299,10 @@ public class IntegrityUtil {
             int count = 0;
 
             while (rs.next()) {
-                writer.write(rs.getString("remote_inode"));
-                writer.write(rs.getString("local_inode"));
+                writer.write(rs.getString("remote_working_inode"));
+                writer.write(rs.getString("local_working_inode"));
+                writer.write(rs.getString("remote_live_inode"));
+                writer.write(rs.getString("local_live_inode"));
 
                 if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
                 	writer.write(rs.getString("remote_identifier"));
@@ -1007,10 +1009,10 @@ public class IntegrityUtil {
 			if(type==IntegrityType.FOLDERS) {
 				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
 			} else if(type==IntegrityType.HTMLPAGES) {
-				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, html_page, endpoint_id, language_id) values(?,?,?,?,?,?,?)";
+				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, html_page, endpoint_id, language_id) values(?,?,?,?,?,?,?)";
             }
 
-			while (csvFile.readRecord()) {
+			while (csvFile.readRecord()) { // TODO: FIX THE INDEXES FOR HTMLPAGES
 
 				String localInode = csvFile.get(0);
 				String remoteInode = csvFile.get(1);
@@ -1936,7 +1938,7 @@ public class IntegrityUtil {
 		dc.addParam(languageId);
 		dc.loadResult();
 
-        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
+        if(UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode) && !localLiveInode.equals(localWorkingInode)) {
             // Remove the conflicting version of the Contentlet record
             dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
             dc.addParam(oldHtmlPageIdentifier);
@@ -1991,7 +1993,7 @@ public class IntegrityUtil {
 		dc.addParam(localWorkingInode);
 		dc.loadResult();
 
-        if(UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
+        if(UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode) && !localLiveInode.equals(localWorkingInode)) {
             // Remove the old Inode record
             dc.setSQL("DELETE FROM inode WHERE inode = ?");
             dc.addParam(localLiveInode);
