@@ -1881,7 +1881,14 @@
 
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
-
+						
+						if (cellData.allowUnpublishOfLiveVersion=="true" && workflowMandatory=="false"){
+                          if(selectedStructureVarName == 'calendarEvent'){
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
+                          }else{
+                                popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishContentlet('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ", '" + contentStructureType + "', '" + structure_id + "');\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
+                          }
+                        }
 
 						if (live && (publish=="1") && workflowMandatory=="false"){
                           if(selectedStructureVarName == 'calendarEvent'){
