@@ -991,6 +991,12 @@ public class ContentletAjax {
 			searchResult.put("working", working.toString());
 			Boolean live=con.isLive();
 			searchResult.put("statusIcons", UtilHTML.getStatusIcons(con));
+			if(!con.isLive() && con.isWorking() && !con.isArchived()){
+				if(APILocator.getVersionableAPI().hasLiveVersion(con)){
+					searchResult.put("allowUnpublishOfLiveVersion", "true");
+					searchResult.put("inodeOfLiveVersion", APILocator.getVersionableAPI().getContentletVersionInfo(con.getIdentifier(), con.getLanguageId()).getLiveInode());
+				}
+			}
 
 			searchResult.put("live", live.toString());
 			Boolean isdeleted=con.isArchived();
