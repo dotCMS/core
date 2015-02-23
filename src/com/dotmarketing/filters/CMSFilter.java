@@ -197,7 +197,7 @@ public class CMSFilter implements Filter {
 					response.setHeader("Location", uri +"/" );
 					
 				}
-				response.sendError(301);
+				response.setStatus(301);
 				closeDbSilently();
 				return;
 			} else {
