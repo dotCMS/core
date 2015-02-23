@@ -376,6 +376,7 @@ public class IntegrityResource extends WebResource {
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.STRUCTURES);
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.SCHEMES);
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.HTMLPAGES);
+                                    integrityUtil.discardConflicts(endpointId, IntegrityType.CONTENTPAGES);
                                     HibernateUtil.commitTransaction();
                                     
                                     HibernateUtil.startTransaction();
@@ -794,8 +795,15 @@ public class IntegrityResource extends WebResource {
                         break;
                 }
 
-                columns.add("local_inode");
-                columns.add("remote_inode");
+                if(integrityType==IntegrityType.HTMLPAGES) {
+                    columns.add("local_working_inode");
+                    columns.add("remote_working_inode");
+                    columns.add("local_live_inode");
+                    columns.add("remote_live_inode");
+                } else {
+                    columns.add("local_inode");
+                    columns.add("remote_inode");
+                }
 
                 errorContent.put( "columns", columns.toArray() );
 
@@ -928,10 +936,9 @@ public class IntegrityResource extends WebResource {
             }
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
-            HibernateUtil.startTransaction();
+//            HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
-            HibernateUtil.commitTransaction();
-
+//            HibernateUtil.commitTransaction();
 
         } catch ( Exception e ) {
             try {
