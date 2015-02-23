@@ -166,6 +166,7 @@ public class CMSFilter implements Filter {
 			}
 			if (UtilMethods.isSet(rewrite) && rewrite.contains("//")) {
 				response.sendRedirect(rewrite);
+				
 				closeDbSilently();
 				return;
 			}
@@ -190,11 +191,13 @@ public class CMSFilter implements Filter {
 		if (iAm == IAm.FOLDER) {
 			if (!uri.endsWith("/")) {
 				if(UtilMethods.isSet(queryString)){
-					response.sendRedirect(uri + "/?" + queryString);
+					response.setHeader("Location", uri + "/?" + queryString );
 				}
 				else{
-					response.sendRedirect(uri +"/" );
+					response.setHeader("Location", uri +"/" );
+					
 				}
+				response.sendError(301);
 				closeDbSilently();
 				return;
 			} else {
