@@ -322,8 +322,8 @@ public class EditFolderAction extends DotPortletAction {
 				
 					if (InodeUtils.isSet(prevId.getInode())) {
 						// For messages to be displayed on messages page
-						SessionMessages.add(req, "message",
-						"message.folder.alreadyexists");
+						SessionMessages.add(req, "error",
+						"message.named.asset.alreadyexists");
 						return false;
 					}
 				}
