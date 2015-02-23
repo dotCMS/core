@@ -1009,34 +1009,44 @@ public class IntegrityUtil {
 			if(type==IntegrityType.FOLDERS) {
 				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id) values(?,?,?,?,?)";
 			} else if(type==IntegrityType.HTMLPAGES) {
-				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, html_page, endpoint_id, language_id) values(?,?,?,?,?,?,?)";
+				INSERT_TEMP_TABLE = "insert into " + resultsTable + " (local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, local_identifier, remote_identifier, html_page, endpoint_id, language_id) values(?,?,?,?,?,?,?,?,?)";
             }
 
 			while (csvFile.readRecord()) { // TODO: FIX THE INDEXES FOR HTMLPAGES
 
-				String localInode = csvFile.get(0);
-				String remoteInode = csvFile.get(1);
-				dc.setSQL(INSERT_TEMP_TABLE);
-				dc.addParam(localInode);
-				dc.addParam(remoteInode);
+                String localWorkingInode = csvFile.get(0);
+                String remoteWorkingInode = csvFile.get(1);
 
-				if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
+				dc.setSQL(INSERT_TEMP_TABLE);
+
+				dc.addParam(localWorkingInode);
+				dc.addParam(remoteWorkingInode);
+
+                if(type == IntegrityType.HTMLPAGES) {
+                    String localLiveInode = csvFile.get(2);;
+                    String remoteLiveInode = csvFile.get(3);
+                    String localIdentifier = csvFile.get(4);
+                    String remoteIdentifier = csvFile.get(5);
+                    String htmlPage = csvFile.get(6);
+                    dc.addParam(localLiveInode);
+                    dc.addParam(remoteLiveInode);
+                    dc.addParam(localIdentifier);
+                    dc.addParam(remoteIdentifier);
+                    dc.addParam(htmlPage);
+                } else if(type == IntegrityType.FOLDERS) {
 					String localIdentifier = csvFile.get(2);
 					String remoteIdentifier = csvFile.get(3);
 					dc.addParam(localIdentifier);
 					dc.addParam(remoteIdentifier);
 				}
 
-                if(type == IntegrityType.HTMLPAGES) {
-                    String htmlPage = csvFile.get(4);
-                    dc.addParam(htmlPage);
-                }
-
 				dc.addParam(endpointId);
+
 				if (type == IntegrityType.HTMLPAGES) {
-                    String languageId = csvFile.get(5);
+                    String languageId = csvFile.get(7);
                     dc.addParam(new Long(languageId));
                 }
+
 				dc.loadResult();
 			}
 
