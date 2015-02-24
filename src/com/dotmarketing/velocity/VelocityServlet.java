@@ -425,7 +425,15 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "Page Permissions for URI=" + uri);
 
     
-    		IHTMLPage page = getPage(ident, request, true, VelocityUtil.getWebContext(request, response));
+    		IHTMLPage page = null;
+
+            try {
+                page = getPage(ident, request, true, VelocityUtil.getWebContext(request, response));
+            } catch(DotDataException e) {
+                Logger.info(VelocityServlet.class, "Unable to find live version of page. Identifier: " + ident.getId());
+                response.getWriter().write("There is no live version of this page");
+                return;
+            }
     		String languageStr = "_" + getLanguageId(request);
     
     		// Check if the page is visible by a CMS Anonymous role
@@ -1206,6 +1214,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		try {
 			if(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)!=null)
 				languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
+            else if (request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)!=null)
+                languageId = Long.parseLong((String) request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 		} catch(NumberFormatException e) {
 			Logger.info(VelocityServlet.class, "Bad languageId passed in");
 		}
@@ -1309,7 +1319,7 @@ public abstract class VelocityServlet extends HttpServlet {
 					htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
 				}
 				else{
-					throw dse;
+					throw new DotDataException("Can't find content. Identifier: " + id.getId() + ", Live: " +live+ ", Lang: " + langId, dse);
 				}
 
 			}
