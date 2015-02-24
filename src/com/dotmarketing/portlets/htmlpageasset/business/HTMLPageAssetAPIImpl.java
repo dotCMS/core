@@ -13,6 +13,8 @@ import java.util.Set;
 
 import javax.servlet.http.Cookie;
 
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -192,6 +194,44 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
         }
         return pa;
+    }
+
+    @Override
+    public IHTMLPage getPageByPath(String uri, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException {
+        Identifier id;
+        if(!UtilMethods.isSet(uri)){
+            return null;
+        }
+        try {
+            id = APILocator.getIdentifierAPI().find(host, uri);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), "Unable to find" + uri);
+            return null;
+        }
+        if (id == null || id.getId() == null)
+            return null;
+
+        if ("contentlet".equals(id.getAssetType())) {
+            try {
+
+                ContentletVersionInfo cinfo = APILocator.getVersionableAPI().getContentletVersionInfo( id.getId(), languageId );
+
+                if ( cinfo == null || cinfo.getWorkingInode().equals( "NOTFOUND" ) ) {
+                    return null;
+                }
+
+                Contentlet c = APILocator.getContentletAPI().find(live?cinfo.getLiveInode():cinfo.getWorkingInode(), APILocator.getUserAPI().getSystemUser(), false);
+
+                if(c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE) {
+                    return fromContentlet(c);
+                }
+
+            } catch (Exception e) {
+                Logger.error(this.getClass(), "Unable to find" + uri);
+                return null;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -647,12 +687,23 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 		return getHTML(uri, host, liveMode, contentId, user, userAgent);
 	}
 
+    @Override
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+                          String contentId, User user, long langId, String userAgent)
+            throws DotStateException, DotDataException, DotSecurityException {
+        String uri = htmlPage.getURI();
+        Host host = getParentHost(htmlPage);
+        return getHTML(uri, host, liveMode, contentId, user, langId, userAgent);
+    }
+
 	@Override
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
 		return getHTML(uri, host, liveMode, contentId, user, 0, userAgent);
 	}
+
+
 
 	@Override
 	public String getHTML(String uri, Host host, boolean liveMode,
