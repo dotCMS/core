@@ -86,7 +86,7 @@ public class WorkflowCacheImpl extends WorkflowCache {
 		}
 	}
 
-	protected void remove(WorkflowStep step) {
+	public void remove(WorkflowStep step) {
 		cache.remove(step.getId(), STEP_GROUP);
 		cache.remove(step.getId(), ACTION_GROUP);
 	}

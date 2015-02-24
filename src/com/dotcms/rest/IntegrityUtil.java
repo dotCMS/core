@@ -46,6 +46,7 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -1577,6 +1578,14 @@ public class IntegrityUtil {
                     CacheLocator.getCacheAdministrator().remove( workflowCache.defaultKey, workflowCache.getPrimaryGroup() );
                 } else {
                     //Clear the cache
+                    WorkflowScheme oldScheme = APILocator.getWorkflowAPI().findScheme(oldWorkflowId);
+                    List<WorkflowStep> steps = APILocator.getWorkflowAPI().findSteps(oldScheme);
+
+                    for (int i = 0; i < steps.size(); i++) {
+                        WorkflowStep workflowStep =  steps.get(i);
+                        workflowCache.remove(workflowStep);
+                    }
+
                     WorkflowScheme scheme = workflowCache.getScheme( oldWorkflowId );
                     workflowCache.remove( scheme );
                 }
