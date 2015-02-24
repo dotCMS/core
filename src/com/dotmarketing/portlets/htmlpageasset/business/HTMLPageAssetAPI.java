@@ -112,6 +112,8 @@ public interface HTMLPageAssetAPI {
 
     HTMLPageAsset fromContentlet(Contentlet content);
 
+    IHTMLPage getPageByPath(String path, Host host, Long languageId, Boolean live) throws DotDataException, DotSecurityException;
+
     List<IHTMLPage> getLiveHTMLPages(Folder parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 
     /**
@@ -207,6 +209,10 @@ public interface HTMLPageAssetAPI {
 	public String getHTML(IHTMLPage htmlPage, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
+
+    public String getHTML(IHTMLPage htmlPage, boolean liveMode,
+                          String contentId, User user, long langId, String userAgent)
+            throws DotStateException, DotDataException, DotSecurityException;
 
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
