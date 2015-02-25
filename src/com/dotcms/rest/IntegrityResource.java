@@ -799,6 +799,7 @@ public class IntegrityResource extends WebResource {
                     columns.add("remote_working_inode");
                     columns.add("local_live_inode");
                     columns.add("remote_live_inode");
+                    columns.add("language_id");
                 } else {
                     columns.add("local_inode");
                     columns.add("remote_inode");
