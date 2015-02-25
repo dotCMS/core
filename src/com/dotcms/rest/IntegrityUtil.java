@@ -921,12 +921,7 @@ public class IntegrityUtil {
                 insertSQL = insertSQL.replaceAll(" as ", " ");
             }
 
-            try {
-
-                dc.executeStatement(insertSQL);
-            } catch(Exception e) {
-                System.out.println(e);
-            }
+            dc.executeStatement(insertSQL);
         }
     }
 
