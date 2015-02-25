@@ -4,11 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 
@@ -242,7 +238,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	protected List<Category> getChildren(Categorizable parent) throws DotDataException {
 
 		List<String> childrenIds = catCache.getChildren(parent);
-		List<Category> children = null;
+		List<Category> children;
 		if(childrenIds == null) {
 		    DotConnect dc = new DotConnect();
 		    dc.setSQL("select inode,category_name,category_key,sort_order,active,keywords,category_velocity_var_name "+
@@ -713,9 +709,10 @@ public class CategoryFactoryImpl extends CategoryFactory {
         }
     }
 
-	private class CategoryComparator implements Comparator<Category>
-	{
+	private class CategoryComparator implements Comparator<Category> {
+
 		public int compare(Category cat1, Category cat2) {
+
 			int returnValue = 0;
 			try
 			{
@@ -727,14 +724,16 @@ public class CategoryFactoryImpl extends CategoryFactory {
 				{
 					returnValue = -1;
 				}
-				else if(cat1.getSortOrder() == cat2.getSortOrder())
+				else if (Objects.equals(cat1.getSortOrder(), cat2.getSortOrder()))
 				{
 					returnValue = cat1.getCategoryName().compareTo(cat2.getCategoryName());
 				}
 			}
 			catch(Exception ex)
 			{
-				Logger.debug(CategoryFactoryImpl.class,ex.getMessage());
+				Logger.debug(CategoryFactoryImpl.class, ex.getMessage());
+				//At this point we can not do any comparation as the compareTo it self failed, so just return a -1
+				returnValue = -1;
 			}
 			return returnValue;
 		}
