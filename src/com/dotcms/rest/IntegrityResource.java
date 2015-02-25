@@ -376,7 +376,6 @@ public class IntegrityResource extends WebResource {
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.STRUCTURES);
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.SCHEMES);
                                     integrityUtil.discardConflicts(endpointId, IntegrityType.HTMLPAGES);
-                                    integrityUtil.discardConflicts(endpointId, IntegrityType.CONTENTPAGES);
                                     HibernateUtil.commitTransaction();
                                     
                                     HibernateUtil.startTransaction();

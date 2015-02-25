@@ -524,7 +524,9 @@ public class BrowserAPI {
 					linkMap.put("name", link.getTitle());
 					linkMap.put("description", link.getFriendlyName());
 					linkMap.put("extension", "link");
-					returnList.add(linkMap);
+                    linkMap.put("hasLiveVersion", APILocator.getVersionableAPI().hasLiveVersion(link));
+
+                    returnList.add(linkMap);
 				}
 
 			}
