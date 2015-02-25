@@ -154,7 +154,7 @@ public class IntegrityUtil {
 						+ "c.identifier, cvi.working_inode, cvi.live_inode, i.parent_path, i.asset_name, i.host_inode, c.language_id "
 						+ "FROM "
 						+ "contentlet c "
-						+ "INNER JOIN contentlet_version_info cvi ON (c.identifier = cvi.identifier) "
+						+ "INNER JOIN contentlet_version_info cvi ON (c.identifier = cvi.identifier and c.language_id = cvi.lang) "
 						+ "INNER JOIN structure s ON (c.structure_inode = s.inode AND s.structuretype = 5) "
 						+ "INNER JOIN identifier i ON (i.id = c.identifier)";
             	statement = conn.prepareStatement(query);
@@ -782,7 +782,7 @@ public class IntegrityUtil {
                 .append(", asset_name varchar(255)")
                 .append(", host_identifier varchar(36) not null")
                 .append(", language_id ").append(integerKeyword).append(" not null")
-                .append(", primary key (working_inode) )").append((DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : ""));
+                .append(", primary key (working_inode, language_id) )").append((DbConnectionFactory.isOracle() ? " ON COMMIT PRESERVE ROWS " : ""));
 
 
         String createTempTableStr = createTempTable.toString();
@@ -908,7 +908,7 @@ public class IntegrityUtil {
             			+ "FROM "
     					+ "identifier li "
     					+ "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') "
-    					+ "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
+    					+ "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
     					+ "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
     					+ "INNER JOIN "
     					+ tempTableName + " "
@@ -921,7 +921,12 @@ public class IntegrityUtil {
                 insertSQL = insertSQL.replaceAll(" as ", " ");
             }
 
-            dc.executeStatement(insertSQL);
+            try {
+
+                dc.executeStatement(insertSQL);
+            } catch(Exception e) {
+                System.out.println(e);
+            }
         }
     }
 
