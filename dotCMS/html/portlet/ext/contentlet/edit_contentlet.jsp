@@ -372,7 +372,7 @@ var editButtonRow="editContentletButtonRow";
 
 					    	  	if (f.getFieldType().equals(Field.FieldType.WYSIWYG.toString())) {
 					    			List<String> disabled = contentlet.getDisabledWysiwyg();
-					    			if(InodeUtils.isSet(contentlet.getInode()) && disabled.contains(f.getFieldContentlet())) {
+					    			if(InodeUtils.isSet(contentlet.getInode()) && disabled!=null && disabled.contains(f.getFieldContentlet())) {
 					    				request.setAttribute("wysiwygDisabled", true);
 					    			} else {
 					    				request.setAttribute("wysiwygDisabled", false);
