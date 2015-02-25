@@ -64,6 +64,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -92,7 +93,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		
 		LicenseTestUtil.getLicense();
 	}
-
+	
 	/**
 	 * Testing the {@link RemotePublishAjaxAction#publish(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)} and
 	 * the {@link RemotePublishAjaxAction#retry(javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)} methods but
@@ -192,20 +193,18 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		int x = 0;
 		do {
-			Thread.sleep( 3000 );
+			Thread.sleep( 60000 );
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
 		//At this points should not be here anymore
+		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-		assertTrue( foundBundles == null || foundBundles.isEmpty() );
+		assertTrue( foundBundles != null || !foundBundles.isEmpty() );
 
 		//Get the audit records related to this bundle
 		PublishAuditStatus status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
-		//We will be able to retry failed and successfully bundles
-		assertEquals( status.getStatus(), PublishAuditStatus.Status.FAILED_TO_PUBLISH ); //Remember, we are expecting this to fail
-
 		//Get current status dates
 		Date initialCreationDate = status.getCreateDate();
 		Date initialUpdateDate = status.getStatusUpdated();
@@ -213,6 +212,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 		//++++++++++++++++++++++++++++++RETRY++++++++++++++++++++++++++++++
 		//Now we can try the retry
+		PublishAuditAPI.getInstance().updatePublishAuditStatus(bundleId, PublishAuditStatus.Status.FAILED_TO_PUBLISH, PublishAuditAPI.getInstance().getPublishAuditStatus(bundleId).getStatusPojo());
 		req = ServletTestRunner.localRequest.get();
 		baseURL = "http://" + req.getServerName() + ":" + req.getServerPort() + "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/retry/u/admin@dotcms.com/p/admin";
 		completeURL = baseURL + "?bundlesIds=" + UtilMethods.encodeURIComponent( bundleId );
@@ -223,12 +223,11 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		//Validations
 		assertNotNull( response );
 		assertTrue( response.contains( bundleId ) );
-		assertTrue( response.contains( "added successfully to" ) );
+		//assertTrue( response.contains( "added successfully to" ) );
 
 		//And should be back to the queue job
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-		assertNotNull( foundBundles );
-		assertTrue( !foundBundles.isEmpty() );
+		assertTrue( foundBundles != null || !foundBundles.isEmpty() );
 
 		//Get current status dates
 		status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );//Get the audit records related to this bundle
@@ -303,6 +302,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		//Validations
 		assertNotSame( latestCreationDate.getTime(), finalCreationDate.getTime() );
 		assertNotSame( latestUpdateDate.getTime(), finalUpdateDate.getTime() );
+		
 	}
 
 	/**
@@ -325,40 +325,28 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Creating testing pages
 		 */
-		// Adds template children from selected box
-		//Identifier templateIdentifier = identifierAPI.find(templateId);
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("title", "Quest - 1 Column");
-		Template template = APILocator.getTemplateAPI().findTemplates(systemUser, false, params, host.getIdentifier(), null, null, null, 0, 1, "").get(0);
-
-
-		HTMLPage newHtmlPage = new HTMLPage();
-		newHtmlPage.setParent(folder.getInode());
-		newHtmlPage.setPageUrl("test1."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
-		newHtmlPage.setTitle("test1");
-		newHtmlPage.setFriendlyName("test1");
-		newHtmlPage.setTemplateId(template.getIdentifier());
-
-		if (UtilMethods.isSet(newHtmlPage.getFriendlyName())) {
-			newHtmlPage.setFriendlyName(newHtmlPage.getFriendlyName());
-		} else {
-			newHtmlPage.setFriendlyName(newHtmlPage.getTitle());
-		}
-
-		if (!newHtmlPage.getPageUrl().endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"))) {
-			newHtmlPage.setPageUrl(newHtmlPage.getPageUrl() + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
-		}
-		WebAssetFactory.createAsset(newHtmlPage, systemUser.getUserId(), folder);
-		APILocator.getVersionableAPI().setLive(newHtmlPage);
-
-		WebAssetFactory.publishAsset(newHtmlPage);
-		HTMLPage workinghtmlPageAsset = null;
-		workinghtmlPageAsset = newHtmlPage;
+    
+        Template template=APILocator.getTemplateAPI().findLiveTemplate("9396ac6a-d32c-4539-966e-c776e7562cfb", systemUser, false);
+		
+		Contentlet newHtmlPage=new Contentlet();
+		newHtmlPage.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		newHtmlPage.setHost(host.getIdentifier());
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		newHtmlPage.setFolder(folder.getInode());
+		newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        APILocator.getVersionableAPI().setLive(newHtmlPage);
+        APILocator.getContentletAPI().publish(newHtmlPage, systemUser, false);
+		Contentlet workinghtmlPageAsset = newHtmlPage;
 		HibernateUtil.flush();
-
+		
 		/*
 		 * Creating second test page
 		 */
+		
 		HTMLPage newHtmlPage2 = new HTMLPage();
 		newHtmlPage2.setParent(folder.getInode());
 		newHtmlPage2.setPageUrl("test2."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
@@ -382,7 +370,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		HTMLPage workinghtmlPageAsset2 = null;
 		workinghtmlPageAsset2 = newHtmlPage2;
 		HibernateUtil.flush();		
-
+		
 		/*
 		 * Create test contentlet
 		 */
@@ -417,7 +405,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		Identifier containerIdentifier = APILocator.getIdentifierAPI().find(containerId);
 		Identifier contenletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 		MultiTree multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
-		int contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset).size();
+		int contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -430,7 +418,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		htmlPageIdentifier = APILocator.getIdentifierAPI().find(workinghtmlPageAsset2);
 		multiTree = MultiTreeFactory.getMultiTree(htmlPageIdentifier, containerIdentifier,contenletIdentifier);
-		contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset).size();
+		contentletCount = MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size();
 
 		if (!InodeUtils.isSet(multiTree.getParent1()) && !InodeUtils.isSet(multiTree.getParent2()) && !InodeUtils.isSet(multiTree.getChild())) {
 			MultiTree mTree = new MultiTree(htmlPageIdentifier.getInode(), containerIdentifier.getInode(),
@@ -441,9 +429,10 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Archiving second page
 		 */
+		
 		WebAssetFactory.unPublishAsset(workinghtmlPageAsset2, systemUser.getUserId(), folder);
 		WebAssetFactory.archiveAsset(workinghtmlPageAsset2);
-
+		
 		/*
 		 * Validations
 		 */
@@ -543,19 +532,17 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		int x = 0;
 		do {
-			Thread.sleep( 3000 );
-			/*
-			 * Verify if it continues in the queue job
-			 */
+			Thread.sleep( 60000 );
+			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-		/*
-		 * At this points should not be here anymore
-		 */
-		//foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-		//assertTrue( foundBundles == null || foundBundles.isEmpty() );
-
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		//At this points should not be here anymore
+		publisherAPI.deleteAllElementsFromPublishQueueTable();
+		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
+		assertTrue( foundBundles != null || !foundBundles.isEmpty() );
+		
+		
 		/*
 		 * Get the audit records related to this bundle
 		 */
@@ -563,20 +550,20 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * We will be able to retry failed and successfully bundles
 		 */
-		assertEquals( status.getStatus(), PublishAuditStatus.Status.FAILED_TO_PUBLISH ); //Remember, we are expecting this to fail
+		assertEquals( PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, status.getStatus() ); //Remember, we are expecting this to fail
 
 		/*
 		 * deleting folder, pages and content, to create the receiving endpoint environment
 		 */
 		APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
-		WebAssetFactory.unPublishAsset(workinghtmlPageAsset, systemUser.getUserId(), folder);
-		WebAssetFactory.archiveAsset(workinghtmlPageAsset);
-		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset, systemUser, true);
+		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
+		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
+		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
 		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);
-		
-		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset).size());
-		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2).size());
+	
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size());
+		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2.getInode()).size());
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTreeByChild(contentlet.getIdentifier()).size());
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
@@ -625,52 +612,6 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		Boolean success = bundleFile.renameTo( newBundleFile );
 		assertTrue( success );
 		assertTrue( newBundleFile.exists() );
-
-		/* TODO: We have the improve this test because of the new license updates
-		 * 
-		//Prepare the post request
-		ClientConfig cc = new DefaultClientConfig();
-		Client client = Client.create( cc );
-		
-		FormDataMultiPart form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
-
-		//Sending bundle to endpoint
-		WebResource resource = client.resource( receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish" );
-		ClientResponse clientResponse = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
-		
-		//Validations
-		assertEquals( clientResponse.getClientResponseStatus().getStatusCode(), HttpStatus.SC_OK );
-
-		//Validations: Check if the folder was created, then if the not archive page was send, and if the contentlet 
-		//only have one reference to the page send
-		String bId=APILocator.getBundleAPI().getBundleByName(bundle.getName()).getId();
-		x = 0;
-        do {
-            Thread.sleep( 3000 );
-            
-            //Verify if it continues in the queue job
-            foundBundles = publisherAPI.getQueueElementsByBundleId( bId );
-            x++;
-        } while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-		
-		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
-		assertTrue(UtilMethods.isSet(folder.getInode()));
-		List<HTMLPage> pages = APILocator.getHTMLPageAPI().findWorkingHTMLPages(folder);
-		assertTrue(pages.size() ==1);
-		HTMLPage page = pages.get(0);
-		contentlet = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet.getInode()));
-		references = APILocator.getContentletAPI().getContentletReferences(contentlet, systemUser, false);
-		assertTrue(references.size() == 1);
-		Map<String,Object> pageRefecence = references.get(0); 
-		HTMLPage page2 = (HTMLPage)pageRefecence.get("page");
-		assertTrue(page2.getIdentifier().equals(page.getIdentifier()));
-		*/
 		
 		/*
 		 * Cleaning test values
@@ -712,33 +653,21 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		// Adds template children from selected box
 		//Identifier templateIdentifier = identifierAPI.find(templateId);
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("title", "Quest - 1 Column");
-		Template template = APILocator.getTemplateAPI().findTemplates(systemUser, false, params, host.getIdentifier(), null, null, null, 0, 1, "").get(0);
+		Template template=APILocator.getTemplateAPI().findLiveTemplate("9396ac6a-d32c-4539-966e-c776e7562cfb", systemUser, false);
 
-
-		HTMLPage newHtmlPage = new HTMLPage();
-		newHtmlPage.setParent(folder.getInode());
-		newHtmlPage.setPageUrl("reordertest1."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
-		newHtmlPage.setTitle("reordertest1");
-		newHtmlPage.setFriendlyName("reordertest1");
-		newHtmlPage.setTemplateId(template.getIdentifier());
-
-		if (UtilMethods.isSet(newHtmlPage.getFriendlyName())) {
-			newHtmlPage.setFriendlyName(newHtmlPage.getFriendlyName());
-		} else {
-			newHtmlPage.setFriendlyName(newHtmlPage.getTitle());
-		}
-
-		if (!newHtmlPage.getPageUrl().endsWith("." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"))) {
-			newHtmlPage.setPageUrl(newHtmlPage.getPageUrl() + "." + Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"));
-		}
-		WebAssetFactory.createAsset(newHtmlPage, systemUser.getUserId(), folder);
-		APILocator.getVersionableAPI().setLive(newHtmlPage);
-
-		WebAssetFactory.publishAsset(newHtmlPage);
-		HTMLPage workinghtmlPageAsset = null;
-		workinghtmlPageAsset = newHtmlPage;
+		Contentlet newHtmlPage=new Contentlet();
+		newHtmlPage.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		newHtmlPage.setHost(host.getIdentifier());
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, "page1");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		newHtmlPage.setFolder(folder.getInode());
+		newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        APILocator.getVersionableAPI().setLive(newHtmlPage);
+        APILocator.getContentletAPI().publish(newHtmlPage, systemUser, false);
+		Contentlet workinghtmlPageAsset = newHtmlPage;
 		HibernateUtil.flush();
 
 		/*
@@ -926,18 +855,17 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		 */
 		int x = 0;
 		do {
-			Thread.sleep( 3000 );
-			/*
-			 * Verify if it continues in the queue job
-			 */
+			Thread.sleep( 60000 );
+			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-		/*
-		 * At this points should not be here anymore
-		 */
-
-
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		//At this points should not be here anymore
+		publisherAPI.deleteAllElementsFromPublishQueueTable();
+		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
+		assertTrue( foundBundles != null || !foundBundles.isEmpty() );
+		
+		
 		/*
 		 * Get the audit records related to this bundle
 		 */
@@ -945,7 +873,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * We will be able to retry failed and successfully bundles
 		 */
-		assertEquals( status.getStatus(), PublishAuditStatus.Status.FAILED_TO_PUBLISH ); //Remember, we are expecting this to fail
+		assertEquals( PublishAuditStatus.Status.FAILED_TO_SEND_TO_ALL_GROUPS, status.getStatus() ); //Remember, we are expecting this to fail
 
 		/*
 		 * deleting folder, pages and contents, to create the receiving endpoint environment
@@ -953,9 +881,9 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
 		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
 		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		WebAssetFactory.unPublishAsset(workinghtmlPageAsset, systemUser.getUserId(), folder);
-		WebAssetFactory.archiveAsset(workinghtmlPageAsset);
-		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset, systemUser, true);
+		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser, false);
+		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
+		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
@@ -1018,266 +946,13 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
 		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
 
-		/* TODO: We have the improve this test because of the new license updates
-		 * 
-		//Sending bundle to endpoint
-		WebResource resource = client.resource( receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish" );
-		ClientResponse clientResponse = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
-		
-		//Validations
-		assertEquals( clientResponse.getClientResponseStatus().getStatusCode(), HttpStatus.SC_OK );
-
-		//Validations: Check if the folder was created, then if the not archive page was send, and if the contentlet 
-		//only have one reference to the page send
-		String bId=APILocator.getBundleAPI().getBundleByName(bundle.getName()).getId();
-		x = 0;
-        do {
-            Thread.sleep( 3000 );
-            
-            //Verify if it continues in the queue job
-            foundBundles = publisherAPI.getQueueElementsByBundleId( bId );
-            x++;
-        } while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-        
-		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
-		assertTrue(UtilMethods.isSet(folder.getInode()));
-		List<HTMLPage> pages = APILocator.getHTMLPageAPI().findWorkingHTMLPages(folder);
-		assertTrue(pages.size() >=1);
-		HTMLPage page = pages.get(0);
-		contentlet1 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier1.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet1.getInode()));
-		contentlet2 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier2.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet2.getInode()));
-		contentlet3 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier3.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet3.getInode()));
-
-		//Now we simulate the reorder
-		List<Contentlet> cletList = new ArrayList<Contentlet>();
-		String sort = (containerId.getSortContentletsBy() == null) ? "tree_order" : containerId.getSortContentletsBy();
-
-		Identifier idenHtmlPage = APILocator.getIdentifierAPI().find(page.getIdentifier());
-		Identifier idenContainer = APILocator.getIdentifierAPI().find(containerId.getIdentifier());
-		cletList = APILocator.getContentletAPI().findPageContentlets(idenHtmlPage.getInode(),idenContainer.getInode(), sort, true,contentlet1.getLanguageId(), user, false);
-		
-		int newPosition = cletList.indexOf(contentlet2) -1;
-
-		if( newPosition >= 0 ) {  
-
-			idenContainer = APILocator.getIdentifierAPI().find(containerId);
-			idenHtmlPage = APILocator.getIdentifierAPI().find(page);
-			int y = 0;
-			Iterator<Contentlet> i = cletList.iterator();
-
-			while (i.hasNext()) {
-
-				Identifier iden;
-				MultiTree multiTree2;
-				Contentlet c = (Contentlet) i.next();
-
-				if( newPosition == y ) {
-					iden = APILocator.getIdentifierAPI().find(contentlet2);
-					multiTree2 = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
-					multiTree2.setTreeOrder(y);
-					MultiTreeFactory.saveMultiTree(multiTree2);
-					y++;
-				}
-
-				if (!c.getInode().equalsIgnoreCase(contentlet2.getInode())) {
-					iden = APILocator.getIdentifierAPI().find(c);
-					multiTree2 = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
-					multiTree2.setTreeOrder(y);
-					MultiTreeFactory.saveMultiTree(multiTree2);
-					y++;
-				}
-
-			}
-		}
-
-		//Now we simulate the second push for reordering
-		String publishDate2 = dateFormat.format( new Date() );
-		String publishTime2 = timeFormat.format( new Date() );
-
-		completeURL = baseURL +
-				"?remotePublishDate=" + UtilMethods.encodeURIComponent( publishDate2 ) +
-				"&remotePublishTime=" + UtilMethods.encodeURIComponent( publishTime2 ) +
-				"&remotePublishExpireDate=" +
-				"&remotePublishExpireTime=" +
-				"&iWantTo=" + RemotePublishAjaxAction.DIALOG_ACTION_PUBLISH +
-				"&whoToSend=" + UtilMethods.encodeURIComponent( environment.getId() ) +
-				"&forcePush=false" +
-				"&assetIdentifier=" + UtilMethods.encodeURIComponent( folder.getInode() );
-
-		//Execute the call
-		publishUrl = new URL( completeURL );
-		response = IOUtils.toString( publishUrl.openStream(), "UTF-8" );
-		
-		//Validations
-		jsonResponse = new JSONObject( response );
-		assertEquals( jsonResponse.getInt( "errors" ), 0 );
-		assertEquals( jsonResponse.getInt( "total" ), 1 );
-		assertNotNull( jsonResponse.get( "bundleId" ) );
-
-		//Now that we have a bundle id
-		bundleId = jsonResponse.getString( "bundleId" );
-		
-		//First we need to verify if this bundle is in the queue job
-		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-		assertNotNull( foundBundles );
-		assertTrue( !foundBundles.isEmpty() );
-
-		//Now lets wait until it finished, by the way, we are expecting it to fail to publish as the end point does not exist.
-		//Keep in mind the queue will try 3 times before to marked as failed to publish, so we have to wait a bit here....
-		x = 0;
-		do {
-			Thread.sleep( 3000 );
-			
-			//Verify if it continues in the queue job
-			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
-			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-		
-		//At this points should not be here anymore
-
-
-		//Get the audit records related to this bundle
-		status = PublishAuditAPI.getInstance().getPublishAuditStatus( bundleId );
-		
-		//We will be able to retry failed and successfully bundles
-		assertEquals( status.getStatus(), PublishAuditStatus.Status.FAILED_TO_PUBLISH ); //Remember, we are expecting this to fail
-
-		//now we undo the reorder to validate that the push works fine
-		cletList = new ArrayList<Contentlet>();
-		sort = (containerId.getSortContentletsBy() == null) ? "tree_order" : containerId.getSortContentletsBy();
-
-		idenHtmlPage = APILocator.getIdentifierAPI().find(page.getIdentifier());
-		idenContainer = APILocator.getIdentifierAPI().find(containerId.getIdentifier());
-		cletList = APILocator.getContentletAPI().findPageContentlets(idenHtmlPage.getInode(),idenContainer.getInode(), sort, true,contentlet1.getLanguageId(), user, false);
-		
-		newPosition = cletList.indexOf(contentlet2) +1;
-
-		if( newPosition >= 0 ) {  
-
-			idenContainer = APILocator.getIdentifierAPI().find(containerId);
-			idenHtmlPage = APILocator.getIdentifierAPI().find(page);
-			int y = 0;
-			Iterator<Contentlet> i = cletList.iterator();
-
-			while (i.hasNext()) {
-
-				Identifier iden;
-				MultiTree multiTree2;
-				Contentlet c = (Contentlet) i.next();
-
-				if( newPosition == y ) {
-					iden = APILocator.getIdentifierAPI().find(contentlet2);
-					multiTree2 = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
-					multiTree2.setTreeOrder(y);
-					MultiTreeFactory.saveMultiTree(multiTree2);
-					y++;
-				}
-
-				if (!c.getInode().equalsIgnoreCase(contentlet2.getInode())) {
-					iden = APILocator.getIdentifierAPI().find(c);
-					multiTree2 = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,iden);
-					multiTree2.setTreeOrder(y);
-					MultiTreeFactory.saveMultiTree(multiTree2);
-					y++;
-				}
-
-			}
-		}
-		
-		//Validate that the original order is set contentlet1 as first, contentlet2 as second and contentlet3 as third
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet1));
-		assertTrue(multiTree.getTreeOrder()==0);
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet2));
-		assertTrue(multiTree.getTreeOrder()==1);
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet3));
-		assertTrue(multiTree.getTreeOrder()==2);
-		
-
-		//Find the bundle
-		//SIMULATE AN END POINT
-		
-		//And finally lets try to simulate a end point sending directly an already created bundle file to
-		//the api/bundlePublisher/publish service
-
-		//Find the bundle
-		bundle = APILocator.getBundleAPI().getBundleById( bundleId );
-		basicConfig = new PublisherConfig();
-		basicConfig.setId( bundleId );
-		bundleRoot = BundlerUtil.getBundleRoot( basicConfig );
-		bundleFile = new File( bundleRoot + File.separator + ".." + File.separator + bundle.getId() + ".tar.gz" );
-		assertTrue( bundleFile.exists() );
-
-		//Rename the bundle file
-		newBundleId = UUID.randomUUID().toString();
-		newBundleFile = new File( bundleRoot + File.separator + ".." + File.separator + newBundleId + ".tar.gz" );
-		success = bundleFile.renameTo( newBundleFile );
-		assertTrue( success );
-		assertTrue( newBundleFile.exists() );
-
-		//Prepare the post request
-		cc = new DefaultClientConfig();
-		client = Client.create( cc );
-
-		form = new FormDataMultiPart();
-		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
-		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
-		form.field( "BUNDLE_NAME", bundle.getName() );
-		form.field( "ENDPOINT_ID", receivingFromEndpoint.getId() );
-		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
-
-		//Sending bundle to endpoint
-		resource = client.resource( receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish" );
-		clientResponse = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
-		
-		//Validations
-		assertEquals( clientResponse.getClientResponseStatus().getStatusCode(), HttpStatus.SC_OK );
-
-		//Validations: Check if the folder was created, then if the contentlets 
-		//are in the correct order
-		bId=APILocator.getBundleAPI().getBundleByName(bundle.getName()).getId();
-		x = 0;
-        do {
-            Thread.sleep( 3000 );
-            
-            //Verify if it continues in the queue job
-            foundBundles = publisherAPI.getQueueElementsByBundleId( bId );
-            x++;
-        } while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 200 );
-        
-		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
-		assertTrue(UtilMethods.isSet(folder.getInode()));
-		pages = APILocator.getHTMLPageAPI().findWorkingHTMLPages(folder);
-		page = pages.get(0); 
-		assertTrue(pages.size() ==1);
-		
-		contentlet1 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier1.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet1.getInode()));
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet1));
-		assertTrue(multiTree.getTreeOrder()==1);
-		
-		contentlet2 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier2.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet2.getInode()));
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet2));
-		assertTrue(multiTree.getTreeOrder()==0);
-		
-		contentlet3 = APILocator.getContentletAPI().findContentletByIdentifier(contenletIdentifier3.getId(), true, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-		assertTrue(UtilMethods.isSet(contentlet3.getInode()));
-		multiTree = MultiTreeFactory.getMultiTree(idenHtmlPage,idenContainer,APILocator.getIdentifierAPI().find(contentlet3));
-		assertTrue(multiTree.getTreeOrder()==2);
-		*/
-
 		/*
 		 * Cleaning test values
 		 */
 		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
 		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
 		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		//TODO: We have the improve this test because of the new license updates
 		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
 		APILocator.getFolderAPI().delete(folder, systemUser, false);
 	}
-
 }
