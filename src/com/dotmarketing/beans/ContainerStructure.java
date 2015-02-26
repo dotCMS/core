@@ -8,7 +8,7 @@ public class ContainerStructure implements Serializable{
 
 	private String id;
 	private String structureId;
-    private String structureInode;
+    private String containerInode;
     private String containerId;
     private String code;
 
@@ -30,12 +30,12 @@ public class ContainerStructure implements Serializable{
 		this.containerId = containerId;
 	}
 
-    public String getStructureInode() {
-        return structureInode;
+    public String getContainerInode() {
+        return containerInode;
     }
 
-    public void setStructureInode(String structureInode) {
-        this.structureInode = structureInode;
+    public void setContainerInode(String containerInode) {
+        this.containerInode = containerInode;
     }
 
 	public String getStructureId() {

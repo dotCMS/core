@@ -99,7 +99,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			for (ContainerStructure oldCS : sourceCS) {
 				ContainerStructure newCS = new ContainerStructure();
 				newCS.setContainerId(newContainer.getIdentifier());
-                newCS.setStructureInode(newContainer.getInode());
+                newCS.setContainerInode(newContainer.getInode());
 				newCS.setStructureId(oldCS.getStructureId());
 				newCS.setCode(oldCS.getCode());
 				newContainerCS.add(newCS);
@@ -313,7 +313,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 				//Get one of the relations to get the container id.
 				String containerIdentifier = containerStructureList.get(0).getContainerId();
-                String containerInode = containerStructureList.get(0).getStructureInode();
+                String containerInode = containerStructureList.get(0).getContainerInode();
 
 				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
                         "where container_id = '" + containerIdentifier + "'" +
@@ -499,7 +499,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		// save the container-structure relationships , issue-2093
 		for (ContainerStructure cs : containerStructureList) {
 			cs.setContainerId(container.getIdentifier());
-            cs.setStructureInode(container.getInode());
+            cs.setContainerInode(container.getInode());
 		}
 		saveContainerStructures(containerStructureList);
 

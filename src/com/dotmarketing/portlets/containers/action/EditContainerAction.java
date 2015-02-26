@@ -573,7 +573,7 @@ public class EditContainerAction extends DotPortletAction implements
 				String code = req.getParameter("code_"+structureId);
 				ContainerStructure cs = new ContainerStructure();
 				cs.setContainerId(container.getIdentifier());
-                cs.setStructureInode(container.getInode());
+                cs.setContainerInode(container.getInode());
 				cs.setStructureId(structureId);
 				cs.setCode(code);
 				csList.add(cs);
