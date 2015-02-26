@@ -26,7 +26,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String MYSQL_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY structure_inode varchar(36) not null";
     private static final String MYSQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, structure_inode) VALUES(?, ?, ?, ?, ?)";
     private static final String MYSQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
-    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET structure_inode = ? WHERE identifier = ?";
+    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET structure_inode = ? WHERE container_id = ?";
     private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET structure_inode = ? WHERE id = ?";
     private static final String MYSQL_GET_CONTAINER_VERSION = "SELECT identifier FROM container_version_info WHERE working_inode = ? AND live_inode = ?";
     private static final String MYSQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, structure_inode FROM container_structures WHERE container_id = ?";
