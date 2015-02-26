@@ -300,10 +300,15 @@ public class IntegrityUtil {
             int count = 0;
 
             while (rs.next()) {
-                writer.write(rs.getString("remote_working_inode"));
-                writer.write(rs.getString("local_working_inode"));
-                writer.write(rs.getString("remote_live_inode"));
-                writer.write(rs.getString("local_live_inode"));
+                if(type == IntegrityType.HTMLPAGES) {
+                    writer.write(rs.getString("remote_working_inode"));
+                    writer.write(rs.getString("local_working_inode"));
+                    writer.write(rs.getString("remote_live_inode"));
+                    writer.write(rs.getString("local_live_inode"));
+                } else {
+                    writer.write(rs.getString("remote_inode"));
+                    writer.write(rs.getString("local_inode"));
+                }
 
                 if(type == IntegrityType.FOLDERS || type == IntegrityType.HTMLPAGES) {
                 	writer.write(rs.getString("remote_identifier"));
