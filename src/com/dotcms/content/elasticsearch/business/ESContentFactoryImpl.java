@@ -1473,12 +1473,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        String stInodestr = "structureInode";
 	        String stInodeStrLowered = "structureinode";
 	        String stNameStrLowered = "structurename";
+	        String contentTypeStr = "contentType";
+	        String contentTypeInodeStr = "contentTypeInode";
 
 	        if (query.contains(stNameStrLowered))
 	            query = query.replace(stNameStrLowered,"structureName");
 
 	        if (query.contains(stInodeStrLowered))
 	            query = query.replace(stInodeStrLowered,stInodestr);
+
+            if (query.toLowerCase().contains(contentTypeInodeStr.toLowerCase()))
+                query = query.replace(contentTypeInodeStr,stInodestr);
+
+            if (query.toLowerCase().contains(contentTypeStr.toLowerCase()))
+                query = query.replace(contentTypeStr,"structureName");
+
+
 
 	        if (query.contains(stInodestr)) {
 	            // get structure information
