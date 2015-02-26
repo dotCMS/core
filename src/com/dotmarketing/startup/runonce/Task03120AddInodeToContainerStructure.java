@@ -103,7 +103,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
                 ArrayList<Map<String, String>> containerVersion = dc.loadResults();
 
                 //If inode is both Working and Live, then update container_structures to add inode.
-                if (containerIdentInodes != null && !containerIdentInodes.isEmpty()) {
+                if (containerVersion != null && !containerVersion.isEmpty()) {
                     dc = new DotConnect();
                     dc.setSQL(MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER);
                     dc.addParam(inode);
