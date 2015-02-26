@@ -89,7 +89,7 @@ public class DotCMSInitDb {
 		}
 		
 		if(starterZip==null || (starterZip!=null && !starterZip.exists())){
-			String starterSitePath = "starter.zip";
+			String starterSitePath = "/starter.zip";
 			String zipPath = FileUtil.getRealPath(starterSitePath);
 			starterZip = new File(zipPath); 
 		 }
