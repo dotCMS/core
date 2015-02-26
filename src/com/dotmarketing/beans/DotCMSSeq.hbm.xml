@@ -1257,6 +1257,9 @@
 		<property name="containerId" type="string">
 			<column name="container_id" length="36" not-null="true" />
 		</property>
+        <property name="structureInode" type="string">
+            <column name="structure_inode" length="36" not-null="true" />
+        </property>
 		<property name="structureId" type="string">
 			<column name="structure_id" length="36" not-null="true"/>
 		</property>

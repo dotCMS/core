@@ -152,6 +152,7 @@ public class ContainerFactory {
 			for (ContainerStructure oldCS : sourceCS) {
 				ContainerStructure newCS = new ContainerStructure();
 				newCS.setContainerId(newContainer.getIdentifier());
+                newCS.setStructureInode(newContainer.getInode());
 				newCS.setStructureId(oldCS.getStructureId());
 				newCS.setCode(oldCS.getCode());
 				newContainerCS.add(newCS);
