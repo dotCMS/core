@@ -41,22 +41,6 @@ public class PublisherAPIImpl implements PublisherAPI {
                 }
             }
 
-            
-
-            // Run bundlers
-            File bundleRoot = BundlerUtil.getBundleRoot( config );
-
-            BundlerUtil.writeBundleXML( config );
-            for ( Class<IBundler> c : bundlers ) {
-
-            	IBundler bundler = c.newInstance();
-            	confBundlers.add( bundler );
-            	bundler.setConfig( config );
-            	BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
-            	status.addToBs( bs );
-            	//Generate the bundler
-            	bundler.generate( bundleRoot, bs );
-            }
             if ( config.isIncremental() && config.getEndDate() == null && config.getStartDate() == null ) {
                 // if its incremental and start/end dates aren't se we take it from latest bundle
                 if ( BundlerUtil.bundleExists( config ) ) {
@@ -73,6 +57,22 @@ public class PublisherAPIImpl implements PublisherAPI {
                     config.setEndDate( new Date() );
                 }
             }
+
+            // Run bundlers
+            File bundleRoot = BundlerUtil.getBundleRoot( config );
+
+            BundlerUtil.writeBundleXML( config );
+            for ( Class<IBundler> c : bundlers ) {
+
+                IBundler bundler = c.newInstance();
+                confBundlers.add( bundler );
+                bundler.setConfig( config );
+                BundlerStatus bs = new BundlerStatus( bundler.getClass().getName() );
+                status.addToBs( bs );
+                //Generate the bundler
+                bundler.generate( bundleRoot, bs );
+            }
+
             config.setBundlers( confBundlers );
 
             // run publishers
