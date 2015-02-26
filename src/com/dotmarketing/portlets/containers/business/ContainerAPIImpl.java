@@ -556,8 +556,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 		if(container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())){
 			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
-                    "where container_id = '" + container.getIdentifier() + "'" +
-                    "and container_inode = '" + container.getInode() + "'");
+                    "where container_id = '" + container.getIdentifier() + "'");
 			
 			//Remove the list from cache.
 			StructureCache.removeContainerStructures(container.getIdentifier(), container.getInode());
