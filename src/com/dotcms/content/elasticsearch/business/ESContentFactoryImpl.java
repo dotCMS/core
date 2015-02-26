@@ -1469,11 +1469,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	        result = new TranslatedQuery();
 
 	        String originalQuery = query;
-	        Structure st = null;
+	        Structure st;
 	        String stInodestr = "structureInode";
 	        String stInodeStrLowered = "structureinode";
 	        String stNameStrLowered = "structurename";
-	        String contentTypeStr = "contentType";
 	        String contentTypeInodeStr = "contentTypeInode";
 
 	        if (query.contains(stNameStrLowered))
@@ -1484,11 +1483,6 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
             if (query.toLowerCase().contains(contentTypeInodeStr.toLowerCase()))
                 query = query.replace(contentTypeInodeStr,stInodestr);
-
-            if (query.toLowerCase().contains(contentTypeStr.toLowerCase()))
-                query = query.replace(contentTypeStr,"structureName");
-
-
 
 	        if (query.contains(stInodestr)) {
 	            // get structure information

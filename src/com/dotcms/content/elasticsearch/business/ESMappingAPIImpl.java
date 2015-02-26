@@ -272,6 +272,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			m.put("title", con.getTitle());
 			m.put("structureName", st.getVelocityVarName());
+			m.put("contentType", st.getVelocityVarName());
             m.put("structureType", st.getStructureType() + "");
             m.put("inode", con.getInode());
             m.put("type", "content");
