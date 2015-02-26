@@ -21,15 +21,15 @@ import java.util.UUID;
  */
 public class Task03120AddInodeToContainerStructure implements StartupTask {
 
-    private static final String MYSQL_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD structure_inode varchar(36)";
-    private static final String MYSQL_ADD_FK_INODE = "ALTER TABLE container_structures ADD CONSTRAINT FK_cs_inode FOREIGN KEY (structure_inode) references inode(inode)";
-    private static final String MYSQL_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY structure_inode varchar(36) not null";
-    private static final String MYSQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, structure_inode) VALUES(?, ?, ?, ?, ?)";
+    private static final String MYSQL_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD container_inode varchar(36)";
+    private static final String MYSQL_ADD_FK_INODE = "ALTER TABLE container_structures ADD CONSTRAINT FK_cs_inode FOREIGN KEY (container_inode) references inode(inode)";
+    private static final String MYSQL_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar(36) not null";
+    private static final String MYSQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, container_inode) VALUES(?, ?, ?, ?, ?)";
     private static final String MYSQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
-    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET structure_inode = ? WHERE container_id = ?";
-    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET structure_inode = ? WHERE id = ?";
+    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET container_inode = ? WHERE container_id = ?";
+    private static final String MYSQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET container_inode = ? WHERE id = ?";
     private static final String MYSQL_GET_CONTAINER_VERSION = "SELECT identifier FROM container_version_info WHERE working_inode = ? AND live_inode = ?";
-    private static final String MYSQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, structure_inode FROM container_structures WHERE container_id = ?";
+    private static final String MYSQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, container_inode FROM container_structures WHERE container_id = ?";
 
     private final String MYSQL_GET_NON_WORKING_LIVE_INODES = "SELECT containers.inode " +
             "FROM containers " +
@@ -123,11 +123,11 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
                             String containerId = containerStructure.get("container_id");
                             String structureId = containerStructure.get("structure_id");
                             String code = containerStructure.get("code");
-                            String structureInode = containerStructure.get("structure_inode");
+                            String containerInode = containerStructure.get("container_inode");
 
                             //If the row already has the inode means that the row is already updated.
                             //We need to duplicate the row with new ID and Inode.
-                            if (UtilMethods.isSet(structureInode)) {
+                            if (UtilMethods.isSet(containerInode)) {
                                 id = UUID.randomUUID().toString();
 
                                 dc = new DotConnect();
