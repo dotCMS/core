@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -14,7 +15,15 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	public void init(Object obj) {
 
 	}
-
+	/**
+	 * Takes a url and reads the result.  By default, it will timeout in 15 sec
+	 * @param url
+	 * @return
+	 */
+	public JSONObject fetch(String url) {
+		return fetch(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000));
+		
+	}
 	/**
 	 * Will retrieve data from the remote URL returning for you the JSON Object
 	 * Example use from Velocity would be
@@ -76,9 +85,9 @@ public class JSONTool extends ImportSupport implements ViewTool {
 	 * @param url
 	 * @return
 	 */
-	public JSONObject fetch(String url) {
+	public JSONObject fetch(String url, int timeout) {
 		try {
-			String x = acquireString(url);
+			String x = acquireString(url, timeout);
             x = x.substring(x.indexOf('{'), x.length());
             x = x.substring(0, x.lastIndexOf('}')+1);
 			return new JSONObject(x);
