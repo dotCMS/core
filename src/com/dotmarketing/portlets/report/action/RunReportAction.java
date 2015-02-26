@@ -144,7 +144,7 @@ public class RunReportAction extends DotPortletAction {
 	    if (UtilMethods.isSet(Config.getStringProperty("ASSET_REAL_PATH"))) {
 	    	filePath = Config.getStringProperty("ASSET_REAL_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jasper";
 	    } else {
-	    	filePath = httpReq.getSession().getServletContext().getRealPath(File.separator + Config.getStringProperty("ASSET_PATH") + File.separator + Config.getStringProperty("REPORT_PATH") + File.separator + report.getInode() + ".jasper");
+	    	filePath = httpReq.getSession().getServletContext().getRealPath("/" + Config.getStringProperty("ASSET_PATH") + "/" + Config.getStringProperty("REPORT_PATH") + "/" + report.getInode() + ".jasper");
 	    }
 	    
 	    
