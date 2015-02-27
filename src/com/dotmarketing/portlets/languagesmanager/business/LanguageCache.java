@@ -43,4 +43,10 @@ public abstract class LanguageCache implements Cachable{
     public abstract List<Language> getLanguages()  ;
     
     public abstract void putLanguages(List<Language> langs);
+
+    /**
+     * Removes all the languages stored under the key ALL_LANGUAGES_KEY but
+     * will NOT clear the individual languages already in cache.
+     */
+    public abstract void clearLanguages();
 }
