@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 
 /**
  * <a href="GenericServletOutputStream.java.html"><b><i>View Source</i></b></a>
@@ -54,5 +55,15 @@ public class GenericServletOutputStream extends ServletOutputStream {
 	}
 
 	private DataOutputStream _dos;
+
+	@Override
+	public boolean isReady() {
+		throw new RuntimeException("Not yet implemented");
+	}
+
+	@Override
+	public void setWriteListener(WriteListener writeListener) {
+		throw new RuntimeException("Not yet implemented");
+	}
 
 }

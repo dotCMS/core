@@ -1,13 +1,12 @@
 package com.dotmarketing.filters.FixCmis;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.GZIPOutputStream;
+import com.dotmarketing.util.Logger;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.util.Logger;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class FixCmisResponseStream extends ServletOutputStream {
 	protected ByteArrayOutputStream baos = null;
@@ -87,5 +86,14 @@ public class FixCmisResponseStream extends ServletOutputStream {
 		return (this.closed);
 	}
 
+	@Override
+	public boolean isReady() {
+		throw new RuntimeException("Not yet implemented");
+	}
+
+	@Override
+	public void setWriteListener(WriteListener writeListener) {
+		throw new RuntimeException("Not yet implemented");
+	}
 
 }

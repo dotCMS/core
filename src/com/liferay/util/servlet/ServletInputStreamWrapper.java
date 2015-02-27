@@ -24,6 +24,7 @@ package com.liferay.util.servlet;
 
 import java.io.IOException;
 
+import javax.servlet.ReadListener;
 import javax.servlet.ServletInputStream;
 
 /**
@@ -80,5 +81,20 @@ public class ServletInputStreamWrapper extends ServletInputStream {
 	}
 
 	private ServletInputStream _is;
+
+	@Override
+	public boolean isFinished() {
+		throw new RuntimeException("Not yet implemented");
+	}
+
+	@Override
+	public boolean isReady() {
+		throw new RuntimeException("Not yet implemented");
+	}
+
+	@Override
+	public void setReadListener(ReadListener readListener) {
+		throw new RuntimeException("Not yet implemented");
+	}
 
 }

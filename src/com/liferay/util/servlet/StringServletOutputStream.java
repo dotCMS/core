@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
 
 /**
  * <a href="StringServletOutputStream.java.html"><b><i>View Source</i></b></a>
@@ -45,5 +46,15 @@ public class StringServletOutputStream extends ServletOutputStream {
 	}
 
 	private ByteArrayOutputStream _baos = null;
+
+	@Override
+	public boolean isReady() {
+		throw new RuntimeException("Not yet implemented");
+	}
+
+	@Override
+	public void setWriteListener(WriteListener writeListener) {
+		throw new RuntimeException("Not yet implemented");
+	}
 
 }

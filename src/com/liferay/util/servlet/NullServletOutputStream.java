@@ -22,9 +22,9 @@
 
 package com.liferay.util.servlet;
 
-import java.io.IOException;
-
 import javax.servlet.ServletOutputStream;
+import javax.servlet.WriteListener;
+import java.io.IOException;
 
 /**
  * <a href="NullServletOutputStream.java.html"><b><i>View Source</i></b></a>
@@ -40,5 +40,15 @@ public class NullServletOutputStream extends ServletOutputStream {
 
 	public void write(int b) throws IOException {
 	}
+
+    @Override
+    public boolean isReady() {
+        throw new RuntimeException("Not yet implemented");
+    }
+
+    @Override
+    public void setWriteListener(WriteListener writeListener) {
+        throw new RuntimeException("Not yet implemented");
+    }
 
 }
