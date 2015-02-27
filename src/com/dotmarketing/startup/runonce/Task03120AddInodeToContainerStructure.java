@@ -29,6 +29,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String SQL_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar(36) not null";
     private static final String POSTGRES_ADD_NOT_NULL = "ALTER TABLE container_structures ALTER COLUMN container_inode TYPE varchar(36), ALTER COLUMN container_inode SET NOT NULL";
     private static final String ORACLE_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar2(36) not null";
+    private static final String MSSQL_ADD_NOT_NULL = "ALTER TABLE container_structures ALTER COLUMN container_inode varchar(36) NOT NULL";
     private static final String SQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, container_inode) VALUES(?, ?, ?, ?, ?)";
     private static final String SQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET container_inode = ? WHERE container_id = ?";
@@ -180,6 +181,9 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
         }
         if (DbConnectionFactory.isOracle()) {
             dc.setSQL(ORACLE_ADD_NOT_NULL);
+        }
+        if (DbConnectionFactory.isMsSql()) {
+            dc.setSQL(MSSQL_ADD_NOT_NULL);
         }
         dc.loadResults();
     }
