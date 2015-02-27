@@ -23,9 +23,11 @@ import java.util.UUID;
 public class Task03120AddInodeToContainerStructure implements StartupTask {
 
     private static final String SQL_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD container_inode varchar(36)";
+    private static final String ORACLE_ADD_INODE_COLUMN = "ALTER TABLE container_structures ADD container_inode varchar2(36)";
     private static final String SQL_ADD_FK_INODE = "ALTER TABLE container_structures ADD CONSTRAINT FK_cs_inode FOREIGN KEY (container_inode) references inode(inode)";
     private static final String SQL_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar(36) not null";
     private static final String POSTGRES_ADD_NOT_NULL = "ALTER TABLE container_structures ALTER COLUMN container_inode TYPE varchar(36), ALTER COLUMN container_inode SET NOT NULL";
+    private static final String ORACLE_ADD_NOT_NULL = "ALTER TABLE container_structures MODIFY container_inode varchar2(36) not null";
     private static final String SQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, container_inode) VALUES(?, ?, ?, ?, ?)";
     private static final String SQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET container_inode = ? WHERE container_id = ?";
@@ -70,6 +72,9 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
         DotConnect dc = new DotConnect();
         //Add Column inode to container_structures.
         dc.setSQL(SQL_ADD_INODE_COLUMN);
+        if (DbConnectionFactory.isOracle()) {
+            dc.setSQL(ORACLE_ADD_INODE_COLUMN);
+        }
         dc.loadResults();
 
         //Gets list of inodes that are NOT live nor working to DELETE from container_structures.
@@ -165,6 +170,9 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
         dc.setSQL(SQL_ADD_NOT_NULL);
         if (DbConnectionFactory.isPostgres()) {
             dc.setSQL(POSTGRES_ADD_NOT_NULL);
+        }
+        if (DbConnectionFactory.isOracle()) {
+            dc.setSQL(ORACLE_ADD_NOT_NULL);
         }
         dc.loadResults();
     }
