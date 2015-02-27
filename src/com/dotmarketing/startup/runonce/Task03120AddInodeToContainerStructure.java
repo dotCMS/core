@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.UtilMethods;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
@@ -68,6 +69,12 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
      */
     @Override
     public void executeUpgrade() throws DotDataException, DotRuntimeException {
+
+        try {
+            DbConnectionFactory.getConnection().setAutoCommit(true);
+        } catch (SQLException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
 
         DotConnect dc = new DotConnect();
         //Add Column inode to container_structures.
