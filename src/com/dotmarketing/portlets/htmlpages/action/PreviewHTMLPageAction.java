@@ -6,10 +6,14 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.factories.PreviewFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -22,9 +26,11 @@ import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portlet.ActionRequestImpl;
+import com.liferay.util.servlet.SessionMessages;
 
 /**
  * <a href="ViewQuestionsAction.java.html"><b><i>View Source</i></b></a>
@@ -46,7 +52,15 @@ public class PreviewHTMLPageAction extends DotPortletAction {
 			
 			IHTMLPage webAsset;
 			String inode=req.getParameter("inode");
-            Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
+            Identifier ident;
+            try {
+                ident = APILocator.getIdentifierAPI().findFromInode(inode);
+            } catch (DotStateException e) {
+                Logger.info(PreviewHTMLPageAction.class
+                        , "Unable to find Identifier by Inode. Inode must have changed probably by conflicts fixing.");
+                throw new ActionException(LanguageUtil.get(user,"message.htmlpage.inode.not.found"));
+
+            }
             boolean contentLocked = false;
             boolean iCanLock = false;
             if("contentlet".equals(ident.getAssetType())) {
