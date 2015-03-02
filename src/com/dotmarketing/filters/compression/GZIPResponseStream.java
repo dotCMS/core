@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.util.zip.GZIPOutputStream;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Logger;
@@ -75,16 +74,6 @@ public class GZIPResponseStream extends ServletOutputStream {
   }
   
   public void reset() {
-  }
-
-  @Override
-  public boolean isReady() {
-    throw new RuntimeException("Not yet implemented");
-  }
-
-  @Override
-  public void setWriteListener(WriteListener writeListener) {
-    throw new RuntimeException("Not yet implemented");
   }
 
 }

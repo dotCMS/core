@@ -3,7 +3,6 @@ package com.dotmarketing.filters.FixCmis;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.ServletOutputStream;
-import javax.servlet.WriteListener;
 import javax.servlet.http.HttpServletResponse;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,7 +13,7 @@ public class FixCmisResponseStream extends ServletOutputStream {
 	protected HttpServletResponse response = null;
 	protected ServletOutputStream output = null;
 	int length =0;
-	
+
 	public FixCmisResponseStream(HttpServletResponse response) throws IOException {
 		super();
 		closed = false;
@@ -84,16 +83,6 @@ public class FixCmisResponseStream extends ServletOutputStream {
 
 	public boolean closed() {
 		return (this.closed);
-	}
-
-	@Override
-	public boolean isReady() {
-		throw new RuntimeException("Not yet implemented");
-	}
-
-	@Override
-	public void setWriteListener(WriteListener writeListener) {
-		throw new RuntimeException("Not yet implemented");
 	}
 
 }

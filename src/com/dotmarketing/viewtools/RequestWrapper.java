@@ -118,11 +118,6 @@ public class RequestWrapper implements HttpServletRequest{
 		return _request.getSession();
 	}
 
-	@Override
-	public String changeSessionId() {
-		throw new RuntimeException("Not yet implemented");
-	}
-
 	public HttpSession getSession(boolean arg0) {
 		return _request.getSession(arg0);
 	}
@@ -165,11 +160,6 @@ public class RequestWrapper implements HttpServletRequest{
 
 	public int getContentLength() {
 		return _request.getContentLength();
-	}
-
-	@Override
-	public long getContentLengthLong() {
-		throw new RuntimeException("Not yet implemented");
 	}
 
 	public String getContentType() {
@@ -313,11 +303,6 @@ public class RequestWrapper implements HttpServletRequest{
             ServletException {
         return _request.getPart(arg0);
     }
-
-	@Override
-	public <T extends HttpUpgradeHandler> T upgrade(Class<T> aClass) throws IOException, ServletException {
-		throw new RuntimeException("Not yet implemented");
-	}
 
 	public Collection<Part> getParts() throws IOException,
             IllegalStateException, ServletException {
