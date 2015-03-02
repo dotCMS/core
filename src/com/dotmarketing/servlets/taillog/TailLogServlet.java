@@ -28,20 +28,9 @@ public class TailLogServlet extends HttpServlet {
 	 */
 	private static final long serialVersionUID = -1700686919872123657L;
 
-	static String logFolder = null;
-
-	public void init() {
-		String x = Config.getStringProperty("TAIL_LOG_LOG_FOLDER");
-		if (UtilMethods.isSet(x)) {
-			logFolder = x;
-		}
-	}
+	public void init() {}
 
 	protected void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-
-
-
 		User user = null;
 		try {
 			user = com.liferay.portal.util.PortalUtil.getUser(request);
@@ -59,11 +48,6 @@ public class TailLogServlet extends HttpServlet {
 			response.sendError(403);
 			return;
 		}
-		if(logFolder ==null){
-			return;
-		}
-
-
 
 		String fileName = request.getParameter("fileName");
 
@@ -72,11 +56,16 @@ public class TailLogServlet extends HttpServlet {
 		}
 
 		File file = null;
+        String tailLogLofFolder = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
 		try {
-			file = new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/")+fileName));
+            if (!tailLogLofFolder.endsWith(java.io.File.separator)) {
+                tailLogLofFolder = tailLogLofFolder + java.io.File.separator;
+            }
+			file = new File(com.dotmarketing.util.FileUtil.getAbsolutlePath(tailLogLofFolder + fileName));
+
 		} catch (Exception e) {
-			Logger.error(this.getClass(), "unable to open log file '" + logFolder
-					+ "' please set the config variable TAIL_LOG_SERVLET_FILEPATH correctly");
+			Logger.error(this.getClass(), "unable to open log file '" + tailLogLofFolder + fileName
+					+ "' please set the config variable TAIL_LOG_LOG_FOLDER correctly");
 		}
 		if (file == null || !file.exists()) {
 
