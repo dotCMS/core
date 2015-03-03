@@ -1841,14 +1841,14 @@ public class IntegrityUtil {
 		String localLiveInode = (String) pageData.get("local_live_inode");
 		String remoteWorkingInode = (String) pageData.get("remote_working_inode");
 		String remoteLiveInode = (String) pageData.get("remote_live_inode");
-		Long languageId = new Long(0);
 
-        if (DbConnectionFactory.isOracle() || DbConnectionFactory.isMsSql()) {
-			BigDecimal lang = (BigDecimal) pageData.get("language_id");
-			languageId = new Long(lang.toPlainString());
-		} else {
-			languageId = (Long) pageData.get("language_id");
-		}
+        Long languageId;
+        if (DbConnectionFactory.isOracle()) {
+            BigDecimal lang = (BigDecimal) pageData.get("language_id");
+            languageId = new Long(lang.toPlainString());
+        } else {
+            languageId = (Long) pageData.get("language_id");
+        }
 
         String[] assetUrl = assetName.split("/");
 		assetName = assetUrl[assetUrl.length - 1];
