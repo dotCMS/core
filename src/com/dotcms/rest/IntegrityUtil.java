@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -518,7 +519,7 @@ public class IntegrityUtil {
 
         try {
 
-            CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName(), '|');
+            CsvReader folders = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.FOLDERS.getDataToCheckCSVName(), '|', Charset.forName("UTF-8"));
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
             String tempTableName = getTempTableName(endpointId, IntegrityType.FOLDERS);
@@ -606,7 +607,7 @@ public class IntegrityUtil {
 
         try {
 
-            CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName(), '|');
+            CsvReader structures = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.STRUCTURES.getDataToCheckCSVName(), '|', Charset.forName("UTF-8"));
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
             String tempTableName = getTempTableName(endpointId, IntegrityType.STRUCTURES);
@@ -669,7 +670,7 @@ public class IntegrityUtil {
 
         try {
 
-            CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName(), '|');
+            CsvReader schemes = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + IntegrityType.SCHEMES.getDataToCheckCSVName(), '|', Charset.forName("UTF-8"));
             boolean tempCreated = false;
             DotConnect dc = new DotConnect();
             String tempTableName = getTempTableName(endpointId, IntegrityType.SCHEMES);
@@ -769,7 +770,7 @@ public class IntegrityUtil {
 	 */
 	private void checkPages(String endpointId, IntegrityType type) throws IOException,
 			SQLException, DotDataException {
-    	CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToCheckCSVName(), '|');
+    	CsvReader htmlpages = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToCheckCSVName(), '|', Charset.forName("UTF-8"));
 
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId, type);
@@ -1006,7 +1007,7 @@ public class IntegrityUtil {
 
         try {
 
-            CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToFixCSVName(), '|');
+            CsvReader csvFile = new CsvReader(ConfigUtils.getIntegrityPath() + File.separator + endpointId + File.separator + type.getDataToFixCSVName(), '|', Charset.forName("UTF-8"));
             DotConnect dc = new DotConnect();
             String resultsTable = getResultsTableName(type);
 
