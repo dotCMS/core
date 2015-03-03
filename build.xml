@@ -1011,7 +1011,7 @@
         </copy>
 
         <mkdir dir="${tomcat.home}/webapps/ROOT/META-INF"/>
-        <copy file="extra/tomcat-7/context.xml" tofile="${tomcat.home}/webapps/ROOT/META-INF/context.xml"/>
+        <copy file="extra/tomcat/context.xml" tofile="${tomcat.home}/webapps/ROOT/META-INF/context.xml"/>
         <delete dir="${tomcat.home}/webapps/ROOT/WEB-INF/classes/com"/>
     </target>
 
