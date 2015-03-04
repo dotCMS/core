@@ -138,9 +138,9 @@ public class InitServlet extends HttpServlet {
 
 		Logger.info(this, "");
 
-        String classPath = config.getServletContext().getRealPath("WEB-INF/lib");
+        String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
 
-    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);
+    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
 
 

@@ -177,7 +177,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xalan', version:'2.7.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version:'1.1.3.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_1'
-    compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.6_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_1'

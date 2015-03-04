@@ -81,7 +81,7 @@ public class OSGIUtil {
     	}
         servletContextEvent = context;
 
-        String felixDirectory = context.getServletContext().getRealPath( File.separator + "WEB-INF" + File.separator + "felix" );
+        String felixDirectory = context.getServletContext().getRealPath( "/WEB-INF/felix" );
         FELIX_EXTRA_PACKAGES_FILE = felixDirectory + File.separator + "osgi-extra.conf";
         FELIX_EXTRA_PACKAGES_FILE_GENERATED = felixDirectory + File.separator + "osgi-extra-generated.conf";
 

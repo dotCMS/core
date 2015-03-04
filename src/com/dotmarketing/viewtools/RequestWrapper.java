@@ -17,11 +17,7 @@ import javax.servlet.ServletException;
 import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.Part;
+import javax.servlet.http.*;
 
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Xss;
@@ -308,7 +304,7 @@ public class RequestWrapper implements HttpServletRequest{
         return _request.getPart(arg0);
     }
 
-    public Collection<Part> getParts() throws IOException,
+	public Collection<Part> getParts() throws IOException,
             IllegalStateException, ServletException {
         return _request.getParts();
     }

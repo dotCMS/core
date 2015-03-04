@@ -16,30 +16,19 @@
 
 package org.apache.velocity.tools.view;
 
-import java.util.Locale;
+import com.dotmarketing.util.Logger;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import javax.servlet.ServletContext;
-import javax.servlet.RequestDispatcher;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletException;
-
-import com.dotmarketing.util.Logger;
-
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.io.InputStreamReader;
-import java.io.StringWriter;
-import java.io.PrintWriter;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.HttpURLConnection;
+import java.util.Locale;
 
 /**
  * <p>Provides methods to import arbitrary local or remote resources as strings.</p>
@@ -330,13 +319,11 @@ public abstract class ImportSupport {
             {
                 bos = new ByteArrayOutputStream();
             }
-            ServletOutputStream sos = new ServletOutputStream()
-                {
-                    public void write(int b) throws IOException
-                    {
-                        bos.write(b);
-                    }
-                };
+            ServletOutputStream sos = new ServletOutputStream() {
+                public void write(int b) throws IOException {
+                    bos.write(b);
+                }
+            };
             return sos;
         }
 

@@ -75,4 +75,5 @@ public class GZIPResponseStream extends ServletOutputStream {
   
   public void reset() {
   }
+
 }

@@ -106,14 +106,14 @@ public class MainServlet extends ActionServlet {
 			com.dotmarketing.util.Config.setMyApp(config.getServletContext());
 			// Need the plugin root dir before Hibernate comes up
 			try {
-				APILocator.getPluginAPI().setPluginJarDir(new File(config.getServletContext().getRealPath("WEB-INF/lib")));
+				APILocator.getPluginAPI().setPluginJarDir(new File(config.getServletContext().getRealPath("/WEB-INF/lib")));
 			} catch (IOException e1) {
 				Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
 			}
 
 			// Checking for execute upgrades
 			try {
-				StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("."));
+				StartupTasksExecutor.getInstance().executeUpgrades(config.getServletContext().getRealPath("/"));
 			} catch (DotRuntimeException e1) {
 				throw new ServletException(e1);
 			} catch (DotDataException e1) {
