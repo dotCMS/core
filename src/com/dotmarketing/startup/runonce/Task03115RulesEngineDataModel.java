@@ -28,7 +28,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
-            .append("conditionlet text not null")
+            .append("conditionlet text not null,")
+            .append("rel_operator varchar(20) not null,")
+            .append("value text")
             .append(");")
 
                     // create RULE_ACTION_CLASS table
@@ -60,7 +62,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
-            .append("conditionlet text not null")
+            .append("conditionlet text not null,")
+            .append("rel_operator varchar(20) not null,")
+            .append("value text")
             .append(");")
 
                     // create RULE_ACTION_CLASS table
@@ -92,7 +96,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("id varchar2(36) primary key,")
             .append("name varchar2(255) not null,")
             .append("rule_id varchar2(36) references dot_rule(id),")
-            .append("conditionlet nclob not null")
+            .append("conditionlet nclob not null,")
+            .append("rel_operator varchar2(20) not null,")
+            .append("value nclob")
             .append(");")
 
                     // create RULE_ACTION_CLASS table
@@ -123,7 +129,10 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
-            .append("conditionlet text not null")
+            .append("conditionlet text not null,")
+            .append("rel_operator varchar(20) not null,")
+            .append("value text")
+
             .append(");")
 
                     // create RULE_ACTION_CLASS table
@@ -154,7 +163,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
-            .append("conditionlet text not null")
+            .append("conditionlet text not null,")
+            .append("rel_operator varchar(20) not null,")
+            .append("value text")
             .append(");")
 
                     // create RULE_ACTION_CLASS table
