@@ -3167,3 +3167,5 @@ create table cluster_server_action(
 	time_out_seconds bigint not null,
 	PRIMARY KEY (server_action_id)
 );
+
+-- Rules Engine
