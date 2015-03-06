@@ -6,12 +6,7 @@
 package com.dotmarketing.util;
 
 import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -3487,4 +3482,17 @@ public class UtilMethods {
             return false;
         }
     }
+
+    /**
+     * Get the stacktrace as String from an Exception.
+     * @param throwable Exception to get the stacktrace
+     * @return boolean
+     */
+    public static String getStackTrace(final Throwable throwable) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, true);
+        throwable.printStackTrace(pw);
+        return sw.getBuffer().toString();
+    }
+
 }
