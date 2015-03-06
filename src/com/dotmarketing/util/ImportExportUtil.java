@@ -574,18 +574,6 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-        for (File file : containerStructuresXML) {
-            try{
-                HibernateUtil.closeSession();
-            } catch (DotHibernateException e) {
-                Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
-            }
-            try{
-                doXMLFileImport(file, out);
-            } catch (Exception e) {
-                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
-            }
-        }
         for (File file : pagesXML) {
             try{
 				HibernateUtil.closeSession();
@@ -634,7 +622,18 @@ public class ImportExportUtil {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
             }
         }
-
+        for (File file : containerStructuresXML) {
+            try{
+                HibernateUtil.closeSession();
+            } catch (DotHibernateException e) {
+                Logger.error(this, "Unable to close Session : " + e.getMessage(), e);
+            }
+            try{
+                doXMLFileImport(file, out);
+            } catch (Exception e) {
+                Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
+            }
+        }
         for (File file : treeXMLs) {
             try{
 				HibernateUtil.closeSession();
