@@ -207,47 +207,52 @@
 		</tr>
 	<%} %>
 	</table>
-	
-	<table width="95%" align="center" style="margin:10px;">
-		<tr>
-		<td width="33%">
-			<%if(searcher.hasBack()){ 
-				fakeSearcher.setPage(searcher.getPage()-1);
-			%>			
-				<button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="previousIcon">
-					<%= LanguageUtil.get(pageContext, "Back") %> 
-				</button>
-			
-			<%} %>
-		</td>
-		<td width="34%" align="center">
-			<%if(searcher.getTotalPages() > 1){ %>
-				<%for(int i = searcher.getStartPage();i< searcher.getTotalPages();i++){ 
-					fakeSearcher.setPage(i);
-					%>
-					<%if(i == searcher.getPage()){ %>
-						<%=i+1 %>
-					<%}else{ %>
-						<a href="javascript:refreshTaskList('<%=fakeSearcher.getQueryString()%>')"><%=i+1 %></a>
-					<%} %>
-					&nbsp;
-				<%} %>
-			<%} %>
-		</td>
-		<td width="33%" align="right">
-			<%if(searcher.hasNext()){ 
-				fakeSearcher.setPage(searcher.getPage()+1);
-			%>
-			
-			<button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="nextIcon">
-				<%= LanguageUtil.get(pageContext, "Next") %> 
-			</button>
 
-			<%} %>
-		</td>
-		</tr>
-	
-	</table>
+    <table width="95%" align="center" style="margin:10px;">
+        <tr>
+            <td width="33%">
+                <%if(searcher.hasBack()){
+                    fakeSearcher.setPage(searcher.getPage()-1);
+                %>
+                <button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="previousIcon">
+                    <%= LanguageUtil.get(pageContext, "Back") %>
+                </button>
+
+                <%} %>
+            </td>
+            <td width="34%" align="center">
+                <%if(searcher.getTotalPages() > 1){
+                    for(int auxPage = searcher.getPage() - 4; auxPage < searcher.getPage(); auxPage++){
+                        if(auxPage >= 0){
+                            fakeSearcher.setPage(auxPage);
+                %><a href="javascript:refreshTaskList('<%=fakeSearcher.getQueryString()%>')"><%=auxPage+1 %></a>&nbsp;<%
+                    }
+                }
+
+            %><%=searcher.getPage() + 1%>&nbsp;<%
+
+                for(int auxPage = searcher.getPage() + 1; auxPage < searcher.getPage() + 4; auxPage++){
+                    if(auxPage < searcher.getTotalPages()){
+                        fakeSearcher.setPage(auxPage);
+            %><a href="javascript:refreshTaskList('<%=fakeSearcher.getQueryString()%>')"><%=auxPage+1 %></a>&nbsp;<%
+                        }
+                    }
+                } %>
+            </td>
+            <td width="33%" align="right">
+                <%if(searcher.hasNext()){
+                    fakeSearcher.setPage(searcher.getPage()+1);
+                %>
+
+                <button dojoType="dijit.form.Button" onClick="refreshTaskList('<%=fakeSearcher.getQueryString()%>');" iconClass="nextIcon">
+                    <%= LanguageUtil.get(pageContext, "Next") %>
+                </button>
+
+                <%} %>
+            </td>
+        </tr>
+
+    </table>
 	
 	
 	<%if(tasks != null && tasks.size() >0 ){ %>
