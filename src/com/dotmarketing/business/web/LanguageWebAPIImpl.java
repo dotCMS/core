@@ -48,16 +48,18 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 		String languageId = String.valueOf(langAPI.getDefaultLanguage().getId());
 		Language currentLang = langAPI.getLanguage(languageId);
 		Locale locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-		HttpSession session = httpRequest.getSession();
+		HttpSession sessionOpt = httpRequest.getSession(false);
 
-		// set default page language
-		if (UtilMethods.isSet((String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))) {
-
-			languageId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-			currentLang = langAPI.getLanguage(languageId);
-			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
-
+		if(sessionOpt !=null){
+			// set default page language
+			if (UtilMethods.isSet((String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))) {
+	
+				languageId = (String) sessionOpt.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+				currentLang = langAPI.getLanguage(languageId);
+				locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
+			}
 		}
+		
 
 		// update page language
 		if (UtilMethods.isSet(httpRequest.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
@@ -75,16 +77,17 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 
 		}
-
-		session.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 		httpRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
-		boolean ADMIN_MODE = (session.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
-		if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
-			session.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-			httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
-		}
-		session.setAttribute(WebKeys.LOCALE, locale);
 		httpRequest.setAttribute(WebKeys.LOCALE, locale);
+		if(sessionOpt!=null){
+			sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
+			boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
+			if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {
+				sessionOpt.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+				httpRequest.setAttribute(WebKeys.Globals_FRONTEND_LOCALE_KEY, locale);
+			}
+			sessionOpt.setAttribute(WebKeys.LOCALE, locale);
+		}
 
 	}
 	
@@ -92,7 +95,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 	public Language getLanguage(HttpServletRequest req) {
 
 		checkSessionLocale(req);
-		return APILocator.getLanguageAPI().getLanguage((String) req.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+		return APILocator.getLanguageAPI().getLanguage((String) req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 
 	}
 	
