@@ -115,6 +115,21 @@
 
 
 <div style="margin:15px;">
+
+    <%if(tasks != null && tasks.size() >0 ){ %>
+    <div class="buttonRow" style="text-align: left">
+
+        <%if(availableActions.size() > 0){ %>
+        <%=LanguageUtil.get(pageContext, "Workflows") %> :
+        <select name="performAction" id="performAction" store="actionStore" dojoType="dijit.form.FilteringSelect"></select>
+
+        <button dojoType="dijit.form.Button" onClick="excuteWorkflowAction()">
+            <%=LanguageUtil.get(pageContext, "Perform-Workflow") %>
+        </button>
+        <%} %>
+    </div>
+    <%} %>
+
 	<table class="listingTable">
 	
 	<tr>
@@ -255,19 +270,7 @@
     </table>
 	
 	
-	<%if(tasks != null && tasks.size() >0 ){ %>
-		<div class="buttonRow" style="text-align: left">
-			
-			<%if(availableActions.size() > 0){ %>
-				<%=LanguageUtil.get(pageContext, "Workflows") %> : 
-				<select name="performAction" id="performAction" store="actionStore" dojoType="dijit.form.FilteringSelect"></select>
-	
-				<button dojoType="dijit.form.Button" onClick="excuteWorkflowAction()">
-					<%=LanguageUtil.get(pageContext, "Perform-Workflow") %>
-				</button>
-			<%} %>
-		</div>
-	<%} %>
+
 	<form name="executeTasksFrm" id="executeTasksFrm" action="/DotAjaxDirector/com.dotmarketing.portlets.workflows.ajax.WfTaskAjax?cmd=executeActions" method="post">
 		<input name="wfActionAssign" id="wfActionAssign" type="hidden" value="">
 		<input name="wfActionComments" id="wfActionComments" type="hidden" value="">
