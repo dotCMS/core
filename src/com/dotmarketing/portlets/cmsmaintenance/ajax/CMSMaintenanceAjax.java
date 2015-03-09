@@ -489,7 +489,7 @@ public class CMSMaintenanceAjax {
 	                    else if(CalendarReminder.class.equals(clazz)){
 	                    	_dh.setQuery("from " + clazz.getName() + " order by user_id, event_id, send_date");
 	                    } else if(Identifier.class.equals(clazz)){
-	                    	_dh.setQuery("from " + clazz.getName() + " order by parent_path");
+	                    	_dh.setQuery("from " + clazz.getName() + " order by parent_path, id");
 	                    } else {
 	                        _dh.setQuery("from " + clazz.getName() + " order by 1");
 
