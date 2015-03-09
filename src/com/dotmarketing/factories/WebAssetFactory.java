@@ -1553,6 +1553,7 @@ public class WebAssetFactory {
 		}
 		Identifier ident=APILocator.getIdentifierAPI().find(asset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
+        CacheLocator.getContentletCache().remove(asset.getInode());
 		
 		HibernateUtil.saveOrUpdate(asset);
 	}
