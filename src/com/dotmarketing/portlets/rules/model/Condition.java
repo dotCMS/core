@@ -1,13 +1,11 @@
-package com.dotmarketing.portlets.rules.conditionlet.model;
-
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+package com.dotmarketing.portlets.rules.model;
 
 public class Condition {
 
     private String id;
     private String name;
     private String ruleId;
-    private Conditionlet conditionlet;
+    private String conditionletId;
     private String operator;
     private String input;
 
@@ -35,12 +33,12 @@ public class Condition {
         this.ruleId = ruleId;
     }
 
-    public Conditionlet getConditionlet() {
-        return conditionlet;
+    public String getConditionletId() {
+        return conditionletId;
     }
 
-    public void setConditionlet(Conditionlet conditionlet) {
-        this.conditionlet = conditionlet;
+    public void setConditionletId(String conditionletId) {
+        this.conditionletId = conditionletId;
     }
 
     public String getOperator() {

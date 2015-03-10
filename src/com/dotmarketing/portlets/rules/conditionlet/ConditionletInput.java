@@ -1,13 +1,14 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.Set;
 
 /**
  * This class contains all the information and/or data needed to build the input for a Condition
  */
 
 public class ConditionletInput {
+
+    /* we might use this one in the near? future
 
     public enum ResponseType {
         RAW_DATA,
@@ -16,60 +17,37 @@ public class ConditionletInput {
         JAVASCRIPT // ??
     }
 
-    public enum InputType {
-        SELECT,
-        FILTERING_SELECT,
-        CHECKBOX,
-        RADIOBUTTON,
-        TEXTBOX,
-        TEXTAREA // etc
-    }
+    */
 
-    private ResponseType responseType;
-    private LinkedHashMap<String, String> data;
-    private Boolean allowUserInput;
-    private Boolean multipleChoice;
-    private InputType inputType;
+    private Set<EntryOption> data;
+    private boolean userInputAllowed;
+    private boolean multipleSelectionAllowed;
     private String defaultValue;
+    private Integer minNum;
+    private Integer maxNum;
 
-    public ResponseType getResponseType() {
-        return responseType;
-    }
-
-    public void setResponseType(ResponseType responseType) {
-        this.responseType = responseType;
-    }
-
-    public Map<String, String> getData() {
+    public Set<EntryOption> getData() {
         return data;
     }
 
-    public void setData(LinkedHashMap<String, String> data) {
+    public void setData(Set<EntryOption> data) {
         this.data = data;
     }
 
-    public Boolean getAllowUserInput() {
-        return allowUserInput;
+    public boolean isUserInputAllowed() {
+        return userInputAllowed;
     }
 
-    public void setAllowUserInput(Boolean allowUserInput) {
-        this.allowUserInput = allowUserInput;
+    public void setUserInputAllowed(boolean userInputAllowed) {
+        this.userInputAllowed = userInputAllowed;
     }
 
-    public Boolean getMultipleChoice() {
-        return multipleChoice;
+    public boolean isMultipleSelectionAllowed() {
+        return multipleSelectionAllowed;
     }
 
-    public void setMultipleChoice(Boolean multipleChoice) {
-        this.multipleChoice = multipleChoice;
-    }
-
-    public InputType getInputType() {
-        return inputType;
-    }
-
-    public void setInputType(InputType inputType) {
-        this.inputType = inputType;
+    public void setMultipleSelectionAllowed(boolean multipleSelectionAllowed) {
+        this.multipleSelectionAllowed = multipleSelectionAllowed;
     }
 
     public String getDefaultValue() {
@@ -78,5 +56,21 @@ public class ConditionletInput {
 
     public void setDefaultValue(String defaultValue) {
         this.defaultValue = defaultValue;
+    }
+
+    public Integer getMinNum() {
+        return minNum;
+    }
+
+    public void setMinNum(Integer minNum) {
+        this.minNum = minNum;
+    }
+
+    public Integer getMaxNum() {
+        return maxNum;
+    }
+
+    public void setMaxNum(Integer maxNum) {
+        this.maxNum = maxNum;
     }
 }

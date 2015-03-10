@@ -2,12 +2,13 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotmarketing.util.UtilMethods;
 
-import java.util.LinkedHashMap;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 public class VisitorsCountryConditionlet extends Conditionlet {
 
-    private LinkedHashMap<String, String> operators;
-    private ConditionletInput options;
+    private LinkedHashSet<Operator> operators;
+    private ConditionletInput conditionletInput;
 
     @Override
     public String getName() {
@@ -15,56 +16,77 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public LinkedHashMap<String, String> getOperators() {
+    public LinkedHashSet<Operator> getOperators() {
         if(operators!=null)
             return operators;
 
-        operators = new LinkedHashMap<>();
-        operators.put("is", getLabel(getClass().getName() + ".is") );
-        operators.put("isNot", getLabel(getClass().getName() + ".isNot") );
+        operators = new LinkedHashSet<>();
+        operators.add(new Operator("is", "is"));
+        operators.add(new Operator("isNot", "isNot"));
 
         return operators;
     }
 
     @Override
-    public boolean validate(String operator, String value) {
-        return false;
-    }
+    protected ValidationResult validate(Operator operator, String value) {
+        ValidationResult result = new ValidationResult();
 
-    @Override
-    public ConditionletInput getInput(String operator) {
-        if (options != null)
-            return options;
-
-        options = new ConditionletInput();
-        options.setResponseType(ConditionletInput.ResponseType.RAW_DATA);
-        options.setInputType(ConditionletInput.InputType.FILTERING_SELECT);
-        options.setMultipleChoice(true);
-
-        LinkedHashMap<String, String> data = new LinkedHashMap<>();
-        data.put("CR", getLabel(getClass().getName() + ".CR"));
-        data.put("US", getLabel(getClass().getName() + ".US"));
-        data.put("VE", getLabel(getClass().getName() + ".VE"));
-
-        options.setData(data);
-        options.setDefaultValue("US");
-
-        return options;
-    }
-
-    @Override
-    public boolean evaluate(String leftArgument, String operator, String rightArgument) {
-        if (!UtilMethods.isSet(leftArgument) || !UtilMethods.isSet(operator) || !UtilMethods.isSet(rightArgument))
-            return false;
-
-        switch (operator) {
-            case "is":
-                return leftArgument.equals(rightArgument);
-            case "isNot":
-                return !leftArgument.equals(rightArgument);
-            default:
-                return false;
+        Set<EntryOption> entries = conditionletInput.getData();
+        for (Iterator<EntryOption> iterator = entries.iterator(); iterator.hasNext(); ) {
+            EntryOption entryOption =  iterator.next();
+            if(entryOption.getLabel().equals(value)) {
+                result.setValid(true);
+            }
         }
 
+        result.setErrorMessage("Non valid selected value: " + value);
+        return result ;
+    }
+
+    @Override
+    public ValidationResults validate(Operator operator, Collection<String> values) {
+
+        ValidationResults results = new ValidationResults();
+
+        if(!UtilMethods.isSet(values))
+            return results;
+
+        List<ValidationResult> resultList = new ArrayList();
+
+        for (Iterator<String> iterator = values.iterator(); iterator.hasNext(); ) {
+            ValidationResult result = validate(operator, iterator.next());
+            resultList.add(result);
+            if(!result.isValid())
+                results.setErrors(true);
+        }
+
+        return results;
+
+    }
+
+
+
+    @Override
+    public ConditionletInput getInput(Operator operator) {
+        if (conditionletInput != null)
+            return conditionletInput;
+
+        conditionletInput = new ConditionletInput();
+        conditionletInput.setMultipleSelectionAllowed(true);
+
+        LinkedHashSet<EntryOption> data = new LinkedHashSet<>();
+        data.add(new EntryOption("CR"));
+        data.add(new EntryOption("US"));
+        data.add(new EntryOption("CR"));
+
+        conditionletInput.setData(data);
+        conditionletInput.setDefaultValue("US");
+
+        return conditionletInput;
+    }
+
+    @Override
+    public boolean evaluate(Operator operator, HttpServletRequest request) {
+        return false;
     }
 }
