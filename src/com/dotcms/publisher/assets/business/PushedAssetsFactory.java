@@ -14,7 +14,7 @@ public abstract class PushedAssetsFactory {
 	protected static String DELETE_ASSETS_BY_BUNDLE_ENV= "DELETE FROM publishing_pushed_assets WHERE bundle_id = ? and environment_id = ?";
 	protected static String DELETE_ASSETS_BY_ASSET_ID= "DELETE FROM publishing_pushed_assets WHERE asset_id = ?";
 	protected static String DELETE_ASSETS_BY_ENVIRONMENT_ID= "DELETE FROM publishing_pushed_assets WHERE environment_id = ?";
-	protected static String DELETE_ALL_ASSETS= "TRUNCATE publishing_pushed_assets";
+	protected static String DELETE_ALL_ASSETS= "TRUNCATE TABLE publishing_pushed_assets";
 
 	public abstract void savePushedAsset(PushedAsset asset) throws DotDataException;
 
