@@ -52,27 +52,37 @@ These queries can be tested in the Elasticsearch query portlet
 
 
 <h3>Facet on the news.tags field</h3>
-<pre><code>{
-    "query" : { "query_string" : {"query" : "gas*"} },
+<pre><code>
+{
+    "query" : {
+        "match_all" : {  }
+    },
     "facets" : {
-        "tags" : { "terms" : {"field" : "news.tags"} }
-    }
+        "tag" : {
+            "terms" : {
+                "field" : "news.tags",
+                "size" : 100   //the number of facets to return
+            }
+        }
+    },
+	"size":0    //the number of hits to return
 }
 </code></pre>
 <br>
 
 
-<h3>Suggest based on title</h3>
+<h3>Suggest based on title, return only the suggestions (size:0))</h3>
 <pre><code>{
   "suggest" : {
     "title-suggestions" : {
       "text" : "gs pric rollrcoater",
       "term" : {
-        "size" : 3,
+        "size" : 10,
         "field" : "title"
       }
     }
-  }
+  }    
+  ,"size":0
 }
 </code></pre>
 
