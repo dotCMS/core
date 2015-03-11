@@ -197,7 +197,6 @@ $results.response&lt;br&gt;
 <h2><a name="#esPortletGeo"></a>Geolocation</h2>
 <p>For these examples to work you need to add a field to the ""news structure that uses latlon as its velocity variable name. In this example, it is just a text field with a value of ""42.648899,-71.165497)</p>
 <p>Filter news by distance away</p>
-<p>(</p>
 <pre><code>{
     "query": {
         "filtered": {
