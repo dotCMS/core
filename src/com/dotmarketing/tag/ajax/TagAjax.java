@@ -1,31 +1,12 @@
 package com.dotmarketing.tag.ajax;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
-
 import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
@@ -36,6 +17,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.*;
 
 public class TagAjax {
 
@@ -339,8 +326,8 @@ public class TagAjax {
 		try{
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
-			if(!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode())){
-				selectedHostOrFolderId = APILocator.getFolderAPI().find(selectedHostOrFolderId, currentUser, false).getHostId();
+			if ( (!UtilMethods.isSet( host ) || !UtilMethods.isSet( host.getInode() )) && UtilMethods.isSet( selectedHostOrFolderId ) ) {
+				selectedHostOrFolderId = APILocator.getFolderAPI().find( selectedHostOrFolderId, currentUser, false ).getHostId();
 			}
 		}catch(Exception e){
 			Logger.error(TagAjax.class,e.getMessage());
