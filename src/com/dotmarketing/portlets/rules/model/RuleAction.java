@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
-public class RuleActionClass {
+public class RuleAction {
     private String id;
     private String name;
     private String ruleId;

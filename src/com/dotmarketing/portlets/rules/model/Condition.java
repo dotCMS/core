@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
+import java.util.Date;
+
 public class Condition {
 
     private String id;
@@ -8,6 +10,7 @@ public class Condition {
     private String conditionletId;
     private String operator;
     private String input;
+    private Date modDate;
 
     public String getId() {
         return id;
@@ -55,5 +58,13 @@ public class Condition {
 
     public void setInput(String input) {
         this.input = input;
+    }
+
+    public Date getModDate() {
+        return modDate;
+    }
+
+    public void setModDate(Date modDate) {
+        this.modDate = modDate;
     }
 }

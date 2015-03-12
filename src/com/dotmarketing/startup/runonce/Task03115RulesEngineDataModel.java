@@ -18,7 +18,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("host varchar(36) not null,")
             .append("folder varchar(36) not null,")
             .append("fire_order int default 0,")
-            .append("enabled boolean default false")
+            .append("enabled boolean default false,")
+            .append("mod_date datetime")
             .append(");")
 
                     // unique constraint rule table
@@ -31,11 +32,12 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("conditionlet text not null,")
             .append("rel_operator varchar(36) not null,")
-            .append("value text")
+            .append("value text,")
+            .append("mod_date datetime")
             .append(");")
 
-                    // create RULE_ACTION_CLASS table
-            .append("create table rule_action_class(")
+                    // create RULE_ACTION  table
+            .append("create table rule_action (")
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
@@ -56,6 +58,7 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("fire_order int default 0,")
             .append("enabled boolean default false,")
+            .append("mod_date timestamp,")
             .append("unique (name, host)")
             .append(");")
 
@@ -66,11 +69,12 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("conditionlet text not null,")
             .append("rel_operator varchar(36) not null,")
-            .append("value text")
+            .append("value text,")
+            .append("mod_date timestamp")
             .append(");")
 
-                    // create RULE_ACTION_CLASS table
-            .append("create table rule_action_class(")
+                    // create RULE_ACTION  table
+            .append("create table rule_action (")
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
@@ -90,6 +94,7 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar2(36) not null,")
             .append("fire_order number(10,0) default 0,")
             .append("enabled  number(1,0) default 0,")
+            .append("mod_date timestamp,")
             .append("primary key (id),")
             .append("unique (name, host)")
             .append(");")
@@ -101,11 +106,12 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_id varchar2(36) references dot_rule(id),")
             .append("conditionlet nclob not null,")
             .append("rel_operator varchar2(36) not null,")
-            .append("value nclob")
+            .append("value nclob,")
+            .append("mod_date timestamp")
             .append(");")
 
-                    // create RULE_ACTION_CLASS table
-            .append("create table rule_action_class(")
+                    // create RULE_ACTION  table
+            .append("create table rule_action (")
             .append("id varchar2(36) primary key,")
             .append("name varchar2(255) not null,")
             .append("rule_id varchar2(36) references dot_rule(id),")
@@ -125,6 +131,7 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("fire_order int default 0,")
             .append("enabled tinyint default 0,")
+            .append("mod_date datetime,")
             .append("unique (name, host)")
             .append(");")
 
@@ -135,12 +142,13 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("conditionlet text not null,")
             .append("rel_operator varchar(36) not null,")
-            .append("value text")
+            .append("value text,")
+            .append("mod_date datetime")
 
             .append(");")
 
-                    // create RULE_ACTION_CLASS table
-            .append("create table rule_action_class(")
+                    // create RULE_ACTION  table
+            .append("create table rule_action (")
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
@@ -160,6 +168,7 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("fire_order int default 0,")
             .append("enabled boolean default false,")
+            .append("mod_date timestamp,")
             .append("unique (name, host)")
             .append(");")
 
@@ -170,11 +179,12 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("conditionlet text not null,")
             .append("rel_operator varchar(36) not null,")
-            .append("value text")
+            .append("value text,")
+            .append("mod_date timestamp")
             .append(");")
 
-                    // create RULE_ACTION_CLASS table
-            .append("create table rule_action_class(")
+                    // create RULE_ACTION  table
+            .append("create table rule_action (")
             .append("id varchar(36) primary key,")
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
@@ -205,16 +215,6 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMySQLScript() {
-        System.out.println("-----MYSQL--------");
-        System.out.println(MYSQL);
-        System.out.println("-----POSTGRES--------");
-        System.out.println(POSTGRES);
-        System.out.println("-----ORACLE--------");
-        System.out.println(ORACLE);
-        System.out.println("-----MSSQL--------");
-        System.out.println(MSSQL);
-        System.out.println("-----H2--------");
-        System.out.println(H2);
         return MYSQL.toString();
     }
 

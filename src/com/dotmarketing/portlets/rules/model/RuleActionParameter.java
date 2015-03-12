@@ -6,7 +6,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.Serializable;
 
 
-public class RuleActionClassParameter implements Serializable {
+public class RuleActionParameter implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
@@ -50,7 +50,7 @@ public class RuleActionClassParameter implements Serializable {
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if(obj ==null || ! (obj instanceof RuleActionClassParameter)) return false;
-		return ((RuleActionClassParameter)obj).getId().equals(this.getId());
+		if(obj ==null || ! (obj instanceof RuleActionParameter)) return false;
+		return ((RuleActionParameter)obj).getId().equals(this.getId());
 	}
 }

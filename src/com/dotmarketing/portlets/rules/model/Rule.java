@@ -8,6 +8,7 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class Rule implements Permissionable {
@@ -71,6 +72,7 @@ public class Rule implements Permissionable {
     private int fireOrder;
     private boolean enabled;
     private String expression;
+    private Date modDate;
 
     public String getId() {
         return id;
@@ -142,5 +144,13 @@ public class Rule implements Permissionable {
 
     public void setExpression(String expression) {
         this.expression = expression;
+    }
+
+    public Date getModDate() {
+        return modDate;
+    }
+
+    public void setModDate(Date modDate) {
+        this.modDate = modDate;
     }
 }
