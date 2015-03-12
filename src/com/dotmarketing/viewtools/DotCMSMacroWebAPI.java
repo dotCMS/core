@@ -312,6 +312,9 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	}
 
+	   /**
+	    * @deprecated Use the {@link SQLResultsViewTool} instead, the {@link SQLResultsViewTool} view tool is mapped to the <strong>sql</strong> key.
+	    */
 	   public ArrayList<HashMap<String, String>> getSQLResults(String dataSource, String sql, int startRow, int maxRow) {
 		   
 		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<HashMap<String, String>>();
