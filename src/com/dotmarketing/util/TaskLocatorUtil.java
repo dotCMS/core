@@ -97,11 +97,8 @@ import com.dotmarketing.startup.runonce.Task03055RemoveLicenseManagerPortlet;
 import com.dotmarketing.startup.runonce.Task03060AddClusterServerAction;
 import com.dotmarketing.startup.runonce.Task03065AddHtmlPageIR;
 import com.dotmarketing.startup.runonce.Task03105HTMLPageGenericPermissions;
-<<<<<<< HEAD
-import com.dotmarketing.startup.runonce.Task03110AddLanguageIdToHtmlpagesIr;
+
 import com.dotmarketing.startup.runonce.Task03120AddInodeToContainerStructure;
-=======
->>>>>>> df802b3... #7458: Delete duplicated upgrade task
 
 
 public class TaskLocatorUtil {
