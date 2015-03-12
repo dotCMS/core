@@ -426,10 +426,9 @@ public class EditReportAction extends DotPortletAction {
 					+ File.separator + report.getInode() + ".jrxml";
 		} else {
 			filePath = request.getSession().getServletContext().getRealPath(
-					File.separator + Config.getStringProperty("ASSET_PATH")
-							+ File.separator
-							+ Config.getStringProperty("REPORT_PATH")
-							+ File.separator + report.getInode() + ".jrxml");
+					"/" + Config.getStringProperty("ASSET_PATH")
+							+ "/" + Config.getStringProperty("REPORT_PATH")
+							+ "/" + report.getInode() + ".jrxml");
 		}
 
 		File reportFile = new File(filePath);

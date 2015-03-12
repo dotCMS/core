@@ -65,8 +65,11 @@ public class PermissionedWebAssetUtil {
 			Field hostNameField = st.getFieldVar("hostName");
 			List<Contentlet> list = null;
 			try {
-				list = APILocator.getContentletAPI().search("+structureInode:" + st.getInode() + 
-						" +working:true +" + hostNameField.getFieldContentlet() + ":" + hostName, 0, 0, null, user, respectFrontEndPermissions);
+                String query = "+structureInode:" + st.getInode() + " +working:true";
+                if(UtilMethods.isSet(hostName)){
+                    query += " +" + hostNameField.getFieldContentlet() + ":" + hostName;
+                }
+				list = APILocator.getContentletAPI().search(query, 0, 0, null, user, respectFrontEndPermissions);
 			} catch (Exception e) {
 				Logger.error(PermissionedWebAssetUtil.class,e.getMessage(),e);
 			}

@@ -13,6 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotmarketing.beans.Host;
@@ -43,7 +44,11 @@ public class TimeMachineFilter implements Filter {
 		HttpServletResponse resp = (HttpServletResponse) response;
 		String uri=req.getRequestURI();
 		
-		
+
+		if(req.getSession(false)==null){
+		    chain.doFilter(request, response);
+		    return;
+		}
 		if(!uri.startsWith("/"))
 		    uri="/"+uri;
 

@@ -111,7 +111,7 @@ public interface ContainerAPI {
 
 	/**
 	 *
-	 * deletes the container-structure relationships for the given container
+	 * Deletes the container-structure relationships for the given container identifier. Inode does not matter.
 	 *
 	 * @param container
 	 * @return

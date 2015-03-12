@@ -189,18 +189,18 @@ public class StructureCache {
         cache.put(getPrimaryGroup() + MASTER_STRUCTURE, pattern, getPrimaryGroup());
 	}
     
-    public static void addContainerStructures(List<ContainerStructure> containerStructures, String containerIdentifier){
+    public static void addContainerStructures(List<ContainerStructure> containerStructures, String containerIdentifier, String containerInode){
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(getContainerStructureGroup() + containerIdentifier, containerStructures, getContainerStructureGroup());
+        cache.put(getContainerStructureGroup() + containerIdentifier + containerInode, containerStructures, getContainerStructureGroup());
 	}
     
     @SuppressWarnings("unchecked")
-	public static List<ContainerStructure> getContainerStructures(String containerIdentifier){
+	public static List<ContainerStructure> getContainerStructures(String containerIdentifier, String containerInode){
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     	List<ContainerStructure> containerStructures = null;
     	
 		try{
-			containerStructures = (List<ContainerStructure>) cache.get(getContainerStructureGroup() + containerIdentifier, getContainerStructureGroup());
+			containerStructures = (List<ContainerStructure>) cache.get(getContainerStructureGroup() + containerIdentifier + containerInode, getContainerStructureGroup());
 			return containerStructures;
 			
 		} catch (DotCacheException e) {
@@ -209,9 +209,9 @@ public class StructureCache {
     	}
 	}
     
-    public static void removeContainerStructures(String containerIdentifier) {
+    public static void removeContainerStructures(String containerIdentifier, String containerInode) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(getContainerStructureGroup() + containerIdentifier, getContainerStructureGroup());
+        cache.remove(getContainerStructureGroup() + containerIdentifier + containerInode, getContainerStructureGroup());
     }
     
     public static void clearCache(){

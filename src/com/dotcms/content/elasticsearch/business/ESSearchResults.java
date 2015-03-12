@@ -1,18 +1,19 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
-
 import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
 import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
 import com.dotcms.repackage.org.elasticsearch.search.facet.Facets;
 import com.dotcms.repackage.org.elasticsearch.search.suggest.Suggest;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
 public class ESSearchResults implements List {
 
 	String query;
+	String rewrittenQuery;
 	long populationTook = 0;
 
 	final SearchResponse response;
@@ -87,6 +88,19 @@ public class ESSearchResults implements List {
 
 	public void setQuery(String query) {
 		this.query = query;
+	}
+
+	/**
+	 * Returns the ES query after our permissions query is append to it
+	 *
+	 * @return Rewritten query with a permissions filter
+	 */
+	public String getRewrittenQuery () {
+		return rewrittenQuery;
+	}
+
+	public void setRewrittenQuery ( String rewrittenQuery ) {
+		this.rewrittenQuery = rewrittenQuery;
 	}
 
 	public long getQueryTook() {

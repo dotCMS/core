@@ -52,27 +52,37 @@ These queries can be tested in the Elasticsearch query portlet
 
 
 <h3>Facet on the news.tags field</h3>
-<pre><code>{
-    "query" : { "query_string" : {"query" : "gas*"} },
+<pre><code>
+{
+    "query" : {
+        "match_all" : {  }
+    },
     "facets" : {
-        "tags" : { "terms" : {"field" : "news.tags"} }
-    }
+        "tag" : {
+            "terms" : {
+                "field" : "news.tags",
+                "size" : 100   //the number of facets to return
+            }
+        }
+    },
+	"size":0    //the number of hits to return
 }
 </code></pre>
 <br>
 
 
-<h3>Suggest based on title</h3>
+<h3>Suggest based on title, return only the suggestions (size:0))</h3>
 <pre><code>{
   "suggest" : {
     "title-suggestions" : {
       "text" : "gs pric rollrcoater",
       "term" : {
-        "size" : 3,
+        "size" : 10,
         "field" : "title"
       }
     }
-  }
+  }    
+  ,"size":0
 }
 </code></pre>
 
@@ -187,7 +197,6 @@ $results.response&lt;br&gt;
 <h2><a name="#esPortletGeo"></a>Geolocation</h2>
 <p>For these examples to work you need to add a field to the ""news structure that uses latlon as its velocity variable name. In this example, it is just a text field with a value of ""42.648899,-71.165497)</p>
 <p>Filter news by distance away</p>
-<p>(</p>
 <pre><code>{
     "query": {
         "filtered": {

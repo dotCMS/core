@@ -95,7 +95,7 @@ public class URLMapFilter implements Filter {
 		
 		
 		HttpServletRequest request = (HttpServletRequest) req;
-		HttpSession session = request.getSession();
+		HttpSession optSession = request.getSession(false);
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
 
@@ -155,8 +155,8 @@ public class URLMapFilter implements Filter {
 			return;
 		}
 		if (RegEX.contains(url, mastRegEx)) {
-			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			boolean ADMIN_MODE = (optSession!=null && optSession.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean EDIT_MODE = ((optSession!=null && optSession.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 
 			Structure structure = null;
 			User user = null;
@@ -247,7 +247,9 @@ public class URLMapFilter implements Filter {
 						        idx=1;
 						}
 						ContentletSearch c = cons.get(idx);
-						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
+						if(optSession !=null){
+							optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
+						}
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
 						request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, c.getIdentifier());

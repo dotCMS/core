@@ -99,6 +99,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			for (ContainerStructure oldCS : sourceCS) {
 				ContainerStructure newCS = new ContainerStructure();
 				newCS.setContainerId(newContainer.getIdentifier());
+                newCS.setContainerInode(newContainer.getInode());
 				newCS.setStructureId(oldCS.getStructureId());
 				newCS.setCode(oldCS.getCode());
 				newContainerCS.add(newCS);
@@ -312,15 +313,18 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 				//Get one of the relations to get the container id.
 				String containerIdentifier = containerStructureList.get(0).getContainerId();
+                String containerInode = containerStructureList.get(0).getContainerInode();
 
-				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + containerIdentifier + "'");
+				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
+                        "where container_id = '" + containerIdentifier + "'" +
+                        "and container_inode = '" + containerInode+ "'");
 
 				for(ContainerStructure containerStructure : containerStructureList){
 					HibernateUtil.save(containerStructure);
 				}
 				
 				//Add the list to the cache.
-				StructureCache.addContainerStructures(containerStructureList, containerIdentifier);
+				StructureCache.addContainerStructures(containerStructureList, containerIdentifier, containerInode);
 				
 			}catch(DotHibernateException e){
 				if(local){
@@ -351,19 +355,22 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 		
 		//Gets the list from cache.
-		List<ContainerStructure> containerStructures = StructureCache.getContainerStructures(container.getIdentifier());
+		List<ContainerStructure> containerStructures = StructureCache.getContainerStructures(container.getIdentifier(), container.getInode());
 		
 		//If there is not cache data for that container, go to the DB.
 		if(containerStructures == null){
 			
 			//Run query directly to DB.
 			HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-			dh.setSQLQuery("select {container_structures.*} from container_structures where container_structures.container_id = ?");
+			dh.setSQLQuery("select {container_structures.*} from container_structures " +
+                    "where container_structures.container_id = ? " +
+                    "and container_structures.container_inode = ?");
 			dh.setParam(container.getIdentifier());
+            dh.setParam(container.getInode());
 			containerStructures = dh.list();
 			
 			//Add the list to cache. 
-			StructureCache.addContainerStructures(containerStructures, container.getIdentifier());
+			StructureCache.addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
 		}
 		
 		return containerStructures;
@@ -495,6 +502,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		// save the container-structure relationships , issue-2093
 		for (ContainerStructure cs : containerStructureList) {
 			cs.setContainerId(container.getIdentifier());
+            cs.setContainerInode(container.getInode());
 		}
 		saveContainerStructures(containerStructureList);
 
@@ -546,11 +554,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public void deleteContainerStructuresByContainer(Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
 
-		if(container != null && UtilMethods.isSet(container.getIdentifier())){
-			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + container.getIdentifier() + "'");
+		if(container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())){
+			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
+                    "where container_id = '" + container.getIdentifier() + "'");
 			
 			//Remove the list from cache.
-			StructureCache.removeContainerStructures(container.getIdentifier());
+			StructureCache.removeContainerStructures(container.getIdentifier(), container.getInode());
 		}
 	}
 

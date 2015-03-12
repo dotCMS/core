@@ -129,7 +129,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
         if(req!=null)
-            return !isCodeLink() && req.getRequestURI().contains(href);
+            return !isCodeLink() && req.getRequestURI().startsWith(href);
         else
             return false;
     }

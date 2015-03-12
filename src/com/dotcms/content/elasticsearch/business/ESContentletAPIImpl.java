@@ -186,11 +186,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
-        return APILocator.getEsSearchAPI().esSearchRaw( esQuery, live, user, respectFrontendRoles );
+        return APILocator.getEsSearchAPI().esSearchRaw(esQuery, live, user, respectFrontendRoles);
     }
 
     public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException {
-        return APILocator.getEsSearchAPI().esSearch( esQuery, live, user, respectFrontendRoles );
+        return APILocator.getEsSearchAPI().esSearch(esQuery, live, user, respectFrontendRoles);
     }
 
     public Object loadField(String inode, Field f) throws DotDataException {
@@ -398,9 +398,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         	throw e;
         }
 
-        ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " +contentPushPublishDate+ "; "
-        		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+        ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " + contentPushPublishDate + "; "
+                + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
 
     }
@@ -632,8 +632,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         if(respectFrontendRoles) {
             buffy.append("(permissions:P" + APILocator.getRoleAPI().loadCMSAnonymousRole().getId() + ".1P*) ");
-            if(user != null)
+            if (user != null && !user.getUserId().equals("anonymous")) {
                 buffy.append("(permissions:P" + APILocator.getRoleAPI().loadLoggedinSiteRole().getId() + ".1P*)");
+            }
         }
         buffy.append(")");
     }
@@ -2531,7 +2532,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    ident.setHostId(contentlet.getHost());
 				    if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET){
 				        try {
-				            ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            if(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD) == null){
+                                String binaryIdentifier = contentletRaw.getIdentifier() != null ? contentletRaw.getIdentifier() : "";
+                                String binarynode = contentletRaw.getInode() != null ? contentletRaw.getInode() : "";;
+                                throw new FileAssetValidationException("Unable to validate field: " + FileAssetAPI.BINARY_FIELD
+                                        + " identifier: " + binaryIdentifier
+                                        + " inode: " + binarynode);
+                            } else {
+                                ident.setAssetName(contentletRaw.getBinary(FileAssetAPI.BINARY_FIELD).getName());
+                            }
 				        } catch (IOException e) {
 				            // TODO
 				        }
