@@ -41,6 +41,7 @@ import java.util.Set;
 public class Xss {
 
     public static final String XSS_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern" ) );
+    public static final String XSS_REGEXP_PATTERN_URI = GetterUtil.getString( SystemProperties.get( Xss.class.getName() + ".regexp.pattern.uri" ) );
     public static final Boolean ESAPI_VALIDATION = GetterUtil.getBoolean( SystemProperties.get( Xss.class.getName() + ".ESAPI.validation" ), true );
 
     private static Set<String> excludeList = null;
@@ -129,34 +130,9 @@ public class Xss {
 
         if ( uri == null ) {
             return false;
-        }
-
-        if ( ESAPI_VALIDATION ) {
-
-            /*
-             Verify if the given URI have parameters, if it have them apply the security check to both, the
-             URI and the parameters.
-             */
-            String finalURI = uri;
-            String queryString = null;
-            if ( uri.contains( "?" ) ) {
-                finalURI = uri.substring( 0, uri.indexOf( "?" ) );
-                queryString = uri.substring( uri.indexOf( "?" ) + 1, uri.length() );
-            }
-
-            //Validate the URI
-            boolean isValid = true;
-            
-            isValid = ESAPI.validator().isValidInput( "URLContext", finalURI, "HTTPURI", uri.length(), false );
-              
-            //Validate the query string if present
-            if ( isValid && queryString != null ) {
-                return ParamsHaveXSS( queryString );
-            }
-
-            return !isValid;
         } else {
-            return RegEX.contains( uri, XSS_REGEXP_PATTERN );
+            //ESAPI doesnt allow blacklist of characters, only whitelists so we dont use ESAPI here.
+            return RegEX.contains( uri, XSS_REGEXP_PATTERN_URI );
         }
     }
 
@@ -184,7 +160,7 @@ public class Xss {
                     isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPParameterValue", url.length(), false );
                 }
             } else {
-                isValid = ESAPI.validator().isValidInput( "URLContext", url, "HTTPURI", url.length(), false );
+                isValid = !RegEX.contains(url, XSS_REGEXP_PATTERN_URI);
             }
 
             return !isValid;
