@@ -12,7 +12,7 @@
 
     <bean id="viewResolver" class="com.dotmarketing.osgi.custom.spring.CustomViewResolver">
         <property name="prefix" value="/application/spring/"/>
-        <property name="suffix" value=".html"/>
+        <!--<property name="suffix" value=".html"/>-->
     </bean>
 
 </beans>
