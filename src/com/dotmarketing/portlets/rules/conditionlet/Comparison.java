@@ -1,18 +1,18 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-public final class Operator {
+public final class Comparison {
 
     private String id;
     private String label;
 
-    public Operator() {}
+    public Comparison() {}
 
-    public Operator(String id) {
+    public Comparison(String id) {
         this.id = id;
         this.label = id;
     }
 
-    public Operator(String id, String label) {
+    public Comparison(String id, String label) {
         this.id = id;
         this.label = label;
     }

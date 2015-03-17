@@ -63,6 +63,12 @@ public class Rule implements Permissionable {
 
     }
 
+    private static final String BEGIN_CONDITION = "com.dotmarketing.portlets.rules.BeginCondition";
+    private static final String END_CONDITION = "com.dotmarketing.portlets.rules.EndCondition";
+    private static final String CONDITION_ = "com.dotmarketing.portlets.rules.EndCondition";
+
+
+
     private String id;
     private String name;
     private FirePolicy firePolicy;
@@ -71,7 +77,6 @@ public class Rule implements Permissionable {
     private String folder="SYSTEM_FOLDER";
     private int fireOrder;
     private boolean enabled;
-    private String expression;
     private Date modDate;
 
     public String getId() {
@@ -136,14 +141,6 @@ public class Rule implements Permissionable {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public String getExpression() {
-        return expression;
-    }
-
-    public void setExpression(String expression) {
-        this.expression = expression;
     }
 
     public Date getModDate() {

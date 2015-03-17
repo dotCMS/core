@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -168,7 +166,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(condition.getName());
             db.addParam(condition.getRuleId());
             db.addParam(condition.getConditionletId());
-            db.addParam(condition.getOperator());
+            db.addParam(condition.getComparison());
             db.addParam(condition.getInput());
             db.loadResult();
         } else {
@@ -176,7 +174,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(condition.getName());
             db.addParam(condition.getRuleId());
             db.addParam(condition.getConditionletId());
-            db.addParam(condition.getOperator());
+            db.addParam(condition.getComparison());
             db.addParam(condition.getInput());
             db.addParam(condition.getId());
             db.loadResult();
@@ -290,7 +288,7 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setName(row.get("name").toString());
         c.setRuleId(row.get("rule_id").toString());
         c.setConditionletId(row.get("conditionlet").toString());
-        c.setOperator(row.get("rel_operator").toString());
+        c.setComparison(row.get("rel_operator").toString());
         c.setInput(row.get("value").toString());
         return c;
     }

@@ -4,13 +4,19 @@ import java.util.Date;
 
 public class Condition {
 
+    public enum Operator {
+        AND,
+        OR
+    }
+
     private String id;
     private String name;
     private String ruleId;
     private String conditionletId;
-    private String operator;
+    private String comparison;
     private String input;
     private Date modDate;
+    private Operator operator;
 
     public String getId() {
         return id;
@@ -44,12 +50,12 @@ public class Condition {
         this.conditionletId = conditionletId;
     }
 
-    public String getOperator() {
-        return operator;
+    public String getComparison() {
+        return comparison;
     }
 
-    public void setOperator(String operator) {
-        this.operator = operator;
+    public void setComparison(String comparison) {
+        this.comparison = comparison;
     }
 
     public String getInput() {
@@ -66,5 +72,13 @@ public class Condition {
 
     public void setModDate(Date modDate) {
         this.modDate = modDate;
+    }
+
+    public Operator getOperator() {
+        return operator;
+    }
+
+    public void setOperator(Operator operator) {
+        this.operator = operator;
     }
 }

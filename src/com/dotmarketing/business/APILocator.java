@@ -73,6 +73,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
+import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotmarketing.portlets.rules.business.RulesAPIImpl;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPIImpl;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -339,6 +341,9 @@ public class APILocator extends Locator<APIIndex>{
 	public static ESSeachAPI getEsSearchAPI () {
 		return (ESSeachAPI) getInstance( APIIndex.ES_SEARCH_API );
 	}
+	public static RulesAPI getRulesAPI () {
+		return (RulesAPI) getInstance( APIIndex.RULES_API );
+	}
 
 
 	private static Object getInstance(APIIndex index) {
@@ -430,7 +435,8 @@ enum APIIndex
 	HTMLPAGE_ASSET_API,
 
 	SERVER_ACTION_API,
-	ES_SEARCH_API;
+	ES_SEARCH_API,
+    RULES_API;
 
 
 	Object create() {
@@ -491,6 +497,7 @@ enum APIIndex
 		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
 		case ES_SEARCH_API: return new ESSearchProxy();
+		case RULES_API: return new RulesAPIImpl();
 
 		
 		}

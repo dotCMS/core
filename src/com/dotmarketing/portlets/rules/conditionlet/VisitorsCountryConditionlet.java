@@ -7,7 +7,7 @@ import java.util.*;
 
 public class VisitorsCountryConditionlet extends Conditionlet {
 
-    private LinkedHashSet<Operator> operators;
+    private LinkedHashSet<Comparison> comparisons;
     private ConditionletInput conditionletInput;
 
     @Override
@@ -16,19 +16,19 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public LinkedHashSet<Operator> getOperators() {
-        if(operators!=null)
-            return operators;
+    public LinkedHashSet<Comparison> getComparisons() {
+        if(comparisons !=null)
+            return comparisons;
 
-        operators = new LinkedHashSet<>();
-        operators.add(new Operator("is", "is"));
-        operators.add(new Operator("isNot", "isNot"));
+        comparisons = new LinkedHashSet<>();
+        comparisons.add(new Comparison("is", "is"));
+        comparisons.add(new Comparison("isNot", "isNot"));
 
-        return operators;
+        return comparisons;
     }
 
     @Override
-    protected ValidationResult validate(Operator operator, String value) {
+    protected ValidationResult validate(Comparison comparison, String value) {
         ValidationResult result = new ValidationResult();
 
         Set<EntryOption> entries = conditionletInput.getData();
@@ -44,7 +44,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public ValidationResults validate(Operator operator, Collection<String> values) {
+    public ValidationResults validate(Comparison comparison, Collection<String> values) {
 
         ValidationResults results = new ValidationResults();
 
@@ -54,7 +54,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
         List<ValidationResult> resultList = new ArrayList();
 
         for (Iterator<String> iterator = values.iterator(); iterator.hasNext(); ) {
-            ValidationResult result = validate(operator, iterator.next());
+            ValidationResult result = validate(comparison, iterator.next());
             resultList.add(result);
             if(!result.isValid())
                 results.setErrors(true);
@@ -67,7 +67,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 
 
     @Override
-    public ConditionletInput getInput(Operator operator) {
+    public ConditionletInput getInput(Comparison comparison) {
         if (conditionletInput != null)
             return conditionletInput;
 
@@ -86,7 +86,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public boolean evaluate(Operator operator, HttpServletRequest request) {
+    public boolean evaluate(Comparison comparison, HttpServletRequest request) {
         return false;
     }
 }
