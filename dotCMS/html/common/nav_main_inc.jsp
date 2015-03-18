@@ -19,7 +19,6 @@ var portletTabMap = {}; // this holds a Map of portletId, tabId, used when refre
                          tabDescription = LanguageUtil.get(pageContext,tabDescription) ;
                  }
 
-
                 List<String> portletIDs = layouts[l].getPortletIds();
                 if(portletIDs ==null || portletIDs.size() ==0){
                 	continue;
