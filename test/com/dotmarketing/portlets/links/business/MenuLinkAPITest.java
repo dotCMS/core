@@ -3,20 +3,22 @@ package com.dotmarketing.portlets.links.business;
 import com.dotcms.repackage.org.junit.AfterClass;
 import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
-
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+
 import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class MenuLinkAPITest extends TestBase {
@@ -34,7 +36,15 @@ public class MenuLinkAPITest extends TestBase {
         user = uAPI.getSystemUser();
         host = new Host();
         host.setHostname("MenuLinkTest"+UUIDGenerator.generateUuid());
-        host = hAPI.save(host, user, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	host = hAPI.save(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(MenuLinkAPITest.class, e.getMessage());
+        }
+        
         hAPI.publish(host, user, false);
         cAPI.isInodeIndexed(host.getInode(),true);
         pAPI.permissionIndividually(hAPI.findSystemHost(),host, user, false);
@@ -42,8 +52,16 @@ public class MenuLinkAPITest extends TestBase {
     
     @AfterClass
     public static void cleanup() throws Exception {
-        hAPI.unpublish(host, user, false);
-        hAPI.archive(host, user, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	hAPI.unpublish(host, user, false);
+        	hAPI.archive(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(MenuLinkAPITest.class, e.getMessage());
+        }
+
     }
     
     @Test
@@ -75,6 +93,7 @@ public class MenuLinkAPITest extends TestBase {
     
     @Test
     public void save() throws Exception {
+    	HibernateUtil.startTransaction();
         Folder folder = fAPI.createFolders("/testsave", host, user, false);
         Link link = new Link();
         link.setFriendlyName("test link");
@@ -99,6 +118,7 @@ public class MenuLinkAPITest extends TestBase {
         link.setUrl("google.com");
         link.setProtocal("http://");
         mAPI.save(link, folder, user, false);
+        HibernateUtil.commitTransaction();
         assertEquals(existingIdent,link.getIdentifier());
         assertEquals(existingInode,link.getInode());
     }

@@ -8,11 +8,11 @@ import java.util.List;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.junit.Test;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -24,6 +24,7 @@ import com.liferay.portal.model.User;
 public class ContainerAPITest extends ContentletBaseTest {
     @Test
     public void save() throws Exception {
+    	HibernateUtil.startTransaction();
         Container c = new Container();
         c.setFriendlyName("test container");
         c.setTitle("his is the title");
@@ -63,6 +64,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(cc.getMaxContentlets()==c.getMaxContentlets());
         assertTrue(cc.getPreLoop().equals(c.getPreLoop()));
         assertTrue(cc.getPostLoop().equals(c.getPostLoop()));
+        HibernateUtil.commitTransaction();
     }
 
     @Test
@@ -130,6 +132,7 @@ public class ContainerAPITest extends ContentletBaseTest {
 
     @Test
     public void delete() throws Exception {
+    	HibernateUtil.startTransaction();
         Container container = new Container();
         container.setFriendlyName("test container");
         container.setTitle("his is the title");
@@ -155,5 +158,6 @@ public class ContainerAPITest extends ContentletBaseTest {
         assertTrue(APILocator.getContainerAPI().delete(saved, user, false));
 
         AssetUtil.assertDeleted(inode, identifier, "containers");
+        HibernateUtil.commitTransaction();
     }
 }
