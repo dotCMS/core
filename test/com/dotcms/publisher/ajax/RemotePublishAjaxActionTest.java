@@ -71,6 +71,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -337,7 +338,15 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
 		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		newHtmlPage.setFolder(folder.getInode());
-		newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
+		
         APILocator.getVersionableAPI().setLive(newHtmlPage);
         APILocator.getContentletAPI().publish(newHtmlPage, systemUser, false);
 		Contentlet workinghtmlPageAsset = newHtmlPage;
@@ -555,12 +564,20 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * deleting folder, pages and content, to create the receiving endpoint environment
 		 */
-		APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
-		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
-		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
-		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
-		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
+    		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
+    		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
+    		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
+    		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
+		
 	
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size());
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2.getInode()).size());
@@ -878,13 +895,20 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * deleting folder, pages and contents, to create the receiving endpoint environment
 		 */
-		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser, false);
-		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
-		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+    		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
+    		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(!UtilMethods.isSet(folder.getInode()));
@@ -949,10 +973,17 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Cleaning test values
 		 */
-		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+    		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
+    		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
 	}
 }

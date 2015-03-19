@@ -352,11 +352,19 @@ public class URLMapTest extends TestBase  {
 
 	@After
 	public void deleteAssets() throws Exception {
-		if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
-		if(template!=null) APILocator.getTemplateAPI().delete(template, user, false);
-		if(container!=null) APILocator.getContainerAPI().delete(container, user, false);
-		if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
-		if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	if(testFolder!=null) APILocator.getFolderAPI().delete(testFolder, user, false);
+        	if(template!=null) APILocator.getTemplateAPI().delete(template, user, false);
+        	if(container!=null) APILocator.getContainerAPI().delete(container, user, false);
+        	if(testSt!=null) APILocator.getStructureAPI().delete(testSt, user);
+        	if(widget!=null) APILocator.getContentletAPI().delete(widget, user, false);
+
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(URLMapTest.class, e.getMessage());
+        }
 
 	}
 
