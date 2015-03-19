@@ -1,13 +1,5 @@
 package com.dotmarketing.business;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.WebAsset;
@@ -24,17 +16,21 @@ import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.Parameter;
-import com.dotmarketing.util.UUIDGenerator;
-import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -119,9 +115,12 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 			identifier.setURI(folderId.getPath() + ((File) webasset).getFileName());
 		}else if (webasset instanceof Contentlet){
 			Contentlet c =(Contentlet) webasset;
-			if(c.getStructure().getStructureType() ==Structure.STRUCTURE_TYPE_FILEASSET){
-				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
-				identifier.setURI(folderId.getPath() + fa.getFileName());
+			if ( c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
+				FileAsset fa = APILocator.getFileAssetAPI().fromContentlet( c );
+				identifier.setURI( folderId.getPath() + fa.getFileName() );
+			} else if ( c.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+				HTMLPageAsset htmlPageAsset = APILocator.getHTMLPageAssetAPI().fromContentlet( c );
+				identifier.setAssetName( htmlPageAsset.getPageUrl() );
 			}
 		}
 		saveIdentifier(identifier);

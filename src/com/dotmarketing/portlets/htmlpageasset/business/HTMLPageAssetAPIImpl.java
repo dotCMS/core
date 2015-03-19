@@ -1,32 +1,8 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
-import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.Cookie;
-
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.ResourceNotFoundException;
-
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.notifications.bean.NotificationLevel;
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.beans.MultiTree;
-import com.dotmarketing.beans.Permission;
-import com.dotmarketing.beans.UserProxy;
-import com.dotmarketing.beans.VersionInfo;
+import com.dotmarketing.beans.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -48,11 +24,12 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.ClickstreamFilter;
+import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPIImpl;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -60,17 +37,19 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.services.PageServices;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
+
+import javax.servlet.http.Cookie;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.util.*;
 
 public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
@@ -487,21 +466,62 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     }
 
     @Override
-    public boolean rename(HTMLPageAsset page, String newName, User user) throws DotDataException, DotSecurityException {
-        Identifier sourceIdent=APILocator.getIdentifierAPI().find(page);
-        Host host=APILocator.getHostAPI().find(sourceIdent.getHostId(), user, false);
-        Identifier targetIdent=APILocator.getIdentifierAPI().find(host, 
-                sourceIdent.getParentPath()+newName);
-        if(targetIdent==null || !InodeUtils.isSet(targetIdent.getId())) {
-            Contentlet cont=APILocator.getContentletAPI().checkout(page.getInode(), user, false);
-            cont.setStringProperty(URL_FIELD, newName);
-            cont=APILocator.getContentletAPI().checkin(cont, user, false);
-            if(page.isLive()) {
-                APILocator.getContentletAPI().publish(cont, user, false);
+    public boolean rename ( HTMLPageAsset page, String newName, User user ) throws DotDataException, DotSecurityException {
+
+        // Checking permissions
+        if ( !permissionAPI.doesUserHavePermission( page, PermissionAPI.PERMISSION_WRITE, user ) ) {
+            Logger.error( HTMLPageAssetAPIImpl.class, "User does not have permissions to rename the page with identifier [" + page.getIdentifier() + "]." );
+            throw new DotStateException( "User does not have permissions to rename the page with identifier [" + page.getIdentifier() + "]." );
+        }
+
+        //getting old file properties
+        Folder folder = APILocator.getFolderAPI().findParentFolder( page, user, false );
+
+        Host host;
+        try {
+            User systemUser = APILocator.getUserAPI().getSystemUser();
+            host = APILocator.getHostAPI().findParentHost( folder, systemUser, false );
+        } catch ( DotDataException e ) {
+            Logger.error( HTMLPageAssetAPIImpl.class, e.getMessage(), e );
+            throw new DotRuntimeException( e.getMessage(), e );
+        } catch ( DotSecurityException e ) {
+            Logger.error( HTMLPageAssetAPIImpl.class, e.getMessage(), e );
+            throw new DotRuntimeException( e.getMessage(), e );
+        }
+
+        //Find the identifier of the given page
+        Identifier identifier = APILocator.getIdentifierAPI().find( page );
+
+        //Validate if the name we are trying to use is already in use
+        Identifier testIdentifier = APILocator.getIdentifierAPI().find( host, identifier.getParentPath() + newName );
+        if ( InodeUtils.isSet( testIdentifier.getInode() ) || page.isLocked() ) {
+            return false;
+        }
+
+        //Removing both old and new parent
+        RefreshMenus.deleteMenu( folder );
+        CacheLocator.getNavToolCache().removeNavByPath( identifier.getHostId(), identifier.getParentPath() );
+        CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
+
+        //Modify and save the identifier with the new name
+        identifier.setAssetName( newName );
+        APILocator.getIdentifierAPI().save( identifier );
+
+        return true;
+
+        /*Identifier sourceIdent = APILocator.getIdentifierAPI().find( page );
+        Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
+        Identifier targetIdent = APILocator.getIdentifierAPI().find( host, sourceIdent.getParentPath() + newName );
+        if ( targetIdent == null || !InodeUtils.isSet( targetIdent.getId() ) ) {
+            Contentlet cont = APILocator.getContentletAPI().checkout( page.getInode(), user, false );
+            cont.setStringProperty( URL_FIELD, newName );
+            cont = APILocator.getContentletAPI().checkin( cont, user, false );
+            if ( page.isLive() ) {
+                APILocator.getContentletAPI().publish( cont, user, false );
             }
             return true;
         }
-        return false;
+        return false;*/
     }
 
     @Override

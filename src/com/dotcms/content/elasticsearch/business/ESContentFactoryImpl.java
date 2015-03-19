@@ -1340,6 +1340,18 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected Contentlet save(Contentlet contentlet, String existingInode) throws DotDataException, DotStateException, DotSecurityException {
+
+        if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+            String url = contentlet.getStringProperty( com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.URL_FIELD );
+            if ( url != null && !url.isEmpty() ) {
+                //TODO: Remove!!!!
+                Logger.warn( this.getClass(), "-------------------------------------------" );
+                Logger.warn( this.getClass(), "Trying to save a HTMLPage with a URL!!!!" );
+                Logger.warn( this.getClass(), "-------------------------------------------" );
+                //TODO: Remove!!!!
+            }
+        }
+
 	    com.dotmarketing.portlets.contentlet.business.Contentlet fatty = new com.dotmarketing.portlets.contentlet.business.Contentlet();
         if(InodeUtils.isSet(contentlet.getInode())){
             fatty = (com.dotmarketing.portlets.contentlet.business.Contentlet)HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, contentlet.getInode());

@@ -694,7 +694,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			 */
 			if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
 
-				Object identifierObj = super.get( IDENTIFIER_KEY );
+				//TODO: Remove!!!!
+				if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
+					Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
+					Logger.warn( this.getClass(), "Getting HTMLPage URL!!!!" );
+					Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
+				}
+				//TODO: Remove!!!!
+
+				/*Object identifierObj = super.get( IDENTIFIER_KEY );
 				if ( identifierObj != null ) {
 
 					String identifierId = (String) identifierObj;
@@ -703,11 +711,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 						Logger.warn( this.getClass(), "Trying to get the HTMLPage url directly from the Contentlet instead of get it from the Identifier!!." );
 
 						Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
-						return identifier.getAssetName();
+						if ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) ) {
+							return identifier.getAssetName();
+						}
 					} catch ( DotDataException e ) {
 						Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierId + "].", e );
 					}
-				}
+				}*/
 			}
 
 			return super.get( key );
@@ -719,15 +729,36 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				 this.remove(key);
 				 return oldValue;
 			 }
+
+			//TODO: Remove!!!!
+			if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
+				Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
+				Logger.warn( this.getClass(), "Setting HTMLPage URL!!!!" );
+				Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
+			}
+			//TODO: Remove!!!!
+
 			 return super.put(key, value);
 		 }
 
 		public Boolean isHTMLPage () {
-			return getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
+
+			Structure structure = getStructure();
+			if ( structure != null ) {
+				return structure.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
+			}
+
+			return false;
 		}
 
 		public Structure getStructure () {
-			return StructureCache.getStructureByInode( getStructureInode() );
+
+			String structureInode = getStructureInode();
+			if ( structureInode != null && !structureInode.isEmpty() ) {
+				return StructureCache.getStructureByInode( structureInode );
+			}
+
+			return null;
 		}
 
 		public String getStructureInode () {
