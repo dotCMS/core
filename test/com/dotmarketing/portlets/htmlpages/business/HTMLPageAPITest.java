@@ -40,10 +40,12 @@ import com.liferay.portal.model.User;
 public class HTMLPageAPITest extends TestBase {
     @Test
     public void saveHTMLPage() throws Exception {
+    	
         User sysuser=APILocator.getUserAPI().getSystemUser();
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
         String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-
+        
+        HibernateUtil.startTransaction();
         Template template=new Template();
         template.setTitle("a template "+UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
@@ -92,6 +94,7 @@ public class HTMLPageAPITest extends TestBase {
         page.setInode(newInode);
         page.setTitle("other title");
         page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
+        HibernateUtil.commitTransaction();
         assertEquals(newInode,page.getInode());
         assertEquals(existingIdentifier,page.getIdentifier());
         assertEquals("other title",page.getTitle());
@@ -152,10 +155,16 @@ public class HTMLPageAPITest extends TestBase {
                      containerInode=container.getInode(), containerIdent=container.getIdentifier();
 
         // let's delete
-
-        APILocator.getHTMLPageAPI().delete(page, sysuser, false);
-        APILocator.getTemplateAPI().delete(template, sysuser, false);
-        APILocator.getContainerAPI().delete(container, sysuser, false);
+        try{
+        	HibernateUtil.startTransaction();
+            APILocator.getHTMLPageAPI().delete(page, sysuser, false);
+            APILocator.getTemplateAPI().delete(template, sysuser, false);
+            APILocator.getContainerAPI().delete(container, sysuser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HTMLPageAPITest.class, e.getMessage());
+        }
 
         // check everything is clean up
 
