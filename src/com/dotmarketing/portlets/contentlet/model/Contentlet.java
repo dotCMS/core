@@ -1,13 +1,33 @@
 package com.dotmarketing.portlets.contentlet.model;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
+
 import com.dotcms.sync.Exportable;
 import com.dotcms.sync.Importable;
 import com.dotcms.sync.exception.DotDependencyException;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -19,20 +39,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.io.*;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -680,90 +692,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 			super();
 		}
 
-		@Override
-		public Object get ( Object key ) {
-
-			if(map ==null || key ==null){
-				return null;
-			}
-
-			/*
-			 For HTMLPages the URL should be get from the Identifier, it is a mistake to get
-			 the URL of a HTMLPage directly from the contentlet as the pages have multilanguage support,
-			 the same URL should be shared between all the page languages.
-			 */
-			if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
-
-				//TODO: Remove!!!!
-				if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
-					Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
-					Logger.warn( this.getClass(), "Getting HTMLPage URL!!!!" );
-					Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
-				}
-				//TODO: Remove!!!!
-
-				/*Object identifierObj = super.get( IDENTIFIER_KEY );
-				if ( identifierObj != null ) {
-
-					String identifierId = (String) identifierObj;
-					try {
-
-						Logger.warn( this.getClass(), "Trying to get the HTMLPage url directly from the Contentlet instead of get it from the Identifier!!." );
-
-						Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
-						if ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) ) {
-							return identifier.getAssetName();
-						}
-					} catch ( DotDataException e ) {
-						Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierId + "].", e );
-					}
-				}*/
-			}
-
-			return super.get( key );
-		}
-
 		public Object put(String key, Object value) {
 			 if(value==null) {
 				 Object oldValue = this.get(key);
 				 this.remove(key);
 				 return oldValue;
 			 }
-
-			//TODO: Remove!!!!
-			if ( isHTMLPage() && key.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
-				Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
-				Logger.warn( this.getClass(), "Setting HTMLPage URL!!!!" );
-				Logger.warn( this.getClass(), "+++++++++++++++++++++++++++++++++++++++++++" );
-			}
-			//TODO: Remove!!!!
-
 			 return super.put(key, value);
 		 }
-
-		public Boolean isHTMLPage () {
-
-			Structure structure = getStructure();
-			if ( structure != null ) {
-				return structure.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
-			}
-
-			return false;
-		}
-
-		public Structure getStructure () {
-
-			String structureInode = getStructureInode();
-			if ( structureInode != null && !structureInode.isEmpty() ) {
-				return StructureCache.getStructureByInode( structureInode );
-			}
-
-			return null;
-		}
-
-		public String getStructureInode () {
-			return (String) super.get( STRUCTURE_INODE_KEY );
-		}
-
 	}
 }

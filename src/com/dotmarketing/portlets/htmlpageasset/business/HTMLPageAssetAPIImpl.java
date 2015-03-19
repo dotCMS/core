@@ -24,7 +24,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.ClickstreamFilter;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -468,48 +467,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     @Override
     public boolean rename ( HTMLPageAsset page, String newName, User user ) throws DotDataException, DotSecurityException {
 
-        // Checking permissions
-        if ( !permissionAPI.doesUserHavePermission( page, PermissionAPI.PERMISSION_WRITE, user ) ) {
-            Logger.error( HTMLPageAssetAPIImpl.class, "User does not have permissions to rename the page with identifier [" + page.getIdentifier() + "]." );
-            throw new DotStateException( "User does not have permissions to rename the page with identifier [" + page.getIdentifier() + "]." );
-        }
-
-        //getting old file properties
-        Folder folder = APILocator.getFolderAPI().findParentFolder( page, user, false );
-
-        Host host;
-        try {
-            User systemUser = APILocator.getUserAPI().getSystemUser();
-            host = APILocator.getHostAPI().findParentHost( folder, systemUser, false );
-        } catch ( DotDataException e ) {
-            Logger.error( HTMLPageAssetAPIImpl.class, e.getMessage(), e );
-            throw new DotRuntimeException( e.getMessage(), e );
-        } catch ( DotSecurityException e ) {
-            Logger.error( HTMLPageAssetAPIImpl.class, e.getMessage(), e );
-            throw new DotRuntimeException( e.getMessage(), e );
-        }
-
-        //Find the identifier of the given page
-        Identifier identifier = APILocator.getIdentifierAPI().find( page );
-
-        //Validate if the name we are trying to use is already in use
-        Identifier testIdentifier = APILocator.getIdentifierAPI().find( host, identifier.getParentPath() + newName );
-        if ( InodeUtils.isSet( testIdentifier.getInode() ) || page.isLocked() ) {
-            return false;
-        }
-
-        //Removing both old and new parent
-        RefreshMenus.deleteMenu( folder );
-        CacheLocator.getNavToolCache().removeNavByPath( identifier.getHostId(), identifier.getParentPath() );
-        CacheLocator.getNavToolCache().removeNav( folder.getHostId(), folder.getInode() );
-
-        //Modify and save the identifier with the new name
-        identifier.setAssetName( newName );
-        APILocator.getIdentifierAPI().save( identifier );
-
-        return true;
-
-        /*Identifier sourceIdent = APILocator.getIdentifierAPI().find( page );
+        Identifier sourceIdent = APILocator.getIdentifierAPI().find( page );
         Host host = APILocator.getHostAPI().find( sourceIdent.getHostId(), user, false );
         Identifier targetIdent = APILocator.getIdentifierAPI().find( host, sourceIdent.getParentPath() + newName );
         if ( targetIdent == null || !InodeUtils.isSet( targetIdent.getId() ) ) {
@@ -521,7 +479,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             }
             return true;
         }
-        return false;*/
+        return false;
     }
 
     @Override

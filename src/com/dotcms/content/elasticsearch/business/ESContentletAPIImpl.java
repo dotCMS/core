@@ -1822,7 +1822,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         } catch(DotDataException | DotStateException| DotSecurityException e) {
         	ActivityLogger.logInfo(getClass(), "Error Unarchiving Content", "StartDate: " +contentPushPublishDate+ "; "
-        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
+        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
         			+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
         	throw e;
         }
@@ -2447,7 +2447,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				String forcePush = contentlet.getStringProperty("forcePush");
 
                 /*
-                 For HTMLPages get the url in the page sent by the user, we use the Contentlet object to
+                 For HTMLPages get the url of the page sent by the user, we use the Contentlet object to
                  move around that url but we DON'T want what url saved in the contentlet table, the URL
                  for HTMLPages must be retrieve it from the Identifier.
                  */
@@ -2969,20 +2969,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         return contentlet;
-    }
-
-    private void removeURLFromContentlet ( Contentlet contentlet ) {
-
-        if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
-            contentlet.setProperty( HTMLPageAssetAPI.URL_FIELD, null );
-        }
-    }
-
-    private void addURLToContentlet ( Contentlet contentlet, String url ) {
-
-        if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
-            contentlet.setProperty( HTMLPageAssetAPI.URL_FIELD, url );
-        }
     }
 
     public List<Contentlet> checkout(List<Contentlet> contentlets, User user,   boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
@@ -4963,5 +4949,32 @@ public class ESContentletAPIImpl implements ContentletAPI {
 						+ (contentlet != null ? contentlet.getIdentifier()
 								: "Unknown"), contentlet.getHost());
 	}
+
+    /**
+     * Utility method that removes from a given contentlet the URL field as it should never be saved on the DB.
+     * The URL of a HTMLPage should always been retrieved from the Identifier.
+     *
+     * @param contentlet
+     */
+    private void removeURLFromContentlet ( Contentlet contentlet ) {
+
+        if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+            contentlet.setProperty( HTMLPageAssetAPI.URL_FIELD, null );
+        }
+    }
+
+    /**
+     * Utility method that adds to a given contentlet a given URL, remember that we just use the URL field to move aroung the value
+     * but we never save it into the DB for HTMLPages, the URL of a HTMLPage should always been retrieved from the Identifier.
+     *
+     * @param contentlet
+     * @param url
+     */
+    private void addURLToContentlet ( Contentlet contentlet, String url ) {
+
+        if ( contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE ) {
+            contentlet.setProperty( HTMLPageAssetAPI.URL_FIELD, url );
+        }
+    }
 
 }
