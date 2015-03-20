@@ -341,7 +341,8 @@ public class APILocator extends Locator<APIIndex>{
 	public static ESSeachAPI getEsSearchAPI () {
 		return (ESSeachAPI) getInstance( APIIndex.ES_SEARCH_API );
 	}
-	public static RulesAPI getRulesAPI () {
+
+    public static RulesAPI getRulesAPI () {
 		return (RulesAPI) getInstance( APIIndex.RULES_API );
 	}
 

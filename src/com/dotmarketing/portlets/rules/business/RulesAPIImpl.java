@@ -10,11 +10,13 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
@@ -47,10 +49,18 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public List<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(host)) {
+            return new ArrayList<>();
+        }
+
         return perAPI.filterCollection(rulesFactory.getRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
     public List<Rule> getRulesByFolder(String folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(folder)) {
+            return new ArrayList<>();
+        }
+
         return perAPI.filterCollection(rulesFactory.getRulesByHost(folder), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
@@ -59,7 +69,15 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public Rule getRuleById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(id)) {
+            return null;
+        }
+
         Rule rule = rulesFactory.getRuleById(id);
+
+        if(!UtilMethods.isSet(rule)) {
+            return null;
+        }
 
         if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
@@ -76,12 +94,42 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<Condition> conditions = rulesFactory.getConditionsByRule(rule.getId());
 
-        for (int i = 0; i < conditions.size(); i++) {
-            rulesFactory.deleteCondition(conditions.get(i));
+        for (Condition condition : conditions) {
+            rulesFactory.deleteCondition(condition);
         }
 
         rulesFactory.deleteRule(rule);
+    }
 
+    public List<ConditionGroup> getConditionGroupsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(ruleId)) {
+            return new ArrayList<>();
+        }
+
+        Rule rule = rulesFactory.getRuleById(ruleId);
+
+        if(!UtilMethods.isSet(rule)) {
+            return new ArrayList<>();
+        }
+
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+        return rulesFactory.getConditionGroupsByRule(ruleId);
+    }
+
+    public List<Condition> getConditionsByConditionGroup(String conditionGroupId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(conditionGroupId)) {
+            return new ArrayList<>();
+        }
+
+        ConditionGroup conditionGroup = rulesFactory.getConditionGroupById(conditionGroupId);
+
+        if(!UtilMethods.isSet(conditionGroup)) {
+            return new ArrayList<>();
+        }
+
+        return null; // TODO working on this one
     }
 
     public List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

@@ -40,7 +40,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
              // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
-            .append("operator varchar(10) not null")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date datetime")
             .append(");")
 
 
@@ -50,7 +52,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("fire_order int default 0,")
-            .append("actionlet text not null")
+            .append("actionlet text not null,")
+            .append("mod_date datetime")
             .append(");");
 
 
@@ -85,7 +88,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
              // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
-            .append("operator varchar(10) not null")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date timestamp")
             .append(");")
 
                     // create RULE_ACTION  table
@@ -94,7 +99,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("fire_order int default 0,")
-            .append("actionlet text not null")
+            .append("actionlet text not null,")
+            .append("mod_date timestamp")
             .append(");");
 
     private final StringBuilder ORACLE = new StringBuilder()
@@ -129,7 +135,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
               // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
-            .append("operator varchar(10) not null")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date timestamp")
             .append(");")
 
              // create RULE_ACTION  table
@@ -138,7 +146,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("name varchar2(255) not null,")
             .append("rule_id varchar2(36) references dot_rule(id),")
             .append("fire_order number(10,0) default 0,")
-            .append("actionlet nclob not null")
+            .append("actionlet nclob not null,")
+            .append("mod_date timestamp")
             .append(");");
 
     private final StringBuilder MSSQL = new StringBuilder()
@@ -172,7 +181,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
              // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
-            .append("operator varchar(10) not null")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date datetime")
             .append(");")
 
              // create RULE_ACTION  table
@@ -181,7 +192,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("fire_order int default 0,")
-            .append("actionlet text not null")
+            .append("actionlet text not null,")
+            .append("mod_date datetime")
             .append(");");
 
     private final StringBuilder H2 = new StringBuilder()
@@ -215,7 +227,9 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
              // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
-            .append("operator varchar(10) not null")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date timestamp")
             .append(");")
 
                     // create RULE_ACTION  table
@@ -224,7 +238,8 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("name varchar(255) not null,")
             .append("rule_id varchar(36) references dot_rule(id),")
             .append("fire_order int default 0,")
-            .append("actionlet text not null")
+            .append("actionlet text not null,")
+            .append("mod_date timestamp")
             .append(");");
 
 

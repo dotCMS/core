@@ -6,6 +6,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
@@ -14,6 +15,7 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -75,6 +77,27 @@ public class RulesFactoryImpl implements RulesFactory {
         List result = convertListToObjects(db.loadObjectResults(), Rule.class);
         if(!result.isEmpty()) {
             return (RuleAction) result.get(0);
+        }
+
+        return null;
+    }
+
+
+    public List<ConditionGroup> getConditionGroupsByRule(String ruleId) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.SELECT_CONDITION_GROUPS_BY_RULE);
+        db.addParam(ruleId);
+        return convertListToObjects(db.loadObjectResults(), ConditionGroup.class);
+    }
+
+    @Override
+    public ConditionGroup getConditionGroupById(String conditionGroupId) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.SELECT_CONDITION_GROUP_BY_ID);
+        db.addParam(conditionGroupId);
+        List result = convertListToObjects(db.loadObjectResults(), ConditionGroup.class);
+        if(!result.isEmpty()) {
+            return (ConditionGroup) result.get(0);
         }
 
         return null;
@@ -264,7 +287,9 @@ public class RulesFactoryImpl implements RulesFactory {
             return this.convertRuleAction(map);
         } else if (clazz.getName().equals(Condition.class.getName())) {
             return this.convertCondition(map);
-        }else {
+        }else if (clazz.getName().equals(ConditionGroup.class.getName())) {
+            return this.convertConditionGroup(map);
+        }{
             return this.convert(clazz.newInstance(), map);
         }
     }
@@ -288,8 +313,20 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setName(row.get("name").toString());
         c.setRuleId(row.get("rule_id").toString());
         c.setConditionletId(row.get("conditionlet").toString());
-        c.setComparison(row.get("rel_operator").toString());
+        c.setConditionGroup(row.get("condition_group").toString());
+        c.setComparison(row.get("comparison").toString());
+        c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
         c.setInput(row.get("value").toString());
+        c.setModDate((Date) row.get("mod_date"));
+        return c;
+    }
+
+    public static ConditionGroup convertConditionGroup(Map<String, Object> row){
+        ConditionGroup c = new ConditionGroup();
+        c.setId(row.get("id").toString());
+        c.setRuleId(row.get("rule_id").toString());
+        c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
+        c.setModDate((Date) row.get("mod_date"));
         return c;
     }
 

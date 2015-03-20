@@ -13,6 +13,7 @@ public class Condition {
     private String name;
     private String ruleId;
     private String conditionletId;
+    private String conditionGroup;
     private String comparison;
     private String input;
     private Date modDate;
@@ -48,6 +49,14 @@ public class Condition {
 
     public void setConditionletId(String conditionletId) {
         this.conditionletId = conditionletId;
+    }
+
+    public String getConditionGroup() {
+        return conditionGroup;
+    }
+
+    public void setConditionGroup(String conditionGroup) {
+        this.conditionGroup = conditionGroup;
     }
 
     public String getComparison() {

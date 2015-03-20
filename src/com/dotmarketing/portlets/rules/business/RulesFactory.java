@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 
@@ -20,6 +21,10 @@ public interface RulesFactory {
     List<RuleAction> getRuleActionsByRule(String ruleId) throws DotDataException;
 
     RuleAction getRuleActionById(String ruleActionId) throws DotDataException;
+
+    List<ConditionGroup> getConditionGroupsByRule(String ruleId) throws DotDataException;
+
+    ConditionGroup getConditionGroupById(String conditionGroupId) throws DotDataException;
 
     List<Condition> getConditionsByRule(String ruleId) throws DotDataException;
 

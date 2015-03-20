@@ -17,6 +17,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -109,10 +110,25 @@ public class RulesResource extends WebResource {
 
         Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
 
+        if(!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
+            return responseResource.response(jsonRuleExpression.toString());
+        }
+
+        JSONObject resultsObject = new JSONObject();
+        JSONArray jsonConditionGroups = new JSONArray();
+
+        List<ConditionGroup> conditionGroups = APILocator.getRulesAPI().getConditionGroupsByRule(ruleId, user, false);
+
+        for (ConditionGroup conditionGroup : conditionGroups) {
+            JSONObject jsonConditionGroup = new JSONObject();
+            jsonConditionGroup.put("conditionGroupId", conditionGroup.getId());
+            jsonConditionGroup.put("operator", conditionGroup.getOperator());
 
 
-        // A and ( B and C) and (d or e)
-//        return responseResource.response(jsonRules.toString());
+
+        }
+
+        resultsObject.put("conditionGroups", jsonConditionGroups);
 
         return null;
     }

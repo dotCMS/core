@@ -352,7 +352,9 @@ public final class WebKeys {
     public static final String WORKFLOW_SEARCHER = "com.dotmarketing.workflowtasks.WORKFLOW_SEARCHER";
     public static enum WorkflowStatuses { OPEN, RESOLVED, CANCELLED };
 
-
+    // RULES ENGIGE
+    public static final String RULES_CONDITIONLET_CLASSES = "RULES_CONDITIONLET_CLASSES";
+    public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
 
 
 	//ADMIN CONTROL
