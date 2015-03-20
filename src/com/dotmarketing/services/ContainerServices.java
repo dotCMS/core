@@ -213,7 +213,7 @@ public class ContainerServices {
                 if(containsEndTag)
                 {
                 	String footerString = "#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1) " +
-                			"$velutil.mergeTemplate('static/preview_mode/content_controls.vtl') " +
+                			"$velutil.mergeTemplate('static/preview_mode/content_controls.vtl', $response) " +
                 			" #end " +
                 			"#if($EDIT_MODE) " +
                 			"<div class=\"dotClear\"></div></div>" +
@@ -241,7 +241,7 @@ public class ContainerServices {
                 {
                 	sb.append("#if($EDIT_MODE && ${contentletId.indexOf(\".structure\")}==-1)");
                 	    sb.append("#getContentDetail($contentletId)");
-                		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
+                		sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl', $response)");
                 	sb.append("#end ");
                 	sb.append("#if($EDIT_MODE) ");
                 		sb.append("<div class=\"dotClear\"></div></div>");
@@ -263,7 +263,7 @@ public class ContainerServices {
 
                 	sb.append("<div class=\"dotContentlet\">");
                     sb.append("	Content Parse Error. Check your Content Code. ");
-                    sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl')");
+                    sb.append("$velutil.mergeTemplate('static/preview_mode/content_controls.vtl', $response)");
                     sb.append("<div class=\"dotClear\"></div></div>");
                 sb.append("#end ");
 
@@ -280,7 +280,7 @@ public class ContainerServices {
             }
             //close our container preview mode div
             sb.append("#if($EDIT_MODE) ");
-            	sb.append("$velutil.mergeTemplate('static/preview_mode/container_controls.vtl')");
+            	sb.append("$velutil.mergeTemplate('static/preview_mode/container_controls.vtl', $response)");
                 sb.append("</div>");
             sb.append("#end ");
 

@@ -124,7 +124,7 @@ public class PageServices {
 
 		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlPage);
 		sb.append("#if(!$doNotParseTemplate)");
-			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION", "html") ).append( "')");
+			sb.append("$velutil.mergeTemplate('" ).append( folderPath ).append( host.getIdentifier() ).append( "." ).append( Config.getStringProperty("VELOCITY_HOST_EXTENSION", "html") ).append( "', $response)");
 		sb.append(" #end ");
 		
 		
@@ -300,9 +300,9 @@ public class PageServices {
                 sb.append( "#set ($dotTheme = $templatetool.theme(\"" ).append( cmsTemplate.getTheme() ).append( "\",\"" ).append( host.getIdentifier() ).append( "\"))" );
                 sb.append( "#set ($dotThemeLayout = $templatetool.themeLayout(\"" ).append( cmsTemplate.getInode() ).append( "\" ))" );
                 //Merging our template
-                sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
+                sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\", $response)" );
             } else {
-                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION","html" ) ).append( "')" );
+                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION","html" ) ).append( "', $response)" );
             }
 		sb.append("#end");
 		
