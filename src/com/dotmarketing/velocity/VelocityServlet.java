@@ -89,6 +89,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.HTMLPageWebAPI;
 import com.dotmarketing.viewtools.RequestWrapper;
+import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -573,8 +574,9 @@ public abstract class VelocityServlet extends HttpServlet {
 		Context context = VelocityUtil.getWebContext(request, response);
 
 		IHTMLPage htmlPage = getPage(id, request, false, context);
-		context.put("dotPageContent", htmlPage);
-		
+		if("contentlet".equals(htmlPage.getType())){
+			context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user,true,host, context) );
+		}
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -812,7 +814,9 @@ public abstract class VelocityServlet extends HttpServlet {
         Context context = VelocityUtil.getWebContext( request, response );
 
 		IHTMLPage htmlPage = getPage(id, request, false, context);
-		context.put("dotPageContent", htmlPage);
+		if("contentlet".equals(htmlPage.getType())){
+			context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), backendUser,true,host, context) );
+		}
 
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
