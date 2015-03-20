@@ -22,7 +22,7 @@ import javax.servlet.http.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Xss;
 
-public class RequestWrapper extends HttpServletRequestWrapper implements HttpServletRequest  {
+public class RequestWrapper extends HttpServletRequestWrapper  {
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
