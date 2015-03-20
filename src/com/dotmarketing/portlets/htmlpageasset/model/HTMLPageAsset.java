@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.htmlpageasset.model;
 
 import java.util.Map;
 
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -9,7 +10,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -152,9 +152,31 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
             map.put("modUserName", "unknown");
         
         map.put("metadata", getMetadata());
-        map.put("pageUrl", getPageUrl());
         map.put("httpsRequired", isHttpsRequired());
         map.put("redirect", getRedirect());
+
+        /*
+         For HTMLPages the URL should be get from the Identifier, it is a mistake to get
+         the URL of a HTMLPage directly from the contentlet as the pages have multilanguage support,
+         the same URL should be shared between all the page languages.
+         */
+        Object identifierObj = get( IDENTIFIER_KEY );
+        if ( identifierObj != null ) {
+
+            String identifierId = (String) identifierObj;
+            try {
+
+                Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
+                if ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) ) {
+                    map.put( "pageUrl", identifier.getAssetName() );
+                }
+            } catch ( DotDataException e ) {
+                Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierId + "].", e );
+            }
+        } else {
+            map.put( "pageUrl", getPageUrl() );
+        }
+
         return map;
     }
 
