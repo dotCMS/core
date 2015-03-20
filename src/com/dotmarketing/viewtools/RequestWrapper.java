@@ -22,12 +22,13 @@ import javax.servlet.http.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Xss;
 
-public class RequestWrapper implements HttpServletRequest{
+public class RequestWrapper extends HttpServletRequestWrapper implements HttpServletRequest  {
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
 	public RequestWrapper(HttpServletRequest req) {
+        super(req);
 		this._request = req;
 	}
 	

@@ -150,16 +150,16 @@ public abstract class VelocityServlet extends HttpServlet {
         request.setRequestUri(uri);
 		
 		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
-			request.getRequestDispatcher("/portal/no_license.jsp").forward(req, response);
+			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 
 		if (DbConnectionFactory.isOracle() && LicenseUtil.getLevel() < 399) {
-			request.getRequestDispatcher("/portal/no_license.jsp").forward(req, response);
+			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 		}
 		if (!LicenseUtil.isASAllowed()) {
-			request.getRequestDispatcher("/portal/no_license.jsp").forward(req, response);
+			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
 			return;
 
 		}
