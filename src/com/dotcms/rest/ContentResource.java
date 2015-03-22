@@ -1208,7 +1208,13 @@ public class ContentResource extends WebResource {
 		}
 		
 		try{
-			contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+            //request.getCookies() could return null.
+            if(UtilMethods.isSet(request.getCookies())){
+                contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+            } else {
+                //There are some cases where the cookies are not in the request, for example using curl without -b or --cookie.
+                Logger.warn(this.getClass(), "COOKIES are not in the REQUEST");
+            }
 		}
 		catch(Exception e){
 			Logger.error(this.getClass(), "Cannot set COOKIES " + e);
