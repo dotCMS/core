@@ -371,9 +371,11 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *******************************/
 			String mimeType = fileAPI.getMimeType(data.getDataFile().getName());
 
-			if (mimeType == null)
+			if (mimeType == null) {
 				mimeType = "application/octet-stream";
+			}
 			resp.setContentType(mimeType);
+			resp.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
