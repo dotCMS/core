@@ -86,16 +86,25 @@ public class RelationshipFactory {
 
     public static List<Relationship> getAllRelationships() {
         String orderBy = "inode";
-        return getRelationships(orderBy);
+        return getRelationships(orderBy,null);
     }
 
     @SuppressWarnings("unchecked")
-    public static List<Relationship> getRelationships(String orderBy) {
+    public static List<Relationship> getRelationships(String orderBy, String structureId) {
         List<Relationship> list = new ArrayList<Relationship>();
-        String query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
-                + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
-                + "relationship.parent_structure_inode = parentstruct.inode and "
-                + "relationship.child_structure_inode = childstruct.inode order by " + orderBy;
+        String query;
+        if(structureId.equals("all")){
+           query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
+                    + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
+                    + "relationship.parent_structure_inode = parentstruct.inode and "
+                    + "relationship.child_structure_inode = childstruct.inode order by " + orderBy;
+        }else{
+           query = "select {relationship.*} from relationship, inode relationship_1_, structure parentstruct, "
+                    + "structure childstruct where relationship_1_.type='relationship' and relationship.inode = relationship_1_.inode and "
+                    + "relationship.parent_structure_inode = parentstruct.inode and "
+                    + "relationship.child_structure_inode = childstruct.inode and (relationship.parent_structure_inode = '" +structureId
+                    + "' or relationship.child_structure_inode = '"+structureId +"')  order by " + orderBy;
+        }
         try {
 			HibernateUtil dh = new HibernateUtil(Relationship.class);
 			dh.setSQLQuery(query);

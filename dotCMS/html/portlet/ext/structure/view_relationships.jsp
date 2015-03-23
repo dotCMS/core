@@ -12,6 +12,7 @@
 	java.util.Map params = new java.util.HashMap();
 	params.put("struts_action", new String[] {"/ext/structure/view_relationships"});
 	String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params);
+	referer = referer + "&_EXT_STRUCTURE_structure_id="+request.getParameter("structure_id");
 	List<Relationship> relationships = (List<Relationship>) request.getAttribute(com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIPS);
 %>
 
@@ -54,10 +55,10 @@ function deleteRelationship(inode) {
 <table class="listingTable" >
 	<tr>
 		<th style="text-align:center; white-space:nowrap;" width="6%"><%= LanguageUtil.get(pageContext, "Action") %></th>		
-		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='relation_type_value' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Relationship-Name") %></a></th>		
-		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='parent_relation_name' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Parent-Structure") %></a></th>
-		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='child_relation_name' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Child-Structure") %></a></th>
-		<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Cardinality") %></th>
+		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='relation_type_value' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Relationship-Name") %></a></th>		
+		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='parent_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Parent-Structure") %></a></th>
+		<th width="31%" ><a href="<portlet:actionURL><portlet:param name='struts_action' value='/ext/structure/view_relationships' /><portlet:param name='orderBy' value='child_relation_name' /><portlet:param name='structure_id' value='<%= request.getParameter("structure_id") %>' /></portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Child-Structure") %></a></th>
+ 		<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Cardinality") %></th>
 		<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Parent-Required") %></th>
 		<th style="text-align:center; white-space:nowrap;"><%= LanguageUtil.get(pageContext, "Child-Required") %></th>
 	</tr>

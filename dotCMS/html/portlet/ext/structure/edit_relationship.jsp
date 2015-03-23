@@ -23,7 +23,7 @@ List<Structure> structures = (List<Structure>) request.getAttribute(com.dotmarke
 function cancel()
 {
 	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' />";
+	href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' /> <portlet:param name='structure_id' value='all' /> ";
 	href = href + "</portlet:actionURL>";
 	document.location = href;
 }
@@ -84,8 +84,8 @@ function structuresChanged() {
 		}
 	}
 		
-	dijit.byId("parentRelationName").attr('value', "Parent " + parentStructureName);
-	dijit.byId("childRelationName").attr('value', "Child " + childStructureName);
+	dijit.byId("parentRelationName").attr('value', parentStructureName);
+	dijit.byId("childRelationName").attr('value', childStructureName);
 	
 }
 
