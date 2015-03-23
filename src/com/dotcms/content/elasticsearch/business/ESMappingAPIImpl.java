@@ -274,7 +274,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 			m.put("structureName", st.getVelocityVarName()); // marked for DEPRECATION
 			m.put("contentType", st.getVelocityVarName());
             m.put("structureType", st.getStructureType() + ""); // marked for DEPRECATION
-            m.put("type", st.getStructureType() + "");
+            m.put("baseType", st.getStructureType() + "");
+            m.put("type", "content");
             m.put("inode", con.getInode());
             m.put("modDate", datetimeFormat.format(con.getModDate()));
             m.put("owner", con.getOwner()==null ? "0" : con.getOwner());
