@@ -346,4 +346,8 @@ public class ContentMap {
 		return ToStringBuilder.reflectionToString(this);
 	}
 
+	public Boolean isHTMLPage() {
+		return content.isHTMLPage();
+	}
+
 }

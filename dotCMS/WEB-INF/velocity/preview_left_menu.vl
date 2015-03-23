@@ -2,7 +2,7 @@
 	#stop
 #end
 
-#if($dotPageContent.isContent())
+#if($dotPageContent.isHTMLPage())
 	#parse("/preview_left_menu_page_as_content.vtl")
 	#stop 
 #end
