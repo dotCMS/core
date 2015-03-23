@@ -555,7 +555,7 @@ public class ContentletAjax {
 		        }
 		    }
 		    luceneQuery.append("-contentType:Host ");
-		    luceneQuery.append("-type:3 ");
+		    luceneQuery.append("-baseType:3 ");
 		}
 
 		WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
