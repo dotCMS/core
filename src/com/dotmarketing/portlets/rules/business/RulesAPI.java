@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -140,4 +141,12 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException;
 }

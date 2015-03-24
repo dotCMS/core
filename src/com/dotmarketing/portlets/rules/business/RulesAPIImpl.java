@@ -299,4 +299,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
     }
+
+    public List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException {
+        return new ArrayList<>(conditionletMap.values());
+    }
 }

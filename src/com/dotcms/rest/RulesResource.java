@@ -16,7 +16,10 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.UtilMethods;
@@ -32,49 +35,58 @@ import java.util.List;
 import java.util.Set;
 
 
-@Path("/environment")
+@Path("/rules-engine")
 public class RulesResource extends WebResource {
 
 	/**
 	 * <p>Returns a JSON representation of the rules defined in the given Host or Folder
 	 * <br>Each Rule node contains all fields in  .
 	 *
-	 * Usage: /getrules/{hostOrFolderIdentifier}
+	 * Usage: /rules/{hostOrFolderIdentifier}
 	 * @throws com.dotmarketing.util.json.JSONException
 	 *
 	 */
 
 	@GET
-	@Path("/getrules/{params:.*}")
+	@Path("/rules/{params:.*}")
 	@Produces("application/json")
 	public Response getRules(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
-
 		InitDataObject initData = init(params, true, request, true);
-
-        //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
         User user = initData.getUser();
 
+        String ruleId = initData.getParamsMap().get("id");
+
+        if(UtilMethods.isSet(ruleId)) {
+            Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
+            JSONObject ruleObject = new JSONObject(rule);
+            return responseResource.response(ruleObject.toString());
+        }
+
         JSONArray jsonRules = new JSONArray();
+        String hostIdentifier = initData.getParamsMap().get("host");
+        String folderIdentifier = initData.getParamsMap().get("folder");
 
-		String hostOrFolder = initData.getParamsMap().get("hostOrFolder");
-
-        if(!UtilMethods.isSet(hostOrFolder)) {
+        if(!UtilMethods.isSet(hostIdentifier) || !UtilMethods.isSet(folderIdentifier)) {
             return responseResource.response(jsonRules.toString());
         }
 
-        Host host = APILocator.getHostAPI().find(hostOrFolder, user, false);
+        if(UtilMethods.isSet(hostIdentifier)) {
+            Host host = APILocator.getHostAPI().find(hostIdentifier, user, false);
 
-        if(UtilMethods.isSet(host)) {
-            List<Rule> rules = APILocator.getRulesAPI().getRulesByHost(host.getIdentifier(), user, false);
-            jsonRules = new JSONArray(rules);
+            if (UtilMethods.isSet(host)) {
+                List<Rule> rules = APILocator.getRulesAPI().getRulesByHost(host.getIdentifier(), user, false);
+                jsonRules = new JSONArray(rules);
+            }
+        }
 
+        else if(UtilMethods.isSet(folderIdentifier)) {
+            Folder folder = APILocator.getFolderAPI().find(folderIdentifier, user, false);
 
-        } else {
-            Folder folder = APILocator.getFolderAPI().find(hostOrFolder, user, false);
-            List<Rule> rules = APILocator.getRulesAPI().getRulesByFolder(folder.getIdentifier(), user, false);
-            jsonRules = new JSONArray(rules);
+            if (UtilMethods.isSet(folder)) {
+                List<Rule> rules = APILocator.getRulesAPI().getRulesByFolder(folder.getIdentifier(), user, false);
+                jsonRules = new JSONArray(rules);
+            }
         }
 
         return responseResource.response(jsonRules.toString());
@@ -84,21 +96,26 @@ public class RulesResource extends WebResource {
      * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
      * <br>Each Rule node contains all fields in  .
      *
-     * Usage: /getconditions/{roleid}
+     * Usage: /condition/
      * @throws com.dotmarketing.util.json.JSONException
      *
      */
 
     @GET
-    @Path("/getconditions/{params:.*}")
+    @Path("/conditions/{params:.*}")
     @Produces("application/json")
     public Response getConditions(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
-
         InitDataObject initData = init(params, true, request, true);
-
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-
         User user = initData.getUser();
+
+        String conditionId = initData.getParamsMap().get("id");
+
+        if(UtilMethods.isSet(conditionId)) {
+            Condition condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
+            JSONObject conditionObject = new JSONObject(condition);
+            return responseResource.response(conditionObject.toString());
+        }
 
         JSONObject jsonRuleExpression = new JSONObject();
 
@@ -124,7 +141,19 @@ public class RulesResource extends WebResource {
             jsonConditionGroup.put("conditionGroupId", conditionGroup.getId());
             jsonConditionGroup.put("operator", conditionGroup.getOperator());
 
+            JSONArray jsonGroupConditions = new JSONArray();
 
+            List<Condition> conditions = APILocator.getRulesAPI().getConditionsByConditionGroup(conditionGroup.getId(), user, false);
+
+            for (Condition condition : conditions) {
+                JSONObject conditionObject = new JSONObject();
+                conditionObject.put("conditionId", condition.getId());
+                conditionObject.put("conditionName", condition.getName());
+                conditionObject.put("operator", condition.getOperator());
+                jsonGroupConditions.put(conditionObject);
+            }
+
+            jsonConditionGroup.put("conditions", jsonGroupConditions);
 
         }
 
@@ -132,6 +161,38 @@ public class RulesResource extends WebResource {
 
         return null;
     }
+
+
+    /**
+     * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
+     * <br>Each Rule node contains all fields in  .
+     *
+     * Usage: /getconditions/{roleid}
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
+
+    @GET
+    @Path("/conditionlets/{params:.*}")
+    @Produces("application/json")
+    public Response getConditionlets(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        User user = initData.getUser();
+
+        JSONObject resultsObject = new JSONObject();
+        JSONArray jsonConditionGroups = new JSONArray();
+
+        List<Conditionlet> conditionlets = APILocator.getRulesAPI().getConditionlets();
+
+        resultsObject.put("conditionGroups", jsonConditionGroups);
+        String a = "sdf";
+        a
+
+        return null;
+    }
+
+
 
 
 }
