@@ -502,6 +502,7 @@ public class ESIndexAPI {
 		}
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
+        map.put("auto_expand_replicas", "0-all");
 
 
         // create actual index
