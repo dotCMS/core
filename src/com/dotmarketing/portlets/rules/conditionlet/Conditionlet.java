@@ -52,14 +52,14 @@ public abstract class Conditionlet implements Serializable {
 
 
     /**
-     * Performs a validation to the given value(s), determined by the given operator
-     * @param comparison the name of the selected operator in the condition
-     * @param values the given values in the condition
-     * @return the result of whether the given value is valid or not, determined by the given operator
+     * Performs a validation to the given inputValues(s), determined by the given operator
+     * @param comparison the selected comparison in the condition
+     * @param inputValues the given values in the condition
+     * @return the result of whether the given values are valid or not, determined by the given operator
      */
-    public abstract ValidationResults validate(Comparison comparison, Collection<String> values);
+    public abstract ValidationResults validate(Comparison comparison, Set<ConditionletInputValue> inputValues);
 
-    protected abstract ValidationResult validate(Comparison comparison, String value);
+    protected abstract ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue);
 
     /**
      * Returns a {@link ConditionletInput} containing all the information and/or data needed to build the input for a Condition,
@@ -67,7 +67,7 @@ public abstract class Conditionlet implements Serializable {
      * @param comparison the name of the selected operator in the condition
      * @return
      */
-    public abstract ConditionletInput getInput(Comparison comparison);
+    public abstract Set<ConditionletInput> getInputs(Comparison comparison);
 
     public abstract boolean evaluate(Comparison comparison, HttpServletRequest request);
 

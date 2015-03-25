@@ -5,6 +5,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
@@ -202,12 +203,12 @@ public class RulesAPIImpl implements RulesAPI {
 
                     Collections.sort(conditionletList, new ConditionletComparator());
                     conditionletMap = new LinkedHashMap<String, Conditionlet>();
-                    for(Conditionlet actionlet : conditionletList){
+                    for(Conditionlet conditionlet : conditionletList){
 
                         try {
-                            conditionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
-                            if ( !actionletClasses.contains( actionlet.getClass() ) ) {
-                                actionletClasses.add( actionlet.getClass() );
+                            conditionletMap.put(conditionlet.getClass().getCanonicalName(),conditionlet.getClass().newInstance());
+                            if ( !actionletClasses.contains( conditionlet.getClass() ) ) {
+                                actionletClasses.add( conditionlet.getClass() );
                             }
                         } catch (InstantiationException e) {
                             Logger.error(RulesAPIImpl.class,e.getMessage(),e);
@@ -302,5 +303,9 @@ public class RulesAPIImpl implements RulesAPI {
 
     public List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException {
         return new ArrayList<>(conditionletMap.values());
+    }
+
+    public Conditionlet findConditionlet(String clazz) throws DotDataException, DotSecurityException {
+        return conditionletMap.get(clazz);
     }
 }

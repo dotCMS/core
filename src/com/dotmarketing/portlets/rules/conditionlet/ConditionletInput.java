@@ -17,12 +17,21 @@ public class ConditionletInput {
     }
     */
 
+    private String id;
     private Set<EntryOption> data;
     private boolean userInputAllowed;
     private boolean multipleSelectionAllowed;
     private String defaultValue;
     private Integer minNum;
     private Integer maxNum;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public Set<EntryOption> getData() {
         return data;

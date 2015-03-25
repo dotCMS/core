@@ -8,7 +8,8 @@ import java.util.*;
 public class VisitorsCountryConditionlet extends Conditionlet {
 
     private LinkedHashSet<Comparison> comparisons;
-    private ConditionletInput conditionletInput;
+    private Set<ConditionletInput> inputs;
+    private Map<String, ConditionletInput> inputMap = new HashMap<String, ConditionletInput>();
 
     @Override
     public String getName() {
@@ -28,10 +29,19 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    protected ValidationResult validate(Comparison comparison, String value) {
+    protected ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue) {
         ValidationResult result = new ValidationResult();
+        String inputId = inputValue.getConditionletInputId();
 
-        Set<EntryOption> entries = conditionletInput.getData();
+        if(!UtilMethods.isSet(inputId))
+            return result;
+
+        ConditionletInput input = inputMap.get(inputId);
+        String value = inputValue.getValue();
+
+        result.setConditionletInputId(input.getId());
+
+        Set<EntryOption> entries = input.getData();
         for (Iterator<EntryOption> iterator = entries.iterator(); iterator.hasNext(); ) {
             EntryOption entryOption =  iterator.next();
             if(entryOption.getLabel().equals(value)) {
@@ -44,45 +54,48 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public ValidationResults validate(Comparison comparison, Collection<String> values) {
+    public ValidationResults validate(Comparison comparison, Set<ConditionletInputValue> inputValues) {
 
         ValidationResults results = new ValidationResults();
 
-        if(!UtilMethods.isSet(values))
+        if(!UtilMethods.isSet(inputValues))
             return results;
+
 
         List<ValidationResult> resultList = new ArrayList();
 
-        for (Iterator<String> iterator = values.iterator(); iterator.hasNext(); ) {
-            ValidationResult result = validate(comparison, iterator.next());
-            resultList.add(result);
-            if(!result.isValid())
-                results.setErrors(true);
+        for (ConditionletInputValue inputValue : inputValues) {
+            resultList.add(validate(comparison, inputValue));
         }
 
         return results;
-
     }
 
 
 
     @Override
-    public ConditionletInput getInput(Comparison comparison) {
-        if (conditionletInput != null)
-            return conditionletInput;
+    public Set<ConditionletInput> getInputs(Comparison comparison) {
+        if (inputs != null)
+            return inputs;
 
-        conditionletInput = new ConditionletInput();
-        conditionletInput.setMultipleSelectionAllowed(true);
+        inputs = new TreeSet<>();
+
+        ConditionletInput input = new ConditionletInput();
+        input.setId("country");
+        input.setMultipleSelectionAllowed(true);
 
         LinkedHashSet<EntryOption> data = new LinkedHashSet<>();
         data.add(new EntryOption("CR"));
         data.add(new EntryOption("US"));
         data.add(new EntryOption("CR"));
 
-        conditionletInput.setData(data);
-        conditionletInput.setDefaultValue("US");
+        input.setData(data);
+        input.setDefaultValue("US");
 
-        return conditionletInput;
+        inputs.add(input);
+        inputMap.put(input.getId(), input);
+
+        return inputs;
     }
 
     @Override

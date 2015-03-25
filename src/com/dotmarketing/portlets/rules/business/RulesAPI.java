@@ -149,4 +149,13 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param clazz
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Conditionlet findConditionlet(String clazz) throws DotDataException, DotSecurityException;
 }

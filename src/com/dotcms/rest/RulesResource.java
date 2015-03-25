@@ -18,6 +18,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.rules.conditionlet.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -50,7 +51,7 @@ public class RulesResource extends WebResource {
 	@GET
 	@Path("/rules/{params:.*}")
 	@Produces("application/json")
-	public Response getRules(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
+	public Response getRules(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
 		InitDataObject initData = init(params, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
@@ -63,12 +64,14 @@ public class RulesResource extends WebResource {
             return responseResource.response(ruleObject.toString());
         }
 
+        JSONObject resultsObject = new JSONObject();
         JSONArray jsonRules = new JSONArray();
         String hostIdentifier = initData.getParamsMap().get("host");
         String folderIdentifier = initData.getParamsMap().get("folder");
 
         if(!UtilMethods.isSet(hostIdentifier) || !UtilMethods.isSet(folderIdentifier)) {
-            return responseResource.response(jsonRules.toString());
+            resultsObject.put("rules", new JSONArray());
+            return responseResource.response(resultsObject.toString());
         }
 
         if(UtilMethods.isSet(hostIdentifier)) {
@@ -89,7 +92,8 @@ public class RulesResource extends WebResource {
             }
         }
 
-        return responseResource.response(jsonRules.toString());
+        resultsObject.put("rules", jsonRules);
+        return responseResource.response(resultsObject.toString());
     }
 
     /**
@@ -104,7 +108,7 @@ public class RulesResource extends WebResource {
     @GET
     @Path("/conditions/{params:.*}")
     @Produces("application/json")
-    public Response getConditions(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
+    public Response getConditions(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
         InitDataObject initData = init(params, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
@@ -117,21 +121,23 @@ public class RulesResource extends WebResource {
             return responseResource.response(conditionObject.toString());
         }
 
-        JSONObject jsonRuleExpression = new JSONObject();
+        JSONObject resultsObject = new JSONObject();
 
         String ruleId = initData.getParamsMap().get("ruleId");
 
         if(!UtilMethods.isSet(ruleId)) {
-            return responseResource.response(jsonRuleExpression.toString());
+            resultsObject.put("conditionGroups", new JSONArray());
+            return responseResource.response(resultsObject.toString());
         }
 
         Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
 
         if(!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-            return responseResource.response(jsonRuleExpression.toString());
+            resultsObject.put("conditionGroups", new JSONArray());
+            return responseResource.response(resultsObject.toString());
         }
 
-        JSONObject resultsObject = new JSONObject();
+
         JSONArray jsonConditionGroups = new JSONArray();
 
         List<ConditionGroup> conditionGroups = APILocator.getRulesAPI().getConditionGroupsByRule(ruleId, user, false);
@@ -159,15 +165,15 @@ public class RulesResource extends WebResource {
 
         resultsObject.put("conditionGroups", jsonConditionGroups);
 
-        return null;
+        return responseResource.response(resultsObject.toString());
     }
 
 
     /**
-     * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
-     * <br>Each Rule node contains all fields in  .
+     * <p>Returns a JSON with all the Conditionlet Objects defined.
+     * <br>Each Conditionlet node contains only its name
      *
-     * Usage: /getconditions/{roleid}
+     * Usage: /conditionlets/
      * @throws com.dotmarketing.util.json.JSONException
      *
      */
@@ -175,21 +181,93 @@ public class RulesResource extends WebResource {
     @GET
     @Path("/conditionlets/{params:.*}")
     @Produces("application/json")
-    public Response getConditionlets(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
+    public Response getConditionlets(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+
+        JSONObject resultsObject = new JSONObject();
+        JSONArray jsonConditionlets = new JSONArray();
+
+        List<Conditionlet> conditionlets = APILocator.getRulesAPI().getConditionlets();
+
+        for (Conditionlet conditionlet : conditionlets) {
+            JSONObject conditionletObject = new JSONObject();
+            conditionletObject.put("id", conditionlet.getClass().getCanonicalName());
+            conditionletObject.put("name", conditionlet.getLocalizedName());
+            jsonConditionlets.add(conditionletObject);
+        }
+
+        resultsObject.put("conditionlets", jsonConditionlets);
+
+        return responseResource.response(resultsObject.toString());
+    }
+
+    /**
+     * <p>Returns a JSON with the Comparisons of a given contentlet.
+     * <br>Each Comparisons node contains the id and label
+     *
+     * Usage: /comparisons/conditionlet/{conditionletId}
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
+
+    @GET
+    @Path("/comparisons/{params:.*}")
+    @Produces("application/json")
+    public Response getComparisons(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
         InitDataObject initData = init(params, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
 
         JSONObject resultsObject = new JSONObject();
-        JSONArray jsonConditionGroups = new JSONArray();
+        JSONArray jsonComparisons = new JSONArray();
 
-        List<Conditionlet> conditionlets = APILocator.getRulesAPI().getConditionlets();
+        String conditionletId = initData.getParamsMap().get("conditionlet");
 
-        resultsObject.put("conditionGroups", jsonConditionGroups);
-        String a = "sdf";
-        a
+        if(!UtilMethods.isSet(conditionletId)) {
+            resultsObject.put("comparisons", jsonComparisons);
+            return responseResource.response(resultsObject.toString());
+        }
 
-        return null;
+        Conditionlet conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
+        jsonComparisons.addAll(conditionlet.getComparisons());
+        resultsObject.put("comparisons", jsonComparisons);
+
+        return responseResource.response(resultsObject.toString());
+    }
+
+    /**
+     * <p>Returns a JSON with the Comparisons of a given contentlet.
+     * <br>Each Comparisons node contains the id and label
+     *
+     * Usage: /conditionletInputs/
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
+
+    @GET
+    @Path("/conditionletinputs/{params:.*}")
+    @Produces("application/json")
+    public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        User user = initData.getUser();
+
+        JSONObject resultsObject = new JSONObject();
+        JSONArray jsonComparisons = new JSONArray();
+
+        String conditionletId = initData.getParamsMap().get("conditionlet");
+
+        if(!UtilMethods.isSet(conditionletId)) {
+            resultsObject.put("comparisons", jsonComparisons);
+            return responseResource.response(resultsObject.toString());
+        }
+
+        Conditionlet conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
+        jsonComparisons.addAll(conditionlet.getComparisons());
+        resultsObject.put("comparisons", jsonComparisons);
+
+        return responseResource.response(resultsObject.toString());
     }
 
 
