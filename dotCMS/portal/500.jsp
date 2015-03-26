@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.filters.CMSFilter"%>
 <%@ page import="java.util.*" %>
 <%@ page import="java.net.URL" %>
 <%@ page import="java.lang.Exception" %>
@@ -23,6 +24,7 @@
 		
 	String ep_originatingHost = host.getHostname();
 	String ep_errorCode = "500";
+    String ep_error_uri = (String)request.getAttribute("javax.servlet.forward.request_uri");
 	
 	// Get 500 from virtual link
 	String pointer = (String) com.dotmarketing.cache.VirtualLinksCache.getPathFromCache(host.getHostname() + ":/cms500Page");
@@ -81,17 +83,19 @@
 	}
 	
 	// if we have virtual link and page exists, redirect or forward
-	if(UtilMethods.isSet(pointer) ){
-		if (pointer.startsWith("/")) {
-			Logger.debug(this, "cms500Page forwarding to relative path: " + pointer);			
-			request.getRequestDispatcher(pointer).forward(request, response);
-		} else {
-			pointer = pointer + "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode;
-			Logger.debug(this, "cms500Page redirecting to absolute path: " + pointer);
-			response.sendRedirect(pointer);
-		}
-		return;
-	}
+    if(UtilMethods.isSet(pointer) ){
+        if (pointer.startsWith("/")) {
+            Logger.debug(this, "cms500Page forwarding to relative path: " + pointer);
+            request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, pointer);
+            // Serving a page through the velocity servlet
+            request.getRequestDispatcher("/servlets/VelocityServlet").forward(request, response);
+        } else {
+            pointer = pointer + "?ep_originatingHost="+ep_originatingHost+"&ep_errorCode="+ep_errorCode+"&ep_error_uri="+ep_error_uri;
+            Logger.debug(this, "cms404Page redirecting to absolute path: " + pointer);
+            response.sendRedirect(pointer);
+        }
+        return;
+    }
 	
 	
 	%>
