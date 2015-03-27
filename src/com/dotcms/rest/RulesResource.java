@@ -1,14 +1,12 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.environment.bean.Environment;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -23,6 +21,7 @@ import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
@@ -31,8 +30,10 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -49,14 +50,12 @@ public class RulesResource extends WebResource {
 	 */
 
 	@GET
-	@Path("/rules/{params:.*}")
+	@Path("/rules/{ruleId}")
 	@Produces("application/json")
-	public Response getRules(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-		InitDataObject initData = init(params, true, request, true);
+	public Response getRules(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId) throws DotDataException, DotSecurityException, JSONException {
+		InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
-
-        String ruleId = initData.getParamsMap().get("id");
 
         if(UtilMethods.isSet(ruleId)) {
             Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
@@ -100,20 +99,20 @@ public class RulesResource extends WebResource {
      * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
      * <br>Each Rule node contains all fields in  .
      *
-     * Usage: /condition/
+     * <p>If a conditionId is provided, it will return the condition whose id matches the provided conditionId.
+     *
+     * Usage: /conditions/
      * @throws com.dotmarketing.util.json.JSONException
      *
      */
 
     @GET
-    @Path("/conditions/{params:.*}")
+    @Path("/rules/{ruleId}/conditions/{conditionId}")
     @Produces("application/json")
-    public Response getConditions(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init(params, true, request, true);
+    public Response getConditions(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId, @PathParam("conditionId") String conditionId) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
-
-        String conditionId = initData.getParamsMap().get("id");
 
         if(UtilMethods.isSet(conditionId)) {
             Condition condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
@@ -122,8 +121,6 @@ public class RulesResource extends WebResource {
         }
 
         JSONObject resultsObject = new JSONObject();
-
-        String ruleId = initData.getParamsMap().get("ruleId");
 
         if(!UtilMethods.isSet(ruleId)) {
             resultsObject.put("conditionGroups", new JSONArray());
@@ -168,7 +165,6 @@ public class RulesResource extends WebResource {
         return responseResource.response(resultsObject.toString());
     }
 
-
     /**
      * <p>Returns a JSON with all the Conditionlet Objects defined.
      * <br>Each Conditionlet node contains only its name
@@ -179,10 +175,10 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/conditionlets/{params:.*}")
+    @Path("/conditionlets")
     @Produces("application/json")
-    public Response getConditionlets(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init(params, true, request, true);
+    public Response getConditionlets(@Context HttpServletRequest request) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         JSONObject resultsObject = new JSONObject();
@@ -212,17 +208,15 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/comparisons/{params:.*}")
+    @Path("/conditionlets/{id}/comparisons")
     @Produces("application/json")
-    public Response getComparisons(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init(params, true, request, true);
+    public Response getComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
 
         JSONObject resultsObject = new JSONObject();
         JSONArray jsonComparisons = new JSONArray();
-
-        String conditionletId = initData.getParamsMap().get("conditionlet");
 
         if(!UtilMethods.isSet(conditionletId)) {
             resultsObject.put("comparisons", jsonComparisons);
@@ -246,31 +240,232 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/conditionletinputs/{params:.*}")
+    @Path("/conditionlets/{id}/inputs")
     @Produces("application/json")
-    public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init(params, true, request, true);
+    public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         User user = initData.getUser();
 
         JSONObject resultsObject = new JSONObject();
-        JSONArray jsonComparisons = new JSONArray();
+        JSONArray jsonInputs = new JSONArray();
 
-        String conditionletId = initData.getParamsMap().get("conditionlet");
+        String comparison = initData.getParamsMap().get("comparison");
 
-        if(!UtilMethods.isSet(conditionletId)) {
-            resultsObject.put("comparisons", jsonComparisons);
+        if(!UtilMethods.isSet(conditionletId) || !UtilMethods.isSet(comparison)) {
+            resultsObject.put("conditionletinputs", jsonInputs);
             return responseResource.response(resultsObject.toString());
         }
 
+
+
         Conditionlet conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
-        jsonComparisons.addAll(conditionlet.getComparisons());
-        resultsObject.put("comparisons", jsonComparisons);
+        jsonInputs.addAll(conditionlet.getInputs(comparison));
+        resultsObject.put("conditionletinputs", jsonInputs);
 
         return responseResource.response(resultsObject.toString());
     }
 
 
+    /**
+     * <p>Saves a new Rule
+     * <br>
+     *
+     * Usage: /rules/
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
 
+    @POST
+    @Path("/rules")
+    @Produces("application/json")
+    public Response saveRule(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        User user = initData.getUser();
+        Map ruleAttributes;
+
+        try {
+            ruleAttributes = processJSON(request.getInputStream());
+        } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
+            Logger.error(this.getClass(), "Error processing JSON for Stream", e);
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (IOException e) {
+            Logger.error(this.getClass(), "Error processing Stream", e);
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+
+        JSONObject resultsObject = new JSONObject();
+
+        Rule rule = new Rule();
+
+        if(!UtilMethods.isSet(ruleAttributes.get("ruleName")) || !UtilMethods.isSet(ruleAttributes.get("site"))) {
+            Logger.error(this.getClass(), "Saving Rule - No ruleName or Site provided");
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("No ruleName or Site provided").build();
+        }
+
+        try {
+            setRulesProperties(user, ruleAttributes, rule);
+        } catch (DotDataException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("").build();
+        }
+
+        APILocator.getRulesAPI().saveRule(rule, user, false);
+
+
+        resultsObject.put(rule.getId(), new JSONObject(rule));
+
+        return responseResource.response(resultsObject.toString());
+    }
+
+    /**
+     * <p>Updates a new Rule
+     * <br>
+     *
+     * Usage: /rules/
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
+
+    @PUT
+    @Path("/rules")
+    @Produces("application/json")
+    public Response updateRule(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        User user = initData.getUser();
+        Map ruleAttributes;
+
+        try {
+            ruleAttributes = processJSON(request.getInputStream());
+        } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
+            Logger.error(this.getClass(), "Error processing JSON for Stream", e);
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (IOException e) {
+            Logger.error(this.getClass(), "Error processing Stream", e);
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+
+        JSONObject resultsObject = new JSONObject();
+
+        Rule newRuleVersion = new Rule();
+
+        if(!UtilMethods.isSet(ruleAttributes.get("ruleId")) || !UtilMethods.isSet(ruleAttributes.get("ruleName")) || !UtilMethods.isSet(ruleAttributes.get("site"))) {
+            Logger.error(this.getClass(), "Updating Rule - No ruleId or ruleName or Site provided");
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("No ruleName or Site provided").build();
+        }
+
+        Rule existingRule = APILocator.getRulesAPI().getRuleById((String)ruleAttributes.get("ruleId"), user, false);
+
+        if (!UtilMethods.isSet(existingRule)) {
+            Logger.error(this.getClass(), "Updating Rule - Invalid ruleId provided");
+            return responseResource.response(resultsObject.toString());
+        }
+
+        newRuleVersion.setId(existingRule.getId());
+
+        try {
+            setRulesProperties(user, ruleAttributes, newRuleVersion);
+        } catch (DotDataException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("").build();
+        }
+
+        APILocator.getRulesAPI().saveRule(newRuleVersion, user, false);
+
+
+        resultsObject.put(newRuleVersion.getId(), new JSONObject(newRuleVersion));
+
+        return responseResource.response(resultsObject.toString());
+    }
+
+    /**
+     * <p>Saves a new Condition
+     * <br>
+     *
+     * Usage: /rules/
+     * @throws com.dotmarketing.util.json.JSONException
+     *
+     */
+
+    @POST
+    @Path("/rules/{ruleId}/conditions")
+    @Produces("application/json")
+    public Response saveCondition(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(params, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
+        User user = initData.getUser();
+        Map conditionAttributes;
+
+        try {
+            conditionAttributes = processJSON(request.getInputStream());
+        } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
+            Logger.error(this.getClass(), "Error processing JSON for Stream", e);
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (IOException e) {
+            Logger.error(this.getClass(), "Error processing Stream", e);
+            return Response.status(HttpStatus.SC_INTERNAL_SERVER_ERROR).entity(e.getMessage()).build();
+        }
+
+        JSONObject resultsObject = new JSONObject();
+
+        ConditionGroup conditionGroup;
+
+//        if(!UtilMethods.isSet(ruleAttributes.get("ruleName")) || !UtilMethods.isSet(ruleAttributes.get("site"))) {
+//            Logger.error(this.getClass(), "Saving Rule - No ruleName or Site provided");
+//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("No ruleName or Site provided").build();
+//        }
+//
+//        try {
+//            setRulesProperties(user, ruleAttributes, rule);
+//        } catch (DotDataException e) {
+//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("").build();
+//        }
+//
+//        APILocator.getRulesAPI().saveRule(rule, user, false);
+//
+//
+//        resultsObject.put(rule.getId(), new JSONObject(rule));
+
+        return responseResource.response(resultsObject.toString());
+    }
+
+    private void setRulesProperties(User user, Map ruleAttributes, Rule newRuleVersion) throws DotDataException, DotSecurityException {
+        Host host = APILocator.getHostAPI().find((String) ruleAttributes.get("site"), user, false);
+
+        if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
+            Logger.error(this.getClass(), "Invalid Site identifier provided");
+            throw new DotDataException("Invalid Site identifier provided ");
+        }
+
+        newRuleVersion.setHost(host.getIdentifier());
+
+        newRuleVersion.setName((String) ruleAttributes.get("ruleName"));
+
+        String firePolicyStr = (String) ruleAttributes.get("firePolicy");
+
+        if(UtilMethods.isSet(firePolicyStr)) {
+            try {
+                newRuleVersion.setFirePolicy(Rule.FirePolicy.valueOf(firePolicyStr));
+            } catch(IllegalArgumentException e) {
+                Logger.info(getClass(), "Unable to set Fire Policy - Invalid value provided");
+            }
+        }
+
+        if(UtilMethods.isSet(ruleAttributes.get("shortCircuit"))) {
+            try {
+                newRuleVersion.setShortCircuit((boolean) ruleAttributes.get("shortCircuit") );
+            } catch (ClassCastException e) {
+                Logger.info(getClass(), "Unable to set Short Circuit - Invalid value provided");
+            }
+        }
+
+        if(UtilMethods.isSet(ruleAttributes.get("enabled"))) {
+            try {
+                newRuleVersion.setEnabled((boolean) ruleAttributes.get("enabled"));
+            } catch (ClassCastException e) {
+                Logger.info(getClass(), "Unable to set Enabled - Invalid value provided");
+            }
+        }
+    }
 
 }

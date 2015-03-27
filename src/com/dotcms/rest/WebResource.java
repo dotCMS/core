@@ -1,11 +1,17 @@
 package com.dotcms.rest;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -359,5 +365,18 @@ public class WebResource {
 			throw new SecurityException("SSL Required.", Response.Status.FORBIDDEN);
 
 	}
+
+    protected Map processJSON(InputStream input) throws JSONException, IOException {
+        HashMap<String,Object> map=new HashMap<String,Object>();
+        JSONObject obj=new JSONObject(IOUtils.toString(input));
+        Iterator<String> keys = obj.keys();
+        while(keys.hasNext()) {
+            String key=keys.next();
+            Object value=obj.get(key);
+            map.put(key, value.toString());
+        }
+
+        return map;
+    }
 
 }

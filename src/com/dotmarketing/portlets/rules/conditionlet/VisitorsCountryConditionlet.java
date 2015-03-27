@@ -8,8 +8,7 @@ import java.util.*;
 public class VisitorsCountryConditionlet extends Conditionlet {
 
     private LinkedHashSet<Comparison> comparisons;
-    private Set<ConditionletInput> inputs;
-    private Map<String, ConditionletInput> inputMap = new HashMap<String, ConditionletInput>();
+    private Map<String, ConditionletInput> inputs;
 
     @Override
     public String getName() {
@@ -36,7 +35,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
         if(!UtilMethods.isSet(inputId))
             return result;
 
-        ConditionletInput input = inputMap.get(inputId);
+        ConditionletInput input = inputs.get(inputId);
         String value = inputValue.getValue();
 
         result.setConditionletInputId(input.getId());
@@ -74,11 +73,11 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 
 
     @Override
-    public Set<ConditionletInput> getInputs(Comparison comparison) {
+    public Collection<ConditionletInput> getInputs(String comparisonId) {
         if (inputs != null)
-            return inputs;
+            return inputs.values();
 
-        inputs = new TreeSet<>();
+        inputs = new LinkedHashMap<>();
 
         ConditionletInput input = new ConditionletInput();
         input.setId("country");
@@ -92,14 +91,13 @@ public class VisitorsCountryConditionlet extends Conditionlet {
         input.setData(data);
         input.setDefaultValue("US");
 
-        inputs.add(input);
-        inputMap.put(input.getId(), input);
+        inputs.put(input.getId(), input);
 
-        return inputs;
+        return inputs.values();
     }
 
     @Override
-    public boolean evaluate(Comparison comparison, HttpServletRequest request) {
+    public boolean evaluate(String comparisonId, HttpServletRequest request) {
         return false;
     }
 }

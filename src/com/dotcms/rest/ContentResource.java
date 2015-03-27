@@ -1187,15 +1187,7 @@ public class ContentResource extends WebResource {
 
 	@SuppressWarnings("unchecked")
 	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException {
-		HashMap<String,Object> map=new HashMap<String,Object>();
-		JSONObject obj=new JSONObject(IOUtils.toString(input));
-		Iterator<String> keys = obj.keys();
-		while(keys.hasNext()) {
-			String key=keys.next();
-			Object value=obj.get(key);
-			map.put(key, value.toString());
-		}
-		processMap(contentlet,map);
+		processMap(contentlet,processJSON(input));
 	}
 	
 	private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {

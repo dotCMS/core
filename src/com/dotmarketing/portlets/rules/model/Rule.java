@@ -71,9 +71,9 @@ public class Rule implements Permissionable {
 
     private String id;
     private String name;
-    private FirePolicy firePolicy;
+    private FirePolicy firePolicy = FirePolicy.EVERY_PAGE;
     private boolean shortCircuit;
-    private String host="SYSTEM_HOST";
+    private String host;
     private String folder="SYSTEM_FOLDER";
     private int fireOrder;
     private boolean enabled;

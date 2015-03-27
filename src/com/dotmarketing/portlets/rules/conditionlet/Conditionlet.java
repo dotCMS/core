@@ -8,6 +8,7 @@ import com.liferay.portal.language.LanguageUtil;
 import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 public abstract class Conditionlet implements Serializable {
@@ -64,12 +65,12 @@ public abstract class Conditionlet implements Serializable {
     /**
      * Returns a {@link ConditionletInput} containing all the information and/or data needed to build the input for a Condition,
      * determined by the given operator
-     * @param comparison the name of the selected operator in the condition
+     * @param comparisonId the id of the selected comparison in the condition
      * @return
      */
-    public abstract Set<ConditionletInput> getInputs(Comparison comparison);
+    public abstract Collection<ConditionletInput> getInputs(String comparisonId);
 
-    public abstract boolean evaluate(Comparison comparison, HttpServletRequest request);
+    public abstract boolean evaluate(String comparisonId, HttpServletRequest request);
 
     public String getLanguageId() {
         return languageId;

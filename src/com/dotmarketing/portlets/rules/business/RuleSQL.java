@@ -19,8 +19,8 @@ abstract class RuleSQL {
 		return null;
 	}
 
-    protected String INSERT_RULE = "insert into dot_rule (id, name, fire_policy, short_circuit, host, folder, fire_order, enabled) values (?,?,?,?,?,?,?,?)";
-    protected String UPDATE_RULE = "update dot_rule set name=?, fire_policy=?, short_circuit=?, host=?, folder=?, fire_order=?, enabled=? where id=?";
+    protected String INSERT_RULE = "insert into dot_rule (id, name, fire_policy, short_circuit, host, folder, fire_order, enabled, mod_date) values (?,?,?,?,?,?,?,?,?)";
+    protected String UPDATE_RULE = "update dot_rule set name=?, fire_policy=?, short_circuit=?, host=?, folder=?, fire_order=?, enabled=?, mod_date=? where id=?";
     protected String SELECT_RULES_BY_HOST = "select * from dot_rule where host=?";
     protected String SELECT_RULES_BY_FOLDER = "select * from dot_rule where folder=?";
     protected String SELECT_RULE_BY_ID = "select * from dot_rule where id=?";

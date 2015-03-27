@@ -151,6 +151,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(rule.getFolder());
             db.addParam(rule.getFireOrder());
             db.addParam(rule.isEnabled());
+            db.addParam(new Date());
             db.loadResult();
         } else {
             db.setSQL(sql.UPDATE_RULE);
@@ -161,6 +162,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(rule.getFolder());
             db.addParam(rule.getFireOrder());
             db.addParam(rule.isEnabled());
+            db.addParam(new Date());
             db.addParam(rule.getId());
             db.loadResult();
         }

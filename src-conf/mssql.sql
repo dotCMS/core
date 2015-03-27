@@ -3475,3 +3475,9 @@ create table cluster_server_action(
 	time_out_seconds bigint not null,
 	PRIMARY KEY (server_action_id)
 );
+
+-- Rules Engine
+create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_policy varchar(20),short_circuit tinyint default 0,host varchar(36) not null,folder varchar(36) not null,fire_order int default 0,enabled tinyint default 0,mod_date datetime,unique (name, host));
+create table rule_condition(id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,value text,mod_date datetime);
+create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,mod_date datetime);
+create table rule_action (id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),fire_order int default 0,actionlet text not null,mod_date datetime);
