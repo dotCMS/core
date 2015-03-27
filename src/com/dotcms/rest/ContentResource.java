@@ -736,7 +736,7 @@ public class ContentResource extends WebResource {
 
 					for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
 						// filling binarys in order. as they come / as field order says
-						if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
+						if(ff.getFieldContentlet().startsWith("binary")) {
 							contentlet.setBinary(ff.getVelocityVarName(), tmp);
 							break;
 						}
