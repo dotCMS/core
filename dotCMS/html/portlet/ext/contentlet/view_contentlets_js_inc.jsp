@@ -1754,33 +1754,37 @@
                                 var cell = row.insertCell (row.cells.length);
                                 //console.log(headers[j]);
                                 cell.setAttribute("align","left");
-                                if (j == 0 && languages.length>1) {
+                                if (j == 0 ) {
+                                
+                                	if(languages.length>1){
                                 		cell.setAttribute("nowrap","true");
                                         languageId = cellData["languageId"];
                                         locale = "";
                                         	
                                         for (var n = 0; n < languages.length; ++n) {
-                                                if (languages[n][0] == languageId) {
-                                                        locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
-                                                        break;
-                                                }
+                                            if (languages[n][0] == languageId) {
+	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
+	                                            break;
+                                        	}
                                         }
 
-                                        if (locale == "")
-                                                locale = "&nbsp;";
-
+                                        if (locale == ""){
+                                        	locale = "&nbsp;";
+										}
                                         cell.innerHTML = locale;
-                                        var cell = row.insertCell (row.cells.length);
-
-                                        var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
-
-                                } else {
-                                        var value = cellData[header["fieldVelocityVarName"]];
+                                        cell = row.insertCell (row.cells.length);
+                                        cell.setAttribute("align","left");
+									}
+                                    var value = titleCell(cellData,cellData[header["fieldVelocityVarName"]], i);
+                                }
+                                else{
+                                    var value = cellData[header["fieldVelocityVarName"]];
                                 }
                                 cell.setAttribute("class","titleCellDiv");
                                 cell.setAttribute("className","titleCellDiv");
-                                if (value != null)
-                                        cell.innerHTML = value;
+                                if (value != null){
+                                	cell.innerHTML = value;
+                                }
                         }
                         var cell = row.insertCell (row.cells.length);
                         cell.innerHTML = cellData["modUser"];
