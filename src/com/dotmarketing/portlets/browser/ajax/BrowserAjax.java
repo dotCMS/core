@@ -1196,7 +1196,7 @@ public class BrowserAjax {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
             }
             else {
-                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
+                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, host, user);
             }
         }
     }

@@ -3534,19 +3534,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            else{
 	                folder=APILocator.getFolderAPI().findSystemFolder();
 	            }
-	            String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+
+                //Get the URL from Identifier
+                String url;
+                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+
+                if(identifier != null && UtilMethods.isSet(identifier.getAssetName())) {
+                    url = identifier.getAssetName();
+                } else {
+                    url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
+                }
 	
 	            if(UtilMethods.isSet(url)){
+                    contentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, url);
 	        		Identifier folderId = APILocator.getIdentifierAPI().find(folder);
 	        		String path = folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)?"/"+url:folderId.getPath()+url;
 	        		Identifier htmlpage = APILocator.getIdentifierAPI().find(host, path);
 	        		if(htmlpage!=null && InodeUtils.isSet(htmlpage.getId()) && !htmlpage.getId().equals(contentlet.getIdentifier()) && htmlpage.getAssetType().equals("htmlpage") ){
-	        	        DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.error.url.already.exists");
+	        	        DotContentletValidationException cve = new FileAssetValidationException("Page URL already exists." + url);
 	                    cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                    throw cve;
 	                }
 	            }else{
-	                DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.url.required");
+	                DotContentletValidationException cve = new FileAssetValidationException("URL is required");
 	                cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
 	                throw cve;
 	            }
@@ -3555,7 +3565,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
       
         	}
         	catch(DotDataException | DotSecurityException | IllegalArgumentException e){
-                DotContentletValidationException cve = new FileAssetValidationException("message.htmlpage.error.url.invalid");
+                DotContentletValidationException cve = new FileAssetValidationException(" URL is invalid");
                 cve.addBadTypeField(st.getFieldVar(HTMLPageAssetAPI.URL_FIELD));
                 throw cve;
         	}
@@ -4381,6 +4391,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	            for (ContentletRelationshipRecords crr : rr) {
 	                rels.put(crr.getRelationship(), crr.getRecords());
 	            }
+            }
+
+            //Set URL in the new contentlet because is needed to create Identifier in EscontentletAPI.
+            if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE){
+                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
+                    newContentlet.setProperty(HTMLPageAssetAPI.URL_FIELD, identifier.getAssetName());
+                } else {
+                    Logger.warn(this, "Unable to get URL from Contentlet " + contentlet);
+                }
             }
 
             newContentlet.getMap().put("__disable_workflow__", true);
