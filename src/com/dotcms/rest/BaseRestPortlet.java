@@ -1,23 +1,7 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Proxy;
-import java.util.HashMap;
-
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.Portlet;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.javax.portlet.PortletException;
-import com.dotcms.repackage.javax.portlet.RenderRequest;
-import com.dotcms.repackage.javax.portlet.RenderResponse;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
+import com.dotcms.repackage.com.sun.jersey.server.impl.ThreadLocalInvoker;
+import com.dotcms.repackage.javax.portlet.*;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -26,7 +10,6 @@ import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
@@ -41,6 +24,19 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Proxy;
+import java.util.HashMap;
 
 public abstract class BaseRestPortlet extends WebResource implements Portlet, Cloneable {
 
@@ -76,7 +72,7 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 		HttpServletResponse response = ((RenderResponseImpl) res).getHttpServletResponse();
 
 		try {
-			response.getWriter().write(getJspResponse(request, this.getClass().getSimpleName(), "render"));
+			response.getWriter().write( getJspResponse( request, response, this.getClass().getSimpleName(), "render" ) );
 		} catch (ServletException e) {
 
 			e.printStackTrace();
@@ -84,7 +80,7 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 
 	}
 
-	private String getJspResponse(HttpServletRequest request, String portletId, String jspName) throws ServletException,
+	private String getJspResponse ( HttpServletRequest request, HttpServletResponse response, String portletId, String jspName ) throws ServletException,
 			IOException {
 
 		@SuppressWarnings("rawtypes")
@@ -97,15 +93,33 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 
 		String path = "/WEB-INF/jsp/" + portletId.toLowerCase() + "/" + jspName + ".jsp";
 
-		HttpServletResponseWrapper response = new ResponseWrapper(responseProxy);
+		HttpServletResponseWrapper responseWrapper = new ResponseWrapper( responseProxy );
 		Logger.debug(this.getClass(), "trying: " + path);
 
 		try {
-			request.getRequestDispatcher(path).include(request, response);
-			return ((ResponseWrapper) response).getResponseString();
+
+			try {
+				request.getRequestDispatcher( path ).include( request, response );
+			} catch ( Exception e ) {//Fallback if the normal flow does not work, posible on app servers like weblogic
+
+				//Read the request proxy sent to jersey and look for its handler to get the object behind that proxy
+				ThreadLocalInvoker localInvoker = (ThreadLocalInvoker) Proxy.getInvocationHandler( request );
+				Object proxiedObject = localInvoker.get();
+
+				if ( proxiedObject instanceof ServletRequestWrapper ) {
+					ServletRequestWrapper servletRequestWrapper = (ServletRequestWrapper) proxiedObject;
+					request.getRequestDispatcher( path ).include( servletRequestWrapper, response );
+				} else if ( proxiedObject instanceof ServletRequest ) {
+					ServletRequest servletRequest = (ServletRequest) proxiedObject;
+					request.getRequestDispatcher( path ).include( servletRequest, response );
+				}
+
+			}
+
+			return ((ResponseWrapper) responseWrapper).getResponseString();
 		} catch (Exception e) {
 			Logger.debug(this.getClass(), "unable to parse: " + path);
-			Logger.error(this.getClass(), e.toString());
+			Logger.error( this.getClass(), e.toString(), e );
 			StringWriter sw = new StringWriter();
 			sw.append("<div style='padding:30px;'>");
 			sw.append("unable to parse: <a href='" + path + "' target='debug'>" + path + "</a>");
@@ -124,7 +138,7 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 	@GET
 	@Path("/layout/{params:.*}")
 	@Produces("text/html")
-	public Response getLayout(@Context HttpServletRequest request, @PathParam("params") String params)
+	public Response getLayout ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam( "params" ) String params )
 			throws DotDataException, DotSecurityException, ServletException, IOException, DotRuntimeException,
 			PortalException, SystemException {
 
@@ -162,7 +176,7 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 			return builder.build();
 		}
 
-		ResponseBuilder builder = Response.ok(getJspResponse(request, portlet.getPortletId(), jspName), "text/html");
+		ResponseBuilder builder = Response.ok( getJspResponse( request, response, portlet.getPortletId(), jspName ), "text/html" );
 		CacheControl cc = new CacheControl();
 		cc.setNoCache(true);
 

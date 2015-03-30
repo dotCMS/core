@@ -1,4 +1,3 @@
-`
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
