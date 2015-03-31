@@ -420,7 +420,7 @@
 	<% } %>
 
 	<% } else if (InodeUtils.isSet(template.getInode())) { %>
-		<button dojoType="dijit.form.Button" onClick="selectTemplateVersion(<%=template.getInode()%>, '<%=referer%>')" type="button">
+		<button dojoType="dijit.form.Button" onClick="selectTemplateVersion('<%=template.getInode()%>', '<%=referer%>')" type="button">
 			<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "bring-back-this-version")) %>
 		</button>
 	<% } %>
