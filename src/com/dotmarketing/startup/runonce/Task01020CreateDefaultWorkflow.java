@@ -253,6 +253,10 @@ public class Task01020CreateDefaultWorkflow implements StartupTask {
 				formattedQuery = String.format(query, "id,",
 						"permission_seq.NEXTVAL,", inodeID, APILocator
 								.getRoleAPI().loadCMSAnonymousRole().getId());
+			} else if (DbConnectionFactory.isPostgres()) {
+				formattedQuery = String.format(query, "id,",
+						"nextval('permission_seq'),", inodeID, APILocator
+								.getRoleAPI().loadCMSAnonymousRole().getId());
 			} else {
 				formattedQuery = String.format(query, "", "", inodeID,
 						APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
