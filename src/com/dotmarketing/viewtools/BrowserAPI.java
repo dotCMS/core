@@ -437,8 +437,8 @@ public class BrowserAPI {
 				returnList.removeAll(toDelete);
 			}
 
-			if (skip || wfdata.skip) {
-			    continue;
+			if ( skip || (wfdata != null && wfdata.skip) ) {
+				continue;
 			}
 			
 			IFileAsset fileAsset=(IFileAsset)file;
