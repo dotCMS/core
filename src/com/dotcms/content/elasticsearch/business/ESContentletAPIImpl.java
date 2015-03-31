@@ -3537,10 +3537,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
                 //Get the URL from Identifier if it is not in Contentlet
                 String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
-                Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                if(!UtilMethods.isSet(url) && UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
-                    url = identifier.getAssetName();
+                if(!UtilMethods.isSet(url)){
+
+                    Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
+                    if(UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())){
+
+                        url = identifier.getAssetName();
+                    }
                 }
 	
 	            if(UtilMethods.isSet(url)){
