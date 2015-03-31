@@ -171,6 +171,22 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Logger.warn(this, "Unable to convert contentlet to page asset " + con, e);
             }
         }
+
+        //We have to get PageUrl from the Identifier (AssetName)
+        if(!UtilMethods.isSet(pa.getPageUrl())){
+            try{
+                Identifier identifier = APILocator.getIdentifierAPI().find(con);
+                if(identifier != null && UtilMethods.isSet(identifier.getAssetName())){
+                    pa.setPageUrl(identifier.getAssetName());
+                } else {
+                    Logger.warn(this, "Unable to convert Contentlet to page asset, error at set PageUrl " + con);
+                }
+            }catch(Exception e){
+                pa=new HTMLPageAsset();
+                Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
+            }
+        }
+
         return pa;
     }
 
