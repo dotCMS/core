@@ -3535,14 +3535,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 	                folder=APILocator.getFolderAPI().findSystemFolder();
 	            }
 
-                //Get the URL from Identifier
-                String url;
+                //Get the URL from Identifier if it is not in Contentlet
+                String url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
                 Identifier identifier = APILocator.getIdentifierAPI().find(contentlet);
 
-                if(identifier != null && UtilMethods.isSet(identifier.getAssetName())) {
+                if(!UtilMethods.isSet(url) && UtilMethods.isSet(identifier) && UtilMethods.isSet(identifier.getAssetName())) {
                     url = identifier.getAssetName();
-                } else {
-                    url = contentlet.getStringProperty(HTMLPageAssetAPI.URL_FIELD);
                 }
 	
 	            if(UtilMethods.isSet(url)){

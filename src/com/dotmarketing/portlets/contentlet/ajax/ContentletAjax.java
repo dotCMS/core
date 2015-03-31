@@ -912,6 +912,11 @@ public class ContentletAjax {
 					if (UtilMethods.isSet(fieldValue))
 						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");
 				}
+                //We need to replace the URL value from the contentlet with the one in the Identifier.
+                if(("url").equals(fieldContentlet) && UtilMethods.isSet(ident) && UtilMethods.isSet(ident.getAssetName())){
+                    fieldValue = ident.getAssetName();
+                }
+
 				searchResult.put(fieldContentlet, fieldValue);
 			}
 			searchResult.put("inode", con.getInode());
