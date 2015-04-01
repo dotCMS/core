@@ -141,7 +141,16 @@ public class CMSFilter implements Filter {
 			closeDbSilently();
 			throw new ServletException(e1);
 		}
-		if (!_adminMode && !hostlive) {
+
+        //If the Host/Site is not alive we have to allow some paths in order to be able to login to Back End.
+        if (!_adminMode
+                && !hostlive
+                && UtilMethods.isSet(uri)
+                && !("/c").equals(uri)
+                && !("/admin").equals(uri)
+                && !("/html/portal/login.jsp").equals(uri)
+                && !("/c/portal_public/login").equals(uri)
+                && !uri.startsWith("/html")) {
 			try {
 				Company company = PublicCompanyFactory.getDefaultCompany();
 				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
