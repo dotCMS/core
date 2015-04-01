@@ -14,12 +14,18 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,8 +35,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import org.apache.commons.logging.LogFactory;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
@@ -61,7 +71,39 @@ public class SpeedyAssetServlet extends HttpServlet {
 			Logger.error(this, "Config.CONTEXT is null. RESETTING  Cannot Serve Files without this!!!!!!");
 		}
 
+/*
+		 * Getting host object form the session
+		 */
+        HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+        Host host;
+        try {
+            host = hostWebAPI.getCurrentHost(request);
+        } catch (Exception e) {
+            Logger.error(this, "Unable to retrieve current request host");
+            throw new ServletException(e.getMessage(), e);
+        }
 
+        // Checking if host is active
+        boolean hostlive;
+        boolean _adminMode = UtilMethods.isAdminMode(request, response);
+
+        try {
+            hostlive = APILocator.getVersionableAPI().hasLiveVersion(host);
+        } catch (Exception e1) {
+            UtilMethods.closeDbSilently();
+            throw new ServletException(e1);
+        }
+        if (!_adminMode && !hostlive) {
+            try {
+                Company company = PublicCompanyFactory.getDefaultCompany();
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+                        LanguageUtil.get(company.getCompanyId(), company.getLocale(), "server-unavailable-error-message"));
+            } catch (LanguageException e) {
+                Logger.error(CMSFilter.class, e.getMessage(), e);
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            }
+            return;
+        }
 
 		File f;
 		boolean PREVIEW_MODE = false;
