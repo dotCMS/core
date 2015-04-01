@@ -553,9 +553,6 @@ public class ContentletForm extends ValidatorForm {
 
 					   String identifierId = (String) identifierObj;
 					   try {
-
-						   Logger.warn( this.getClass(), "Trying to get the HTMLPage url directly from the Contentlet instead of get it from the Identifier!!." );
-
 						   Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
 						   if ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) ) {
 							   value = identifier.getAssetName();

@@ -1489,11 +1489,7 @@ public class BrowserAjax {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
-
         Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user))
-    		throw new DotRuntimeException("The user doesn't have the required permissions.");
-
     	if(id!=null && id.getAssetType().equals("contentlet")){
     		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
     		APILocator.getContentletAPI().unlock(cont, user, false);
