@@ -7,6 +7,7 @@ public class ConditionGroup {
     private String ruleId;
     private Condition.Operator operator;
     private Date modDate;
+    private int priority;
 
     public String getId() {
         return id;
@@ -38,5 +39,13 @@ public class ConditionGroup {
 
     public void setModDate(Date modDate) {
         this.modDate = modDate;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }

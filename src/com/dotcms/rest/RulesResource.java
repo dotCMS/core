@@ -95,7 +95,7 @@ public class RulesResource extends WebResource {
             JSONObject jsonGroups = new JSONObject();
 
             for (ConditionGroup group : groups) {
-//                jsonGroups.put(group.getId(), new JSONObject(group, ))
+                jsonGroups.put(group.getId(), new JSONObject(group, ))
             }
 
             jsonRule.put("conditionGroups", jsonGroups);

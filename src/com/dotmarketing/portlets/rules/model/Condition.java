@@ -18,6 +18,7 @@ public class Condition {
     private String input;
     private Date modDate;
     private Operator operator;
+    private int priority;
 
     public String getId() {
         return id;
@@ -89,5 +90,13 @@ public class Condition {
 
     public void setOperator(Operator operator) {
         this.operator = operator;
+    }
+
+    public int getPriority() {
+        return priority;
+    }
+
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 }
