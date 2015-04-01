@@ -145,22 +145,22 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.INSERT_RULE);
             db.addParam(rule.getId());
             db.addParam(rule.getName());
-            db.addParam(rule.getFirePolicy().toString());
+            db.addParam(rule.getFireOn().toString());
             db.addParam(rule.isShortCircuit());
             db.addParam(rule.getHost());
             db.addParam(rule.getFolder());
-            db.addParam(rule.getFireOrder());
+            db.addParam(rule.getPriority());
             db.addParam(rule.isEnabled());
             db.addParam(new Date());
             db.loadResult();
         } else {
             db.setSQL(sql.UPDATE_RULE);
             db.addParam(rule.getName());
-            db.addParam(rule.getFirePolicy().toString());
+            db.addParam(rule.getFireOn().toString());
             db.addParam(rule.isShortCircuit());
             db.addParam(rule.getHost());
             db.addParam(rule.getFolder());
-            db.addParam(rule.getFireOrder());
+            db.addParam(rule.getPriority());
             db.addParam(rule.isEnabled());
             db.addParam(new Date());
             db.addParam(rule.getId());
@@ -300,11 +300,11 @@ public class RulesFactoryImpl implements RulesFactory {
         Rule r = new Rule();
         r.setId(row.get("id").toString());
         r.setName(row.get("name").toString());
-        r.setFirePolicy(Rule.FirePolicy.valueOf(row.get("fire_policy").toString()));
+        r.setFireOn(Rule.FireOn.valueOf(row.get("fire_policy").toString()));
         r.setShortCircuit(DbConnectionFactory.isDBTrue(row.get("short_circuit").toString()));
         r.setHost(row.get("host").toString());
         r.setFolder(row.get("folder").toString());
-        r.setFireOrder(Integer.parseInt(row.get("fire_order").toString()));
+        r.setPriority(Integer.parseInt(row.get("fire_order").toString()));
         r.setEnabled(DbConnectionFactory.isDBTrue(row.get("enabled").toString()));
         return r;
     }

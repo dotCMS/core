@@ -86,7 +86,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
         LinkedHashSet<EntryOption> data = new LinkedHashSet<>();
         data.add(new EntryOption("CR"));
         data.add(new EntryOption("US"));
-        data.add(new EntryOption("CR"));
+        data.add(new EntryOption("VE"));
 
         input.setData(data);
         input.setDefaultValue("US");

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionClassParameter;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionletParameter;
@@ -86,11 +87,10 @@ public abstract class RuleActionlet implements Serializable {
 
 	/**
 	 * Action that gets executed when the owner {@link com.dotmarketing.portlets.rules.conditionlet.Conditionlet} evaluates to true
-	 * @param processor
 	 * @param params
 	 * @throws
 	 */
-	public abstract void executeAction(WorkflowProcessor processor, Map<String, WorkflowActionClassParameter> params);
+	public abstract void executeAction(Map<String, RuleActionParameter> params);
 
 
 	@Override

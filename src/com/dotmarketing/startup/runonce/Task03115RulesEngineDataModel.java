@@ -24,6 +24,15 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
                     // unique constraint rule table
             .append("alter table rule add constraint rule_name_host unique (name, host);")
 
+                    // create RULE_CONDITION_GROUP table
+            .append("create table rule_condition_group(")
+            .append("id varchar(36) primary key,")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date datetime")
+            .append(");")
+
+
                     // create RULE_CONDITION table
             .append("create table rule_condition(")
             .append("id varchar(36) primary key,")
@@ -36,15 +45,6 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("value text,")
             .append("mod_date datetime")
             .append(");")
-
-             // create RULE_CONDITION_GROUP table
-            .append("create table rule_condition_group(")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("operator varchar(10) not null,")
-            .append("mod_date datetime")
-            .append(");")
-
 
             // create RULE_ACTION  table
             .append("create table rule_action (")
@@ -119,6 +119,15 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("unique (name, host)")
             .append(");")
 
+                    // create RULE_CONDITION_GROUP table
+            .append("create table rule_condition_group(")
+            .append("id varchar(36) primary key,")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date timestamp")
+            .append(");")
+
+
                     // create RULE_CONDITION table
             .append("create table rule_condition(")
             .append("id varchar2(36) primary key,")
@@ -129,14 +138,6 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("comparison varchar2(36) not null,")
             .append("operator varchar2(10) not null,")
             .append("value nclob,")
-            .append("mod_date timestamp")
-            .append(");")
-
-              // create RULE_CONDITION_GROUP table
-            .append("create table rule_condition_group(")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("operator varchar(10) not null,")
             .append("mod_date timestamp")
             .append(");")
 
@@ -165,6 +166,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("unique (name, host)")
             .append(");")
 
+                    // create RULE_CONDITION_GROUP table
+            .append("create table rule_condition_group(")
+            .append("id varchar(36) primary key,")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date datetime")
+            .append(");")
+
                     // create RULE_CONDITION table
             .append("create table rule_condition(")
             .append("id varchar(36) primary key,")
@@ -178,13 +187,7 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("mod_date datetime")
             .append(");")
 
-             // create RULE_CONDITION_GROUP table
-            .append("create table rule_condition_group(")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("operator varchar(10) not null,")
-            .append("mod_date datetime")
-            .append(");")
+
 
              // create RULE_ACTION  table
             .append("create table rule_action (")
@@ -211,6 +214,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("unique (name, host)")
             .append(");")
 
+                    // create RULE_CONDITION_GROUP table
+            .append("create table rule_condition_group(")
+            .append("id varchar(36) primary key,")
+            .append("rule_id varchar(36) references dot_rule(id),")
+            .append("operator varchar(10) not null,")
+            .append("mod_date timestamp")
+            .append(");")
+
                     // create RULE_CONDITION table
             .append("create table rule_condition(")
             .append("id varchar(36) primary key,")
@@ -224,13 +235,6 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("mod_date timestamp")
             .append(");")
 
-             // create RULE_CONDITION_GROUP table
-            .append("create table rule_condition_group(")
-            .append("id varchar(36) primary key,")
-            .append("rule_id varchar(36) references dot_rule(id),")
-            .append("operator varchar(10) not null,")
-            .append("mod_date timestamp")
-            .append(");")
 
                     // create RULE_ACTION  table
             .append("create table rule_action (")

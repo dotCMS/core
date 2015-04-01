@@ -47,6 +47,9 @@ public class RulesAPIImpl implements RulesAPI {
         conditionletClasses.addAll(Arrays.asList(new Class[]{
                 VisitorsCountryConditionlet.class
         }));
+
+        refreshConditionletMap();
+        refreshActionletMap();
     }
 
     public List<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -80,14 +83,14 @@ public class RulesAPIImpl implements RulesAPI {
             return null;
         }
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
         return rule;
     }
 
     public void deleteRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException  {
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId());
         }
 
@@ -113,10 +116,27 @@ public class RulesAPIImpl implements RulesAPI {
             return new ArrayList<>();
         }
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
         return rulesFactory.getConditionGroupsByRule(ruleId);
+    }
+
+    public List<RuleAction> getActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(ruleId)) {
+            return new ArrayList<>();
+        }
+
+        Rule rule = rulesFactory.getRuleById(ruleId);
+
+        if(!UtilMethods.isSet(rule)) {
+            return new ArrayList<>();
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+        return rulesFactory.getRuleActionsByRule(ruleId);
     }
 
     public List<Condition> getConditionsByConditionGroup(String conditionGroupId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -136,7 +156,7 @@ public class RulesAPIImpl implements RulesAPI {
     public List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
         return rulesFactory.getConditionsByRule(ruleId);
@@ -146,7 +166,7 @@ public class RulesAPIImpl implements RulesAPI {
         Condition condition = rulesFactory.getConditionById(id);
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions");
         }
 
@@ -154,8 +174,8 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
-            throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId());
+        if (!perAPI.doesUserHavePermissions(PermissionAPI.PermissionableType.RULES, PermissionAPI.PERMISSION_EDIT, user)) {
+            throw new DotSecurityException("User " + user + " does not have permissions to Edit Rules");
         }
 
         rulesFactory.saveRule(rule);
@@ -164,7 +184,7 @@ public class RulesAPIImpl implements RulesAPI {
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its conditions ");
         }
 
@@ -174,7 +194,7 @@ public class RulesAPIImpl implements RulesAPI {
     public void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
 
-        if (!APILocator.getPermissionAPI().doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
         }
 
@@ -206,9 +226,9 @@ public class RulesAPIImpl implements RulesAPI {
                     for(Conditionlet conditionlet : conditionletList){
 
                         try {
-                            conditionletMap.put(conditionlet.getClass().getCanonicalName(),conditionlet.getClass().newInstance());
-                            if ( !actionletClasses.contains( conditionlet.getClass() ) ) {
-                                actionletClasses.add( conditionlet.getClass() );
+                            conditionletMap.put(conditionlet.getClass().getSimpleName(),conditionlet.getClass().newInstance());
+                            if ( !conditionletClasses.contains( conditionlet.getClass() ) ) {
+                                conditionletClasses.add( conditionlet.getClass() );
                             }
                         } catch (InstantiationException e) {
                             Logger.error(RulesAPIImpl.class,e.getMessage(),e);
@@ -230,12 +250,12 @@ public class RulesAPIImpl implements RulesAPI {
                 if (actionletMap == null) {
 
                     // get the dotmarketing-config.properties actionlet classes
-                    List<RuleActionlet> conditionletList = getCustomClasses(WebKeys.RULES_ACTIONLET_CLASSES);
+                    List<RuleActionlet> actionletList = getCustomClasses(WebKeys.RULES_ACTIONLET_CLASSES);
 
                     // get the included (shipped with) actionlet classes
                     for (Class<RuleActionlet> z : actionletClasses) {
                         try {
-                            conditionletList.add(z.newInstance());
+                            actionletList.add(z.newInstance());
                         } catch (InstantiationException e) {
                             Logger.error(RulesAPIImpl.class, e.getMessage(), e);
                         } catch (IllegalAccessException e) {
@@ -243,12 +263,12 @@ public class RulesAPIImpl implements RulesAPI {
                         }
                     }
 
-                    Collections.sort(conditionletList, new ActionletComparator());
+                    Collections.sort(actionletList, new ActionletComparator());
                     actionletMap = new LinkedHashMap<String, RuleActionlet>();
-                    for(RuleActionlet actionlet : conditionletList){
+                    for(RuleActionlet actionlet : actionletList){
 
                         try {
-                            actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
+                            actionletMap.put(actionlet.getClass().getSimpleName(),actionlet.getClass().newInstance());
                             if ( !actionletClasses.contains( actionlet.getClass() ) ) {
                                 actionletClasses.add( actionlet.getClass() );
                             }
@@ -301,11 +321,19 @@ public class RulesAPIImpl implements RulesAPI {
 
     }
 
-    public List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException {
+    public List<Conditionlet> findConditionlets() throws DotDataException, DotSecurityException {
         return new ArrayList<>(conditionletMap.values());
     }
 
     public Conditionlet findConditionlet(String clazz) throws DotDataException, DotSecurityException {
         return conditionletMap.get(clazz);
+    }
+
+    public List<RuleActionlet> findActionlets() throws DotDataException, DotSecurityException {
+        return new ArrayList<>(actionletMap.values());
+    }
+
+    public RuleActionlet findActionlet(String clazz) throws DotDataException, DotSecurityException {
+        return actionletMap.get(clazz);
     }
 }

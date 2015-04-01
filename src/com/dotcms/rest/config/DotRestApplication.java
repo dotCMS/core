@@ -38,6 +38,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
+					REST_CLASSES.add(com.dotcms.rest.RulesResource.class);
 				}
 			}
 		}

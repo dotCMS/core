@@ -1,15 +1,16 @@
 package com.dotmarketing.portlets.rules.business;
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public interface RulesAPI {
@@ -77,6 +78,17 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     List<ConditionGroup> getConditionGroupsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param ruleId
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<RuleAction> getActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**
@@ -148,7 +160,7 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Conditionlet> getConditionlets() throws DotDataException, DotSecurityException;
+    List<Conditionlet> findConditionlets() throws DotDataException, DotSecurityException;
 
     /**
      *
@@ -158,4 +170,21 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     Conditionlet findConditionlet(String clazz) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    List<RuleActionlet> findActionlets() throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param clazz
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    RuleActionlet findActionlet(String clazz) throws DotDataException, DotSecurityException;
 }

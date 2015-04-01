@@ -55,7 +55,7 @@ public class Rule implements Permissionable {
 
     // End Permissionable methods
 
-    public enum FirePolicy {
+    public enum FireOn {
         EVERY_PAGE,
         ONCE_PER_VISIT,
         ONCE_PER_VISITOR,
@@ -71,11 +71,11 @@ public class Rule implements Permissionable {
 
     private String id;
     private String name;
-    private FirePolicy firePolicy = FirePolicy.EVERY_PAGE;
+    private FireOn fireOn = FireOn.EVERY_PAGE;
     private boolean shortCircuit;
     private String host;
     private String folder="SYSTEM_FOLDER";
-    private int fireOrder;
+    private int priority;
     private boolean enabled;
     private Date modDate;
 
@@ -95,12 +95,12 @@ public class Rule implements Permissionable {
         this.name = name;
     }
 
-    public FirePolicy getFirePolicy() {
-        return firePolicy;
+    public FireOn getFireOn() {
+        return fireOn;
     }
 
-    public void setFirePolicy(FirePolicy firePolicy) {
-        this.firePolicy = firePolicy;
+    public void setFireOn(FireOn fireOn) {
+        this.fireOn = fireOn;
     }
 
     public boolean isShortCircuit() {
@@ -127,12 +127,12 @@ public class Rule implements Permissionable {
         this.folder = folder;
     }
 
-    public int getFireOrder() {
-        return fireOrder;
+    public int getPriority() {
+        return priority;
     }
 
-    public void setFireOrder(int fireOrder) {
-        this.fireOrder = fireOrder;
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public boolean isEnabled() {
