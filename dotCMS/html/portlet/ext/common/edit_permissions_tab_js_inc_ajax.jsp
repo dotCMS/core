@@ -17,6 +17,7 @@
 <%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
+<%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -79,6 +80,7 @@
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
 	var permissionsOnChildrenMsg2 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children2")) %>';
 	var structureWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structure")) %>';
+	var rulesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Rules")) %>';
 
 	//HTML Templates
 	var inheritedSourcesTemplate = '<span class="${icon}"></span> ${path}';
@@ -103,6 +105,7 @@
 	var linkClassName = '<%= Link.class.getCanonicalName() %>'
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>';
+	var rulesClassName = '<%= Rule.class.getCanonicalName() %>';
 
 	var dijits = [];
 
@@ -364,6 +367,7 @@
 				rolePermission.linksPermission = retrievePermissionChecks(role.id, 'links');
 				rolePermission.contentPermission = retrievePermissionChecks(role.id, 'content');
 				rolePermission.structurePermission = retrievePermissionChecks(role.id, 'structure');
+				rolePermission.rulesPermission = retrievePermissionChecks(role.id, 'rules');
 			}
 			permissionsToSubmit.push(rolePermission)
 		}
@@ -396,6 +400,7 @@
 		destroyCheckboxes(getPermissionCheckboxDijits('links', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('content', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('structure', role.roleId))
+		destroyCheckboxes(getPermissionCheckboxDijits('rules', role.roleId))
 
 		var containerPane = dijit.byId('permissionsAccordionPane-' + role.roleId);
 		accordionContainer.removeChild(containerPane);
@@ -427,7 +432,8 @@
 					rolePermission.filesPermission |
 					rolePermission.linksPermission |
 					rolePermission.contentPermission |
-					rolePermission.structurePermission) == 0) {
+					rolePermission.structurePermission |
+					rolePermission.rulesPermission) == 0) {
 				rolesRemoved.push(rolePermission);
 			}
 
@@ -523,7 +529,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates', 'template-layouts','pages','files','links','structure','content','categories'];
+        types=['hosts','folders','containers','templates', 'template-layouts','pages','files','links','structure','content','categories', 'rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -693,6 +699,7 @@
 			enableCheckboxes(getPermissionCheckboxDijits('links', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('content', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('structure', role.id))
+			enableCheckboxes(getPermissionCheckboxDijits('rules', role.id))
 		});
 		dojo.style('permissionsTabFt', { display: '' });
 		dojo.style('inheritingFrom', { display: 'none' });
@@ -831,6 +838,7 @@
 		fillTemplatePermissionOptions(role, permissions, linkClassName, 'links');
 		fillTemplatePermissionOptions(role, permissions, contentClassName, 'content');
 		fillTemplatePermissionOptions(role, permissions, structureClassName, 'structure');
+		fillTemplatePermissionOptions(role, permissions, rulesClassName, 'rules');
 
 		role["view-permission-style"] = '';
 		role["add-children-permission-style"] = '';
@@ -886,6 +894,7 @@
 		role.permissionsOnChildren1=permissionsOnChildrenMsg1;
 		role.permissionsOnChildren2=permissionsOnChildrenMsg2;
 		role.structureWillInherit = structureWillInheritMsg;
+		role.rulesWillInherit = rulesWillInheritMsg;
 	}
 
 	function fillTemplatePermissionOptions (role, permissions, permissionType, assetType) {

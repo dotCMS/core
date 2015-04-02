@@ -14,6 +14,7 @@
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
+<%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -54,6 +55,7 @@
 	var permissionsOnChildrenMsg1 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children1")) %>';
 	var permissionsOnChildrenMsg2 = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Permissions-on-Children2")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
+	var rulesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Rules")) %>';
 
 	<%if(UtilMethods.isSet(request.getAttribute("ViewingUserRole"))){%>
 		var nameMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "this-pageContext")) %>';
@@ -81,6 +83,7 @@
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var systemHostId = '<%= APILocator.getHostAPI().findSystemHost().getIdentifier() %>';
 	var categoryClassName = '<%= Category.class.getCanonicalName() %>';
+	var rulesClassName = '<%= Rule.class.getCanonicalName() %>';
 
 	var currentListOfHostFolders = new Array();
 	var permissionsData;
@@ -388,6 +391,15 @@
 			'categories-edit-permissions-permission-' + id,
 			'categories-virtual-links-permission-' + id,
 
+            'rules-view-permission-' + id,
+            'rules-add-children-permission-' + id,
+            'rules-edit-permission-' + id,
+            'rules-publish-permission-' + id,
+            'rules-edit-permission-' + id,
+            'rules-publish-permission-' + id,
+            'rules-edit-permissions-permission-' + id,
+            'rules-virtual-links-permission-' + id,
+
 			'cascadeChangesCheckbox-' + id,
 			'applyChangesButton-' + id
 		];
@@ -499,6 +511,7 @@
 				var structuresPermissions = retrievePermissionChecks(id, 'structures');
 				var contentPermissions = retrievePermissionChecks(id, 'content');
 				var categoriesPermissions = retrievePermissionChecks(id, 'categories');
+				var rulesPermissions = retrievePermissionChecks(id, 'rules');
 				var cascadeChanges = dijit.byId('cascadeChangesCheckbox-' + id).attr('value') == 'on';
 			       checkCurrentCascadeTasks();
 
@@ -523,7 +536,8 @@
 						links: linksPermissions,
 						structures: structuresPermissions,
 						content: contentPermissions,
-						categories: categoriesPermissions};
+						categories: categoriesPermissions,
+						rules: rulesPermissions};
 
 				var callbackOptions = {
 					callback: dojo.hitch(this, applyPermissionChangesCallback, permissionsRoleId, id, permissionsToSave, cascadeChanges),
@@ -666,7 +680,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structures','content','categories'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structures','content','categories','rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -780,6 +794,7 @@
 		fillTemplatePermissionOptions(item, permissions, structureClassName, 'structures');
 		fillTemplatePermissionOptions(item, permissions, contentClassName, 'content');
 		fillTemplatePermissionOptions(item, permissions, categoryClassName, 'categories');
+		fillTemplatePermissionOptions(item, permissions, rulesClassName, 'rules');
 		if(item.type == 'host') {
 			if(item.id == systemHostId) {
 				item.hostsPermissionsEntryStyle = '';
@@ -792,12 +807,14 @@
 			item.templatesPermissionsEntryStyle = '';
 			item.templateLayoutsPermissionsEntryStyle = '';
 			item.categoriesPermissionsEntryStyle = '';
+			item.rulesPermissionsEntryStyle = '';
 		} else {
 			item.hostsPermissionsEntryStyle = 'display: none';
 			item.containersPermissionsEntryStyle = 'display: none';
 			item.templatesPermissionsEntryStyle = 'display: none';
 			item.templateLayoutsPermissionsEntryStyle = 'display: none';
 			item.categoriesPermissionsEntryStyle = 'display: none';
+			item.rulesPermissionsEntryStyle = 'display: none';
 			if(item.type == 'folder'){
 				item.structuresPermissionsEntryStyle = '';
 			}else{
@@ -827,6 +844,7 @@
 		item.permissionsOnChildren2=permissionsOnChildrenMsg2;
 		item.name=nameMsg;
 		item.categoriesWillInherit = categoriesWillInheritMsg;
+		item.rulesWillInherit = rulesWillInheritMsg;
 
 	}
 
@@ -843,6 +861,7 @@
 		fillEmptyTemplatePermissionOptions(item, 'structures');
 		fillEmptyTemplatePermissionOptions(item, 'content');
 		fillEmptyTemplatePermissionOptions(item, 'categories');
+		fillEmptyTemplatePermissionOptions(item, 'rules');
 
 		if(item.type == 'host') {
 			if(item.id == systemHostId) {
@@ -856,12 +875,14 @@
 			item.templatesPermissionsEntryStyle = '';
 			item.templateLayoutsPermissionsEntryStyle = '';
 			item.categoriesPermissionsEntryStyle = '';
+			item.rulesPermissionsEntryStyle = '';
 		} else {
 			item.hostsPermissionsEntryStyle = 'display: none';
 			item.containersPermissionsEntryStyle = 'display: none';
 			item.templatesPermissionsEntryStyle = 'display: none';
 			item.templateLayoutsPermissionsEntryStyle = 'display: none';
 			item.categoriesPermissionsEntryStyle = 'display: none';
+			item.rulesPermissionsEntryStyle = 'display: none';
 			if(item.type == 'folder'){
 				item.structuresPermissionsEntryStyle = '';
 			}else{
@@ -885,6 +906,7 @@
 		item.permissionsOnChildren2=permissionsOnChildrenMsg2;
 		item.name=nameMsg;
 		item.categoriesWillInherit = categoriesWillInheritMsg;
+		item.rulesWillInherit = rulesWillInheritMsg;
 	}
 
 	function fillTemplatePermissionOptions (item, permissions, permissionType, assetType) {

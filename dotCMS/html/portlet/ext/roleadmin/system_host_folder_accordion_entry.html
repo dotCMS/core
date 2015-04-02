@@ -239,6 +239,26 @@
                 </td>
 
             </tr>
+            <tr style="${templateLayoutsPermissionsEntryStyle}">
+                <td class="permissionType">
+                    ${rulesWillInherit}
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="rules-view-permission-${id}" onclick="viewPermissionChanged('rules', '${id}')" ${rulesViewPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="rules-edit-permission-${id}" onclick="editPermissionChanged('rules', '${id}')" ${rulesEditPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                </td>
+                <td>
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="rules-edit-permissions-permission-${id}" onclick="editPermissionsPermissionChanged('rules', '${id}')" ${rulesEditPermissionsPermissionChecked} ${disabledPermissions} />
+                </td>
+                <td>
+                </td>
+            </tr>
         </table>
     </div>
 	<div class="permissionsActions">

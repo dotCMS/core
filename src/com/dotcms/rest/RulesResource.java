@@ -10,6 +10,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -18,8 +19,8 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
-import com.dotmarketing.util.json.JSONException;
-import com.dotmarketing.util.json.JSONObject;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -31,6 +32,7 @@ public class RulesResource extends WebResource {
 
     private static final boolean UPDATE = false;
     private static final boolean SAVE = true;
+    private RulesAPI rulesAPI = APILocator.getRulesAPI();
 
     /**
      * <p>Returns a JSON representation of the rules defined in the given Host or Folder
@@ -49,24 +51,25 @@ public class RulesResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
-        JSONObject resultsObject = new JSONObject();
-        JSONArray jsonRules = new JSONArray();
+        JSONObject rulesJSON = new JSONObject();
 
         try {
 
             Host host = APILocator.getHostAPI().find(siteId, user, false);
 
             if (UtilMethods.isSet(host)) {
-                List<Rule> rules = APILocator.getRulesAPI().getRulesByHost(host.getIdentifier(), user, false);
-                jsonRules = new JSONArray(rules);
+                List<Rule> rules = rulesAPI.getRulesByHost(host.getIdentifier(), user, false);
+
+                for (Rule rule : rules) {
+                    rulesJSON.put(rule.getId(), getRuleJSON(rule, user));
+                }
             }
 
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
-        resultsObject.put("rules", (Object) jsonRules);
-        return responseResource.response(resultsObject.toString());
+        return responseResource.response(rulesJSON.toString());
     }
 
     /**
@@ -87,21 +90,11 @@ public class RulesResource extends WebResource {
         User user = initData.getUser();
 
         try {
-            Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
-            String[] ruleFields = {"name", "enabled", "site", "priority", "fireOn", "folder", "shortCircuit"};
-            JSONObject jsonRule = new JSONObject(rule, ruleFields);
-
-            List<ConditionGroup> groups = APILocator.getRulesAPI().getConditionGroupsByRule(rule.getId(), user, false);
-            JSONObject jsonGroups = new JSONObject();
-
-            for (ConditionGroup group : groups) {
-                jsonGroups.put(group.getId(), new JSONObject(group, ))
-            }
-
-            jsonRule.put("conditionGroups", jsonGroups);
+            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
+            JSONObject ruleJSON = getRuleJSON(rule, user);
 
             if (rule != null) {
-                return responseResource.response(new JSONObject(rule).toString());
+                return responseResource.response(ruleJSON.toString());
             } else {
                 return responseResource.response(new JSONObject().toString());
             }
@@ -109,6 +102,29 @@ public class RulesResource extends WebResource {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
+    }
+
+    private JSONObject getRuleJSON(Rule rule, User user) throws DotDataException, DotSecurityException, JSONException {
+        JSONObject ruleJSON = new com.dotmarketing.util.json.JSONObject(rule);
+
+        List<ConditionGroup> groups = rulesAPI.getConditionGroupsByRule(rule.getId(), user, false);
+        JSONObject groupsJSON = new JSONObject();
+
+        for (ConditionGroup group : groups) {
+            groupsJSON.put(group.getId(), new JSONObject(group, new String[]{"operator", "priority"}));
+        }
+
+        ruleJSON.put("conditionGroups", groupsJSON);
+
+        List<RuleAction> actions = rulesAPI.getActionsByRule(rule.getId(), user, false);
+        JSONObject actionsJSON = new JSONObject();
+
+        for (RuleAction action : actions) {
+            groupsJSON.put(action.getId(), new JSONObject(action, new String[]{"priority"}));
+        }
+
+        ruleJSON.put("actions", actionsJSON);
+        return ruleJSON;
     }
 
     /**
@@ -134,7 +150,7 @@ public class RulesResource extends WebResource {
 
         try {
 
-            Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
+            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
 
             if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
                 resultsObject.put("conditionGroups", new JSONArray());
@@ -143,7 +159,7 @@ public class RulesResource extends WebResource {
 
             JSONArray jsonConditionGroups = new JSONArray();
 
-            List<ConditionGroup> conditionGroups = APILocator.getRulesAPI().getConditionGroupsByRule(ruleId, user, false);
+            List<ConditionGroup> conditionGroups = rulesAPI.getConditionGroupsByRule(ruleId, user, false);
 
             for (ConditionGroup conditionGroup : conditionGroups) {
                 JSONObject jsonConditionGroup = new JSONObject();
@@ -152,7 +168,7 @@ public class RulesResource extends WebResource {
 
                 JSONArray jsonGroupConditions = new JSONArray();
 
-                List<Condition> conditions = APILocator.getRulesAPI().getConditionsByConditionGroup(conditionGroup.getId(), user, false);
+                List<Condition> conditions = rulesAPI.getConditionsByConditionGroup(conditionGroup.getId(), user, false);
 
                 for (Condition condition : conditions) {
                     JSONObject conditionObject = new JSONObject();
@@ -195,8 +211,8 @@ public class RulesResource extends WebResource {
         User user = initData.getUser();
 
         try {
-            Condition condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
-            JSONObject conditionObject = new JSONObject(condition);
+            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
+            JSONObject conditionObject = new com.dotmarketing.util.json.JSONObject(condition);
             return responseResource.response(conditionObject.toString());
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -225,7 +241,7 @@ public class RulesResource extends WebResource {
 
         try {
 
-            List<Conditionlet> conditionlets = APILocator.getRulesAPI().findConditionlets();
+            List<Conditionlet> conditionlets = rulesAPI.findConditionlets();
 
             for (Conditionlet conditionlet : conditionlets) {
                 JSONObject conditionletObject = new JSONObject();
@@ -234,7 +250,7 @@ public class RulesResource extends WebResource {
                 jsonConditionlets.add(conditionletObject);
             }
 
-            resultsObject.put("conditionlets", (Object)jsonConditionlets);
+            resultsObject.put("conditionlets", (Object) jsonConditionlets);
 
             return responseResource.response(resultsObject.toString());
 
@@ -270,9 +286,9 @@ public class RulesResource extends WebResource {
         }
 
         try {
-            Conditionlet conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
+            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
 
-            if(!UtilMethods.isSet(conditionlet)) {
+            if (!UtilMethods.isSet(conditionlet)) {
                 resultsObject.put("comparisons", (Object) jsonComparisons);
                 return responseResource.response(resultsObject.toString());
             }
@@ -311,9 +327,9 @@ public class RulesResource extends WebResource {
         }
 
         try {
-            Conditionlet conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
+            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
 
-            if(!UtilMethods.isSet(conditionlet)) {
+            if (!UtilMethods.isSet(conditionlet)) {
                 resultsObject.put("conditionletinputs", (Object) jsonInputs);
                 return responseResource.response(resultsObject.toString());
             }
@@ -347,7 +363,7 @@ public class RulesResource extends WebResource {
 
         try {
 
-            List<RuleActionlet> actionlets = APILocator.getRulesAPI().findActionlets();
+            List<RuleActionlet> actionlets = rulesAPI.findActionlets();
 
             for (RuleActionlet actionlet : actionlets) {
                 JSONObject actionletObject = new JSONObject();
@@ -356,7 +372,7 @@ public class RulesResource extends WebResource {
                 jsonActionlets.add(actionletObject);
             }
 
-            resultsObject.put("ruleactionlets", (Object)jsonActionlets);
+            resultsObject.put("ruleactionlets", (Object) jsonActionlets);
 
             return responseResource.response(resultsObject.toString());
 
@@ -384,14 +400,14 @@ public class RulesResource extends WebResource {
         JSONArray jsonActions = new JSONArray();
 
         try {
-            Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
+            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
 
             if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
                 resultsObject.put("conditionGroups", new JSONArray());
                 return responseResource.response(resultsObject.toString());
             }
 
-            List<RuleAction> actions = APILocator.getRulesAPI().getActionsByRule(rule.getId(), user, false);
+            List<RuleAction> actions = rulesAPI.getActionsByRule(rule.getId(), user, false);
 
             for (RuleAction action : actions) {
                 JSONObject actionletObject = new JSONObject();
@@ -401,7 +417,7 @@ public class RulesResource extends WebResource {
                 jsonActions.add(actionletObject);
             }
 
-            resultsObject.put("ruleactions", (Object)jsonActions);
+            resultsObject.put("ruleactions", (Object) jsonActions);
 
             return responseResource.response(resultsObject.toString());
 
@@ -409,7 +425,6 @@ public class RulesResource extends WebResource {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
-
 
 
     /**
@@ -435,7 +450,7 @@ public class RulesResource extends WebResource {
 
         try {
             Rule rule = saveUpdateRule(user, ruleAttributes, SAVE);
-            resultsObject.put(rule.getId(), new JSONObject(rule));
+            resultsObject.put("id", rule.getId());
             return responseResource.response(resultsObject.toString());
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -455,18 +470,24 @@ public class RulesResource extends WebResource {
     @Path("/rules")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes) throws
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONException, JSONException {
+    public Response updateRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleJSON) throws
+            JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
-        JSONObject resultsObject = new JSONObject();
-
         try {
-            Rule rule = saveUpdateRule(user, ruleAttributes, UPDATE);
-            resultsObject.put(rule.getId(), new JSONObject(rule));
-            return responseResource.response(resultsObject.toString());
+            saveUpdateRule(user, ruleJSON, UPDATE);
+
+//            JSONObject conditionGroups = ruleAttributes.optJSONObject("conditionGroups");
+//
+//            while (conditionGroups.keys().hasNext()) {
+//                String key =  (String) conditionGroups.keys().next();
+//
+//
+//            }
+
+            return responseResource.response(ruleJSON.toString());
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -474,7 +495,7 @@ public class RulesResource extends WebResource {
     }
 
     private Rule saveUpdateRule(User user, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes, boolean save) throws DotDataException, DotSecurityException,
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONException {
+            JSONException {
 
 
         Rule rule;
@@ -492,7 +513,7 @@ public class RulesResource extends WebResource {
             rule.setName(ruleAttributes.getString("ruleName"));
 
         } else {
-            rule = APILocator.getRulesAPI().getRuleById(ruleAttributes.getString("ruleId"), user, false);
+            rule = rulesAPI.getRuleById(ruleAttributes.getString("ruleId"), user, false);
 
             if (!UtilMethods.isSet(rule)) {
                 throw new DotDataException("Unable to update Rule with id:" + ruleAttributes.getString("ruleId"));
@@ -512,7 +533,7 @@ public class RulesResource extends WebResource {
 
         rule.setEnabled(ruleAttributes.optBoolean("enabled", true));
 
-        APILocator.getRulesAPI().saveRule(rule, user, false);
+        rulesAPI.saveRule(rule, user, false);
 
         return rule;
     }
@@ -550,7 +571,7 @@ public class RulesResource extends WebResource {
 //            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("").build();
 //        }
 //
-//        APILocator.getRulesAPI().saveRule(rule, user, false);
+//        rulesAPI.saveRule(rule, user, false);
 //
 //
 //        resultsObject.put(rule.getId(), new JSONObject(rule));

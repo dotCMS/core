@@ -6,6 +6,7 @@ import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.json.JSONIgnore;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,54 +14,16 @@ import java.util.List;
 
 public class Rule implements Permissionable {
 
-    // Beginning Permissionable methods
-
-    public String getPermissionId() {
-        return this.getId();
-    }
-
-    public String getOwner() {
-        return null;
-    }
-
-    public void setOwner(String owner) {}
-
-    @JsonIgnore
-    public List<PermissionSummary> acceptedPermissions() {
-        List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
-        accepted.add(new PermissionSummary("use",
-                "use-permission-description", PermissionAPI.PERMISSION_USE));
-        return accepted;
-    }
-
-    @JsonIgnore
-    public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
-        return null;
-    }
-
-    @JsonIgnore
-    public Permissionable getParentPermissionable() throws DotDataException {
-        return null;
-    }
-
-    @JsonIgnore
-    public String getPermissionType() {
-        return this.getClass().getCanonicalName();
-    }
-
-    @JsonIgnore
-    public boolean isParentPermissionable() {
-        return false;
-    }
-
-    // End Permissionable methods
-
     public enum FireOn {
         EVERY_PAGE,
         ONCE_PER_VISIT,
         ONCE_PER_VISITOR,
-        EVERY_REQUEST
+        EVERY_REQUEST;
 
+        @Override
+        public String toString() {
+            return super.name();
+        }
     }
 
     private static final String BEGIN_CONDITION = "com.dotmarketing.portlets.rules.BeginCondition";
@@ -79,6 +42,7 @@ public class Rule implements Permissionable {
     private boolean enabled;
     private Date modDate;
 
+    @JSONIgnore
     public String getId() {
         return id;
     }
@@ -150,4 +114,48 @@ public class Rule implements Permissionable {
     public void setModDate(Date modDate) {
         this.modDate = modDate;
     }
+
+    // Beginning Permissionable methods
+
+    @JSONIgnore
+    public String getPermissionId() {
+        return this.getId();
+    }
+
+    @JSONIgnore
+    public String getOwner() {
+        return null;
+    }
+
+    public void setOwner(String owner) {}
+
+    @JSONIgnore
+    public List<PermissionSummary> acceptedPermissions() {
+        List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
+        accepted.add(new PermissionSummary("use",
+                "use-permission-description", PermissionAPI.PERMISSION_USE));
+        return accepted;
+    }
+
+    @JSONIgnore
+    public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
+        return null;
+    }
+
+    @JSONIgnore
+    public Permissionable getParentPermissionable() throws DotDataException {
+        return null;
+    }
+
+    @JSONIgnore
+    public String getPermissionType() {
+        return this.getClass().getCanonicalName();
+    }
+
+    @JSONIgnore
+    public boolean isParentPermissionable() {
+        return false;
+    }
+
+    // End Permissionable methods
 }
