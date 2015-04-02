@@ -1139,7 +1139,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             
             for (Contentlet contentlet : otherLanguageCons) {
                 if(contentlet.getInode() != con.getInode() && contentlet.getLanguageId() != con.getLanguageId()){
-                    if(contentlet.isArchived()){
+                    if(perCons.contains(contentlet)){
                     	indexAPI.removeContentFromIndex(contentlet);
                     } else {
                     	cannotDelete = true;
@@ -1156,8 +1156,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	
                 perCons.remove(con);
                 break;
-            } else {
-            	indexAPI.removeContentFromIndex(con);
             }
             
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
