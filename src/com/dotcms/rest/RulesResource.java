@@ -104,29 +104,6 @@ public class RulesResource extends WebResource {
 
     }
 
-    private JSONObject getRuleJSON(Rule rule, User user) throws DotDataException, DotSecurityException, JSONException {
-        JSONObject ruleJSON = new com.dotmarketing.util.json.JSONObject(rule);
-
-        List<ConditionGroup> groups = rulesAPI.getConditionGroupsByRule(rule.getId(), user, false);
-        JSONObject groupsJSON = new JSONObject();
-
-        for (ConditionGroup group : groups) {
-            groupsJSON.put(group.getId(), new JSONObject(group, new String[]{"operator", "priority"}));
-        }
-
-        ruleJSON.put("conditionGroups", groupsJSON);
-
-        List<RuleAction> actions = rulesAPI.getActionsByRule(rule.getId(), user, false);
-        JSONObject actionsJSON = new JSONObject();
-
-        for (RuleAction action : actions) {
-            groupsJSON.put(action.getId(), new JSONObject(action, new String[]{"priority"}));
-        }
-
-        ruleJSON.put("actions", actionsJSON);
-        return ruleJSON;
-    }
-
     /**
      * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
      * <br>Each Rule node contains all fields in  .
@@ -382,7 +359,7 @@ public class RulesResource extends WebResource {
     }
 
     /**
-     * <p>Returns a JSON with all the RuleActionlet Objects defined.
+     * <p>Returns a JSON with the RuleActions defined for the Rule with the given ruleId.
      * <p/>
      *
      * @throws com.dotmarketing.util.json.JSONException
@@ -403,11 +380,11 @@ public class RulesResource extends WebResource {
             Rule rule = rulesAPI.getRuleById(ruleId, user, false);
 
             if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-                resultsObject.put("conditionGroups", new JSONArray());
+                resultsObject.put("ruleactions", (Object) new JSONArray());
                 return responseResource.response(resultsObject.toString());
             }
 
-            List<RuleAction> actions = rulesAPI.getActionsByRule(rule.getId(), user, false);
+            List<RuleAction> actions = rulesAPI.getRuleActionsByRule(rule.getId(), user, false);
 
             for (RuleAction action : actions) {
                 JSONObject actionletObject = new JSONObject();
@@ -494,50 +471,6 @@ public class RulesResource extends WebResource {
 
     }
 
-    private Rule saveUpdateRule(User user, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes, boolean save) throws DotDataException, DotSecurityException,
-            JSONException {
-
-
-        Rule rule;
-
-        if (save) {
-            Host host = APILocator.getHostAPI().find(ruleAttributes.getString("site"), user, false);
-
-            if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
-                Logger.error(this.getClass(), "Invalid Site identifier provided");
-                throw new DotDataException("Invalid Site identifier provided ");
-            }
-
-            rule = new Rule();
-            rule.setHost(host.getIdentifier());
-            rule.setName(ruleAttributes.getString("ruleName"));
-
-        } else {
-            rule = rulesAPI.getRuleById(ruleAttributes.getString("ruleId"), user, false);
-
-            if (!UtilMethods.isSet(rule)) {
-                throw new DotDataException("Unable to update Rule with id:" + ruleAttributes.getString("ruleId"));
-            }
-
-            try {
-                rule.setName(ruleAttributes.getString("ruleName"));
-            } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
-                Logger.info(getClass(), "Unable to set 'ruleName' - Invalid value provided - Using default");
-                throw new DotDataException("No 'ruleName' provided");
-            }
-        }
-
-        rule.setFireOn(Rule.FireOn.valueOf(ruleAttributes.optString("firePolicy", Rule.FireOn.EVERY_PAGE.name())));
-
-        rule.setShortCircuit(ruleAttributes.optBoolean("shortCircuit", false));
-
-        rule.setEnabled(ruleAttributes.optBoolean("enabled", true));
-
-        rulesAPI.saveRule(rule, user, false);
-
-        return rule;
-    }
-
     /**
      * <p>Saves a new Condition
      * <br>
@@ -577,6 +510,209 @@ public class RulesResource extends WebResource {
 //        resultsObject.put(rule.getId(), new JSONObject(rule));
 
         return responseResource.response(resultsObject.toString());
+    }
+
+
+    /**
+     * <p>Deletes a Rule
+     * <br>
+     * <p/>
+     * Usage: DELETE api/rules-engine/rules/{ruleId}
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @DELETE
+    @Path("/rules/{ruleId}")
+    public Response deleteRule(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        User user = initData.getUser();
+
+        try {
+            if(!UtilMethods.isSet(ruleId)) {
+                Logger.info(getClass(), "Unable to delete rule - 'ruleId' not provided");
+                throw new DotDataException("Unable to delete rule - 'ruleId' not provided");
+            }
+
+            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
+
+            rulesAPI.deleteRule(rule, user, false);
+
+            return Response.status(HttpStatus.SC_NO_CONTENT).build();
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    /**
+     * <p>Deletes a Condition Group and all its child Conditions
+     * <br>
+     * <p/>
+     * Usage: DELETE api/rules-engine/conditiongroups
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @DELETE
+    @Path("/rules/conditiongroups/{conditionGroupId}")
+    public Response deleteConditionGroup(@Context HttpServletRequest request, @PathParam("conditionGroupId") String conditionGroupId) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        User user = initData.getUser();
+
+        try {
+            if(!UtilMethods.isSet(conditionGroupId)) {
+                Logger.info(getClass(), "Unable to delete condition group - 'conditionGroupId' not provided");
+                throw new DotDataException("Unable to delete condition group - 'conditionGroupId' not provided");
+            }
+
+            ConditionGroup conditionGroup = rulesAPI.getConditionGroupById(conditionGroupId, user, false);
+            rulesAPI.deleteConditionGroup(conditionGroup, user, false);
+
+            return Response.status(HttpStatus.SC_NO_CONTENT).build();
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    /**
+     * <p>Deletes a Condition
+     * <br>
+     * <p/>
+     * Usage: DELETE api/rules-engine/rules
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @DELETE
+    @Path("/conditions")
+    public Response deleteCondition(@Context HttpServletRequest request, @PathParam("conditionId") String conditionId) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        User user = initData.getUser();
+
+        try {
+            if(!UtilMethods.isSet(conditionId)) {
+                Logger.info(getClass(), "Unable to delete condition - 'conditionId' not provided");
+                throw new DotDataException("Unable to delete condition - 'conditionId' not provided");
+            }
+
+            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
+            rulesAPI.deleteCondition(condition, user, false);
+
+            return Response.status(HttpStatus.SC_NO_CONTENT).build();
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    /**
+     * <p>Deletes the RuleAction with the given ruleActionId
+     * <br>
+     * <p/>
+     * Usage: DELETE api/rules-engine/rules/actions/{ruleActionId}
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @DELETE
+    @Path("/conditions")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response deleteRuleAction(@Context HttpServletRequest request, @PathParam("ruleActionId") String ruleActionId) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        User user = initData.getUser();
+
+        try {
+            if(!UtilMethods.isSet(ruleActionId)) {
+                Logger.info(getClass(), "Unable to delete RuleAction - 'ruleActionId' not provided");
+                throw new DotDataException("Unable to delete RuleAction - 'ruleActionId' not provided");
+            }
+
+            RuleAction ruleAction = rulesAPI.getRuleActionById(ruleActionId, user, false);
+            rulesAPI.deleteRuleAction(ruleAction, user, false);
+
+            return Response.status(HttpStatus.SC_NO_CONTENT).build();
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+
+    private JSONObject getRuleJSON(Rule rule, User user) throws DotDataException, DotSecurityException, JSONException {
+        JSONObject ruleJSON = new com.dotmarketing.util.json.JSONObject(rule);
+
+        List<ConditionGroup> groups = rulesAPI.getConditionGroupsByRule(rule.getId(), user, false);
+        JSONObject groupsJSON = new JSONObject();
+
+        for (ConditionGroup group : groups) {
+            groupsJSON.put(group.getId(), new JSONObject(group, new String[]{"operator", "priority"}));
+        }
+
+        ruleJSON.put("conditionGroups", groupsJSON);
+
+        List<RuleAction> actions = rulesAPI.getRuleActionsByRule(rule.getId(), user, false);
+        JSONObject actionsJSON = new JSONObject();
+
+        for (RuleAction action : actions) {
+            groupsJSON.put(action.getId(), new JSONObject(action, new String[]{"priority"}));
+        }
+
+        ruleJSON.put("actions", actionsJSON);
+        return ruleJSON;
+    }
+
+    private Rule saveUpdateRule(User user, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes, boolean save) throws DotDataException, DotSecurityException,
+            JSONException {
+
+
+        Rule rule;
+
+        if (save) {
+            Host host = APILocator.getHostAPI().find(ruleAttributes.getString("site"), user, false);
+
+            if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
+                Logger.error(this.getClass(), "Invalid Site identifier provided");
+                throw new DotDataException("Invalid Site identifier provided ");
+            }
+
+            rule = new Rule();
+            rule.setHost(host.getIdentifier());
+            rule.setName(ruleAttributes.getString("ruleName"));
+
+        } else {
+            String ruleId = ruleAttributes.getString("ruleId");
+
+            if(!UtilMethods.isSet(ruleId)) {
+                Logger.info(getClass(), "Unable to update rule - 'ruleId' not provided");
+                throw new DotDataException("Unable to update rule - 'ruleId' not provided");
+            }
+
+            rule = rulesAPI.getRuleById(ruleId, user, false);
+
+            if (!UtilMethods.isSet(rule)) {
+                throw new DotDataException("Unable to update Rule with id:" + ruleAttributes.getString("ruleId"));
+            }
+
+            try {
+                rule.setName(ruleAttributes.getString("ruleName"));
+            } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
+                Logger.info(getClass(), "Unable to set 'ruleName' - Invalid value provided - Using default");
+                throw new DotDataException("No 'ruleName' provided");
+            }
+        }
+
+        rule.setFireOn(Rule.FireOn.valueOf(ruleAttributes.optString("firePolicy", Rule.FireOn.EVERY_PAGE.name())));
+
+        rule.setShortCircuit(ruleAttributes.optBoolean("shortCircuit", false));
+
+        rule.setEnabled(ruleAttributes.optBoolean("enabled", true));
+
+        rulesAPI.saveRule(rule, user, false);
+
+        return rule;
     }
 
 

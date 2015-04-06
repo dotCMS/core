@@ -112,6 +112,14 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
+    public List<Condition> getConditionsByGroup(String groupId) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.SELECT_CONDITIONS_BY_GROUP);
+        db.addParam(groupId);
+        return convertListToObjects(db.loadObjectResults(), Condition.class);
+    }
+
+    @Override
     public Condition getConditionById(String id) throws DotDataException {
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_CONDITION_BY_ID);
@@ -241,6 +249,23 @@ public class RulesFactoryImpl implements RulesFactory {
             db.loadResult();
         }
     }
+
+    @Override
+    public void deleteConditionGroup(ConditionGroup conditionGroup) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_CONDITION_GROUP_BY_ID);
+        db.addParam(conditionGroup.getId());
+        db.loadResult();
+    }
+
+    @Override
+    public void deleteConditionsByGroup(ConditionGroup conditionGroup) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_CONDITION_BY_GROUP);
+        db.addParam(conditionGroup.getId());
+        db.loadResult();
+    }
+
 
     @Override
     public void deleteCondition(Condition condition) throws DotDataException {

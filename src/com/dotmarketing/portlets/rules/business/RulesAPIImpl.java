@@ -90,6 +90,10 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void deleteRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException  {
+        if(!UtilMethods.isSet(rule)) {
+            return;
+        }
+
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId());
         }
@@ -122,7 +126,19 @@ public class RulesAPIImpl implements RulesAPI {
         return rulesFactory.getConditionGroupsByRule(ruleId);
     }
 
-    public List<RuleAction> getActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public ConditionGroup getConditionGroupById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        ConditionGroup conditionGroup = rulesFactory.getConditionGroupById(id);
+
+        Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions/groups");
+        }
+
+        return conditionGroup;
+    }
+
+    public List<RuleAction> getRuleActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(ruleId)) {
             return new ArrayList<>();
         }
@@ -137,6 +153,18 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
         return rulesFactory.getRuleActionsByRule(ruleId);
+    }
+
+    public RuleAction getRuleActionById(String ruleActionId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        RuleAction action = rulesFactory.getRuleActionById(ruleActionId);
+
+        Rule rule = rulesFactory.getRuleById(action.getRuleId());
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions/groups");
+        }
+
+        return action;
     }
 
     public List<Condition> getConditionsByConditionGroup(String conditionGroupId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -192,6 +220,10 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(condition)) {
+            return;
+        }
+
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
@@ -199,6 +231,44 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.deleteCondition(condition);
+    }
+
+    public void deleteConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(conditionGroup)) {
+            return;
+        }
+
+        Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if(!UtilMethods.isSet(rule)) {
+            return;
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
+        }
+
+        rulesFactory.deleteConditionsByGroup(conditionGroup);
+
+        rulesFactory.deleteConditionGroup(conditionGroup);
+    }
+
+    public void deleteRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(ruleAction)) {
+            return;
+        }
+
+        Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
+
+        if(!UtilMethods.isSet(rule)) {
+            return;
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
+        }
+
+        rulesFactory.deleteRuleAction(ruleAction);
     }
 
     private void refreshConditionletMap() {

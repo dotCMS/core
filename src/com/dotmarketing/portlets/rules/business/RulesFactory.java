@@ -28,6 +28,8 @@ public interface RulesFactory {
 
     List<Condition> getConditionsByRule(String ruleId) throws DotDataException;
 
+    List<Condition> getConditionsByGroup(String groupId) throws DotDataException;
+
     Condition getConditionById(String id) throws DotDataException ;
 
     void saveRule(Rule rule) throws DotDataException;
@@ -37,6 +39,10 @@ public interface RulesFactory {
     void saveRuleAction(RuleAction ruleAction) throws DotDataException;
 
     void deleteRule(Rule rule) throws DotDataException;
+
+    void deleteConditionGroup(ConditionGroup conditionGroup) throws DotDataException;
+
+    void deleteConditionsByGroup(ConditionGroup conditionGroup) throws DotDataException;
 
     void deleteCondition(Condition condition) throws DotDataException;
 

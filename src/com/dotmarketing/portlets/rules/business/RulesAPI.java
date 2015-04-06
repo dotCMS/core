@@ -79,6 +79,18 @@ public interface RulesAPI {
      */
     List<ConditionGroup> getConditionGroupsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+
+    /**
+     *
+     * @param conditionGroupId
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    ConditionGroup getConditionGroupById(String conditionGroupId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
     /**
      *
      * @param ruleId
@@ -88,7 +100,18 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<RuleAction> getActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    List<RuleAction> getRuleActionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param ruleActionId
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    RuleAction getRuleActionById(String ruleActionId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**
@@ -153,6 +176,27 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param conditionGroup
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void deleteConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param ruleAction
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void deleteRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 
     /**
      *
