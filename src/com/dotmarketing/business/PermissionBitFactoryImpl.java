@@ -1716,6 +1716,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			permissionCache.clearCache();
 		}
 
+        if(isFolder) {
+            ContentletAPI contAPI = APILocator.getContentletAPI();
+            contAPI.refreshContentUnderFolder((Folder)permissionable);
+        }
+
 	}
 
 	/*

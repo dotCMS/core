@@ -284,7 +284,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 				// get the identifier from cache
 				if(byInode) {
-					dotFile = fileAPI.find(assetInode,user,false);
+					dotFile = fileAPI.find( assetInode, user, respectFrontendRoles );
 					downloadName = dotFile.getFileName();
 					//com.dotmarketing.portlets.files.model.File dotFile = APILocator.getFileAPI().get(assetIdentifier, user, respectFrontendRoles);
 					assetIdentifier = dotFile.getIdentifier();
@@ -371,9 +371,11 @@ public class BinaryExporterServlet extends HttpServlet {
 			 *******************************/
 			String mimeType = fileAPI.getMimeType(data.getDataFile().getName());
 
-			if (mimeType == null)
+			if (mimeType == null) {
 				mimeType = "application/octet-stream";
+			}
 			resp.setContentType(mimeType);
+			resp.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 

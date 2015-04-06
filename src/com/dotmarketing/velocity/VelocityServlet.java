@@ -33,6 +33,8 @@ import javax.servlet.http.HttpSession;
 import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 
+import com.liferay.portal.language.LanguageException;
+import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -89,6 +91,7 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.HTMLPageWebAPI;
 import com.dotmarketing.viewtools.RequestWrapper;
+import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
@@ -147,6 +150,41 @@ public abstract class VelocityServlet extends HttpServlet {
 
         RequestWrapper request  = new RequestWrapper( req );
         request.setRequestUri(uri);
+
+        /*
+		 * Getting host object form the session
+		 */
+        HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+        Host host;
+        try {
+            host = hostWebAPI.getCurrentHost(request);
+        } catch (Exception e) {
+            Logger.error(this, "Unable to retrieve current request host for URI " + uri);
+            throw new ServletException(e.getMessage(), e);
+        }
+
+        // Checking if host is active
+        boolean hostlive;
+        boolean _adminMode = UtilMethods.isAdminMode(request, response);
+
+        try {
+            hostlive = APILocator.getVersionableAPI().hasLiveVersion(host);
+        } catch (Exception e1) {
+            UtilMethods.closeDbSilently();
+            throw new ServletException(e1);
+        }
+        if (!_adminMode && !hostlive) {
+            try {
+                Company company = PublicCompanyFactory.getDefaultCompany();
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
+                        LanguageUtil.get(company.getCompanyId(), company.getLocale(), "server-unavailable-error-message"));
+            } catch (LanguageException e) {
+                Logger.error(CMSFilter.class, e.getMessage(), e);
+                response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+            }
+            return;
+        }
+
 		
 		if (DbConnectionFactory.isMsSql() && LicenseUtil.getLevel() < 299) {
 			request.getRequestDispatcher("/portal/no_license.jsp").forward(request, response);
@@ -573,8 +611,9 @@ public abstract class VelocityServlet extends HttpServlet {
 		Context context = VelocityUtil.getWebContext(request, response);
 
 		IHTMLPage htmlPage = getPage(id, request, false, context);
-		context.put("dotPageContent", htmlPage);
-		
+		if("contentlet".equals(htmlPage.getType())){
+			context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), user,true,host, context) );
+		}
 		HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 		PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -812,7 +851,9 @@ public abstract class VelocityServlet extends HttpServlet {
         Context context = VelocityUtil.getWebContext( request, response );
 
 		IHTMLPage htmlPage = getPage(id, request, false, context);
-		context.put("dotPageContent", htmlPage);
+		if("contentlet".equals(htmlPage.getType())){
+			context.put("dotPageContent", new ContentMap(((Contentlet) htmlPage), backendUser,true,host, context) );
+		}
 
         PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
@@ -1336,6 +1377,4 @@ public abstract class VelocityServlet extends HttpServlet {
 		
 		
 	}
-	
-	
 }

@@ -277,6 +277,7 @@ public class FileUtil {
 	/*
 	 * This will return a path whether the file exists or not
 	 * (Websphere returns a null if the file does not exist, which throws a lot of NPEs)
+	 * NOTE: relativePath has to start with "/"
 	 */
 	public static String getRealPath(String relativePath){
 		
@@ -290,14 +291,21 @@ public class FileUtil {
 			relativePath = replaceSeparator(relativePath);
 		}
 
+        //Relative path has to start with "/"
+        if(!relativePath.startsWith("/")){
+            relativePath = File.separatorChar + relativePath;
+        }
+
 		String ret = Config.CONTEXT.getRealPath(relativePath);	
-		if(ret !=null) return ret;
+		if(ret !=null) {
+            return ret;
+        }
+
 		String base = Config.CONTEXT.getRealPath("/");
-		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ?  base.substring(0, base.lastIndexOf(File.separatorChar)):base;
+		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
 		
 		return base + relativePath;
-
 	}
 	
 	

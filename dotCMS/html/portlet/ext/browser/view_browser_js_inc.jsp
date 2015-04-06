@@ -11,7 +11,6 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
 <%@ page import="com.dotmarketing.business.CacheLocator" %>
-<%@ page import="static com.dotmarketing.business.PermissionAPI.PERMISSION_READ" %>
 
 <%
 Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
@@ -1760,7 +1759,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
         <%
              String defaultPageSt = "0";
              Structure defaultHTMLPageST = StructureCache.getStructureByInode(APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost));
-             if(APILocator.getPermissionAPI().doesUserHavePermission(defaultHTMLPageST, PERMISSION_READ, user, false)) {
+             if(APILocator.getPermissionAPI().doesUserHavePermission(defaultHTMLPageST, PermissionAPI.PERMISSION_READ, user, false)) {
                defaultPageSt = defaultHTMLPageST.getInode();
              }
         %>

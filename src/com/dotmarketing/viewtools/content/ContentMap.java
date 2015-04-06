@@ -132,7 +132,7 @@ public class ContentMap {
 			if(f==null){
 				if(fieldVariableName.equalsIgnoreCase("host")){
 					try{
-						return new ContentMap(conAPI.search("+type:content +live:true +deleted:false +identifier:" + content.getHost() , 1, -1, "modDate", user, true).get(0), user, EDIT_OR_PREVIEW_MODE, host,context);
+						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
@@ -244,7 +244,7 @@ public class ContentMap {
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
 				if(FolderAPI.SYSTEM_FOLDER.equals(content.getFolder())){
 					try{
-						return new ContentMap(conAPI.search("+type:content +live:true +deleted:false +identifier:" + content.getHost(),1,-1,"modDate",user,true).get(0),user, EDIT_OR_PREVIEW_MODE, host, context);
+						return new ContentMap(conAPI.findContentletByIdentifier( content.getHost() ,!EDIT_OR_PREVIEW_MODE, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, true ),user,EDIT_OR_PREVIEW_MODE,host,context);
 					}catch (IndexOutOfBoundsException e) {
 						Logger.debug(this, "Unable to get host on content");
 						return null;
@@ -344,6 +344,10 @@ public class ContentMap {
 		getContentletsTitle();
 		getStructure();
 		return ToStringBuilder.reflectionToString(this);
+	}
+
+	public Boolean isHTMLPage() {
+		return content.isHTMLPage();
 	}
 
 }

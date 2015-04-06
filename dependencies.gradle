@@ -1,7 +1,7 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '63e5572-SNAPSHOT'
-    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '52064b4-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'fa44eab-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '525cfdb-SNAPSHOT'
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
     compile group: 'com.dotcms', name: 'starter', version: '20150304-SNAPSHOT', ext: 'zip'
 
@@ -177,7 +177,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xalan', version:'2.7.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version:'1.1.3.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_1'
-    compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.8_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_1'

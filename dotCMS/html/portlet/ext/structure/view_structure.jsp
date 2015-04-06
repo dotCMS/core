@@ -123,7 +123,7 @@ function addNewRelationship()
 function viewAllRelationship()
 {
 	var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-	href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' />";
+	href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' />  <portlet:param name='structure_id' value='all' />";
 	href = href + "</portlet:actionURL>";
 	document.location = href;
 }

@@ -1047,39 +1047,37 @@ public class BrowserAjax {
         }
     }
 
-    public Map<String, Object> renameHTMLPage (String inode, String newName) throws Exception {
+	public Map<String, Object> renameHTMLPage ( String inode, String newName ) throws Exception {
 
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = getUser(req);
+		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+		User user = getUser( req );
 
-        Identifier ident=APILocator.getIdentifierAPI().findFromInode(inode);
-        IHTMLPage page = ident.getAssetType().equals("htmlpage") 
-                           ? (IHTMLPage) InodeFactory.getInode(inode, HTMLPage.class)
-                           : APILocator.getHTMLPageAssetAPI().fromContentlet(
-                                 APILocator.getContentletAPI().find(inode, user, false));
-        
-    	HashMap<String, Object> result = new HashMap<String, Object> ();
-    	
-    	String pageURL = page.getPageUrl();
-    	String lastName = (pageURL.lastIndexOf(".") > -1) ? pageURL.substring(0, pageURL.lastIndexOf(".")) : pageURL;
-    	
-    	result.put("lastName",lastName);
+		Identifier ident = APILocator.getIdentifierAPI().findFromInode( inode );
+		IHTMLPage page = ident.getAssetType().equals( "htmlpage" ) ?
+				(IHTMLPage) InodeFactory.getInode( inode, HTMLPage.class )
+				: APILocator.getHTMLPageAssetAPI().fromContentlet( APILocator.getContentletAPI().find( inode, user, false ) );
 
-    	result.put("newName", newName);
-    	result.put("inode", inode);
-    	if (ident.getAssetType().equals("htmlpage") ? 
-    	        HTMLPageFactory.renameHTMLPage((HTMLPage)page, newName, user)
-    	      : APILocator.getHTMLPageAssetAPI().rename((HTMLPageAsset) page, newName, user)) {
-        	result.put("result", 0);
-    	} else {
-        	result.put("result", 1);
-        	if (page.isLocked())
-        		result.put("errorReason", "The page is locked");
-        	else
-        		result.put("errorReason", "Another page with the same name already exists on this folder");
-    	}
-    	return result;
-    }
+		String pageURL = ident.getAssetName();
+		String lastName = (pageURL.lastIndexOf( "." ) > -1) ? pageURL.substring( 0, pageURL.lastIndexOf( "." ) ) : pageURL;
+
+		HashMap<String, Object> result = new HashMap<String, Object>();
+		result.put( "lastName", lastName );
+		result.put( "newName", newName );
+		result.put( "inode", inode );
+
+		if ( ident.getAssetType().equals( "htmlpage" ) ?
+				HTMLPageFactory.renameHTMLPage( (HTMLPage) page, newName, user )
+				: APILocator.getHTMLPageAssetAPI().rename( (HTMLPageAsset) page, newName, user ) ) {
+			result.put( "result", 0 );
+		} else {
+			result.put( "result", 1 );
+			if ( page.isLocked() )
+				result.put( "errorReason", "The page is locked" );
+			else
+				result.put( "errorReason", "Another page with the same name already exists on this folder" );
+		}
+		return result;
+	}
 
     /**
      * Copies a given inode HTMLPage to a given folder
@@ -1198,7 +1196,7 @@ public class BrowserAjax {
                 return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
             }
             else {
-                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, parent, user);
+                return APILocator.getHTMLPageAssetAPI().move((HTMLPageAsset)page, host, user);
             }
         }
     }
@@ -1491,11 +1489,7 @@ public class BrowserAjax {
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = getUser(req);
 
-
         Identifier id  = APILocator.getIdentifierAPI().findFromInode(inode);
-    	if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user))
-    		throw new DotRuntimeException("The user doesn't have the required permissions.");
-
     	if(id!=null && id.getAssetType().equals("contentlet")){
     		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
     		APILocator.getContentletAPI().unlock(cont, user, false);

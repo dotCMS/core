@@ -1,15 +1,5 @@
 package com.dotcms.csspreproc;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Date;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.csspreproc.CachedCSS.ImportedAsset;
 import com.dotcms.enterprise.csspreproc.CSSCompiler;
 import com.dotcms.enterprise.csspreproc.LessCompiler;
@@ -33,6 +23,15 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Date;
+
 public class CSSPreProcessServlet extends HttpServlet {
     private static final long serialVersionUID = -3315180323197314439L;
 
@@ -45,7 +44,39 @@ public class CSSPreProcessServlet extends HttpServlet {
             User user = WebAPILocator.getUserWebAPI().getLoggedInUser(req);
             String reqURI=req.getRequestURI();
             String uri = reqURI.substring(reqURI.indexOf('/', 1));
-            
+
+            /*
+              First we need to figure it out the host of the requested file, not the current host.
+              We could be in host B and the file be living in host A
+            */
+            if ( uri.startsWith( "//" ) ) {
+
+                String tempURI = uri.replaceFirst( "//", "" );
+                String externalHost = tempURI.substring( 0, tempURI.indexOf( "/" ) );
+
+                //Avoid unnecessary queries, we may be already in the host where the file lives
+                if ( !externalHost.equals( host.getHostname() ) && !host.getAliases().contains( externalHost ) ) {
+
+                    Host fileHost = null;
+                    try {
+                        fileHost = APILocator.getHostAPI().findByName( externalHost, user, true );
+                        if ( !UtilMethods.isSet( fileHost ) || !InodeUtils.isSet( fileHost.getInode() ) ) {
+                            fileHost = APILocator.getHostAPI().findByAlias( externalHost, user, true );
+                        }
+                    } catch ( Exception e ) {
+                        Logger.error( CSSPreProcessServlet.class, "Error searching host [" + externalHost + "].", e );
+                    }
+
+                    if ( UtilMethods.isSet( fileHost ) && InodeUtils.isSet( fileHost.getInode() ) ) {
+                        host = fileHost;
+                    }
+                }
+
+                //Remove the host from the URI now that we have the host owner of the file
+                uri = uri.replace( "//" + externalHost, "" );
+
+            }
+
             if(!reqURI.endsWith(".css")) {
                 String path=live ? LiveCache.getPathFromCache(uri, host.getIdentifier()) : WorkingCache.getPathFromCache(uri, host.getIdentifier());
                 if(UtilMethods.isSet(path)) {

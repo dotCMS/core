@@ -664,7 +664,7 @@ public class ContentResource extends WebResource {
 		setRequestMetadata(contentlet, request);
 		
 		Map<String, Object> map = new HashMap<String, Object>();
-		
+		List<String> usedBinaryFields = new ArrayList<String>();
 		for(BodyPart part : multipart.getBodyParts()) {
 			ContentDisposition cd=part.getContentDisposition();
 			String name=cd!=null && cd.getParameters().containsKey("name") ? cd.getParameters().get("name") : "";
@@ -733,11 +733,13 @@ public class ContentResource extends WebResource {
 					tmp.delete();
 				try {
 					FileUtils.copyInputStreamToFile(input, tmp);
-
 					for(Field ff : FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode())) {
 						// filling binarys in order. as they come / as field order says
-						if(ff.getFieldContentlet().startsWith("binary") && contentlet.getBinary(ff.getVelocityVarName())==null) {
+						String fieldName = ff.getFieldContentlet();
+						if (fieldName.startsWith("binary")
+								&& !usedBinaryFields.contains(fieldName)) {
 							contentlet.setBinary(ff.getVelocityVarName(), tmp);
+							usedBinaryFields.add(fieldName);
 							break;
 						}
 					}
@@ -1200,7 +1202,13 @@ public class ContentResource extends WebResource {
 		}
 		
 		try{
-			contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+            //request.getCookies() could return null.
+            if(UtilMethods.isSet(request.getCookies())){
+                contentlet.setStringProperty(COOKIES, request.getCookies().toString());
+            } else {
+                //There are some cases where the cookies are not in the request, for example using curl without -b or --cookie.
+                Logger.warn(this.getClass(), "COOKIES are not in the REQUEST");
+            }
 		}
 		catch(Exception e){
 			Logger.error(this.getClass(), "Cannot set COOKIES " + e);

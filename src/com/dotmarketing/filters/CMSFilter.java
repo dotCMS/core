@@ -92,7 +92,7 @@ public class CMSFilter implements Filter {
 		
 		LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 		
-		boolean _adminMode = isAdminMode(request, response);
+
 		
 
 		/*
@@ -131,28 +131,6 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
-
-		// Checking if host is active
-
-		boolean hostlive;
-		try {
-			hostlive = APILocator.getVersionableAPI().hasLiveVersion(host);
-		} catch (Exception e1) {
-			closeDbSilently();
-			throw new ServletException(e1);
-		}
-		if (!_adminMode && !hostlive) {
-			try {
-				Company company = PublicCompanyFactory.getDefaultCompany();
-				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-						LanguageUtil.get(company.getCompanyId(), company.getLocale(), "server-unavailable-error-message"));
-			} catch (LanguageException e) {
-				Logger.error(CMSFilter.class, e.getMessage(), e);
-				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-			}
-			return;
-		}
-		
 		
 		String rewrite = null;
 		String queryString = request.getQueryString();
@@ -305,60 +283,7 @@ public class CMSFilter implements Filter {
 			}
 		}
 	}
-	
-	
-	
-	private boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
-		HttpSession session = request.getSession(false);
-		
-		// set the preview mode
-		boolean adminMode = false;
 
-		if (session != null) {
-			// struts crappy messages have to be retrived from session
-			if (session.getAttribute(Globals.ERROR_KEY) != null) {
-				request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-				session.removeAttribute(Globals.ERROR_KEY);
-			}
-			if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-				request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-				session.removeAttribute(Globals.MESSAGE_KEY);
-			}
-			// set the preview mode
-			adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-
-			if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
-			}
-		}
-		return adminMode;
-
-	}
-	
 	private String xssCheck(String uri, String queryString) throws ServletException{
 		
 		String rewrite=null;

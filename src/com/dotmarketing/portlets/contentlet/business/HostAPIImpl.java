@@ -584,9 +584,7 @@ public class HostAPIImpl implements HostAPI {
 				// Remove Contentlet
 				ContentletAPI contentAPI = APILocator.getContentletAPI();								
 				List<Contentlet> contentlets = contentAPI.findContentletsByHost(host, user, respectFrontendRoles);
-				for (Contentlet contentlet : contentlets) {	
-					contentAPI.delete(contentlet, user, respectFrontendRoles);
-				}
+				contentAPI.delete(contentlets, user, respectFrontendRoles);
 
 				// Remove Folders
 				FolderAPI folderAPI = APILocator.getFolderAPI();

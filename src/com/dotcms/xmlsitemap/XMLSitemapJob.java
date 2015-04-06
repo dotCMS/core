@@ -1,32 +1,9 @@
 package com.dotcms.xmlsitemap;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-
-import org.quartz.Job;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.FactoryLocator;
-import com.dotmarketing.business.IdentifierAPI;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.*;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -35,6 +12,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -42,20 +20,25 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.business.FileFactory;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.AssetsComparator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.XMLUtils;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
+import org.quartz.Job;
+import org.quartz.JobExecutionContext;
+import org.quartz.JobExecutionException;
+import org.quartz.StatefulJob;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
+import java.util.*;
+import java.util.Calendar;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * This class manage the generation of the XMLSitemap<X>.xml.gz files from every
@@ -94,34 +77,26 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 	private String structuresToIgnoreConfig = null;
 
-	public XMLSitemapJob() {
+	public XMLSitemapJob () {
 		try {
 			systemUser = userAPI.getSystemUser();
 
 			hostFilesCounter = new HashMap<String, Integer>();
 
-			XML_SITEMAPS_FOLDER = Config.getStringProperty("org.dotcms.XMLSitemap.XML_SITEMAPS_FOLDER","/XMLSitemaps/");
-
-			String usePermalinksString = Config.getStringProperty("org.dotcms.XMLSitemap.USE_PERMALINKS=false","false");
-
-			String useStructureURLMapString = Config.getStringProperty("org.dotcms.XMLSitemap.USE_STRUCTURE_URL_MAP","false");
-
-			usePermalinks = (UtilMethods.isSet(usePermalinksString) ? Boolean
-					.parseBoolean(usePermalinksString) : false);
-
-			useStructureURLMap = (UtilMethods.isSet(useStructureURLMapString) ? Boolean
-					.parseBoolean(useStructureURLMapString)
-					: false);
+			XML_SITEMAPS_FOLDER = Config.getStringProperty( "org.dotcms.XMLSitemap.XML_SITEMAPS_FOLDER", "/XMLSitemaps/" );
+			String usePermalinksString = Config.getStringProperty( "org.dotcms.XMLSitemap.USE_PERMALINKS=false", "false" );
+			String useStructureURLMapString = Config.getStringProperty( "org.dotcms.XMLSitemap.USE_STRUCTURE_URL_MAP", "false" );
+			usePermalinks = (UtilMethods.isSet( usePermalinksString ) ? Boolean.parseBoolean( usePermalinksString ) : false);
+			useStructureURLMap = (UtilMethods.isSet( useStructureURLMapString ) ? Boolean.parseBoolean( useStructureURLMapString ) : false);
 
 			modifiedDateStringValue = UtilMethods.dateToHTMLDate(
-					new java.util.Date(System.currentTimeMillis()),
-					"yyyy-MM-dd");
+					new java.util.Date( System.currentTimeMillis() ), "yyyy-MM-dd" );
 
-			structuresToIgnoreConfig = Config.getStringProperty("org.dotcms.XMLSitemap.IGNORE_Structure_Ids","");
+			structuresToIgnoreConfig = Config.getStringProperty( "org.dotcms.XMLSitemap.IGNORE_Structure_Ids", "" );
 
 			//generateSitemapPerHost();
-		} catch (Exception e) {
-			Logger.error(this, e.getMessage(), e);
+		} catch ( Exception e ) {
+			Logger.error( this, e.getMessage(), e );
 		}
 	}
 
@@ -180,25 +155,21 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	 * folder
 	 */
 	@SuppressWarnings("unchecked")
-	public void generateSitemapPerHost() throws DotDataException,
-			DotSecurityException {
+	public void generateSitemapPerHost() throws DotDataException, DotSecurityException {
 
 		List<Host> hostsList = hostAPI.findAll(systemUser, false);
-
-		int orderDirection = 1;
-
-		List<String> structureVelocityVarNames = StructureFactory
-				.getAllVelocityVariablesNames();
+		List<String> structureVelocityVarNames = StructureFactory.getAllVelocityVariablesNames();
 
 		for (Host host : hostsList) {
 
-			if(host.isSystemHost())
+            if ( host.isSystemHost() ) {
 				continue;
+            }
 
 			processedRegistries = 0;
 			currentHost = host;
 			sitemapCounter = 1;
-			String stringbuf = null;
+            String stringbuf;
 
 			try {
 				/**
@@ -218,8 +189,8 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 				/* adding host url */
 				stringbuf = "<url><loc>"
-						+ XMLUtils.xmlEscape("http://" + host.getHostname()
-								+ "/") + "</loc><lastmod>"
+						+ XMLUtils.xmlEscape("http://" + host.getHostname() + "/")
+						+ "</loc><lastmod>"
 						+ modifiedDateStringValue
 						+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
@@ -234,56 +205,56 @@ public class XMLSitemapJob implements Job, StatefulJob {
 				 */
 				for (String stVelocityVarName : structureVelocityVarNames) {
 
-					if (ignorableStructureIds.contains(stVelocityVarName
-							.toLowerCase()))
-						continue;
-
-					Structure st = StructureFactory
-							.getStructureByVelocityVarName(stVelocityVarName);
-
-					if (!InodeUtils.isSet(st.getPagedetail()))
-						continue;
-
-					HTMLPage page = htmlAPI.loadLivePageById(
-							st.getPagedetail(), systemUser, true);
-
-					Logger.debug(this, " Creating Site Map for Structure "
-							+ stVelocityVarName);
-					Identifier pageIdentifier = identAPI.find(page
-							.getIdentifier());
-
-					Logger.debug(this,
-							" Performing Host Parameter validation Page Identifider Host ["
-									+ pageIdentifier.getHostId()
-									+ "], Host Identifider ["
-									+ host.getIdentifier() + "], Deleted ["
-									+ page.isDeleted() + "], Live ["
-									+ page.isLive() + "]");
-
-					if (!(host.getIdentifier().equals(
-							pageIdentifier.getHostId()) && (!page.isDeleted() && page
-							.isLive()))) {
-						Logger.debug(this,
-								"Host Parameter validation failed for structure ["
-										+ stVelocityVarName + "]");
+					if (ignorableStructureIds.contains(stVelocityVarName.toLowerCase())) {
 						continue;
 					}
 
-					String query = "+structureName:" + st.getVelocityVarName()
-							+ " +deleted:false +live:true";
+					Structure st = StructureFactory.getStructureByVelocityVarName( stVelocityVarName );
 
-					List<Contentlet> hits = conAPI.search(query, -1, 0, "",
-							systemUser, true);
+                    //Continue only if have a detail
+                    if ( !InodeUtils.isSet( st.getPagedetail() ) ) {
+						continue;
+                    }
 
+					//Getting the detail page, that detail page could be a HTMLPageAsset or a legacy page
+					IHTMLPage page = null;
+					try {
+						//First lets asume it is a HTMLPageAsset
+						Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier:" + st.getPagedetail() + " +live:true", 0, 0, "moddate", systemUser, false ).get( 0 );
+						if ( contentlet != null ) {
+							page = APILocator.getHTMLPageAssetAPI().fromContentlet( contentlet );
+						}
+					} catch ( DotContentletStateException e ) {
+						//HTMLPageAsset not found, now lets try to find a legacy page
+						page = htmlAPI.loadLivePageById( st.getPagedetail(), systemUser, true );
+					}
+
+					if ( !UtilMethods.isSet( page ) || !UtilMethods.isSet( page.getIdentifier() ) ) {
+						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );
+						continue;
+					}
+
+					Identifier pageIdentifier = identAPI.find( page.getIdentifier() );
+					if ( !UtilMethods.isSet( pageIdentifier ) || !UtilMethods.isSet( pageIdentifier.getId() ) ) {
+						Logger.error( this, "Unable to find detail page for structure [" + stVelocityVarName + "]." );
+						continue;
+					}
+
+					Logger.debug( this, " Creating Site Map for Structure " + stVelocityVarName );
+
+					//Search for the content of this structure
+					String hostQuery = "+(conhost:" + host.getIdentifier() + " conhost:SYSTEM_HOST)";
+					String query = hostQuery + " +structureName:" + st.getVelocityVarName() + " +deleted:false +live:true";
+
+					List<Contentlet> hits = conAPI.search( query, -1, 0, "", systemUser, true );
 					String structureURLMap = st.getUrlMapPattern();
 
 					List<RegExMatch> matches = null;
 
-					if (useStructureURLMap
-							&& UtilMethods.isSet(structureURLMap)) {
-						matches = RegEX.find(st.getUrlMapPattern(),
-								"({[^{}]+})");
+					if ( useStructureURLMap && UtilMethods.isSet( structureURLMap ) ) {
+						matches = RegEX.find( st.getUrlMapPattern(), "({[^{}]+})" );
 					}
+
 					for (Contentlet contenlet : hits) {
 						try {
 							if (usePermalinks) {
@@ -297,13 +268,12 @@ public class XMLSitemapJob implements Job, StatefulJob {
 										+ "</loc><lastmod>"
 										+ modifiedDateStringValue
 										+ "</lastmod><changefreq>daily</changefreq></url>\n";
-							} else if (useStructureURLMap
-									&& UtilMethods.isSet(structureURLMap)
-									&& (matches != null)) {
+
+							} else if (useStructureURLMap && UtilMethods.isSet(structureURLMap) && (matches != null)) {
+
 								String uri = structureURLMap;
-								Logger.debug(this,
-										" Found the URL String for validation ["
-												+ uri + "]");
+								Logger.debug(this, " Found the URL String for validation [" + uri + "]");
+
 								for (RegExMatch match : matches) {
 									String urlMapField = match.getMatch();
 									String urlMapFieldValue = contenlet
@@ -329,18 +299,12 @@ public class XMLSitemapJob implements Job, StatefulJob {
 													+ "], uri [" + uri + "]");
 								}
 
-								if (uri == null
-										&& UtilMethods
-												.isSet(st.getDetailPage())) {
-									if (page != null
-											&& UtilMethods.isSet(page
-													.getIdentifier())) {
-										uri = page.getURI() + "?id="
-												+ contenlet.getInode();
+								if ( uri == null && UtilMethods.isSet( st.getDetailPage() ) ) {
+									if ( page != null && UtilMethods.isSet( page.getIdentifier() ) ) {
+										uri = page.getURI() + "?id=" + contenlet.getInode();
 									}
 								}
-								String urlRelacementText = getUrlPatternReplacementText(
-										host, stVelocityVarName);
+								String urlRelacementText = getUrlPatternReplacementText( host, stVelocityVarName);
 
 								uri = uri.replaceAll(urlRelacementText, "");
 
@@ -374,40 +338,15 @@ public class XMLSitemapJob implements Job, StatefulJob {
 						}
 					}
 				}
-				/**
-				 * This part add the show on menu pages. similar as we do in
-				 * navigationwebapi to generate sitemap
-				 * */
-				java.util.List<Folder> itemsList = new ArrayList<Folder>();
 
-				itemsList = folderAPI.findSubFolders(host, true);
+                /*
+                 This part add the show on menu pages. similar as we do in nav tool to generate the sitemap
+                 */
+                List<Folder> itemsList = folderAPI.findSubFolders( host, true );
+                if ( itemsList != null && !itemsList.isEmpty() ) {
 
-				//Logger.warn(this, "Finding Subfolders for referebce [" + itemsList.size() + "]");
-
-				Comparator<Folder> comparator = new AssetsComparator(
-						orderDirection);
-				Collections.sort(itemsList, comparator);
-
-				List<Inode> itemsList2 = new ArrayList<Inode>();
-
-				for (Folder f : itemsList) {
-					if (f instanceof Folder) {
-						//Logger.warn(this, "Folder Iteration in progress Name [" + f.getName() + "], show on Menu Indicator [" + f.isShowOnMenu() + "]");
-						itemsList2.addAll(folderAPI.findMenuItems(f,
-								systemUser, true));
-						//Adding index.html, even it is not marked show on menu with parent folder has show on menu
-						HTMLPage indexPage = APILocator.getHTMLPageAPI().loadPageByPath(f.getPath()+"index."+ Config.getStringProperty("VELOCITY_PAGE_EXTENSION","html"), host);
-						if(UtilMethods.isSet(indexPage.getIdentifier()) && !indexPage.isShowOnMenu())
-							itemsList2.add(indexPage);
-					}
-				}
-
-				//Logger.warn(this, "List Size [" + itemsList2 + "]");
-
-				if (itemsList2.size() > 0) {
-
-					// /FIRST LEVEL MENU ITEMS!!!!
-					for (Permissionable itemChild : itemsList) {
+                    // /FIRST LEVEL MENU ITEMS!!!!
+                    for ( Object itemChild : itemsList ) {
 
 						if (itemChild instanceof Folder) {
 
@@ -419,67 +358,21 @@ public class XMLSitemapJob implements Job, StatefulJob {
 							buildSubFolderSiteMapMenu(folderChild, 100, 1, 1);
 
 						} else if (itemChild instanceof Link) {
-							Link link = (Link) itemChild;
-							if (link.isLive() && !link.isDeleted()) {
-								if (link.getUrl()
-										.startsWith(host.getHostname())) {
-									stringbuf = "<url><loc>"
-											+ XMLUtils.xmlEscape(link
-													.getProtocal()
-													+ link.getUrl())
-											+ "</loc><lastmod>"
-											+ modifiedDateStringValue
-											+ "</lastmod><changefreq>daily</changefreq></url>\n";
-									writeFile(stringbuf);
-									addRegistryProcessed();
-								}
-							}
-						} else if (itemChild instanceof HTMLPage) {
-							HTMLPage page = (HTMLPage) itemChild;
-							Logger.debug(this, "Folder Page Configuration " + page.getURI());
-							if (page.isLive() && !page.isDeleted()) {
-								String indexPageConfiguration = "/"+ CMSFilter.CMS_INDEX_PAGE;
-								String pathToPageUrl = XMLUtils.xmlEscape("http://"+ host.getHostname() + page.getURI());
 
-								if (pathToPageUrl.endsWith(indexPageConfiguration)) {
-									pathToPageUrl = pathToPageUrl.replace(indexPageConfiguration, "");
-								}
+                            writeLink( host, (Link) itemChild );
 
-								stringbuf = "<url><loc>"
-										+ pathToPageUrl
-										+ "</loc><lastmod>"
-										+ modifiedDateStringValue
-										+ "</lastmod><changefreq>daily</changefreq></url>\n";
-								writeFile(stringbuf);
-								addRegistryProcessed();
-							}
+						} else if (itemChild instanceof IHTMLPage) {
+
+                            writeHTMLPage( host, (IHTMLPage) itemChild, false );
+
 						} else if (itemChild instanceof com.dotmarketing.portlets.files.model.File) {
-							com.dotmarketing.portlets.files.model.File file = (com.dotmarketing.portlets.files.model.File) itemChild;
-							if (file.isLive() && !file.isDeleted()) {
-								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://"
-												+ host.getHostname()
-												+ file.getURI())
-										+ "</loc><lastmod>"
-										+ modifiedDateStringValue
-										+ "</lastmod><changefreq>daily</changefreq></url>\n";
-								writeFile(stringbuf);
-								addRegistryProcessed();
-							}
+
+                            writeFile( host, (com.dotmarketing.portlets.files.model.File) itemChild );
+
 						} else if (itemChild instanceof Contentlet) {
-							Contentlet fileContent = (Contentlet)itemChild;
-							if (fileContent.isLive() && !fileContent.isArchived()) {
-								Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
-								stringbuf = "<url><loc>"
-										+ XMLUtils.xmlEscape("http://"
-												+ host.getHostname()
-												+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
-										+ "</loc><lastmod>"
-										+ modifiedDateStringValue
-										+ "</lastmod><changefreq>daily</changefreq></url>\n";
-								writeFile(stringbuf);
-								addRegistryProcessed();
-							}
+
+							writeContentlet( host, (Contentlet) itemChild );
+
 						}
 					}
 
@@ -500,169 +393,95 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	/**
 	 * Add the subfolder site map code to the xml site map file
 	 *
-	 * @param stringbuf
-	 *            StringBuffer.
 	 * @param thisFolder
-	 *            Folder.
 	 * @param numberOfLevels
-	 *            int.
 	 * @param currentLevel
-	 *            int.
 	 * @param orderDirection
-	 *            int.
-	 * @param menuIdPrefix
-	 *            String.
-	 * @return StringBuffer
+     * @throws com.dotmarketing.exception.DotDataException
+     * @throws com.dotmarketing.exception.DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
-	private void buildSubFolderSiteMapMenu(Folder thisFolder,
-			int numberOfLevels, int currentLevel, int orderDirection)
-			throws DotDataException, DotSecurityException {
+	private void buildSubFolderSiteMapMenu ( Folder thisFolder, int numberOfLevels, int currentLevel, int orderDirection ) throws DotDataException, DotSecurityException {
 
-		String stringbuf = null;
+		String stringbuf;
 		// gets menu items for this folder
-		java.util.List<Inode> itemsChildrenList2 = folderAPI.findMenuItems(
-				thisFolder, orderDirection);
+		List<Inode> itemsChildrenList2 = folderAPI.findMenuItems( thisFolder, orderDirection );
 
-		Identifier folderIdent = identAPI.find(thisFolder.getIdentifier());
+		Identifier folderIdent = identAPI.find( thisFolder.getIdentifier() );
+		Host host = hostAPI.findParentHost( thisFolder, systemUser, false );
+		//The folder have a index page?, if don't we don' need to add it to the site map
+		Identifier indexPageId = identAPI.loadFromCache( host, folderIdent.getURI() + "/" + CMSFilter.CMS_INDEX_PAGE );
 
-		String folderChildPath = folderIdent.getURI().substring(0,
-				folderIdent.getURI().length() - 1);
-
-		folderChildPath = folderChildPath.substring(0, folderChildPath
-				.lastIndexOf("/"));
-
-		Host host = hostAPI.findParentHost(thisFolder, systemUser, false);
-
-		Identifier id = identAPI.loadFromCache(host, folderIdent.getURI()
-				+ "/"
-				+ CMSFilter.CMS_INDEX_PAGE);
-
-		Logger.debug(this, "Performing check for folders [" + (folderIdent.getURI() + "/" + CMSFilter.CMS_INDEX_PAGE) + "], Identifier Check ["
-		 + (id != null) + "], Children Count [" + itemsChildrenList2.size() + "], Host Identifier [" + host.getIdentifier() + "], Identifier " +
-		 ((id != null) ? id.getInode() : "") + "]");
+		Logger.debug( this, "Performing check for folders [" + (folderIdent.getURI() + "/" + CMSFilter.CMS_INDEX_PAGE) + "], Identifier Check ["
+				+ (indexPageId != null) + "], Children Count [" + itemsChildrenList2.size() + "], Host Identifier [" + host.getIdentifier() + "], Identifier " +
+				((indexPageId != null) ? indexPageId.getInode() : "") + "]" );
 
 		boolean isIndexPageAlreadyConfigured = false;
 
-		if ((id != null) && InodeUtils.isSet(id.getInode())) {
+		if ( (indexPageId != null) && InodeUtils.isSet( indexPageId.getInode() ) ) {
+
 			stringbuf = "<url><loc>"
 					+ XMLUtils
-							.xmlEscape("http://"
-									+ host.getHostname()
-									+ folderIdent.getURI())
+					.xmlEscape( "http://"
+							+ host.getHostname()
+							+ folderIdent.getURI() )
 					+ "</loc><lastmod>" + modifiedDateStringValue
 					+ "</lastmod><changefreq>daily</changefreq></url>\n";
 
-			Logger.debug(this, "Writing the XMLConfiguration for Folder[" + XMLUtils
-							.xmlEscape("http://"
-									+ host.getHostname()
-									+ folderIdent.getURI()) + "]"
-			);
+			Logger.debug( this, "Writing the XMLConfiguration for Folder[" + XMLUtils.xmlEscape( "http://" + host.getHostname() + folderIdent.getURI() ) + "]" );
 
 			isIndexPageAlreadyConfigured = true;
 
-			writeFile(stringbuf);
+			writeFile( stringbuf );
 			addRegistryProcessed();
 		}
 
-		if (currentLevel < numberOfLevels) {
+		if ( currentLevel < numberOfLevels ) {
 
-			for (Permissionable childChild2 : itemsChildrenList2) {
-				if (childChild2 instanceof Folder) {
+			for ( Permissionable childChild2 : itemsChildrenList2 ) {
+				if ( childChild2 instanceof Folder ) {
 					Folder folderChildChild2 = (Folder) childChild2;
 					Identifier childChild2Ident = identAPI
-							.find(folderChildChild2.getIdentifier());
+							.find( folderChildChild2.getIdentifier() );
 
-					if (currentLevel <= numberOfLevels) {
-						buildSubFolderSiteMapMenu(folderChildChild2,
+					if ( currentLevel <= numberOfLevels ) {
+						buildSubFolderSiteMapMenu( folderChildChild2,
 								numberOfLevels, currentLevel + 1,
-								orderDirection);
+								orderDirection );
 					} else {
 						stringbuf = "<url><loc>"
 								+ XMLUtils
-										.xmlEscape("http://"
-												+ host.getHostname()
-												+ childChild2Ident.getURI())
-								+ "</loc><lastmod>"
-								+ modifiedDateStringValue
-								+ "</lastmod><changefreq>daily</changefreq></url>\n";
-
-						Logger.debug(this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
-										.xmlEscape("http://"
-												+ host.getHostname()
-												+ childChild2Ident.getURI()) + "]");
-
-						writeFile(stringbuf);
-						addRegistryProcessed();
-					}
-				} else if (childChild2 instanceof Link) {
-					Link link2 = (Link) childChild2;
-					if (link2.isLive() && !link2.isDeleted()) {
-						if (link2.getUrl().startsWith(host.getHostname())) {
-							stringbuf = "<url><loc>"
-									+ XMLUtils.xmlEscape(link2.getProtocal()
-											+ link2.getUrl())
-									+ "</loc><lastmod>"
-									+ modifiedDateStringValue
-									+ "</lastmod><changefreq>daily</changefreq></url>\n";
-							writeFile(stringbuf);
-							addRegistryProcessed();
-						}
-					}
-				} else if (childChild2 instanceof HTMLPage) {
-					HTMLPage page2 = (HTMLPage) childChild2;
-					Identifier childChild2Ident = identAPI.find(page2
-							.getIdentifier());
-					if (page2.isLive() && !page2.isDeleted()) {
-						String indexPageConfiguration = "/"+ CMSFilter.CMS_INDEX_PAGE;
-
-						String pathToPageUrl = XMLUtils.xmlEscape("http://" + host.getHostname() + childChild2Ident.getURI());
-
-						if (pathToPageUrl.endsWith(indexPageConfiguration) && isIndexPageAlreadyConfigured) {
-							Logger.debug(this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]");
-							continue;
-						}
-
-						pathToPageUrl = pathToPageUrl.replace(indexPageConfiguration, "");
-
-						stringbuf = "<url><loc>" + pathToPageUrl + "</loc><lastmod>" + modifiedDateStringValue + "</lastmod><changefreq>daily</changefreq></url>\n";
-
-						Logger.debug(this, "Writing the XMLConfiguration for an HTML Page with out " + CMSFilter.CMS_INDEX_PAGE + " extension [" + pathToPageUrl + "]");
-
-						writeFile(stringbuf);
-
-						addRegistryProcessed();
-					}
-				} else if (childChild2 instanceof com.dotmarketing.portlets.files.model.File) {
-					com.dotmarketing.portlets.files.model.File file2 = (com.dotmarketing.portlets.files.model.File) childChild2;
-					Identifier childChild2Ident = identAPI.find(file2
-							.getIdentifier());
-					if (file2.isLive() && !file2.isDeleted()) {
-						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://"
+								.xmlEscape( "http://"
 										+ host.getHostname()
-										+ childChild2Ident.getURI() + "/"
-										+ file2.getFileName())
+										+ childChild2Ident.getURI() )
 								+ "</loc><lastmod>"
 								+ modifiedDateStringValue
 								+ "</lastmod><changefreq>daily</changefreq></url>\n";
-						writeFile(stringbuf);
-						addRegistryProcessed();
-					}
-				} else if (childChild2 instanceof Contentlet) {
-					Contentlet fileContent = (Contentlet)childChild2;
-					if (fileContent.isLive() && !fileContent.isArchived()) {
-						Identifier identifier = APILocator.getIdentifierAPI().find(fileContent);
-						stringbuf = "<url><loc>"
-								+ XMLUtils.xmlEscape("http://"
+
+						Logger.debug( this, "Writing the XMLConfiguration Second Level Check for [" + XMLUtils
+								.xmlEscape( "http://"
 										+ host.getHostname()
-										+ UtilMethods.encodeURIComponent(identifier.getParentPath()+fileContent.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)))
-								+ "</loc><lastmod>"
-								+ modifiedDateStringValue
-								+ "</lastmod><changefreq>daily</changefreq></url>\n";
-						writeFile(stringbuf);
+										+ childChild2Ident.getURI() ) + "]" );
+
+						writeFile( stringbuf );
 						addRegistryProcessed();
 					}
+				} else if ( childChild2 instanceof Link ) {
+
+					writeLink( host, (Link) childChild2 );
+
+				} else if ( childChild2 instanceof IHTMLPage ) {
+
+					writeHTMLPage( host, (IHTMLPage) childChild2, isIndexPageAlreadyConfigured );
+
+				} else if ( childChild2 instanceof com.dotmarketing.portlets.files.model.File ) {
+
+					writeFile( host, (com.dotmarketing.portlets.files.model.File) childChild2 );
+
+				} else if ( childChild2 instanceof Contentlet ) {
+
+					writeContentlet( host, (Contentlet) childChild2 );
+
 				}
 			}
 		}
@@ -680,7 +499,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			out = new OutputStreamWriter(new FileOutputStream(temporaryFile),
 					"UTF-8");
 
-			out.write("<?xml version='1.0' encoding='UTF-8'?>\n");
+			out.write( "<?xml version='1.0' encoding='UTF-8'?>\n" );
 			out
 					.write("<urlset xmlns=\"http://www.sitemaps.org/schemas/sitemap/0.9\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd\">\n");
 			out.flush();
@@ -747,11 +566,13 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			file.setFolder(folder.getInode());
 			file.setHost(currentHost.getIdentifier());
 			file.setBinary(FileAssetAPI.BINARY_FIELD, uploadedFile);
-			if(StructureCache.getStructureByInode(file.getStructureInode()).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET)
+            if ( StructureCache.getStructureByInode( file.getStructureInode() ).getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET ) {
 				file.setStringProperty("fileName", sitemapName);
+            }
 			file = APILocator.getContentletAPI().checkin(file, systemUser,false);
-			if(APILocator.getPermissionAPI().doesUserHavePermission(file, PermissionAPI.PERMISSION_PUBLISH, systemUser))
+            if ( APILocator.getPermissionAPI().doesUserHavePermission( file, PermissionAPI.PERMISSION_PUBLISH, systemUser ) ) {
 				APILocator.getVersionableAPI().setLive(file);
+            }
 			APILocator.getVersionableAPI().setWorking(file);
 
 
@@ -796,7 +617,6 @@ public class XMLSitemapJob implements Job, StatefulJob {
 
 	/**
 	 * Add one to the the number of pages processed counter
-	 *
 	 */
 	private void addRegistryProcessed() {
 		processedRegistries = processedRegistries + 1;
@@ -805,7 +625,7 @@ public class XMLSitemapJob implements Job, StatefulJob {
 	/**
 	 * Delete previous XML sitemaps files from the specified host
 	 *
-	 * @param host
+     * @param siteMapsToDel
 	 * @throws Exception
 	 */
 	private void cleanOldSitemapFiles(List<Object> siteMapsToDel) throws Exception {
@@ -823,4 +643,88 @@ public class XMLSitemapJob implements Job, StatefulJob {
 			Logger.error(this, e.getMessage(), e);
 		}
 	}
+
+	private void writeContentlet ( Host host, Contentlet contentlet ) throws DotDataException, DotSecurityException {
+
+		if ( contentlet.isLive() && !contentlet.isArchived() ) {
+
+			Identifier identifier = APILocator.getIdentifierAPI().find( contentlet );
+			String url = identifier.getParentPath() + contentlet.getStringProperty( FileAssetAPI.FILE_NAME_FIELD );
+
+			String stringbuf = "<url><loc>"
+					+ XMLUtils.xmlEscape( "http://"
+					+ host.getHostname()
+					+ UtilMethods.encodeURIComponent( url ) )
+					+ "</loc><lastmod>"
+					+ modifiedDateStringValue
+					+ "</lastmod><changefreq>daily</changefreq></url>\n";
+
+			writeFile( stringbuf );
+			addRegistryProcessed();
+		}
+	}
+
+	private void writeFile ( Host host, com.dotmarketing.portlets.files.model.File file ) throws DotDataException, DotSecurityException {
+
+		Identifier childChild2Ident = identAPI.find( file.getIdentifier() );
+		if ( file.isLive() && !file.isDeleted() ) {
+
+			String stringbuf = "<url><loc>"
+					+ XMLUtils.xmlEscape( "http://"
+					+ host.getHostname()
+					+ childChild2Ident.getURI() + "/"
+					+ file.getFileName() )
+					+ "</loc><lastmod>"
+					+ modifiedDateStringValue
+					+ "</lastmod><changefreq>daily</changefreq></url>\n";
+
+			writeFile( stringbuf );
+			addRegistryProcessed();
+		}
+	}
+
+	private void writeHTMLPage ( Host host, IHTMLPage page, Boolean isIndexPageAlreadyConfigured ) throws DotDataException, DotSecurityException {
+
+		Identifier childChild2Ident = identAPI.find( page.getIdentifier() );
+		if ( page.isLive() && !page.isArchived() ) {
+
+			String indexPageConfiguration = "/" + CMSFilter.CMS_INDEX_PAGE;
+			String pathToPageUrl = XMLUtils.xmlEscape( "http://" + host.getHostname() + childChild2Ident.getURI() );
+
+			if ( pathToPageUrl.endsWith( indexPageConfiguration ) && isIndexPageAlreadyConfigured ) {
+				Logger.debug( this, "Index Page is already configured, skipping the process [" + pathToPageUrl + "]" );
+				return;
+			}
+
+			pathToPageUrl = pathToPageUrl.replace( indexPageConfiguration, "" );
+
+			String stringbuf = "<url><loc>"
+					+ pathToPageUrl
+					+ "</loc><lastmod>"
+					+ modifiedDateStringValue
+					+ "</lastmod><changefreq>daily</changefreq></url>\n";
+
+			writeFile( stringbuf );
+			addRegistryProcessed();
+		}
+	}
+
+	private void writeLink ( Host host, Link link ) throws DotSecurityException, DotDataException {
+
+		if ( link.isLive() && !link.isDeleted() ) {
+			if ( link.getUrl().startsWith( host.getHostname() ) ) {
+
+				String stringbuf = "<url><loc>"
+						+ XMLUtils.xmlEscape( link.getProtocal()
+						+ link.getUrl() )
+						+ "</loc><lastmod>"
+						+ modifiedDateStringValue
+						+ "</lastmod><changefreq>daily</changefreq></url>\n";
+
+				writeFile( stringbuf );
+				addRegistryProcessed();
+			}
+		}
+	}
+
 }
