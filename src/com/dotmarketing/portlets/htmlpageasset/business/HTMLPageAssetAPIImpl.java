@@ -420,7 +420,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         HTMLPageAsset cworking=copyLegacyData(working, user, respectFrontEndPermissions), clive=null;
         if(vInfo.getLiveInode()!=null && !vInfo.getLiveInode().equals(vInfo.getWorkingInode())) {
             HTMLPage live=(HTMLPage) APILocator.getVersionableAPI().findLiveVersion(legacyident, user, respectFrontEndPermissions);
-            clive=copyLegacyData(working, user, respectFrontEndPermissions);
+            clive=copyLegacyData(live, user, respectFrontEndPermissions);
         }
         
         List<Permission> perms=null;
@@ -442,7 +442,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         
         Contentlet ccworking = APILocator.getContentletAPI().checkin(cworking, user, respectFrontEndPermissions);
         
-        if(vInfo.getLiveInode()!=null && vInfo.getWorkingInode().equals(ccworking.getInode())) {
+        if(vInfo.getLiveInode()!=null && vInfo.getLiveInode().equals(ccworking.getInode())) {
             APILocator.getContentletAPI().publish(ccworking, user, respectFrontEndPermissions);
         }
         
