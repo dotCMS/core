@@ -5,13 +5,16 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -46,15 +49,71 @@ public class ThreadMonitorTool{
 	  *	Helper method; stringfies the ThreadInfos and returns them as a string array
 	*/
 	public String[] getThreads() {
-		validateUser();
-		ThreadInfo[] threadInfos = getAllThreadInfos();
-		int arraySize = threadInfos.length;
-		String[] threads = new String[arraySize];
+		 ThreadMXBean threads = ManagementFactory.getThreadMXBean(); 
 
-		for (int i = 0; i < arraySize; i++ ) {
-			threads[i] = threadInfos[i].toString().replace("at ", "<br />&nbsp; &nbsp; &nbsp; at ");
-		}
-		return threads;
+		    StringBuilder sb = new StringBuilder();
+		    sb.append( "<pre>" );   
+		    sb.append( String.format("Thread dump at: %1$tF %1$tT", new java.util.Date()) );
+		    sb.append( "\n\n" );    
+
+		    long[] deadLockedArray = threads.findDeadlockedThreads();
+		    Set<Long> deadlocks = new HashSet<Long>();
+		    if( deadLockedArray != null ) {
+		        for( long i : deadLockedArray ) {
+		            deadlocks.add(i);
+		        }
+		    }
+
+		    // Build a TID map for looking up more specific thread
+		    // information than provided by ThreadInfo
+		    Map<Long, Thread> threadMap = new HashMap<Long, Thread>();
+		    for( Thread t : Thread.getAllStackTraces().keySet() ) {
+		        threadMap.put( t.getId(), t );
+		    } 
+
+		    // This only works in 1.6+... but I think that's ok
+		    ThreadInfo[] infos = threads.dumpAllThreads(true, true);
+		    for( ThreadInfo info : infos ) {
+		    	
+		        StringBuilder threadMetaData = new StringBuilder();
+		        Thread thread = threadMap.get(info.getThreadId());            
+		        if( thread != null ) {
+		            threadMetaData.append("(");
+		            threadMetaData.append(thread.isDaemon() ? "daemon " : "");
+		            threadMetaData.append(thread.isInterrupted() ? "interrupted " : "");
+		            threadMetaData.append("prio=" + thread.getPriority());
+		            threadMetaData.append(")");                
+		        }  
+		        String s = info.toString().trim();
+		        if(s.indexOf("\t...")>-1){
+	
+		        	s=s.substring(0, s.indexOf("\t..."));
+		        	boolean printTrace = false;
+		        	for(StackTraceElement trace : info.getStackTrace()){
+		        		if(printTrace || !s.contains(trace.toString())) {
+		        			printTrace = true;
+		        	
+			        		s+="\tat " + trace.toString() + "\n";
+			        	}
+			        }
+		        }
+		        
+
+		        // Inject the meta-data after the ID... Presumes a 
+		        // certain format but it's low priority information.            
+		        s = s.replaceFirst( "Id=\\d+", "$0 " + threadMetaData );
+		        sb.append( s );
+		        sb.append( "\n" );
+
+		        if( deadlocks.contains(info.getThreadId()) ) {
+		            sb.append( " ** Deadlocked **" );
+		            sb.append( "\n" );
+		        }
+
+		        sb.append( "\n" );
+		    }
+		    sb.append( "</pre>" );   
+		    return new String[] {sb.toString()};    
 
 	} // end of getThreadArray method
 
@@ -65,27 +124,13 @@ public class ThreadMonitorTool{
 	private ThreadInfo[] getAllThreadInfos() {
 	    validateUser();
 		final ThreadMXBean thbean = ManagementFactory.getThreadMXBean();
-		final long[] ids = thbean.getAllThreadIds();
 
-		ThreadInfo[] infos;
-		if (!thbean.isObjectMonitorUsageSupported()
-				|| !thbean.isSynchronizerUsageSupported())
-			infos = thbean.getThreadInfo(ids);
-		else
-			infos = thbean.getThreadInfo(ids, true, true);
 
-		final ThreadInfo[] notNulls = new ThreadInfo[infos.length];
 
-		int nNotNulls = 0;
-		for (ThreadInfo info : infos){
-			if (info != null){
-				notNulls[nNotNulls++] = info;
-			}
-		}
 
-		if (nNotNulls == infos.length)
-			return infos;
-		return java.util.Arrays.copyOf(notNulls, nNotNulls);
+		final ThreadInfo[] notNulls = thbean.dumpAllThreads(true, true);
+
+		return notNulls;
 	}// end of getAllThreadInfos method
 
 	/**
