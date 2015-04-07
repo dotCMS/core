@@ -418,7 +418,7 @@ public class RulesResource extends WebResource {
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response saveRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes) throws
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONException, JSONException {
+            JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -510,6 +510,44 @@ public class RulesResource extends WebResource {
 //        resultsObject.put(rule.getId(), new JSONObject(rule));
 
         return responseResource.response(resultsObject.toString());
+    }
+
+    /**
+     * <p>Saves a Rule Action
+     * <br>
+     * <p/>
+     * Usage: /rules/
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @POST
+    @Path("/rules/{ruleId}/actions/")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response saveRuleAction(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject actionJSON) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        User user = initData.getUser();
+
+        JSONObject resultsObject = new JSONObject();
+
+        try {
+            RuleAction action = new RuleAction();
+            action.setRuleId(actionJSON.getString("ruleId"));
+            action.setName(actionJSON.getString("actionletName"));
+            action.setPriority(actionJSON.optInt("priority", 0));
+            action.setActionlet(actionJSON.getString("actionlet"));
+
+            rulesAPI.saveRuleAction(action, user, false);
+
+            resultsObject.put("id", action.getId());
+            return responseResource.response(resultsObject.toString());
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
 
@@ -704,7 +742,9 @@ public class RulesResource extends WebResource {
             }
         }
 
-        rule.setFireOn(Rule.FireOn.valueOf(ruleAttributes.optString("firePolicy", Rule.FireOn.EVERY_PAGE.name())));
+        rule.setFireOn(Rule.FireOn.valueOf(ruleAttributes.optString("fireOn", Rule.FireOn.EVERY_PAGE.name())));
+
+        rule.setPriority(ruleAttributes.optInt("priority", 0));
 
         rule.setShortCircuit(ruleAttributes.optBoolean("shortCircuit", false));
 

@@ -4,7 +4,7 @@ public class RuleAction {
     private String id;
     private String name;
     private String ruleId;
-    private int fireOrder;
+    private int priority;
     private String actionlet;
 
     public String getId() {
@@ -31,12 +31,12 @@ public class RuleAction {
         this.ruleId = ruleId;
     }
 
-    public int getFireOrder() {
-        return fireOrder;
+    public int getPriority() {
+        return priority;
     }
 
-    public void setFireOrder(int fireOrder) {
-        this.fireOrder = fireOrder;
+    public void setPriority(int priority) {
+        this.priority = priority;
     }
 
     public String getActionlet() {

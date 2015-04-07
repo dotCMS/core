@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
+import javax.rmi.CORBA.Util;
 import java.util.*;
 import java.util.Arrays;
 import java.util.Collections;
@@ -202,6 +203,9 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(rule))
+            return;
+
         if (!perAPI.doesUserHavePermissions(PermissionAPI.PermissionableType.RULES, PermissionAPI.PERMISSION_EDIT, user)) {
             throw new DotSecurityException("User " + user + " does not have permissions to Edit Rules");
         }
@@ -210,6 +214,9 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(condition))
+            return;
+
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
@@ -217,6 +224,22 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveCondition(condition);
+    }
+
+    public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(ruleAction))
+            return;
+
+        Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
+
+        if(!UtilMethods.isSet(rule))
+            return;
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot edit rule: " + rule.getId());
+        }
+
+        rulesFactory.saveRuleAction(ruleAction);
     }
 
     public void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

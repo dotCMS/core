@@ -236,14 +236,14 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(ruleAction.getId());
             db.addParam(ruleAction.getName());
             db.addParam(ruleAction.getRuleId());
-            db.addParam(ruleAction.getFireOrder());
+            db.addParam(ruleAction.getPriority());
             db.addParam(ruleAction.getActionlet());
             db.loadResult();
         } else {
             db.setSQL(sql.UPDATE_RULE_ACTION);
             db.addParam(ruleAction.getName());
             db.addParam(ruleAction.getRuleId());
-            db.addParam(ruleAction.getFireOrder());
+            db.addParam(ruleAction.getPriority());
             db.addParam(ruleAction.getActionlet());
             db.addParam(ruleAction.getId());
             db.loadResult();
@@ -325,11 +325,11 @@ public class RulesFactoryImpl implements RulesFactory {
         Rule r = new Rule();
         r.setId(row.get("id").toString());
         r.setName(row.get("name").toString());
-        r.setFireOn(Rule.FireOn.valueOf(row.get("fire_policy").toString()));
+        r.setFireOn(Rule.FireOn.valueOf(row.get("fire_on").toString()));
         r.setShortCircuit(DbConnectionFactory.isDBTrue(row.get("short_circuit").toString()));
         r.setHost(row.get("host").toString());
         r.setFolder(row.get("folder").toString());
-        r.setPriority(Integer.parseInt(row.get("fire_order").toString()));
+        r.setPriority(Integer.parseInt(row.get("priority").toString()));
         r.setEnabled(DbConnectionFactory.isDBTrue(row.get("enabled").toString()));
         return r;
     }
@@ -362,7 +362,7 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setId(row.get("id").toString());
         r.setName(row.get("name").toString());
         r.setRuleId(row.get("rule_id").toString());
-        r.setFireOrder(Integer.parseInt(row.get("fire_order").toString()));
+        r.setPriority(Integer.parseInt(row.get("priority").toString()));
         r.setActionlet(row.get("rule_id").toString());
         return r;
     }
