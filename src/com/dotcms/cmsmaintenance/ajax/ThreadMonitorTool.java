@@ -82,7 +82,10 @@ public class ThreadMonitorTool{
 
 	    ThreadInfo[] infos = mxBean.dumpAllThreads(true, true);
 	    
-
+	    Map<String, String> blockers = new HashMap<String, String>();
+	    
+	    
+	    
 	    for( ThreadInfo info : infos ) {
 	        Thread thread = threadMap.get(info.getThreadId());           
 	        LockInfo lockInfo = info.getLockInfo();
@@ -91,14 +94,7 @@ public class ThreadMonitorTool{
 	        
 	        
 	        if( thread == null ) continue;
-	        sb.append("\"");
-	        sb.append(info.getThreadName());
-	        sb.append("\"");
-
-	        sb.append(" ");
-        	sb.append(thread.isDaemon() ? "daemon " : "");
-        	sb.append(thread.isInterrupted() ? "interrupted " : "");
-        	sb.append("prio=" + thread.getPriority());            
+    
 
 	        long tid = info.getThreadId();
 	       
@@ -110,6 +106,9 @@ public class ThreadMonitorTool{
 	        }catch(Exception e){
 	        	
 	        }
+	        
+	        
+	        
 	        long nativeParkPointer = 0;
 	        try{
 	        	Field f = Thread.class.getDeclaredField("nativeParkEventPointer");
@@ -120,22 +119,30 @@ public class ThreadMonitorTool{
 	        	
 	        }
 	        
-	        
+	        sb.append("\"");
+	        sb.append(info.getThreadName());
+	        sb.append("\"");
+	        sb.append(" ");
+        	sb.append(thread.isDaemon() ? "daemon " : "");
+        	sb.append(thread.isInterrupted() ? "interrupted " : "");
+        	sb.append("prio=" + thread.getPriority());        
 	        sb.append(" ");
 	        sb.append("tid=" + hexMe(tid));
-
-	        Object blocker =  java.util.concurrent.locks.LockSupport.getBlocker(thread);
-	        if(blocker !=null){
-	        //sb.append(" ");
-	        sb.append("nativeParkPointer=" + hexMe(blocker.hashCode()));
-	        }
-	        
-	        
 	        if((lockInfo!=null)  ){
 		        sb.append(" waiting on condition [");
 		        sb.append( hexMe(lockInfo.getIdentityHashCode()));
 		        sb.append("]");
 	        }
+	        
+	        
+	        Object blocker =  java.util.concurrent.locks.LockSupport.getBlocker(thread);
+	        if(blocker !=null){
+	        //sb.append(" ");
+	       // sb.append("nativeParkPointer=" + hexMe(blocker.hashCode()));
+	        }
+	        
+	        
+
 	        
 
 	        
@@ -164,7 +171,7 @@ public class ThreadMonitorTool{
         		if(i==0 && lockInfo != null){
         			
         			if(thread.getState().equals(Thread.State.WAITING) || thread.getState().equals(Thread.State.TIMED_WAITING))
-        			sb.append("\t- parking to wait for <" + hexMe(lockInfo.getIdentityHashCode()) + "> (a " + lockInfo.getClassName()+ ")\n");
+        			sb.append("\t- waiting on " + lockInfo+ ")\n");
         		}
         		
         		
@@ -238,7 +245,7 @@ public class ThreadMonitorTool{
 	
 	private String hexMe(long x){
 		
-		return String.format("0x%016X", x);
+		return String.format("0x%016X", x).toLowerCase();
 		
 	}
 }
