@@ -44,6 +44,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageCache;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageCacheImpl;
 import com.dotmarketing.portlets.links.business.MenuLinkCache;
 import com.dotmarketing.portlets.links.business.MenuLinkCacheImpl;
+import com.dotmarketing.portlets.rules.business.RulesCache;
+import com.dotmarketing.portlets.rules.business.RulesCacheImpl;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.factories.RelationshipCacheImpl;
 import com.dotmarketing.portlets.templates.business.TemplateCache;
@@ -255,6 +257,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (NewNotificationCache)getInstance(CacheIndex.NewNotification);
 	}
 
+	public static RulesCache getRulesCache() {
+		return (RulesCache) getInstance(CacheIndex.RulesCache);
+	}
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
@@ -340,7 +345,8 @@ enum CacheIndex
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
-	NewNotification("NewNotification Cache");
+	NewNotification("NewNotification Cache"),
+	RulesCache("Rules Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -378,6 +384,7 @@ enum CacheIndex
       	case PushedAssets: return new PushedAssetsCacheImpl();
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
+      	case RulesCache : return new RulesCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
