@@ -213,6 +213,19 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.saveRule(rule);
     }
 
+    public void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(conditionGroup))
+            return;
+
+        Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its groups/conditions ");
+        }
+
+        rulesFactory.saveConditionGroup(conditionGroup);
+    }
+
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(condition))
             return;

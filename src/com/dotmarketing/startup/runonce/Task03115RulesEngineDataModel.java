@@ -43,9 +43,16 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("condition_group varchar(36) references rule_condition_group(id),")
             .append("comparison varchar(36) not null,")
             .append("operator varchar(10) not null,")
-            .append("value text,")
             .append("priority int default 0,")
             .append("mod_date datetime")
+            .append(");")
+
+                    // create RULE_CONDITION_VALUE table
+            .append("create table rule_condition_value(")
+            .append("id varchar(36) primary key,")
+            .append("condition_id varchar(36) references rule_condition(id),")
+            .append("value text,")
+            .append("priority int default 0")
             .append(");")
 
             // create RULE_ACTION  table
@@ -93,12 +100,17 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("condition_group varchar(36) references rule_condition_group(id),")
             .append("comparison varchar(36) not null,")
             .append("operator varchar(10) not null,")
-            .append("value text,")
             .append("priority int default 0,")
             .append("mod_date timestamp")
             .append(");")
 
-
+                    // create RULE_CONDITION_VALUE table
+            .append("create table rule_condition_value(")
+            .append("id varchar(36) primary key,")
+            .append("condition_id varchar(36) references rule_condition(id),")
+            .append("value text,")
+            .append("priority int default 0")
+            .append(");")
 
                     // create RULE_ACTION  table
             .append("create table rule_action (")
@@ -145,9 +157,16 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("condition_group varchar(36) references rule_condition_group(id),")
             .append("comparison varchar2(36) not null,")
             .append("operator varchar2(10) not null,")
-            .append("value nclob,")
             .append("priority number(10,0) default 0,")
             .append("mod_date timestamp")
+            .append(");")
+
+                    // create RULE_CONDITION_VALUE table
+            .append("create table rule_condition_value(")
+            .append("id varchar(36) primary key,")
+            .append("condition_id varchar(36) references rule_condition(id),")
+            .append("value nclob,")
+            .append("priority number(10,0) default 0")
             .append(");")
 
              // create RULE_ACTION  table
@@ -193,12 +212,17 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("condition_group varchar(36) references rule_condition_group(id),")
             .append("comparison varchar(36) not null,")
             .append("operator varchar(10) not null,")
-            .append("value text,")
             .append("priority int default 0,")
             .append("mod_date datetime")
             .append(");")
 
-
+                    // create RULE_CONDITION_VALUE table
+            .append("create table rule_condition_value(")
+            .append("id varchar(36) primary key,")
+            .append("condition_id varchar(36) references rule_condition(id),")
+            .append("value text,")
+            .append("priority int default 0")
+            .append(");")
 
              // create RULE_ACTION  table
             .append("create table rule_action (")
@@ -243,11 +267,17 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("condition_group varchar(36) references rule_condition_group(id),")
             .append("comparison varchar(36) not null,")
             .append("operator varchar(10) not null,")
-            .append("value text,")
             .append("priority int default 0,")
             .append("mod_date timestamp")
             .append(");")
 
+                    // create RULE_CONDITION_VALUE table
+            .append("create table rule_condition_value(")
+            .append("id varchar(36) primary key,")
+            .append("condition_id varchar(36) references rule_condition(id),")
+            .append("value text,")
+            .append("priority int default 0")
+            .append(");")
 
                     // create RULE_ACTION  table
             .append("create table rule_action (")

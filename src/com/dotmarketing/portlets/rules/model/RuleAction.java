@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.rules.model;
 
+import java.util.Date;
+
 public class RuleAction {
     private String id;
     private String name;
     private String ruleId;
     private int priority;
     private String actionlet;
+    private Date modDate;
 
     public String getId() {
         return id;
@@ -45,5 +48,13 @@ public class RuleAction {
 
     public void setActionlet(String actionlet) {
         this.actionlet = actionlet;
+    }
+
+    public Date getModDate() {
+        return modDate;
+    }
+
+    public void setModDate(Date modDate) {
+        this.modDate = modDate;
     }
 }

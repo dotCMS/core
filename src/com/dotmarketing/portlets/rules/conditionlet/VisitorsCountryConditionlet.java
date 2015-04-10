@@ -1,8 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
 public class VisitorsCountryConditionlet extends Conditionlet {
@@ -97,7 +99,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
     }
 
     @Override
-    public boolean evaluate(String comparisonId, HttpServletRequest request) {
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, String comparisonId, List<ConditionValue> values) {
         return false;
     }
 }

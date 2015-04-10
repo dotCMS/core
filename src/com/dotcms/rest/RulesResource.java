@@ -11,6 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotmarketing.portlets.rules.conditionlet.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -18,13 +19,14 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONArray;
+import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Set;
 
 
 @Path("/rules-engine")
@@ -44,9 +46,9 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/sites/{siteId}/rules")
+    @Path("/sites/{id}/rules")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRules(@Context HttpServletRequest request, @PathParam("siteId") String siteId) throws JSONException {
+    public Response getRules(@Context HttpServletRequest request, @PathParam("id") String siteId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -73,18 +75,17 @@ public class RulesResource extends WebResource {
     }
 
     /**
-     * <p>Returns a JSON representation of the rules defined in the given Host or Folder
-     * <br>Each Rule node contains all fields in  .
+     * <p>Returns a JSON representation of the Rule with the given ruleId
      * <p/>
-     * Usage: /rules/{hostOrFolderIdentifier}
+     * Usage: GET api/rules-engine/rules/{ruleId}
      *
      * @throws com.dotmarketing.util.json.JSONException
      */
 
     @GET
-    @Path("/rules/{ruleId}")
+    @Path("/rules/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRule(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId) throws JSONException {
+    public Response getRule(@Context HttpServletRequest request, @PathParam("id") String ruleId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -107,18 +108,16 @@ public class RulesResource extends WebResource {
     /**
      * <p>Returns a JSON with the Condition Groups and its Conditions for the rule with the given ruleId.
      * <br>Each Rule node contains all fields in  .
-     * <p/>
-     * <p>If a conditionId is provided, it will return the condition whose id matches the provided conditionId.
-     * <p/>
+
      * Usage: /conditions/
      *
      * @throws com.dotmarketing.util.json.JSONException
      */
 
     @GET
-    @Path("/rules/{ruleId}/conditions")
+    @Path("/rules/{id}/conditions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditions(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId) throws JSONException {
+    public Response getConditions(@Context HttpServletRequest request, @PathParam("id") String ruleId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -180,9 +179,9 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/rules/conditions/{conditionId}")
+    @Path("/rules/conditions/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getCondition(@Context HttpServletRequest request, @PathParam("conditionId") String conditionId) throws JSONException {
+    public Response getCondition(@Context HttpServletRequest request, @PathParam("id") String conditionId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -213,8 +212,7 @@ public class RulesResource extends WebResource {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        JSONObject resultsObject = new JSONObject();
-        JSONArray jsonConditionlets = new JSONArray();
+        JSONObject jsonConditionlets = new JSONObject();
 
         try {
 
@@ -222,14 +220,11 @@ public class RulesResource extends WebResource {
 
             for (Conditionlet conditionlet : conditionlets) {
                 JSONObject conditionletObject = new JSONObject();
-                conditionletObject.put("id", conditionlet.getClass().getSimpleName());
                 conditionletObject.put("name", conditionlet.getLocalizedName());
-                jsonConditionlets.add(conditionletObject);
+                jsonConditionlets.put(conditionlet.getClass().getSimpleName(), conditionletObject);
             }
 
-            resultsObject.put("conditionlets", (Object) jsonConditionlets);
-
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(jsonConditionlets.toString());
 
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -240,40 +235,42 @@ public class RulesResource extends WebResource {
      * <p>Returns a JSON with the Comparisons of a given contentlet.
      * <br>Each Comparisons node contains the id and label
      * <p/>
-     * Usage: /comparisons/conditionlet/{conditionletId}
+     * Usage: /comparisons/conditionlet/{id}
      *
      * @throws com.dotmarketing.util.json.JSONException
      */
 
     @GET
-    @Path("/conditionlets/{conditionletId}/comparisons")
+    @Path("/conditionlets/{id}/comparisons")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getComparisons(@Context HttpServletRequest request, @PathParam("conditionletId") String conditionletId) throws JSONException {
+    public Response getComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
 
-        JSONObject resultsObject = new JSONObject();
-        JSONArray jsonComparisons = new JSONArray();
+        JSONObject jsonComparisons = new JSONObject();
 
         if (!UtilMethods.isSet(conditionletId)) {
-            resultsObject.put("comparisons", (Object) jsonComparisons);
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(jsonComparisons.toString());
         }
 
         try {
             Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
 
             if (!UtilMethods.isSet(conditionlet)) {
-                resultsObject.put("comparisons", (Object) jsonComparisons);
-                return responseResource.response(resultsObject.toString());
+                return responseResource.response(jsonComparisons.toString());
             }
 
-            jsonComparisons.addAll(conditionlet.getComparisons());
-            resultsObject.put("comparisons", (Object) jsonComparisons);
+            Set<Comparison> comparisons = conditionlet.getComparisons();
 
-            return responseResource.response(resultsObject.toString());
+            for (Comparison comparison : comparisons) {
+                JSONObject comparisonJSON = new JSONObject();
+                comparisonJSON.put("name", comparison.getLabel());
+                jsonComparisons.put(comparison.getId(), comparisonJSON);
+            }
+
+            return responseResource.response(jsonComparisons.toString());
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
@@ -289,14 +286,14 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/conditionlets/{conditionletId}/comparisons/{comparison}/inputs")
+    @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("conditionletId") String conditionletId, @PathParam("comparison") String comparison) throws JSONException {
+    public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("id") String conditionletId, @PathParam("comparison") String comparison) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
         JSONObject resultsObject = new JSONObject();
-        JSONArray jsonInputs = new JSONArray();
+        com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
 
         if (!UtilMethods.isSet(conditionletId) || !UtilMethods.isSet(comparison)) {
             resultsObject.put("conditionletinputs", (Object) jsonInputs);
@@ -335,8 +332,7 @@ public class RulesResource extends WebResource {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        JSONObject resultsObject = new JSONObject();
-        JSONArray jsonActionlets = new JSONArray();
+        JSONObject jsonActionlets = new JSONObject();
 
         try {
 
@@ -344,14 +340,11 @@ public class RulesResource extends WebResource {
 
             for (RuleActionlet actionlet : actionlets) {
                 JSONObject actionletObject = new JSONObject();
-                actionletObject.put("id", actionlet.getClass().getSimpleName());
                 actionletObject.put("name", actionlet.getLocalizedName());
-                jsonActionlets.add(actionletObject);
+                jsonActionlets.put(actionlet.getClass().getSimpleName(), actionletObject);
             }
 
-            resultsObject.put("ruleactionlets", (Object) jsonActionlets);
-
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(jsonActionlets.toString());
 
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -366,9 +359,9 @@ public class RulesResource extends WebResource {
      */
 
     @GET
-    @Path("/rule/{ruleId}/actions")
+    @Path("/rule/{id}/actions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRuleActions(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId) throws JSONException {
+    public Response getRuleActions(@Context HttpServletRequest request, @PathParam("id") String ruleId) throws JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -391,7 +384,7 @@ public class RulesResource extends WebResource {
                 actionletObject.put("id", action.getId());
                 actionletObject.put("name", action.getName());
                 actionletObject.put("actionlet", action.getActionlet());
-                jsonActions.add(actionletObject);
+                jsonActions.put(actionletObject);
             }
 
             resultsObject.put("ruleactions", (Object) jsonActions);
@@ -417,7 +410,7 @@ public class RulesResource extends WebResource {
     @Path("/rules")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes) throws
+    public Response saveRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleJSON) throws
             JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
@@ -426,7 +419,7 @@ public class RulesResource extends WebResource {
         JSONObject resultsObject = new JSONObject();
 
         try {
-            Rule rule = saveUpdateRule(user, ruleAttributes, SAVE);
+            Rule rule = saveUpdateRule(user, ruleJSON, null, SAVE);
             resultsObject.put("id", rule.getId());
             return responseResource.response(resultsObject.toString());
         } catch (DotDataException | DotSecurityException e) {
@@ -444,31 +437,101 @@ public class RulesResource extends WebResource {
      */
 
     @PUT
-    @Path("/rules")
+    @Path("/rules/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRule(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleJSON) throws
+    public Response updateRule(@Context HttpServletRequest request, @PathParam("id") String ruleId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleJSON) throws
             JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
         try {
-            saveUpdateRule(user, ruleJSON, UPDATE);
-
-//            JSONObject conditionGroups = ruleAttributes.optJSONObject("conditionGroups");
-//
-//            while (conditionGroups.keys().hasNext()) {
-//                String key =  (String) conditionGroups.keys().next();
-//
-//
-//            }
+            saveUpdateRule(user, ruleJSON, ruleId, UPDATE);
 
             return responseResource.response(ruleJSON.toString());
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
+    }
+
+    /**
+     * <p>Saves a Condition Group
+     * <br>
+     * <p/>
+     * Usage: /rules/
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @POST
+    @Path("/rules/{id}/conditiongroups")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response saveConditionGroup(@Context HttpServletRequest request, @PathParam("id") String ruleId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject groupJSON) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        User user = initData.getUser();
+
+        JSONObject resultsObject = new JSONObject();
+
+        try {
+            ConditionGroup group = new ConditionGroup();
+            group.setRuleId(ruleId);
+            group.setOperator(Condition.Operator.valueOf(groupJSON.optString("operator", Condition.Operator.AND.name())));
+            group.setPriority(groupJSON.optInt("priority", 0));
+
+            rulesAPI.saveConditionGroup(group, user, false);
+            resultsObject.put("id", group.getId());
+            return responseResource.response(resultsObject.toString());
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    /**
+     * <p>Updates a Condition Group
+     * <br>
+     * <p/>
+     * Usage: /rules/
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @PUT
+    @Path("/rules/conditiongroups/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateConditionGroup(@Context HttpServletRequest request, @PathParam("id") String groupId,
+                                         com.dotcms.repackage.org.codehaus.jettison.json.JSONObject groupJSON) throws JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        User user = initData.getUser();
+
+        try {
+            if(!UtilMethods.isSet(groupId)) {
+                Logger.info(getClass(), "Unable to update Condition Group - 'id' not provided");
+                throw new DotDataException("Unable to update Condition Grou - 'id' not provided");
+            }
+
+            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
+
+            if (!UtilMethods.isSet(group)) {
+                throw new DotDataException("Unable to update Condition Group with id:" + groupId);
+            }
+
+                group.setOperator(Condition.Operator.valueOf(groupJSON.optString("operator", Condition.Operator.AND.name())));
+                group.setPriority(groupJSON.optInt("priority", 0));
+
+            return responseResource.response(groupJSON.toString());
+
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     /**
@@ -481,35 +544,44 @@ public class RulesResource extends WebResource {
      */
 
     @POST
-    @Path("/rules/{ruleId}/conditions")
+    @Path("/rules/{ruleId}/conditiongroups/{groupId}/conditions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveCondition(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject conditionAttributes) throws DotDataException, DotSecurityException, JSONException {
+    public Response saveCondition(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId, @PathParam("groupId") String groupId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject conditionJSON) throws DotDataException, DotSecurityException, JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
         JSONObject resultsObject = new JSONObject();
 
-        ConditionGroup conditionGroup;
+        try {
+            Condition condition = new Condition();
+            condition.setName(conditionJSON.getString("name"));
+            condition.setRuleId(ruleId);
+            condition.setConditionletId(conditionJSON.getString("conditionletId"));
+            condition.setConditionGroup(groupId);
+            condition.setComparison(conditionJSON.getString("comparison"));
+            condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
+            condition.setPriority(conditionJSON.optInt("priority", 0));
 
-//        if(!UtilMethods.isSet(ruleAttributes.get("ruleName")) || !UtilMethods.isSet(ruleAttributes.get("site"))) {
-//            Logger.error(this.getClass(), "Saving Rule - No ruleName or Site provided");
-//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("No ruleName or Site provided").build();
-//        }
-//
-//        try {
-//            setRulesProperties(user, ruleAttributes, rule);
-//        } catch (DotDataException e) {
-//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("").build();
-//        }
-//
-//        rulesAPI.saveRule(rule, user, false);
-//
-//
-//        resultsObject.put(rule.getId(), new JSONObject(rule));
+            // TODO: SET CONDITION VALUES
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray values = conditionJSON.getJSONArray("values");
 
-        return responseResource.response(resultsObject.toString());
+            if(UtilMethods.isSet(values)) {
+                for(int i=0; i<values.length(); i++) {
+                    JSONObject value = (JSONObject) values.get(i);
+
+                }
+            }
+
+
+            rulesAPI.saveCondition(condition, user, false);
+            resultsObject.put("id", condition.getId());
+            return responseResource.response(resultsObject.toString());
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     /**
@@ -522,10 +594,10 @@ public class RulesResource extends WebResource {
      */
 
     @POST
-    @Path("/rules/{ruleId}/actions/")
+    @Path("/rules/{id}/actions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveRuleAction(@Context HttpServletRequest request, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject actionJSON) throws
+    public Response saveRuleAction(@Context HttpServletRequest request, @PathParam("id") String ruleId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject actionJSON) throws
             JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
@@ -535,7 +607,7 @@ public class RulesResource extends WebResource {
 
         try {
             RuleAction action = new RuleAction();
-            action.setRuleId(actionJSON.getString("ruleId"));
+            action.setRuleId(ruleId);
             action.setName(actionJSON.getString("actionletName"));
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
@@ -544,6 +616,43 @@ public class RulesResource extends WebResource {
 
             resultsObject.put("id", action.getId());
             return responseResource.response(resultsObject.toString());
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
+    /**
+     * <p>Updates the Rule Action with the given id
+     * <br>
+     * <p/>
+     * Usage: /rules/
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @PUT
+    @Path("/rules/actions/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateRuleAction(@Context HttpServletRequest request,  @PathParam("id") String actionId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject actionJSON) throws
+            JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        User user = initData.getUser();
+
+        try {
+
+            RuleAction action = rulesAPI.getRuleActionById(actionId, user, false);
+
+            action.setRuleId(actionJSON.getString("ruleId"));
+            action.setName(actionJSON.getString("actionletName"));
+            action.setPriority(actionJSON.optInt("priority", 0));
+            action.setActionlet(actionJSON.getString("actionlet"));
+
+            rulesAPI.saveRuleAction(action, user, false);
+
+            return responseResource.response(actionJSON.toString());
 
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -702,14 +811,14 @@ public class RulesResource extends WebResource {
         return ruleJSON;
     }
 
-    private Rule saveUpdateRule(User user, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleAttributes, boolean save) throws DotDataException, DotSecurityException,
+    private Rule saveUpdateRule(User user, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject ruleJSON, String ruleId, boolean save) throws DotDataException, DotSecurityException,
             JSONException {
 
 
         Rule rule;
 
         if (save) {
-            Host host = APILocator.getHostAPI().find(ruleAttributes.getString("site"), user, false);
+            Host host = APILocator.getHostAPI().find(ruleJSON.getString("site"), user, false);
 
             if (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getIdentifier())) {
                 Logger.error(this.getClass(), "Invalid Site identifier provided");
@@ -718,10 +827,9 @@ public class RulesResource extends WebResource {
 
             rule = new Rule();
             rule.setHost(host.getIdentifier());
-            rule.setName(ruleAttributes.getString("ruleName"));
+            rule.setName(ruleJSON.getString("name"));
 
         } else {
-            String ruleId = ruleAttributes.getString("ruleId");
 
             if(!UtilMethods.isSet(ruleId)) {
                 Logger.info(getClass(), "Unable to update rule - 'ruleId' not provided");
@@ -731,24 +839,24 @@ public class RulesResource extends WebResource {
             rule = rulesAPI.getRuleById(ruleId, user, false);
 
             if (!UtilMethods.isSet(rule)) {
-                throw new DotDataException("Unable to update Rule with id:" + ruleAttributes.getString("ruleId"));
+                throw new DotDataException("Unable to update Rule with id:" + ruleId);
             }
 
             try {
-                rule.setName(ruleAttributes.getString("ruleName"));
+                rule.setName(ruleJSON.getString("ruleName"));
             } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
                 Logger.info(getClass(), "Unable to set 'ruleName' - Invalid value provided - Using default");
                 throw new DotDataException("No 'ruleName' provided");
             }
         }
 
-        rule.setFireOn(Rule.FireOn.valueOf(ruleAttributes.optString("fireOn", Rule.FireOn.EVERY_PAGE.name())));
+        rule.setFireOn(Rule.FireOn.valueOf(ruleJSON.optString("fireOn", Rule.FireOn.EVERY_PAGE.name())));
 
-        rule.setPriority(ruleAttributes.optInt("priority", 0));
+        rule.setPriority(ruleJSON.optInt("priority", 0));
 
-        rule.setShortCircuit(ruleAttributes.optBoolean("shortCircuit", false));
+        rule.setShortCircuit(ruleJSON.optBoolean("shortCircuit", false));
 
-        rule.setEnabled(ruleAttributes.optBoolean("enabled", true));
+        rule.setEnabled(ruleJSON.optBoolean("enabled", true));
 
         rulesAPI.saveRule(rule, user, false);
 

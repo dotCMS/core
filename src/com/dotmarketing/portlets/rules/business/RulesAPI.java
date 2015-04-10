@@ -169,6 +169,16 @@ public interface RulesAPI {
 
     /**
      *
+     * @param conditionGroup
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
      * @param ruleAction
      * @param user
      * @param respectFrontendRoles

@@ -5,10 +5,7 @@ import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -134,6 +131,9 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public void saveRule(Rule rule) throws DotDataException{
+
+        rule.setModDate(new Date());
+
         boolean isNew = true;
         if (UtilMethods.isSet(rule.getId())) {
             try {
@@ -177,7 +177,49 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
+    public void saveConditionGroup(ConditionGroup group) throws DotDataException {
+
+        group.setModDate(new Date());
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(group.getId())) {
+            try {
+                if (getConditionGroupById(group.getId()) != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        } else {
+            group.setId(UUIDGenerator.generateUuid());
+        }
+
+        final DotConnect db = new DotConnect();
+        if (isNew) {
+
+            db.setSQL(sql.INSERT_CONDITION_GROUP);
+            db.addParam(group.getId());
+            db.addParam(group.getRuleId());
+            db.addParam(group.getOperator().toString());
+            db.addParam(group.getPriority());
+            db.addParam(group.getModDate());
+            db.loadResult();
+        } else {
+            db.setSQL(sql.UPDATE_CONDITION_GROUP);
+            db.addParam(group.getRuleId());
+            db.addParam(group.getOperator().toString());
+            db.addParam(group.getPriority());
+            db.addParam(group.getModDate());
+            db.addParam(group.getId());
+            db.loadResult();
+        }
+    }
+
+    @Override
     public void saveCondition(Condition condition) throws DotDataException {
+
+        condition.setModDate(new Date());
+
         boolean isNew = true;
         if (UtilMethods.isSet(condition.getId())) {
             try {
@@ -199,16 +241,22 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(condition.getName());
             db.addParam(condition.getRuleId());
             db.addParam(condition.getConditionletId());
+            db.addParam(condition.getConditionGroup());
             db.addParam(condition.getComparison());
-            db.addParam(condition.getInput());
+            db.addParam(condition.getOperator());
+            db.addParam(condition.getPriority());
+            db.addParam(condition.getModDate());
             db.loadResult();
         } else {
             db.setSQL(sql.UPDATE_CONDITION);
             db.addParam(condition.getName());
             db.addParam(condition.getRuleId());
             db.addParam(condition.getConditionletId());
+            db.addParam(condition.getConditionGroup());
             db.addParam(condition.getComparison());
-            db.addParam(condition.getInput());
+            db.addParam(condition.getOperator());
+            db.addParam(condition.getPriority());
+            db.addParam(condition.getModDate());
             db.addParam(condition.getId());
             db.loadResult();
         }
@@ -216,6 +264,9 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public void saveRuleAction(RuleAction ruleAction) throws DotDataException{
+
+        ruleAction.setModDate(new Date());
+
         boolean isNew = true;
         if (UtilMethods.isSet(ruleAction.getId())) {
             try {
@@ -343,7 +394,7 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setConditionGroup(row.get("condition_group").toString());
         c.setComparison(row.get("comparison").toString());
         c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
-        c.setInput(row.get("value").toString());
+        c.setPriority(Integer.parseInt(row.get("priority").toString()));
         c.setModDate((Date) row.get("mod_date"));
         return c;
     }
@@ -354,6 +405,15 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setRuleId(row.get("rule_id").toString());
         c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
         c.setModDate((Date) row.get("mod_date"));
+        return c;
+    }
+
+    public static ConditionValue convertConditionValue(Map<String, Object> row){
+        ConditionValue c = new ConditionValue();
+        c.setId(row.get("id").toString());
+        c.setConditionId(row.get("condition_id").toString());
+        c.setValue(row.get("value").toString());
+        c.setPriority(Integer.parseInt(row.get("priority").toString()));
         return c;
     }
 

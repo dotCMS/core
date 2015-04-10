@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -70,7 +72,7 @@ public abstract class Conditionlet implements Serializable {
      */
     public abstract Collection<ConditionletInput> getInputs(String comparisonId);
 
-    public abstract boolean evaluate(String comparisonId, HttpServletRequest request);
+    public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, String comparisonId, List<ConditionValue> values);
 
     public String getLanguageId() {
         return languageId;

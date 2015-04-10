@@ -1,12 +1,21 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
+
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 public class Condition {
 
     public enum Operator {
         AND,
-        OR
+        OR;
+
+        @Override
+        public String toString() {
+            return super.name();
+        }
     }
 
     private String id;
@@ -15,7 +24,7 @@ public class Condition {
     private String conditionletId;
     private String conditionGroup;
     private String comparison;
-    private String input;
+    private List<ConditionValue> values;
     private Date modDate;
     private Operator operator;
     private int priority;
@@ -68,12 +77,12 @@ public class Condition {
         this.comparison = comparison;
     }
 
-    public String getInput() {
-        return input;
+    public List<ConditionValue> getValues() {
+        return values;
     }
 
-    public void setInput(String input) {
-        this.input = input;
+    public void setValues(List<ConditionValue> values) {
+        this.values = values;
     }
 
     public Date getModDate() {
