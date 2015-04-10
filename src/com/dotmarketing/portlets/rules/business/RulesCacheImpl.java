@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -52,14 +53,56 @@ public class RulesCacheImpl extends RulesCache {
 	}
 
 	@Override
-	public Rule getRule(String key) {
+	public List<Rule> addRules(List<Rule> rules) {
+		if (rules != null && rules.size() > 0) {
+			for (Rule rule : rules) {
+				addRule(rule);
+			}
+		}
+		return rules;
+	}
+
+	@Override
+	public Rule getRule(String ruleId) {
 		Rule rule = null;
 		try {
-			rule = (Rule) this.cache.get(key, getPrimaryGroup());
+			rule = (Rule) this.cache.get(ruleId, getPrimaryGroup());
 		} catch (DotCacheException e) {
-			Logger.debug(this, "RulesCache entry not found: " + key);
+			Logger.debug(this, "RulesCache entry not found: " + ruleId);
 		}
 		return rule;
+	}
+
+	@Override
+	public List<Rule> getRulesByHostId(String hostId) {
+		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
+		List<Rule> rules = null;
+		for (String ruleId : ruleIds) {
+			Rule rule = getRule(ruleId);
+			if (rule.getHost().equals(hostId)) {
+				if (rules == null) {
+					rules = new ArrayList<Rule>();
+				}
+				rules.add(rule);
+			}
+		}
+		return rules;
+	}
+
+	@Override
+	public List<Rule> getRulesByFolderId(String folderId) {
+		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
+		List<Rule> rules = null;
+		for (String ruleId : ruleIds) {
+			Rule rule = getRule(ruleId);
+			if (rule.getFolder().equals(folderId)) {
+				if (rules == null) {
+					rules = new ArrayList<Rule>();
+				}
+				rules.add(rule);
+			}
+		}
+		return rules;
 	}
 
 	@Override
@@ -70,53 +113,62 @@ public class RulesCacheImpl extends RulesCache {
 	}
 
 	@Override
-	protected Condition addCondition(ConditionGroup conditionGroup,
+	protected Condition addCondition(String conditionGroupId,
 			Condition condition) {
-		String key = conditionGroup.getId();
 		try {
-			List<Condition> conditions = (List<Condition>) this.cache.get(key,
-					CONDITIONS_GROUP);
+			List<Condition> conditions = (List<Condition>) this.cache.get(
+					conditionGroupId, CONDITIONS_GROUP);
 			if (conditions == null) {
 				conditions = new ArrayList<Condition>();
 			}
 			if (condition != null && UtilMethods.isSet(condition.getId())) {
 				conditions.add(condition);
-				this.cache.put(key, conditions, CONDITIONS_GROUP);
+				this.cache.put(conditionGroupId, conditions, CONDITIONS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionsCache entry not found: " + key);
+			Logger.debug(this, "ConditionsCache entry not found: "
+					+ conditionGroupId);
 		}
 		return condition;
 	}
 
 	@Override
-	public Condition getCondition(ConditionGroup conditionGroup,
-			Condition condition) {
-		String key = conditionGroup.getId();
-		Condition cachedCondition = null;
+	public Condition getCondition(String conditionGroupId, Condition condition) {
 		try {
-			List<Condition> conditions = (List<Condition>) this.cache.get(key,
-					CONDITIONS_GROUP);
+			List<Condition> conditions = (List<Condition>) this.cache.get(
+					conditionGroupId, CONDITIONS_GROUP);
 			for (Condition cond : conditions) {
 				if (cond.getId().equals(condition.getId())) {
-					cachedCondition = cond;
-					break;
+					return cond;
 				}
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionsCache entry not found: " + key);
+			Logger.debug(this, "ConditionsCache entry not found: "
+					+ conditionGroupId);
 		}
-		return cachedCondition;
+		return null;
 	}
 
 	@Override
-	public void removeCondition(ConditionGroup conditionGroup,
-			Condition condition) {
-		String key = conditionGroup.getId();
+	public Condition getCondition(String conditionId) {
+		Set<String> conditionGroups = this.cache.getKeys(CONDITIONS_GROUP);
+		for (String conditionGroup : conditionGroups) {
+			List<Condition> conditionList = getConditionsByGroupId(conditionGroup);
+			for (Condition condition : conditionList) {
+				if (condition.getId().equals(conditionId)) {
+					return condition;
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void removeCondition(String conditionGroupId, Condition condition) {
 		try {
 			int index = -1;
-			List<Condition> conditions = (List<Condition>) this.cache.get(key,
-					CONDITIONS_GROUP);
+			List<Condition> conditions = (List<Condition>) this.cache.get(
+					conditionGroupId, CONDITIONS_GROUP);
 			for (int i = 0; i < conditions.size(); i++) {
 				Condition cond = conditions.get(i);
 				if (cond.getId().equals(condition.getId())) {
@@ -126,76 +178,104 @@ public class RulesCacheImpl extends RulesCache {
 			}
 			if (index >= 0) {
 				conditions.remove(index);
-				this.cache.put(key, conditions, CONDITIONS_GROUP);
+				this.cache.put(conditionGroupId, conditions, CONDITIONS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionsCache entry not found: " + key);
+			Logger.debug(this, "ConditionsCache entry not found: "
+					+ conditionGroupId);
 		}
 	}
 
 	@Override
-	protected List<Condition> addConditions(ConditionGroup conditionGroup,
+	protected List<Condition> addConditions(String conditionGroupId,
 			List<Condition> conditions) {
-		String key = conditionGroup.getId();
 		if (conditions != null && conditions.size() > 0
-				&& UtilMethods.isSet(key)) {
-			this.cache.put(key, conditions, CONDITIONS_GROUP);
+				&& UtilMethods.isSet(conditionGroupId)) {
+			this.cache.put(conditionGroupId, conditions, CONDITIONS_GROUP);
 		}
 		return conditions;
 	}
 
 	@Override
-	public List<Condition> getConditions(ConditionGroup conditionGroup) {
+	public List<Condition> getConditionsByGroupId(String conditionGroupId) {
 		List<Condition> conditions = null;
-		String key = conditionGroup.getId();
-		if (UtilMethods.isSet(key)) {
+		if (UtilMethods.isSet(conditionGroupId)) {
 			try {
-				conditions = (List<Condition>) this.cache.get(key,
+				conditions = (List<Condition>) this.cache.get(conditionGroupId,
 						CONDITIONS_GROUP);
 			} catch (DotCacheException e) {
-				Logger.debug(this, "ConditionsCache entry not found: " + key);
+				Logger.debug(this, "ConditionsCache entry not found: "
+						+ conditionGroupId);
 			}
 		}
 		return conditions;
 	}
 
 	@Override
-	public void removeConditions(ConditionGroup conditionGroup) {
-		String key = conditionGroup.getId();
-		if (UtilMethods.isSet(key)) {
-			this.cache.remove(key, CONDITIONS_GROUP);
+	public List<Condition> getConditions(String ruleId) {
+		List<Condition> conditions = null;
+		if (UtilMethods.isSet(ruleId)) {
+			List<ConditionGroup> conditionGroups = getConditionGroups(ruleId);
+			if (conditionGroups != null & conditionGroups.size() > 0) {
+				conditions = new ArrayList<Condition>();
+				for (ConditionGroup conditionGroup : conditionGroups) {
+					conditions.addAll(getConditionsByGroupId(conditionGroup
+							.getId()));
+				}
+			}
+		}
+		return conditions;
+	}
+
+	@Override
+	public void removeConditions(String conditionGroupId) {
+		if (UtilMethods.isSet(conditionGroupId)) {
+			this.cache.remove(conditionGroupId, CONDITIONS_GROUP);
 		}
 	}
 
 	@Override
-	protected ConditionGroup addConditionGroup(Rule rule,
+	public void removeConditionsByRuleId(String ruleId) {
+		Set<String> conditionGroups = this.cache.getKeys(CONDITIONS_GROUP);
+		for (String condGroup : conditionGroups) {
+			ConditionGroup conditionGroup = getConditionGroup(condGroup);
+			if (conditionGroup.getRuleId().equals(ruleId)) {
+				removeConditions(condGroup);
+			}
+		}
+	}
+
+	@Override
+	protected ConditionGroup addConditionGroup(String ruleId,
 			ConditionGroup conditionGroup) {
-		String key = rule.getId();
+		if (!UtilMethods.isSet(ruleId)) {
+			return null;
+		}
 		try {
 			List<ConditionGroup> conditionGroups = (List<ConditionGroup>) this.cache
-					.get(key, CONDITIONGROUPS_GROUP);
+					.get(ruleId, CONDITIONGROUPS_GROUP);
 			if (conditionGroups == null) {
 				conditionGroups = new ArrayList<ConditionGroup>();
 			}
 			if (conditionGroup != null
 					&& UtilMethods.isSet(conditionGroup.getId())) {
 				conditionGroups.add(conditionGroup);
-				this.cache.put(key, conditionGroups, CONDITIONGROUPS_GROUP);
+				this.cache.put(ruleId, conditionGroups, CONDITIONGROUPS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionGroupsCache entry not found: " + key);
+			Logger.debug(this, "ConditionGroupsCache entry not found: "
+					+ ruleId);
 		}
 		return conditionGroup;
 	}
 
 	@Override
-	public ConditionGroup getConditionGroup(Rule rule,
+	public ConditionGroup getConditionGroup(String ruleId,
 			ConditionGroup conditionGroup) {
-		String key = rule.getId();
 		ConditionGroup cachedConditionGroup = null;
 		try {
 			List<ConditionGroup> conditionGroups = (List<ConditionGroup>) this.cache
-					.get(key, CONDITIONGROUPS_GROUP);
+					.get(ruleId, CONDITIONGROUPS_GROUP);
 			for (ConditionGroup condGroup : conditionGroups) {
 				if (condGroup.getId().equals(conditionGroup.getId())) {
 					cachedConditionGroup = condGroup;
@@ -203,18 +283,33 @@ public class RulesCacheImpl extends RulesCache {
 				}
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionGroupsCache entry not found: " + key);
+			Logger.debug(this, "ConditionGroupsCache entry not found: "
+					+ ruleId);
 		}
 		return cachedConditionGroup;
 	}
 
 	@Override
-	public void removeConditionGroup(Rule rule, ConditionGroup conditionGroup) {
-		String key = rule.getId();
+	public ConditionGroup getConditionGroup(String conditionGroupId) {
+		Set<String> ruleIds = this.cache.getKeys(CONDITIONGROUPS_GROUP);
+		for (String ruleId : ruleIds) {
+			List<ConditionGroup> conditionGroups = getConditionGroups(ruleId);
+			for (ConditionGroup cachedCondGroup : conditionGroups) {
+				if (cachedCondGroup.getId().equals(conditionGroupId)) {
+					return cachedCondGroup;
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void removeConditionGroup(String ruleId,
+			ConditionGroup conditionGroup) {
 		try {
 			int index = -1;
 			List<ConditionGroup> conditionGroups = (List<ConditionGroup>) this.cache
-					.get(key, CONDITIONGROUPS_GROUP);
+					.get(ruleId, CONDITIONGROUPS_GROUP);
 			for (int i = 0; i < conditionGroups.size(); i++) {
 				ConditionGroup condGroup = conditionGroups.get(i);
 				if (condGroup.getId().equals(conditionGroup.getId())) {
@@ -224,34 +319,33 @@ public class RulesCacheImpl extends RulesCache {
 			}
 			if (index >= 0) {
 				conditionGroups.remove(index);
-				this.cache.put(key, conditionGroups, CONDITIONGROUPS_GROUP);
+				this.cache.put(ruleId, conditionGroups, CONDITIONGROUPS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ConditionGroupsCache entry not found: " + key);
+			Logger.debug(this, "ConditionGroupsCache entry not found: "
+					+ ruleId);
 		}
 	}
 
 	@Override
-	protected List<ConditionGroup> addConditionGroups(Rule rule,
+	protected List<ConditionGroup> addConditionGroups(String ruleId,
 			List<ConditionGroup> conditionGroups) {
-		String key = rule.getId();
-		if (conditionGroups != null && UtilMethods.isSet(key)) {
-			this.cache.put(key, conditionGroups, CONDITIONGROUPS_GROUP);
+		if (conditionGroups != null && UtilMethods.isSet(ruleId)) {
+			this.cache.put(ruleId, conditionGroups, CONDITIONGROUPS_GROUP);
 		}
 		return conditionGroups;
 	}
 
 	@Override
-	public List<ConditionGroup> getConditionGroups(Rule rule) {
-		String key = rule.getId();
+	public List<ConditionGroup> getConditionGroups(String ruleId) {
 		List<ConditionGroup> conditionGroups = null;
-		if (UtilMethods.isSet(key)) {
+		if (UtilMethods.isSet(ruleId)) {
 			try {
-				conditionGroups = (List<ConditionGroup>) this.cache.get(key,
+				conditionGroups = (List<ConditionGroup>) this.cache.get(ruleId,
 						CONDITIONGROUPS_GROUP);
 			} catch (DotCacheException e) {
 				Logger.debug(this, "ConditionGroupsCache entry not found: "
-						+ key);
+						+ ruleId);
 			}
 		}
 		return conditionGroups;
@@ -266,50 +360,61 @@ public class RulesCacheImpl extends RulesCache {
 	}
 
 	@Override
-	protected RuleAction addAction(Rule rule, RuleAction action) {
-		String key = rule.getId();
+	protected RuleAction addAction(String ruleId, RuleAction action) {
 		try {
-			List<RuleAction> actions = (List<RuleAction>) this.cache.get(key,
-					ACTIONS_GROUP);
+			List<RuleAction> actions = (List<RuleAction>) this.cache.get(
+					ruleId, ACTIONS_GROUP);
 			if (actions == null) {
 				actions = new ArrayList<RuleAction>();
 			}
 			if (action != null && UtilMethods.isSet(action.getId())) {
 				actions.add(action);
-				this.cache.put(key, actions, ACTIONS_GROUP);
+				this.cache.put(ruleId, actions, ACTIONS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ActionsCache entry not found: " + key);
+			Logger.debug(this, "ActionsCache entry not found: " + ruleId);
 		}
 		return action;
 	}
 
 	@Override
-	public RuleAction getAction(Rule rule, RuleAction action) {
-		String key = rule.getId();
+	public RuleAction getAction(String ruleId, String actionId) {
 		RuleAction cachedAction = null;
 		try {
-			List<RuleAction> actions = (List<RuleAction>) this.cache.get(key,
-					ACTIONS_GROUP);
+			List<RuleAction> actions = (List<RuleAction>) this.cache.get(
+					ruleId, ACTIONS_GROUP);
 			for (RuleAction act : actions) {
-				if (act.getId().equals(action.getId())) {
+				if (act.getId().equals(actionId)) {
 					cachedAction = act;
 					break;
 				}
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ActionsCache entry not found: " + key);
+			Logger.debug(this, "ActionsCache entry not found: " + ruleId);
 		}
 		return cachedAction;
 	}
 
 	@Override
-	public void removeAction(Rule rule, RuleAction action) {
-		String key = rule.getId();
+	public RuleAction getAction(String actionId) {
+		Set<String> ruleIds = this.cache.getKeys(ACTIONS_GROUP);
+		for (String ruleId : ruleIds) {
+			List<RuleAction> actionList = getActions(ruleId);
+			for (RuleAction cachedAction : actionList) {
+				if (cachedAction.getId().equals(actionId)) {
+					return cachedAction;
+				}
+			}
+		}
+		return null;
+	}
+
+	@Override
+	public void removeAction(String ruleId, RuleAction action) {
 		try {
 			int index = -1;
-			List<RuleAction> actions = (List<RuleAction>) this.cache.get(key,
-					ACTIONS_GROUP);
+			List<RuleAction> actions = (List<RuleAction>) this.cache.get(
+					ruleId, ACTIONS_GROUP);
 			for (int i = 0; i < actions.size(); i++) {
 				RuleAction act = actions.get(i);
 				if (act.getId().equals(action.getId())) {
@@ -319,31 +424,31 @@ public class RulesCacheImpl extends RulesCache {
 			}
 			if (index >= 0) {
 				actions.remove(index);
-				this.cache.put(key, actions, ACTIONS_GROUP);
+				this.cache.put(ruleId, actions, ACTIONS_GROUP);
 			}
 		} catch (DotCacheException e) {
-			Logger.debug(this, "ActionsCache entry not found: " + key);
+			Logger.debug(this, "ActionsCache entry not found: " + ruleId);
 		}
 	}
 
 	@Override
-	protected List<RuleAction> addActions(Rule rule, List<RuleAction> actions) {
-		String key = rule.getId();
-		if (actions != null && UtilMethods.isSet(key)) {
-			this.cache.put(key, actions, ACTIONS_GROUP);
+	protected List<RuleAction> addActions(String ruleId,
+			List<RuleAction> actions) {
+		if (actions != null && UtilMethods.isSet(ruleId)) {
+			this.cache.put(ruleId, actions, ACTIONS_GROUP);
 		}
 		return actions;
 	}
 
 	@Override
-	public List<RuleAction> getActions(Rule rule) {
-		String key = rule.getId();
+	public List<RuleAction> getActions(String ruleId) {
 		List<RuleAction> actions = null;
-		if (UtilMethods.isSet(key)) {
+		if (UtilMethods.isSet(ruleId)) {
 			try {
-				actions = (List<RuleAction>) this.cache.get(key, ACTIONS_GROUP);
+				actions = (List<RuleAction>) this.cache.get(ruleId,
+						ACTIONS_GROUP);
 			} catch (DotCacheException e) {
-				Logger.debug(this, "ActionsCache entry not found: " + key);
+				Logger.debug(this, "ActionsCache entry not found: " + ruleId);
 			}
 		}
 		return actions;

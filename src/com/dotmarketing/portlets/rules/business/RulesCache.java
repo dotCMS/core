@@ -2,8 +2,10 @@ package com.dotmarketing.portlets.rules.business;
 
 import java.util.List;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -79,13 +81,43 @@ public abstract class RulesCache implements Cachable {
 	protected abstract Rule addRule(Rule rule);
 
 	/**
+	 * Adds a list of {@link Rule} objects to the caching structure. Null or
+	 * empty lists will not be added to the cache.
+	 * 
+	 * @param hostId
+	 *            - The {@link Rule} objects.
+	 * @return The recently added list of {@link Rule} objects.
+	 */
+	public abstract List<Rule> addRules(List<Rule> rules);
+
+	/**
 	 * Returns the {@link Rule} object associated to the specified key.
 	 * 
-	 * @param key
+	 * @param ruleId
 	 *            - The ID of the {@link Rule} object.
 	 * @return The associated {@link Rule} object.
 	 */
-	public abstract Rule getRule(String key);
+	public abstract Rule getRule(String ruleId);
+
+	/**
+	 * Returns the list of {@link Rule} objects that have been created for a
+	 * specific site (host).
+	 * 
+	 * @param hostId
+	 *            - The {@link Host} ID.
+	 * @return The associated list of {@link Rule} objects.
+	 */
+	public abstract List<Rule> getRulesByHostId(String hostId);
+
+	/**
+	 * Returns the list of {@link Rule} objects that have been created for a
+	 * specific folder.
+	 * 
+	 * @param folderId
+	 *            - The {@link Folder} ID.
+	 * @return The associated list of {@link Rule} objects.
+	 */
+	public abstract List<Rule> getRulesByFolderId(String folderId);
 
 	/**
 	 * Removes the {@link Rule} object from the caching structure.
@@ -100,39 +132,46 @@ public abstract class RulesCache implements Cachable {
 	 * empty values will not be added to the cache. In case the condition
 	 * already exists, the entry will be updated with the new value.
 	 * 
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} where the condition will be
-	 *            added.
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
 	 * @param condition
 	 *            - The {@link Condition} object to cache.
 	 * @return The recently added {@link Condition} object.
 	 */
-	protected abstract Condition addCondition(ConditionGroup conditionGroup,
+	protected abstract Condition addCondition(String conditionGroupId,
 			Condition condition);
 
 	/**
 	 * Returns the {@link Condition} object associated to the specified key.
 	 * 
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} where the condition will be
-	 *            retrieved.
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
 	 * @param condition
 	 *            - The {@link Condition} object.
 	 * @return The associated {@link Condition} object.
 	 */
-	public abstract Condition getCondition(ConditionGroup conditionGroup,
+	public abstract Condition getCondition(String conditionGroupId,
 			Condition condition);
+
+	/**
+	 * Returns the {@link Condition} object associated to the specified ID.
+	 * 
+	 * @param conditionId
+	 *            - The {@link Condition} ID.
+	 * @return The associated {@link Condition} object.
+	 */
+	public abstract Condition getCondition(String conditionId);
 
 	/**
 	 * Removes the {@link Condition} object from the caching structure.
 	 * 
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} where the condition will be
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID where the condition will be
 	 *            removed.
 	 * @param condition
 	 *            - The {@link Condition} object that will be removed.
 	 */
-	public abstract void removeCondition(ConditionGroup conditionGroup,
+	public abstract void removeCondition(String conditionGroupId,
 			Condition condition);
 
 	/**
@@ -141,93 +180,121 @@ public abstract class RulesCache implements Cachable {
 	 * lists will not be added to the cache. In case the condition group already
 	 * exists, the entry will be updated with the new values.
 	 * 
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} object whose conditions will be
-	 *            added to the cache.
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
 	 * @param conditions
 	 *            - The {@link Condition} object to cache.
 	 * @return The recently added list of {@link Condition} objects.
 	 */
-	protected abstract List<Condition> addConditions(
-			ConditionGroup conditionGroup, List<Condition> conditions);
+	protected abstract List<Condition> addConditions(String conditionGroupId,
+			List<Condition> conditions);
 
 	/**
 	 * Returns the list of {@link Condition} objects associated to the specified
 	 * {@link ConditionGroup}.
 	 * 
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} object.
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
 	 * @return The associated list of {@link Condition} objects.
 	 */
-	public abstract List<Condition> getConditions(ConditionGroup conditionGroup);
+	public abstract List<Condition> getConditionsByGroupId(
+			String conditionGroupId);
+
+	/**
+	 * Returns the list of {@link Condition} objects associated to the specified
+	 * rule ID.
+	 * 
+	 * @param ruleId
+	 *            - The {@link Rule} object.
+	 * @return The associated list of {@link Condition} objects.
+	 */
+	public abstract List<Condition> getConditions(String ruleId);
 
 	/**
 	 * Removes the list of {@link Condition} objects of a specific
 	 * {@link ConditionGroup} from the caching structure.
 	 * 
-	 * @param key
-	 *            - The {@link ConditionGroup} object.
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
 	 */
-	public abstract void removeConditions(ConditionGroup conditionGroup);
+	public abstract void removeConditions(String conditionGroupId);
+
+	/**
+	 * Removes the list of {@link Condition} objects of a specific {@link Rule}
+	 * from the caching structure.
+	 * 
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
+	 */
+	public abstract void removeConditionsByRuleId(String ruleId);
 
 	/**
 	 * Adds a {@link ConditionGroup} object in a rule to the caching structure.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @param conditionGroup
 	 *            - The {@link ConditionGroup} object to cache.
 	 * @return The recently added {@link ConditionGroup} object.
 	 */
-	protected abstract ConditionGroup addConditionGroup(Rule rule,
+	protected abstract ConditionGroup addConditionGroup(String ruleId,
 			ConditionGroup conditionGroup);
 
 	/**
 	 * Returns the {@link ConditionGroup} object associated to the specified
 	 * rule.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @param conditionGroup
 	 *            - The {@link ConditionGroup} object to retrieve.
 	 * @return The associated {@link ConditionGroup} object.
 	 */
-	public abstract ConditionGroup getConditionGroup(Rule rule,
+	public abstract ConditionGroup getConditionGroup(String ruleId,
 			ConditionGroup conditionGroup);
+
+	/**
+	 * Returns the {@link ConditionGroup} object associated to the specified ID.
+	 * 
+	 * @param conditionGroupId
+	 *            - The {@link ConditionGroup} ID.
+	 * @return The associated {@link ConditionGroup} object.
+	 */
+	public abstract ConditionGroup getConditionGroup(String conditionGroupId);
 
 	/**
 	 * Removes the {@link ConditionGroup} object of a specific rule from the
 	 * caching structure.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @param conditionGroup
 	 *            - The {@link ConditionGroup} object to remove.
 	 */
-	public abstract void removeConditionGroup(Rule rule,
+	public abstract void removeConditionGroup(String ruleId,
 			ConditionGroup conditionGroup);
 
 	/**
 	 * Adds a list of {@link ConditionGroup} objects in a rule to the caching
 	 * structure.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @param conditionGroups
 	 *            - The {@link ConditionGroup} objects to cache.
 	 * @return The recently added {@link ConditionGroup} object.
 	 */
-	protected abstract List<ConditionGroup> addConditionGroups(Rule rule,
+	protected abstract List<ConditionGroup> addConditionGroups(String ruleId,
 			List<ConditionGroup> conditionGroups);
 
 	/**
 	 * Returns the {@link Condition} object associated to the specified rule.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @return The associated list of {@link ConditionGroup} objects.
 	 */
-	public abstract List<ConditionGroup> getConditionGroups(Rule rule);
+	public abstract List<ConditionGroup> getConditionGroups(String ruleId);
 
 	/**
 	 * Removes the list of {@link ConditionGroup} objects of a specific rule
@@ -243,55 +310,67 @@ public abstract class RulesCache implements Cachable {
 	 * case the action list already exists, the entry will be updated with the
 	 * new values.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
-	 * @param actions
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
+	 * @param action
 	 *            - The {@link RuleAction} object to cache.
-	 * @return The recently added {@link RuleAction} object list.
+	 * @return The recently added {@link RuleAction} object.
 	 */
-	protected abstract RuleAction addAction(Rule rule, RuleAction action);
+	protected abstract RuleAction addAction(String ruleId, RuleAction action);
 
 	/**
-	 * Returns the {@link RuleAction} object associated to the specified rule.
+	 * Returns the {@link RuleAction} object associated to the specified rule
+	 * and ID.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
+	 * @param actionId
+	 *            - The {@link RuleAction} ID.
 	 * @return The associated {@link RuleAction} object.
 	 */
-	public abstract RuleAction getAction(Rule rule, RuleAction action);
+	public abstract RuleAction getAction(String ruleId, String actionId);
+
+	/**
+	 * Returns the {@link RuleAction} object associated to the specified ID.
+	 * 
+	 * @param actionId
+	 *            - The {@link RuleAction} ID.
+	 * @return The associated {@link RuleAction} object.
+	 */
+	public abstract RuleAction getAction(String actionId);
 
 	/**
 	 * Removes the {@link RuleAction} object of a specific rule from the caching
 	 * structure.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 */
-	public abstract void removeAction(Rule rule, RuleAction action);
+	public abstract void removeAction(String ruleId, RuleAction action);
 
 	/**
 	 * Adds a list of {@link RuleAction} objects in a rule to the caching
 	 * structure. In case the action list already exists, the entry will be
 	 * updated with the new values.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @param actions
 	 *            - The {@link RuleAction} objects to cache.
 	 * @return The recently added {@link RuleAction} object list.
 	 */
-	protected abstract List<RuleAction> addActions(Rule rule,
+	protected abstract List<RuleAction> addActions(String ruleId,
 			List<RuleAction> actions);
 
 	/**
 	 * Returns the list of {@link RuleAction} objects associated to the
 	 * specified rule.
 	 * 
-	 * @param rule
-	 *            - The {@link Rule} object.
+	 * @param ruleId
+	 *            - The {@link Rule} ID.
 	 * @return The associated list of {@link RuleAction} objects.
 	 */
-	public abstract List<RuleAction> getActions(Rule rule);
+	public abstract List<RuleAction> getActions(String ruleId);
 
 	/**
 	 * Removes the list of {@link RuleAction} objects of a specific rule from
