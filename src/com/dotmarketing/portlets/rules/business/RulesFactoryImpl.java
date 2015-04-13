@@ -17,14 +17,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 
-/**
- * Provides access to all the information of related to rules.
- * 
- * @author Daniel Silva
- * @version 1.0
- * @since 03-10-2015
- *
- */
 public class RulesFactoryImpl implements RulesFactory {
 
 
@@ -243,43 +235,91 @@ public class RulesFactoryImpl implements RulesFactory {
 	}
 
     @Override
-    public void saveConditionGroup(ConditionGroup condition) throws DotDataException {
+    public void saveConditionGroup(ConditionGroup group) throws DotDataException {
 
+        group.setModDate(new Date());
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(group.getId())) {
+            try {
+                if (getConditionGroupById(group.getId()) != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        } else {
+            group.setId(UUIDGenerator.generateUuid());
+        }
+
+        final DotConnect db = new DotConnect();
+        if (isNew) {
+
+            db.setSQL(sql.INSERT_CONDITION_GROUP);
+            db.addParam(group.getId());
+            db.addParam(group.getRuleId());
+            db.addParam(group.getOperator().toString());
+            db.addParam(group.getPriority());
+            db.addParam(group.getModDate());
+            db.loadResult();
+        } else {
+            db.setSQL(sql.UPDATE_CONDITION_GROUP);
+            db.addParam(group.getRuleId());
+            db.addParam(group.getOperator().toString());
+            db.addParam(group.getPriority());
+            db.addParam(group.getModDate());
+            db.addParam(group.getId());
+            db.loadResult();
+        }
     }
 
     @Override
 	public void saveCondition(Condition condition) throws DotDataException {
-		boolean isNew = true;
-		if (UtilMethods.isSet(condition.getId())) {
-			try {
-				if (getConditionById(condition.getId()) != null) {
-					isNew = false;
-				}
-			} catch (final Exception e) {
-				Logger.debug(this.getClass(), e.getMessage(), e);
-			}
-		} else {
-			condition.setId(UUIDGenerator.generateUuid());
-		}
-		final DotConnect db = new DotConnect();
-		if (isNew) {
-			db.setSQL(sql.INSERT_CONDITION);
-			db.addParam(condition.getId());
-			db.addParam(condition.getName());
-			db.addParam(condition.getRuleId());
-			db.addParam(condition.getConditionletId());
-			db.addParam(condition.getComparison());
-			db.loadResult();
-		} else {
-			db.setSQL(sql.UPDATE_CONDITION);
-			db.addParam(condition.getName());
-			db.addParam(condition.getRuleId());
-			db.addParam(condition.getConditionletId());
-			db.addParam(condition.getComparison());
-			db.addParam(condition.getId());
-			db.loadResult();
-		}
-		cache.addCondition(condition.getConditionGroup(), condition);
+        condition.setModDate(new Date());
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(condition.getId())) {
+            try {
+                if (getConditionById(condition.getId()) != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        } else {
+            condition.setId(UUIDGenerator.generateUuid());
+        }
+
+        final DotConnect db = new DotConnect();
+        if (isNew) {
+
+            db.setSQL(sql.INSERT_CONDITION);
+            db.addParam(condition.getId());
+            db.addParam(condition.getName());
+            db.addParam(condition.getRuleId());
+            db.addParam(condition.getConditionletId());
+            db.addParam(condition.getConditionGroup());
+            db.addParam(condition.getComparison());
+            db.addParam(condition.getOperator());
+            db.addParam(condition.getPriority());
+            db.addParam(condition.getModDate());
+            db.loadResult();
+        } else {
+            db.setSQL(sql.UPDATE_CONDITION);
+            db.addParam(condition.getName());
+            db.addParam(condition.getRuleId());
+            db.addParam(condition.getConditionletId());
+            db.addParam(condition.getConditionGroup());
+            db.addParam(condition.getComparison());
+            db.addParam(condition.getOperator());
+            db.addParam(condition.getPriority());
+            db.addParam(condition.getModDate());
+            db.addParam(condition.getId());
+            db.loadResult();
+
+            cache.removeCondition(condition.getConditionGroup(), condition);
+        }
+
 	}
 
 	@Override
@@ -389,13 +429,13 @@ public class RulesFactoryImpl implements RulesFactory {
 			throws InstantiationException, IllegalAccessException,
 			InvocationTargetException {
 
-		if (clazz.getName().equals(Rule.class.getName())) {
+        if (clazz.getName().equals(Rule.class.getName())) {
 			return this.convertRule(map);
-		} else if (clazz.getName().equals(RuleAction.class.getName())) {
+        } else if (clazz.getName().equals(RuleAction.class.getName())) {
 			return this.convertRuleAction(map);
-		} else if (clazz.getName().equals(Condition.class.getName())) {
-			return this.convertCondition(map);
-		} else if (clazz.getName().equals(ConditionGroup.class.getName())) {
+        } else if (clazz.getName().equals(Condition.class.getName())) {
+            return this.convertCondition(map);
+        } else if (clazz.getName().equals(ConditionGroup.class.getName())) {
 			return this.convertConditionGroup(map);
 		}
 		{
@@ -419,42 +459,49 @@ public class RulesFactoryImpl implements RulesFactory {
 	}
 
 	public static Condition convertCondition(Map<String, Object> row) {
-		Condition c = new Condition();
-		c.setId(row.get("id").toString());
-		c.setName(row.get("name").toString());
-		c.setRuleId(row.get("rule_id").toString());
-		c.setConditionletId(row.get("conditionlet").toString());
-		c.setConditionGroup(row.get("condition_group").toString());
-		c.setComparison(row.get("comparison").toString());
-		c.setOperator(Condition.Operator
-				.valueOf(row.get("operator").toString()));
-		c.setModDate((Date) row.get("mod_date"));
-		return c;
+        Condition c = new Condition();
+        c.setId(row.get("id").toString());
+        c.setName(row.get("name").toString());
+        c.setRuleId(row.get("rule_id").toString());
+        c.setConditionletId(row.get("conditionlet").toString());
+        c.setConditionGroup(row.get("condition_group").toString());
+        c.setComparison(row.get("comparison").toString());
+        c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
+        c.setPriority(Integer.parseInt(row.get("priority").toString()));
+        c.setModDate((Date) row.get("mod_date"));
+        return c;
 	}
 
 	public static ConditionGroup convertConditionGroup(Map<String, Object> row) {
-		ConditionGroup c = new ConditionGroup();
-		c.setId(row.get("id").toString());
-		c.setRuleId(row.get("rule_id").toString());
-		c.setOperator(Condition.Operator
-				.valueOf(row.get("operator").toString()));
-		c.setModDate((Date) row.get("mod_date"));
-		return c;
+        ConditionGroup c = new ConditionGroup();
+        c.setId(row.get("id").toString());
+        c.setRuleId(row.get("rule_id").toString());
+        c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
+        c.setModDate((Date) row.get("mod_date"));
+        return c;
 	}
 
-	public static RuleAction convertRuleAction(Map<String, Object> row) {
-		RuleAction r = new RuleAction();
-		r.setId(row.get("id").toString());
-		r.setName(row.get("name").toString());
-		r.setRuleId(row.get("rule_id").toString());
-		r.setPriority(Integer.parseInt(row.get("priority").toString()));
-		r.setActionlet(row.get("rule_id").toString());
-		return r;
-	}
+    public static ConditionValue convertConditionValue(Map<String, Object> row){
+        ConditionValue c = new ConditionValue();
+        c.setId(row.get("id").toString());
+        c.setConditionId(row.get("condition_id").toString());
+        c.setValue(row.get("value").toString());
+        c.setPriority(Integer.parseInt(row.get("priority").toString()));
+        return c;
+    }
 
-	private Object convert(Object obj, Map<String, Object> map)
-			throws IllegalAccessException, InvocationTargetException {
-		BeanUtils.copyProperties(obj, map);
-		return obj;
-	}
+    public static RuleAction convertRuleAction(Map<String, Object> row){
+        RuleAction r = new RuleAction();
+        r.setId(row.get("id").toString());
+        r.setName(row.get("name").toString());
+        r.setRuleId(row.get("rule_id").toString());
+        r.setPriority(Integer.parseInt(row.get("priority").toString()));
+        r.setActionlet(row.get("rule_id").toString());
+        return r;
+    }
+
+    private Object convert(Object obj, Map<String, Object> map) throws IllegalAccessException, InvocationTargetException {
+        BeanUtils.copyProperties(obj, map);
+        return obj;
+    }
 }
