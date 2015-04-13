@@ -271,6 +271,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(group.getId());
             db.loadResult();
         }
+        cache.addConditionGroup(group.getRuleId(), group);
     }
 
     @Override
