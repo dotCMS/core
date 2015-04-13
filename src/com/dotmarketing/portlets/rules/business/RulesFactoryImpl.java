@@ -166,9 +166,9 @@ public class RulesFactoryImpl implements RulesFactory {
 			final DotConnect db = new DotConnect();
 			db.setSQL(sql.SELECT_CONDITIONS_BY_GROUP);
 			db.addParam(groupId);
-			cache.addConditions(groupId, conditions);
 			conditions = convertListToObjects(db.loadObjectResults(),
 					Condition.class);
+			cache.addConditions(groupId, conditions);
 		}
 		return conditions;
 	}
@@ -317,10 +317,8 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(condition.getModDate());
             db.addParam(condition.getId());
             db.loadResult();
-
-            cache.removeCondition(condition.getConditionGroup(), condition);
         }
-
+        cache.removeCondition(condition.getConditionGroup(), condition);
 	}
 
 	@Override
