@@ -11,7 +11,9 @@ import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -290,35 +292,68 @@ public class RulesFactoryImpl implements RulesFactory {
             condition.setId(UUIDGenerator.generateUuid());
         }
 
+        HibernateUtil.startTransaction();
         final DotConnect db = new DotConnect();
-        if (isNew) {
 
-            db.setSQL(sql.INSERT_CONDITION);
-            db.addParam(condition.getId());
-            db.addParam(condition.getName());
-            db.addParam(condition.getRuleId());
-            db.addParam(condition.getConditionletId());
-            db.addParam(condition.getConditionGroup());
-            db.addParam(condition.getComparison());
-            db.addParam(condition.getOperator());
-            db.addParam(condition.getPriority());
-            db.addParam(condition.getModDate());
-            db.loadResult();
-        } else {
-            db.setSQL(sql.UPDATE_CONDITION);
-            db.addParam(condition.getName());
-            db.addParam(condition.getRuleId());
-            db.addParam(condition.getConditionletId());
-            db.addParam(condition.getConditionGroup());
-            db.addParam(condition.getComparison());
-            db.addParam(condition.getOperator());
-            db.addParam(condition.getPriority());
-            db.addParam(condition.getModDate());
-            db.addParam(condition.getId());
-            db.loadResult();
+        try {
+            if (isNew) {
 
-            cache.removeCondition(condition.getConditionGroup(), condition);
+                db.setSQL(sql.INSERT_CONDITION);
+                db.addParam(condition.getId());
+                db.addParam(condition.getName());
+                db.addParam(condition.getRuleId());
+                db.addParam(condition.getConditionletId());
+                db.addParam(condition.getConditionGroup());
+                db.addParam(condition.getComparison());
+                db.addParam(condition.getOperator());
+                db.addParam(condition.getPriority());
+                db.addParam(condition.getModDate());
+                db.loadResult();
+
+                for (ConditionValue value : condition.getValues()) {
+                    value.setId(UUIDGenerator.generateUuid());
+                    db.setSQL(sql.INSERT_CONDITION_VALUE);
+                    db.addParam(value.getId());
+                    db.addParam(condition.getId());
+                    db.addParam(value.getValue());
+                    db.addParam(value.getPriority());
+                    db.loadResult();
+                }
+
+            } else {
+                db.setSQL(sql.UPDATE_CONDITION);
+                db.addParam(condition.getName());
+                db.addParam(condition.getRuleId());
+                db.addParam(condition.getConditionletId());
+                db.addParam(condition.getConditionGroup());
+                db.addParam(condition.getComparison());
+                db.addParam(condition.getOperator());
+                db.addParam(condition.getPriority());
+                db.addParam(condition.getModDate());
+                db.addParam(condition.getId());
+                db.loadResult();
+
+                for (ConditionValue value : condition.getValues()) {
+                    db.setSQL(sql.UPDATE_CONDITION_VALUE);
+                    db.addParam(value.getId());
+                    db.addParam(condition.getId());
+                    db.addParam(value.getValue());
+                    db.addParam(value.getPriority());
+                    db.loadResult();
+                }
+
+                cache.removeCondition(condition.getConditionGroup(), condition);
+            }
+
+        } catch(DotDataException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.warn(this, e1.getMessage(),e1);
+            }
         }
+
+        HibernateUtil.commitTransaction();
 
 	}
 

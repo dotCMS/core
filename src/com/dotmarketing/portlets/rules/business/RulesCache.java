@@ -26,9 +26,9 @@ public abstract class RulesCache implements Cachable {
 
 	// Caching groups for the different sections of a rule
 	protected static final String PRIMARY_GROUP = "RulesCache";
-	protected static final String CONDITIONGROUPS_GROUP = "ConditionGroupsCache";
-	protected static final String CONDITIONS_GROUP = "ConditionsCache";
-	protected static final String ACTIONS_GROUP = "ActionsCache";
+	protected static final String RULE_CONDITION_GROUPS_CACHE = "RuleConditionGroupsCache";
+	protected static final String RULE_CONDITIONS_GROUP = "RuleConditionsCache";
+	protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
 
 	@Override
 	public String getPrimaryGroup() {
@@ -37,8 +37,8 @@ public abstract class RulesCache implements Cachable {
 
 	@Override
 	public String[] getGroups() {
-		return new String[] { PRIMARY_GROUP, CONDITIONGROUPS_GROUP,
-				CONDITIONS_GROUP, ACTIONS_GROUP };
+		return new String[] { PRIMARY_GROUP, RULE_CONDITION_GROUPS_CACHE,
+                RULE_CONDITIONS_GROUP, RULE_ACTIONS_CACHE};
 	}
 
 	/**
@@ -52,21 +52,21 @@ public abstract class RulesCache implements Cachable {
 	 * Removes all the condition groups from the caching structure.
 	 */
 	protected void flushConditionGroups() {
-		CacheLocator.getCacheAdministrator().flushGroup(CONDITIONGROUPS_GROUP);
+		CacheLocator.getCacheAdministrator().flushGroup(RULE_CONDITION_GROUPS_CACHE);
 	}
 
 	/**
 	 * Removes all the conditions from the caching structure.
 	 */
 	protected void flushConditions() {
-		CacheLocator.getCacheAdministrator().flushGroup(CONDITIONS_GROUP);
+		CacheLocator.getCacheAdministrator().flushGroup(RULE_CONDITIONS_GROUP);
 	}
 
 	/**
 	 * Removes all the action lists from the caching structure.
 	 */
 	protected void flushActions() {
-		CacheLocator.getCacheAdministrator().flushGroup(ACTIONS_GROUP);
+		CacheLocator.getCacheAdministrator().flushGroup(RULE_ACTIONS_CACHE);
 	}
 
 	/**
