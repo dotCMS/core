@@ -324,6 +324,8 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				}
 				
 				//Add the list to the cache.
+				//CacheLocator.getContainerCache().clearCache();
+				CacheLocator.getContainerCache().remove(containerIdentifier);
 				StructureCache.addContainerStructures(containerStructureList, containerIdentifier, containerInode);
 				
 			}catch(DotHibernateException e){
@@ -480,10 +482,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			       APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
-		if(existingInode)
+		if(existingInode){
             save(container, container.getInode());
-        else
+		}
+        else{
             save(container);
+        }
 
 		APILocator.getVersionableAPI().setWorking(container);
 
