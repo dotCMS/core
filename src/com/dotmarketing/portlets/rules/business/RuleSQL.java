@@ -26,7 +26,7 @@ abstract class RuleSQL {
     protected String SELECT_RULE_BY_ID = "select * from dot_rule where id=?";
     protected String DELETE_RULE_BY_ID = "delete from dot_rule where id=?";
 
-    protected String INSERT_CONDITION = "insert into rule_condition (id, name, rule_id, conditionlet, condition_group, comparison, operator, prority, mod_date) values (?,?,?,?,?,?,?,?,?)";
+    protected String INSERT_CONDITION = "insert into rule_condition (id, name, rule_id, conditionlet, condition_group, comparison, operator, priority, mod_date) values (?,?,?,?,?,?,?,?,?)";
     protected String UPDATE_CONDITION = "update rule_condition set name=?, rule_id=?, conditionlet=?, condition_group=?, comparison=?, operator=?, priority=?, mod_date=? where id=?";
     protected String SELECT_CONDITION_BY_ID = "select * from rule_condition where id=?";
     protected String SELECT_CONDITIONS_BY_RULE = "select * from rule_condition where rule_id=?";
@@ -38,12 +38,12 @@ abstract class RuleSQL {
     protected String UPDATE_CONDITION_GROUP = "update rule_condition_group set rule_id=?, operator=?, priority=?, mod_date=? where id=?";
     protected String SELECT_CONDITION_GROUPS_BY_RULE = "select * from rule_condition_group where rule_id=?";
     protected String SELECT_CONDITION_GROUP_BY_ID = "select * from rule_condition_group where id=?";
-    protected String DELETE_CONDITION_GROUP_BY_ID = "delect from rule_condition_group where id=?";
+    protected String DELETE_CONDITION_GROUP_BY_ID = "delete from rule_condition_group where id=?";
 
     protected String INSERT_CONDITION_VALUE = "insert into rule_condition_value (id, condition_id, value, priority) values (?,?,?,?)";
     protected String UPDATE_CONDITION_VALUE = "update rule_condition_value set condition_id=?, value=?, priority=? where id=?";
     protected String SELECT_CONDITION_VALUES_BY_CONDITION = "select * from rule_condition_value where condition_id=?";
-    protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delect from rule_condition_value where condition_id=?";
+    protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delete from rule_condition_value where condition_id=?";
 
 
     protected String INSERT_RULE_ACTION = "insert into rule_action (id, name, rule_id, fire_order, actionlet) values (?,?,?,?,?)";

@@ -13,10 +13,7 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
@@ -25,6 +22,7 @@ import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -122,45 +120,36 @@ public class RulesResource extends WebResource {
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
 
-        JSONObject resultsObject = new JSONObject();
-
         try {
+
+            JSONObject groupsJSON = new JSONObject();
 
             Rule rule = rulesAPI.getRuleById(ruleId, user, false);
 
             if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-                resultsObject.put("conditionGroups", new JSONArray());
-                return responseResource.response(resultsObject.toString());
+                return responseResource.response(groupsJSON.toString());
             }
-
-            JSONArray jsonConditionGroups = new JSONArray();
 
             List<ConditionGroup> conditionGroups = rulesAPI.getConditionGroupsByRule(ruleId, user, false);
 
             for (ConditionGroup conditionGroup : conditionGroups) {
-                JSONObject jsonConditionGroup = new JSONObject();
-                jsonConditionGroup.put("conditionGroupId", conditionGroup.getId());
-                jsonConditionGroup.put("operator", conditionGroup.getOperator());
 
-                JSONArray jsonGroupConditions = new JSONArray();
+                JSONObject groupJSON = new com.dotmarketing.util.json.JSONObject(conditionGroup, new String[]{"operator", "priority"});
 
                 List<Condition> conditions = rulesAPI.getConditionsByConditionGroup(conditionGroup.getId(), user, false);
 
+                JSONObject conditionsJSON = new JSONObject();
+
                 for (Condition condition : conditions) {
-                    JSONObject conditionObject = new JSONObject();
-                    conditionObject.put("conditionId", condition.getId());
-                    conditionObject.put("conditionName", condition.getName());
-                    conditionObject.put("operator", condition.getOperator());
-                    jsonGroupConditions.put(conditionObject);
+                    conditionsJSON.put(condition.getId(), new com.dotmarketing.util.json.JSONObject(condition));
                 }
 
-                jsonConditionGroup.put("conditions", jsonGroupConditions);
+                groupJSON.put("conditions", conditionsJSON);
 
+                groupsJSON.put(conditionGroup.getId(), groupJSON);
             }
 
-            resultsObject.put("conditionGroups", jsonConditionGroups);
-
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(groupsJSON.toString());
 
         } catch (DotDataException | DotSecurityException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -514,7 +503,7 @@ public class RulesResource extends WebResource {
         try {
             if(!UtilMethods.isSet(groupId)) {
                 Logger.info(getClass(), "Unable to update Condition Group - 'id' not provided");
-                throw new DotDataException("Unable to update Condition Grou - 'id' not provided");
+                throw new DotDataException("Unable to update Condition Group - 'id' not provided");
             }
 
             ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
@@ -564,18 +553,25 @@ public class RulesResource extends WebResource {
             condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
             condition.setPriority(conditionJSON.optInt("priority", 0));
 
-            // TODO: SET CONDITION VALUES
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray values = conditionJSON.getJSONArray("values");
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray valuesJSON = conditionJSON.getJSONArray("values");
+            List<ConditionValue> values = new ArrayList<>();
 
-            if(UtilMethods.isSet(values)) {
-                for(int i=0; i<values.length(); i++) {
-                    JSONObject value = (JSONObject) values.get(i);
+            if(UtilMethods.isSet(valuesJSON)) {
+                JSONArray jsonArray = valuesJSON.getJSONArray(0);
 
+                for(int i=0; i<jsonArray.length(); i++) {
+                    JSONObject valueJSON = jsonArray.getJSONObject(i);
+                    ConditionValue value = new ConditionValue();
+                    value.setValue(valueJSON.getString("value"));
+                    value.setPriority(valueJSON.optInt("priority", 0));
+                    values.add(value);
                 }
             }
 
+            condition.setValues(values);
 
             rulesAPI.saveCondition(condition, user, false);
+
             resultsObject.put("id", condition.getId());
             return responseResource.response(resultsObject.toString());
 
@@ -584,6 +580,71 @@ public class RulesResource extends WebResource {
         }
     }
 
+    /**
+     * <p>Updates a Condition
+     * <br>
+     * <p/>
+     * Usage: PUT /rules/conditiongroups/{groupId}/conditions
+     *
+     * @throws com.dotmarketing.util.json.JSONException
+     */
+
+    @PUT
+    @Path("/rules/conditiongroups/conditions/{id}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response updateCondition(@Context HttpServletRequest request, @PathParam("id") String conditionId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject conditionJSON) throws DotDataException, DotSecurityException, JSONException {
+        InitDataObject initData = init(null, true, request, true);
+        ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
+        User user = initData.getUser();
+
+        JSONObject resultsObject = new JSONObject();
+
+        try {
+
+            if(!UtilMethods.isSet(conditionId)) {
+                Logger.info(getClass(), "Unable to update Condition - 'id' not provided");
+                throw new DotDataException("Unable to update Condition - 'id' not provided");
+            }
+
+            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
+
+            if (!UtilMethods.isSet(condition)) {
+                throw new DotDataException("Unable to update Condition with id:" + conditionId);
+            }
+
+            condition.setName(conditionJSON.getString("name"));
+            condition.setRuleId(conditionJSON.getString("ruleId"));
+            condition.setConditionletId(conditionJSON.getString("conditionletId"));
+            condition.setConditionGroup(conditionJSON.getString("conditionGroupId"));
+            condition.setComparison(conditionJSON.getString("comparison"));
+            condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
+            condition.setPriority(conditionJSON.optInt("priority", 0));
+
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray valuesJSON = conditionJSON.getJSONArray("values");
+            List<ConditionValue> values = new ArrayList<>();
+
+            if(UtilMethods.isSet(values)) {
+                for(int i=0; i<valuesJSON.length(); i++) {
+                    JSONObject valueJSON = (JSONObject) valuesJSON.get(i);
+                    ConditionValue value = new ConditionValue();
+                    value.setValue(valueJSON.getString("value"));
+                    value.setPriority(valueJSON.optInt("priority", 0));
+                    values.add(value);
+                }
+            }
+
+            condition.setValues(values);
+
+            rulesAPI.saveCondition(condition, user, false);
+
+            resultsObject.put("id", condition.getId());
+            return responseResource.response(resultsObject.toString());
+
+        } catch (DotDataException | DotSecurityException e) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
     /**
      * <p>Saves a Rule Action
      * <br>
@@ -795,7 +856,7 @@ public class RulesResource extends WebResource {
         JSONObject groupsJSON = new JSONObject();
 
         for (ConditionGroup group : groups) {
-            groupsJSON.put(group.getId(), new JSONObject(group, new String[]{"operator", "priority"}));
+            groupsJSON.put(group.getId(), new com.dotmarketing.util.json.JSONObject(group, new String[]{"operator", "priority"}));
         }
 
         ruleJSON.put("conditionGroups", groupsJSON);
@@ -804,7 +865,7 @@ public class RulesResource extends WebResource {
         JSONObject actionsJSON = new JSONObject();
 
         for (RuleAction action : actions) {
-            groupsJSON.put(action.getId(), new JSONObject(action, new String[]{"priority"}));
+            groupsJSON.put(action.getId(), new com.dotmarketing.util.json.JSONObject(action, new String[]{"priority"}));
         }
 
         ruleJSON.put("actions", actionsJSON);

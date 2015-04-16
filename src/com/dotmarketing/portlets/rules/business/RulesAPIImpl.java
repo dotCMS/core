@@ -179,7 +179,13 @@ public class RulesAPIImpl implements RulesAPI {
             return new ArrayList<>();
         }
 
-        return null; // TODO working on this one
+        Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+
+        return rulesFactory.getConditionsByGroup(conditionGroup.getId());
     }
 
     public List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

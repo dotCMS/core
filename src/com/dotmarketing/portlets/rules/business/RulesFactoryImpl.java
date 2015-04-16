@@ -306,7 +306,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
                 db.addParam(condition.getComparison());
-                db.addParam(condition.getOperator());
+                db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
                 db.loadResult();
@@ -328,7 +328,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
                 db.addParam(condition.getComparison());
-                db.addParam(condition.getOperator());
+                db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
                 db.addParam(condition.getId());
@@ -346,15 +346,18 @@ public class RulesFactoryImpl implements RulesFactory {
                 cache.removeCondition(condition.getConditionGroup(), condition);
             }
 
+            HibernateUtil.commitTransaction();
+
         } catch(DotDataException e) {
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
                 Logger.warn(this, e1.getMessage(),e1);
             }
+
+            throw e;
         }
 
-        HibernateUtil.commitTransaction();
 
 	}
 

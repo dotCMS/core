@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+import com.dotcms.repackage.org.apache.commons.lang.WordUtils;
 import com.dotmarketing.portlets.rules.model.Rule;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
@@ -273,7 +274,7 @@ public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.
         for (int i = 0; i < names.length; i += 1) {
             String name = names[i];
             try {
-                putOpt(name, c.getField(name).get(object));
+                putOpt(name, c.getMethod("get" + WordUtils.capitalize(name)).invoke(object));
             } catch (Exception ignore) {
             }
         }
