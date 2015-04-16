@@ -1,9 +1,21 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+/**
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since 03-25-2015
+ *
+ */
 public class ConditionletInputValue {
     String conditionletInputId;
     String value;
 
+    public ConditionletInputValue(String conditionletInputId, String value) {
+    	this.conditionletInputId = conditionletInputId;
+    	this.value = value;
+    }
+    
     public String getConditionletInputId() {
         return conditionletInputId;
     }

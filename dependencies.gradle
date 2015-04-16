@@ -184,6 +184,11 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-core', version:'2.4.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-annotations', version:'2.4.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-databind', version:'2.4.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_1'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
