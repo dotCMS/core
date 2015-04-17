@@ -37,7 +37,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET container_inode = ? WHERE id = ?";
     private static final String SQL_GET_CONTAINER_VERSION = "SELECT identifier FROM container_version_info WHERE working_inode = ? AND live_inode = ?";
     private static final String SQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, container_inode FROM container_structures WHERE container_id = ?";
-    private static final String SQL_GET_CONTAINER_ID = "SELECT id, container_id FROM container_structures ORDER BY container_id;";
+    private static final String SQL_GET_CONTAINER_ID = "select id, container_id, structure_id, container_inode from container_structures order by container_id, structure_id";
 
     private final String SQL_GET_NON_WORKING_LIVE_INODES = "SELECT containers.inode " +
             "FROM containers " +
@@ -111,12 +111,14 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
         if (identifiersContainerStructure != null && !identifiersContainerStructure.isEmpty()) {
             //Use this variable to get the previous value of the identifier.
             String firstIdentifier = "";
+            String firstStructure = "";
 
             for(Map<String, String> identifierContainerStructure : identifiersContainerStructure){
                 String identifier = identifierContainerStructure.get("container_id");
+                String structure = identifierContainerStructure.get("structure_id");
 
-                //If the identifier is the same that the previous one, we need to delete it to avoid duplicates.
-                if(firstIdentifier.equals(identifier)){
+                //If the identifier and structure is the same that the previous one, we need to delete it to avoid duplicates.
+                if(firstIdentifier.equals(identifier) && firstStructure.equals(structure)){
                     //Delete this row based on the id.
                     String id = identifierContainerStructure.get("id");
 
@@ -126,6 +128,7 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
                     dc.loadResults();
                 } else { //If it is not the same, we have a new identifier and we don't want to delete it.
                     firstIdentifier = identifier;
+                    firstStructure = structure;
                 }
             }
         }
