@@ -141,7 +141,15 @@ public class RulesResource extends WebResource {
                 JSONObject conditionsJSON = new JSONObject();
 
                 for (Condition condition : conditions) {
-                    conditionsJSON.put(condition.getId(), new com.dotmarketing.util.json.JSONObject(condition));
+                    JSONObject conditionJSON = new com.dotmarketing.util.json.JSONObject(condition);
+
+                    JSONObject valuesJSON = new JSONObject();
+                    for(ConditionValue value:condition.getValues()) {
+                        valuesJSON.put(value.getId(), new com.dotmarketing.util.json.JSONObject(value, new String[]{"value", "priority"}));
+                    }
+
+                    conditionJSON.put("values", valuesJSON);
+                    conditionsJSON.put(condition.getId(), conditionJSON);
                 }
 
                 groupJSON.put("conditions", conditionsJSON);

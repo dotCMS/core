@@ -10,10 +10,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -311,6 +308,26 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.deleteRuleAction(ruleAction);
+    }
+
+    public Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        String ruleId = action.getRuleId();
+
+        if (!UtilMethods.isSet(ruleId)) {
+            return new HashMap<>();
+        }
+
+        Rule rule = rulesFactory.getRuleById(ruleId);
+
+        if (!UtilMethods.isSet(rule)) {
+            return new HashMap<>();
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+        return rulesFactory.getRuleActionParameters(action);
     }
 
     private void refreshConditionletMap() {

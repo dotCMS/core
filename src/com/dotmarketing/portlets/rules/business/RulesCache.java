@@ -1,15 +1,13 @@
 package com.dotmarketing.portlets.rules.business;
 
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 
 /**
  * Provides a caching mechanism to improve response times regarding the access
@@ -29,6 +27,7 @@ public abstract class RulesCache implements Cachable {
 	protected static final String RULE_CONDITION_GROUPS_CACHE = "RuleConditionGroupsCache";
 	protected static final String RULE_CONDITIONS_GROUP = "RuleConditionsCache";
 	protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
+	protected static final String EVALUATED_RULE_CACHE = "EvaluatedRuleCache";
 
 	@Override
 	public String getPrimaryGroup() {
@@ -380,5 +379,9 @@ public abstract class RulesCache implements Cachable {
 	 *            - The {@link Rule} object.
 	 */
 	public abstract void removeActions(Rule rule);
+
+    public abstract Map<Rule, Boolean> addEvaluatedRule(Host host, Rule rule, Boolean evaluation);
+
+    public abstract Map<Rule, Boolean> getEvaluatedRulesByHost(Host host);
 
 }

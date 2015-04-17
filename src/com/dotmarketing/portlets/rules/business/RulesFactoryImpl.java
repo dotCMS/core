@@ -1,23 +1,27 @@
 package com.dotmarketing.portlets.rules.business;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
+
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 public class RulesFactoryImpl implements RulesFactory {
 
@@ -170,6 +174,13 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.addParam(groupId);
 			conditions = convertListToObjects(db.loadObjectResults(),
 					Condition.class);
+
+            for (Condition condition : conditions) {
+                db.setSQL(sql.SELECT_CONDITION_VALUES_BY_CONDITION);
+                db.addParam(condition.getId());
+                condition.setValues(convertListToObjects(db.loadObjectResults(), ConditionValue.class));
+            }
+
 			cache.addConditions(groupId, conditions);
 		}
 		return conditions;
@@ -447,7 +458,25 @@ public class RulesFactoryImpl implements RulesFactory {
 		cache.removeAction(ruleAction.getRuleId(), ruleAction);
 	}
 
-	private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
+
+
+    @Override
+    public Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.SELECT_RULE_ACTIONS_PARAMS);
+        db.addParam(action.getId());
+        List<RuleActionParameter> params = convertListToObjects(db.loadObjectResults(),
+                RuleActionParameter.class);
+
+        final Map<String, RuleActionParameter> map = new LinkedHashMap<>();
+        for (final RuleActionParameter param : params) {
+            map.put(param.getKey(), param);
+        }
+
+        return map;
+    }
+
+    private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
 			throws DotDataException {
 		final ObjectMapper m = new ObjectMapper();
 
@@ -476,7 +505,9 @@ public class RulesFactoryImpl implements RulesFactory {
             return this.convertCondition(map);
         } else if (clazz.getName().equals(ConditionGroup.class.getName())) {
 			return this.convertConditionGroup(map);
-		}
+		} else if (clazz.getName().equals(RuleActionParameter.class.getName())) {
+            return this.convertRuleActionParam(map);
+        }
 		{
 			return this.convert(clazz.newInstance(), map);
 		}
@@ -536,6 +567,15 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setRuleId(row.get("rule_id").toString());
         r.setPriority(Integer.parseInt(row.get("priority").toString()));
         r.setActionlet(row.get("rule_id").toString());
+        return r;
+    }
+
+    public static RuleActionParameter convertRuleActionParam(Map<String, Object> row){
+        RuleActionParameter r = new RuleActionParameter();
+        r.setId(row.get("id").toString());
+        r.setRuleActionId(row.get("rule_action_id").toString());
+        r.setKey(row.get("key").toString());
+        r.setValue(row.get("value").toString());
         return r;
     }
 

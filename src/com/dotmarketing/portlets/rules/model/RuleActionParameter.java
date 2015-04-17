@@ -10,21 +10,21 @@ public class RuleActionParameter implements Serializable {
 
 	private static final long serialVersionUID = 1L;
 
-	String id;
-	String actionClassId;
-	String key;
-	String value;
+	private String id;
+	private String ruleActionId;
+	private String key;
+	private String value;
 	public String getId() {
 		return id;
 	}
 	public void setId(String id) {
 		this.id = id;
 	}
-	public String getActionClassId() {
-		return actionClassId;
+	public String getRuleActionId() {
+		return ruleActionId;
 	}
-	public void setActionClassId(String actionClassId) {
-		this.actionClassId = actionClassId;
+	public void setRuleActionId(String ruleActionId) {
+		this.ruleActionId = ruleActionId;
 	}
 	public String getKey() {
 		return key;

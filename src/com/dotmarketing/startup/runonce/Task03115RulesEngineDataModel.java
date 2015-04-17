@@ -63,6 +63,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority int default 0,")
             .append("actionlet text not null,")
             .append("mod_date datetime")
+            .append(");")
+
+            // create RULE_CONDITION_VALUE table
+            .append("create table rule_action_pars(")
+            .append("id varchar(36) primary key,")
+            .append("rule_action_id varchar(36) references rule_action(id),")
+            .append("key varchar(255) not null,")
+            .append("value text")
             .append(");");
 
 
@@ -120,6 +128,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority int default 0,")
             .append("actionlet text not null,")
             .append("mod_date timestamp")
+            .append(");")
+
+            // create RULE_CONDITION_VALUE table
+            .append("create table rule_action_pars(")
+            .append("id varchar(36) primary key,")
+            .append("rule_action_id varchar(36) references rule_action(id),")
+            .append("key varchar(255) not null,")
+            .append("value text")
             .append(");");
 
     private final StringBuilder ORACLE = new StringBuilder()
@@ -177,6 +193,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority number(10,0) default 0,")
             .append("actionlet nclob not null,")
             .append("mod_date timestamp")
+            .append(");")
+
+            // create RULE_CONDITION_VALUE table
+            .append("create table rule_action_pars(")
+            .append("id varchar2(36) primary key,")
+            .append("rule_action_id varchar2(36) references rule_action(id),")
+            .append("key varchar2(255) not null,")
+            .append("value nclob")
             .append(");");
 
     private final StringBuilder MSSQL = new StringBuilder()
@@ -232,6 +256,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority int default 0,")
             .append("actionlet text not null,")
             .append("mod_date datetime")
+            .append(");")
+
+            // create RULE_CONDITION_VALUE table
+            .append("create table rule_action_pars(")
+            .append("id varchar(36) primary key,")
+            .append("rule_action_id varchar(36) references rule_action(id),")
+            .append("key varchar(255) not null,")
+            .append("value text")
             .append(");");
 
     private final StringBuilder H2 = new StringBuilder()
@@ -287,6 +319,14 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority int default 0,")
             .append("actionlet text not null,")
             .append("mod_date timestamp")
+            .append(");")
+
+            // create RULE_CONDITION_VALUE table
+            .append("create table rule_action_pars(")
+            .append("id varchar(36) primary key,")
+            .append("rule_action_id varchar(36) references rule_action(id),")
+            .append("key varchar(255) not null,")
+            .append("value text")
             .append(");");
 
 

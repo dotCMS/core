@@ -1,16 +1,12 @@
 package com.dotmarketing.portlets.rules.business;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -461,5 +457,32 @@ public class RulesCacheImpl extends RulesCache {
 			this.cache.remove(key, RULE_ACTIONS_CACHE);
 		}
 	}
+
+    @Override
+    public Map<Rule, Boolean> addEvaluatedRule(Host host, Rule rule, Boolean evaluation) {
+        if(host == null || rule==null)return null;
+        Map<Rule, Boolean> evaluatedRules = getEvaluatedRulesByHost(host);
+
+        if(!UtilMethods.isSet(evaluatedRules)) {
+            evaluatedRules = new HashMap<>();
+        }
+
+        evaluatedRules.put(rule, evaluation);
+
+        cache.put(host.getIdentifier(), evaluatedRules, EVALUATED_RULE_CACHE);
+        return evaluatedRules;
+
+    }
+
+    @Override
+    public Map<Rule, Boolean> getEvaluatedRulesByHost(Host host) {
+        if(host == null ) return null;
+        try {
+            return (Map<Rule, Boolean>) cache.get(host.getIdentifier(), EVALUATED_RULE_CACHE);
+        } catch (DotCacheException e) {
+            Logger.debug(this, "Error trying to get Rules' Evaluation from cache for host " + host.getIdentifier(), e);
+        }
+        return null;
+    }
 
 }

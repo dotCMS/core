@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.model.*;
+import com.liferay.portal.model.User;
 
 import java.util.List;
+import java.util.Map;
 
 public interface RulesFactory {
 
@@ -50,5 +50,6 @@ public interface RulesFactory {
 
     void deleteRuleAction(RuleAction ruleAction) throws DotDataException;
 
+    Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action) throws DotDataException;
 
 }

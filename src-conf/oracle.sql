@@ -3443,4 +3443,4 @@ create table rule_condition_group(id varchar2(36) primary key,rule_id varchar2(3
 create table rule_condition(id varchar2(36) primary key,name varchar2(255) not null,rule_id varchar2(36) references dot_rule(id),conditionlet nclob not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar2(36) not null,operator varchar2(10) not null,priority number(10,0) default 0,mod_date timestamp);
 create table rule_condition_value (id varchar2(36) primary key,condition_id varchar2(36) references rule_condition(id), value nclob,priority number(10,0) default 0);
 create table rule_action (id varchar2(36) primary key,name varchar2(255) not null,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
-
+create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id),key varchar2(255) not null,value nclob);

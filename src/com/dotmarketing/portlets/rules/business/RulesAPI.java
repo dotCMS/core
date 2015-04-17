@@ -4,14 +4,12 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public interface RulesAPI {
 
@@ -217,6 +215,17 @@ public interface RulesAPI {
      */
     void deleteRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+    /**
+     *
+     * @param action
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 
     /**
      *
@@ -251,4 +260,6 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     RuleActionlet findActionlet(String clazz) throws DotDataException, DotSecurityException;
+
+
 }

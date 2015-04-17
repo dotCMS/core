@@ -3335,3 +3335,4 @@ create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36)
 create table rule_condition(id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamp);
 create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), value text,priority int default 0);
 create table rule_action (id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamp);
+create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id),key varchar(255) not null,value text);
