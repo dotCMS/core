@@ -25,6 +25,14 @@ public class Task03130ActionletsFromPlugin extends AbstractJDBCStartupTask {
                     + "update workflow_action_class set clazz = 'com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet' " +
                     "where clazz like 'com.dotcms.plugin.pushnow.actionlet.PushnowActionlet'";
 
+    private static final String UPDATE_QUERY_ORACLE =
+            "update workflow_action_class set clazz = 'com.dotmarketing.portlets.workflows.actionlet.EmailActionlet' " +
+                    "where to_char(clazz) = 'com.dotcms.plugin.email.actionlet.EmailActionlet';\n"
+                    + "update workflow_action_class set clazz = 'com.dotmarketing.portlets.workflows.actionlet.SetValueActionlet' " +
+                    "where to_char(clazz) = 'com.dotcms.actionlet.setvalue.SetValueActionlet';\n"
+                    + "update workflow_action_class set clazz = 'com.dotmarketing.portlets.workflows.actionlet.PushNowActionlet' " +
+                    "where to_char(clazz) = 'com.dotcms.plugin.pushnow.actionlet.PushnowActionlet'";
+
     @Override
     public boolean forceRun () {
         return true;
@@ -42,7 +50,7 @@ public class Task03130ActionletsFromPlugin extends AbstractJDBCStartupTask {
 
     @Override
     public String getOracleScript () {
-        return UPDATE_QUERY;
+        return UPDATE_QUERY_ORACLE;
     }
 
     @Override
