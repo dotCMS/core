@@ -36,10 +36,13 @@ public class RulesEngineFilter implements Filter {
     private RulesAPI rulesAPI = APILocator.getRulesAPI();
     private RulesCache rulesCache = CacheLocator.getRulesCache();
     private User systemUser;
+    private ScriptEngine engine;
 
 	public void init(FilterConfig arg0) throws ServletException {
         try {
             systemUser = WebAPILocator.getUserWebAPI().getSystemUser();
+            ScriptEngineManager manager = new ScriptEngineManager();
+            engine = manager.getEngineByName("js");
         } catch (DotDataException e) {
             Logger.error(this, "Unable to get systemUser", e);
         }
@@ -70,7 +73,8 @@ public class RulesEngineFilter implements Filter {
 
             List<Rule> notCachedEvaluations = new ArrayList<>(hostRules);
 
-            notCachedEvaluations.removeAll(evaluatedHostRules.keySet());
+            if(evaluatedHostRules!=null)
+                notCachedEvaluations.removeAll(evaluatedHostRules.keySet());
 
             for (Rule rule : notCachedEvaluations) {
                 evaluateRule(host, rule, req, res);
@@ -123,8 +127,7 @@ public class RulesEngineFilter implements Filter {
             ruleExpression.append(")");
         }
 
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine engine = manager.getEngineByName("js");
+
         Boolean result = (Boolean) engine.eval(ruleExpression.toString());
 
         // Let's put this evaluation in cache

@@ -912,7 +912,7 @@ public class RulesResource extends WebResource {
             }
 
             try {
-                rule.setName(ruleJSON.getString("ruleName"));
+                rule.setName(ruleJSON.getString("name"));
             } catch (com.dotcms.repackage.org.codehaus.jettison.json.JSONException e) {
                 Logger.info(getClass(), "Unable to set 'ruleName' - Invalid value provided - Using default");
                 throw new DotDataException("No 'ruleName' provided");

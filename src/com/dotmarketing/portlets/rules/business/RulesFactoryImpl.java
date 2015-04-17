@@ -458,6 +458,15 @@ public class RulesFactoryImpl implements RulesFactory {
 		cache.removeAction(ruleAction.getRuleId(), ruleAction);
 	}
 
+    @Override
+    public void deleteRuleActionsByRule(Rule rule) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_RULE_ACTION_BY_RULE);
+        db.addParam(rule.getId());
+        db.loadResult();
+        cache.removeActions(rule);
+    }
+
 
 
     @Override
@@ -474,6 +483,22 @@ public class RulesFactoryImpl implements RulesFactory {
         }
 
         return map;
+    }
+
+    @Override
+    public void deleteRuleActionsParameters(RuleAction action) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_RULE_ACTION_PARAM_BY_ACTION);
+        db.addParam(action.getId());
+        db.loadResult();
+    }
+
+    @Override
+    public void deleteConditionValues(Condition condition) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_CONDITION_VALUES_BY_CONDITION);
+        db.addParam(condition.getId());
+        db.loadResult();
     }
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)

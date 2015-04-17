@@ -50,6 +50,12 @@ public interface RulesFactory {
 
     void deleteRuleAction(RuleAction ruleAction) throws DotDataException;
 
+    void deleteRuleActionsByRule(Rule rule) throws DotDataException;
+
+    void deleteRuleActionsParameters(RuleAction action) throws DotDataException;
+
+    void deleteConditionValues(Condition condition) throws DotDataException;
+
     Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action) throws DotDataException;
 
 }

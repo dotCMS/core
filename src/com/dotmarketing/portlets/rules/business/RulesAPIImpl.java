@@ -96,15 +96,42 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId());
         }
 
-        // delete the conditions of the rule first
+        // delete the Condition Groups of the rule first
 
-        List<Condition> conditions = rulesFactory.getConditionsByRule(rule.getId());
+        List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        for (Condition condition : conditions) {
-            rulesFactory.deleteCondition(condition);
+        for (ConditionGroup group : groups) {
+            deleteConditionGroup(group, user, respectFrontendRoles);
         }
 
+        // delete the Rule Actions
+
+        deleteRuleActionsByRule(rule, user, respectFrontendRoles);
+//        rulesFactory.deleteRuleActionsByRule(rule);
+
+        // delete the Rule
         rulesFactory.deleteRule(rule);
+    }
+
+    public void deleteRuleActionsByRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException  {
+        if(!UtilMethods.isSet(rule)) {
+            return;
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId());
+        }
+
+        List<RuleAction> actions = rulesFactory.getRuleActionsByRule(rule.getId());
+
+        // delete action parameters
+        for (RuleAction action : actions) {
+            rulesFactory.deleteRuleActionsParameters(action);
+
+            // delete the action
+            rulesFactory.deleteRuleAction(action);
+        }
+
     }
 
     public List<ConditionGroup> getConditionGroupsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -269,6 +296,10 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
         }
 
+        // delete the condition values
+        rulesFactory.deleteConditionValues(condition);
+
+        // delete the condition
         rulesFactory.deleteCondition(condition);
     }
 
@@ -287,7 +318,14 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
         }
 
-        rulesFactory.deleteConditionsByGroup(conditionGroup);
+        // delete the conditions
+
+        List<Condition> conditions = getConditionsByConditionGroup(conditionGroup.getId(), user, respectFrontendRoles);
+
+        for (Condition condition : conditions) {
+
+            deleteCondition(condition, user, respectFrontendRoles);
+        }
 
         rulesFactory.deleteConditionGroup(conditionGroup);
     }
