@@ -1,7 +1,14 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
+import com.dotmarketing.util.Logger;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -28,6 +35,7 @@ public class Condition {
     private Date modDate;
     private Operator operator;
     private int priority;
+    private Conditionlet conditionlet;
 
     public String getId() {
         return id;
@@ -107,5 +115,25 @@ public class Condition {
 
     public void setPriority(int priority) {
         this.priority = priority;
+    }
+
+    public Conditionlet getConditionlet() {
+        if(conditionlet==null) {
+            try {
+                conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(this, "Unable to load conditionlet for condition with id: " + id);
+            }
+        }
+
+        return conditionlet;
+    }
+
+    public void setConditionlet(Conditionlet conditionlet) {
+        this.conditionlet = conditionlet;
+    }
+
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
+        return getConditionlet().evaluate(req, res, getComparison(), getValues());
     }
 }

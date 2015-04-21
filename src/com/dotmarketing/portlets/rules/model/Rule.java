@@ -1,16 +1,19 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotmarketing.portlets.rules.business.RulesFactory;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONIgnore;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 public class Rule implements Permissionable {
 
@@ -41,6 +44,7 @@ public class Rule implements Permissionable {
     private int priority;
     private boolean enabled;
     private Date modDate;
+    private List<ConditionGroup> groups;
 
     @JSONIgnore
     public String getId() {
@@ -115,6 +119,32 @@ public class Rule implements Permissionable {
         this.modDate = modDate;
     }
 
+    public List<ConditionGroup> getGroups() {
+        if(groups==null) {
+            try {
+                groups = FactoryLocator.getRulesFactory().getConditionGroupsByRule(id);
+            } catch (DotDataException e) {
+                Logger.error(this, "Unable to get condition groups for rule: " + id, e);
+            }
+        }
+        return groups;
+    }
+
+    public void setGroups(List<ConditionGroup> groups) {
+        this.groups = groups;
+    }
+
+    public void addGroup(ConditionGroup group) {
+        if(groups!=null) {
+            groups.add(group);
+        }
+    }
+
+    public void removeGroup(ConditionGroup group) {
+        if(groups!=null) {
+            groups.remove(group);
+        }
+    }
     // Beginning Permissionable methods
 
     @JSONIgnore
@@ -158,4 +188,21 @@ public class Rule implements Permissionable {
     }
 
     // End Permissionable methods
+
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) throws DotDataException {
+        boolean result = true;
+
+        for (ConditionGroup group : getGroups()) {
+            if(group.getOperator()== Condition.Operator.AND) {
+                result = result && group.evaluate(req, res);
+            } else {
+                result = result || group.evaluate(req, res);
+            }
+
+            if(!result) return false;
+        }
+
+        return result;
+
+    }
 }
