@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -12,34 +11,25 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the state/province/region a
- * user request comes from. The available options of this conditionlet will be
- * represented as a one or two-character values.
- * <p>
- * The location of the request is determined by the IP address of the client
- * that issued the request. Geographic information is then retrieved via the <a
- * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>,
- * which will allow CMS users to display content based on geographic data.
- * </p>
+ * This conditionlet will allow CMS users to check the language a user has set
+ * in their request. The language selected by the user is saved in the
+ * {@link HttpServletRequest} object, which is used to validate this condition.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-13-2015
+ * @since 04-17-2015
  *
  */
-public class VisitorsStateConditionlet extends Conditionlet {
+public class VisitorsLanguageConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
-
-	private static final String INPUT_ID = "state";
-	private static final String CONDITIONLET_NAME = "User's State/Province/Region";
+	private static final String INPUT_ID = "language";
+	private static final String CONDITIONLET_NAME = "User's Language";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -112,59 +102,55 @@ public class VisitorsStateConditionlet extends Conditionlet {
 			// Set field configuration and available options
 			inputField.setId(INPUT_ID);
 			inputField.setMultipleSelectionAllowed(true);
-			inputField.setDefaultValue("AL");
+			inputField.setDefaultValue("");
 			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
-			options.add(new EntryOption("AK", "Alaska"));
-			options.add(new EntryOption("AL", "Alabama"));
-			options.add(new EntryOption("AR", "Arkansas"));
-			options.add(new EntryOption("AZ", "Arizona"));
-			options.add(new EntryOption("CA", "California"));
-			options.add(new EntryOption("CO", "Colorado"));
-			options.add(new EntryOption("CT", "Connecticut"));
-			options.add(new EntryOption("DE", "Delaware"));
-			options.add(new EntryOption("FL", "Florida"));
-			options.add(new EntryOption("GA", "Georgia"));
-			options.add(new EntryOption("HI", "Hawaii"));
-			options.add(new EntryOption("IA", "Iowa"));
-			options.add(new EntryOption("ID", "Idaho"));
-			options.add(new EntryOption("IL", "Illinois"));
-			options.add(new EntryOption("IN", "Indiana"));
-			options.add(new EntryOption("KS", "Kansas"));
-			options.add(new EntryOption("KY", "Kentucky"));
-			options.add(new EntryOption("LA", "Louisiana"));
-			options.add(new EntryOption("MA", "Massachusetts"));
-			options.add(new EntryOption("MD", "Maryland"));
-			options.add(new EntryOption("ME", "Maine"));
-			options.add(new EntryOption("MI", "Michingan"));
-			options.add(new EntryOption("MN", "Minnesota"));
-			options.add(new EntryOption("MO", "Missouri"));
-			options.add(new EntryOption("MS", "Mississippi"));
-			options.add(new EntryOption("MT", "Montana"));
-			options.add(new EntryOption("NC", "North Carolina"));
-			options.add(new EntryOption("ND", "North Dakota"));
-			options.add(new EntryOption("NE", "Nebraska"));
-			options.add(new EntryOption("NH", "New Hampshire"));
-			options.add(new EntryOption("NJ", "New Jersey"));
-			options.add(new EntryOption("NM", "New Mexico"));
-			options.add(new EntryOption("AK", "Alaska"));
-			options.add(new EntryOption("NV", "Nevada"));
-			options.add(new EntryOption("NY", "New York"));
-			options.add(new EntryOption("OH", "Ohio"));
-			options.add(new EntryOption("OK", "Oklahoma"));
-			options.add(new EntryOption("OR", "Oregon"));
-			options.add(new EntryOption("PA", "Pennsylvania"));
-			options.add(new EntryOption("RI", "Rhode Island"));
-			options.add(new EntryOption("SC", "South Carolina"));
-			options.add(new EntryOption("SD", "South Dakota"));
-			options.add(new EntryOption("TN", "Tennessee"));
-			options.add(new EntryOption("TX", "Texas"));
-			options.add(new EntryOption("UT", "Utah"));
-			options.add(new EntryOption("VA", "Virginia"));
-			options.add(new EntryOption("VT", "Vermont"));
-			options.add(new EntryOption("WA", "Washington"));
-			options.add(new EntryOption("WI", "Wisconsin"));
-			options.add(new EntryOption("WV", "West Virginia"));
-			options.add(new EntryOption("WY", "Wyoming"));
+			options.add(new EntryOption("af", "Afrikaans"));
+			options.add(new EntryOption("sq", "Albanian"));
+			options.add(new EntryOption("ar", "Arabic"));
+			options.add(new EntryOption("be", "Belarusian"));
+			options.add(new EntryOption("bn", "Bengali, Bangla"));
+			options.add(new EntryOption("bs", "Bosnian"));
+			options.add(new EntryOption("bg", "Bulgarian"));
+			options.add(new EntryOption("ca", "Catalan"));
+			options.add(new EntryOption("zh", "Chinese"));
+			options.add(new EntryOption("hr", "Croatian"));
+			options.add(new EntryOption("cs", "Czech"));
+			options.add(new EntryOption("da", "Danish"));
+			options.add(new EntryOption("nl", "Dutch"));
+			options.add(new EntryOption("en", "English"));
+			options.add(new EntryOption("fi", "Finnish"));
+			options.add(new EntryOption("fr", "French"));
+			options.add(new EntryOption("de", "German"));
+			options.add(new EntryOption("el", "Greek"));
+			options.add(new EntryOption("ht", "Haitian, Haitian Creole"));
+			options.add(new EntryOption("he", "Hebrew (modern)"));
+			options.add(new EntryOption("hi", "Hindi"));
+			options.add(new EntryOption("hu", "hungarian"));
+			options.add(new EntryOption("id", "Indonesian"));
+			options.add(new EntryOption("is", "Islandic"));
+			options.add(new EntryOption("it", "Italian"));
+			options.add(new EntryOption("ja", "Japanese"));
+			options.add(new EntryOption("ko", "Korean"));
+			options.add(new EntryOption("ku", "Kurdish"));
+			options.add(new EntryOption("lt", "Lithuanian"));
+			options.add(new EntryOption("no", "Norwegian"));
+			options.add(new EntryOption("fa", "Persian (Farsi)"));
+			options.add(new EntryOption("pl", "Polish"));
+			options.add(new EntryOption("pt", "Portuguese"));
+			options.add(new EntryOption("ro", "Romanian"));
+			options.add(new EntryOption("ru", "Russian"));
+			options.add(new EntryOption("sd", "Sindhi"));
+			options.add(new EntryOption("sm", "Samoan"));
+			options.add(new EntryOption("sr", "Serbian"));
+			options.add(new EntryOption("sk", "Slovak"));
+			options.add(new EntryOption("es", "Spanish"));
+			options.add(new EntryOption("sv", "Swedish"));
+			options.add(new EntryOption("th", "Thai"));
+			options.add(new EntryOption("tr", "Turkish"));
+			options.add(new EntryOption("uk", "Ukranian"));
+			options.add(new EntryOption("vi", "Vietnamese"));
+			options.add(new EntryOption("yi", "Yiddish"));
+			options.add(new EntryOption("za", "Zhuang, Chuang"));
 			inputField.setData(options);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
@@ -177,22 +163,10 @@ public class VisitorsStateConditionlet extends Conditionlet {
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
 		boolean result = false;
-		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-		String ipAddress = geoIp2Util.getClientIpAddress(request); // 181.193.84.158
-		String state = null;
-		try {
-			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
-		} catch (IOException e) {
-			Logger.error(this,
-					"Could not establish connection to GeoIP2 database for IP "
-							+ ipAddress);
-		} catch (GeoIp2Exception e) {
-			Logger.error(this,
-					"State/province/region code could not be retreived for IP "
-							+ ipAddress);
-		}
+		String language = WebAPILocator.getLanguageWebAPI()
+				.getLanguage(request).getLanguageCode();
 		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(state)) {
+				&& UtilMethods.isSet(language)) {
 			Comparison comparison = getComparisonById(comparisonId);
 			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 			for (ConditionValue value : values) {
@@ -202,19 +176,19 @@ public class VisitorsStateConditionlet extends Conditionlet {
 			ValidationResults validationResults = validate(comparison,
 					inputValues);
 			if (!validationResults.hasErrors()) {
-				// If state is equal to one or more options...
+				// If language is equal to one or more options...
 				if (comparison.getId().equals(COMPARISON_IS)) {
 					for (ConditionValue value : values) {
-						if (value.getValue().equals(state)) {
+						if (value.getValue().startsWith(language)) {
 							result = true;
 							break;
 						}
 					}
-					// If state is distinct from the selected options...
-				} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+					// If language is distinct from the selected options...
+				} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
 					result = true;
 					for (ConditionValue value : values) {
-						if (value.getValue().equals(state)) {
+						if (value.getValue().equals(language)) {
 							result = false;
 							break;
 						}
