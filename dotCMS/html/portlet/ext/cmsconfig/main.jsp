@@ -1,3 +1,5 @@
+<%@ page import="com.dotmarketing.util.Config" %>
+
 <%@ include file="/html/portlet/ext/cmsconfig/init.jsp" %>
 
 <%if(request.getAttribute(com.dotmarketing.util.WebKeys.CMS_CRUMBTRAIL_OPTIONS)==null){%>
@@ -29,9 +31,13 @@
             <div id="licenseTabContentDiv"></div>
         </div>
 
-        <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
-            <div id="networkTabContentDiv"></div>
-        </div>
+        <%  if(Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { %>
+                <div id="networkTab" dojoType="dijit.layout.ContentPane" title="<%=LanguageUtil.get(pageContext, "Network")%>" >
+                    <div id="networkTabContentDiv"></div>
+                </div>
+        <%
+            }
+        %>
 
         <div id="remotePublishingTab" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "publisher_Publishing_Environment") %>" >
             <div id="remotePublishingTabContentDiv"></div>
