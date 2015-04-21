@@ -80,4 +80,14 @@ public class ConditionletInput {
     public void setMaxNum(Integer maxNum) {
         this.maxNum = maxNum;
     }
+
+	@Override
+	public String toString() {
+		return "ConditionletInput [id=" + id + ", data=" + data
+				+ ", userInputAllowed=" + userInputAllowed
+				+ ", multipleSelectionAllowed=" + multipleSelectionAllowed
+				+ ", defaultValue=" + defaultValue + ", minNum=" + minNum
+				+ ", maxNum=" + maxNum + "]";
+	}
+
 }

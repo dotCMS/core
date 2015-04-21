@@ -53,4 +53,12 @@ public class RuleActionParameter implements Serializable {
 		if(obj ==null || ! (obj instanceof RuleActionParameter)) return false;
 		return ((RuleActionParameter)obj).getId().equals(this.getId());
 	}
+
+	@JsonIgnore
+	@Override
+	public String toString() {
+		return "RuleActionParameter [id=" + id + ", ruleActionId="
+				+ ruleActionId + ", key=" + key + ", value=" + value + "]";
+	}
+
 }

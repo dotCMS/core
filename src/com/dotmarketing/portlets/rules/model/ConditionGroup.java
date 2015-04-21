@@ -48,4 +48,12 @@ public class ConditionGroup {
     public void setPriority(int priority) {
         this.priority = priority;
     }
+
+	@Override
+	public String toString() {
+		return "ConditionGroup [id=" + id + ", ruleId=" + ruleId
+				+ ", operator=" + operator + ", modDate=" + modDate
+				+ ", priority=" + priority + "]";
+	}
+
 }

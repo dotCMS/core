@@ -28,6 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 public class VisitorsLanguageConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
+	
 	private static final String INPUT_ID = "language";
 	private static final String CONDITIONLET_NAME = "User's Language";
 	private static final String COMPARISON_IS = "is";
@@ -102,7 +103,8 @@ public class VisitorsLanguageConditionlet extends Conditionlet {
 			// Set field configuration and available options
 			inputField.setId(INPUT_ID);
 			inputField.setMultipleSelectionAllowed(true);
-			inputField.setDefaultValue("");
+			inputField.setDefaultValue("en");
+			inputField.setMinNum(1);
 			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
 			options.add(new EntryOption("af", "Afrikaans"));
 			options.add(new EntryOption("sq", "Albanian"));
@@ -163,59 +165,43 @@ public class VisitorsLanguageConditionlet extends Conditionlet {
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
 		boolean result = false;
-		String language = WebAPILocator.getLanguageWebAPI()
-				.getLanguage(request).getLanguageCode();
+
 		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(language)) {
-			Comparison comparison = getComparisonById(comparisonId);
-			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-			for (ConditionValue value : values) {
-				inputValues.add(new ConditionletInputValue(INPUT_ID, value
-						.getValue()));
-			}
-			ValidationResults validationResults = validate(comparison,
-					inputValues);
-			if (!validationResults.hasErrors()) {
-				// If language is equal to one or more options...
-				if (comparison.getId().equals(COMPARISON_IS)) {
-					for (ConditionValue value : values) {
-						if (value.getValue().startsWith(language)) {
-							result = true;
-							break;
+				&& UtilMethods.isSet(comparisonId)) {
+			String language = WebAPILocator.getLanguageWebAPI()
+					.getLanguage(request).getLanguageCode();
+			if (UtilMethods.isSet(language)) {
+				Comparison comparison = getComparisonById(comparisonId);
+				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+				for (ConditionValue value : values) {
+					inputValues.add(new ConditionletInputValue(INPUT_ID, value
+							.getValue()));
+				}
+				ValidationResults validationResults = validate(comparison,
+						inputValues);
+				if (!validationResults.hasErrors()) {
+					// If language is equal to one or more options...
+					if (comparison.getId().equals(COMPARISON_IS)) {
+						for (ConditionValue value : values) {
+							if (value.getValue().startsWith(language)) {
+								result = true;
+								break;
+							}
 						}
-					}
-					// If language is distinct from the selected options...
-				} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-					result = true;
-					for (ConditionValue value : values) {
-						if (value.getValue().equals(language)) {
-							result = false;
-							break;
+						// If language is distinct from the selected options...
+					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+						result = true;
+						for (ConditionValue value : values) {
+							if (value.getValue().equals(language)) {
+								result = false;
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * Traverses the list of {@link Comparison} criteria and returns the one
-	 * associated to the specified ID.
-	 * 
-	 * @param id
-	 *            - The {@link Comparison} ID.
-	 * @return The {@link Comparison} object.
-	 */
-	private Comparison getComparisonById(String id) {
-		Comparison comparison = null;
-		for (Comparison c : this.comparisons) {
-			if (c.getId().equals(id)) {
-				comparison = c;
-				break;
-			}
-		}
-		return comparison;
 	}
 
 }

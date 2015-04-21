@@ -189,6 +189,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-databind', version:'2.4.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.useragentutils', version:'1.15_1'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {

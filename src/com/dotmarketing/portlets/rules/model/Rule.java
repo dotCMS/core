@@ -1,16 +1,15 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.json.JSONIgnore;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class Rule implements Permissionable {
 
@@ -156,6 +155,15 @@ public class Rule implements Permissionable {
     public boolean isParentPermissionable() {
         return false;
     }
-
     // End Permissionable methods
+    
+    @JSONIgnore
+	@Override
+	public String toString() {
+		return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
+				+ ", shortCircuit=" + shortCircuit + ", host=" + host
+				+ ", folder=" + folder + ", priority=" + priority
+				+ ", enabled=" + enabled + ", modDate=" + modDate + "]";
+	}
+ 
 }

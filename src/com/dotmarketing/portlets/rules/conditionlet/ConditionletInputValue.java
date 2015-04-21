@@ -31,4 +31,11 @@ public class ConditionletInputValue {
     public void setValue(String value) {
         this.value = value;
     }
+
+	@Override
+	public String toString() {
+		return "ConditionletInputValue [conditionletInputId="
+				+ conditionletInputId + ", value=" + value + "]";
+	}
+
 }

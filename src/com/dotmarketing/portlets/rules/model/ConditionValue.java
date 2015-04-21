@@ -37,4 +37,11 @@ public class ConditionValue {
     public void setPriority(int priority) {
         this.priority = priority;
     }
+
+	@Override
+	public String toString() {
+		return "ConditionValue [id=" + id + ", conditionId=" + conditionId
+				+ ", value=" + value + ", priority=" + priority + "]";
+	}
+
 }

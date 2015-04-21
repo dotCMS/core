@@ -1,8 +1,5 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
-
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -108,4 +105,14 @@ public class Condition {
     public void setPriority(int priority) {
         this.priority = priority;
     }
+
+	@Override
+	public String toString() {
+		return "Condition [id=" + id + ", name=" + name + ", ruleId=" + ruleId
+				+ ", conditionletId=" + conditionletId + ", conditionGroup="
+				+ conditionGroup + ", comparison=" + comparison + ", values="
+				+ values + ", modDate=" + modDate + ", operator=" + operator
+				+ ", priority=" + priority + "]";
+	}
+
 }

@@ -23,4 +23,11 @@ public class ValidationResults {
     public void setResults(List<ValidationResult> results) {
         this.results = results;
     }
+
+	@Override
+	public String toString() {
+		return "ValidationResults [errors=" + errors + ", results=" + results
+				+ "]";
+	}
+
 }

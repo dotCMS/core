@@ -8,6 +8,7 @@ import com.liferay.portal.language.LanguageUtil;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -81,4 +82,24 @@ public abstract class Conditionlet implements Serializable {
     public void setLanguageId(String languageId) {
         this.languageId = languageId;
     }
+
+	/**
+	 * Traverses the list of {@link Comparison} criteria and returns the one
+	 * associated to the specified ID.
+	 * 
+	 * @param id
+	 *            - The {@link Comparison} ID.
+	 * @return The {@link Comparison} object.
+	 */
+	protected Comparison getComparisonById(String id) {
+		Comparison comparison = null;
+		for (Comparison c : getComparisons()) {
+			if (c.getId().equals(id)) {
+				comparison = c;
+				break;
+			}
+		}
+		return comparison;
+	}
+
 }
