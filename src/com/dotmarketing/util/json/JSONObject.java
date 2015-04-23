@@ -954,6 +954,18 @@ public class JSONObject  {
         return this;
     }
 
+    /**
+     * Put a key/value pair in the JSONObject, where the value will be a
+     * Object which is produced from a Collection.
+     * @param key A key string.
+     * @param value A JSONArray value.
+     * @return this.
+     * @throws JSONException
+     */
+    public JSONObject put(String key, JSONArray value) throws JSONException {
+        put(key, (Object)value);
+        return this;
+    }
 
     /**
      * Put a key/double pair in the JSONObject.
