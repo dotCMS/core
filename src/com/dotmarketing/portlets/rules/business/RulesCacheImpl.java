@@ -58,6 +58,24 @@ public class RulesCacheImpl extends RulesCache {
 		return rules;
 	}
 
+    @Override
+    public Set<Rule> addRules(Set<Rule> rules, String hostId, Rule.FireOn fireOn) {
+        if(!UtilMethods.isSet(hostId) || rules==null || fireOn==null)return null;
+        cache.put(hostId + ":" + fireOn, rules, getPrimaryGroup());
+        return rules;
+    }
+
+    @Override
+    public Set<Rule> getRules(String hostId, Rule.FireOn fireOn) {
+        if(!UtilMethods.isSet(hostId) || fireOn==null) return null;
+        try {
+            return (Set<Rule>) cache.get(hostId + ":" + fireOn, PRIMARY_GROUP);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class,e.getMessage(),e);
+        }
+        return null;
+    }
+
 	@Override
 	public Rule getRule(String ruleId) {
 		Rule rule = null;
@@ -105,6 +123,7 @@ public class RulesCacheImpl extends RulesCache {
 	public void removeRule(Rule rule) {
 		if (rule != null && UtilMethods.isSet(rule.getId())) {
 			this.cache.remove(rule.getId(), getPrimaryGroup());
+            getRules(rule.getHost(), rule.getFireOn()).remove(rule);
 		}
 	}
 
@@ -457,32 +476,5 @@ public class RulesCacheImpl extends RulesCache {
 			this.cache.remove(key, RULE_ACTIONS_CACHE);
 		}
 	}
-
-    @Override
-    public Map<Rule, Boolean> addEvaluatedRule(Host host, Rule rule, Boolean evaluation) {
-        if(host == null || rule==null)return null;
-        Map<Rule, Boolean> evaluatedRules = getEvaluatedRulesByHost(host);
-
-        if(!UtilMethods.isSet(evaluatedRules)) {
-            evaluatedRules = new HashMap<>();
-        }
-
-        evaluatedRules.put(rule, evaluation);
-
-        cache.put(host.getIdentifier(), evaluatedRules, EVALUATED_RULE_CACHE);
-        return evaluatedRules;
-
-    }
-
-    @Override
-    public Map<Rule, Boolean> getEvaluatedRulesByHost(Host host) {
-        if(host == null ) return null;
-        try {
-            return (Map<Rule, Boolean>) cache.get(host.getIdentifier(), EVALUATED_RULE_CACHE);
-        } catch (DotCacheException e) {
-            Logger.debug(this, "Error trying to get Rules' Evaluation from cache for host " + host.getIdentifier(), e);
-        }
-        return null;
-    }
 
 }

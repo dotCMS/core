@@ -47,6 +47,20 @@ public class RulesFactoryImpl implements RulesFactory {
 		return ruleList;
 	}
 
+    @Override
+    public Set<Rule> getRulesByHost(String host, Rule.FireOn fireOn) throws DotDataException {
+        Set<Rule> ruleList = cache.getRules(host, fireOn);
+        if (ruleList == null) {
+            final DotConnect db = new DotConnect();
+            db.setSQL(sql.SELECT_RULES_BY_HOST_FIRE_ON);
+            db.addParam(host);
+            db.addParam(fireOn.toString());
+            ruleList = convertListToObjectsSet(db.loadObjectResults(), Rule.class);
+            cache.addRules(ruleList, host, fireOn);
+        }
+        return ruleList;
+    }
+
 	@Override
 	public List<Rule> getRulesByFolder(String folder) throws DotDataException {
 		List<Rule> ruleList = cache.getRulesByHostId(folder);
@@ -243,8 +257,12 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.addParam(new Date());
 			db.addParam(rule.getId());
 			db.loadResult();
+
+            cache.removeRule(rule);
+
+
 		}
-		cache.addRule(rule);
+        cache.getRules(rule.getHost(), rule.getFireOn()).add(rule);
 	}
 
     @Override
@@ -517,6 +535,23 @@ public class RulesFactoryImpl implements RulesFactory {
 		}
 		return ret;
 	}
+
+    private Set convertListToObjectsSet(List<Map<String, Object>> rs, Class clazz)
+            throws DotDataException {
+        final ObjectMapper m = new ObjectMapper();
+
+        final Set ret = new HashSet();
+        try {
+            for (final Map<String, Object> map : rs) {
+                ret.add(this.convertMaptoObject(map, clazz));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + clazz
+                    + " " + e.getMessage());
+
+        }
+        return ret;
+    }
 
 	private Object convertMaptoObject(Map<String, Object> map, Class clazz)
 			throws InstantiationException, IllegalAccessException,

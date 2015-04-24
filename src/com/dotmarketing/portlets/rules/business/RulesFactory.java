@@ -7,10 +7,13 @@ import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface RulesFactory {
 
     List<Rule> getRulesByHost(String host) throws DotDataException;
+
+    Set<Rule> getRulesByHost(String host, Rule.FireOn fireOn) throws DotDataException;
 
     List<Rule> getRulesByFolder(String folder) throws DotDataException;
 

@@ -33,6 +33,8 @@ import javax.servlet.http.HttpSession;
 import com.dotmarketing.business.*;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.language.LanguageException;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.Template;
@@ -214,7 +216,10 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 
-
+            if(request.getSession(false)==null) {
+                // lets fire the session scoped rules
+                RulesEngine.getInstance().fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
+            }
 
 			HttpSession session = request.getSession();
 			boolean timemachine=session.getAttribute("tm_date")!=null;
@@ -391,6 +396,10 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 	    LicenseUtil.startLiveMode();
 	    try {
+
+            // Fire EVERY_PAGE Rules
+            RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = hostWebAPI.getCurrentHost(request);
 
@@ -445,6 +454,9 @@ public abstract class VelocityServlet extends HttpServlet {
     			// create unique generator engine
     			Cookie idCookie = CookieUtil.createCookie();
     			response.addCookie(idCookie);
+
+                // Fire ONCE_PER_VISITOR Rules
+                RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
     		}
     
     		com.liferay.portal.model.User user = null;

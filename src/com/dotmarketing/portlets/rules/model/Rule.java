@@ -6,6 +6,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.business.RulesFactory;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONIgnore;
 
 import javax.servlet.http.HttpServletRequest;
@@ -204,5 +205,13 @@ public class Rule implements Permissionable {
 
         return result;
 
+    }
+
+    public boolean equals(Object o) {
+        if(!UtilMethods.isSet(o)) return false;
+
+        if(!(o instanceof Rule)) return false;
+
+        return id.equals(((Rule)o).getId());
     }
 }

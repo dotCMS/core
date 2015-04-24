@@ -3483,3 +3483,4 @@ create table rule_condition(id varchar(36) primary key,name varchar(255) not nul
 create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), value text,priority int default 0);
 create table rule_action (id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id),key varchar(255) not null,value text);
+create index idx_rules_fire_on on dot_rule (fire_on);

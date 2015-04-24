@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import com.dotcms.repackage.org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
+import com.dotcms.repackage.org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
 import org.springframework.util.NumberUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -1204,22 +1206,41 @@ public class ESContentFactoryImpl extends ContentletFactory {
         return crb.execute().actionGet().getCount();
 	}
 
-	private SearchRequestBuilder createRequest(Client client, String query) {
-		if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
-			/* this is filtered query
-			 * return client.prepareSearch().setQuery(
-        			QueryBuilders.filteredQuery(QueryBuilders.matchAllQuery(),
-                        FilterBuilders.queryFilter(
-        					QueryBuilders.queryString(query)).cache(true)));*/
-			/* this is a match_all query with a separated filter */
-			return client.prepareSearch().setQuery(QueryBuilders.matchAllQuery())
-					.setPostFilter(FilterBuilders.queryFilter(
-							QueryBuilders.queryString(query)).cache(true));
-		}
-		else {
-			return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
-		}
+    /**
+     * It will call createRequest with null as sortBy parameter
+     *
+     * @param client
+     * @param query
+     * @return
+     */
+    private SearchRequestBuilder createRequest(Client client, String query) {
+		return createRequest(client, query, null);
 	}
+
+    /**
+     *
+     * @param client
+     * @param query
+     * @param sortBy i.e. "random" or null object.
+     * @return
+     */
+    private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
+        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
+
+            if("random".equals(sortBy)){
+                return client.prepareSearch()
+                        .setQuery(QueryBuilders.functionScoreQuery(QueryBuilders.matchAllQuery(), new RandomScoreFunctionBuilder()))
+                        .setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(query)).cache(true));
+            } else {
+                return client.prepareSearch()
+                        .setQuery(QueryBuilders.matchAllQuery())
+                        .setPostFilter(FilterBuilders.queryFilter(QueryBuilders.queryString(query)).cache(true));
+            }
+
+        } else {
+            return client.prepareSearch().setQuery(QueryBuilders.queryString(query));
+        }
+    }
 
 	@Override
 	protected SearchHits indexSearch(String query, int limit, int offset, String sortBy) {
@@ -1244,7 +1265,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	    SearchResponse resp = null;
         try {
 
-        	SearchRequestBuilder srb = createRequest(client,qq);
+        	SearchRequestBuilder srb = createRequest(client, qq, sortBy);
 
         	srb.setIndices(indexToHit);
         	srb.addFields("inode","identifier");
@@ -1255,10 +1276,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 srb.setFrom(offset);
 
             if(UtilMethods.isSet(sortBy)) {
-            	if(sortBy.equals("random")) {
-            		srb.addSort(SortBuilders.scriptSort("Math.random()", "number"));
-            	}
-            	else if(sortBy.endsWith("-order")) {
+            	if(sortBy.endsWith("-order")) {
             	    // related content ordering
             	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
             	    int ind1=ind0>0 ? sortBy.indexOf('-',ind0+1) : -1;
@@ -1276,18 +1294,12 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	        }
             	    }
             	}
-            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw")) {
+            	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
             		String[] sortbyArr=sortBy.split(",");
 	            	for (String sort : sortbyArr) {
 	            		String[] x=sort.trim().split(" ");
-	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase()).order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	//                            SortOrder.DESC : SortOrder.ASC));
-	//            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + ".org").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	//                          SortOrder.DESC : SortOrder.ASC));
 	            		srb.addSort(SortBuilders.fieldSort(x[0].toLowerCase() + "_dotraw").order(x.length>1 && x[1].equalsIgnoreCase("desc") ?
 	                                SortOrder.DESC : SortOrder.ASC));
-	//            		srb.addSort(x[0].toLowerCase(),x.length>1 && x[1].equalsIgnoreCase("desc") ?
-	//                            SortOrder.DESC : SortOrder.ASC);
 
 					}
             	}

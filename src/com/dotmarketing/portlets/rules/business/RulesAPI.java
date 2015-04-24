@@ -10,6 +10,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface RulesAPI {
 
@@ -23,6 +24,18 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     List<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    Set<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException;
+
 
     /**
      *

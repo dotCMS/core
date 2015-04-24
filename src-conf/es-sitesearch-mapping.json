@@ -6,7 +6,8 @@
           "fields": {
             "untouched": {
               "type": "string",
-              "index": "not_analyzed"
+              "index": "not_analyzed",
+              "ignore_above": 32766
             },
             "content": {
               "type": "string",

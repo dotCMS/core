@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
@@ -27,7 +28,6 @@ public abstract class RulesCache implements Cachable {
 	protected static final String RULE_CONDITION_GROUPS_CACHE = "RuleConditionGroupsCache";
 	protected static final String RULE_CONDITIONS_GROUP = "RuleConditionsCache";
 	protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
-	protected static final String EVALUATED_RULE_CACHE = "EvaluatedRuleCache";
 
 	@Override
 	public String getPrimaryGroup() {
@@ -89,7 +89,28 @@ public abstract class RulesCache implements Cachable {
 	 */
 	public abstract List<Rule> addRules(List<Rule> rules);
 
-	/**
+    /**
+     * Adds a list of {@link Rule} objects under the {@Link Host} with the given hostId
+     * and whose 'Fire On' matches the given fireOn
+     *
+     * @param rules
+     * @param hostId
+     * @param fireOn
+     * @return
+     */
+    public abstract Set<Rule> addRules(Set<Rule> rules, String hostId, Rule.FireOn fireOn);
+
+    /**
+     * Returns a list of {@link Rule} objects under the {@Link Host} with the given hostId
+     * and whose 'Fire On' matches the given fireOn
+     * @param hostId
+     * @param fireOn
+     * @return
+     */
+    public abstract Set<Rule> getRules(String hostId, Rule.FireOn fireOn);
+
+
+    /**
 	 * Returns the {@link Rule} object associated to the specified key.
 	 * 
 	 * @param ruleId
@@ -379,9 +400,5 @@ public abstract class RulesCache implements Cachable {
 	 *            - The {@link Rule} object.
 	 */
 	public abstract void removeActions(Rule rule);
-
-    public abstract Map<Rule, Boolean> addEvaluatedRule(Host host, Rule rule, Boolean evaluation);
-
-    public abstract Map<Rule, Boolean> getEvaluatedRulesByHost(Host host);
 
 }

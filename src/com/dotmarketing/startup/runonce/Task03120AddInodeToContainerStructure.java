@@ -32,10 +32,12 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
     private static final String MSSQL_ADD_NOT_NULL = "ALTER TABLE container_structures ALTER COLUMN container_inode varchar(36) NOT NULL";
     private static final String SQL_INSERT_INTO_CONTAINER_STRUCTURE = "INSERT INTO container_structures(id, container_id, structure_id, code, container_inode) VALUES(?, ?, ?, ?, ?)";
     private static final String SQL_DELETE_FROM_CONTAINER = "DELETE FROM containers WHERE inode = ?";
+    private static final String SQL_DELETE_FROM_CONTAINER_STRUCTURE = "DELETE FROM container_structures WHERE id = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_IDENTIFIER = "UPDATE container_structures SET container_inode = ? WHERE container_id = ?";
     private static final String SQL_UPDATE_CONTAINER_STRUCTURE_BY_ID = "UPDATE container_structures SET container_inode = ? WHERE id = ?";
     private static final String SQL_GET_CONTAINER_VERSION = "SELECT identifier FROM container_version_info WHERE working_inode = ? AND live_inode = ?";
     private static final String SQL_GET_CONTAINER_STRUCTURE = "SELECT id, container_id, structure_id, code, container_inode FROM container_structures WHERE container_id = ?";
+    private static final String SQL_GET_CONTAINER_ID = "select id, container_id, structure_id, container_inode from container_structures order by container_id, structure_id";
 
     private final String SQL_GET_NON_WORKING_LIVE_INODES = "SELECT containers.inode " +
             "FROM containers " +
@@ -98,6 +100,36 @@ public class Task03120AddInodeToContainerStructure implements StartupTask {
                 dc.setSQL(SQL_DELETE_FROM_CONTAINER);
                 dc.addParam(inode);
                 dc.loadResults();
+            }
+        }
+
+        //Delete all the rows in ContainerStructures before inserting inode.
+        dc = new DotConnect();
+        dc.setSQL(SQL_GET_CONTAINER_ID);
+        ArrayList<Map<String, String>> identifiersContainerStructure = dc.loadResults();
+
+        if (identifiersContainerStructure != null && !identifiersContainerStructure.isEmpty()) {
+            //Use this variable to get the previous value of the identifier.
+            String firstIdentifier = "";
+            String firstStructure = "";
+
+            for(Map<String, String> identifierContainerStructure : identifiersContainerStructure){
+                String identifier = identifierContainerStructure.get("container_id");
+                String structure = identifierContainerStructure.get("structure_id");
+
+                //If the identifier and structure is the same that the previous one, we need to delete it to avoid duplicates.
+                if(firstIdentifier.equals(identifier) && firstStructure.equals(structure)){
+                    //Delete this row based on the id.
+                    String id = identifierContainerStructure.get("id");
+
+                    dc = new DotConnect();
+                    dc.setSQL(SQL_DELETE_FROM_CONTAINER_STRUCTURE);
+                    dc.addObject(id);
+                    dc.loadResults();
+                } else { //If it is not the same, we have a new identifier and we don't want to delete it.
+                    firstIdentifier = identifier;
+                    firstStructure = structure;
+                }
             }
         }
 

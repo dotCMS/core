@@ -18,6 +18,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
@@ -86,6 +88,9 @@ public class CMSFilter implements Filter {
 			response.sendRedirect(xssRedirect);
 			return;
 		}
+
+        // lets fire the request scoped rules
+        RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 		
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;
