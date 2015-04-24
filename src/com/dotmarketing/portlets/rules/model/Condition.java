@@ -4,12 +4,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
@@ -136,4 +134,13 @@ public class Condition {
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         return getConditionlet().evaluate(req, res, getComparison(), getValues());
     }
+	@Override
+	public String toString() {
+		return "Condition [id=" + id + ", name=" + name + ", ruleId=" + ruleId
+				+ ", conditionletId=" + conditionletId + ", conditionGroup="
+				+ conditionGroup + ", comparison=" + comparison + ", values="
+				+ values + ", modDate=" + modDate + ", operator=" + operator
+				+ ", priority=" + priority + "]";
+	}
+
 }

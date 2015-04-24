@@ -31,4 +31,11 @@ public class ValidationResult {
     public void setValid(boolean valid) {
         this.valid = valid;
     }
+
+	@Override
+	public String toString() {
+		return "ValidationResult [conditionletInputId=" + conditionletInputId
+				+ ", errorMessage=" + errorMessage + ", valid=" + valid + "]";
+	}
+
 }

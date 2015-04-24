@@ -98,4 +98,11 @@ public class ConditionGroup {
 
         return result;
     }
+	@Override
+	public String toString() {
+		return "ConditionGroup [id=" + id + ", ruleId=" + ruleId
+				+ ", operator=" + operator + ", modDate=" + modDate
+				+ ", priority=" + priority + "]";
+	}
+
 }

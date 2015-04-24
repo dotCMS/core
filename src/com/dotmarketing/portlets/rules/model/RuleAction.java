@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.rules.model;
 
 import java.util.Date;
 
+import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
+
 public class RuleAction {
     private String id;
     private String name;
@@ -57,4 +59,13 @@ public class RuleAction {
     public void setModDate(Date modDate) {
         this.modDate = modDate;
     }
+
+    @JsonIgnore
+	@Override
+	public String toString() {
+		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
+				+ ", priority=" + priority + ", actionlet=" + actionlet
+				+ ", modDate=" + modDate + "]";
+	}
+
 }

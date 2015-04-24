@@ -32,4 +32,10 @@ public final class EntryOption {
     public void setLabel(String label) {
         this.label = label;
     }
+
+	@Override
+	public String toString() {
+		return "EntryOption [id=" + id + ", label=" + label + "]";
+	}
+
 }

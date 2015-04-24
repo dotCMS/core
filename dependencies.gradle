@@ -53,7 +53,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-core', version:'1.0.406301_1'
     compile group: 'com.dotcms.lib', name: 'dot.commons-jci-eclipse', version:'3.2.0.666_1'
     compile group: 'com.dotcms.lib', name: 'dot.commons-lang', version:'2.4_1'
-    compile group: 'com.dotcms.lib', name: 'dot.commons-net', version:'1.4.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-net', version:'3.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.commons-pool', version:'1.5.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.commons-validator', version:'1.1.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.compression-filter', version:'ukv_1'
@@ -189,6 +189,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jackson-databind', version:'2.4.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.useragentutils', version:'1.15_1'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {

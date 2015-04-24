@@ -32,4 +32,10 @@ public final class Comparison {
     public void setLabel(String label) {
         this.label = label;
     }
+
+	@Override
+	public String toString() {
+		return "Comparison [id=" + id + ", label=" + label + "]";
+	}
+
 }

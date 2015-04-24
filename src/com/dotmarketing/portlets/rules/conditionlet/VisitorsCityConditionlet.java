@@ -1,6 +1,8 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -14,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -36,6 +39,7 @@ import com.dotmarketing.util.UtilMethods;
 public class VisitorsCityConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
+
 	private static final String INPUT_ID = "city";
 	private static final String CONDITIONLET_NAME = "Visitor's USA City";
 	private static final String COMPARISON_IS = "is";
@@ -111,6 +115,7 @@ public class VisitorsCityConditionlet extends Conditionlet {
 			inputField.setId(INPUT_ID);
 			inputField.setMultipleSelectionAllowed(true);
 			inputField.setDefaultValue("");
+			inputField.setMinNum(1);
 			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
 			options.add(new EntryOption("Juneau", "Juneau"));
 			options.add(new EntryOption("Montgomery", "Montgomery"));
@@ -174,70 +179,60 @@ public class VisitorsCityConditionlet extends Conditionlet {
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
 		boolean result = false;
-		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-		String ipAddress = geoIp2Util.getClientIpAddress(request); // 181.193.84.158
-		String city = null;
-		try {
-			city = geoIp2Util.getSubdivisionIsoCode(ipAddress);
-		} catch (IOException e) {
-			Logger.error(this,
-					"Could not establish connection to GeoIP2 database for IP "
-							+ ipAddress);
-		} catch (GeoIp2Exception e) {
-			Logger.error(this, "City name could not be retreived for IP "
-					+ ipAddress);
-		}
+
 		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(city)) {
-			Comparison comparison = getComparisonById(comparisonId);
-			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-			for (ConditionValue value : values) {
-				inputValues.add(new ConditionletInputValue(INPUT_ID, value
-						.getValue()));
+				&& UtilMethods.isSet(comparisonId)) {
+			GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+			String ipAddress = null;
+			String city = null;
+			try {
+				InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
+				ipAddress = address.getHostAddress();
+				city = geoIp2Util.getSubdivisionIsoCode(ipAddress);
+			} catch (UnknownHostException e) {
+				Logger.error(this,
+						"Could not retrieved a valid IP address from request: "
+								+ request.getRequestURL());
+			} catch (IOException e) {
+				Logger.error(this,
+						"Could not establish connection to GeoIP2 database for IP "
+								+ ipAddress);
+			} catch (GeoIp2Exception e) {
+				Logger.error(this, "City name could not be retreived for IP "
+						+ ipAddress);
 			}
-			ValidationResults validationResults = validate(comparison,
-					inputValues);
-			if (!validationResults.hasErrors()) {
-				// If city is equal to one or more options...
-				if (comparison.getId().equals(COMPARISON_IS)) {
-					for (ConditionValue value : values) {
-						if (value.getValue().equals(city)) {
-							result = true;
-							break;
+			if (UtilMethods.isSet(city)) {
+				Comparison comparison = getComparisonById(comparisonId);
+				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+				for (ConditionValue value : values) {
+					inputValues.add(new ConditionletInputValue(INPUT_ID, value
+							.getValue()));
+				}
+				ValidationResults validationResults = validate(comparison,
+						inputValues);
+				if (!validationResults.hasErrors()) {
+					// If city is equal to one or more options...
+					if (comparison.getId().equals(COMPARISON_IS)) {
+						for (ConditionValue value : values) {
+							if (value.getValue().equals(city)) {
+								result = true;
+								break;
+							}
 						}
-					}
-					// If city is distinct from the selected options...
-				} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-					result = true;
-					for (ConditionValue value : values) {
-						if (value.getValue().equals(city)) {
-							result = false;
-							break;
+						// If city is distinct from the selected options...
+					} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+						result = true;
+						for (ConditionValue value : values) {
+							if (value.getValue().equals(city)) {
+								result = false;
+								break;
+							}
 						}
 					}
 				}
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * Traverses the list of {@link Comparison} criteria and returns the one
-	 * associated to the specified ID.
-	 * 
-	 * @param id
-	 *            - The {@link Comparison} ID.
-	 * @return The {@link Comparison} object.
-	 */
-	private Comparison getComparisonById(String id) {
-		Comparison comparison = null;
-		for (Comparison c : this.comparisons) {
-			if (c.getId().equals(id)) {
-				comparison = c;
-				break;
-			}
-		}
-		return comparison;
 	}
 
 }
