@@ -3,7 +3,6 @@ package com.dotcms.util;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -12,11 +11,9 @@ import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.com.maxmind.geoip2.model.CityResponse;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Country;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Subdivision;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 /**
  * Provides utility methods to interact with the GeoIP2 API City Database. This
@@ -97,65 +94,6 @@ public class GeoIp2CityDbUtil {
 	 */
 	public static GeoIp2CityDbUtil getInstance() {
 		return SingletonHolder.INSTANCE;
-	}
-
-	/**
-	 * Retrieves the client's IP address from the {@link HttpServletRequest}
-	 * object based on the different available approaches. It's worth noting
-	 * that, depending on the server startup parameters (as described in the
-	 * Javadoc for this class), the resulting IP address can be either IPv4 or
-	 * IPv6.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return The client's IP address (either IPv4 or IPv6.).
-	 * @throws UnknownHostException
-	 *             The host name or IP address does not exist.
-	 */
-	public InetAddress getClientIpAddress(HttpServletRequest request)
-			throws UnknownHostException {
-		InetAddress ipAddress = null;
-		String ip = request.getHeader("X-Forwarded-For");
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("WL-Proxy-Client-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_X_CLUSTER_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_CLIENT_IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED_FOR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_FORWARDED");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("HTTP_VIA");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("REMOTE_ADDR");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getHeader("X-Real-IP");
-		}
-		if (StringUtils.isEmpty(ip) || "unknown".equalsIgnoreCase(ip)) {
-			ip = request.getRemoteAddr();
-		}
-		if (UtilMethods.isSet(ip)) {
-			ipAddress = InetAddress.getByName(ip);
-		}
-		return ipAddress;
 	}
 
 	/**

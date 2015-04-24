@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -185,7 +186,7 @@ public class VisitorsCityConditionlet extends Conditionlet {
 			String ipAddress = null;
 			String city = null;
 			try {
-				InetAddress address = geoIp2Util.getClientIpAddress(request); // 181.193.84.158
+				InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
 				ipAddress = address.getHostAddress();
 				city = geoIp2Util.getSubdivisionIsoCode(ipAddress);
 			} catch (UnknownHostException e) {

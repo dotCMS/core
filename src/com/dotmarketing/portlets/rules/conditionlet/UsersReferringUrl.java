@@ -13,37 +13,30 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the browser name a user
- * request is issued from. The information is obtained by reading the
- * {@code User-Agent} header in the {@link HttpServletRequest} object.
- * <p>
- * The format of the {@code User-Agent} is not standardized (basically free
- * format), which makes it difficult to decipher it. This conditionlet uses a
- * Java API called <a
- * href="http://www.bitwalker.eu/software/user-agent-utils">User Agent Utils</a>
- * which parses HTTP requests in real time and gather information about the user
- * agent, detecting a high amount of browsers, browser types, operating systems,
- * device types, rendering engines, and Web applications.
- * </p>
+ * This conditionlet will allow CMS users to check the referring URL where the
+ * user request came from.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-21-2015
+ * @since 04-22-2015
  *
  */
-public class UsersBrowserConditionlet extends Conditionlet {
+public class UsersReferringUrl extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "browser";
-	private static final String CONDITIONLET_NAME = "User's Browser";
+	private static final String INPUT_ID = "referring-url";
+	private static final String CONDITIONLET_NAME = "User's Referring URL";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
+	private static final String COMPARISON_STARTSWITH = "startsWith";
+	private static final String COMPARISON_ENDSWITH = "endsWith";
+	private static final String COMPARISON_CONTAINS = "contains";
 	private static final String COMPARISON_REGEX = "regex";
 
 	private LinkedHashSet<Comparison> comparisons = null;
@@ -60,6 +53,12 @@ public class UsersBrowserConditionlet extends Conditionlet {
 			this.comparisons = new LinkedHashSet<Comparison>();
 			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
 			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
+			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
+					"Starts With"));
+			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
+					"Ends With"));
+			this.comparisons
+					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
 			this.comparisons.add(new Comparison(COMPARISON_REGEX,
 					"Matches Regular Expression"));
 		}
@@ -123,34 +122,43 @@ public class UsersBrowserConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			String userAgentInfo = request.getHeader("User-Agent");
-			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-			String browserName = agent.getBrowser().getName().toLowerCase();
-			if (UtilMethods.isSet(browserName)) {
+			String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
+			if (UtilMethods.isSet(referrerUrl)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 				String inputValue = null;
 				for (ConditionValue value : values) {
 					inputValues.add(new ConditionletInputValue(INPUT_ID, value
 							.getValue()));
-					inputValue = value.getValue().toLowerCase();
+					inputValue = value.getValue();
 				}
 				ValidationResults validationResults = validate(comparison,
 						inputValues);
 				if (!validationResults.hasErrors()) {
 					if (comparison.getId().equals(COMPARISON_IS)) {
-						// Use startsWith because the API might return a version
-						// number after the browser name
-						if (browserName.startsWith(inputValue)) {
+						if (inputValue.equalsIgnoreCase(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!browserName.equalsIgnoreCase(inputValue)) {
+						if (!inputValue.equalsIgnoreCase(referrerUrl)) {
+							result = true;
+						}
+					} else if (comparison.getId().startsWith(
+							COMPARISON_STARTSWITH)) {
+						if (inputValue.startsWith(referrerUrl)) {
+							result = true;
+						}
+					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+						if (inputValue.endsWith(referrerUrl)) {
+							result = true;
+						}
+					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+						if (inputValue.contains(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
 						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(browserName);
+						Matcher matcher = pattern.matcher(referrerUrl);
 						if (matcher.find()) {
 							result = true;
 						}
