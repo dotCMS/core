@@ -198,7 +198,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
@@ -545,7 +545,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
@@ -876,7 +876,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
