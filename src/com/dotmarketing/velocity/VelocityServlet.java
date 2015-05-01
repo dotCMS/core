@@ -218,7 +218,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
             if(request.getSession(false)==null) {
                 // lets fire the session scoped rules
-                RulesEngine.getInstance().fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
+                RulesEngine.fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
             }
 
 			HttpSession session = request.getSession();
@@ -398,7 +398,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	    try {
 
             // Fire EVERY_PAGE Rules
-            RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
 
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = hostWebAPI.getCurrentHost(request);
@@ -456,7 +456,7 @@ public abstract class VelocityServlet extends HttpServlet {
     			response.addCookie(idCookie);
 
                 // Fire ONCE_PER_VISITOR Rules
-                RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
+                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
     		}
     
     		com.liferay.portal.model.User user = null;

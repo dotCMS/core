@@ -5,19 +5,19 @@ import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-public class SetVariantActionlet extends RuleActionlet {
+public class TestActionlet extends RuleActionlet {
     @Override
     public String getName() {
-        return "Set Variant";
+        return "TestActionlet";
     }
 
     @Override
     public String getHowTo() {
-        return "";
+        return null;
     }
 
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
-        // INSERT SOME AWESOMENESS HERE
+          // nothing to do here
     }
 }

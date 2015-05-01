@@ -21,8 +21,8 @@ abstract class RuleSQL {
 
     protected String INSERT_RULE = "insert into dot_rule (id, name, fire_on, short_circuit, host, folder, priority, enabled, mod_date) values (?,?,?,?,?,?,?,?,?)";
     protected String UPDATE_RULE = "update dot_rule set name=?, fire_on=?, short_circuit=?, host=?, folder=?, priority=?, enabled=?, mod_date=? where id=?";
-    protected String SELECT_RULES_BY_HOST = "select * from dot_rule where host=?";
-    protected String SELECT_RULES_BY_HOST_FIRE_ON = "select * from dot_rule where host=? and fire_on=?";
+    protected String SELECT_RULES_BY_HOST = "select * from dot_rule where host=? and enabled="+DbConnectionFactory.getDBTrue();
+    protected String SELECT_RULES_BY_HOST_FIRE_ON = "select * from dot_rule where host=? and fire_on=? and enabled="+DbConnectionFactory.getDBTrue();
     protected String SELECT_RULES_BY_FOLDER = "select * from dot_rule where folder=?";
     protected String SELECT_RULE_BY_ID = "select * from dot_rule where id=?";
     protected String DELETE_RULE_BY_ID = "delete from dot_rule where id=?";
@@ -47,8 +47,8 @@ abstract class RuleSQL {
     protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delete from rule_condition_value where condition_id=?";
 
 
-    protected String INSERT_RULE_ACTION = "insert into rule_action (id, name, rule_id, fire_order, actionlet) values (?,?,?,?,?)";
-    protected String UPDATE_RULE_ACTION = "update rule_action set name=?, rule_id=?, fire_order=?, actionlet=? where id=?";
+    protected String INSERT_RULE_ACTION = "insert into rule_action (id, name, rule_id, priority, actionlet) values (?,?,?,?,?)";
+    protected String UPDATE_RULE_ACTION = "update rule_action set name=?, rule_id=?, priority=?, actionlet=? where id=?";
     protected String SELECT_RULE_ACTIONS_BY_RULE = "select * from rule_action where rule_id=?";
     protected String SELECT_RULE_ACTION_BY_ID = "select * from rule_action where id=?";
     protected String DELETE_RULE_ACTION_BY_ID = "delete from rule_action where id=?";

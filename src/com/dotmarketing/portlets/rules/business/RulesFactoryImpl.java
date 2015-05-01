@@ -262,7 +262,14 @@ public class RulesFactoryImpl implements RulesFactory {
 
 
 		}
-        cache.getRules(rule.getHost(), rule.getFireOn()).add(rule);
+
+        Set<Rule> rules = cache.getRules(rule.getHost(), rule.getFireOn());
+        if(rules==null) {
+            rules = new HashSet<>();
+            cache.addRules(rules, rule.getHost(), rule.getFireOn());
+        }
+
+        rules.add(rule);
 	}
 
     @Override

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import java.util.*;
 
+import com.dotcms.repackage.org.apache.commons.collections.IteratorUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -182,19 +183,17 @@ public class RulesCacheImpl extends RulesCache {
 	public void removeCondition(String conditionGroupId, Condition condition) {
 		try {
 			int index = -1;
-			List<Condition> conditions = (List<Condition>) this.cache.get(
-					conditionGroupId, RULE_CONDITIONS_GROUP);
-			for (int i = 0; i < conditions.size(); i++) {
-				Condition cond = conditions.get(i);
+			Iterator<Condition> conditions = ((List<Condition>) this.cache.get(
+					conditionGroupId, RULE_CONDITIONS_GROUP)).iterator();
+			for (int i = 0; conditions.hasNext(); i++) {
+				Condition cond = conditions.next();
 				if (cond.getId().equals(condition.getId())) {
-					index = i;
+					conditions.remove();
 					break;
 				}
 			}
-			if (index >= 0) {
-				conditions.remove(index);
-				this.cache.put(conditionGroupId, conditions, RULE_CONDITIONS_GROUP);
-			}
+            this.cache.put(conditionGroupId, IteratorUtils.toList(conditions), RULE_CONDITIONS_GROUP);
+
 		} catch (DotCacheException e) {
 			Logger.debug(this, "ConditionsCache entry not found: "
 					+ conditionGroupId);
@@ -323,19 +322,16 @@ public class RulesCacheImpl extends RulesCache {
 			ConditionGroup conditionGroup) {
 		try {
 			int index = -1;
-			List<ConditionGroup> conditionGroups = (List<ConditionGroup>) this.cache
-					.get(ruleId, RULE_CONDITION_GROUPS_CACHE);
-			for (int i = 0; i < conditionGroups.size(); i++) {
-				ConditionGroup condGroup = conditionGroups.get(i);
+			Iterator<ConditionGroup> conditionGroups = ((List<ConditionGroup>) this.cache
+					.get(ruleId, RULE_CONDITION_GROUPS_CACHE)).iterator();
+			for (int i = 0; conditionGroups.hasNext(); i++) {
+				ConditionGroup condGroup = conditionGroups.next();
 				if (condGroup.getId().equals(conditionGroup.getId())) {
-					index = i;
+					conditionGroups.remove();
 					break;
 				}
 			}
-			if (index >= 0) {
-				conditionGroups.remove(index);
-				this.cache.put(ruleId, conditionGroups, RULE_CONDITION_GROUPS_CACHE);
-			}
+            this.cache.put(ruleId, IteratorUtils.toList(conditionGroups), RULE_CONDITION_GROUPS_CACHE);
 		} catch (DotCacheException e) {
 			Logger.debug(this, "ConditionGroupsCache entry not found: "
 					+ ruleId);

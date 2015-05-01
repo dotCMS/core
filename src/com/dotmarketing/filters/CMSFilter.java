@@ -90,7 +90,7 @@ public class CMSFilter implements Filter {
 		}
 
         // lets fire the request scoped rules
-        RulesEngine.getInstance().fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 		
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;

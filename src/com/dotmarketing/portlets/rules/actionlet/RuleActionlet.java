@@ -11,6 +11,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -90,7 +91,7 @@ public abstract class RuleActionlet implements Serializable {
 	 * @param params
 	 * @throws
 	 */
-	public abstract void executeAction(Map<String, RuleActionParameter> params);
+	public abstract void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params);
 
 
 	@Override

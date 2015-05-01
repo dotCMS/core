@@ -109,14 +109,13 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        for (ConditionGroup group : groups) {
-            deleteConditionGroup(group, user, respectFrontendRoles);
+        for (Iterator<ConditionGroup> iterator = groups.iterator(); iterator.hasNext(); ) {
+            deleteConditionGroup(iterator.next(), user, respectFrontendRoles);
         }
 
         // delete the Rule Actions
 
         deleteRuleActionsByRule(rule, user, respectFrontendRoles);
-//        rulesFactory.deleteRuleActionsByRule(rule);
 
         // delete the Rule
         rulesFactory.deleteRule(rule);
@@ -331,9 +330,9 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<Condition> conditions = getConditionsByConditionGroup(conditionGroup.getId(), user, respectFrontendRoles);
 
-        for (Condition condition : conditions) {
+        for (Iterator<Condition> iterator = conditions.iterator(); iterator.hasNext(); ) {
 
-            deleteCondition(condition, user, respectFrontendRoles);
+            deleteCondition(iterator.next(), user, respectFrontendRoles);
         }
 
         rulesFactory.deleteConditionGroup(conditionGroup);

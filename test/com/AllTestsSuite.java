@@ -1,6 +1,7 @@
 package com;
 
 
+import com.dotmarketing.portlets.rules.business.RulesAPITest;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -92,7 +93,8 @@ import com.dotmarketing.webdav.WebDavTest;
     WorkflowAPITest.class,
     ContentletAjaxTest.class,
     SimpleNodeTest.class,
-    DbConnectionFactoryUtilTest.class
+    DbConnectionFactoryUtilTest.class,
+    RulesAPITest.class
 })
 public class AllTestsSuite {
 

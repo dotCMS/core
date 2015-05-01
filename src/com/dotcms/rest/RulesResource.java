@@ -555,7 +555,7 @@ public class RulesResource extends WebResource {
             Condition condition = new Condition();
             condition.setName(conditionJSON.getString("name"));
             condition.setRuleId(ruleId);
-            condition.setConditionletId(conditionJSON.getString("conditionletId"));
+            condition.setConditionletId(conditionJSON.getString("conditionlet"));
             condition.setConditionGroup(groupId);
             condition.setComparison(conditionJSON.getString("comparison"));
             condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
@@ -565,10 +565,8 @@ public class RulesResource extends WebResource {
             List<ConditionValue> values = new ArrayList<>();
 
             if(UtilMethods.isSet(valuesJSON)) {
-                JSONArray jsonArray = valuesJSON.getJSONArray(0);
-
-                for(int i=0; i<jsonArray.length(); i++) {
-                    JSONObject valueJSON = jsonArray.getJSONObject(i);
+                for(int i=0; i<valuesJSON.length(); i++) {
+                    JSONObject valueJSON = valuesJSON.getJSONObject(i);
                     ConditionValue value = new ConditionValue();
                     value.setValue(valueJSON.getString("value"));
                     value.setPriority(valueJSON.optInt("priority", 0));
@@ -623,7 +621,7 @@ public class RulesResource extends WebResource {
 
             condition.setName(conditionJSON.getString("name"));
             condition.setRuleId(conditionJSON.getString("ruleId"));
-            condition.setConditionletId(conditionJSON.getString("conditionletId"));
+            condition.setConditionletId(conditionJSON.getString("conditionlet"));
             condition.setConditionGroup(conditionJSON.getString("conditionGroupId"));
             condition.setComparison(conditionJSON.getString("comparison"));
             condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
@@ -677,7 +675,7 @@ public class RulesResource extends WebResource {
         try {
             RuleAction action = new RuleAction();
             action.setRuleId(ruleId);
-            action.setName(actionJSON.getString("actionletName"));
+            action.setName(actionJSON.getString("actionlet"));
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
 
@@ -802,7 +800,7 @@ public class RulesResource extends WebResource {
      */
 
     @DELETE
-    @Path("/conditions")
+    @Path("/rules/conditiongroups/conditions/{conditionId}")
     public Response deleteCondition(@Context HttpServletRequest request, @PathParam("conditionId") String conditionId) throws
             JSONException {
         InitDataObject initData = init(null, true, request, true);
