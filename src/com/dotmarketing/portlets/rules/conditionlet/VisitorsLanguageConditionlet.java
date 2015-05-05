@@ -165,7 +165,6 @@ public class VisitorsLanguageConditionlet extends Conditionlet {
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
 		boolean result = false;
-
 		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
 				&& UtilMethods.isSet(comparisonId)) {
 			String language = WebAPILocator.getLanguageWebAPI()

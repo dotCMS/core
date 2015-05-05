@@ -133,4 +133,16 @@ public class HttpRequestDataUtil {
 		return referrerUrl;
 	}
 
+	/**
+	 * Returns the request URI.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The URI of the request.
+	 */
+	public static String getUri(HttpServletRequest request) {
+		String uri = request.getRequestURI();
+		return uri;
+	}
+
 }

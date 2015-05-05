@@ -6,9 +6,11 @@ import java.util.Calendar;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.portlets.rules.business.SiteVisitCache;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.Config;
 
@@ -38,6 +40,7 @@ public class DeleteOldClickstreams extends DotStatefulJob {
 			HibernateUtil.delete("from clickstream in class com.dotmarketing.beans.Clickstream where start_date < '"+sdate+"'");
 			HibernateUtil.delete("from clickstream_404 in class com.dotmarketing.beans.Clickstream404 where timestampper < '"+sdate+"'");
 			HibernateUtil.commitTransaction();	
+			CacheLocator.getVisitedUrlCache().clearCache();
 			
 		} catch (Exception e) {
 			try {

@@ -46,6 +46,10 @@ import com.dotmarketing.portlets.links.business.MenuLinkCache;
 import com.dotmarketing.portlets.links.business.MenuLinkCacheImpl;
 import com.dotmarketing.portlets.rules.business.RulesCache;
 import com.dotmarketing.portlets.rules.business.RulesCacheImpl;
+import com.dotmarketing.portlets.rules.business.SiteVisitCache;
+import com.dotmarketing.portlets.rules.business.SiteVisitCacheImpl;
+import com.dotmarketing.portlets.rules.business.VisitedUrlCache;
+import com.dotmarketing.portlets.rules.business.VisitedUrlCacheImpl;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.factories.RelationshipCacheImpl;
 import com.dotmarketing.portlets.templates.business.TemplateCache;
@@ -261,6 +265,14 @@ public class CacheLocator extends Locator<CacheIndex>{
 		return (RulesCache) getInstance(CacheIndex.RulesCache);
 	}
 
+	public static VisitedUrlCache getVisitedUrlCache() {
+		return (VisitedUrlCache) getInstance(CacheIndex.VisitedUrlCache);
+	}
+	
+	public static SiteVisitCache getSiteVisitCache() {
+		return (SiteVisitCache) getInstance(CacheIndex.SiteVisitCache);
+	}
+
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
 	 * on a put where the non legacy one will not.
@@ -346,7 +358,9 @@ enum CacheIndex
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
 	NewNotification("NewNotification Cache"),
-	RulesCache("Rules Cache");
+	RulesCache("Rules Cache"),
+	VisitedUrlCache("Rules Engine - Visited URLs"),
+	SiteVisitCache("Rules Engine - Site Visits");
 
 	Cachable create() {
 		switch(this) {
@@ -385,6 +399,8 @@ enum CacheIndex
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
       	case RulesCache : return new RulesCacheImpl();
+      	case VisitedUrlCache : return new VisitedUrlCacheImpl();
+      	case SiteVisitCache : return new SiteVisitCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

@@ -1,5 +1,7 @@
 package com.dotmarketing.factories;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -9,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.BrowserSniffer;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
@@ -76,7 +79,14 @@ public class ClickstreamFactory {
 			clickstream.setHostname(request.getRemoteHost());
 		}
 		if (clickstream.getRemoteAddress() == null) {
-			clickstream.setRemoteAddress(request.getRemoteAddr());
+			try {
+				InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+				if (UtilMethods.isSet(address)) {
+					clickstream.setRemoteAddress(address.getHostAddress());
+				}
+			} catch (UnknownHostException e) {
+				Logger.debug(ClickstreamFactory.class, "Could not retrieve IP address from request.");
+			}
 		}
 
 		// if this is the first request in the click stream

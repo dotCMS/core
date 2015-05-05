@@ -48,7 +48,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
-
+	
 	@Override
 	protected String getName() {
 		return CONDITIONLET_NAME;
@@ -365,6 +365,8 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 			try {
 				InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
 				ipAddress = address.getHostAddress();
+				// TODO
+				ipAddress = "54.209.28.36";
 				country = geoIp2Util.getCountryIsoCode(ipAddress);
 			} catch (UnknownHostException e) {
 				Logger.error(this,

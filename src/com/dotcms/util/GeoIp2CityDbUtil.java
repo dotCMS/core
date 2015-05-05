@@ -141,7 +141,7 @@ public class GeoIp2CityDbUtil {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
 		CityResponse city = databaseReader.city(inetAddress);
 		Country country = city.getCountry();
-		System.out.println(country.getIsoCode());
+		countryCode = country.getIsoCode();
 		return countryCode;
 	}
 

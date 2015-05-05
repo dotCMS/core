@@ -189,6 +189,8 @@ public class VisitorsStateConditionlet extends Conditionlet {
 			try {
 				InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 				ipAddress = address.getHostAddress();
+				// TODO
+				ipAddress = "54.209.28.36";
 				state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
 			} catch (UnknownHostException e) {
 				Logger.error(this,
