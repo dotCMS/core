@@ -17,6 +17,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -85,20 +86,29 @@ public class ServerAPIImpl implements ServerAPI {
 	}
 
 	public  void writeHeartBeatToDisk(String serverId) throws IOException {
-		String realPath = APILocator.getFileAPI().getRealAssetPath()
-    			+ java.io.File.separator + "server" + java.io.File.separator + serverId;
-		File serverDir = new File(realPath);
 
-		if(!serverDir.exists()) {
-			serverDir.mkdirs();
+		//First We need to check if the heartbeat job is enable.
+		if ( Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true) ) {
+			String realPath = APILocator.getFileAPI().getRealAssetPath()
+					+ java.io.File.separator
+					+ "server"
+					+ java.io.File.separator
+					+ serverId;
+
+			File serverDir = new File(realPath);
+			if(!serverDir.exists()) {
+				serverDir.mkdirs();
+			}
+
+			File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
+
+			OutputStream os = new FileOutputStream(heartBeat);
+			os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
+			os.flush();
+			os.close();
+		} else {
+			Logger.warn(ServerAPIImpl.class, "ENABLE_SERVER_HEARTBEAT is set to false to we do not need to write to Disk " );
 		}
-
-		File heartBeat = new File(realPath + java.io.File.separator + "heartbeat.dat");
-
-		OutputStream os = new FileOutputStream(heartBeat);
-		os.write(UtilMethods.dateToHTMLDate(new Date(), "yyyy-MM-dd H:mm:ss").getBytes());
-		os.flush();
-		os.close();
 
 	}
 
