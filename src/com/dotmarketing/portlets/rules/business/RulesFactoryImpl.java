@@ -120,7 +120,7 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.setSQL(sql.SELECT_RULE_ACTION_BY_ID);
 			db.addParam(ruleActionId);
 			List<RuleAction> result = convertListToObjects(
-					db.loadObjectResults(), Rule.class);
+					db.loadObjectResults(), RuleAction.class);
 			if (!result.isEmpty()) {
 				action = (RuleAction) result.get(0);
 				cache.addAction(action.getRuleId(), action);
@@ -210,7 +210,10 @@ public class RulesFactoryImpl implements RulesFactory {
 			List<Condition> result = convertListToObjects(
 					db.loadObjectResults(), Condition.class);
 			if (!result.isEmpty()) {
-				condition = (Condition) result.get(0);
+				condition = result.get(0);
+                db.setSQL(sql.SELECT_CONDITION_VALUES_BY_CONDITION);
+                db.addParam(condition.getId());
+                condition.setValues(convertListToObjects(db.loadObjectResults(), ConditionValue.class));
 				cache.addCondition(condition.getConditionGroup(), condition);
 			}
 		}
@@ -269,7 +272,6 @@ public class RulesFactoryImpl implements RulesFactory {
             cache.addRules(rules, rule.getHost(), rule.getFireOn());
         }
 
-        rules.add(rule);
 	}
 
     @Override
@@ -372,10 +374,10 @@ public class RulesFactoryImpl implements RulesFactory {
 
                 for (ConditionValue value : condition.getValues()) {
                     db.setSQL(sql.UPDATE_CONDITION_VALUE);
-                    db.addParam(value.getId());
                     db.addParam(condition.getId());
                     db.addParam(value.getValue());
                     db.addParam(value.getPriority());
+                    db.addParam(value.getId());
                     db.loadResult();
                 }
 
@@ -402,7 +404,7 @@ public class RulesFactoryImpl implements RulesFactory {
 		boolean isNew = true;
 		if (UtilMethods.isSet(ruleAction.getId())) {
 			try {
-				if (getRuleById(ruleAction.getId()) != null) {
+				if (getRuleActionById(ruleAction.getId()) != null) {
 					isNew = false;
 				}
 			} catch (final Exception e) {
@@ -428,8 +430,8 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.addParam(ruleAction.getActionlet());
 			db.addParam(ruleAction.getId());
 			db.loadResult();
+            cache.removeAction(ruleAction.getRuleId(), ruleAction);
 		}
-		cache.addAction(ruleAction.getRuleId(), ruleAction);
 	}
 
 	@Override
@@ -574,8 +576,9 @@ public class RulesFactoryImpl implements RulesFactory {
 			return this.convertConditionGroup(map);
 		} else if (clazz.getName().equals(RuleActionParameter.class.getName())) {
             return this.convertRuleActionParam(map);
-        }
-		{
+        } else if (clazz.getName().equals(ConditionValue.class.getName())) {
+            return this.convertConditionValue(map);
+        } else {
 			return this.convert(clazz.newInstance(), map);
 		}
 	}

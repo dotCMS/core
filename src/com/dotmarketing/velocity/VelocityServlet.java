@@ -216,12 +216,14 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 
-            if(request.getSession(false)==null) {
-                // lets fire the session scoped rules
-                RulesEngine.fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
-            }
+            boolean fireRules = request.getSession(false)==null;
 
 			HttpSession session = request.getSession();
+
+            if(fireRules)
+                RulesEngine.fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
+
+
 			boolean timemachine=session.getAttribute("tm_date")!=null;
 			boolean ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
 			boolean PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);

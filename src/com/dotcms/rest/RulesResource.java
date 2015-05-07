@@ -66,6 +66,7 @@ public class RulesResource extends WebResource {
             }
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Rules", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
@@ -98,6 +99,7 @@ public class RulesResource extends WebResource {
                 return responseResource.response(new JSONObject().toString());
             }
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Rule", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
@@ -160,6 +162,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(groupsJSON.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Conditions", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -188,6 +191,7 @@ public class RulesResource extends WebResource {
             JSONObject conditionObject = new com.dotmarketing.util.json.JSONObject(condition);
             return responseResource.response(conditionObject.toString());
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Condition", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
@@ -224,6 +228,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(jsonConditionlets.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Conditionlets", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -269,6 +274,7 @@ public class RulesResource extends WebResource {
 
             return responseResource.response(jsonComparisons.toString());
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Conditionlet Comparisons", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -310,6 +316,7 @@ public class RulesResource extends WebResource {
 
             return responseResource.response(resultsObject.toString());
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Conditionlet Inputs", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -344,6 +351,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(jsonActionlets.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Rule Actionlets", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -389,6 +397,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(resultsObject.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error getting Rule Action", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -420,6 +429,7 @@ public class RulesResource extends WebResource {
             resultsObject.put("id", rule.getId());
             return responseResource.response(resultsObject.toString());
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error saving Rule", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -448,6 +458,7 @@ public class RulesResource extends WebResource {
 
             return responseResource.response(ruleJSON.toString());
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error updating Rule", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
 
@@ -485,6 +496,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(resultsObject.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error saving Condition Group", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -527,6 +539,7 @@ public class RulesResource extends WebResource {
 
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error updating Condition Group", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -541,10 +554,10 @@ public class RulesResource extends WebResource {
      */
 
     @POST
-    @Path("/rules/{ruleId}/conditiongroups/{groupId}/conditions")
+    @Path("/rules/conditiongroups/{groupId}/conditions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveCondition(@Context HttpServletRequest request, @PathParam("ruleId") String ruleId, @PathParam("groupId") String groupId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject conditionJSON) throws DotDataException, DotSecurityException, JSONException {
+    public Response saveCondition(@Context HttpServletRequest request, @PathParam("groupId") String groupId, com.dotcms.repackage.org.codehaus.jettison.json.JSONObject conditionJSON) throws DotDataException, DotSecurityException, JSONException {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
@@ -552,9 +565,22 @@ public class RulesResource extends WebResource {
         JSONObject resultsObject = new JSONObject();
 
         try {
+
+            if(!UtilMethods.isSet(groupId)) {
+                Logger.info(getClass(), "Unable to save Condition - 'groupId' not provided");
+                throw new DotDataException("Unable to save Condition - 'groupId' not provided");
+            }
+
+            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
+
+            if(group==null) {
+                Logger.info(getClass(), "Unable to save Condition - There is no group with the 'groupId' provided");
+                throw new DotDataException("Unable to save Condition - There is no group with the 'groupId' provided");
+            }
+
             Condition condition = new Condition();
             condition.setName(conditionJSON.getString("name"));
-            condition.setRuleId(ruleId);
+            condition.setRuleId(group.getRuleId());
             condition.setConditionletId(conditionJSON.getString("conditionlet"));
             condition.setConditionGroup(groupId);
             condition.setComparison(conditionJSON.getString("comparison"));
@@ -579,9 +605,18 @@ public class RulesResource extends WebResource {
             rulesAPI.saveCondition(condition, user, false);
 
             resultsObject.put("id", condition.getId());
+
+            JSONObject valuesObject = new JSONObject();
+
+            for (ConditionValue value : values) {
+                valuesObject.put(value.getId(), value.getValue());
+            }
+
+            resultsObject.put("values", valuesObject );
             return responseResource.response(resultsObject.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error saving Condition", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -603,8 +638,6 @@ public class RulesResource extends WebResource {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
         User user = initData.getUser();
-
-        JSONObject resultsObject = new JSONObject();
 
         try {
 
@@ -634,6 +667,7 @@ public class RulesResource extends WebResource {
                 for(int i=0; i<valuesJSON.length(); i++) {
                     JSONObject valueJSON = (JSONObject) valuesJSON.get(i);
                     ConditionValue value = new ConditionValue();
+                    value.setId(valueJSON.getString("id"));
                     value.setValue(valueJSON.getString("value"));
                     value.setPriority(valueJSON.optInt("priority", 0));
                     values.add(value);
@@ -644,10 +678,11 @@ public class RulesResource extends WebResource {
 
             rulesAPI.saveCondition(condition, user, false);
 
-            resultsObject.put("id", condition.getId());
-            return responseResource.response(resultsObject.toString());
+            JSONObject conditionObject = new com.dotmarketing.util.json.JSONObject(condition);
+            return responseResource.response(conditionObject.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error updating Condition", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -675,7 +710,10 @@ public class RulesResource extends WebResource {
         try {
             RuleAction action = new RuleAction();
             action.setRuleId(ruleId);
-            action.setName(actionJSON.getString("actionlet"));
+
+            RuleActionlet actionlet = rulesAPI.findActionlet(actionJSON.getString("actionlet"));
+
+            action.setName(actionlet.getName());
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
 
@@ -685,6 +723,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(resultsObject.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error saving Rule Action", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -713,7 +752,7 @@ public class RulesResource extends WebResource {
             RuleAction action = rulesAPI.getRuleActionById(actionId, user, false);
 
             action.setRuleId(actionJSON.getString("ruleId"));
-            action.setName(actionJSON.getString("actionletName"));
+            action.setName(actionJSON.getString("actionlet"));
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
 
@@ -722,6 +761,7 @@ public class RulesResource extends WebResource {
             return responseResource.response(actionJSON.toString());
 
         } catch (DotDataException | DotSecurityException e) {
+            Logger.error(this, "Error updating Rule Action", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }

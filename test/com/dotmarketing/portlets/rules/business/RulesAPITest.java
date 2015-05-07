@@ -54,7 +54,6 @@ public class RulesAPITest extends TestBase {
 
             final String modifiedRuleName = "testRuleModified";
             final String modifiedConditionName = "testConditionModified";
-            final String modifiedActionName = "testActionModified";
 
             // Create new Rule
 
@@ -104,18 +103,18 @@ public class RulesAPITest extends TestBase {
 
             conditionJSON.put("values", valuesJSON);
 
-            response = resource.path("/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, conditionJSON.toString());
+            response = resource.path("/rules/conditiongroups/" + groupId + "/conditions").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, conditionJSON.toString());
 
             assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
 
             responseStr = response.getEntity(String.class);
             responseJSON = new JSONObject(responseStr);
             String conditionId = (String) responseJSON.get("id");
+            JSONObject conditionValues = (JSONObject) responseJSON.get("values");
 
             // Create new Rule Action
 
             JSONObject actionJSON = new JSONObject();
-            actionJSON.put("name", "testAction");
             actionJSON.put("actionlet", "TestActionlet");
 
             response = resource.path("/rules/" + ruleId + "/actions").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, actionJSON.toString());
@@ -166,6 +165,8 @@ public class RulesAPITest extends TestBase {
             conditionJSON.put("operator", Condition.Operator.OR.name());
 
             valueJSON = new JSONObject();
+            String valueId = (String) conditionValues.keys().next();
+            valueJSON.put("id", valueId);
             valueJSON.put("value", "VE");
             valueJSON.put("priority", 0);
 
@@ -186,15 +187,16 @@ public class RulesAPITest extends TestBase {
             // Update Rule Action
 
             actionJSON = new JSONObject();
-            actionJSON.put("name", modifiedActionName);
             actionJSON.put("actionlet", "TestActionlet");
+            actionJSON.put("ruleId", ruleId);
+            actionJSON.put("priority", 10);
 
-            response = resource.path("/rules/" + ruleId + "/actions").type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, actionJSON.toString());
+            response = resource.path("/rules/actions/"+actionId).type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, actionJSON.toString());
 
             assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
 
             RuleAction action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
-            assertTrue(action.getName().equals(modifiedConditionName));
+            assertTrue(action.getPriority()==10);
 
             // Get Rules
 

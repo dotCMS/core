@@ -93,7 +93,8 @@ public class RulesCacheImpl extends RulesCache {
 		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
 		List<Rule> rules = null;
 		for (String ruleId : ruleIds) {
-			Rule rule = getRule(ruleId);
+			if(ruleId.indexOf(':')>-1) continue;
+            Rule rule = getRule(ruleId);
 			if (rule.getHost().equals(hostId)) {
 				if (rules == null) {
 					rules = new ArrayList<Rule>();
@@ -109,6 +110,7 @@ public class RulesCacheImpl extends RulesCache {
 		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
 		List<Rule> rules = null;
 		for (String ruleId : ruleIds) {
+            if(ruleId.indexOf(':')>-1) continue;
 			Rule rule = getRule(ruleId);
 			if (rule.getFolder().equals(folderId)) {
 				if (rules == null) {

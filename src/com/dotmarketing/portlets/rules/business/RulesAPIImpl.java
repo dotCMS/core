@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
 import com.dotmarketing.portlets.rules.model.*;
@@ -45,6 +46,10 @@ public class RulesAPIImpl implements RulesAPI {
         // Add default conditionlet classes
         conditionletClasses.addAll(Arrays.asList(new Class[]{
                 VisitorsCountryConditionlet.class
+        }));
+
+        actionletClasses.addAll(Arrays.asList(new Class[]{
+                TestActionlet.class
         }));
 
         refreshConditionletMap();
@@ -87,6 +92,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(id);
 
         if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + id);
             return null;
         }
 
@@ -150,6 +156,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
         if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + ruleId);
             return new ArrayList<>();
         }
 
@@ -162,7 +169,17 @@ public class RulesAPIImpl implements RulesAPI {
     public ConditionGroup getConditionGroupById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         ConditionGroup conditionGroup = rulesFactory.getConditionGroupById(id);
 
+        if(conditionGroup==null) {
+            Logger.info(this, "There is no condition group with the given id: " + id);
+            return null;
+        }
+
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if(rule==null){
+            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
+            return null;
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions/groups");
@@ -179,6 +196,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
         if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + ruleId);
             return new ArrayList<>();
         }
 
@@ -191,7 +209,17 @@ public class RulesAPIImpl implements RulesAPI {
     public RuleAction getRuleActionById(String ruleActionId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         RuleAction action = rulesFactory.getRuleActionById(ruleActionId);
 
+        if(action==null) {
+            Logger.info(this, "There is no action with the given id: " + ruleActionId);
+            return null;
+        }
+
         Rule rule = rulesFactory.getRuleById(action.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + action.getRuleId());
+            return null;
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions/groups");
@@ -208,10 +236,16 @@ public class RulesAPIImpl implements RulesAPI {
         ConditionGroup conditionGroup = rulesFactory.getConditionGroupById(conditionGroupId);
 
         if(!UtilMethods.isSet(conditionGroup)) {
+            Logger.info(this, "There is no condition group with the given id: " + conditionGroupId);
             return new ArrayList<>();
         }
 
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
+            return null;
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
@@ -223,6 +257,11 @@ public class RulesAPIImpl implements RulesAPI {
     public List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
+        if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + ruleId);
+            return new ArrayList<>();
+        }
+
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
@@ -231,7 +270,18 @@ public class RulesAPIImpl implements RulesAPI {
 
     public Condition getConditionById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Condition condition = rulesFactory.getConditionById(id);
+
+        if(condition==null) {
+            Logger.info(this, "There is no condition with the given id: " + id);
+            return null;
+        }
+
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
+            return null;
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId() + " including any of its conditions");
@@ -257,6 +307,11 @@ public class RulesAPIImpl implements RulesAPI {
 
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
 
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
+            return;
+        }
+
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its groups/conditions ");
         }
@@ -269,6 +324,11 @@ public class RulesAPIImpl implements RulesAPI {
             return;
 
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
+            return;
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its conditions ");
@@ -283,8 +343,10 @@ public class RulesAPIImpl implements RulesAPI {
 
         Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
 
-        if(!UtilMethods.isSet(rule))
-            return;
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + ruleAction.getRuleId());
+            throw new DotDataException("There is no Rule with the provided ruleId: "+ruleAction.getRuleId());
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot edit rule: " + rule.getId());
@@ -299,6 +361,11 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
+            throw new DotDataException("There is no Rule with the provided ruleId: " + condition.getRuleId());
+        }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
@@ -319,6 +386,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
 
         if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
             return;
         }
 
@@ -346,6 +414,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
 
         if(!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + ruleAction.getRuleId());
             return;
         }
 
@@ -367,6 +436,7 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(ruleId);
 
         if (!UtilMethods.isSet(rule)) {
+            Logger.info(this, "There is no rule with the given id: " + action.getRuleId());
             return new HashMap<>();
         }
 
