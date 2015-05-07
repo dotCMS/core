@@ -147,9 +147,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public HTMLPageAsset fromContentlet(Contentlet con) {
-        if (con == null || con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
-            throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
-        }
+    	if (con != null){
+    		if(con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
+    			throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
+    		}
+    	}else{
+    		throw new DotStateException("Contentlet is null");
+    	}
 
         HTMLPageAsset pa=new HTMLPageAsset();
         pa.setStructureInode(con.getStructureInode());
