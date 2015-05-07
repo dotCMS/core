@@ -107,6 +107,8 @@ ol.wfStepsList li:first-child{border-top:1px dashed #ccc;}
 #actionClassParamsDia{
 	width:600px;
 	min-height:250px;
+	max-height:600px;
+	overflow:auto;
 }
 .wfnoSubActions{
 	text-align: center;
