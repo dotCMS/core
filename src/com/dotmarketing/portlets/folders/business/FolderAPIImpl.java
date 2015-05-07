@@ -376,7 +376,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				//remove value in the parent folder from the children listing
 				Folder parentFolder = !ident.getParentPath().equals("/") ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
 				if(parentFolder != null){
-					CacheLocator.getNavToolCache().getNav(faker.getHostId(), parentFolder.getInode());
+					CacheLocator.getNavToolCache().removeNav(faker.getHostId(), parentFolder.getInode());
 				}
 			}
 
