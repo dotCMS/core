@@ -163,16 +163,15 @@ if(request.getParameter("in_frame")!=null){
 					<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 					<input name="referer" type="hidden" value="<%= referer %>">
 					
-					<table border="0">
-						<tr>
-							<td valign="bottom">
-								<b><%= LanguageUtil.get(pageContext, "Folder") %>:</b>
-							</td>
-							<td>
-								<html:text readonly="true" style="border:0px;margin:auto;padding-bottom:1px" styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
-							</td>
-						</tr>
-					</table>
+                    <div style="width:100%; display:inline-block;">
+                        <div style="float:left; width:10%;line-height:30px;">
+                            <b><%= LanguageUtil.get(pageContext, "Folder") %>:</b>
+                        </div>
+                        <div style="float:left; width:90%;">
+                            <html:textarea readonly="true" rows="2" style="outline:none;resize:none;border:0px;width:99%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;" 
+                                styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
+                        </div>
+                    </div>
                      <div class="callOutBox" style="margin-left:40px;margin-right:40px;margin-bottom:10px" >
                     	 <b><%= LanguageUtil.get(pageContext, "Note") %></b>: <%= LanguageUtil.get(pageContext, "Hold-down-ctrl-to-select-multiple-files") %>
                      </div>
