@@ -222,6 +222,18 @@ public class RulesResource extends WebResource {
             for (Conditionlet conditionlet : conditionlets) {
                 JSONObject conditionletObject = new JSONObject();
                 conditionletObject.put("name", conditionlet.getLocalizedName());
+
+                Set<Comparison> comparisons = conditionlet.getComparisons();
+                JSONObject jsonComparisons = new JSONObject();
+
+                for (Comparison comparison : comparisons) {
+                    JSONObject comparisonJSON = new JSONObject();
+                    comparisonJSON.put("name", comparison.getLabel());
+                    jsonComparisons.put(comparison.getId(), comparisonJSON);
+                }
+
+                conditionletObject.put("comparisons", jsonComparisons);
+
                 jsonConditionlets.put(conditionlet.getClass().getSimpleName(), conditionletObject);
             }
 
@@ -295,26 +307,22 @@ public class RulesResource extends WebResource {
         InitDataObject initData = init(null, true, request, true);
         ResourceResponse responseResource = new ResourceResponse(initData.getParamsMap());
 
-        JSONObject resultsObject = new JSONObject();
         com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
 
         if (!UtilMethods.isSet(conditionletId) || !UtilMethods.isSet(comparison)) {
-            resultsObject.put("conditionletinputs", (Object) jsonInputs);
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(jsonInputs.toString());
         }
 
         try {
             Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
 
             if (!UtilMethods.isSet(conditionlet)) {
-                resultsObject.put("conditionletinputs", (Object) jsonInputs);
-                return responseResource.response(resultsObject.toString());
+                return responseResource.response(jsonInputs.toString());
             }
 
             jsonInputs.addAll(conditionlet.getInputs(comparison));
-            resultsObject.put("conditionletinputs", (Object) jsonInputs);
 
-            return responseResource.response(resultsObject.toString());
+            return responseResource.response(jsonInputs.toString());
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error getting Conditionlet Inputs", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
@@ -840,7 +848,7 @@ public class RulesResource extends WebResource {
      */
 
     @DELETE
-    @Path("/rules/conditiongroups/conditions/{conditionId}")
+    @Path("/rules/conditions/{conditionId}")
     public Response deleteCondition(@Context HttpServletRequest request, @PathParam("conditionId") String conditionId) throws
             JSONException {
         InitDataObject initData = init(null, true, request, true);
@@ -871,7 +879,7 @@ public class RulesResource extends WebResource {
      */
 
     @DELETE
-    @Path("/conditions")
+    @Path("/rules/actions/{ruleActionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response deleteRuleAction(@Context HttpServletRequest request, @PathParam("ruleActionId") String ruleActionId) throws

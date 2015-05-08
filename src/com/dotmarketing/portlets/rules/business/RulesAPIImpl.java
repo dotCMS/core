@@ -10,8 +10,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.util.Config;
@@ -45,7 +44,16 @@ public class RulesAPIImpl implements RulesAPI {
 
         // Add default conditionlet classes
         conditionletClasses.addAll(Arrays.asList(new Class[]{
-                VisitorsCountryConditionlet.class
+                VisitorsCountryConditionlet.class,
+                VisitorsCityConditionlet.class,
+                VisitorsStateConditionlet.class,
+                VisitorsLanguageConditionlet.class,
+                UsersBrowserConditionlet.class,
+                UsersHostConditionlet.class,
+                UsersIpAddressConditionlet.class,
+                UsersOperatingSystemConditionlet.class,
+                UsersSiteVisitsConditionlet.class,
+                UsersVisitedUrlConditionlet.class
         }));
 
         actionletClasses.addAll(Arrays.asList(new Class[]{
@@ -115,8 +123,11 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        for (Iterator<ConditionGroup> iterator = groups.iterator(); iterator.hasNext(); ) {
-            deleteConditionGroup(iterator.next(), user, respectFrontendRoles);
+        for (int i = 0; i < groups.size(); i++) {
+
+            ConditionGroup group = groups.get(i);
+
+            deleteConditionGroup(group, user, respectFrontendRoles);
         }
 
         // delete the Rule Actions
@@ -378,6 +389,31 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteCondition(condition);
     }
 
+    public void deleteConditions(ConditionGroup group, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(group)) {
+            return;
+        }
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
+            throw new DotDataException("There is no Rule with the provided ruleId: " + group.getRuleId());
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
+        }
+
+        // delete the condition values
+        for (Condition condition : group.getConditions()) {
+            rulesFactory.deleteConditionValues(condition);
+        }
+
+        // delete the condition
+        rulesFactory.deleteConditionsByGroup(group);
+    }
+
     public void deleteConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(conditionGroup)) {
             return;
@@ -396,12 +432,7 @@ public class RulesAPIImpl implements RulesAPI {
 
         // delete the conditions
 
-        List<Condition> conditions = getConditionsByConditionGroup(conditionGroup.getId(), user, respectFrontendRoles);
-
-        for (Iterator<Condition> iterator = conditions.iterator(); iterator.hasNext(); ) {
-
-            deleteCondition(iterator.next(), user, respectFrontendRoles);
-        }
+        deleteConditions(conditionGroup, user, respectFrontendRoles);
 
         rulesFactory.deleteConditionGroup(conditionGroup);
     }
