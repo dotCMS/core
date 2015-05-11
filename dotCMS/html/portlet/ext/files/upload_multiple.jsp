@@ -277,5 +277,8 @@ if(request.getParameter("in_frame")!=null){
 	<b><%= LanguageUtil.get(pageContext, "File-Uploading") %>  . . .</b><BR>
 	<%= LanguageUtil.get(pageContext, "Note") %>: <%= LanguageUtil.get(pageContext, "This-window-will-redirect-you-back-when-the-file-has-been-uploaded") %>
 </div>
+
+<% // Include javascript method to upload multiple files %>
+<%@ include file="/html/portlet/ext/files/upload_multiple_js_inc.jsp" %>
 </body>
 </liferay:box>
