@@ -527,13 +527,9 @@ public class NavigationWebAPI implements ViewTool {
 		ViewContext context = (ViewContext) obj;
         this.request = context.getRequest();
         HttpSession ses = request.getSession(false);
-    	if (ses != null)
-    		user = (User) ses.getAttribute(WebKeys.CMS_USER);
 
-		java.io.File fileFolder = new java.io.File(MENU_VTL_PATH);
-		if (!fileFolder.exists()) {
-			fileFolder.mkdirs();
-		}
+		if (ses != null)
+    		user = (User) ses.getAttribute(WebKeys.CMS_USER);
 	}
 
 	/**
