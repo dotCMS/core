@@ -123,7 +123,9 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        for (int i = 0; i < groups.size(); i++) {
+        List<ConditionGroup> auxList = new ArrayList<>(groups);
+
+        for (int i = 0; i < auxList.size(); i++) {
 
             ConditionGroup group = groups.get(i);
 
@@ -149,8 +151,10 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<RuleAction> actions = rulesFactory.getRuleActionsByRule(rule.getId());
 
+        List<RuleAction> aux = new ArrayList<>(actions);
+
         // delete action parameters
-        for (RuleAction action : actions) {
+        for (RuleAction action : aux) {
             rulesFactory.deleteRuleActionsParameters(action);
 
             // delete the action

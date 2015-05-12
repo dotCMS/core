@@ -125,8 +125,6 @@ public class RulesAPITest extends TestBase {
             responseJSON = new JSONObject(responseStr);
             String actionId = (String) responseJSON.get("id");
 
-//            if(ruleId!=null) throw new Exception(); // TODO remove this
-
             // Update Rule
 
             ruleJSON = new JSONObject();
