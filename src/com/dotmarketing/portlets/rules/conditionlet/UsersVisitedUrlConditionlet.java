@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -13,24 +15,22 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.ClickstreamRequest;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 /**
  * This conditionlet will allow CMS users to check whether a user has already
- * visited the current URL or not.
+ * visited the current URL or not. The information on the visited pages will be
+ * available until the user's session ends.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -133,27 +133,25 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", true)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					result = isUrlVisited(request, inputValue, comparison);
-				}
+			Comparison comparison = getComparisonById(comparisonId);
+			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+			String inputValue = null;
+			for (ConditionValue value : values) {
+				inputValues.add(new ConditionletInputValue(INPUT_ID, value
+						.getValue()));
+				inputValue = value.getValue();
+			}
+			ValidationResults validationResults = validate(comparison,
+					inputValues);
+			if (!validationResults.hasErrors()) {
+				result = isUrlVisited(request, inputValue, comparison);
 			}
 		}
 		return result;
 	}
 
 	/**
-	 * Analyzes the URL in the HTTP request and determines whether it has been
+	 * Retrieves the URL in the HTTP request and determines whether it has been
 	 * visited or not. Depending on the comparison mechanism, it can be a URL,
 	 * only a section of it, or a regular expression.
 	 * <p>
@@ -166,7 +164,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @param inputValue
-	 *            - The URL or regular expression
+	 *            - The URL or regular expression.
 	 * @param comparison
 	 *            - The {@link Comparison} mechanism.
 	 * @return If the URL meets the expected comparison criterion, returns
@@ -175,46 +173,31 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	private boolean isUrlVisited(HttpServletRequest request, String inputValue,
 			Comparison comparison) {
 		boolean isVisited = false;
-		Clickstream clickstream = (Clickstream) request.getSession()
-				.getAttribute("clickstream");
-		if (clickstream != null && UtilMethods.isSet(inputValue)) {
-			// Check Clickstream session object first
-			List<String> sessionUrlList = getUrlsInSession(clickstream);
-			isVisited = validateUrl(sessionUrlList, inputValue, comparison);
-			// If not found, search previous database records
-			if (!isVisited) {
-				String hostId = getHostId(request);
-				if (UtilMethods.isSet(hostId)) {
-					List<String> dbUrlList = loadPreviousRecords(
-							clickstream.getRemoteAddress(), hostId);
-					dbUrlList.removeAll(sessionUrlList);
-					isVisited = validateUrl(dbUrlList, inputValue, comparison);
-				}
+		String hostId = getHostId(request);
+		Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request
+				.getSession().getAttribute(
+						WebKeys.RULES_CONDITIONLET_VISITEDURLS);
+		Set<String> urlSet = null;
+		if (visitedUrls == null) {
+			visitedUrls = new HashMap<String, Set<String>>();
+			urlSet = new LinkedHashSet<String>();
+		} else {
+			urlSet = visitedUrls.get(hostId);
+		}
+		isVisited = validateUrl(urlSet, inputValue, comparison);
+		try {
+			String uri = HttpRequestDataUtil.getUri(request);
+			if (UtilMethods.isSet(uri)) {
+				urlSet.add(uri);
+				visitedUrls.put(hostId, urlSet);
+				request.getSession().setAttribute(
+						WebKeys.RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
 			}
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Could not retrieved a valid URI from request: "
+					+ request.getRequestURL());
 		}
 		return isVisited;
-	}
-
-	/**
-	 * Retrieves the list of unique URLs that have been visited by the current
-	 * session.
-	 * 
-	 * @param clickstream
-	 *            - The {@link Clickstream} object for the current session.
-	 * @return A {@code List<String>} containing the URLs visited by the current
-	 *         session.
-	 */
-	private List<String> getUrlsInSession(Clickstream clickstream) {
-		List<String> urlList = new ArrayList<String>();
-		List<ClickstreamRequest> clickstreamRequests = clickstream
-				.getClickstreamRequests();
-		for (ClickstreamRequest click : clickstreamRequests) {
-			String urlInRequest = click.getRequestURI();
-			if (!urlList.contains(urlInRequest)) {
-				urlList.add(urlInRequest);
-			}
-		}
-		return urlList;
 	}
 
 	/**
@@ -253,84 +236,40 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	 *         the comparison, returns {@code true}. Otherwise, returns
 	 *         {@code false}.
 	 */
-	private boolean validateUrl(List<String> urlList, String inputValue,
+	private boolean validateUrl(Collection<String> urlList, String inputValue,
 			Comparison comparison) {
-		for (String urlInRequest : urlList) {
-			if (comparison.getId().equals(COMPARISON_IS)) {
-				if (inputValue.equalsIgnoreCase(urlInRequest)) {
-					return true;
-				}
-			} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-				if (!inputValue.equalsIgnoreCase(urlInRequest)) {
-					return true;
-				}
-			} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-				if (inputValue.startsWith(urlInRequest)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-				if (inputValue.endsWith(urlInRequest)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-				if (inputValue.contains(urlInRequest)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-				Pattern pattern = Pattern.compile(inputValue);
-				Matcher matcher = pattern.matcher(urlInRequest);
-				if (matcher.find()) {
-					return true;
+		if (urlList != null && UtilMethods.isSet(inputValue)) {
+			for (String urlInSession : urlList) {
+				if (comparison.getId().equals(COMPARISON_IS)) {
+					if (inputValue.equalsIgnoreCase(urlInSession)) {
+						return true;
+					}
+				} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+					if (!inputValue.equalsIgnoreCase(urlInSession)) {
+						return true;
+					}
+				} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+					if (inputValue.startsWith(urlInSession)) {
+						return true;
+					}
+				} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+					if (inputValue.endsWith(urlInSession)) {
+						return true;
+					}
+				} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+					if (inputValue.contains(urlInSession)) {
+						return true;
+					}
+				} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+					Pattern pattern = Pattern.compile(inputValue);
+					Matcher matcher = pattern.matcher(urlInSession);
+					if (matcher.find()) {
+						return true;
+					}
 				}
 			}
 		}
 		return false;
-	}
-
-	/**
-	 * If the current URL is not found in the list of visited URLs carried in
-	 * the current session, this method will look it up in the database and will
-	 * place the results in cache.
-	 * 
-	 * @param ipAddress
-	 *            - The IP address of the client requesting the URL.
-	 * @param hostId
-	 *            - The ID of the host that the URL belongs to.
-	 * @return A {@code List<String>} containing the URLs that the specified
-	 *         user has requested to the specified host.
-	 */
-	private List<String> loadPreviousRecords(String ipAddress, String hostId) {
-		List<String> visitedUrls = CacheLocator.getVisitedUrlCache().getUrls(
-				ipAddress, hostId);
-		if (!UtilMethods.isSet(visitedUrls)) {
-			DotConnect dc = new DotConnect();
-			String query = "SELECT DISTINCT(request_uri) FROM "
-					+ "clickstream_request as cr inner join clickstream as c "
-					+ "on cr.clickstream_id = c.clickstream_id "
-					+ "where c.remote_address = ? and c.host_id = ?";
-			dc.setSQL(query);
-			dc.addParam(ipAddress);
-			dc.addParam(hostId);
-			try {
-				List<Map<String, Object>> results = dc.loadObjectResults();
-				visitedUrls = new ArrayList<String>();
-				for (Map<String, Object> record : results) {
-					Object obj = record.get("request_uri");
-					if (UtilMethods.isSet(obj)) {
-						String url = (String) record.get("request_uri");
-						visitedUrls.add(url);
-					}
-				}
-				if (visitedUrls.size() > 0) {
-					CacheLocator.getVisitedUrlCache().addUrls(ipAddress,
-							hostId, visitedUrls);
-				}
-			} catch (DotDataException e) {
-				Logger.error(this,
-						"An error occurred when executing the query.");
-			}
-		}
-		return visitedUrls;
 	}
 
 }

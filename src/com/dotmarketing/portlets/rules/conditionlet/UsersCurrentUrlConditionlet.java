@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -25,7 +27,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-27-2015
  *
  */
-public class UsersCurrentUrl extends Conditionlet {
+public class UsersCurrentUrlConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
@@ -121,7 +123,14 @@ public class UsersCurrentUrl extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			String requestUri = HttpRequestDataUtil.getUri(request);
+			String requestUri = null;
+			try {
+				requestUri = HttpRequestDataUtil.getUri(request);
+			} catch (UnsupportedEncodingException e) {
+				Logger.error(this,
+						"Could not retrieved a valid URI from request: "
+								+ request.getRequestURL());
+			}
 			if (UtilMethods.isSet(requestUri)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();

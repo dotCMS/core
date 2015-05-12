@@ -1,6 +1,8 @@
 package com.dotcms.util;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -139,9 +141,12 @@ public class HttpRequestDataUtil {
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The URI of the request.
+	 * @throws UnsupportedEncodingException
 	 */
-	public static String getUri(HttpServletRequest request) {
-		String uri = request.getRequestURI();
+	public static String getUri(HttpServletRequest request)
+			throws UnsupportedEncodingException {
+		String uri = URLDecoder.decode(request.getRequestURI(),
+				UtilMethods.getCharsetConfiguration());
 		return uri;
 	}
 
