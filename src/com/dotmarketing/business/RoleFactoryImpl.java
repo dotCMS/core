@@ -551,12 +551,14 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	@Override
 	protected boolean doesUserHaveRole(User user, Role role) throws DotDataException {
-
+		
 		if(user == null || role ==null) {
 			Logger.debug(this, "User or Role was Null");
 			return false;
 		}
-
+		if("system".equals(user.getUserId())){
+			return true;
+		}
 		List<UserRoleCacheHelper> helpers = rc.getRoleIdsForUser(user.getUserId());
 		List<String> roleIds = null;
 		if(helpers != null){
