@@ -128,17 +128,15 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         
         map.put("title", getTitle());
         map.put("friendlyName", getFriendlyName());
-        if(UtilMethods.isSet(map.get("inode"))){
-        	
-	        try {
-	            map.put("live", isLive());
-	            map.put("working", isWorking());
-	            map.put("deleted", isArchived());
-	            map.put("locked", isLocked());
-	        }
-	        catch(Exception ex) {
-	            throw new DotRuntimeException(ex.getMessage(),ex);
-	        }
+        
+        try {
+            map.put("live", isLive());
+            map.put("working", isWorking());
+            map.put("deleted", isArchived());
+            map.put("locked", isLocked());
+        }
+        catch(Exception ex) {
+            throw new DotRuntimeException(ex.getMessage(),ex);
         }
         map.put("modDate", getModDate());
         map.put("modUser", getModUser());
