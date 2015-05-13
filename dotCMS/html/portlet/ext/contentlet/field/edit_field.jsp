@@ -10,6 +10,7 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.Locale"%>
+<%@page import="java.util.Arrays"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
@@ -733,15 +734,19 @@
                 if(value instanceof Number){
                     value = String.valueOf(value);
                 }
-                if ((((String) value).contains(pairValue + ",") || ((String) value).contains(pairValue)) && UtilMethods.isSet(pairValue)) {
-                    checked = "CHECKED";
+
+                if(UtilMethods.isSet(pairValue)) {
+                    // Find and checked values saved
+                    if (Arrays.asList(((String)value).split(",")).contains(pairValue)) {
+                        checked = "CHECKED";
+                    }
                 }
             } else {
-                if (UtilMethods.isSet(defaultValue)
-                        && (defaultValue.contains("|" + pairValue)
-                                || defaultValue.contains(pairValue + "|") || defaultValue
-                                .equals(pairValue))) {
-                    checked = "CHECKED";
+                if (UtilMethods.isSet(defaultValue)) {
+                    // Find and checked default values
+                    if (Arrays.asList(defaultValue.split("|")).contains(pairValue)) {
+                        checked = "CHECKED";
+                    }
                 }
             }
  %>
@@ -758,19 +763,14 @@
 
     <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>Checkbox() {
-            var valuesList = "";
-            var checkbox = null;
-        <%
-            for (int j = 0; j < pairs.length; j++) {
-        %>
-            checkbox = $('<%=fieldName + j%>Checkbox');
-            if(checkbox.checked) {
-                valuesList += checkbox.value + ",";
-            }
-        <%
-            }
-        %>
-            $('<%=field.getVelocityVarName()%>').value = valuesList;
+            var valuesList = [];
+            
+            var checkedInputs = dojo.query("input:checkbox[name^='<%=fieldName%>Checkbox']:checked");
+            checkedInputs.forEach(function(checkedInput) {
+                valuesList.push(checkedInput.value);
+            });
+            
+            $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();
