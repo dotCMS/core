@@ -455,8 +455,7 @@ public abstract class VelocityServlet extends HttpServlet {
                 page = VelocityUtil.getPage(ident, request, true, null);
             } catch(DotDataException e) {
                 Logger.info(VelocityServlet.class, "Unable to find live version of page. Identifier: " + ident.getId());
-                response.getWriter().write("There is no live version of this page");
-                return;
+    			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
             }
 
     		// Check if the page is visible by a CMS Anonymous role

@@ -10,9 +10,9 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 //This interface should have default package access
 public abstract class HTMLPageCache implements Cachable {
 
-	abstract protected IHTMLPage add(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException;
+	abstract public IHTMLPage add(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException;
 
-	abstract protected HTMLPage get(String key);
+	abstract public IHTMLPage get(String key);
 
 	abstract public void clearCache();
 

@@ -139,6 +139,7 @@ public class ContentletCacheImpl extends ContentletCache {
     	if(h != null){ 
     		CacheLocator.getHostCache().remove(h);
     	}
+    	CacheLocator.getHTMLPageCache().remove(key);
     }
     public String[] getGroups() {
     	return groupNames;
