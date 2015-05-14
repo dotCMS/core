@@ -1353,7 +1353,7 @@ dd.leftdl {
                             <% } %>
                         </select>
                         <button dojoType="dijit.form.Button" onClick="submitform('flushCache');" iconClass="deleteIcon">
-                         <%= LanguageUtil.get(pageContext,"Flush-All-Caches") %>
+                         <%= LanguageUtil.get(pageContext,"Flush-Cache-Button") %>
                         </button>
                     </td>
                 </tr>
