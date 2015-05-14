@@ -1,13 +1,23 @@
 package com.dotmarketing.portlets.structure.ajax;
 
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,11 +44,6 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.*;
-
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 /**
  * @author David
@@ -154,7 +159,7 @@ public class StructureAjax {
 		Map<String,Object> result = new HashMap<String, Object>();
 		boolean allowImport = true;
 		
-		Structure struct = StructureCache.getStructureByInode(structureInode);
+		Structure struct = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		List<Field> fields = struct.getFields();
 		ArrayList<Map> searchableFields = new ArrayList<Map> ();
 		for (Field field : fields) {
@@ -243,7 +248,7 @@ public class StructureAjax {
 			user = (User)request.getSession().getAttribute(WebKeys.CMS_USER);
 		}
 
-		Structure st = (Structure) StructureCache.getStructureByName(structureName);
+		Structure st = (Structure) CacheLocator.getContentTypeCache().getStructureByName(structureName);
 		List<Map<String, Object>> maps = new ArrayList<Map<String,Object>>();
 
 
@@ -445,7 +450,7 @@ public class StructureAjax {
 
             //Cleaning cache
             FieldsCache.removeFields( structure );
-            StructureCache.removeStructure( structure );
+            CacheLocator.getContentTypeCache().remove( structure );
 
             //Save the structure in order to update the modDate
             StructureFactory.saveStructure( structure );
@@ -472,7 +477,7 @@ public class StructureAjax {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = userWebAPI.getLoggedInUser(req);
 
-		Structure str = StructureCache.getStructureByInode(StructureInode);
+		Structure str = CacheLocator.getContentTypeCache().getStructureByInode(StructureInode);
 
         if(!APILocator.getPermissionAPI().doesUserHavePermission(str, PERMISSION_READ, user, false))
             return  new HashMap<String, Object>();
@@ -521,7 +526,7 @@ public class StructureAjax {
 	}
 
 	public Map<String, Object> fetchByIdentity(String id) throws DotDataException, DotSecurityException {
-		Structure st = StructureCache.getStructureByInode(id);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(id);
 		if(st!=null){
 			return st.getMap();
 		}
@@ -568,8 +573,8 @@ public class StructureAjax {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		
-		if(StructureCache.getStructureByVelocityVarName(StructureVelocityVarName) != null){
-			request.getSession().setAttribute("selectedStructure", StructureCache.getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
+		if(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName) != null){
+			request.getSession().setAttribute("selectedStructure", CacheLocator.getContentTypeCache().getStructureByVelocityVarName(StructureVelocityVarName).getInode());	
 		}
 	}
 

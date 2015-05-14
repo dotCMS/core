@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -61,7 +60,7 @@ public class PermissionedWebAssetUtil {
 		offset = offset<0?0:offset;
 		String hostQuery = null;
 		if(searchHost){
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			Field hostNameField = st.getFieldVar("hostName");
 			List<Contentlet> list = null;
 			try {

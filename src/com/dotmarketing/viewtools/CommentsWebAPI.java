@@ -14,8 +14,8 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -70,9 +70,9 @@ public class CommentsWebAPI implements ViewTool {
 	}
 	private String getRelationshipName(Contentlet contentlet) throws DotSecurityException {
 		// Comments Structure
-		Structure commentsStructure = StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+		Structure commentsStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 		// Get the contentlet structure
-		Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+		Structure contentletStructure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
 		String commentStructureName = commentsStructure.getName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
 		String contentletStructureName = contentletStructure.getName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
@@ -92,7 +92,7 @@ public class CommentsWebAPI implements ViewTool {
 	}
 
 	private static boolean existCommentsStructure() {
-		Structure structure = StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 		boolean returnValue = false;
 		if (InodeUtils.isSet(structure.getInode())) {
 			returnValue = true;
@@ -175,10 +175,10 @@ public class CommentsWebAPI implements ViewTool {
 	private static boolean existCommentsRelation(Contentlet contentlet) {
 		boolean returnValue = false;
 		// Comments Structure
-		Structure commentsStructure = StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+		Structure commentsStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 
 		// Get the contentlet structure
-		Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+		Structure contentletStructure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
 
 		// Get the relationships of the comments structure
@@ -197,7 +197,7 @@ public class CommentsWebAPI implements ViewTool {
 	private static  void validateCommentsRelation(Contentlet contentlet) throws DotHibernateException {
 		if (!existCommentsRelation(contentlet)) {
 			// Comments Structure
-			Structure commentsStructure =  StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+			Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 			// Get the contentlet structure
 			Structure contentletStructure = contentlet.getStructure();
 
@@ -223,7 +223,7 @@ public class CommentsWebAPI implements ViewTool {
 	private static boolean existCommentsCommentsRelation() {
 		boolean returnValue = false;
 		// Comments Structure
-		Structure commentsStructure =  StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+		Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 
 		// Get the relationships of the comments structure
 		List<Relationship> relationships = RelationshipFactory.getAllRelationshipsByStructure(commentsStructure);
@@ -241,7 +241,7 @@ public class CommentsWebAPI implements ViewTool {
 	private static void validateCommentsCommentsRelation() throws DotHibernateException {
 		if (!existCommentsCommentsRelation()) {
 			// Comments Structure
-			Structure commentsStructure =  StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+			Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 			// Get the contentlet structure
 
 			String commentStructureName = commentsStructure.getName().replaceAll("\\s", "_").replaceAll("[^a-zA-Z0-9\\_]", "");
@@ -272,8 +272,8 @@ public class CommentsWebAPI implements ViewTool {
 				commentsStructure.setFixed(true);
 				commentsStructure.setStructureType(Structure.STRUCTURE_TYPE_CONTENT);
 				StructureFactory.saveStructure(commentsStructure);
-				StructureCache.removeStructure(commentsStructure);
-				StructureCache.addStructure(commentsStructure);
+				CacheLocator.getContentTypeCache().remove(commentsStructure);
+				CacheLocator.getContentTypeCache().add(commentsStructure);
 				List<Field> fields = new ArrayList<Field>();
 				String commentsStructureInode = commentsStructure.getInode();
 
@@ -478,7 +478,7 @@ public class CommentsWebAPI implements ViewTool {
 		public int compare(com.dotmarketing.portlets.contentlet.model.Contentlet contentlet1, com.dotmarketing.portlets.contentlet.model.Contentlet contentlet2) {
 			
 			if (!UtilMethods.isSet(datePublishedFieldName)) {
-				Structure commentsStructure =  StructureCache.getStructureByVelocityVarName(commentsVelocityStructureName);
+				Structure commentsStructure =  CacheLocator.getContentTypeCache().getStructureByVelocityVarName(commentsVelocityStructureName);
 				
 				Field field = commentsStructure.getField("DatePublished");
 				String dbField = field.getVelocityVarName();
@@ -516,7 +516,7 @@ public class CommentsWebAPI implements ViewTool {
 		    Contentlet contentlet = new Contentlet();
 			contentlet = conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
 
-			Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+			Structure contentletStructure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 
     		Field field =  contentletStructure.getField("CommentsCount");
     		if (!InodeUtils.isSet(field.getInode())){

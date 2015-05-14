@@ -4,10 +4,8 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ include file="/html/portlet/ext/files/init.jsp" %>
-<%@ page import="com.dotmarketing.util.UtilMethods"%>
-<%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.util.UtilMethods"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotmarketing.beans.Host" %>
@@ -22,7 +20,7 @@
 <%
 //gets referer
 String referer = (request.getParameter("referer") != null ) ? request.getParameter("referer") : "" ;
-String selectedStructure = (request.getParameter("selectedStructure") != null ) ? request.getParameter("selectedStructure") : StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+String selectedStructure = (request.getParameter("selectedStructure") != null ) ? request.getParameter("selectedStructure") : CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 Structure s = StructureFactory.getStructureByInode(selectedStructure);
 WorkflowScheme scheme = APILocator.getWorkflowAPI().findSchemeForStruct(s);

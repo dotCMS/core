@@ -11,17 +11,16 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.org.apache.chemistry.cmissql.CmisSqlParser.boolean_factor_return;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -39,8 +38,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 
 /**
@@ -168,7 +165,7 @@ public class ContainerAjax {
 
 			for (ContainerStructure cs : csList) {
 				Map<String, String> result = new HashMap<String, String>();
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				result.put("inode", cs.getStructureId());
 				result.put("name", st.getName());
 				resultList.add(result);
@@ -198,7 +195,7 @@ public class ContainerAjax {
 
 			for (ContainerStructure cs : csList) {
 				Map<String, String> result = new HashMap<String, String>();
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				if(permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user)){
 					result.put("inode", cs.getStructureId());
 					result.put("name", st.getName());

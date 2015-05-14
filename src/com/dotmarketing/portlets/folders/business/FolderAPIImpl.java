@@ -29,7 +29,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -564,7 +563,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setSortOrder(0);
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType(StructureCache.getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
 				Identifier newIdentifier = new Identifier();
 				if(!UtilMethods.isSet(parent)){
 					newIdentifier = APILocator.getIdentifierAPI().createNew(f, host);

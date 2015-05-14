@@ -10,10 +10,11 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,8 +35,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class EventFactoryImpl extends EventFactory {
 
@@ -185,21 +184,21 @@ public class EventFactoryImpl extends EventFactory {
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Structure getBuildingStructure() {
-		Structure eventStructure = StructureCache.getStructureByName(BUILDING_STRUCTURE_NAME);
+		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(BUILDING_STRUCTURE_NAME);
 		return eventStructure;
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Structure getEventStructure() {
-		Structure eventStructure = StructureCache.getStructureByName(EVENT_STRUCTURE_NAME);
+		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(EVENT_STRUCTURE_NAME);
 		return eventStructure;
 	}
 
 	@SuppressWarnings("deprecation")
 	@Override
 	protected Structure getLocationStructure() {
-		Structure eventStructure = StructureCache.getStructureByName(FACILITY_STRUCTURE_NAME);
+		Structure eventStructure = CacheLocator.getContentTypeCache().getStructureByName(FACILITY_STRUCTURE_NAME);
 		return eventStructure;
 	}	
 	

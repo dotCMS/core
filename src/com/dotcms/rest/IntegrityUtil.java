@@ -18,7 +18,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -31,7 +30,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -1231,7 +1229,7 @@ public class IntegrityUtil {
                         dc.executeStatement( "insert into inode values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
                     }
 
-            		Structure fileAssetSt = StructureCache.getStructureByVelocityVarName("FileAsset");
+            		Structure fileAssetSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 
             		// lets see if we have structures referencing the folder, if so, let's use its host for the dummy identifier
             		List<Structure> referencedStructures = APILocator.getFolderAPI().getStructures(folder, APILocator.getUserAPI().getSystemUser(), false);
@@ -1418,14 +1416,14 @@ public class IntegrityUtil {
             	String oldStructureInode = (String) result.get("local_inode");
             	String newStructureInode = (String) result.get("remote_inode");
 
-				Structure st = StructureCache.getStructureByInode(oldStructureInode);
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
 
 				List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st, APILocator.getUserAPI().getSystemUser(), false, 0, 0);
 				for (Contentlet contentlet : contents) {
 					CacheLocator.getContentletCache().remove(contentlet.getInode());
 				}
 
-				StructureCache.removeStructure(st);
+				CacheLocator.getContentTypeCache().remove(st);
 
 
 				// THIS IS THE NEW CODE

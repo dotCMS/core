@@ -19,25 +19,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipOutputStream;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
+
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
-
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Clickstream404;
 import com.dotmarketing.beans.ClickstreamRequest;
@@ -48,7 +49,6 @@ import com.dotmarketing.beans.PermissionReference;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -92,9 +92,6 @@ import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
-import com.dotcms.repackage.com.thoughtworks.xstream.mapper.Mapper;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -172,9 +169,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			{
 				Logger.info(this, "Running Contents Index Cache");
 				if(defaultStructure.equals("Rebuild Whole Index")){
-					structure = StructureCache.getStructureByVelocityVarName(defaultStructure);
+					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
 				}else
-					structure = StructureCache.getStructureByVelocityVarName(ccf.getStructure());
+					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
 					try{

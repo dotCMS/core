@@ -12,19 +12,19 @@ import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
 
+import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
+import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -134,7 +134,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @deprecated this methods was deprecated because it hits the database, try to use the lucene search methods instead.
 	 */
 	public Structure getStructureByType(String structureType) {
-		return StructureCache.getStructureByType(structureType);
+		return CacheLocator.getContentTypeCache().getStructureByType(structureType);
 	}
 
 	/**
@@ -146,7 +146,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @since 1.5
 	 */
 	public Structure getStructureByInode(String structureInode) {
-		return StructureCache.getStructureByInode(structureInode);
+		return CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 	}
 
 	/**
@@ -177,7 +177,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName, int maxResults) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = StructureCache.getStructureByType(structureType);
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		return getLastestContents(structure, category, maxResults);
 	}
 
@@ -206,7 +206,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getLastestContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = StructureCache.getStructureByType(structureType);
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		return getLastestContents(structure, category);
 	}
 
@@ -236,7 +236,7 @@ public class ContentsWebAPI implements ViewTool {
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
 	public Field getFieldByName(String structureType, String fieldName) {
-		Structure st = StructureCache.getStructureByType(structureType);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		return getFieldByName(st, fieldName);
 	}
 
@@ -260,7 +260,7 @@ public class ContentsWebAPI implements ViewTool {
 	 *              we encourage the use of the logical name of the field instead @see getFieldByLogicalName
 	 */
 	public Field getFieldByInode(String structureInode, String fieldName) {
-		Structure st = StructureCache.getStructureByInode(structureInode);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		return getFieldByName(st, fieldName);
 	}
 
@@ -287,7 +287,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public Field getFieldByLogicalName(String structureType, String fieldName) {
 		@SuppressWarnings("deprecation")
-		Structure st = StructureCache.getStructureByType(structureType);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		return getFieldByLogicalName(st, fieldName);
 	}
 
@@ -307,7 +307,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @return The field found, an empty field if it wasn't found
 	 */
 	public Field getFieldByLogicalNameAndInode(String structureInode, String fieldName) {
-		Structure st = StructureCache.getStructureByInode(structureInode);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		return getFieldByLogicalName(st, fieldName);
 	}
 
@@ -319,7 +319,7 @@ public class ContentsWebAPI implements ViewTool {
 	 * @deprecated Try using the #getContentDetail or #getContentDetailByIdentifier macros to retrieve the fields of a content.
 	 */
 	public Object getFieldValue(String fieldName, Contentlet content) {
-		Structure structure = StructureCache.getStructureByInode(content.getStructureInode());
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(content.getStructureInode());
 		Field theField = null;
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 		for (Field field : fields) {
@@ -388,7 +388,7 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public List<Contentlet> getContents(String structureType, String categoryName) throws DotDataException, DotSecurityException {
 		Category category = categoryAPI.findByName(categoryName, user, true);
-		Structure structure = StructureCache.getStructureByType(structureType);
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		StringBuffer buffy = new StringBuffer();
 		buffy.append("+live:true +deleted:false +structureInode:" + structure.getInode() + " +c" + category.getInode() + "c:on");
 		return conAPI.search(buffy.toString(), 0, -1, "mod_date", user, true);
@@ -426,7 +426,7 @@ public class ContentsWebAPI implements ViewTool {
 			structure = new Structure();
 			structure.setInode(structInode);
 		} catch (Exception e) {
-			structure = StructureCache.getStructureByType(structureType);
+			structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		}
 
 		Logger.debug(ContentsWebAPI.class, "search: luceneCondition: " + luceneCondition + ", sortBy: " + sortBy
@@ -484,7 +484,7 @@ public class ContentsWebAPI implements ViewTool {
 			structure = new Structure();
 			structure.setInode(structInode);
 		} catch (Exception e) {
-			structure = StructureCache.getStructureByType(structureType);
+			structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		}
 		//luceneCondition = LuceneUtils.findAndReplaceQueryDatesLegacy(luceneCondition);
 		int offSet = 0;
@@ -1168,7 +1168,7 @@ public class ContentsWebAPI implements ViewTool {
 
 		// get the structure and field
 		@SuppressWarnings("deprecation")
-		Structure structure = StructureCache.getStructureByName(structureName);
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByName(structureName);
         if(structure ==null){
             Logger.error(this.getClass(), "getContentletByUrl unable to find structure " +structureName + "." +fieldName );
             return null;
@@ -1309,7 +1309,7 @@ public class ContentsWebAPI implements ViewTool {
 
 		try {
 			@SuppressWarnings("deprecation")
-			Structure structure = StructureCache.getStructureByName(structureName);
+			Structure structure = CacheLocator.getContentTypeCache().getStructureByName(structureName);
 			if ((structure == null) || !InodeUtils.isSet(structure.getInode()))
 				return result;
 

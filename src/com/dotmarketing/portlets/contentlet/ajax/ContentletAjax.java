@@ -18,9 +18,9 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -32,7 +32,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -532,7 +531,7 @@ public class ContentletAjax {
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
 		if(!"_all".equals(structureInode)){
-		    st = StructureCache.getStructureByInode(structureInode);
+		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
@@ -923,7 +922,7 @@ public class ContentletAjax {
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
 			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
-			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
+			Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
 			                :  (s.getStructureType() ==2)
@@ -2090,7 +2089,7 @@ public class ContentletAjax {
 
 		Contentlet newCont = new Contentlet();
 
-		Structure fileAssetStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+		Structure fileAssetStr = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 

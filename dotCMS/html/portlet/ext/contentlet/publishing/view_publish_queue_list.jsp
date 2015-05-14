@@ -31,7 +31,6 @@
 <%@ page import="com.dotmarketing.portlets.templates.model.Template"%>
 <%@ page import="com.dotmarketing.portlets.containers.model.Container"%>
 <%@ page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@ page import="com.dotmarketing.cache.StructureCache"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%
 

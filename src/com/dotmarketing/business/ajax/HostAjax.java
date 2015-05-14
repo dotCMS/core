@@ -8,19 +8,20 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.org.directwebremoting.WebContext;
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import org.quartz.SchedulerException;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
+import com.dotcms.repackage.org.directwebremoting.WebContext;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.util.HostNameComparator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,8 +35,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class HostAjax {
 
@@ -83,7 +82,7 @@ public class HostAjax {
 		long totalResults;
 		List<Map<String, Object>> listOfHosts = new ArrayList<Map<String,Object>>(hosts.size());
 
-		Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+		Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		List<Field> fields = FieldsCache.getFieldsByStructureVariableName("Host");
 
 		List<Field> searchableFields = new ArrayList<Field>(fields.size());

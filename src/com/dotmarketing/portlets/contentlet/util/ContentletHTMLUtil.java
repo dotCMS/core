@@ -4,8 +4,8 @@ import java.util.Date;
 import java.util.List;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -31,7 +31,7 @@ public class ContentletHTMLUtil {
 			Logger.error(Contentlet.class, "Unable to get system user", e);
 		}
         StringBuffer sb = new StringBuffer();
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
         for (Field f : fields) {
             if (f.isListed()) {

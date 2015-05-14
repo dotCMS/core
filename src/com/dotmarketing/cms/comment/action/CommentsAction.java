@@ -24,11 +24,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.comment.struts.CommentsForm;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -124,14 +124,14 @@ public class CommentsAction extends DispatchAction {
 				Logger.error(this, "Unable to look up comment with inode " + commentsOptions.get("contentInode"), e);
 			}
 
-			Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+			Structure contentletStructure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 			Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 
 			/*make sure we have a structure in place before saving */
 			CommentsWebAPI cAPI = new CommentsWebAPI();
 			cAPI.validateComments(contentlet.getInode());
 
-			Structure commentsStructure = StructureCache.getStructureByVelocityVarName(CommentsWebAPI.commentsVelocityStructureName);
+			Structure commentsStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(CommentsWebAPI.commentsVelocityStructureName);
 
 			Contentlet contentletComment = new Contentlet();
 
@@ -367,7 +367,7 @@ public class CommentsAction extends DispatchAction {
 
 		//This needs to be updated to use a lucene fix
 		// Condition
-		Structure commentsStructure = StructureCache.getStructureByVelocityVarName(CommentsWebAPI.commentsVelocityStructureName);
+		Structure commentsStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(CommentsWebAPI.commentsVelocityStructureName);
 		Field field = commentsStructure.getFieldVar("emailResponse");
 		String responseField = field.getFieldContentlet();
 
