@@ -34,7 +34,7 @@ import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCacheImpl;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -137,7 +137,7 @@ public class URLMapFilter implements Filter {
 			Logger.error(URLMapFilter.class, e2.getMessage(), e2);
 		}
 		if (mastRegEx == null) {
-			synchronized (StructureCacheImpl.MASTER_STRUCTURE) {
+			synchronized (ContentTypeCacheImpl.MASTER_STRUCTURE) {
 				try {
 					mastRegEx = buildCacheObjects();
 				} catch (DotDataException e) {

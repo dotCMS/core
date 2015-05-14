@@ -14,7 +14,7 @@ import com.dotmarketing.util.UtilMethods;
 /**
  * @author David
  */
-public class StructureCacheImpl extends ContentTypeCache {
+public class ContentTypeCacheImpl extends ContentTypeCache {
 
 	public static final String MASTER_STRUCTURE = "dotMaster_Structure";
 	
@@ -24,7 +24,7 @@ public class StructureCacheImpl extends ContentTypeCache {
     // region's name for the cache
     private final String[] groups = { primaryGroup, containerStructureGroup };
 
-    public StructureCacheImpl() {
+    public ContentTypeCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
     }
 
@@ -64,7 +64,7 @@ public class StructureCacheImpl extends ContentTypeCache {
     	try{
     		st = (Structure) cache.get(primaryGroup + inode,primaryGroup);
     	}catch (DotCacheException e) {
-			Logger.debug(StructureCacheImpl.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByInode(inode);
@@ -98,7 +98,7 @@ public class StructureCacheImpl extends ContentTypeCache {
         try{
         	st = (Structure) cache.get(primaryGroup + name,primaryGroup);
         }catch (DotCacheException e) {
-			Logger.debug(StructureCacheImpl.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByType(name);
@@ -124,7 +124,7 @@ public class StructureCacheImpl extends ContentTypeCache {
         try{
         	st = (Structure) cache.get(primaryGroup + variableName,primaryGroup);
         }catch (DotCacheException e) {
-			Logger.debug(StructureCacheImpl.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByVelocityVarName(variableName);
@@ -186,7 +186,7 @@ public class StructureCacheImpl extends ContentTypeCache {
     }
     
     public void clearURLMasterPattern(){
-    	synchronized (StructureCacheImpl.MASTER_STRUCTURE) {
+    	synchronized (ContentTypeCacheImpl.MASTER_STRUCTURE) {
         	cache.remove(primaryGroup + MASTER_STRUCTURE,primaryGroup);	
 		}
     }
@@ -208,7 +208,7 @@ public class StructureCacheImpl extends ContentTypeCache {
 			return containerStructures;
 			
 		} catch (DotCacheException e) {
-			Logger.debug(StructureCacheImpl.class, "Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class, "Cache Entry not found", e);
 			return null;
     	}
 	}
