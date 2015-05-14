@@ -211,7 +211,9 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 			hostId = host.getIdentifier();
 		} catch (PortalException | SystemException | DotDataException
 				| DotSecurityException e) {
-			Logger.error(this, "Could not retrieve current host information");
+			Logger.error(this,
+					"Could not retrieve current host information for: "
+							+ request.getRequestURL());
 		}
 		return hostId;
 	}

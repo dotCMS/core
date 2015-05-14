@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -16,23 +15,23 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the current URL in a request.
+ * This conditionlet will allow CMS users to check the referring URL where the
+ * user request came from.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-27-2015
+ * @since 04-22-2015
  *
  */
-public class UsersCurrentUrlConditionlet extends Conditionlet {
+public class UsersReferringUrlConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "current-url";
-	private static final String CONDITIONLET_NAME = "User's Current URL";
+	private static final String INPUT_ID = "referring-url";
+	private static final String CONDITIONLET_NAME = "User's Referring URL";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -123,15 +122,8 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			String requestUri = null;
-			try {
-				requestUri = HttpRequestDataUtil.getUri(request);
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(this,
-						"Could not retrieved a valid URI from request: "
-								+ request.getRequestURL());
-			}
-			if (UtilMethods.isSet(requestUri)) {
+			String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
+			if (UtilMethods.isSet(referrerUrl)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 				String inputValue = null;
@@ -144,29 +136,29 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 						inputValues);
 				if (!validationResults.hasErrors()) {
 					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (inputValue.equalsIgnoreCase(requestUri)) {
+						if (inputValue.equalsIgnoreCase(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!inputValue.equalsIgnoreCase(requestUri)) {
+						if (!inputValue.equalsIgnoreCase(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().startsWith(
 							COMPARISON_STARTSWITH)) {
-						if (inputValue.startsWith(requestUri)) {
+						if (inputValue.startsWith(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (inputValue.endsWith(requestUri)) {
+						if (inputValue.endsWith(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (inputValue.contains(requestUri)) {
+						if (inputValue.contains(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
 						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(requestUri);
+						Matcher matcher = pattern.matcher(referrerUrl);
 						if (matcher.find()) {
 							result = true;
 						}

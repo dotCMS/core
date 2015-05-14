@@ -128,24 +128,7 @@ public class UsersHostConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			String hostName = null;
-			try {
-				Host host = WebAPILocator.getHostWebAPI().getCurrentHost(
-						request);
-				hostName = host.getHostname();
-			} catch (PortalException e) {
-				Logger.error(this,
-						"User could not be retrieved from the request.");
-			} catch (SystemException e) {
-				Logger.error(this,
-						"An system error occurred when evaluating this conditoinlet.");
-			} catch (DotDataException e) {
-				Logger.error(this,
-						"An error occurred when retrieving Host data from the database.");
-			} catch (DotSecurityException e) {
-				Logger.error(this,
-						"User does not have permission to read Host data.");
-			}
+			String hostName = getHostName(request);
 			if (UtilMethods.isSet(hostName)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
@@ -190,6 +173,29 @@ public class UsersHostConditionlet extends Conditionlet {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Returns the name of the site (host) based on the
+	 * {@code HttpServletRequest} object.
+	 * 
+	 * @param request
+	 *            - The {@code HttpServletRequest} object.
+	 * @return The name of the site, or {@code null} if an error occurred when
+	 *         retrieving the site information.
+	 */
+	private String getHostName(HttpServletRequest request) {
+		String hostName = null;
+		try {
+			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+			hostName = host.getHostname();
+		} catch (PortalException | SystemException | DotDataException
+				| DotSecurityException e) {
+			Logger.error(this,
+					"Could not retrieve current host information for: "
+							+ request.getRequestURL());
+		}
+		return hostName;
 	}
 
 }

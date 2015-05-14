@@ -41,7 +41,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "state";
+	private static final String INPUT_ID = "country";
 	private static final String CONDITIONLET_NAME = "User's Country";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";

@@ -40,7 +40,7 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "operating-system";
+	private static final String INPUT_ID = "os";
 	private static final String CONDITIONLET_NAME = "User's Operating System";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";

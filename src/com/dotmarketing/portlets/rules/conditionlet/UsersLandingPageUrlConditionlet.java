@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -14,25 +13,28 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.beans.Clickstream;
+import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the current URL in a request.
+ * This conditionlet will allow CMS users to check the URL of the first page
+ * that a user has visited in its current session. For this conditionlet to
+ * work, the Clickstream feature must be enabled.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-27-2015
+ * @since 05-13-2015
  *
  */
-public class UsersCurrentUrlConditionlet extends Conditionlet {
+public class UsersLandingPageUrlConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "current-url";
-	private static final String CONDITIONLET_NAME = "User's Current URL";
+	private static final String INPUT_ID = "landing-url";
+	private static final String CONDITIONLET_NAME = "User's Landing Page URL";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -96,7 +98,8 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputValue.getConditionletInputId() + "': '"
+						+ selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -105,13 +108,13 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
-			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
-			inputField.setId(INPUT_ID);
-			inputField.setUserInputAllowed(true);
-			inputField.setMultipleSelectionAllowed(false);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-			this.inputValues.put(inputField.getId(), inputField);
+			ConditionletInput inputField1 = new ConditionletInput();
+			// Set field configuration and available options
+			inputField1.setId(INPUT_ID);
+			inputField1.setUserInputAllowed(true);
+			inputField1.setMultipleSelectionAllowed(false);
+			this.inputValues.put(inputField1.getId(), inputField1);
 		}
 		return this.inputValues.values();
 	}
@@ -120,61 +123,64 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String requestUri = null;
-			try {
-				requestUri = HttpRequestDataUtil.getUri(request);
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(this,
-						"Could not retrieved a valid URI from request: "
-								+ request.getRequestURL());
+		if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+			return false;
+		}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String conditionletValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			conditionletValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		Clickstream clickstream = (Clickstream) request.getSession()
+				.getAttribute("clickstream");
+		String firstUrl = null;
+		List<ClickstreamRequest> clickstreamRequests = clickstream
+				.getClickstreamRequests();
+		if (clickstreamRequests != null && clickstreamRequests.size() > 1) {
+			firstUrl = clickstreamRequests.get(0).getRequestURI();
+		}
+		if (!UtilMethods.isSet(firstUrl)) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (conditionletValue.equalsIgnoreCase(firstUrl)) {
+				return true;
 			}
-			if (UtilMethods.isSet(requestUri)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (inputValue.equalsIgnoreCase(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!inputValue.equalsIgnoreCase(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (inputValue.startsWith(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (inputValue.endsWith(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (inputValue.contains(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(requestUri);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!conditionletValue.equalsIgnoreCase(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (conditionletValue.startsWith(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (conditionletValue.endsWith(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (conditionletValue.contains(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(conditionletValue);
+			Matcher matcher = pattern.matcher(firstUrl);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

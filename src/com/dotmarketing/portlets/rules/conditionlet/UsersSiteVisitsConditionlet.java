@@ -133,7 +133,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", true)) {
+			if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 				String inputValue = null;
@@ -155,7 +155,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 						// Increase the visit counter cache with new sessions
 						CacheLocator.getSiteVisitCache().addSiteVisit(hostId);
 						// Take current session into account
-						visits ++;
+						visits++;
 						if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
 							if (visits > visitCounter) {
 								return true;

@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -18,20 +19,21 @@ import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the referring URL where the
- * user request came from.
+ * This conditionlet will allow CMS users to check the value of a specific
+ * parameter in the URL (a query String parameter).
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-22-2015
+ * @since 05-12-2015
  *
  */
-public class UsersReferringUrl extends Conditionlet {
+public class UsersUrlParameterConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "referring-url";
-	private static final String CONDITIONLET_NAME = "User's Referring URL";
+	private static final String INPUT1_ID = "urlparam-name";
+	private static final String INPUT2_ID = "urlparam-value";
+	private static final String CONDITIONLET_NAME = "User's URL Parameter";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -95,7 +97,8 @@ public class UsersReferringUrl extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputValue.getConditionletInputId() + "': '"
+						+ selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -104,13 +107,20 @@ public class UsersReferringUrl extends Conditionlet {
 	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
-			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
-			inputField.setId(INPUT_ID);
-			inputField.setUserInputAllowed(true);
-			inputField.setMultipleSelectionAllowed(false);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-			this.inputValues.put(inputField.getId(), inputField);
+			ConditionletInput inputField1 = new ConditionletInput();
+			// Set field #1 configuration and available options
+			inputField1.setId(INPUT1_ID);
+			inputField1.setUserInputAllowed(true);
+			inputField1.setMultipleSelectionAllowed(false);
+			this.inputValues.put(inputField1.getId(), inputField1);
+			ConditionletInput inputField2 = new ConditionletInput();
+			// Set field #2 configuration and available options
+			inputField2.setId(INPUT2_ID);
+			inputField2.setUserInputAllowed(true);
+			inputField2.setMultipleSelectionAllowed(false);
+			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
+			this.inputValues.put(inputField2.getId(), inputField2);
 		}
 		return this.inputValues.values();
 	}
@@ -119,54 +129,58 @@ public class UsersReferringUrl extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
-			if (UtilMethods.isSet(referrerUrl)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (inputValue.equalsIgnoreCase(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!inputValue.equalsIgnoreCase(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (inputValue.startsWith(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (inputValue.endsWith(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (inputValue.contains(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(referrerUrl);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		Map<String, String> conditionletValues = new HashMap<String, String>();
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			conditionletValues.put(value.getId(), value.getValue());
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		String urlParamValue = HttpRequestDataUtil.getUrlParameterValue(
+				request, conditionletValues.get(INPUT1_ID));
+		if (!UtilMethods.isSet(urlParamValue)) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (urlParamValue.equalsIgnoreCase(conditionletValues
+					.get(INPUT2_ID))) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!urlParamValue.equalsIgnoreCase(conditionletValues
+					.get(INPUT2_ID))) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (urlParamValue.startsWith(conditionletValues.get(INPUT2_ID))) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (urlParamValue.endsWith(conditionletValues.get(INPUT2_ID))) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (urlParamValue.contains(conditionletValues.get(INPUT2_ID))) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(urlParamValue);
+			Matcher matcher = pattern
+					.matcher(conditionletValues.get(INPUT2_ID));
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

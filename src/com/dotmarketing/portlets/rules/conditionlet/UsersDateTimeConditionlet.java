@@ -36,7 +36,7 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "host";
+	private static final String INPUT_ID = "datetime";
 	private static final String CONDITIONLET_NAME = "User's Date & Time";
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
@@ -142,7 +142,7 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 				clientDateTime = date.getTime();
 			} catch (UnknownHostException e) {
 				Logger.error(this,
-						"Could not retrieved a valid IP address from request: "
+						"Could not retrieved a valid date from request: "
 								+ request.getRequestURL());
 			} catch (IOException e) {
 				Logger.error(this,
@@ -150,7 +150,7 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 								+ ip);
 			} catch (GeoIp2Exception e) {
 				Logger.error(this,
-						"Country code could not be retreived for IP " + ip);
+						"Current date could not be retreived for IP " + ip);
 			}
 			if (clientDateTime == 0) {
 				return result;
