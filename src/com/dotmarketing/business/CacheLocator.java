@@ -15,6 +15,7 @@ import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.repackage.org.jgroups.JChannel;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -340,7 +341,8 @@ enum CacheIndex
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
-	NewNotification("NewNotification Cache");
+	NewNotification("NewNotification Cache"),
+	ContentTypes("Content Types");
 
 	Cachable create() {
 		switch(this) {
@@ -378,6 +380,7 @@ enum CacheIndex
       	case PushedAssets: return new PushedAssetsCacheImpl();
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
+      	case ContentTypes: return new ContentTypeCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}
