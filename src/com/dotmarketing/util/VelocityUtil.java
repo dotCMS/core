@@ -218,12 +218,13 @@ public class VelocityUtil {
 
 		// put the list of languages on the page
 		context.put("languages", getLanguages());
-		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))
-		    context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+		HttpSession session = request.getSession(false);
+		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) && session!=null)
+		    context.put("language", (String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 		else
 		    context.put("language", request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 
-		
+		session = request.getSession(false);
 		try {
 			Host host;
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -231,15 +232,17 @@ public class VelocityUtil {
 		} catch (Exception e) {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
-		
+		session = request.getSession(false);
 		context.put("pdfExport", false);
 		com.liferay.portal.model.User user = null;
 
-		try {
-			user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-			context.put("user", user);
-		} catch (Exception nsue) {
-			Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
+		if(request.getSession(false)!=null){
+			try {
+				user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+				context.put("user", user);
+			} catch (Exception nsue) {
+				Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
+			}
 		}
 		VelocityServlet.velocityCtx.set(context);
 		return context;
@@ -463,7 +466,7 @@ public class VelocityUtil {
 		// request attribute
 		if ("no".equals(request.getParameter("dotcache"))
 				|| "no".equals(request.getAttribute("dotcache"))
-				|| "no".equals(request.getSession().getAttribute("dotcache"))) {
+				|| (request.getSession(false) !=null && "no".equals(request.getSession(true).getAttribute("dotcache")))) {
 			return null;
 		}
 		String idInode = (String) request.getAttribute("idInode");

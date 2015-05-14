@@ -21,7 +21,6 @@ package org.apache.velocity.tools.view.servlet;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Iterator;
@@ -34,6 +33,7 @@ import javax.servlet.ServletContext;
 
 import com.dotcms.repackage.org.apache.commons.digester.Digester;
 import com.dotcms.repackage.org.apache.commons.digester.RuleSet;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.DataInfo;
@@ -43,8 +43,8 @@ import org.apache.velocity.tools.view.XMLToolboxManager;
 import org.apache.velocity.tools.view.context.ToolboxContext;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.servlet.ServletToolboxRuleSet;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
 
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.util.Config;
 
@@ -136,7 +136,7 @@ public class ServletToolboxManager extends XMLToolboxManager
         appTools = new HashMap();
         sessionToolInfo = new ArrayList();
         requestToolInfo = new ArrayList();
-        createSession = true;
+        createSession = false;
 
         registerService();
     }
@@ -359,7 +359,8 @@ public class ServletToolboxManager extends XMLToolboxManager
      * 
      * @param initData the {@link ViewContext} for the current servlet request
      */
-    public Map getToolbox(Object initData)
+    @SuppressWarnings("unchecked")
+	public Map getToolbox(Object initData)
     {
         //we know the initData is a ViewContext
         ViewContext ctx = (ViewContext)initData;
@@ -370,7 +371,7 @@ public class ServletToolboxManager extends XMLToolboxManager
         if (!sessionToolInfo.isEmpty())
         {
             HttpSession session = ctx.getRequest().getSession(createSession);
-            if (session != null)
+            if (session != null && sessionToolInfo.size()>0)
             {
                 // allow only one thread per session at a time
                 synchronized(getMutex(session))
