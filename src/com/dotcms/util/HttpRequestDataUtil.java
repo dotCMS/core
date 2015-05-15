@@ -1,6 +1,8 @@
 package com.dotcms.util;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,11 +15,13 @@ import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * Provides quick access to HTTP request-related operations, such as:
+ * Provides quick access to information that can be obtained from the HTTP
+ * request, including, for example:
  * <ul>
  * <li>IP address retrieval from the request.</li>
  * <li>Matching IP address and a netmask.</li>
- * <li>etc.</li>
+ * <li>Retrieval of URL parameters.</li>
+ * <li>Retrieval of the request URI.</li>
  * </ul>
  * 
  * @author Jose Castro
@@ -134,15 +138,41 @@ public class HttpRequestDataUtil {
 	}
 
 	/**
-	 * Returns the request URI.
+	 * Returns the decoded URI of the request.
 	 * 
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The URI of the request.
+	 * @throws UnsupportedEncodingException
+	 *             If character encoding needs to be consulted, but named
+	 *             character encoding is not supported.
 	 */
-	public static String getUri(HttpServletRequest request) {
-		String uri = request.getRequestURI();
+	public static String getUri(HttpServletRequest request)
+			throws UnsupportedEncodingException {
+		String uri = URLDecoder.decode(request.getRequestURI(),
+				UtilMethods.getCharsetConfiguration());
 		return uri;
+	}
+
+	/**
+	 * Retrieves the value of the specified parameter sent through the query
+	 * String.
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @param name
+	 *            - The name of the query String parameter.
+	 * @return The value of the URL parameter. If the request or the parameter
+	 *         name are null/empty, or if the parameter is not present in the
+	 *         request, it returns {@code null}.
+	 */
+	public static String getUrlParameterValue(HttpServletRequest request,
+			String name) {
+		if (request == null || !UtilMethods.isSet(name)) {
+			return null;
+		}
+		String value = request.getParameter(name);
+		return value;
 	}
 
 }

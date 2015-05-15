@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -13,35 +12,33 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 /**
- * This conditionlet will allow CMS users to check the number of times a
- * specific user has visited a site.
+ * This conditionlet will allow CMS users to check the number of pages that a
+ * user has visited during its current session. The information on the visited
+ * pages will be available until the user's session ends.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 05-04-2015
+ * @since 05-11-2015
  *
  */
-public class UsersSiteVisitsConditionlet extends Conditionlet {
+public class UsersPageVisitsConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "site-visits";
-	private static final String CONDITIONLET_NAME = "User's Visits to Site";
+	private static final String INPUT_ID = "number-visited-pages";
+	private static final String CONDITIONLET_NAME = "User's Visited Pages";
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
@@ -133,59 +130,69 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					Clickstream clickstream = (Clickstream) request
-							.getSession().getAttribute("clickstream");
-					String hostId = getHostId(request);
-					if (clickstream != null && UtilMethods.isSet(hostId)
-							&& UtilMethods.isSet(inputValue)) {
-						int visitCounter = Integer.parseInt(inputValue);
-						int visits = getSiteVisits(hostId);
-						// Increase the visit counter cache with new sessions
-						CacheLocator.getSiteVisitCache().addSiteVisit(hostId);
-						// Take current session into account
-						visits++;
-						if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-							if (visits > visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().startsWith(
-								COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-							if (visits >= visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().startsWith(
-								COMPARISON_EQUAL_TO)) {
-							if (visits == visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().endsWith(
-								COMPARISON_LOWER_THAN)) {
-							if (visits < visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().endsWith(
-								COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-							if (visits <= visitCounter) {
-								return true;
-							}
-						}
+			Comparison comparison = getComparisonById(comparisonId);
+			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+			String inputValue = null;
+			for (ConditionValue value : values) {
+				inputValues.add(new ConditionletInputValue(INPUT_ID, value
+						.getValue()));
+				inputValue = value.getValue();
+			}
+			ValidationResults validationResults = validate(comparison,
+					inputValues);
+			if (!validationResults.hasErrors()) {
+				int visitedPages = getTotalVisitedPages(request);
+				int conditionletInput = Integer.parseInt(inputValue);
+				if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+					if (visitedPages > conditionletInput) {
+						return true;
+					}
+				} else if (comparison.getId().startsWith(
+						COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+					if (visitedPages >= conditionletInput) {
+						return true;
+					}
+				} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+					if (visitedPages == conditionletInput) {
+						return true;
+					}
+				} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+					if (visitedPages < conditionletInput) {
+						return true;
+					}
+				} else if (comparison.getId().endsWith(
+						COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+					if (visitedPages <= conditionletInput) {
+						return true;
 					}
 				}
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Retrieves the number of pages that the user has visited in its current
+	 * session under a specific site (host).
+	 * 
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The number of visited pages.
+	 */
+	private int getTotalVisitedPages(HttpServletRequest request) {
+		String hostId = getHostId(request);
+		if (UtilMethods.isSet(hostId)) {
+			Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request
+					.getSession().getAttribute(
+							WebKeys.RULES_CONDITIONLET_VISITEDURLS);
+			if (visitedUrls != null && visitedUrls.containsKey(hostId)) {
+				Set<String> urlSet = visitedUrls.get(hostId);
+				if (urlSet != null) {
+					return urlSet.size();
+				}
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -204,47 +211,11 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 			hostId = host.getIdentifier();
 		} catch (PortalException | SystemException | DotDataException
 				| DotSecurityException e) {
-			Logger.error(this, "Could not retrieve current host information.");
+			Logger.error(this,
+					"Could not retrieve current host information for: "
+							+ request.getRequestURL());
 		}
 		return hostId;
-	}
-
-	/**
-	 * Returns the amount of visits to a specific site. The information
-	 * 
-	 * @param hostId
-	 *            - The ID of the host that the URL belongs to.
-	 * @return A {@code List<String>} containing the URLs that the specified
-	 *         user has requested to the specified host.
-	 */
-	private int getSiteVisits(String hostId) {
-		int visits = CacheLocator.getSiteVisitCache().getSiteVisits(hostId);
-		if (visits < 0) {
-			visits = 0;
-			DotConnect dc = new DotConnect();
-			String query = "select coalesce(sum(visits), 0) as visits "
-					+ "from analytic_summary where host_id = ?";
-			dc.setSQL(query);
-			dc.addParam(hostId);
-			try {
-				List<Map<String, Object>> results = dc.loadObjectResults();
-				for (Map<String, Object> record : results) {
-					Object obj = record.get("visits");
-					if (UtilMethods.isSet(obj)) {
-						BigDecimal value = (BigDecimal) obj;
-						visits = value.intValue();
-					}
-				}
-				if (visits > 0) {
-					CacheLocator.getSiteVisitCache().setSiteVisits(hostId,
-							visits);
-				}
-			} catch (DotDataException e) {
-				Logger.error(this,
-						"An error occurred when executing the query.");
-			}
-		}
-		return visits;
 	}
 
 }

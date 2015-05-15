@@ -4,6 +4,7 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 import com.dotcms.repackage.org.apache.lucene.search.BooleanQuery;
+import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -16,6 +17,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.loggers.mbeans.Log4jConfig;
@@ -30,12 +32,14 @@ import com.dotmarketing.quartz.job.ShutdownHookThread;
 import com.dotmarketing.util.*;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.util.ReleaseInfo;
+
 import org.quartz.SchedulerException;
 
 import javax.management.*;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -243,7 +247,19 @@ public class InitServlet extends HttpServlet {
 		if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
 		    EscalationThread.getInstace().start();
 		}
-
+		
+		// Create the GeoIP2 database reader on startup since it takes around 2
+		// seconds to load the file
+		try {
+			Logger.info(this, "");
+			GeoIp2CityDbUtil.getInstance();
+			Logger.info(this,
+					"Local GeoIP2 DB connection established successfully!");
+		} catch (DotRuntimeException e) {
+			Logger.info(this, e.getMessage());
+		}
+		Logger.info(this, "");
+		
         /*
          * SHOULD BE LAST THING THAT HAPPENS
          */

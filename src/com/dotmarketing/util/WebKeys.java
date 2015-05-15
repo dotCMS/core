@@ -355,7 +355,7 @@ public final class WebKeys {
     // RULES ENGIGE
     public static final String RULES_CONDITIONLET_CLASSES = "RULES_CONDITIONLET_CLASSES";
     public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
-
+    public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
 
 	//ADMIN CONTROL
     public static final String ADMIN_CONTROL_TOP = "com.dotmarketing.admin.control.top";

@@ -31,7 +31,7 @@ String action = (request.getParameter("action") !=null)
 						: "add";
 int visits = 500;
 int days = 30;
-String[] urls = {"/home/index.html","/products/index.html","/about-us/index.html"};
+String[] urls = {"/index","/products/index","/about-us/index"};
 
 
 

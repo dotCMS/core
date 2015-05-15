@@ -3,6 +3,11 @@ package com.dotcms.util;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -49,42 +54,17 @@ import com.dotmarketing.util.Logger;
 public class GeoIp2CityDbUtil {
 
 	private static DatabaseReader databaseReader = null;
+	private static long lastModified = 0;
+	private static String dbPath = null;
 
 	/**
 	 * Singleton holder based on the initialization-on-demand approach.
-	 *
 	 */
 	private static class SingletonHolder {
 
 		private static GeoIp2CityDbUtil INSTANCE = new GeoIp2CityDbUtil(
 				Config.getStringProperty("GEOIP2_CITY_DATABASE_PATH", ""));
 
-	}
-
-	/**
-	 * Private constructor that will initialize the connection to the local
-	 * GeoIP2 database.
-	 * 
-	 * @param databasePath
-	 *            - The path to the database file in the file system.
-	 * @throws DotRuntimeException
-	 *             If the connection to the GeoIP2 database file could not be
-	 *             established.
-	 */
-	private GeoIp2CityDbUtil(String databasePath) {
-		if (!databasePath.startsWith("/")) {
-			databasePath = Config.CONTEXT.getRealPath("/" + databasePath);
-		}
-		File database = new File(databasePath);
-		try {
-			databaseReader = new DatabaseReader.Builder(database).build();
-		} catch (IOException e) {
-			Logger.error(this,
-					"Connection to the GeoIP2 database could not be established.");
-			throw new DotRuntimeException(
-					"Connection to the GeoIP2 database could not be established.",
-					e);
-		}
 	}
 
 	/**
@@ -97,6 +77,81 @@ public class GeoIp2CityDbUtil {
 	}
 
 	/**
+	 * Private constructor that will initialize the connection to the local
+	 * GeoIP2 database. If the database file is updated, it will have to be
+	 * re-loaded. Therefore, its path is kept in memory.
+	 * 
+	 * @param databasePath
+	 *            - The path to the database file in the file system.
+	 * @throws DotRuntimeException
+	 *             If the connection to the GeoIP2 database file cannot be
+	 *             established.
+	 */
+	private GeoIp2CityDbUtil(String databasePath) {
+		if (!databasePath.startsWith("/")) {
+			databasePath = Config.CONTEXT.getRealPath("/" + databasePath);
+		}
+		dbPath = databasePath;
+		File database = new File(databasePath);
+		connectToDatabase(database);
+	}
+
+	/**
+	 * Establishes the connection with the IP database. If a previous connection
+	 * has already been created, it will be closed. Such a scenario would mean
+	 * that the database file has been updated, so the database reader must be
+	 * re-built to load the new information.
+	 * 
+	 * @param database
+	 *            - The {@link File} reference to the database file.
+	 * @throws DotRuntimeException
+	 *             If the connection to the GeoIP2 database file cannot be
+	 *             established.
+	 */
+	private static void connectToDatabase(File database) {
+		try {
+			if (databaseReader != null) {
+				databaseReader.close();
+			}
+			databaseReader = new DatabaseReader.Builder(database).build();
+			lastModified = database.lastModified();
+		} catch (IOException e) {
+			Logger.error(GeoIp2CityDbUtil.class,
+					"Connection to the GeoIP2 database could not be established.");
+			throw new DotRuntimeException(
+					"Connection to the GeoIP2 database could not be established.",
+					e);
+		}
+	}
+
+	/**
+	 * Returns the {@link DatabaseReader} object used to perform the queries to
+	 * the IP database.
+	 * <p>
+	 * When the class is initially instantiated, the modification date of the
+	 * database file is kept in memory. This method will read the last modified
+	 * date of the requested database file in order to determine whether it must
+	 * be re-loaded or not. If it has to, synchronization will be used to load
+	 * the new database file.
+	 * </p>
+	 * 
+	 * @return The {@link DatabaseReader} object with the latest content of the
+	 *         database.
+	 */
+	private static DatabaseReader getDatabaseReader() {
+		File database = new File(dbPath);
+		long fileLastModified = database.lastModified();
+		if (fileLastModified != lastModified) {
+			synchronized (GeoIp2CityDbUtil.class) {
+				if (fileLastModified != lastModified) {
+					connectToDatabase(database);
+				}
+			}
+		}
+		return databaseReader;
+	}
+
+	/**
 	 * Returns the ISO code of the state, province or region (referred to as
 	 * "subdivision") the specified IP address belongs to. The ISO code is a one
 	 * or two-character representation (depending on the country) of the name of
@@ -105,19 +160,20 @@ public class GeoIp2CityDbUtil {
 	 * @param ipAddress
 	 *            - The IP address to get information from.
 	 * @return The ISO code representing the state, province, or region.
-	 * @throws GeoIp2Exception
-	 *             If the IP address is not present in the service database.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
 	 * @throws IOException
 	 *             If the connection to the GeoIP2 service could not be
 	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
 	 */
-	public String getSubdivisionIsoCode(String ipAddress) throws IOException,
-			GeoIp2Exception {
-		String subdivisionCode = null;
+	public String getSubdivisionIsoCode(String ipAddress)
+			throws UnknownHostException, IOException, GeoIp2Exception {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
-		CityResponse city = databaseReader.city(inetAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
 		Subdivision subdivision = city.getMostSpecificSubdivision();
-		subdivisionCode = subdivision.getIsoCode();
+		String subdivisionCode = subdivision.getIsoCode();
 		return subdivisionCode;
 	}
 
@@ -129,20 +185,78 @@ public class GeoIp2CityDbUtil {
 	 * @param ipAddress
 	 *            - The IP address to get information from.
 	 * @return The ISO code representing the country.
-	 * @throws GeoIp2Exception
-	 *             If the IP address is not present in the service database.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
 	 * @throws IOException
 	 *             If the connection to the GeoIP2 service could not be
 	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
 	 */
-	public String getCountryIsoCode(String ipAddress) throws IOException,
-			GeoIp2Exception {
-		String countryCode = null;
+	public String getCountryIsoCode(String ipAddress)
+			throws UnknownHostException, IOException, GeoIp2Exception {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
-		CityResponse city = databaseReader.city(inetAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
 		Country country = city.getCountry();
-		countryCode = country.getIsoCode();
+		String countryCode = country.getIsoCode();
 		return countryCode;
+	}
+
+	/**
+	 * Returns the {@link TimeZone} associated with location, as specified by
+	 * the <a href="http://www.iana.org/time-zones">IANA Time Zone Database</a>.
+	 * For example: {@code "America/New_York"}.
+	 * 
+	 * @param ipAddress
+	 *            - The IP address to get information from.
+	 * @return The associated {@link TimeZone} object.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
+	 * @throws IOException
+	 *             If the connection to the GeoIP2 service could not be
+	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
+	 */
+	public TimeZone getTimeZone(String ipAddress) throws UnknownHostException,
+			IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse city = getDatabaseReader().city(inetAddress);
+		String zone = city.getLocation().getTimeZone();
+		TimeZone timeZone = TimeZone.getTimeZone(zone);
+		return timeZone;
+	}
+
+	/**
+	 * Returns the {@link Date} when the client issued the request. This
+	 * information is obtained by adjusting the server's current date/time with
+	 * the time zone the user is in.
+	 * 
+	 * @param ipAddress
+	 *            - The IP address to get information from.
+	 * @return The client's current {@link Date}.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
+	 * @throws IOException
+	 *             If the connection to the GeoIP2 service could not be
+	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
+	 */
+	public Date getDateTime(String ipAddress) throws UnknownHostException,
+			IOException, GeoIp2Exception {
+		TimeZone timeZone = getTimeZone(ipAddress);
+		Calendar calendar = Calendar.getInstance(timeZone);
+		int year = calendar.get(Calendar.YEAR);
+		int month = calendar.get(Calendar.MONTH);
+		int day = calendar.get(Calendar.DAY_OF_MONTH);
+		int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		int minute = calendar.get(Calendar.MINUTE);
+		int second = calendar.get(Calendar.SECOND);
+		long clientDateTime = new GregorianCalendar(year, month, day, hour,
+				minute, second).getTimeInMillis();
+		Date ipDateTime = new Date(clientDateTime);
+		return ipDateTime;
 	}
 
 }

@@ -13,38 +13,32 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
+import com.dotmarketing.beans.Clickstream;
+import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the Operating System of the
- * user that issued the request. The information is obtained by reading the
- * {@code User-Agent} header in the {@link HttpServletRequest} object.
- * <p>
- * The format of the {@code User-Agent} is not standardized (basically free
- * format), which makes it difficult to decipher it. This conditionlet uses a
- * Java API called <a
- * href="http://www.bitwalker.eu/software/user-agent-utils">User Agent Utils</a>
- * which parses HTTP requests in real time and gather information about the user
- * agent, detecting a high amount of browsers, browser types, operating systems,
- * device types, rendering engines, and Web applications.
- * </p>
+ * This conditionlet will allow CMS users to check the URL of the first page
+ * that a user has visited in its current session. For this conditionlet to
+ * work, the Clickstream feature must be enabled.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-21-2015
+ * @since 05-13-2015
  *
  */
-public class UsersOperatingSystemConditionlet extends Conditionlet {
+public class UsersLandingPageUrlConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "os";
-	private static final String CONDITIONLET_NAME = "User's Operating System";
+	private static final String INPUT_ID = "landing-url";
+	private static final String CONDITIONLET_NAME = "User's Landing Page URL";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
+	private static final String COMPARISON_ENDSWITH = "endsWith";
 	private static final String COMPARISON_CONTAINS = "contains";
 	private static final String COMPARISON_REGEX = "regex";
 
@@ -64,6 +58,8 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
 			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
 					"Starts With"));
+			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
+					"Ends With"));
 			this.comparisons
 					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
 			this.comparisons.add(new Comparison(COMPARISON_REGEX,
@@ -102,7 +98,8 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputValue.getConditionletInputId() + "': '"
+						+ selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -111,13 +108,13 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
-			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration and available options
-			inputField.setId(INPUT_ID);
-			inputField.setUserInputAllowed(true);
-			inputField.setMultipleSelectionAllowed(false);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-			this.inputValues.put(inputField.getId(), inputField);
+			ConditionletInput inputField1 = new ConditionletInput();
+			// Set field configuration and available options
+			inputField1.setId(INPUT_ID);
+			inputField1.setUserInputAllowed(true);
+			inputField1.setMultipleSelectionAllowed(false);
+			this.inputValues.put(inputField1.getId(), inputField1);
 		}
 		return this.inputValues.values();
 	}
@@ -126,52 +123,64 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String userAgentInfo = request.getHeader("User-Agent");
-			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-			String browserName = agent.getOperatingSystem().getName();
-			if (UtilMethods.isSet(browserName)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (browserName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!browserName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (browserName.startsWith(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (browserName.contains(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(browserName);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+			return false;
+		}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String conditionletValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			conditionletValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		Clickstream clickstream = (Clickstream) request.getSession()
+				.getAttribute("clickstream");
+		String firstUrl = null;
+		List<ClickstreamRequest> clickstreamRequests = clickstream
+				.getClickstreamRequests();
+		if (clickstreamRequests != null && clickstreamRequests.size() > 1) {
+			firstUrl = clickstreamRequests.get(0).getRequestURI();
+		}
+		if (!UtilMethods.isSet(firstUrl)) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (conditionletValue.equalsIgnoreCase(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!conditionletValue.equalsIgnoreCase(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (conditionletValue.startsWith(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (conditionletValue.endsWith(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (conditionletValue.contains(firstUrl)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(conditionletValue);
+			Matcher matcher = pattern.matcher(firstUrl);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

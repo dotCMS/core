@@ -13,31 +13,25 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
 
 /**
- * This conditionlet will allow CMS users to check the host name a user request
- * is directed to.
+ * This conditionlet will allow CMS users to check the referring URL where the
+ * user request came from.
  * 
  * @author Jose Castro
  * @version 1.0
- * @since 04-20-2015
+ * @since 04-22-2015
  *
  */
-public class UsersHostConditionlet extends Conditionlet {
+public class UsersReferringUrlConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "host";
-	private static final String CONDITIONLET_NAME = "User's Host";
+	private static final String INPUT_ID = "referring-url";
+	private static final String CONDITIONLET_NAME = "User's Referring URL";
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -111,7 +105,7 @@ public class UsersHostConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration and available options
+			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
@@ -128,8 +122,8 @@ public class UsersHostConditionlet extends Conditionlet {
 		boolean result = false;
 		if (UtilMethods.isSet(values) && values.size() > 0
 				&& UtilMethods.isSet(comparisonId)) {
-			String hostName = getHostName(request);
-			if (UtilMethods.isSet(hostName)) {
+			String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
+			if (UtilMethods.isSet(referrerUrl)) {
 				Comparison comparison = getComparisonById(comparisonId);
 				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 				String inputValue = null;
@@ -142,29 +136,29 @@ public class UsersHostConditionlet extends Conditionlet {
 						inputValues);
 				if (!validationResults.hasErrors()) {
 					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (hostName.equalsIgnoreCase(inputValue)) {
+						if (inputValue.equalsIgnoreCase(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!hostName.equalsIgnoreCase(inputValue)) {
+						if (!inputValue.equalsIgnoreCase(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().startsWith(
 							COMPARISON_STARTSWITH)) {
-						if (hostName.startsWith(inputValue)) {
+						if (inputValue.startsWith(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (hostName.endsWith(inputValue)) {
+						if (inputValue.endsWith(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (hostName.contains(inputValue)) {
+						if (inputValue.contains(referrerUrl)) {
 							result = true;
 						}
 					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
 						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(hostName);
+						Matcher matcher = pattern.matcher(referrerUrl);
 						if (matcher.find()) {
 							result = true;
 						}
@@ -173,29 +167,6 @@ public class UsersHostConditionlet extends Conditionlet {
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * Returns the name of the site (host) based on the
-	 * {@code HttpServletRequest} object.
-	 * 
-	 * @param request
-	 *            - The {@code HttpServletRequest} object.
-	 * @return The name of the site, or {@code null} if an error occurred when
-	 *         retrieving the site information.
-	 */
-	private String getHostName(HttpServletRequest request) {
-		String hostName = null;
-		try {
-			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			hostName = host.getHostname();
-		} catch (PortalException | SystemException | DotDataException
-				| DotSecurityException e) {
-			Logger.error(this,
-					"Could not retrieve current host information for: "
-							+ request.getRequestURL());
-		}
-		return hostName;
 	}
 
 }
