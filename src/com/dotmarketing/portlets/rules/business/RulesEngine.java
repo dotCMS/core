@@ -64,7 +64,7 @@ public class RulesEngine {
                 }
             }
 
-        } catch(DotDataException | DotSecurityException e) {
+        } catch(Exception e) {
             Logger.error(RulesEngine.class, "Unable process rules." + e.getMessage());
         }
     }

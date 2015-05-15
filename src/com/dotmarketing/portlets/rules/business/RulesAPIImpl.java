@@ -1,25 +1,19 @@
 package com.dotmarketing.portlets.rules.business;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.*;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
+import com.dotmarketing.portlets.rules.actionlet.*;
 import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.*;
-import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
-import javax.rmi.CORBA.Util;
 import java.util.*;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,6 +51,10 @@ public class RulesAPIImpl implements RulesAPI {
         }));
 
         actionletClasses.addAll(Arrays.asList(new Class[]{
+                EveryRequestActionlet.class,
+                EveryPageActionlet.class,
+                OncePerVisitActionlet.class,
+                OncePerVisitorActionlet.class,
                 TestActionlet.class
         }));
 

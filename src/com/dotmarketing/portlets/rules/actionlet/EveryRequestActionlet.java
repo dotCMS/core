@@ -5,10 +5,10 @@ import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-public class TestActionlet extends RuleActionlet {
+public class EveryRequestActionlet extends RuleActionlet {
     @Override
     public String getName() {
-        return "TestActionlet";
+        return "EveryRequestActionlet";
     }
 
     @Override
@@ -18,6 +18,6 @@ public class TestActionlet extends RuleActionlet {
 
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
-       //
+          request.getServletContext().setAttribute("everyRequest", true);
     }
 }
