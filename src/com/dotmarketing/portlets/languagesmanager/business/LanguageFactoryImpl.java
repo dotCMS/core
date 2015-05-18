@@ -92,7 +92,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
         try {
             x = Long.parseLong(id);
         } catch (Exception e) {
-            Logger.error(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + id, e);
+            Logger.error(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric.", e);
             throw new DotRuntimeException(e.toString(), e);
         }
 

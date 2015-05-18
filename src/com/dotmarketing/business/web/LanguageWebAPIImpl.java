@@ -9,7 +9,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.struts.MultiMessageResources;
@@ -74,17 +73,7 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			else {
 				languageId = httpRequest.getParameter("language_id");
 			}
-			//If languageId is not Long we will use the Default Language and log.
-			long languageIdLong = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-			try{
-				languageIdLong = Long.parseLong(languageId);
-			} catch (Exception e){
-				Logger.error(this.getClass(),
-						"Language Id from request is not a long value. " +
-								"We will use Default Language. " +
-								"Value from request: " + languageId, e);
-			}
-			currentLang = langAPI.getLanguage(languageIdLong);
+			currentLang = langAPI.getLanguage(languageId);
 			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 
 		}
