@@ -746,12 +746,6 @@ public class FolderAPIImpl implements FolderAPI  {
 		return ffac.getMenuItems(folder, orderDirection);
 	}
 
-
-	public List<Object> buildNavigationTree(List items, int depth,User user)throws DotDataException {
-		return ffac.buildNavigationTree(items, depth,user);
-	}
-
-
 	public List<Inode> findMenuItems(Host host,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		return ffac.getMenuItems(host);
 	}

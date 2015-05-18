@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -17,15 +18,14 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.WebAsset;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.*;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.files.model.File;
@@ -34,12 +34,16 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
+import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 /**
  * @author Maria
@@ -52,13 +56,13 @@ public class OrderMenuAction extends DotPortletAction {
 	private PermissionAPI perAPI= null;
 	User user = null;
 	FolderAPI fapi = APILocator.getFolderAPI();
-	public void processAction(
-			ActionMapping mapping, ActionForm form, PortletConfig config,
-			ActionRequest req, ActionResponse res)
-	throws Exception {
+	ActionRequest actionRequest = null;
+
+	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res) throws Exception {
 
 		perAPI = APILocator.getPermissionAPI();
 		user = _getUser(req);
+		actionRequest = req;
 
 		try {
 			String cmd = req.getParameter("cmd");
@@ -112,6 +116,7 @@ public class OrderMenuAction extends DotPortletAction {
 					Folder folder = APILocator.getFolderAPI().findParentFolder(treeable, user, false);
 					String folderInode = (folder==null) ? FolderAPI.SYSTEM_FOLDER : folder.getInode();
 					CacheLocator.getNavToolCache().removeNav(id.getHostId(), folderInode);
+					CacheLocator.getHTMLPageCache().remove(id.getId());
 				}
 				
 				return;
@@ -158,10 +163,34 @@ public class OrderMenuAction extends DotPortletAction {
 		Host host = APILocator.getHostAPI().find(hostId, user, true);
 		if (!path.equals("/")) {
 
-			Folder folder = fapi.findFolderByPath(path, host,user,false);
+			Folder folder = fapi.findFolderByPath(path, host, user, false);
 
 			//gets menu items for this folder
-			java.util.List<Inode> itemsList = fapi.findMenuItems(folder,user,false);
+			java.util.List<Inode> itemsList = fapi.findMenuItems(folder, user, false);
+
+			//Cleaning the results to only display the ones under the current language.
+			long currentLanguageId = WebAPILocator.getLanguageWebAPI().getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest()).getId();
+
+			//If we have the current language we can proceed to clean the HTML pages.
+			if(UtilMethods.isSet(currentLanguageId)) {
+				Iterator<Inode> itemsIter = itemsList.iterator();
+
+				while(itemsIter.hasNext()) {
+					Object item = itemsIter.next();
+
+					//Make sure the object is HTMLPage.
+					if(item instanceof HTMLPageAsset){
+						//We need to make sure that the HTMLPage has the languageId. If not we leave in the results.
+						if (UtilMethods.isSet(((HTMLPageAsset) item).getLanguageId())) {
+							//If the values do not match, we remove the result from the list.
+							if(currentLanguageId != ((HTMLPageAsset) item).getLanguageId()){
+								itemsIter.remove();
+							}
+						}
+					}
+				}
+			}
+
 			userHasPublishPermission = _findPublishPermissionExists(itemsList);
 			h.put("menuItems", itemsList);
 			req.setAttribute(WebKeys.MENU_MAIN_FOLDER,folder);
@@ -244,16 +273,47 @@ public class OrderMenuAction extends DotPortletAction {
 						((Folder) asset).setSortOrder(i);
 						ret.add(((Folder) asset));
 					}
-					if (asset instanceof WebAsset) {
+					if (asset instanceof WebAsset && !asset.getType().equals("contentlet")) {
 						((WebAsset) asset).setSortOrder(i);
 						ret.add(((WebAsset) asset));
 					}
-					if (APILocator.getFileAssetAPI().isFileAsset(c) || asset.getType().equals("contentlet")) {
+					if (APILocator.getFileAssetAPI().isFileAsset(c)) {
 						ret.add(c);
 						c.setSortOrder(i);
 						APILocator.getContentletAPI().refresh(c);
 					}
+
 					HibernateUtil.saveOrUpdate(asset);
+
+					if(asset.getType().equals("contentlet")){
+						ret.add(c);
+
+						String[] listOfJustOne = {asset.getIdentifier()};
+						List<Language> languagesList = APILocator.getLanguageAPI().getLanguages();
+
+						for (Language language : languagesList) {
+
+							try {
+								List<Contentlet> contentlets = APILocator.getContentletAPI()
+										.findContentletsByIdentifiers(listOfJustOne, true, language.getId(),
+												APILocator.getUserAPI().getSystemUser(), false);
+
+								for (Contentlet contentlet : contentlets) {
+									Inode assetContent = InodeFactory.getInode(contentlet.getInode(), Inode.class);
+									((WebAsset) assetContent).setSortOrder(i);
+									HibernateUtil.saveOrUpdate(assetContent);
+
+									CacheLocator.getContentletCache().remove(contentlet.getInode());
+									CacheLocator.getHTMLPageCache().remove(contentlet.getInode());
+									CacheLocator.getHTMLPageCache().remove(contentlet.getIdentifier());
+								}
+							} catch (DotContentletStateException e){ //This exception in case we don't have identifiers for that content.
+								Logger.debug(this.getClass(),
+										"No contents with identifier: " + asset.getIdentifier()
+												+ " for language: " + language.getId());
+							}
+						}
+					}
 				}
 			}
 		} catch (Exception ex) {
@@ -417,9 +477,330 @@ public class OrderMenuAction extends DotPortletAction {
 
 
 		List<Object> l = new ArrayList();
-		l.add(fapi.buildNavigationTree(items, depth, user));
+		l.add(buildNavigationTree(items, depth, user));
 		l.add(new Boolean(hasMenuPubPer));
 		return l;
+	}
+
+	/**
+	 * Builds the navigation tree containing all the items in the list and the
+	 * files, HTML pages, links, folders contained recursively by those items
+	 * until the specified depth. This method will change later
+	 *
+	 * @param items
+	 * @param depth
+	 * @throws DotDataException
+	 */
+	protected List<Object> buildNavigationTree(List items, int depth, User user) throws DotDataException {
+		depth = depth - 1;
+		int level = 0;
+		List<Object> v = new ArrayList<Object>();
+		InternalCounter counter = new OrderMenuAction().new InternalCounter();
+		counter.setCounter(0);
+		List<Integer> ids = new ArrayList<Integer>();
+		List l = buildNavigationTree(items, ids, level, counter, depth, user);
+		StringBuffer sb = new StringBuffer("");
+		if (l != null && l.size() > 0) {
+			sb = (StringBuffer) l.get(0);
+			sb.append("<script language='javascript'>\n");
+			for (int i = ids.size() - 1; i >= 0; i--) {
+				int internalCounter = (Integer) ids.get(i);
+				String id = "list" + internalCounter;
+				String className = "class" + internalCounter;
+				String sortCreate = "Sortable.create(\"" + id + "\",{dropOnEmpty:true,tree:true,constraint:false,only:\"" + className
+						+ "\"});\n";
+				sb.append(sortCreate);
+			}
+
+			sb.append("\n");
+			sb.append("function serialize(){\n");
+			sb.append("var values = \"\";\n");
+			for (int i = 0; i < ids.size(); i++) {
+				int internalCounter = (Integer) ids.get(i);
+				String id = "list" + internalCounter;
+				String sortCreate = "values += \"&\" + Sortable.serialize('" + id + "');\n";
+				sb.append(sortCreate);
+			}
+			sb.append("values = values.replace(/\\[/g, '__');\n");
+			sb.append("values = values.replace(/\\]/g, '---');\n");
+			sb.append("return values;\n");
+			sb.append("}\n");
+
+			sb.append("</script>\n");
+
+			sb.append("<style>\n");
+			for (int i = 0; i < ids.size(); i++) {
+				int internalCounter = (Integer) ids.get(i);
+				String className = "class" + internalCounter;
+				String style = "li." + className + " { cursor: move;}\n";
+				sb.append(style);
+			}
+			sb.append("</style>\n");
+		}
+		v.add(sb.toString());
+		if (l != null && l.size() > 0) {
+			v.add(l.get(1));
+		} else {
+			v.add(new Boolean(false));
+		}
+
+		return v;
+	}
+
+	/**
+	 * Builds the navigation tree containing all the items and the files, HTML
+	 * pages, links, folders contained recursively by those items in the list
+	 * until the specified depth. This method will change later
+	 *
+	 * @param items
+	 * @param ids
+	 * @param level
+	 * @param counter
+	 * @param depth
+	 * @throws DotDataException
+	 */
+	protected List buildNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
+			throws DotDataException {
+		boolean show = true;
+		StringBuffer sb = new StringBuffer();
+		List v = new ArrayList<Object>();
+		int internalCounter = counter.getCounter();
+		String className = "class" + internalCounter;
+		String id = "list" + internalCounter;
+		ids.add(internalCounter);
+		counter.setCounter(++internalCounter);
+
+		sb.append("<ul id='" + id + "' >\n");
+		if (items != null) {
+			Iterator itemsIter = items.iterator();
+			while (itemsIter.hasNext()) {
+				Permissionable item = (Permissionable) itemsIter.next();
+				String title = "";
+				String inode = "";
+				if (item instanceof Folder) {
+					Folder folder = ((Folder) item);
+					title = folder.getTitle();
+					title = retrieveTitle(title, user);
+					inode = folder.getInode();
+					if (folder.isShowOnMenu()) {
+						if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+							show = false;
+						}
+						if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
+
+							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
+							List childs = fapi.findMenuItems(folder, user, false);
+							if (childs.size() > 0) {
+								int nextLevel = level + 1;
+								if (depth > 0) {
+									List<Object> l = getNavigationTree(childs, ids, nextLevel, counter, depth, user);
+									if (show) {
+										show = ((Boolean) l.get(1)).booleanValue();
+									}
+									sb.append((StringBuffer) (l.get(0)));
+								}
+							}
+							sb.append("</li>\n");
+						}
+					}
+				} else {
+					if(item instanceof FileAsset){
+						FileAsset fa =(FileAsset)item;
+						title = fa.getTitle();
+						title = retrieveTitle(title, user);
+						inode = fa.getInode();
+						if (fa.isShowOnMenu()) {
+							if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+								show = false;
+							}
+							if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+							}
+						}
+					}else if(item instanceof IHTMLPage){
+						IHTMLPage asset = ((IHTMLPage) item);
+						title = asset.getTitle();
+						title = retrieveTitle(title, user);
+						inode = asset.getInode();
+						if (asset.isShowOnMenu()) {
+							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+								show = false;
+							}
+							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+							}
+						}
+					}else{
+						WebAsset asset = ((WebAsset) item);
+						title = asset.getTitle();
+						title = retrieveTitle(title, user);
+						inode = asset.getInode();
+						if (asset.isShowOnMenu()) {
+							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+								show = false;
+							}
+							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+							}
+						}
+					}
+				}
+			}
+		}
+
+		sb.append("</ul>\n");
+		v.add(sb);
+		v.add(new Boolean(show));
+
+		return v;
+	}
+
+	private String retrieveTitle(String title, User user) {
+		try {
+			String regularExpressionString = "(.*)\\$glossary.get\\('(.*)'\\)(.*)";
+			java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regularExpressionString);
+			Matcher matcher = pattern.matcher(title);
+			if (matcher.matches()) {
+				String tempTitle = matcher.group(2);
+				tempTitle = matcher.group(1) + LanguageUtil.get(user, tempTitle) + matcher.group(3);
+				title = tempTitle;
+			}
+		} catch (Exception ex) {
+			Logger.warn(this.getClass(), "retrieveTitle failed:" + ex);
+		}
+		return title;
+	}
+
+	/**
+	 * Gets the tree containing all the items in the list. If the item is a
+	 * folder, gets the files and folders contained by the folder. It is
+	 * executed recursively until reaching the depth specified. This method will
+	 * change later
+	 *
+	 * @param items
+	 * @param ids
+	 * @param level
+	 * @param counter
+	 * @param depth
+	 * @throws DotDataException
+	 */
+	protected List getNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
+			throws DotDataException {
+		boolean show = true;
+		StringBuffer sb = new StringBuffer();
+		List v = new ArrayList<Object>();
+		int internalCounter = counter.getCounter();
+		String className = "class" + internalCounter;
+		String id = "list" + internalCounter;
+		ids.add(internalCounter);
+		counter.setCounter(++internalCounter);
+
+		sb.append("<ul id='" + id + "' >\n");
+		Iterator itemsIter = items.iterator();
+		while (itemsIter.hasNext()) {
+			Permissionable item = (Permissionable) itemsIter.next();
+			String title = "";
+			String inode = "";
+			if (item instanceof Folder) {
+				Folder folder = ((Folder) item);
+				title = folder.getTitle();
+				title = retrieveTitle(title, user);
+				inode = folder.getInode();
+				if (folder.isShowOnMenu()) {
+					if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+						show = false;
+					}
+					if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
+
+						sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
+						List childs = fapi.findMenuItems(folder, user, false);
+						if (childs.size() > 0) {
+
+							int nextLevel = level + 1;
+
+							if (depth > 1) {
+								sb.append(getNavigationTree(childs, ids, nextLevel, counter, depth-1, user).get(0));
+							}
+						}
+						sb.append("</li>\n");
+					}
+				}
+			} else {
+				if(item instanceof FileAsset){
+					FileAsset fa =(FileAsset)item;
+					title = fa.getTitle();
+					title = retrieveTitle(title, user);
+					inode = fa.getInode();
+					if (fa.isShowOnMenu()) {
+						if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+							show = false;
+						}
+						if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
+							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+						}
+					}
+				}else if(item instanceof IHTMLPage){
+					IHTMLPage asset = ((IHTMLPage) item);
+					title = asset.getTitle();
+					title = retrieveTitle(title, user);
+					inode = asset.getInode();
+					if (asset.isShowOnMenu()) {
+						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+							show = false;
+						}
+
+						//Cleaning the results to only display the ones under the current language.
+						long currentLanguageId = WebAPILocator.getLanguageWebAPI().getLanguage(((ActionRequestImpl) actionRequest).getHttpServletRequest()).getId();
+
+						//If we have the current language we can proceed to clean the HTML pages.
+						if(UtilMethods.isSet(currentLanguageId)) {
+							//We need to make sure that the HTMLPage has the languageId. If not we leave in the results.
+							if (UtilMethods.isSet(asset.getLanguageId())) {
+								//If the values match we include the page in the list.
+								if(currentLanguageId == asset.getLanguageId()){
+									if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+										sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+									}
+								}
+							}
+						}
+					}
+				}else{
+					WebAsset asset = ((WebAsset) item);
+					title = asset.getTitle();
+					title = retrieveTitle(title, user);
+					inode = asset.getInode();
+					if (asset.isShowOnMenu()) {
+						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+							show = false;
+						}
+						if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
+							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
+						}
+					}
+				}
+			}
+		}
+		sb.append("</ul>\n");
+		v.add(sb);
+		v.add(new Boolean(show));
+
+		return v;
+	}
+
+	private class InternalCounter
+	{
+		private int counter;
+
+		public int getCounter()
+		{
+			return counter;
+		}
+
+		public void setCounter(int counter)
+		{
+			this.counter = counter;
+		}
 	}
 
 }

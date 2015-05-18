@@ -89,10 +89,6 @@ public abstract class FolderFactory {
 		return null;
 	}
 
-	protected List<Object> buildNavigationTree(List items, int depth, User user) throws DotDataException {
-		return null;
-	}
-
 	protected List getMenuItems(Host host) throws DotStateException, DotDataException, DotSecurityException {
 		return null;
 	}
