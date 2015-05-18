@@ -412,7 +412,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 			resp.setContentType(mimeType);
-			resp.setHeader("Content-Disposition", "attachment; filename=" + downloadName);
+			resp.setHeader("Content-Disposition", "inline; filename=" + downloadName);
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
