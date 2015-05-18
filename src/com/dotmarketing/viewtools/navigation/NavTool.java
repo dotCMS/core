@@ -32,7 +32,6 @@ public class NavTool implements ViewTool {
     private Host currenthost=null;
     private static User user=null;
     private static HttpServletRequest request = null;
-    private static long currentLanguage = 0;
     
     static {
         try {
@@ -48,14 +47,13 @@ public class NavTool implements ViewTool {
         try {
     		this.request = context.getRequest();
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
-            currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(this.request).getId();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
     }
     
     protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
-        return getNav(host, path, currentLanguage);
+        return getNav(host, path, WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
     }
     
     protected static NavResult getNav(Host host, String path, long languageId) throws DotDataException, DotSecurityException {
