@@ -86,7 +86,6 @@ import com.dotmarketing.webdav.WebDavTest;
     IdentifierAPITest.class,
     ImportUtilTest.class,
     SiteSearchAjaxActionTest.class,
-    RemotePublishAjaxActionTest.class, //Needs Enterprise License
     CSSPreProcessServletTest.class, //Needs Enterprise License
     ESContentFactoryImplTest.class,
     HibernateUtilTest.class,
@@ -94,7 +93,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ContentletAjaxTest.class,
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
-    RulesAPITest.class
+    RulesAPITest.class,
+    RemotePublishAjaxActionTest.class //Needs Enterprise License
 })
 public class AllTestsSuite {
 

@@ -163,16 +163,15 @@ if(request.getParameter("in_frame")!=null){
 					<input type="hidden" name="userId" value="<%= user.getUserId() %>">
 					<input name="referer" type="hidden" value="<%= referer %>">
 					
-					<table border="0">
-						<tr>
-							<td valign="bottom">
-								<b><%= LanguageUtil.get(pageContext, "Folder") %>:</b>
-							</td>
-							<td>
-								<html:text readonly="true" style="border:0px;margin:auto;padding-bottom:1px" styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
-							</td>
-						</tr>
-					</table>
+                    <div style="width:100%; display:inline-block;">
+                        <div style="float:left; width:10%;line-height:30px;">
+                            <b><%= LanguageUtil.get(pageContext, "Folder") %>:</b>
+                        </div>
+                        <div style="float:left; width:90%;">
+                            <html:textarea readonly="true" rows="2" style="outline:none;resize:none;border:0px;width:99%;-webkit-box-sizing:border-box;-moz-box-sizing:border-box;box-sizing:border-box;" 
+                                styleClass="form-text" property="selectedparentPath" styleId="selectedparentPath" />
+                        </div>
+                    </div>
                      <div class="callOutBox" style="margin-left:40px;margin-right:40px;margin-bottom:10px" >
                     	 <b><%= LanguageUtil.get(pageContext, "Note") %></b>: <%= LanguageUtil.get(pageContext, "Hold-down-ctrl-to-select-multiple-files") %>
                      </div>
@@ -278,5 +277,8 @@ if(request.getParameter("in_frame")!=null){
 	<b><%= LanguageUtil.get(pageContext, "File-Uploading") %>  . . .</b><BR>
 	<%= LanguageUtil.get(pageContext, "Note") %>: <%= LanguageUtil.get(pageContext, "This-window-will-redirect-you-back-when-the-file-has-been-uploaded") %>
 </div>
+
+<% // Include javascript method to upload multiple files %>
+<%@ include file="/html/portlet/ext/files/upload_multiple_js_inc.jsp" %>
 </body>
 </liferay:box>

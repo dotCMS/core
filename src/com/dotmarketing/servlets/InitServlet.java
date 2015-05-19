@@ -176,7 +176,14 @@ public class InitServlet extends HttpServlet {
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
 
+        //Used com.dotmarketing.viewtools.NavigationWebAPI
+        String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
+        String menuVLTPath = velocityRootPath + "menus" + java.io.File.separator;
 
+        java.io.File fileFolder = new java.io.File(menuVLTPath);
+        if (!fileFolder.exists()) {
+            fileFolder.mkdirs();
+        }
         
         if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
             // deletes all menues that have been generated

@@ -15,29 +15,24 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 public class NavTool implements ViewTool {
-    
-    private static NavToolCache navCache = null;
-    private static FolderAPI fAPI=null;
+
     private Host currenthost=null;
     private static User user=null;
-    private HttpServletRequest request = null;
+    private static HttpServletRequest request = null;
+    private static long currentLanguage = 0;
     
     static {
         try {
@@ -53,29 +48,28 @@ public class NavTool implements ViewTool {
         try {
     		this.request = context.getRequest();
             currenthost=WebAPILocator.getHostWebAPI().getCurrentHost(context.getRequest());
-            fAPI = APILocator.getFolderAPI();
-            navCache = CacheLocator.getNavToolCache();
+            currentLanguage = WebAPILocator.getLanguageWebAPI().getLanguage(this.request).getId();
         } catch (Exception e) {
             Logger.warn(this, e.getMessage(), e);
         }
     }
     
-    protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException { 
-    	return getNav(host, path, String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
+    protected static NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
+        return getNav(host, path, currentLanguage);
     }
     
-    protected static NavResult getNav(Host host, String path, String languageId) throws DotDataException, DotSecurityException {
+    protected static NavResult getNav(Host host, String path, long languageId) throws DotDataException, DotSecurityException {
         
         if(path != null && path.contains(".")){
         	path = path.substring(0, path.lastIndexOf("/"));
         }
         
-        Folder folder=!path.equals("/") ? fAPI.findFolderByPath(path, host, user, true) : fAPI.findSystemFolder();
+        Folder folder=!path.equals("/") ? APILocator.getFolderAPI().findFolderByPath(path, host, user, true) : APILocator.getFolderAPI().findSystemFolder();
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
             return null;
         
-        NavResult result=navCache.getNav(host.getIdentifier(), folder.getInode());
-        
+        NavResult result=CacheLocator.getNavToolCache().getNav(host.getIdentifier(), folder.getInode(), languageId);
+
         if(result != null) {
         	
         	return result;
@@ -85,7 +79,7 @@ public class NavTool implements ViewTool {
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
                 parentId=ident.getParentPath().equals("/") ? 
-                        FolderAPI.SYSTEM_FOLDER : fAPI.findFolderByPath(ident.getParentPath(), host, user, false).getInode();
+                        FolderAPI.SYSTEM_FOLDER : APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, user, false).getInode();
             } else {
                 parentId=null;
             }
@@ -100,12 +94,12 @@ public class NavTool implements ViewTool {
             List<String> folderIds=new ArrayList<String>();
             result.setChildren(children);
             result.setChildrenFolderIds(folderIds);
-        
+
             List menuItems;
             if(path.equals("/"))
-                menuItems = fAPI.findSubFolders(host, true);
+                menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
             else
-                menuItems = fAPI.findMenuItems(folder, user, true);
+                menuItems = APILocator.getFolderAPI().findMenuItems(folder, user, true);
             
             for(Object item : menuItems) {
                 if(item instanceof Folder) {
@@ -147,7 +141,7 @@ public class NavTool implements ViewTool {
                     nav.setType("htmlpage");
                     nav.setPermissionId(itemPage.getPermissionId());
                     
-                    if(!itemPage.isContent() || (itemPage.isContent() && String.valueOf(((IHTMLPage)itemPage).getLanguageId()).equals(languageId) )) {
+                    if(!itemPage.isContent() || (itemPage.isContent() && (itemPage.getLanguageId() == languageId) )) {
                     	children.add(nav);
                     }
                 }
@@ -179,8 +173,8 @@ public class NavTool implements ViewTool {
                     children.add(nav);
                 }
             }
-            
-            navCache.putNav(host.getIdentifier(), folder.getInode(), result);
+
+            CacheLocator.getNavToolCache().putNav(host.getIdentifier(), folder.getInode(), result, languageId);
             
             return result;
         }
@@ -200,7 +194,7 @@ public class NavTool implements ViewTool {
         return getNav(host,path);
     }
     
-    public NavResult getNav(String path, String languageId) throws DotDataException, DotSecurityException {
+    public NavResult getNav(String path, long languageId) throws DotDataException, DotSecurityException {
         
     	Host host=getHostFromPath(path);
 

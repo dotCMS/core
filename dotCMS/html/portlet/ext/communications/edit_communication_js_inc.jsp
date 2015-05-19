@@ -67,11 +67,11 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 	}
 	function addFileCallback(file) {
 		var ident
-		var ext=file.extension;
-		var ident =file.identifier;
+		var ext = file.extension;
+		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>'){
+		if(fileExt == '<%= extension %>' || ext == 'page'){
 			wysiwyg_win.document.forms[0].elements["href"].value = file.pageURI;
 		}else{
 			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";

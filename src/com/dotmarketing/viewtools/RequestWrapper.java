@@ -22,11 +22,12 @@ import javax.servlet.http.*;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.Xss;
 
-public class RequestWrapper extends HttpServletRequestWrapper  {
+public class RequestWrapper extends javax.servlet.http.HttpServletRequestWrapper  {
 
 	private HttpServletRequest _request;
     private String customUserAgentHeader;
 	private String dotCMSUri;
+
 	public RequestWrapper(HttpServletRequest req) {
         super(req);
 		this._request = req;
@@ -235,8 +236,19 @@ public class RequestWrapper extends HttpServletRequestWrapper  {
 		return _request.getRemotePort();
 	}
 
-	public RequestDispatcher getRequestDispatcher(String arg0) {
-		return _request.getRequestDispatcher(arg0);
+	public RequestDispatcher getRequestDispatcher(String uri) {
+		final RequestDispatcher rd = _request.getRequestDispatcher(uri);
+		return new RequestDispatcher() {
+			public void forward(ServletRequest servletRequest, ServletResponse servletResponse)
+					throws ServletException, IOException {
+				rd.forward(_request, servletResponse);
+			}
+
+			public void include(ServletRequest servletRequest, ServletResponse servletResponse)
+					throws ServletException, IOException {
+				rd.include(_request, servletResponse);
+			}
+		};
 	}
 
 	public String getScheme() {

@@ -579,11 +579,11 @@ var cmsfile=null;
 	}
 	function addFileCallback(file) {
 		var ident
-		var ext=file.extension;
-		var ident =file.identifier;
+		var ext = file.extension;
+		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>'){
+		if(fileExt == '<%= extension %>' || ext == 'page'){
 			tinyMCEFilePickerCallback(file.pageURI, {});
 		}else {
 			tinyMCEFilePickerCallback("/contentAsset/raw-data/" + ident + "/fileAsset", {});

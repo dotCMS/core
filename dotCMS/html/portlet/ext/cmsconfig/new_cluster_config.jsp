@@ -2,6 +2,14 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.enterprise.LicenseUtil" %>
+<%@ page import="com.dotmarketing.util.Config" %>
+
+<%  if(!Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true)) { //In case user tries to acess jsp directly%>
+<%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>
+<%
+        return;
+    }
+%>
 
 <%  if( LicenseUtil.getLevel()<300){ %>
     <%@ include file="/html/portlet/ext/cmsconfig/network/not_licensed.jsp" %>

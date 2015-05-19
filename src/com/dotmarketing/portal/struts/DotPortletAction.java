@@ -689,11 +689,11 @@ public class DotPortletAction extends PortletAction {
 		} catch (DotHibernateException e1) {
 			Logger.error(this, e.getMessage(), e);
 		}
-        if(UtilMethods.getStackTrace(e) != null
+        /*if(UtilMethods.getStackTrace(e) != null
                 && UtilMethods.getStackTrace(e).toLowerCase().contains("constraint")
                 && UtilMethods.getStackTrace(e).toLowerCase().contains("violation")){
             SessionMessages.add(req, "message", "message.language.content");
-        }
+        }*/
 		req.setAttribute(PageContext.EXCEPTION, e);
 		
 		//This is a fix for the <%@ page isErrorPage="true" %> directive in Glassfish

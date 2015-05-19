@@ -147,11 +147,19 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public HTMLPageAsset fromContentlet(Contentlet con) {
-        if (con == null || con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
-            throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
-        }
-
-        HTMLPageAsset pa=new HTMLPageAsset();
+    	if (con != null){
+    		if(con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_HTMLPAGE) {
+    			throw new DotStateException("Contentlet : " + con.getInode() + " is not a pageAsset");
+    		}
+    	}else{
+    		throw new DotStateException("Contentlet is null");
+    	}
+    	
+    	HTMLPageAsset pa = (HTMLPageAsset) CacheLocator.getHTMLPageCache().get(con.getInode());
+    	if(pa!=null){
+    		return pa;
+    	}
+        pa=new HTMLPageAsset();
         pa.setStructureInode(con.getStructureInode());
         try {
             APILocator.getContentletAPI().copyProperties((Contentlet) pa, con.getMap());
@@ -186,6 +194,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
             }
         }
+
+        try {
+			CacheLocator.getHTMLPageCache().add(pa);
+		} catch (Exception e) {
+
+		}
+        
 
         return pa;
     }

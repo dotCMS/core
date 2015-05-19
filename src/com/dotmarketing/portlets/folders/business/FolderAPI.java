@@ -448,17 +448,6 @@ import com.liferay.portal.model.User;
 	public abstract List<Inode> findMenuItems(Folder folder, int orderDirection) throws DotDataException;
 
 	/**
-	 * Builds the Navigation Tree with the items
-	 *
-	 * @param items
-	 * @param depth
-	 * @param user
-	 * @return
-	 * @throws DotDataException
-	 */
-	public abstract List<Object> buildNavigationTree(List items, int depth,User user) throws DotDataException;
-
-	/**
 	 * Find the Items of a host
 	 *
 	 * @param host

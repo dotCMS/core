@@ -24,7 +24,7 @@ public class ExampleController {
     @RequestMapping (value = "/", method = RequestMethod.GET)
     public ModelAndView helloWorld () {
         Logger.info( this.getClass(), "Received request to hello" );
-        String myMessage = "Hello World, Spring 3.1 and dotCMS!";
+        String myMessage = "Hello World, Spring 4.1.1 and dotCMS!";
         // This will resolve to /application/spring/helloworld.html, and put the String myMessage in the map with key "message"
         return new ModelAndView( "helloworld", "message", myMessage );
     }
@@ -37,8 +37,8 @@ public class ExampleController {
 
         // set the message
         String aMessage = (userName != null)
-                ? "Hello EDIT " + userName + ", welcome to Spring  3.1 and dotCMS!  "
-                : "Hello Total Stranger, welcome to Spring  3.1 and dotCMS!  ";
+                ? "Hello EDIT " + userName + ", welcome to Spring 4.1.1 and dotCMS!  "
+                : "Hello Total Stranger, welcome to Spring 4.1.1 and dotCMS!  ";
 
         // Attach message to the Model
         model.addAttribute( "message", aMessage );

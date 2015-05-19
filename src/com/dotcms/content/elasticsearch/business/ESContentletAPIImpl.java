@@ -262,118 +262,104 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
-    public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException {
+    public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
-    	String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
- 		String contentPushPublishTime = contentlet.getStringProperty("wfPublishTime");
- 		String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
- 		String contentPushExpireTime = contentlet.getStringProperty("wfExpireTime");
-
- 		contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
- 		contentPushPublishTime = UtilMethods.isSet(contentPushPublishTime)?contentPushPublishTime:"N/D";
- 		contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
- 		contentPushExpireTime = UtilMethods.isSet(contentPushExpireTime)?contentPushExpireTime:"N/D";
-
-
-        ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
-         		+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-         		+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-
+        boolean localTransaction = false;
         try {
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-        	if(contentlet.getInode().equals(""))
-        		throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
-        	if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
-        		Logger.debug(PublishFactory.class, "publishAsset: user = " + (user != null ? user.getEmailAddress() : "Unknown") 
-        				+ ", don't have permissions to publish: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
+            String contentPushPublishDate = contentlet.getStringProperty("wfPublishDate");
+            String contentPushExpireDate = contentlet.getStringProperty("wfExpireDate");
 
-        		//If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
+            contentPushPublishDate = UtilMethods.isSet(contentPushPublishDate)?contentPushPublishDate:"N/D";
+            contentPushExpireDate = UtilMethods.isSet(contentPushExpireDate)?contentPushExpireDate:"N/D";
 
-        		List<Role> roles = perAPI.getRoles(contentlet.getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
-        		Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
-        		boolean isCMSOwner = false;
-        		if(roles.size() > 0){
-        			for (Role role : roles) {
-        				if(role == cmsOwner){
-        					isCMSOwner = true;
-        					break;
-        				}
-        			}
-        			if(!isCMSOwner){
-        				throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") 
-        						+ "does not have permission to publish contentlet with inode " 
-        						+ (contentlet != null ? contentlet.getInode() : "Unknown"));
-        			}
-        		}else{
-        			throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown") 
-        						+ "does not have permission to publish contentlet with inode " 
-        						+ (contentlet != null ? contentlet.getInode() : "Unknown"));
-        		}
-        	}
+            ActivityLogger.logInfo(getClass(), "Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+                    + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                    + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
-        	canLock(contentlet, user, respectFrontendRoles);
+            try {
 
-        	String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid()  ;
+                if(contentlet.getInode().equals(""))
+                    throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
 
-        	synchronized (syncMe.intern()) {
+                if(!perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_PUBLISH, user, respectFrontendRoles)){
+                    Logger.debug(PublishFactory.class, "publishAsset: user = " + (user != null ? user.getEmailAddress() : "Unknown")
+                            + ", don't have permissions to publish: " + (contentlet != null ? contentlet.getInode() : "Unknown"));
 
-        		Logger.debug(this, "*****I'm a Contentlet -- Publishing");
+                    //If the contentlet has CMS Owner Publish permission on it, the user creating the new contentlet is allowed to publish
+                    List<Role> roles = perAPI.getRoles(contentlet.getPermissionId(), PermissionAPI.PERMISSION_PUBLISH, "CMS Owner", 0, -1);
+                    Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+                    boolean isCMSOwner = false;
 
-        		//Set contentlet to live and unlocked
-        		APILocator.getVersionableAPI().setLive(contentlet);
-        		//APILocator.getVersionableAPI().setLocked(contentlet.getIdentifier(), false, user);
+                    if(roles.size() > 0){
+                        for (Role role : roles) {
+                            if(role == cmsOwner){
+                                isCMSOwner = true;
+                                break;
+                            }
+                        }
 
-        		publishAssociated(contentlet, false);
+                        if(!isCMSOwner){
+                            throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
+                                    + "does not have permission to publish contentlet with inode "
+                                    + (contentlet != null ? contentlet.getInode() : "Unknown"));
+                        }
+                    }else{
+                        throw new DotSecurityException("User " + (user != null ? user.getUserId() : "Unknown")
+                                + "does not have permission to publish contentlet with inode "
+                                + (contentlet != null ? contentlet.getInode() : "Unknown"));
+                    }
+                }
 
-        		if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
-        			Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
-        			CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
-        			IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
-        			if(fileAsset.isShowOnMenu()){
-        				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
-        				RefreshMenus.deleteMenu(folder);
-        				CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
-	                }
-        		}
+                canLock(contentlet, user, respectFrontendRoles);
 
-        	}
+                String syncMe = (UtilMethods.isSet(contentlet.getIdentifier()))  ? contentlet.getIdentifier() : UUIDGenerator.generateUuid();
+                synchronized (syncMe.intern()) {
+                    Logger.debug(this, "*****I'm a Contentlet -- Publishing");
 
-        } catch(DotDataException | DotStateException | DotSecurityException e) {
-        	ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
-        			+ "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown") 
-        			+ "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
-        	throw e;
-        }
+                    //Set contentlet to live and unlocked
+                    APILocator.getVersionableAPI().setLive(contentlet);
 
-        ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " + contentPushPublishDate + "; "
-                + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
-                + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+                    publishAssociated(contentlet, false);
 
+                    if(contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET) {
+                        Identifier ident = APILocator.getIdentifierAPI().find(contentlet);
+                        CacheLocator.getCSSCache().remove(ident.getHostId(), ident.getPath(), true);
+                        IFileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(contentlet);
 
-    }
+                        if(fileAsset.isShowOnMenu()){
+                            Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, respectFrontendRoles);
+                            RefreshMenus.deleteMenu(folder);
+                            CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
+                        }
+                    }
+                }
 
-    /* Not needed anymore
-     * private void setLiveContentOff(Contentlet contentlet) throws DotDataException {
-        List<Contentlet> liveCons = new ArrayList<Contentlet>();
-        if (InodeUtils.isSet(contentlet.getIdentifier())) {
-            liveCons = conFac.findContentletsByIdentifier(contentlet.getIdentifier(), true, contentlet
-                    .getLanguageId());
-        }
-        Logger.debug(this, "working contentlet =" + contentlet.getInode());
-        for (Contentlet liveCon : liveCons) {
-            if ((liveCon != null) && (InodeUtils.isSet(liveCon.getInode()))
-                    && (!liveCon.getInode().equalsIgnoreCase(contentlet.getInode()))) {
+            } catch(DotDataException | DotStateException | DotSecurityException e) {
+                ActivityLogger.logInfo(getClass(), "Error Publishing Content", "StartDate: " +contentPushPublishDate+ "; "
+                        + "EndDate: " +contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                        + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
+                throw e;
+            }
 
-                Logger.debug(this, "live contentlet =" + liveCon.getInode());
-                // sets previous live to false
-                liveCon.setLive(false);
-                liveCon.setModDate(new java.util.Date());
+            ActivityLogger.logInfo(getClass(), "Content Published", "StartDate: " + contentPushPublishDate + "; "
+                    + "EndDate: " + contentPushExpireDate + "; User:" + (user != null ? user.getUserId() : "Unknown")
+                    + "; ContentIdentifier: " + (contentlet != null ? contentlet.getIdentifier() : "Unknown"), contentlet.getHost());
 
-                // persists it
-                conFac.save(liveCon);
+        }catch(Exception e){
+            Logger.error(this, e.getMessage(), e);
+
+            if(localTransaction){
+                HibernateUtil.rollbackTransaction();
             }
         }
-    }*/
+        finally{
+            if(localTransaction){
+                HibernateUtil.commitTransaction();
+            }
+        }
+    }
 
     public void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException,
             DotContentletStateException, DotStateException {
@@ -387,7 +373,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (!contentlet.isWorking())
             throw new DotContentletStateException("Only the working version can be published");
 
-
+        // writes the contentlet object to a file
+        indexAPI.addContentToIndex(contentlet, true, true);
 
         User user = APILocator.getUserAPI().getSystemUser();
 
@@ -456,9 +443,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 throw new DotStateException("Problem occured while publishing file");
             }
         }
-
-        // writes the contentlet object to a file
-        indexAPI.addContentToIndex(contentlet);
 
         if (!isNew) {
             // writes the contentlet to a live directory under velocity folder
@@ -663,9 +647,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         
         // if it showOnMenu is checked changing publish status should remove nav on that folder
-        if((contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ||
-                contentlet.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE) &&
-                contentlet.getStringProperty("showOnMenu")!=null && contentlet.getStringProperty("showOnMenu").contains("true")) {
+        if((contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
+                || contentlet.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE)
+                && contentlet.getStringProperty("showOnMenu") != null
+                && contentlet.getStringProperty("showOnMenu").contains("true")) {
+
             CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
         }
     }
@@ -1733,10 +1719,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
     			if(fileAsset.isShowOnMenu()){
     				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId() , user, false);
     				RefreshMenus.deleteMenu(folder);
-    				CacheLocator.getNavToolCache().getNav(ident.getHostId(), folder.getInode());
+                    CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                 }
         	}
-
+        	CacheLocator.getContentletCache().remove(contentlet.getInode());
         	ContentletServices.unpublishContentletFile(contentlet);
         	ContentletMapServices.unpublishContentletMapFile(contentlet);
         	publishRelatedHtmlPages(contentlet);
