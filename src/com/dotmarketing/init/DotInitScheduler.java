@@ -13,6 +13,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
+import com.dotcms.workflow.EscalationThread;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -800,6 +801,44 @@ public class DotInitScheduler {
 			} else {
 				if ((job = sched.getJobDetail(jobName, jobGroup)) != null) {
 					sched.deleteJob(jobName, jobGroup);
+				}
+			}
+
+			//SCHEDULE ESCALATION THREAD JOB
+			String ETjobName = "EscalationThreadJob";
+			String ETjobGroup = "dotcms_jobs";
+			String ETtriggerName = "trigger24";
+			String ETtriggerGroup = "group24";
+
+			if(Config.getBooleanProperty("ESCALATION_ENABLE", true)) {
+				try {
+					isNew = false;
+
+					try {
+						if ((job = sched.getJobDetail(ETjobName, ETjobGroup)) == null) {
+							job = new JobDetail(ETjobName, ETjobGroup, EscalationThread.class);
+							isNew = true;
+						}
+					} catch (SchedulerException se) {
+						sched.deleteJob(ETjobName, ETjobGroup);
+						job = new JobDetail(ETjobName, ETjobGroup, EscalationThread.class);
+						isNew = true;
+					}
+					calendar = GregorianCalendar.getInstance();
+					trigger = new CronTrigger(ETtriggerName, ETtriggerGroup, ETjobName, ETjobGroup, calendar.getTime(), null,Config.getStringProperty("ESCALATION_CHECK_INTERVAL_CRON", "0/30 * * * * ?"));
+					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW);
+					sched.addJob(job, true);
+
+					if (isNew)
+						sched.scheduleJob(trigger);
+					else
+						sched.rescheduleJob(ETtriggerName, ETtriggerGroup, trigger);
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else {
+				if ((sched.getJobDetail(ETjobName, ETjobGroup)) != null) {
+					sched.deleteJob(ETjobName, ETjobGroup);
 				}
 			}
             

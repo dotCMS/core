@@ -247,10 +247,6 @@ public class InitServlet extends HttpServlet {
 			throw new ServletException("Unable to initialize system folder", e1);
 		}
 
-		if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
-		    EscalationThread.getInstace().start();
-		}
-
         /*
          * SHOULD BE LAST THING THAT HAPPENS
          */
