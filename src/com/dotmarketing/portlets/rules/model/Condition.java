@@ -127,10 +127,6 @@ public class Condition {
         return conditionlet;
     }
 
-    public void setConditionlet(Conditionlet conditionlet) {
-        this.conditionlet = conditionlet;
-    }
-
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         return getConditionlet().evaluate(req, res, getComparison(), getValues());
     }

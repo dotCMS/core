@@ -269,8 +269,11 @@ public class RulesFactoryImpl implements RulesFactory {
         Set<Rule> rules = cache.getRules(rule.getHost(), rule.getFireOn());
         if(rules==null) {
             rules = new HashSet<>();
-            cache.addRules(rules, rule.getHost(), rule.getFireOn());
         }
+
+        rules.add(rule);
+
+        cache.addRules(rules, rule.getHost(), rule.getFireOn());
 
 	}
 
@@ -349,14 +352,16 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getModDate());
                 db.loadResult();
 
-                for (ConditionValue value : condition.getValues()) {
-                    value.setId(UUIDGenerator.generateUuid());
-                    db.setSQL(sql.INSERT_CONDITION_VALUE);
-                    db.addParam(value.getId());
-                    db.addParam(condition.getId());
-                    db.addParam(value.getValue());
-                    db.addParam(value.getPriority());
-                    db.loadResult();
+                if(condition.getValues()!=null) {
+                    for (ConditionValue value : condition.getValues()) {
+                        value.setId(UUIDGenerator.generateUuid());
+                        db.setSQL(sql.INSERT_CONDITION_VALUE);
+                        db.addParam(value.getId());
+                        db.addParam(condition.getId());
+                        db.addParam(value.getValue());
+                        db.addParam(value.getPriority());
+                        db.loadResult();
+                    }
                 }
 
             } else {
@@ -422,6 +427,7 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.addParam(ruleAction.getPriority());
 			db.addParam(ruleAction.getActionlet());
 			db.loadResult();
+            cache.addAction(ruleAction.getRuleId(), ruleAction);
 		} else {
 			db.setSQL(sql.UPDATE_RULE_ACTION);
 			db.addParam(ruleAction.getName());
@@ -431,6 +437,7 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.addParam(ruleAction.getId());
 			db.loadResult();
             cache.removeAction(ruleAction.getRuleId(), ruleAction);
+            cache.addAction(ruleAction.getRuleId(), ruleAction);
 		}
 	}
 

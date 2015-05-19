@@ -829,7 +829,7 @@ public class RulesResource extends WebResource {
             condition.setOperator(Condition.Operator.valueOf(conditionJSON.optString("operator", Condition.Operator.AND.name())));
             condition.setPriority(conditionJSON.optInt("priority", 0));
 
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray valuesJSON = conditionJSON.getJSONArray("values");
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray valuesJSON = conditionJSON.optJSONArray("values");
             List<ConditionValue> values = new ArrayList<>();
 
             if(UtilMethods.isSet(valuesJSON)) {

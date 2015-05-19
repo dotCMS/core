@@ -8,6 +8,7 @@ import com.dotcms.repackage.com.sun.jersey.api.client.filter.HTTPBasicAuthFilter
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.apache.http.client.methods.HttpGet;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.AfterClass;
 import com.dotcms.repackage.org.junit.Test;
@@ -31,12 +32,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static com.dotcms.repackage.org.junit.Assert.assertFalse;
+import static com.dotcms.repackage.org.junit.Assert.assertNull;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import com.dotcms.repackage.org.mockito.Mockito;
 import com.liferay.util.Http;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 
@@ -302,6 +305,67 @@ public class RulesAPITest extends TestBase {
     @Test
     public void testFireOnEveryRequest() throws Exception {
 
+        createRule(Rule.FireOn.EVERY_REQUEST);
+
+        HttpServletRequest request = ServletTestRunner.localRequest.get();
+        String serverName = request.getServerName();
+        Integer serverPort = request.getServerPort();
+
+        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.connect();
+        int responseCode = con.getResponseCode();
+        assertTrue((Boolean) request.getServletContext().getAttribute("everyRequest"));
+
+    }
+
+    @Test
+    public void testFireOnEveryPage() throws Exception {
+
+        createRule(Rule.FireOn.EVERY_PAGE);
+
+        HttpServletRequest request = ServletTestRunner.localRequest.get();
+        String serverName = request.getServerName();
+        Integer serverPort = request.getServerPort();
+
+        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.connect();
+        int responseCode = con.getResponseCode();
+        assertNull(request.getServletContext().getAttribute("everyPage"));
+
+        url = new URL("http://" + serverName + ":" + serverPort);
+        con = (HttpURLConnection) url.openConnection();
+        con.connect();
+        responseCode = con.getResponseCode();
+        assertTrue((Boolean) request.getServletContext().getAttribute("everyPage"));
+
+    }
+
+    @Test
+    public void testFireOnOncePerVisit() throws Exception {
+
+        createRule(Rule.FireOn.ONCE_PER_VISIT);
+
+        HttpServletRequest request = ServletTestRunner.localRequest.get();
+        String serverName = request.getServerName();
+        Integer serverPort = request.getServerPort();
+
+        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        con.connect();
+        int responseCode = con.getResponseCode();
+        assertFalse((Boolean) request.getServletContext().getAttribute("everyPage"));
+
+        url = new URL("http://" + serverName + ":" + serverPort);
+        con = (HttpURLConnection) url.openConnection();
+        con.connect();
+        responseCode = con.getResponseCode();
+        assertTrue((Boolean) request.getServletContext().getAttribute("everyPage"));
+
+    }
+
+    private void createRule(Rule.FireOn fireOn) throws Exception {
         RulesAPI rulesAPI = APILocator.getRulesAPI();
         User user = APILocator.getUserAPI().getSystemUser();
 
@@ -313,10 +377,10 @@ public class RulesAPITest extends TestBase {
 
         // Create Rule
         Rule rule = rule = new Rule();
-        rule.setName("everyRequestRule");
+        rule.setName(fireOn.name() + "Rule");
         rule.setHost(defaultHost.getIdentifier());
         rule.setEnabled(true);
-        rule.setFireOn(Rule.FireOn.EVERY_REQUEST);
+        rule.setFireOn(fireOn);
 
         rulesAPI.saveRule(rule, user, false);
 
@@ -328,30 +392,23 @@ public class RulesAPITest extends TestBase {
 
         rulesAPI.saveConditionGroup(group, user, false);
 
-        Condition condition = Mockito.mock(Condition.class);
+        Condition condition =new Condition();
         condition.setName("testCondition");
         condition.setRuleId(rule.getId());
         condition.setConditionGroup(group.getId());
         condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
         condition.setOperator(Condition.Operator.AND);
+        condition.setComparison("is");
 
         rulesAPI.saveCondition(condition, user, false);
 
         RuleAction action = new RuleAction();
-        action.setActionlet("EveryRequestActionlet");
+        action.setActionlet(fireOn.getCamelCaseName() + "Actionlet");
         action.setRuleId(rule.getId());
-        action.setName("EveryRequestActionlet");
+        action.setName(fireOn.getCamelCaseName() + "Actionlet");
 
         rulesAPI.saveRuleAction(action, user, false);
 
-        HttpServletRequest request = ServletTestRunner.localRequest.get();
-        String serverName = request.getServerName();
-        Integer serverPort = request.getServerPort();
-
-        URL urlE = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif");
-        URLConnection yc = urlE.openConnection();
-        yc.getInputStream();
-        assertTrue((Boolean) request.getServletContext().getAttribute("everyRequest"));
     }
 
     @After

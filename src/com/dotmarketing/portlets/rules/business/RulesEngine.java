@@ -27,7 +27,7 @@ public class RulesEngine {
         try {
             host =  WebAPILocator.getHostWebAPI().getCurrentHost(req);
         } catch (Exception e) {
-            Logger.error(RulesEngine.class, "Unable to retrieve current request host for URI ");
+            Logger.error(RulesEngine.class, "Unable to retrieve current request host for URI ", e);
             return;
         }
 
@@ -49,7 +49,7 @@ public class RulesEngine {
                 try {
                     result = rule.evaluate(req, res);
                 } catch (DotDataException e) {
-                    Logger.error(RulesEngine.class, "Rule could not be evaluated. Rule Id: " + rule.getId());
+                    Logger.error(RulesEngine.class, "Rule could not be evaluated. Rule Id: " + rule.getId(), e);
                 }
 
                 // Let's execute the actions
@@ -65,7 +65,7 @@ public class RulesEngine {
             }
 
         } catch(Exception e) {
-            Logger.error(RulesEngine.class, "Unable process rules." + e.getMessage());
+            Logger.error(RulesEngine.class, "Unable process rules." + e.getMessage(), e);
         }
     }
 }

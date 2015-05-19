@@ -47,7 +47,8 @@ public class RulesAPIImpl implements RulesAPI {
                 UsersIpAddressConditionlet.class,
                 UsersOperatingSystemConditionlet.class,
                 UsersSiteVisitsConditionlet.class,
-                UsersVisitedUrlConditionlet.class
+                UsersVisitedUrlConditionlet.class,
+                MockTrueConditionlet.class
         }));
 
         actionletClasses.addAll(Arrays.asList(new Class[]{

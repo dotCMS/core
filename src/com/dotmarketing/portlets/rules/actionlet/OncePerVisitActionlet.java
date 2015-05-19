@@ -18,6 +18,11 @@ public class OncePerVisitActionlet extends RuleActionlet {
 
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
-        request.getServletContext().setAttribute("oncePerVisit", true);
+        Integer count = (Integer) request.getServletContext().getAttribute("oncePerVisitCount");
+
+        if(count==null)
+            count = 1;
+
+        request.getServletContext().setAttribute("oncePerVisitCount", count++);
     }
 }

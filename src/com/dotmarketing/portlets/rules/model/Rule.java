@@ -15,15 +15,27 @@ import java.util.List;
 public class Rule implements Permissionable {
 
     public enum FireOn {
-        EVERY_PAGE,
-        ONCE_PER_VISIT,
-        ONCE_PER_VISITOR,
-        EVERY_REQUEST;
+        EVERY_PAGE("EveryPage"),
+        ONCE_PER_VISIT("OncePerVisit"),
+        ONCE_PER_VISITOR("OncePerVisitor"),
+        EVERY_REQUEST("EveryRequest");
+
+        private String camelCaseName;
+
+        FireOn(String camelCaseName) {
+            this.camelCaseName = camelCaseName;
+        }
 
         @Override
         public String toString() {
             return super.name();
         }
+
+        public String getCamelCaseName() {
+            return camelCaseName;
+        }
+
+
     }
 
     private static final String BEGIN_CONDITION = "com.dotmarketing.portlets.rules.BeginCondition";
