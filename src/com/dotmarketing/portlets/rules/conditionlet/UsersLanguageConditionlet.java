@@ -25,7 +25,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-17-2015
  *
  */
-public class VisitorsLanguageConditionlet extends Conditionlet {
+public class UsersLanguageConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 	

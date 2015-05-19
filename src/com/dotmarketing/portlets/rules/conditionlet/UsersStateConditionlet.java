@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -37,7 +36,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-13-2015
  *
  */
-public class VisitorsStateConditionlet extends Conditionlet {
+public class UsersStateConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
@@ -48,7 +47,7 @@ public class VisitorsStateConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
-
+	
 	@Override
 	protected String getName() {
 		return CONDITIONLET_NAME;
@@ -70,7 +69,6 @@ public class VisitorsStateConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues)) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -90,27 +88,30 @@ public class VisitorsStateConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			getInputs(comparison.getId());
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
-			for (EntryOption option : inputOptions) {
-				// Validate that the selected value is correct
-				if (option.getId().equals(selectedValue)) {
-					validationResult.setValid(true);
-					break;
+			if (inputOptions != null) {
+				for (EntryOption option : inputOptions) {
+					if (option.getId().equals(selectedValue)) {
+						validationResult.setValid(true);
+						break;
+					}
 				}
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ inputField.getId() + "': '" + selectedValue + "'");
 			}
-		}
+		} // set error message when no inputid is specified
 		return validationResult;
 	}
 
 	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
+			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			ConditionletInput inputField = new ConditionletInput();
 			// Set field configuration and available options
 			inputField.setId(INPUT_ID);
@@ -170,7 +171,6 @@ public class VisitorsStateConditionlet extends Conditionlet {
 			options.add(new EntryOption("WV", "West Virginia"));
 			options.add(new EntryOption("WY", "Wyoming"));
 			inputField.setData(options);
-			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
 		return this.inputValues.values();
@@ -180,63 +180,50 @@ public class VisitorsStateConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(comparisonId)) {
-			GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-			String ipAddress = null;
-			String state = null;
-			try {
-				InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-				ipAddress = address.getHostAddress();
-				// TODO
-				ipAddress = "54.209.28.36";
-				state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
-			} catch (UnknownHostException e) {
-				Logger.error(this,
-						"Could not retrieved a valid IP address from request: "
-								+ request.getRequestURL());
-			} catch (IOException e) {
-				Logger.error(this,
-						"Could not establish connection to GeoIP2 database for IP "
-								+ ipAddress);
-			} catch (GeoIp2Exception e) {
-				Logger.error(this,
-						"State/province/region code could not be retreived for IP "
-								+ ipAddress);
-			}
-			if (UtilMethods.isSet(state)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+		String state = null;
+		try {
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+			String ipAddress = address.getHostAddress();
+			// TODO
+			// ipAddress = "54.209.28.36";
+			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
+		} catch (IOException | GeoIp2Exception e) {
+			Logger.error(this,
+					"An error occurred when retrieving the IP address from request: "
+							+ request.getRequestURL());
+		}
+		if (!UtilMethods.isSet(state)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().equals(state)) {
+					return true;
 				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					// If state is equal to one or more options...
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						for (ConditionValue value : values) {
-							if (value.getValue().equals(state)) {
-								result = true;
-								break;
-							}
-						}
-						// If state is distinct from the selected options...
-					} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-						result = true;
-						for (ConditionValue value : values) {
-							if (value.getValue().equals(state)) {
-								result = false;
-								break;
-							}
-						}
-					}
+			}
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().equals(state)) {
+					return false;
 				}
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

@@ -38,10 +38,10 @@ public class RulesAPIImpl implements RulesAPI {
 
         // Add default conditionlet classes
         conditionletClasses.addAll(Arrays.asList(new Class[]{
-                VisitorsCountryConditionlet.class,
-                VisitorsCityConditionlet.class,
-                VisitorsStateConditionlet.class,
-                VisitorsLanguageConditionlet.class,
+                UsersCountryConditionlet.class,
+                UsersCityConditionlet.class,
+                UsersStateConditionlet.class,
+                UsersLanguageConditionlet.class,
                 UsersBrowserConditionlet.class,
                 UsersHostConditionlet.class,
                 UsersIpAddressConditionlet.class,
