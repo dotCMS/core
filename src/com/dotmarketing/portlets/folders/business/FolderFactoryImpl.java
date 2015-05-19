@@ -194,76 +194,94 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
 
-		if(host==null) return null;
-		Folder folder =null;
+		String originalPath = path;
+		Folder folder;
+
+		if(host == null){
+			return null;
+		}
+
 		if(path.equals("/") || path.equals("/System folder")) {
 			folder = fc.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
-		}
-		else{
+		} else{
 			folder = fc.getFolderByPathAndHost(path, host);
 		}
-		
+
 		if(folder == null){
 			String parentPath;
 			String assetName;
 			String hostId;
-			String parentFolder;
 
 			try{
 				if(path.equals("/") || path.equals("/System folder")) {
-					parentPath="/System folder";
-					assetName="system folder";
-					hostId="SYSTEM_HOST";
-
-					HibernateUtil dh = new HibernateUtil(Folder.class);
-					dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
-							+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
-					dh.setParam(assetName);
-					dh.setParam(parentPath);
-					dh.setParam(hostId);
-					folder = (Folder) dh.load();
-					if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
-						// if it is found add it to folder cache
-						Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
-						fc.addFolder(folder, id);
-					}
+					parentPath = "/System folder";
+					assetName = "system folder";
+					hostId = "SYSTEM_HOST";
 				}
 				else {
+					// trailing / is removed
+					if (path.endsWith("/")){
+						path = path.substring(0, path.length()-1);
+					}
+					// split path into parent and asset name
+					int idx = path.lastIndexOf('/');
+					parentPath = path.substring(0,idx+1);
+					assetName = path.substring(idx+1);
 					hostId = host.getIdentifier();
-					parentFolder = path;
+				}
+
+				HibernateUtil dh = new HibernateUtil(Folder.class);
+				dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
+						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
+				dh.setParam(assetName);
+				dh.setParam(parentPath);
+				dh.setParam(hostId);
+				folder = (Folder) dh.load();
+
+				// if it is found add it to folder cache
+				if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+					Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+					fc.addFolder(folder, id);
+				} else {
+					String parentFolder = originalPath;
 
 					//If the path ends with a / we assume that the last part of the path is the folder.
 					//We just have to remove tha last / and substring from the last / remaining.
 					//For example: /application/themes/ => themes
 					if(parentFolder.endsWith("/")){
 						parentFolder = parentFolder.substring(0, parentFolder.length()-1);
+						parentPath = parentFolder.substring(0, parentFolder.lastIndexOf("/")+1);
 
 						if(parentFolder.contains("/")){
 							parentFolder = parentFolder.substring(parentFolder.lastIndexOf("/")+1);
 						}
-					//If the path doesn't end in / we assume the last part is a page or something else.
-					//We have to remove the last part plus the / and then remove the path from 0 to /
-					//For example: /application/themes/example-page => themes
+
+						//If the path doesn't end in / we assume the last part is a page or something else.
+						//We have to remove the last part plus the / and then remove the path from 0 to /
+						//For example: /application/themes/example-page => themes
 					} else {
-						if(parentFolder.contains("/")){
+						if (parentFolder.contains("/")) {
 							parentFolder = parentFolder.substring(0, parentFolder.lastIndexOf("/"));
+							parentPath = parentFolder.substring(0, parentFolder.lastIndexOf("/")+1);
 							parentFolder = parentFolder.substring(parentFolder.lastIndexOf("/")+1);
 						}
 					}
 
-					HibernateUtil dh = new HibernateUtil(Folder.class);
+					dh = new HibernateUtil(Folder.class);
 					dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier"
 							+ " where asset_name = ?"
+							+ " and parent_path = ?"
 							+ " and folder_1_.type = 'folder'"
 							+ " and folder.inode = folder_1_.inode"
 							+ " and folder.identifier = identifier.id"
 							+ " and host_inode = ?");
 					dh.setParam(parentFolder);
+					dh.setParam(parentPath);
 					dh.setParam(hostId);
 					folder = (Folder) dh.load();
 
+					// if it is found add it to folder cache
 					if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
-						// if it is found add it to folder cache
 						Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 						fc.addFolder(folder, id);
 					}
