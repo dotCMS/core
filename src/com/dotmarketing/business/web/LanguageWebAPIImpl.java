@@ -61,9 +61,9 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			}
 		}
 		
-
+		
 		// update page language
-		if (UtilMethods.isSet(httpRequest.getParameter(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE))
+		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
 				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))
 				|| UtilMethods.isSet(httpRequest.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))) {
 			if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))) {
@@ -88,9 +88,20 @@ public class LanguageWebAPIImpl implements LanguageWebAPI {
 			locale = new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
 
 		}
+		
+		// if we are changing the language, we NEED a session
+		boolean changeLang = false;
+		if (UtilMethods.isSet(httpRequest.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
+				|| UtilMethods.isSet(httpRequest.getParameter("language_id"))){
+			changeLang=true;
+		
+		}
+		
+		
 		httpRequest.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 		httpRequest.setAttribute(WebKeys.LOCALE, locale);
-		if(sessionOpt!=null){
+		if(sessionOpt!=null || changeLang){
+			sessionOpt= httpRequest.getSession(true);
 			sessionOpt.setAttribute(WebKeys.HTMLPAGE_LANGUAGE, languageId);
 			boolean ADMIN_MODE = (sessionOpt.getAttribute(WebKeys.ADMIN_MODE_SESSION) != null);
 			if (ADMIN_MODE == false || httpRequest.getParameter("leftMenu") == null) {

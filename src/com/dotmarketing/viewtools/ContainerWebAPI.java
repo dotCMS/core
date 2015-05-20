@@ -44,8 +44,7 @@ public class ContainerWebAPI implements ViewTool {
 
 			for (ContainerStructure cs : csList) {
 				if(cs.getStructureId().equals(structureId)) {
-					if(request.getSession()==null) {
-					}
+
 					VelocityUtil vu = new VelocityUtil();
 					String parsedCode = vu.parseVelocity(cs.getCode(), ctx);
 					return parsedCode;

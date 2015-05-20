@@ -50,10 +50,12 @@ public class ClickstreamFactory {
 		}
 		request.setAttribute("CLICKSTREAM_RECORDED", true);
 
-		String pointer = request.getRequestURI();
+		String pointer = (String) request.getAttribute("javax.servlet.forward.request_uri");
+		if(pointer ==null)pointer=request.getRequestURI();
 
 		HttpSession session = request.getSession();
-		Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
+		
+		Clickstream clickstream = (Clickstream) request.getSession(true).getAttribute("clickstream");
 		if (clickstream == null) {
 			clickstream = new Clickstream();
 			session.setAttribute("clickstream", clickstream);
