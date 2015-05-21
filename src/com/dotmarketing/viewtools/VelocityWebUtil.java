@@ -44,8 +44,8 @@ public class VelocityWebUtil implements ViewTool {
 		if(!this.debug){
 			try{
 				if(ctx.get("request") != null){
-					if(((HttpServletRequest) ctx.get("request")).getParameter(_logVariable) != null || 
-							req.getSession().getAttribute(_logVariable) != null 
+					if(((HttpServletRequest) ctx.get("request")).getParameter(_logVariable) != null || (
+							req.getSession(false)!=null && req.getSession(false).getAttribute(_logVariable) != null )
 					){
 						this.debug = true;
 						

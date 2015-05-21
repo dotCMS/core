@@ -144,8 +144,9 @@ public class ContainerServices {
            	}
            	    //sb.append("\n#if($webapi.canParseContent($contentletId,"+EDIT_MODE+")) ");
            	    sb.append(" #set($_show_working_=false) ");
+
            	    // if timemachine future enabled
-           	    sb.append(" #if($request.session.getAttribute(\"tm_date\")) ");
+           	    sb.append("#if($request.getSession(false) && $request.session.getAttribute(\"tm_date\"))");
            	    sb.append("  #set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
            	    sb.append("  #set($_ident=$webapi.findIdentifierById($contentletId)) ");
 
