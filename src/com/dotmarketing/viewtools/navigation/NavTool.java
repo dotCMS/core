@@ -57,17 +57,17 @@ public class NavTool implements ViewTool {
     }
     
     protected NavResult getNav(Host host, String path) throws DotDataException, DotSecurityException {
-        return getNav(host, path, this.currentLanguage);
+        return getNav(host, path, this.currentLanguage, this.systemUser);
     }
     
-    protected NavResult getNav(Host host, String path, long languageId) throws DotDataException, DotSecurityException {
+    protected NavResult getNav(Host host, String path, long languageId, User systemUserParam) throws DotDataException, DotSecurityException {
         
         if(path != null && path.contains(".")){
         	path = path.substring(0, path.lastIndexOf("/"));
         }
         
         
-        Folder folder=!path.equals("/") ? APILocator.getFolderAPI().findFolderByPath(path, host, systemUser, true) : APILocator.getFolderAPI().findSystemFolder();
+        Folder folder=!path.equals("/") ? APILocator.getFolderAPI().findFolderByPath(path, host, systemUserParam, true) : APILocator.getFolderAPI().findSystemFolder();
         if(folder==null || !UtilMethods.isSet(folder.getIdentifier()))
             return null;
         
@@ -82,7 +82,7 @@ public class NavTool implements ViewTool {
             if(!folder.getInode().equals(FolderAPI.SYSTEM_FOLDER)) {
                 Identifier ident=APILocator.getIdentifierAPI().find(folder);
                 parentId=ident.getParentPath().equals("/") ? 
-                        FolderAPI.SYSTEM_FOLDER : APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false).getInode();
+                        FolderAPI.SYSTEM_FOLDER : APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUserParam, false).getInode();
             } else {
                 parentId=null;
             }
@@ -102,7 +102,7 @@ public class NavTool implements ViewTool {
             if(path.equals("/"))
                 menuItems = APILocator.getFolderAPI().findSubFolders(host, true);
             else
-                menuItems = APILocator.getFolderAPI().findMenuItems(folder, systemUser, true);
+                menuItems = APILocator.getFolderAPI().findMenuItems(folder, systemUserParam, true);
             
             for(Object item : menuItems) {
                 if(item instanceof Folder) {
@@ -184,7 +184,7 @@ public class NavTool implements ViewTool {
     }
     
     public NavResult getNav() throws DotDataException, DotSecurityException {
-    	return getNav((String)request.getAttribute("javax.servlet.forward.request_uri"));
+    	return getNav((String) request.getAttribute("javax.servlet.forward.request_uri"));
     }
     
     public NavResult getNav(String path) throws DotDataException, DotSecurityException {
@@ -204,7 +204,7 @@ public class NavTool implements ViewTool {
     	if(host==null)
     		host = currenthost;
 
-        return getNav(host,path,languageId);
+        return getNav(host,path,languageId, systemUser);
     }
     
     private Host getHostFromPath(String path) throws DotDataException, DotSecurityException{
