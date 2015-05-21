@@ -11,18 +11,17 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.http.client.methods.HttpGet;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -31,9 +30,7 @@ import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import static com.dotcms.repackage.org.junit.Assert.assertFalse;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 import com.dotcms.repackage.org.mockito.Mockito;
 import com.liferay.util.Http;
@@ -42,10 +39,22 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RulesAPITest extends TestBase {
 
     private String ruleId;
+    HttpServletRequest request;
+    String serverName;
+    Integer serverPort;
+
+    @BeforeClass
+    private void init() {
+        request = ServletTestRunner.localRequest.get();
+        serverName = request.getServerName();
+        serverPort = request.getServerPort();
+    }
 
     @Test
     public void testCRUD() throws Exception {
@@ -261,7 +270,7 @@ public class RulesAPITest extends TestBase {
 
         responseStr = response.getEntity(String.class);
         JSONObject conditionletJSON = new JSONObject(responseStr);
-        assertTrue(conditionletJSON.getString(VisitorsCountryConditionlet.class.getSimpleName()) != null);
+        assertNotNull(conditionletJSON.getString(VisitorsCountryConditionlet.class.getSimpleName()));
 
 
         // Delete Condition
@@ -271,7 +280,7 @@ public class RulesAPITest extends TestBase {
         assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
 
         condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
-        assertTrue(condition == null);
+        assertNull(condition);
 
         // Delete Condition Group
 
@@ -280,7 +289,7 @@ public class RulesAPITest extends TestBase {
         assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
 
         group = APILocator.getRulesAPI().getConditionGroupById(conditionId, user, false);
-        assertTrue(group == null);
+        assertNull(group);
 
         // Delete Rule Action
 
@@ -289,7 +298,7 @@ public class RulesAPITest extends TestBase {
         assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
 
         action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
-        assertTrue(action == null);
+        assertNull(action);
 
         // Delete Rule
 
@@ -298,7 +307,7 @@ public class RulesAPITest extends TestBase {
         assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
 
         rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
-        assertTrue(rule == null);
+        assertNull(rule);
 
     }
 
@@ -307,15 +316,14 @@ public class RulesAPITest extends TestBase {
 
         createRule(Rule.FireOn.EVERY_REQUEST);
 
-        HttpServletRequest request = ServletTestRunner.localRequest.get();
-        String serverName = request.getServerName();
-        Integer serverPort = request.getServerPort();
 
-        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.connect();
-        int responseCode = con.getResponseCode();
-        assertTrue((Boolean) request.getServletContext().getAttribute("everyRequest"));
+        makeRequest("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        Integer count = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
+
+        makeRequest("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        Integer newCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
+
+        assertTrue(newCount>count);
 
     }
 
@@ -323,23 +331,18 @@ public class RulesAPITest extends TestBase {
     public void testFireOnEveryPage() throws Exception {
 
         createRule(Rule.FireOn.EVERY_PAGE);
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
-        HttpServletRequest request = ServletTestRunner.localRequest.get();
-        String serverName = request.getServerName();
-        Integer serverPort = request.getServerPort();
+        makeRequest("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
-        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.connect();
-        int responseCode = con.getResponseCode();
-        assertNull(request.getServletContext().getAttribute("everyPage"));
+        assertEquals(firstCount,secondCount);
 
-        url = new URL("http://" + serverName + ":" + serverPort);
-        con = (HttpURLConnection) url.openConnection();
-        con.connect();
-        responseCode = con.getResponseCode();
-        assertTrue((Boolean) request.getServletContext().getAttribute("everyPage"));
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer thirdCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
+        assertTrue(thirdCount>secondCount);
     }
 
     @Test
@@ -347,22 +350,36 @@ public class RulesAPITest extends TestBase {
 
         createRule(Rule.FireOn.ONCE_PER_VISIT);
 
-        HttpServletRequest request = ServletTestRunner.localRequest.get();
-        String serverName = request.getServerName();
-        Integer serverPort = request.getServerPort();
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
 
-        URL url = new URL("http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
+
+        assertEquals(firstCount, secondCount);
+
+    }
+
+    @Test
+    public void testFireOnOncePerVisitor() throws Exception {
+
+        createRule(Rule.FireOn.ONCE_PER_VISITOR);
+
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
+
+        makeRequest("http://" + serverName + ":" + serverPort);
+        Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
+
+        assertEquals(firstCount, secondCount);
+
+    }
+
+    private int makeRequest(String urlStr) throws IOException {
+        URL url = new URL(urlStr);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.connect();
-        int responseCode = con.getResponseCode();
-        assertFalse((Boolean) request.getServletContext().getAttribute("everyPage"));
-
-        url = new URL("http://" + serverName + ":" + serverPort);
-        con = (HttpURLConnection) url.openConnection();
-        con.connect();
-        responseCode = con.getResponseCode();
-        assertTrue((Boolean) request.getServletContext().getAttribute("everyPage"));
-
+        return con.getResponseCode();
     }
 
     private void createRule(Rule.FireOn fireOn) throws Exception {
@@ -403,9 +420,19 @@ public class RulesAPITest extends TestBase {
         rulesAPI.saveCondition(condition, user, false);
 
         RuleAction action = new RuleAction();
-        action.setActionlet(fireOn.getCamelCaseName() + "Actionlet");
+        action.setActionlet(CountRequestsActionlet.class.getSimpleName());
         action.setRuleId(rule.getId());
         action.setName(fireOn.getCamelCaseName() + "Actionlet");
+
+        RuleActionParameter fireOnParam = new RuleActionParameter();
+        fireOnParam.setRuleActionId(action.getId());
+        fireOnParam.setKey("fireOn");
+        fireOnParam.setValue(fireOn.name());
+
+        List<RuleActionParameter> params = new ArrayList<>();
+        params.add(fireOnParam);
+
+        action.setParameters(params);
 
         rulesAPI.saveRuleAction(action, user, false);
 

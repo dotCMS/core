@@ -52,10 +52,7 @@ public class RulesAPIImpl implements RulesAPI {
         }));
 
         actionletClasses.addAll(Arrays.asList(new Class[]{
-                EveryRequestActionlet.class,
-                EveryPageActionlet.class,
-                OncePerVisitActionlet.class,
-                OncePerVisitorActionlet.class,
+                CountRequestsActionlet.class,
                 TestActionlet.class
         }));
 
@@ -304,6 +301,40 @@ public class RulesAPIImpl implements RulesAPI {
         return condition;
     }
 
+    @Override
+    public ConditionValue getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(id)) {
+            return null;
+        }
+
+        ConditionValue value = rulesFactory.getConditionValueById(id);
+
+        if(!UtilMethods.isSet(value)) {
+            Logger.info(this, "There is no Condition Value with the given id: " + id);
+            return null;
+        }
+
+        Condition condition = rulesFactory.getConditionById(value.getConditionId());
+
+        if(condition==null) {
+            Logger.info(this, "There is no condition associated with the given Condition Value: " + id);
+            return null;
+        }
+
+        Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule associated with the given Condition Value: " + id);
+            return null;
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+        return value;
+
+    }
+
     public void saveRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(rule))
             return;
@@ -478,6 +509,38 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
         }
         return rulesFactory.getRuleActionParameters(action);
+    }
+
+    public RuleActionParameter getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(id)) {
+            return null;
+        }
+
+        RuleActionParameter parameter = rulesFactory.getRuleActionParameterById(id);
+
+        if(!UtilMethods.isSet(parameter)) {
+            Logger.info(this, "There is no RuleAction Parameter with the given id: " + id);
+            return null;
+        }
+
+        RuleAction action = rulesFactory.getRuleActionById(parameter.getRuleActionId());
+
+        if(action==null) {
+            Logger.info(this, "There is no RuleAction associated with the given RuleAction Parameter: " + id);
+            return null;
+        }
+
+        Rule rule = rulesFactory.getRuleById(action.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule associated with the given RuleAction Parameter: " + id);
+            return null;
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
+        }
+        return parameter;
     }
 
     private void refreshConditionletMap() {
