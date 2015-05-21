@@ -20,8 +20,12 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCountryConditionlet;
 import com.dotmarketing.portlets.rules.model.*;
+import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionlet;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
@@ -112,7 +116,7 @@ public class RulesAPITest extends TestBase {
 
         JSONObject conditionJSON = new JSONObject();
         conditionJSON.put("name", "testCondition");
-        conditionJSON.put("conditionlet", VisitorsCountryConditionlet.class.getSimpleName());
+        conditionJSON.put("conditionlet", UsersCountryConditionlet.class.getSimpleName());
         conditionJSON.put("comparison", "is");
         conditionJSON.put("operator", Condition.Operator.AND.name());
 
@@ -182,7 +186,7 @@ public class RulesAPITest extends TestBase {
         conditionJSON.put("name", modifiedConditionName);
         conditionJSON.put("ruleId", ruleId);
         conditionJSON.put("conditionGroupId", groupId);
-        conditionJSON.put("conditionlet", VisitorsCountryConditionlet.class.getSimpleName());
+        conditionJSON.put("conditionlet", UsersCountryConditionlet.class.getSimpleName());
         conditionJSON.put("comparison", "is");
         conditionJSON.put("operator", Condition.Operator.OR.name());
 
@@ -270,7 +274,8 @@ public class RulesAPITest extends TestBase {
 
         responseStr = response.getEntity(String.class);
         JSONObject conditionletJSON = new JSONObject(responseStr);
-        assertNotNull(conditionletJSON.getString(VisitorsCountryConditionlet.class.getSimpleName()));
+
+        assertTrue(conditionletJSON.getString(UsersCountryConditionlet.class.getSimpleName()) != null);
 
 
         // Delete Condition

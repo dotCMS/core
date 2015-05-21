@@ -90,6 +90,9 @@ public abstract class Conditionlet implements Serializable {
 	 * @param id
 	 *            - The {@link Comparison} ID.
 	 * @return The {@link Comparison} object.
+	 * @throws IllegalArgumentException
+	 *             If the comparison ID is not found or the list of comparisons
+	 *             is empty.
 	 */
 	protected Comparison getComparisonById(String id) {
 		Comparison comparison = null;
@@ -98,6 +101,10 @@ public abstract class Conditionlet implements Serializable {
 				comparison = c;
 				break;
 			}
+		}
+		if (comparison == null) {
+			Logger.error(this, "Comparison ID not found.");
+			throw new IllegalArgumentException("Comparison ID not found.");
 		}
 		return comparison;
 	}

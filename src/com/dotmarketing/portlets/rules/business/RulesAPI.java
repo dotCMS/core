@@ -158,6 +158,18 @@ public interface RulesAPI {
      */
     Condition getConditionById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
+
+    /**
+     *
+     * @param id
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    ConditionValue getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
     /**
      *
      * @param rule
@@ -238,6 +250,18 @@ public interface RulesAPI {
      * @throws DotSecurityException
      */
     Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+
+    /**
+     *
+     * @param id
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    RuleActionParameter getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**

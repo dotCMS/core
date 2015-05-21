@@ -931,8 +931,7 @@ public class RulesResource extends WebResource {
             if(UtilMethods.isSet(values)) {
                 for(int i=0; i<valuesJSON.length(); i++) {
                     JSONObject valueJSON = (JSONObject) valuesJSON.get(i);
-                    ConditionValue value = new ConditionValue();
-                    value.setId(valueJSON.getString("id"));
+                    ConditionValue value = rulesAPI.getConditionValueById(valueJSON.getString("id"), user, false);
                     value.setValue(valueJSON.getString("value"));
                     value.setPriority(valueJSON.optInt("priority", 0));
                     values.add(value);
@@ -1002,6 +1001,23 @@ public class RulesResource extends WebResource {
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
 
+
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray parametersJSON = actionJSON.getJSONArray("parameters");
+            List<RuleActionParameter> parameters = new ArrayList<>();
+
+            if(UtilMethods.isSet(parameters)) {
+                for(int i=0; i<parametersJSON.length(); i++) {
+                    JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
+                    RuleActionParameter parameter = new RuleActionParameter();
+                    parameter.setKey(parameterJSON.getString("key"));
+                    parameter.setValue(parameterJSON.getString("value"));
+                    parameters.add(parameter);
+                }
+            }
+
+
+            action.setParameters(parameters);
+
             rulesAPI.saveRuleAction(action, user, false);
 
             resultsObject.put("id", action.getId());
@@ -1068,6 +1084,21 @@ public class RulesResource extends WebResource {
             action.setName(actionlet.getName());
             action.setPriority(actionJSON.optInt("priority", 0));
             action.setActionlet(actionJSON.getString("actionlet"));
+
+            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray parametersJSON = actionJSON.getJSONArray("parameters");
+            List<RuleActionParameter> parameters = new ArrayList<>();
+
+            if(UtilMethods.isSet(parameters)) {
+                for(int i=0; i<parametersJSON.length(); i++) {
+                    JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
+                    RuleActionParameter parameter = rulesAPI.getRuleActionParameterById(parameterJSON.getString("id"), user, false);
+                    parameter.setKey(parameterJSON.getString("key"));
+                    parameter.setValue(parameterJSON.getString("value"));
+                    parameters.add(parameter);
+                }
+            }
+
+            action.setParameters(parameters);
 
             rulesAPI.saveRuleAction(action, user, false);
 

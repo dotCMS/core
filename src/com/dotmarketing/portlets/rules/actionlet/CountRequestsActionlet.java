@@ -19,6 +19,14 @@ public class CountRequestsActionlet extends RuleActionlet {
 
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
-        request.getServletContext().setAttribute(Rule.FireOn.EVERY_PAGE.name(), true);
+
+        String fireOn = params.get("fireOn").getValue();
+
+        Integer count = (Integer) request.getServletContext().getAttribute(fireOn);
+
+        if(count==null)
+            count = 1;
+
+        request.getServletContext().setAttribute(fireOn, count++);
     }
 }

@@ -2,6 +2,7 @@ package com.dotmarketing.servlets;
 
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
 import com.dotcms.repackage.org.apache.lucene.search.BooleanQuery;
 import com.dotcms.util.GeoIp2CityDbUtil;
@@ -43,6 +44,7 @@ import javax.servlet.http.HttpServlet;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.*;
 import java.net.URLEncoder;
@@ -256,16 +258,30 @@ public class InitServlet extends HttpServlet {
 		}
 		
 		// Create the GeoIP2 database reader on startup since it takes around 2
-		// seconds to load the file
-		try {
+		// seconds to load the file. If the prop is not set, just move on
+		if (UtilMethods.isSet(Config.getStringProperty(
+				"GEOIP2_CITY_DATABASE_PATH", ""))) {
+			try {
+				Logger.info(this, "");
+				long time = System.currentTimeMillis();
+				GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+				// Dummy query to initialize DB
+				String state = geoIp2Util
+						.getSubdivisionIsoCode("www.google.com");
+				long time2 = System.currentTimeMillis();
+				long res = time2 - time;
+				Logger.info(this,
+						"Local GeoIP2 DB connection established successfully!"
+								+ " -> " + res);
+			} catch (IOException | GeoIp2Exception e) {
+				Logger.info(this,
+						"Could not read from GeoIP2 DB: " + e.getMessage());
+			} catch (DotRuntimeException e) {
+				Logger.info(this,
+						"Could not read from GeoIP2 DB: " + e.getMessage());
+			}
 			Logger.info(this, "");
-			GeoIp2CityDbUtil.getInstance();
-			Logger.info(this,
-					"Local GeoIP2 DB connection established successfully!");
-		} catch (DotRuntimeException e) {
-			Logger.info(this, e.getMessage());
 		}
-		Logger.info(this, "");
 		
         /*
          * SHOULD BE LAST THING THAT HAPPENS

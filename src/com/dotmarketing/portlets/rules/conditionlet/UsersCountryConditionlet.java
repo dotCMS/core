@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -37,7 +36,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-17-2015
  *
  */
-public class VisitorsCountryConditionlet extends Conditionlet {
+public class UsersCountryConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
@@ -48,7 +47,7 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
-	
+
 	@Override
 	protected String getName() {
 		return CONDITIONLET_NAME;
@@ -355,64 +354,50 @@ public class VisitorsCountryConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-
-		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(comparisonId)) {
-			GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-			String ipAddress = null;
-			String country = null;
-			try {
-				InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
-				ipAddress = address.getHostAddress();
-				// TODO
-				ipAddress = "54.209.28.36";
-				country = geoIp2Util.getCountryIsoCode(ipAddress);
-			} catch (UnknownHostException e) {
-				Logger.error(this,
-						"Could not retrieved a valid IP address from request: "
-								+ request.getRequestURL());
-			} catch (IOException e) {
-				Logger.error(this,
-						"Could not establish connection to GeoIP2 database for IP "
-								+ ipAddress);
-			} catch (GeoIp2Exception e) {
-				Logger.error(this,
-						"Country code could not be retreived for IP "
-								+ ipAddress);
-			}
-			if (UtilMethods.isSet(country)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+		String country = null;
+		try {
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
+			String ipAddress = address.getHostAddress();
+			// TODO
+			ipAddress = "54.209.28.36";
+			country = geoIp2Util.getCountryIsoCode(ipAddress);
+		} catch (IOException | GeoIp2Exception e) {
+			Logger.error(this,
+					"An error occurred when retrieving the IP address from request: "
+							+ request.getRequestURL());
+		}
+		if (!UtilMethods.isSet(country)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+					.getValue()));
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().equals(country)) {
+					return true;
 				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					// If country is equal to one or more options...
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						for (ConditionValue value : values) {
-							if (value.getValue().equals(country)) {
-								result = true;
-								break;
-							}
-						}
-						// If country is distinct from the selected options...
-					} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-						result = true;
-						for (ConditionValue value : values) {
-							if (value.getValue().equals(country)) {
-								result = false;
-								break;
-							}
-						}
-					}
+			}
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().equals(country)) {
+					return false;
 				}
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

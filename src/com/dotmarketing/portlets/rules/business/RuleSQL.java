@@ -44,6 +44,7 @@ abstract class RuleSQL {
     protected String INSERT_CONDITION_VALUE = "insert into rule_condition_value (id, condition_id, value, priority) values (?,?,?,?)";
     protected String UPDATE_CONDITION_VALUE = "update rule_condition_value set condition_id=?, value=?, priority=? where id=?";
     protected String SELECT_CONDITION_VALUES_BY_CONDITION = "select * from rule_condition_value where condition_id=?";
+    protected String SELECT_CONDITION_VALUE_BY_ID = "select * from rule_condition_value where id=?";
     protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delete from rule_condition_value where condition_id=?";
 
 
@@ -57,6 +58,7 @@ abstract class RuleSQL {
     protected String INSERT_RULE_ACTION_PARAM = "insert into rule_action_pars (id, rule_action_id, key, value) values (?,?,?,?)";
     protected String UPDATE_RULE_ACTION_PARAM = "update rule_action_pars set rule_action_id=?, key=?, value=? where id=?";
     protected String SELECT_RULE_ACTIONS_PARAMS = "select * from rule_action_pars where rule_action_id=?";
+    protected String SELECT_RULE_ACTION_PARAMS = "select * from rule_action_pars where id=?";
     protected String DELETE_RULE_ACTION_PARAM_BY_ID = "delete from rule_action_pars where id=?";
     protected String DELETE_RULE_ACTION_PARAM_BY_ACTION = "delete from rule_action_pars where rule_action_id=?";
 

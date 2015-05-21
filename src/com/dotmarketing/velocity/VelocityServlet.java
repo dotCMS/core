@@ -202,13 +202,7 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 
-            boolean fireRules = request.getSession(false)==null;
-
 			HttpSession session = request.getSession();
-
-            if(fireRules)
-                RulesEngine.fireRules(req, response, Rule.FireOn.ONCE_PER_VISIT);
-
 
 			boolean timemachine=session.getAttribute("tm_date")!=null;
 			boolean ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
@@ -385,7 +379,6 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
 
-            // Fire EVERY_PAGE Rules
             RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
 
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
@@ -443,9 +436,18 @@ public abstract class VelocityServlet extends HttpServlet {
     			Cookie idCookie = CookieUtil.createCookie();
     			response.addCookie(idCookie);
 
-                // Fire ONCE_PER_VISITOR Rules
                 RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
     		}
+
+            String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
+                    WebKeys.ONCE_PER_VISIT_COOKIE);
+
+            if (!UtilMethods.isSet(_oncePerVisitCookie)) {
+                response.addCookie(CookieUtil.createOncePerVisitCookie());
+
+                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+            }
+
     
     		com.liferay.portal.model.User user = null;
     		HttpSession session = request.getSession(false);

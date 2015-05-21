@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
 import java.util.Date;
+import java.util.List;
 
 import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
 
@@ -11,6 +12,7 @@ public class RuleAction {
     private int priority;
     private String actionlet;
     private Date modDate;
+    List<RuleActionParameter> parameters;
 
     public String getId() {
         return id;
@@ -58,6 +60,14 @@ public class RuleAction {
 
     public void setModDate(Date modDate) {
         this.modDate = modDate;
+    }
+
+    public List<RuleActionParameter> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(List<RuleActionParameter> parameters) {
+        this.parameters = parameters;
     }
 
     @JsonIgnore
