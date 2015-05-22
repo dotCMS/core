@@ -1831,9 +1831,11 @@ public class ContentletAjax {
 				APILocator.getVersionableAPI().setLive(cont);
 			}else{
 				//cont.setLive(false);
-				conAPI.saveDraft(cont, contentRelationships,
+				Contentlet draftContentlet = conAPI.saveDraft(cont, contentRelationships,
 					APILocator.getCategoryAPI().getParents(cont, user, false),
 					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
+				
+				callbackData.put("newContentletInode", draftContentlet.getInode());
 			}
 		}catch (DotContentletValidationException ve) {
 
