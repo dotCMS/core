@@ -492,7 +492,7 @@ public class RulesFactoryImpl implements RulesFactory {
                     parameter.setId(UUIDGenerator.generateUuid());
                     db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
                     db.addParam(parameter.getId());
-                    db.addParam(parameter.getRuleActionId());
+                    db.addParam(ruleAction.getId());
                     db.addParam(parameter.getKey());
                     db.addParam(parameter.getValue());
                     db.loadResult();

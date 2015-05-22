@@ -53,8 +53,7 @@ public class RulesAPITest extends TestBase {
     String serverName;
     Integer serverPort;
 
-    @BeforeClass
-    private void init() {
+    public RulesAPITest() {
         request = ServletTestRunner.localRequest.get();
         serverName = request.getServerName();
         serverPort = request.getServerPort();
