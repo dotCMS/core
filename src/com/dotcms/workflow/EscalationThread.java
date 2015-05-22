@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.quartz.DotStatefulJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
@@ -45,36 +46,39 @@ public class EscalationThread extends DotStatefulJob {
                     Contentlet def = APILocator.getContentletAPI().findContentletByIdentifier(task.getWebasset(), false,
                             APILocator.getLanguageAPI().getDefaultLanguage().getId(),
                             APILocator.getUserAPI().getSystemUser(), false);
-                    String inode = def.getInode();
 
-                    Contentlet c;
+                    //No need to escalate if the contentlet already is in the Action Escalated.
+                    if(UtilMethods.isSet(actionId) && !actionId.equals(def.getStringProperty("wfActionId"))){
+                        String inode = def.getInode();
 
-                    // if the worflow requires a checkin
-                    if (action.requiresCheckout()) {
-                        c = APILocator.getContentletAPI().checkout(inode, APILocator.getUserAPI().getSystemUser(), false);
-                        c.setStringProperty("wfActionId", action.getId());
-                        c.setStringProperty("wfActionComments", wfActionComments);
-                        c.setStringProperty("wfActionAssign", wfActionAssign);
+                        // if the worflow requires a checkin
+                        if (action.requiresCheckout()) {
+                            Contentlet c = APILocator.getContentletAPI().checkout(inode, APILocator.getUserAPI().getSystemUser(), false);
+                            c.setStringProperty("wfActionId", action.getId());
+                            c.setStringProperty("wfActionComments", wfActionComments);
+                            c.setStringProperty("wfActionAssign", wfActionAssign);
 
-                        c = APILocator.getContentletAPI().checkin(c, APILocator.getUserAPI().getSystemUser(), false);
-                    }
+                            APILocator.getContentletAPI().checkin(c, APILocator.getUserAPI().getSystemUser(), false);
+                        }
 
-                    // if the worflow requires a checkin
-                    else {
-                        c = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
-                        c.setStringProperty("wfActionId", action.getId());
-                        c.setStringProperty("wfActionComments", wfActionComments);
-                        c.setStringProperty("wfActionAssign", wfActionAssign);
-                        wapi.fireWorkflowNoCheckin(c, APILocator.getUserAPI().getSystemUser());
+                        // if the worflow requires a checkin
+                        else {
+                            Contentlet c = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), false);
+                            c.setStringProperty("wfActionId", action.getId());
+                            c.setStringProperty("wfActionComments", wfActionComments);
+                            c.setStringProperty("wfActionAssign", wfActionAssign);
+                            wapi.fireWorkflowNoCheckin(c, APILocator.getUserAPI().getSystemUser());
+                        }
                     }
                 }
                 HibernateUtil.commitTransaction();
+
             } catch (Exception ex) {
+                Logger.warn(this, ex.getMessage(), ex);
+
                 try {
                     HibernateUtil.rollbackTransaction();
-                } catch (DotHibernateException e) {
-                }
-                Logger.warn(this, ex.getMessage(), ex);
+                } catch (DotHibernateException e) {}
             }
         }
     }
