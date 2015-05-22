@@ -42,6 +42,7 @@ public class CookieUtil {
 	
 	public static final String HTTP_ONLY = "HttpOnly";
 	public static final String SECURE = "secure";
+    public static Boolean websphere = null;
 
 	public static String get(Cookie[] cookies, String name) {
 		if ((cookies != null) && (cookies.length > 0)) {
@@ -154,9 +155,14 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 					if(cookie.getName().equals(CookieKeys.ID)) 
 						continue;
 					
-					if(cookie.getName().equals("JSESSIONID")) {
-						value = req.getSession().getId();
-					} 
+
+                    if(cookie.getName().equals("JSESSIONID") && !Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || isWebsphere(req)) {
+                        continue;
+                    }
+
+                    if(cookie.getName().equals("JSESSIONID") && req.getSession(false)!=null) {
+                        value = req.getSession(false).getId();
+					}
 						
 
 					if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
@@ -182,13 +188,15 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 			}
 		} 
 		
-		if(req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID")) {
+		if(req.getSession(false)!=null && (req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID"))) {
 			StringBuilder headerStr = new StringBuilder();
 
-			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
 					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
-				String value = req.getSession().getId();
-				
+
+                System.out.println("2 req.getSession().getId() = " + req.getSession().getId());
+				String value = req.getSession(false).getId();
+
 				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
 					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
 				else
@@ -210,5 +218,29 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 		}
 		return false;
 	}
+
+    private static boolean isWebsphere(HttpServletRequest request) {
+
+        if(websphere!=null) return websphere;
+
+        websphere = false;
+
+        String[] websphereNames = Config.getStringArrayProperty("SERVER_WEBSPHERE_SERVER_INFO")!=null
+                ?Config.getStringArrayProperty("SERVER_WEBSPHERE_SERVER_INFO")
+                :new String[]{"SMF WebContainer","IBM WebSphere Liberty"};
+
+        if (websphereNames != null) {
+            for (int i = 0; i < websphereNames.length; i++) {
+                if(request.getServletContext().getServerInfo().contains(websphereNames[i])) {
+                    websphere = true;
+                    break;
+                }
+
+
+            }
+        }
+
+        return websphere;
+    }
 
 }
