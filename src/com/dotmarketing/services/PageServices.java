@@ -259,7 +259,7 @@ public class PageServices {
                 if(++countFull>=c.getMaxContentlets()) break;
             }
 			
-			sb.append("#if($request.getSession(false) && $request.session.getAttribute(\"tm_date\"))");
+			sb.append("#if(! $null.isNull($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 			   sb.append(widgetpreeFull);
 			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
                  .append( " = [" ).append( contentletListFull.toString() ).append( "] )");
