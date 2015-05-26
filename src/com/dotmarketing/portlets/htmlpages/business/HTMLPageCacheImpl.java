@@ -23,7 +23,7 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
 	}
 
 	@Override
-	protected IHTMLPage add(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+	public IHTMLPage add(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
 		String key = primaryGroup + htmlPage.getIdentifier();
 		
 		if(!htmlPage.isLive()){
@@ -32,19 +32,22 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
 		
         // Add the key to the cache
         cache.put(key, htmlPage, primaryGroup);
-
-
+        
+        
+        key = primaryGroup + htmlPage.getInode();
+        cache.put(key, htmlPage, primaryGroup);
+        
 		return htmlPage;
 		
 	}
 	
 	@Override
-	protected HTMLPage get(String key) {
+	public IHTMLPage get(String key) {
 
 		key = primaryGroup + key;
-		HTMLPage htmlPage = null;
+		IHTMLPage htmlPage = null;
     	try{
-    		htmlPage = (HTMLPage)cache.get(key,primaryGroup);
+    		htmlPage = (IHTMLPage)cache.get(key,primaryGroup);
     	}catch (DotCacheException e) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
@@ -58,9 +61,10 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
         // clear the cache
         cache.flushGroup(primaryGroup);
     }
-
+    @Override
     public void remove(String pageIdentifier){
-    	HTMLPage page = new HTMLPage();
+    	
+    	IHTMLPage page = new HTMLPage();
     	page.setIdentifier(pageIdentifier);
     	remove(page);
     }
@@ -68,15 +72,22 @@ public class HTMLPageCacheImpl extends HTMLPageCache {
     /* (non-Javadoc)
 	 * @see com.dotmarketing.business.PermissionCache#remove(java.lang.String)
 	 */
+    @Override
     public void remove(IHTMLPage page){
-		String key = primaryGroup + page.getIdentifier();
-
-
-    	try{
-    		cache.remove(key,primaryGroup);
-    	}catch (Exception e) {
-			Logger.debug(this, "Cache not able to be removed", e);
-		} 
+		IHTMLPage holder = get(page.getIdentifier());
+		
+		if(holder!=null){
+	    	try{
+	    		cache.remove(primaryGroup + holder.getIdentifier(),primaryGroup);
+	    	}catch (Exception e) {
+				Logger.debug(this, "Cache not able to be removed", e);
+			} 
+	    	try{
+	    		cache.remove(primaryGroup + holder.getInode(),primaryGroup);
+	    	}catch (Exception e) {
+				Logger.debug(this, "Cache not able to be removed", e);
+			} 
+		}
     }
     public String[] getGroups() {
     	return groupNames;

@@ -1722,7 +1722,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                 }
         	}
-
+        	CacheLocator.getContentletCache().remove(contentlet.getInode());
         	ContentletServices.unpublishContentletFile(contentlet);
         	ContentletMapServices.unpublishContentletMapFile(contentlet);
         	publishRelatedHtmlPages(contentlet);

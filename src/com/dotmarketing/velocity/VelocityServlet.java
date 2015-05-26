@@ -203,12 +203,17 @@ public abstract class VelocityServlet extends HttpServlet {
 
 
 
-			HttpSession session = request.getSession();
-			boolean timemachine=session.getAttribute("tm_date")!=null;
-			boolean ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
-			boolean EDIT_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
-
+			HttpSession session = request.getSession(false);
+			boolean timemachine=false;
+			boolean ADMIN_MODE=false;
+			boolean PREVIEW_MODE=false;
+			boolean EDIT_MODE=false;
+			if(session!=null){
+				timemachine=session.getAttribute("tm_date")!=null;
+				ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+				PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
+				EDIT_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
+			}
 			String value = request.getHeader("X-Requested-With");
 			if ((value != null) && value.equals("XMLHttpRequest") && EDIT_MODE && ADMIN_MODE) {
 				ADMIN_MODE = false;
@@ -460,8 +465,7 @@ public abstract class VelocityServlet extends HttpServlet {
                 page = VelocityUtil.getPage(ident, request, true, null);
             } catch(DotDataException e) {
                 Logger.info(VelocityServlet.class, "Unable to find live version of page. Identifier: " + ident.getId());
-                response.getWriter().write("There is no live version of this page");
-                return;
+    			throw new ResourceNotFoundException(String.format("Resource %s not found in Live mode!", uri));
             }
 
     		// Check if the page is visible by a CMS Anonymous role
@@ -515,7 +519,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
     		// Begin page caching
     		String userId = (user != null) ? user.getUserId() : "PUBLIC";
-    		String language = (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+    		String language = String.valueOf(currentLanguageId);
     		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
     		String queryString = request.getQueryString();
 			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString);
@@ -526,7 +530,7 @@ public abstract class VelocityServlet extends HttpServlet {
     			String cachedPage = CacheLocator.getBlockPageCache().get(page, cacheParameters);
     			if (cachedPage == null || "refresh".equals(request.getParameter("dotcache"))
     					|| "refresh".equals(request.getAttribute("dotcache"))
-    					|| "refresh".equals(request.getSession().getAttribute("dotcache"))) {
+    					|| (request.getSession(false) !=null && "refresh".equals(request.getSession(true).getAttribute("dotcache")))) {
     				// build cached response
     				buildCache = true;
     			} else {
@@ -541,14 +545,14 @@ public abstract class VelocityServlet extends HttpServlet {
     		Context context = VelocityUtil.getWebContext(request, response);
     		request.setAttribute("velocityContext", context);
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
-    		
+
     		try {
     			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId()
     					+ "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
     		} catch (Throwable e) {
     			Logger.warn(this, "can't do live mode merge", e);
     		}
-
+    		session = request.getSession(false);
     		if (buildCache) {
     			String trimmedPage = out.toString().trim();
     			response.getWriter().write(trimmedPage);

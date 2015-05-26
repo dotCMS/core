@@ -47,25 +47,33 @@ public class ESContentTool implements ViewTool {
 		LIVE = true;
 		this.context = ((ViewContext) initData).getVelocityContext();
 		this.req = ((ViewContext) initData).getRequest();
+		tmDate=null;
+		ADMIN_MODE=false;
+		PREVIEW_MODE=false;
+		EDIT_MODE=false;
+		HttpSession session = req.getSession(false);
 		try {
 			user = userAPI.getLoggedInFrontendUser(req);
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
-		HttpSession session = req.getSession();
-		tmDate = (String) session.getAttribute("tm_date");
-		boolean tm=tmDate!=null;
-		ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-		EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-		if(EDIT_MODE || PREVIEW_MODE){
-			LIVE = false;
+
+		if(session!=null){
+			tmDate = (String) session.getAttribute("tm_date");
+			boolean tm=tmDate!=null;
+			ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+			EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			if(EDIT_MODE || PREVIEW_MODE){
+				LIVE = false;
+			}
 		}
 		try{
 			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(req);
 		}catch(Exception e){
 			Logger.error(this, "Error finding current host", e);
 		}
+		
 	}
 	
 	

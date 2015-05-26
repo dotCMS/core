@@ -23,6 +23,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
 
@@ -64,14 +65,23 @@ public class ContentTool implements ViewTool {
 		} catch (Exception e) {
 			Logger.error(this, "Error finding the logged in user", e);
 		}
-		HttpSession session = req.getSession();
-		tmDate = (String) session.getAttribute("tm_date");
-		boolean tm=tmDate!=null;
-		ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-		PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-		EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-		if(EDIT_MODE || PREVIEW_MODE){
-			EDIT_OR_PREVIEW_MODE = true;
+		
+		tmDate=null;
+		ADMIN_MODE=false;
+		PREVIEW_MODE=false;
+		EDIT_MODE=false;
+		HttpSession session = req.getSession(false);
+		
+		
+		if(session!=null){
+			tmDate = (String) session.getAttribute("tm_date");
+			boolean tm=tmDate!=null;
+			ADMIN_MODE = !tm && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			PREVIEW_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+			EDIT_MODE = !tm && ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			if(EDIT_MODE || PREVIEW_MODE){
+				EDIT_OR_PREVIEW_MODE = true;
+			}
 		}
 		try{
 			this.currentHost = WebAPILocator.getHostWebAPI().getCurrentHost(req);
@@ -401,8 +411,8 @@ public class ContentTool implements ViewTool {
 			query = q;
 		
 		if(!query.contains("languageId")){
-			if(UtilMethods.isSet(req.getSession().getAttribute("com.dotmarketing.htmlpage.language"))){
-				q += " +languageId:" + req.getSession().getAttribute("com.dotmarketing.htmlpage.language");
+			if(UtilMethods.isSet(req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))){
+				q += " +languageId:" + req.getAttribute(WebKeys.HTMLPAGE_LANGUAGE);
 			} 
 		}
 	  

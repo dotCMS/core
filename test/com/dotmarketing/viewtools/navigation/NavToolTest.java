@@ -32,12 +32,14 @@ public class NavToolTest extends TestBase{
         //Using Identifier to get the path.
         Identifier aboutUsIdentifier=APILocator.getIdentifierAPI().find(aboutUsFolder);
 
-        NavResult navResult = NavTool.getNav(demoHost, aboutUsIdentifier.getPath(), 1);
+        NavTool navTool = new NavTool();
+
+        NavResult navResult = navTool.getNav(demoHost, aboutUsIdentifier.getPath(), 1, user);
 
         //We are expecting 4 children result for English Language.
         int englishResultChildren = navResult.getChildren().size();
 
-        navResult = NavTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2);
+        navResult = navTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
 
         //We are expecting 2 children result for Spanish Language.
         int spanishResultChildren = navResult.getChildren().size();
@@ -68,7 +70,7 @@ public class NavToolTest extends TestBase{
             contentletsCreated.add(working);
         }
 
-        navResult = NavTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2);
+        navResult = navTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
 
         //Now We are expecting same children result for Spanish Language that English Language.
         assertEquals(englishResultChildren, navResult.getChildren().size());
@@ -79,7 +81,7 @@ public class NavToolTest extends TestBase{
         APILocator.getContentletAPI().delete(contentletsCreated, user, false);
 
         //We should back to 2 in Spanish Nav.
-        navResult = NavTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2);
+        navResult = navTool.getNav(demoHost, aboutUsIdentifier.getPath(), 2, user);
 
         //Now We are expecting original amount children result for Spanish Language.
         assertEquals(spanishResultChildren, navResult.getChildren().size());

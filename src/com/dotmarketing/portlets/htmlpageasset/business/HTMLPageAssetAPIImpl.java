@@ -154,8 +154,12 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     	}else{
     		throw new DotStateException("Contentlet is null");
     	}
-
-        HTMLPageAsset pa=new HTMLPageAsset();
+    	
+    	HTMLPageAsset pa = (HTMLPageAsset) CacheLocator.getHTMLPageCache().get(con.getInode());
+    	if(pa!=null){
+    		return pa;
+    	}
+        pa=new HTMLPageAsset();
         pa.setStructureInode(con.getStructureInode());
         try {
             APILocator.getContentletAPI().copyProperties((Contentlet) pa, con.getMap());
@@ -190,6 +194,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                 Logger.warn(this, "Unable to convert Contentlet to page asset " + con, e);
             }
         }
+
+        try {
+			CacheLocator.getHTMLPageCache().add(pa);
+		} catch (Exception e) {
+
+		}
+        
 
         return pa;
     }

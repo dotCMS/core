@@ -89,7 +89,7 @@ public class DateTool implements ViewTool
 
     @Override
     public void init(Object initData) {
-        if(((ViewContext) initData).getRequest().getSession()!=null && ((ViewContext) initData).getRequest().getSession().getAttribute("tm_date")!=null) {
+        if(((ViewContext) initData).getRequest().getSession(false)!=null && ((ViewContext) initData).getRequest().getSession().getAttribute("tm_date")!=null) {
             tmDate=new Date(Long.parseLong((String)((ViewContext) initData).getRequest().getSession().getAttribute("tm_date")));
         }
     }

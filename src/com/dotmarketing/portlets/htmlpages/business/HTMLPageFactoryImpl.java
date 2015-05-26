@@ -141,7 +141,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 
 	@SuppressWarnings("unchecked")
 	public HTMLPage loadLivePageById(String pageId) throws DotDataException, DotStateException, DotSecurityException {
-		HTMLPage page = htmlPageCache.get(pageId);
+		HTMLPage page = (HTMLPage) htmlPageCache.get(pageId);
 		if(page ==null){
 	    	HibernateUtil hu = new HibernateUtil(HTMLPage.class);
 	    	hu.setSQLQuery("select {htmlpage.*} from htmlpage, inode htmlpage_1_, htmlpage_version_info htmlvi " +

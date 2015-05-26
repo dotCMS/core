@@ -194,35 +194,42 @@ public class FolderFactoryImpl extends FolderFactory {
 	@Override
 	protected Folder findFolderByPath(String path, Host host) throws DotDataException {
 
-		if(host==null) return null;
-		Folder folder =null;
+		String originalPath = path;
+		Folder folder;
+
+		if(host == null){
+			return null;
+		}
+
 		if(path.equals("/") || path.equals("/System folder")) {
 			folder = fc.getFolderByPathAndHost(path, APILocator.getHostAPI().findSystemHost());
-		}
-		else{
+		} else{
 			folder = fc.getFolderByPathAndHost(path, host);
 		}
-		
-		if(folder ==null){
+
+		if(folder == null){
 			String parentPath;
 			String assetName;
 			String hostId;
+
 			try{
 				if(path.equals("/") || path.equals("/System folder")) {
-					parentPath="/System folder";
-					assetName="system folder";
-					hostId="SYSTEM_HOST";
+					parentPath = "/System folder";
+					assetName = "system folder";
+					hostId = "SYSTEM_HOST";
 				}
 				else {
 					// trailing / is removed
-					if (path.endsWith("/"))
+					if (path.endsWith("/")){
 						path = path.substring(0, path.length()-1);
+					}
 					// split path into parent and asset name
-					int idx=path.lastIndexOf('/');
-					parentPath=path.substring(0,idx+1);
-					assetName=path.substring(idx+1);
-					hostId=host.getIdentifier();
+					int idx = path.lastIndexOf('/');
+					parentPath = path.substring(0,idx+1);
+					assetName = path.substring(idx+1);
+					hostId = host.getIdentifier();
 				}
+
 				HibernateUtil dh = new HibernateUtil(Folder.class);
 				dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier where asset_name = ? and parent_path = ? and "
 						+ "folder_1_.type = 'folder' and folder.inode = folder_1_.inode and folder.identifier = identifier.id and host_inode = ?");
@@ -230,10 +237,54 @@ public class FolderFactoryImpl extends FolderFactory {
 				dh.setParam(parentPath);
 				dh.setParam(hostId);
 				folder = (Folder) dh.load();
+
+				// if it is found add it to folder cache
 				if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
-					// if it is found add it to folder cache
 					Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
 					fc.addFolder(folder, id);
+				} else {
+					String parentFolder = originalPath;
+
+					//If the path ends with a / we assume that the last part of the path is the folder.
+					//We just have to remove tha last / and substring from the last / remaining.
+					//For example: /application/themes/ => themes
+					if(parentFolder.endsWith("/")){
+						parentFolder = parentFolder.substring(0, parentFolder.length()-1);
+						parentPath = parentFolder.substring(0, parentFolder.lastIndexOf("/")+1);
+
+						if(parentFolder.contains("/")){
+							parentFolder = parentFolder.substring(parentFolder.lastIndexOf("/")+1);
+						}
+
+						//If the path doesn't end in / we assume the last part is a page or something else.
+						//We have to remove the last part plus the / and then remove the path from 0 to /
+						//For example: /application/themes/example-page => themes
+					} else {
+						if (parentFolder.contains("/")) {
+							parentFolder = parentFolder.substring(0, parentFolder.lastIndexOf("/"));
+							parentPath = parentFolder.substring(0, parentFolder.lastIndexOf("/")+1);
+							parentFolder = parentFolder.substring(parentFolder.lastIndexOf("/")+1);
+						}
+					}
+
+					dh = new HibernateUtil(Folder.class);
+					dh.setSQLQuery("select {folder.*} from folder, inode folder_1_, identifier identifier"
+							+ " where asset_name = ?"
+							+ " and parent_path = ?"
+							+ " and folder_1_.type = 'folder'"
+							+ " and folder.inode = folder_1_.inode"
+							+ " and folder.identifier = identifier.id"
+							+ " and host_inode = ?");
+					dh.setParam(parentFolder);
+					dh.setParam(parentPath);
+					dh.setParam(hostId);
+					folder = (Folder) dh.load();
+
+					// if it is found add it to folder cache
+					if(UtilMethods.isSet(folder) && UtilMethods.isSet(folder.getInode())) {
+						Identifier id = APILocator.getIdentifierAPI().find(folder.getIdentifier());
+						fc.addFolder(folder, id);
+					}
 				}
 			}
 			catch(Exception e){
@@ -280,7 +331,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@SuppressWarnings("unchecked")
 	protected java.util.List getMenuItems(Host host, int orderDirection) throws DotDataException, DotSecurityException {
-		List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(host,APILocator.getUserAPI().getSystemUser(),false);
+		List<Folder> subFolders = APILocator.getFolderAPI().findSubFolders(host, APILocator.getUserAPI().getSystemUser(), false);
 		return getMenuItems(subFolders, orderDirection);
 	}
 
@@ -972,299 +1023,6 @@ public class FolderFactoryImpl extends FolderFactory {
 		return match;
 	}
 
-	/**
-	 * Gets the tree containing all the items in the list. If the item is a
-	 * folder, gets the files and folders contained by the folder. It is
-	 * executed recursively until reaching the depth specified. This method will
-	 * change later
-	 *
-	 * @param items
-	 * @param ids
-	 * @param level
-	 * @param counter
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List getNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
-			throws DotDataException {
-		boolean show = true;
-		StringBuffer sb = new StringBuffer();
-		List v = new ArrayList<Object>();
-		int internalCounter = counter.getCounter();
-		String className = "class" + internalCounter;
-		String id = "list" + internalCounter;
-		ids.add(internalCounter);
-		counter.setCounter(++internalCounter);
-
-		sb.append("<ul id='" + id + "' >\n");
-		Iterator itemsIter = items.iterator();
-		while (itemsIter.hasNext()) {
-			Permissionable item = (Permissionable) itemsIter.next();
-			String title = "";
-			String inode = "";
-			if (item instanceof Folder) {
-				Folder folder = ((Folder) item);
-				title = folder.getTitle();
-				title = retrieveTitle(title, user);
-				inode = folder.getInode();
-				if (folder.isShowOnMenu()) {
-					if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-						show = false;
-					}
-					if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
-
-						sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
-						List childs = getMenuItems(folder);
-						if (childs.size() > 0) {
-
-							int nextLevel = level + 1;
-
-							if (depth > 1) {
-								sb.append(getNavigationTree(childs, ids, nextLevel, counter, depth-1, user).get(0));
-							}
-						}
-						sb.append("</li>\n");
-					}
-				}
-			} else {
-				if(item instanceof FileAsset){
-					FileAsset fa =(FileAsset)item;
-					title = fa.getTitle();
-					title = retrieveTitle(title, user);
-					inode = fa.getInode();
-					if (fa.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-						}
-					}
-				}else if(item instanceof IHTMLPage){
-					IHTMLPage asset = ((IHTMLPage) item);
-					title = asset.getTitle();
-					title = retrieveTitle(title, user);
-					inode = asset.getInode();
-					if (asset.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-						}
-					}
-				}else{
-					WebAsset asset = ((WebAsset) item);
-					title = asset.getTitle();
-					title = retrieveTitle(title, user);
-					inode = asset.getInode();
-					if (asset.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-						}
-					}
-				}
-			}
-		}
-		sb.append("</ul>\n");
-		v.add(sb);
-		v.add(new Boolean(show));
-
-		return v;
-	}
-
-	/**
-	 * Builds the navigation tree containing all the items in the list and the
-	 * files, HTML pages, links, folders contained recursively by those items
-	 * until the specified depth. This method will change later
-	 *
-	 * @param items
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List<Object> buildNavigationTree(List items, int depth, User user) throws DotDataException {
-		depth = depth - 1;
-		int level = 0;
-		List<Object> v = new ArrayList<Object>();
-		InternalCounter counter = new FolderFactoryImpl().new InternalCounter();
-		counter.setCounter(0);
-		List<Integer> ids = new ArrayList<Integer>();
-		List l = buildNavigationTree(items, ids, level, counter, depth, user);
-		StringBuffer sb = new StringBuffer("");
-		if (l != null && l.size() > 0) {
-			sb = (StringBuffer) l.get(0);
-			sb.append("<script language='javascript'>\n");
-			for (int i = ids.size() - 1; i >= 0; i--) {
-				int internalCounter = (Integer) ids.get(i);
-				String id = "list" + internalCounter;
-				String className = "class" + internalCounter;
-				String sortCreate = "Sortable.create(\"" + id + "\",{dropOnEmpty:true,tree:true,constraint:false,only:\"" + className
-						+ "\"});\n";
-				sb.append(sortCreate);
-			}
-
-			sb.append("\n");
-			sb.append("function serialize(){\n");
-			sb.append("var values = \"\";\n");
-			for (int i = 0; i < ids.size(); i++) {
-				int internalCounter = (Integer) ids.get(i);
-				String id = "list" + internalCounter;
-				String sortCreate = "values += \"&\" + Sortable.serialize('" + id + "');\n";
-				sb.append(sortCreate);
-			}
-			sb.append("values = values.replace(/\\[/g, '__');\n");
-			sb.append("values = values.replace(/\\]/g, '---');\n");
-			sb.append("return values;\n");
-			sb.append("}\n");
-
-			sb.append("</script>\n");
-
-			sb.append("<style>\n");
-			for (int i = 0; i < ids.size(); i++) {
-				int internalCounter = (Integer) ids.get(i);
-				String className = "class" + internalCounter;
-				String style = "li." + className + " { cursor: move;}\n";
-				sb.append(style);
-			}
-			sb.append("</style>\n");
-		}
-		v.add(sb.toString());
-		if (l != null && l.size() > 0) {
-			v.add(l.get(1));
-		} else {
-			v.add(new Boolean(false));
-		}
-
-		return v;
-	}
-
-	/**
-	 * Builds the navigation tree containing all the items and the files, HTML
-	 * pages, links, folders contained recursively by those items in the list
-	 * until the specified depth. This method will change later
-	 *
-	 * @param items
-	 * @param ids
-	 * @param level
-	 * @param counter
-	 * @param depth
-	 * @throws DotDataException
-	 */
-	protected List buildNavigationTree(List items, List<Integer> ids, int level, InternalCounter counter, int depth, User user)
-			throws DotDataException {
-		boolean show = true;
-		StringBuffer sb = new StringBuffer();
-		List v = new ArrayList<Object>();
-		int internalCounter = counter.getCounter();
-		String className = "class" + internalCounter;
-		String id = "list" + internalCounter;
-		ids.add(internalCounter);
-		counter.setCounter(++internalCounter);
-
-		sb.append("<ul id='" + id + "' >\n");
-		if (items != null) {
-			Iterator itemsIter = items.iterator();
-			while (itemsIter.hasNext()) {
-				Permissionable item = (Permissionable) itemsIter.next();
-				String title = "";
-				String inode = "";
-				if (item instanceof Folder) {
-					Folder folder = ((Folder) item);
-					title = folder.getTitle();
-					title = retrieveTitle(title, user);
-					inode = folder.getInode();
-					if (folder.isShowOnMenu()) {
-						if (!APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							show = false;
-						}
-						if (APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ, user, false)) {
-
-							sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >\n" + title + "\n");
-							List childs = getMenuItems(folder);
-							if (childs.size() > 0) {
-								int nextLevel = level + 1;
-								if (depth > 0) {
-									List<Object> l = getNavigationTree(childs, ids, nextLevel, counter, depth, user);
-									if (show) {
-										show = ((Boolean) l.get(1)).booleanValue();
-									}
-									sb.append((StringBuffer) (l.get(0)));
-								}
-							}
-							sb.append("</li>\n");
-						}
-					}
-				} else {
-					if(item instanceof FileAsset){
-						FileAsset fa =(FileAsset)item;
-						title = fa.getTitle();
-						title = retrieveTitle(title, user);
-						inode = fa.getInode();
-						if (fa.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(fa, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}else if(item instanceof IHTMLPage){
-						IHTMLPage asset = ((IHTMLPage) item);
-						title = asset.getTitle();
-						title = retrieveTitle(title, user);
-						inode = asset.getInode();
-						if (asset.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}else{
-						WebAsset asset = ((WebAsset) item);
-						title = asset.getTitle();
-						title = retrieveTitle(title, user);
-						inode = asset.getInode();
-						if (asset.isShowOnMenu()) {
-							if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-								show = false;
-							}
-							if (APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_READ, user, false)) {
-								sb.append("<li class=\"" + className + "\" id=\"inode_" + inode + "\" >" + title + "</li>\n");
-							}
-						}
-					}
-				}
-			}
-		}
-
-		sb.append("</ul>\n");
-		v.add(sb);
-		v.add(new Boolean(show));
-
-		return v;
-	}
-
-	private String retrieveTitle(String title, User user) {
-		try {
-			String regularExpressionString = "(.*)\\$glossary.get\\('(.*)'\\)(.*)";
-			java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regularExpressionString);
-			Matcher matcher = pattern.matcher(title);
-			if (matcher.matches()) {
-				String tempTitle = matcher.group(2);
-				tempTitle = matcher.group(1) + LanguageUtil.get(user, tempTitle) + matcher.group(3);
-				title = tempTitle;
-			}
-		} catch (Exception ex) {
-			Logger.warn(FolderFactoryImpl.class, "retrieveTitle failed:" + ex);
-		}
-		return title;
-	}
-
 	private boolean isOpenNode(String[] openNodes, String node) {
 		boolean returnValue = false;
 		for (String actualNode : openNodes) {
@@ -1493,20 +1251,7 @@ public class FolderFactoryImpl extends FolderFactory {
         return dh.list();
     }
 
-	private class InternalCounter
-	{
-		private int counter;
 
-		public int getCounter()
-		{
-			return counter;
-		}
-
-		public void setCounter(int counter)
-		{
-			this.counter = counter;
-		}
-	}
 
 
 	@Override

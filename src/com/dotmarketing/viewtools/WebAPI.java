@@ -505,13 +505,18 @@ public class WebAPI implements ViewTool {
 			while(path.indexOf("//") > -1){
 				path = path.replaceAll("//", "/");
 			}
+			boolean ADMIN_MODE=false;
+			boolean PREVIEW_MODE=false;
+			boolean EDIT_MODE = false;
+					
 
-
-			HttpSession session = request.getSession();
-			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
-			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
-
+			HttpSession session = request.getSession(false);
+			
+			if(session!=null){
+				 ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+				 PREVIEW_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null) && ADMIN_MODE);
+				 EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			}
 			String logicalFilePath;
 
 			if (PREVIEW_MODE && ADMIN_MODE) {	// working page
