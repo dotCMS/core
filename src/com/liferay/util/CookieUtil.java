@@ -42,7 +42,6 @@ public class CookieUtil {
 	
 	public static final String HTTP_ONLY = "HttpOnly";
 	public static final String SECURE = "secure";
-    public static Boolean websphere = null;
 
 	public static String get(Cookie[] cookies, String name) {
 		if ((cookies != null) && (cookies.length > 0)) {
@@ -194,7 +193,6 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
 					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
 
-                System.out.println("2 req.getSession().getId() = " + req.getSession().getId());
 				String value = req.getSession(false).getId();
 
 				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
