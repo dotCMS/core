@@ -156,7 +156,7 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 						continue;
 					
 
-                    if(cookie.getName().equals("JSESSIONID") && !Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || isWebsphere(req)) {
+                    if(cookie.getName().equals("JSESSIONID") && (!Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || ServerDetector.isWebSphere())) {
                         continue;
                     }
 
@@ -218,29 +218,5 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 		}
 		return false;
 	}
-
-    private static boolean isWebsphere(HttpServletRequest request) {
-
-        if(websphere!=null) return websphere;
-
-        websphere = false;
-
-        String[] websphereNames = Config.getStringArrayProperty("SERVER_WEBSPHERE_SERVER_INFO")!=null
-                ?Config.getStringArrayProperty("SERVER_WEBSPHERE_SERVER_INFO")
-                :new String[]{"SMF WebContainer","IBM WebSphere Liberty"};
-
-        if (websphereNames != null) {
-            for (int i = 0; i < websphereNames.length; i++) {
-                if(request.getServletContext().getServerInfo().contains(websphereNames[i])) {
-                    websphere = true;
-                    break;
-                }
-
-
-            }
-        }
-
-        return websphere;
-    }
 
 }
