@@ -43,15 +43,14 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class RulesAPITest extends TestBase {
 
     private String ruleId;
-    HttpServletRequest request;
-    String serverName;
-    Integer serverPort;
+    private HttpServletRequest request;
+    private String serverName;
+    private Integer serverPort;
 
     public RulesAPITest() {
         request = ServletTestRunner.localRequest.get();
@@ -354,10 +353,13 @@ public class RulesAPITest extends TestBase {
 
         createRule(Rule.FireOn.ONCE_PER_VISIT);
 
-        makeRequest("http://" + serverName + ":" + serverPort);
+        URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort);
+
+        String oncePerVisitCookie = getCookie(conn, com.dotmarketing.util.WebKeys.ONCE_PER_VISIT_COOKIE);
+
         Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
 
-        makeRequest("http://" + serverName + ":" + serverPort);
+        makeRequest("http://" + serverName + ":" + serverPort, oncePerVisitCookie);
         Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
 
         assertEquals(firstCount, secondCount);
@@ -369,21 +371,66 @@ public class RulesAPITest extends TestBase {
 
         createRule(Rule.FireOn.ONCE_PER_VISITOR);
 
-        makeRequest("http://" + serverName + ":" + serverPort);
+        URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort);
+
+        String longLivedCookie = getCookie(conn, com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
+
         Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
 
-        makeRequest("http://" + serverName + ":" + serverPort);
+        makeRequest("http://" + serverName + ":" + serverPort, longLivedCookie);
         Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
 
         assertEquals(firstCount, secondCount);
 
     }
 
-    private int makeRequest(String urlStr) throws IOException {
+    private String getCookie(URLConnection conn, String cookieName) {
+
+        String longLivedCookie = null;
+        Map<String, List<String>> headerFields = conn.getHeaderFields();
+
+        Set<String> headerFieldsSet = headerFields.keySet();
+        Iterator<String> hearerFieldsIter = headerFieldsSet.iterator();
+
+        while (hearerFieldsIter.hasNext()) {
+
+            String headerFieldKey = hearerFieldsIter.next();
+
+            if ("Set-Cookie".equalsIgnoreCase(headerFieldKey)) {
+
+                List<String> headerFieldValue = headerFields.get(headerFieldKey);
+
+                for (String headerValue : headerFieldValue) {
+                    String[] fields = headerValue.split(";");
+                    String cookieValue = fields[0];
+                    if(cookieValue.contains(cookieName)) {
+                        longLivedCookie = cookieValue;
+                        break;
+                    }
+                }
+            }
+
+            if(longLivedCookie!=null) break;
+
+        }
+        return longLivedCookie;
+    }
+
+    private URLConnection makeRequest(String urlStr) throws IOException {
+        return makeRequest(urlStr, null);
+    }
+
+    private URLConnection makeRequest(String urlStr, String cookie) throws IOException {
         URL url = new URL(urlStr);
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
+        URLConnection con = url.openConnection();
+
+        if(cookie!=null) {
+            con.setRequestProperty("Cookie", cookie);
+        }
+
         con.connect();
-        return con.getResponseCode();
+        con.getInputStream();
+        return con;
     }
 
     private void createRule(Rule.FireOn fireOn) throws Exception {

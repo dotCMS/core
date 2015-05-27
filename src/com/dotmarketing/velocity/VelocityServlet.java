@@ -126,6 +126,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	
 	public static final String VELOCITY_CONTEXT = "velocityContext";
 
+    private RulesEngine rulesEngine;
+
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
 		final String uri =URLDecoder.decode(
@@ -325,6 +327,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		CHARSET = Config.getStringProperty("CHARSET");
 		VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
 
+        rulesEngine = new RulesEngine();
+
 	}
 
 	protected void doAdminMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -386,7 +390,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
 
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
 
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
@@ -437,22 +441,23 @@ public abstract class VelocityServlet extends HttpServlet {
     		//Set long lived cookie regardless of who this is */
     		String _dotCMSID = UtilMethods.getCookieValue(request.getCookies(),
     				com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
-    
+
     		if (!UtilMethods.isSet(_dotCMSID)) {
     			// create unique generator engine
     			Cookie idCookie = CookieUtil.createCookie();
     			response.addCookie(idCookie);
 
-                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
+                rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
     		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
                     WebKeys.ONCE_PER_VISIT_COOKIE);
 
             if (!UtilMethods.isSet(_oncePerVisitCookie)) {
-                response.addCookie(CookieUtil.createOncePerVisitCookie());
+                Cookie cookie = CookieUtil.createOncePerVisitCookie();
+                response.addCookie(cookie);
 
-                RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+                rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
             }
 
     

@@ -21,8 +21,6 @@ public class CountRequestsActionlet extends RuleActionlet {
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
 
-        Logger.info(this, "EXECUTING ACTION");
-
         String fireOn = params.get("fireOn").getValue();
 
         Integer count = (Integer) request.getServletContext().getAttribute(fireOn);

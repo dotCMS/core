@@ -487,6 +487,8 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
         }
 
+        rulesFactory.deleteRuleActionsParameters(ruleAction);
+
         rulesFactory.deleteRuleAction(ruleAction);
     }
 

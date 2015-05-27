@@ -38,6 +38,8 @@ public class CMSFilter implements Filter {
 
 	CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
 
+    private RulesEngine rulesEngine;
+
 
 	enum IAm{
 		PAGE,
@@ -68,7 +70,7 @@ public class CMSFilter implements Filter {
 		}
 
         // lets fire the request scoped rules
-        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+        rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
 		
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;
@@ -220,6 +222,7 @@ public class CMSFilter implements Filter {
 	
 	public void init(FilterConfig config) throws ServletException {
 		this.ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
+        rulesEngine = new RulesEngine();
 
 	}
 	@Deprecated
