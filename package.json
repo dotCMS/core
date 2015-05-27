@@ -1,0 +1,52 @@
+{
+  "description": "JSPM Components using React, Angular2.0, es6, and other related magic.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ggranum/dc-components.git"
+  },
+  "jspm": {
+    "directories": {},
+    "dependencies": {
+      "bootstrap": "github:twbs/bootstrap@^3.3.4",
+      "css": "github:systemjs/plugin-css@^0.1.9",
+      "debug": "npm:debug@^2.1.3",
+      "events": "github:jspm/nodelibs-events@^0.1.0",
+      "firebase": "github:firebase/firebase-bower@^2.2.4",
+      "flux": "npm:flux@^2.0.1",
+      "jsonp": "npm:jsonp@^0.2.0",
+      "reflect-metadata": "npm:reflect-metadata@^0.1.0",
+      "rest": "github:cujojs/rest@^1.3.1",
+      "rx": "npm:rx@^2.5.2",
+      "text": "github:systemjs/plugin-text@^0.0.2",
+      "zone.js": "npm:zone.js@^0.4.3"
+    },
+    "devDependencies": {
+      "traceur": "github:jmcriffey/bower-traceur@0.0.88",
+      "traceur-runtime": "github:jmcriffey/bower-traceur-runtime@0.0.88"
+    }
+  },
+  "devDependencies": {
+    "connect": "^3.3.4",
+    "connect-livereload": "^0.5.3",
+    "connect-modrewrite": "^0.8.1",
+    "del": "^1.1.1",
+    "glob": "^5.0.5",
+    "gulp": "^3.8.11",
+    "gulp-concat": "~2.5.0",
+    "gulp-watch": "^4.2.4",
+    "gulp-webserver": "^0.9.1",
+    "http-proxy": "^1.11.1",
+    "jasmine-core": "^2.1.3",
+    "jspm": "^0.15.4",
+    "karma": "^0.12.31",
+    "karma-chrome-launcher": "^0.1.7",
+    "karma-jasmine": "^0.3.2",
+    "karma-jspm": "git://github.com/ggranum/karma-jspm.git",
+    "minimist": "^1.1.1",
+    "open": "0.0.5",
+    "proxy-middleware": "^0.11.0",
+    "serve-index": "^1.6.3",
+    "serve-static": "~1.8.1",
+    "through2": "~0.6.3"
+  }
+}

@@ -1,0 +1,10 @@
+loop-gifs {
+  display: block;
+  margin: 1em auto 1em auto;
+}
+
+loop-gifs > img {
+  display: block;
+  margin: 1em auto 1em auto;
+}
+

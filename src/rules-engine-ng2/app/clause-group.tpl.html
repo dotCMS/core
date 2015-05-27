@@ -1,0 +1,45 @@
+<div class="clause-group-separator" *if="index > 1">
+  <div class="row">
+    <div class="col-sm-1">
+      <button class="btn btn-default field-operator" (click)="toggleOperator(rule, group)">
+        {{group.operator}}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="panel panel-default clause-group">
+  <div class="panel-heading">
+    <div class="row">
+      <div class="col-xs-6">
+        <button type="button" class="btn btn-default btn-md js-info-button" data-toggle="popover" data-placement="top" title="Teaser about the rule" data-content="Visitor is from France, user is anonymous and device is tablet">
+          <span class="glyphicon glyphicon-question-sign js-info-button" aria-hidden="true"></span>
+        </button>
+        <h4 class="panel-title js-rule-teaser">We need to add the teaser dynamically...</h4>
+      </div>
+      <div class="col-xs-6">
+        <div class="operations clause-group-operations">
+          <button type="button" class="btn btn-default btn-md" (click)="toggleCollapse()">
+            <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
+          </button>
+          <button type="button" class="btn btn-default btn-md" aria-label="Add Clause" (click)="addGroup(rule)">
+            <span class="glyphicon glyphicon-plus" aria-hidden="true" ></span>
+          </button>
+        </div>
+
+        <!--Remove group will happen when there is no clauses-->
+        <!--<button class="btn btn-default" aria-label="Delete Group" (click)="removeGroup(rule, group)">-->
+          <!--<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>-->
+        <!--</button>-->
+      </div>
+    </div>
+  </div>
+  <div class="panel-body collapse" [class.in]="!isCollapse">
+    <clause *for="var clause of clauses; var i=index"
+            [rule]="rule"
+            [group]="group"
+            [clause]="clause"
+            [index]="i + 1">
+    </clause>
+  </div>
+</div>

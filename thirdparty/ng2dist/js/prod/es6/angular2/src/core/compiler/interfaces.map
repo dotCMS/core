@@ -1,0 +1,1 @@
+{"version":3,"sources":["interfaces.js"],"names":[],"mappings":"AAGA,KAAO,MAAM,SAAO;AAClB,SAAO,CAAE,OAAM,CAAG;AAChB,QAAM,uCAAqC,CAAC;EAC9C;AAAA,AACF;AAAA","file":"angular2/src/core/compiler/interfaces.es6","sourcesContent":["/**\n * @exportedAs angular2/angular2\n */\nexport class OnChange {\n  onChange(changes) {\n    throw \"OnChange.onChange is not implemented\";\n  }\n}\n"]}

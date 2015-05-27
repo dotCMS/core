@@ -1,0 +1,28 @@
+<div class="container">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="row page-title-search">
+                <div class="col-sm-8">
+                    <h1>DotCMS Rules Engine</h1>
+                </div>
+                <div class="col-sm-4">
+                    <form class="form-horizontal">
+                        <div class="form-group has-feedback">
+                            <div class="col-sm-12">
+                                <input type="text" class="form-control" placeholder="Start typing to filter rules...">
+                                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <hr/>
+
+            <rule class="row" *for="var r of rules; var i=index"
+                  [rule]="r"
+                  [index]="i + 1"></rule>
+
+        </div>
+    </div>
+</div>
