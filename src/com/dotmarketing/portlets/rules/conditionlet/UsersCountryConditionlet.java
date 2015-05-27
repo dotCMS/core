@@ -67,9 +67,8 @@ public class UsersCountryConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -93,7 +92,6 @@ public class UsersCountryConditionlet extends Conditionlet {
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
 			for (EntryOption option : inputOptions) {
-				// Validate that the selected value is correct
 				if (option.getId().equals(selectedValue)) {
 					validationResult.setValid(true);
 					break;
@@ -363,8 +361,6 @@ public class UsersCountryConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
 			String ipAddress = address.getHostAddress();
-			// TODO
-			ipAddress = "54.209.28.36";
 			country = geoIp2Util.getCountryIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
@@ -377,7 +373,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+			inputValues.add(new ConditionletInputValue(value.getId(), value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
@@ -396,6 +392,8 @@ public class UsersCountryConditionlet extends Conditionlet {
 					return false;
 				}
 			}
+			// If none of the values match, return true
+			return true;
 		}
 		return false;
 	}

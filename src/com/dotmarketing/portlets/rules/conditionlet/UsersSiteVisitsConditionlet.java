@@ -80,9 +80,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -116,7 +115,6 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
@@ -130,62 +128,61 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			if (Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					Clickstream clickstream = (Clickstream) request
-							.getSession().getAttribute("clickstream");
-					String hostId = getHostId(request);
-					if (clickstream != null && UtilMethods.isSet(hostId)
-							&& UtilMethods.isSet(inputValue)) {
-						int visitCounter = Integer.parseInt(inputValue);
-						int visits = getSiteVisits(hostId);
-						// Increase the visit counter cache with new sessions
-						CacheLocator.getSiteVisitCache().addSiteVisit(hostId);
-						// Take current session into account
-						visits++;
-						if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-							if (visits > visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().startsWith(
-								COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-							if (visits >= visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().startsWith(
-								COMPARISON_EQUAL_TO)) {
-							if (visits == visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().endsWith(
-								COMPARISON_LOWER_THAN)) {
-							if (visits < visitCounter) {
-								return true;
-							}
-						} else if (comparison.getId().endsWith(
-								COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-							if (visits <= visitCounter) {
-								return true;
-							}
-						}
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		String hostId = getHostId(request);
+		if (!UtilMethods.isSet(hostId)) {
+			return false;
+		}
+		Clickstream clickstream = (Clickstream) request
+				.getSession().getAttribute("clickstream");
+		int visitCounter = Integer.parseInt(inputValue);
+		int visits = getSiteVisits(hostId);
+		// Increase the visit counter cache with new sessions
+		CacheLocator.getSiteVisitCache().addSiteVisit(hostId);
+		// Take current session into account
+		visits++;
+		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+			if (visits > visitCounter) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(
+				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+			if (visits >= visitCounter) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+			if (visits == visitCounter) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+			if (visits < visitCounter) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(
+				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+			if (visits <= visitCounter) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	/**
@@ -198,15 +195,16 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 	 *         retrieving the site information.
 	 */
 	private String getHostId(HttpServletRequest request) {
-		String hostId = null;
 		try {
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			hostId = host.getIdentifier();
+			if (host != null) {
+				return host.getIdentifier();
+			}
 		} catch (PortalException | SystemException | DotDataException
 				| DotSecurityException e) {
 			Logger.error(this, "Could not retrieve current host information.");
 		}
-		return hostId;
+		return null;
 	}
 
 	/**

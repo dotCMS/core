@@ -28,7 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 public class UsersLanguageConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
-	
+
 	private static final String INPUT_ID = "language";
 	private static final String CONDITIONLET_NAME = "User's Language";
 	private static final String COMPARISON_IS = "is";
@@ -56,9 +56,8 @@ public class UsersLanguageConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -82,7 +81,6 @@ public class UsersLanguageConditionlet extends Conditionlet {
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
 			for (EntryOption option : inputOptions) {
-				// Validate that the selected value is correct
 				if (option.getId().equals(selectedValue)) {
 					validationResult.setValid(true);
 					break;
@@ -164,43 +162,40 @@ public class UsersLanguageConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(comparisonId) && UtilMethods.isSet(values)
-				&& UtilMethods.isSet(comparisonId)) {
-			String language = WebAPILocator.getLanguageWebAPI()
-					.getLanguage(request).getLanguageCode();
-			if (UtilMethods.isSet(language)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					// If language is equal to one or more options...
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						for (ConditionValue value : values) {
-							if (value.getValue().startsWith(language)) {
-								result = true;
-								break;
-							}
-						}
-						// If language is distinct from the selected options...
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						result = true;
-						for (ConditionValue value : values) {
-							if (value.getValue().equals(language)) {
-								result = false;
-								break;
-							}
-						}
-					}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String language = WebAPILocator.getLanguageWebAPI()
+				.getLanguage(request).getLanguageCode();
+		if (!UtilMethods.isSet(language)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().startsWith(language)) {
+					return true;
 				}
 			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			for (ConditionValue value : values) {
+				if (value.getValue().equals(language)) {
+					return false;
+				}
+			}
+			return true;
 		}
-		return result;
+		return false;
 	}
 
 }

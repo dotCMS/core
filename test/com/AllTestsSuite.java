@@ -2,6 +2,8 @@ package com;
 
 
 import com.dotmarketing.portlets.rules.business.RulesAPITest;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -94,7 +96,8 @@ import com.dotmarketing.webdav.WebDavTest;
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
     RulesAPITest.class,
-    RemotePublishAjaxActionTest.class //Needs Enterprise License
+    RemotePublishAjaxActionTest.class, //Needs Enterprise License
+    ConditionletTest.class
 })
 public class AllTestsSuite {
 

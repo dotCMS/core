@@ -48,8 +48,6 @@ import com.dotmarketing.portlets.rules.business.RulesCache;
 import com.dotmarketing.portlets.rules.business.RulesCacheImpl;
 import com.dotmarketing.portlets.rules.business.SiteVisitCache;
 import com.dotmarketing.portlets.rules.business.SiteVisitCacheImpl;
-import com.dotmarketing.portlets.rules.business.VisitedUrlCache;
-import com.dotmarketing.portlets.rules.business.VisitedUrlCacheImpl;
 import com.dotmarketing.portlets.structure.factories.RelationshipCache;
 import com.dotmarketing.portlets.structure.factories.RelationshipCacheImpl;
 import com.dotmarketing.portlets.templates.business.TemplateCache;
@@ -264,10 +262,6 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static RulesCache getRulesCache() {
 		return (RulesCache) getInstance(CacheIndex.RulesCache);
 	}
-
-	public static VisitedUrlCache getVisitedUrlCache() {
-		return (VisitedUrlCache) getInstance(CacheIndex.VisitedUrlCache);
-	}
 	
 	public static SiteVisitCache getSiteVisitCache() {
 		return (SiteVisitCache) getInstance(CacheIndex.SiteVisitCache);
@@ -359,7 +353,6 @@ enum CacheIndex
 	CSSCache("Processed CSS Cache"),
 	NewNotification("NewNotification Cache"),
 	RulesCache("Rules Cache"),
-	VisitedUrlCache("Rules Engine - Visited URLs"),
 	SiteVisitCache("Rules Engine - Site Visits");
 
 	Cachable create() {
@@ -399,7 +392,6 @@ enum CacheIndex
       	case CSSCache: return new CSSCacheImpl();
       	case NewNotification: return new NewNotificationCacheImpl();
       	case RulesCache : return new RulesCacheImpl();
-      	case VisitedUrlCache : return new VisitedUrlCacheImpl();
       	case SiteVisitCache : return new SiteVisitCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);

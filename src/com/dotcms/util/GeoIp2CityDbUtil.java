@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.com.maxmind.geoip2.DatabaseReader;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.com.maxmind.geoip2.model.CityResponse;
+import com.dotcms.repackage.com.maxmind.geoip2.record.City;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Country;
 import com.dotcms.repackage.com.maxmind.geoip2.record.Subdivision;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -173,8 +174,7 @@ public class GeoIp2CityDbUtil {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
 		CityResponse city = getDatabaseReader().city(inetAddress);
 		Subdivision subdivision = city.getMostSpecificSubdivision();
-		String subdivisionCode = subdivision.getIsoCode();
-		return subdivisionCode;
+		return subdivision.getIsoCode();
 	}
 
 	/**
@@ -198,8 +198,29 @@ public class GeoIp2CityDbUtil {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
 		CityResponse city = getDatabaseReader().city(inetAddress);
 		Country country = city.getCountry();
-		String countryCode = country.getIsoCode();
-		return countryCode;
+		return country.getIsoCode();
+	}
+
+	/**
+	 * Returns the name of the city the specified IP address belongs to.
+	 * 
+	 * @param ipAddress
+	 *            - The IP address to get information from.
+	 * @return The city name.
+	 * @throws UnknownHostException
+	 *             If the IP address of a host could not be determined.
+	 * @throws IOException
+	 *             If the connection to the GeoIP2 service could not be
+	 *             established, or the result object could not be created.
+	 * @throws GeoIp2Exception
+	 *             If the IP address is not present in the service database.
+	 */
+	public String getCityName(String ipAddress) throws UnknownHostException,
+			IOException, GeoIp2Exception {
+		InetAddress inetAddress = InetAddress.getByName(ipAddress);
+		CityResponse cityResponse = getDatabaseReader().city(inetAddress);
+		City city = cityResponse.getCity();
+		return city.getName();
 	}
 
 	/**
@@ -223,8 +244,7 @@ public class GeoIp2CityDbUtil {
 		InetAddress inetAddress = InetAddress.getByName(ipAddress);
 		CityResponse city = getDatabaseReader().city(inetAddress);
 		String zone = city.getLocation().getTimeZone();
-		TimeZone timeZone = TimeZone.getTimeZone(zone);
-		return timeZone;
+		return TimeZone.getTimeZone(zone);
 	}
 
 	/**
@@ -255,8 +275,7 @@ public class GeoIp2CityDbUtil {
 		int second = calendar.get(Calendar.SECOND);
 		long clientDateTime = new GregorianCalendar(year, month, day, hour,
 				minute, second).getTimeInMillis();
-		Date ipDateTime = new Date(clientDateTime);
-		return ipDateTime;
+		return new Date(clientDateTime);
 	}
 
 }

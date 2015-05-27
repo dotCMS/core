@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -70,9 +71,8 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -92,9 +92,24 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ INPUT_ID + "': '" + selectedValue + "'");
 			}
@@ -106,10 +121,10 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(1);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
@@ -120,61 +135,60 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String requestUri = null;
-			try {
-				requestUri = HttpRequestDataUtil.getUri(request);
-			} catch (UnsupportedEncodingException e) {
-				Logger.error(this,
-						"Could not retrieved a valid URI from request: "
-								+ request.getRequestURL());
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String requestUri = null;
+		try {
+			requestUri = HttpRequestDataUtil.getUri(request);
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Could not retrieved a valid URI from request: "
+					+ request.getRequestURL());
+		}
+		if (!UtilMethods.isSet(requestUri)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (requestUri.equalsIgnoreCase(inputValue)) {
+				return true;
 			}
-			if (UtilMethods.isSet(requestUri)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (inputValue.equalsIgnoreCase(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!inputValue.equalsIgnoreCase(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (inputValue.startsWith(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (inputValue.endsWith(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (inputValue.contains(requestUri)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(requestUri);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!requestUri.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (requestUri.startsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (requestUri.endsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (requestUri.contains(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue);
+			Matcher matcher = pattern.matcher(requestUri);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

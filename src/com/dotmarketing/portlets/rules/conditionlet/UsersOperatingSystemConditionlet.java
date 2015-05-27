@@ -9,12 +9,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -45,6 +47,7 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
+	private static final String COMPARISON_ENDSWITH = "endsWith";
 	private static final String COMPARISON_CONTAINS = "contains";
 	private static final String COMPARISON_REGEX = "regex";
 
@@ -64,6 +67,8 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
 			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
 					"Starts With"));
+			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
+					"Ends With"));
 			this.comparisons
 					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
 			this.comparisons.add(new Comparison(COMPARISON_REGEX,
@@ -76,7 +81,7 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
 			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
@@ -98,9 +103,24 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ INPUT_ID + "': '" + selectedValue + "'");
 			}
@@ -112,10 +132,10 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration and available options
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(1);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
@@ -126,52 +146,61 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String userAgentInfo = request.getHeader("User-Agent");
-			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-			String browserName = agent.getOperatingSystem().getName();
-			if (UtilMethods.isSet(browserName)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (browserName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!browserName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (browserName.startsWith(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (browserName.contains(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(browserName);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String userAgentInfo = request.getHeader("User-Agent");
+		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
+		String osName = null;
+		if (agent != null && agent.getOperatingSystem() != null) {
+			osName = agent.getOperatingSystem().getName();
+		}
+		if (!UtilMethods.isSet(osName)) {
+			return false;
+		}
+		osName = osName.toLowerCase();
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		inputValue = inputValue.toLowerCase();
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (osName.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!osName.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (osName.startsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ENDSWITH)) {
+			if (osName.endsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (osName.contains(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue);
+			Matcher matcher = pattern.matcher(osName);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }
