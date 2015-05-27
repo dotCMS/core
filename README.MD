@@ -1,4 +1,4 @@
-# DC-Components
+# Core-Web
 
 ## To Run:
 
@@ -28,7 +28,7 @@ in order to view log messages and unit test execution.
 ## To Develop
 
 This project contains the IntelliJ project files which JetBrains recommends be shared among developers. Rather than using 'create new project', simply open
- the project with IntelliJ (Version 14.1.2 or above), or WebStorm 10.0.0.2.
+ the project with IntelliJ >= 14.1.2 or WebStorm >= 10.0.0.2.
 
 For the most part, these files only change when there are legitimate updates to the project. However, there is a bug in the handling of 
 'JavaScript -> Libraries' that requires changes (the addition of new libraries) made by one dev to be made manually by other devs.
