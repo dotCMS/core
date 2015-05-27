@@ -301,7 +301,8 @@ public class FileUtil {
             return ret;
         }
 
-		String base = Config.CONTEXT.getRealPath("/");
+		//String base = Config.CONTEXT.getRealPath("/");
+		String base = Config.CONTEXT_PATH;
 		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
 		

@@ -2049,12 +2049,12 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		conAPI.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
+		Contentlet savedContentlet = conAPI.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
-			post.saveDraft(contentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
+			post.saveDraft(savedContentlet,contentRelationships, cats,permissions, user, respectFrontendRoles);
 		}
 
-		return contentlet;
+		return savedContentlet;
 	}
 
 	/* (non-Javadoc)

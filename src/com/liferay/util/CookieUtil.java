@@ -154,9 +154,14 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 					if(cookie.getName().equals(CookieKeys.ID)) 
 						continue;
 					
-					if(cookie.getName().equals("JSESSIONID")) {
-						value = req.getSession().getId();
-					} 
+
+                    if(cookie.getName().equals("JSESSIONID") && (!Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || ServerDetector.isWebSphere())) {
+                        continue;
+                    }
+
+                    if(cookie.getName().equals("JSESSIONID") && req.getSession(false)!=null) {
+                        value = req.getSession(false).getId();
+					}
 						
 
 					if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
@@ -182,13 +187,14 @@ public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest r
 			}
 		} 
 		
-		if(req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID")) {
+		if(req.getSession(false)!=null && (req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID"))) {
 			StringBuilder headerStr = new StringBuilder();
 
-			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
+			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
 					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
-				String value = req.getSession().getId();
-				
+
+				String value = req.getSession(false).getId();
+
 				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
 					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
 				else

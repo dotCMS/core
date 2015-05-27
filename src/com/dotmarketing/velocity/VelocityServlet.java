@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
@@ -318,9 +319,13 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void init(ServletConfig config) throws ServletException {
 
 
+		
 		// build the dirs
-		new File(config.getServletContext().getRealPath("/WEB-INF/velocity/working")).mkdirs();
-		new File(config.getServletContext().getRealPath("/WEB-INF/velocity/live")).mkdir();
+		String pathWorking = Config.CONTEXT_PATH + File.separator + "WEB-INF" + File.separator + "velocity" + File.separator + "working";
+		String pathLive = Config.CONTEXT_PATH + File.separator + "WEB-INF" + File.separator + "velocity" + File.separator + "live";
+		
+		new File(pathWorking).mkdirs();
+		new File(pathLive).mkdir();
 
 
 		Config.initializeConfig();
