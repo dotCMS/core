@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,7 +8,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -18,6 +25,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -87,7 +95,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public int getHeight() {
 		int height = 0;
 		try {
-			height = javax.imageio.ImageIO.read(getFileAsset()).getHeight();
+			height = ImageUtil.getInstance().getDimension(getFileAsset()).height;
 		} catch(Exception e) {
 			Logger.error(this, e.getMessage());
 		}
@@ -97,7 +105,7 @@ public class FileAsset extends Contentlet implements IFileAsset {
 	public int getWidth() {
 		int width = 0;
 		try {
-			width = javax.imageio.ImageIO.read(getFileAsset()).getWidth();
+			width = ImageUtil.getInstance().getDimension(getFileAsset()).width;
 		} catch(Exception e) {
 			Logger.error(this, e.getMessage());
 		}
@@ -220,6 +228,9 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	 }
 
+
+	 
+	 
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
