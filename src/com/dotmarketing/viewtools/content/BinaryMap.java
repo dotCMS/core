@@ -4,9 +4,9 @@ import java.io.File;
 import java.io.IOException;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -159,5 +159,24 @@ public class BinaryMap {
 	public File getFile() {
 		return file;
 	}
-	
+	public int getHeight() {
+		int height = 0;
+		try {
+			height = ImageUtil.getInstance().getDimension(getFile()).height;
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return height;
+	}
+
+	public int getWidth() {
+		int width = 0;
+		try {
+			width = ImageUtil.getInstance().getDimension(getFile()).width;
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return width;
+	}
+
 }
