@@ -1,6 +1,7 @@
 package com.dotmarketing.util;
 
 import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
@@ -47,7 +48,15 @@ public final class ImageUtil {
 				int height = reader.getHeight(reader.getMinIndex());
 				return new Dimension(width, height);
 			} catch (IOException e) {
-				Logger.warn(this, "Error reading: " + imgFile.getAbsolutePath(), e);
+				// fall back if we cannot read the image headers
+				try{
+					BufferedImage src = ImageIO.read(imgFile);
+					int width = src.getWidth();
+					int height = src.getHeight();
+					return new Dimension(width, height);
+				} catch (IOException e2) {
+					Logger.warn(this, "Error reading: " + imgFile.getAbsolutePath(), e);
+				}
 			} finally {
 				reader.dispose();
 			}
