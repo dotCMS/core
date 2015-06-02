@@ -2,6 +2,7 @@ package com.dotmarketing.servlets.image;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
+import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,7 +19,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -273,18 +274,9 @@ public class ResizeImageServlet extends HttpServlet {
             		isCont = true;
             		inodeOrId = cont.getInode();
         			contAssetPath = APILocator.getFileAssetAPI().getRealAssetPath(cont.getInode());
-        			java.util.Map<String, Object> keyValueMap = null;
-        			String JSONValue = cont.getStringProperty(FileAssetAPI.META_DATA_FIELD);
-        			//Convert JSON to Table Display {key, value, order}
-        			if(UtilMethods.isSet(JSONValue)){
-        				keyValueMap =  com.dotmarketing.portlets.structure.model.KeyValueFieldUtil.JSONValueToHashMap(JSONValue);
-        				if(UtilMethods.isSet((String)keyValueMap.get("width"))){
-        					imgWidth = Integer.parseInt((String)keyValueMap.get("width"));
-        				}
-        				if(UtilMethods.isSet((String)keyValueMap.get("height"))){
-        					imgLength = Integer.parseInt((String)keyValueMap.get("height"));
-        				}
-        			}
+        			Dimension d = ImageUtil.getInstance().getDimension(fa.getFileAsset());
+        			imgWidth = d.width;
+        			imgLength = d.height;
         			if(!contAssetPath.endsWith(java.io.File.separator)){
         				contAssetPath += java.io.File.separator;
         			}
