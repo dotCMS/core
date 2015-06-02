@@ -8,7 +8,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.Map;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.FileImageInputStream;
+import javax.imageio.stream.ImageInputStream;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -88,30 +94,24 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	private Dimension fileDimension = new Dimension();
 	public int getHeight() {
-        try {
-            if (fileDimension.height == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage());
-        }
+		int height = 0;
+		try {
+			height = ImageUtil.getInstance().getDimension(getFileAsset()).height;
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return height;
+	}
 
-        return fileDimension.height;
-    }
-
-    public int getWidth() {
-        try {
-            if (fileDimension.width == 0) {
-                // File dimension is not loaded and we need to load it
-                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
-            }
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage());
-        }
-
-        return fileDimension.width;
-    }
+	public int getWidth() {
+		int width = 0;
+		try {
+			width = ImageUtil.getInstance().getDimension(getFileAsset()).width;
+		} catch(Exception e) {
+			Logger.error(this, e.getMessage());
+		}
+		return width;
+	}
 
 	public void setFileName(String name) {
 	    File ff=getFileAsset();
