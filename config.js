@@ -14,11 +14,42 @@ System.config({
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*.js",
     "npm:*": "jspm_packages/npm/*.js",
-    "jasmine/*": "thirdparty/jasmine-2.2.0/*",
-    "jasmine/*.es6": "thirdparty/jasmine-2.2.0/*.es6",
     "angular2/*": "thirdparty/ng2dist/js/prod/es6/angular2/*.es6",
     "rtts_assert/*": "thirdparty/ng2dist/js/prod/es6/rtts_assert/*.es6",
     "*": "*.js"
+  },
+  "bundles": {
+    "jspm_bundles/firebase.bundle": [
+      "github:firebase/firebase-bower@2.2.4/firebase",
+      "github:firebase/firebase-bower@2.2.4"
+    ],
+    "jspm_bundles/zone.js.bundle": [
+      "npm:zone.js@0.4.4/zone",
+      "npm:zone.js@0.4.4"
+    ],
+    "jspm_bundles/bootstrap.bundle": [
+      "github:components/jquery@2.1.4/jquery",
+      "github:components/jquery@2.1.4",
+      "github:twbs/bootstrap@3.3.4/js/bootstrap",
+      "github:twbs/bootstrap@3.3.4"
+    ],
+    "jspm_bundles/flux.bundle": [
+      "npm:flux@2.0.3/lib/invariant",
+      "npm:flux@2.0.3/lib/Dispatcher",
+      "npm:flux@2.0.3/index",
+      "npm:flux@2.0.3"
+    ],
+    "jspm_bundles/rtts_assert.bundle": [
+      "rtts_assert/src/rtts_assert",
+      "rtts_assert/rtts_assert"
+    ],
+    "jspm_bundles/debug.bundle": [
+      "npm:ms@0.7.0/index",
+      "npm:ms@0.7.0",
+      "npm:debug@2.1.3/debug",
+      "npm:debug@2.1.3/browser",
+      "npm:debug@2.1.3"
+    ]
   }
 });
 

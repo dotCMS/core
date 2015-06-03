@@ -21,8 +21,7 @@ var config = {
   depBundles:         './jspm_bundles',
   nonStandardBundles: {
     'angular2/angular2':        'angular2',
-    'rtts_assert/rtts_assert':  'rtts_assert',
-    'jasmine/jasmine-boot.es6': 'jasmine'
+    'rtts_assert/rtts_assert':  'rtts_assert'
   },
   noBundle:           ['css', 'text'],
   /**
