@@ -52,6 +52,20 @@ var minimistCliOpts = {
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
 
+gulp.task('jspmInstall', function (done) {
+  imports.exec('jspm install', function (error, stdout, stderr) {
+    if (stdout) {
+      console.log(stdout);
+    }
+    if (stderr) {
+      console.warn(stderr)
+    }
+    done();
+  })
+
+})
+
+
 gulp.task('bundleDeps', ['unbundle'], function (done) {
   var deps = pConfig.jspm.dependencies || {}
   var promises = []
