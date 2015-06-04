@@ -11,15 +11,11 @@ import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
 import com.dotmarketing.beans.Clickstream;
-import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.ClickstreamFactory;
-import com.dotmarketing.portlets.rules.business.VisitedUrlCache;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
 /**
  * The listener that keeps track of all clickstreams in the container as well as
@@ -61,10 +57,11 @@ public class ClickstreamListener implements ServletContextListener, HttpSessionL
 	        HttpSession session = hse.getSession();
 	        Logger.debug(this, "Session " + session.getId() + " was destroyed, logging the clickstream and removing it.");
 	        try {
+	        	
 	            Clickstream clickstream = (Clickstream) clickstreams.get(session.getId());
 	            ClickstreamFactory.flushClickStream(clickstream);
 				clickstreams.remove(session.getId());
-				addVisitedUrlsToCache(clickstream);
+	            
 	        } catch (Exception e) {
 	            Logger.error(this, "An error as ocurred when saving the clickstream");
 	        } finally {
@@ -76,32 +73,10 @@ public class ClickstreamListener implements ServletContextListener, HttpSessionL
 	        }
     	}
     }
-
-	public static Clickstream getClickstream(String sessionId){
+    
+    public static Clickstream getClickstream(String sessionId){
     	return clickstreams.get(sessionId);
     }
-
-	/**
-	 * Adds the URLs that the current user has requested up to the moment the
-	 * session is going to be destroyed. This will avoid the roundtrip to read
-	 * the list of visited URLs from the database. The caching for visited URLs
-	 * does not allow duplicate entries.
-	 * 
-	 * @param clickstream
-	 *            - The {@link Clickstream} object containing the session data.
-	 */
-	private void addVisitedUrlsToCache(Clickstream clickstream) {
-		VisitedUrlCache urlsCache = CacheLocator.getVisitedUrlCache();
-		if (!UtilMethods.isSet(clickstream) || !UtilMethods.isSet(urlsCache)) {
-			return;
-		}
-		String ipAddress = clickstream.getRemoteAddress();
-		String hostId = clickstream.getHostId();
-		for (ClickstreamRequest visitedUrl : clickstream
-				.getClickstreamRequests()) {
-			String uri = visitedUrl.getRequestURI();
-			urlsCache.addUrl(ipAddress, hostId, uri);
-		}
-	}
-
+    
+    
 }

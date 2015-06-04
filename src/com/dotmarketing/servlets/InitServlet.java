@@ -253,6 +253,25 @@ public class InitServlet extends HttpServlet {
 			throw new ServletException("Unable to initialize system folder", e1);
 		}
 
+		// Create the GeoIP2 database reader on startup since it takes around 2
+		// seconds to load the file. If the prop is not set, just move on
+		if (UtilMethods.isSet(Config.getStringProperty(
+				"GEOIP2_CITY_DATABASE_PATH", ""))) {
+			try {
+				Logger.info(this, "");
+				GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+				// Validation query to initialize the GeoIP DB
+				String state = geoIp2Util
+						.getSubdivisionIsoCode("www.google.com");
+				Logger.info(this,
+						"Local GeoIP2 DB connection established successfully!");
+			} catch (IOException | GeoIp2Exception | DotRuntimeException e) {
+				Logger.info(this,
+						"Could not read from GeoIP2 DB: " + e.getMessage());
+			}
+			Logger.info(this, "");
+		}
+		
         /*
          * SHOULD BE LAST THING THAT HAPPENS
          */

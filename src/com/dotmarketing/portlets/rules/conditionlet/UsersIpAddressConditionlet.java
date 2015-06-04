@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,8 +25,8 @@ import com.dotmarketing.util.UtilMethods;
  * This conditionlet will allow CMS users to check the IP address of the user
  * that issued the request. The information is obtained by reading a specific
  * list of headers in the {@link HttpServletRequest} object that might contain
- * the actual IP address. The address can be compared with other specified IP 
- * addresses and also with a specific netmask. 
+ * the actual IP address. The address can be compared with other specified IP
+ * addresses and also with a specific netmask.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -72,7 +73,7 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
 			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
@@ -94,9 +95,26 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_NETMASK)) {
+				if (selectedValue.contains("/")) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ INPUT_ID + "': '" + selectedValue + "'");
 			}
@@ -108,10 +126,10 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(1);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
@@ -122,60 +140,58 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String ipAddress = null;
-			try {
-				InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-				ipAddress = address.getHostAddress();
-			} catch (UnknownHostException e) {
-				Logger.error(this,
-						"Could not retrieved a valid IP address from request: "
-								+ request.getRequestURL());
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String ipAddress = null;
+		try {
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+			ipAddress = address.getHostAddress();
+		} catch (UnknownHostException e) {
+			Logger.error(this,
+					"Could not retrieved a valid IP address from request: "
+							+ request.getRequestURL());
+		}
+		if (!UtilMethods.isSet(ipAddress)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (ipAddress.equals(inputValue)) {
+				return true;
 			}
-			if (UtilMethods.isSet(ipAddress)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (ipAddress.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!ipAddress.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (ipAddress.startsWith(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId()
-							.startsWith(COMPARISON_NETMASK)) {
-						if (HttpRequestDataUtil.isIpMatchingNetmask(ipAddress,
-								inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(ipAddress);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!ipAddress.equals(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (ipAddress.startsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_NETMASK)) {
+			if (HttpRequestDataUtil.isIpMatchingNetmask(ipAddress, inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue);
+			Matcher matcher = pattern.matcher(ipAddress);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

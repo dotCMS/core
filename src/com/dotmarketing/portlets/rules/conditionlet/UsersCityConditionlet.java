@@ -66,7 +66,7 @@ public class UsersCityConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
 			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
@@ -184,9 +184,9 @@ public class UsersCityConditionlet extends Conditionlet {
 		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
 		String city = null;
 		try {
-			InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
-			city = geoIp2Util.getSubdivisionIsoCode(ipAddress);
+			city = geoIp2Util.getCityName(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
 					"An error occurred when retrieving the IP address from request: "
@@ -198,7 +198,7 @@ public class UsersCityConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+			inputValues.add(new ConditionletInputValue(value.getId(), value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
@@ -217,6 +217,7 @@ public class UsersCityConditionlet extends Conditionlet {
 					return false;
 				}
 			}
+			return true;
 		}
 		return false;
 	}

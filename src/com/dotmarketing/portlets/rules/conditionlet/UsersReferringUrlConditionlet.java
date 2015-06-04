@@ -9,12 +9,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -69,9 +71,8 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -91,9 +92,24 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ INPUT_ID + "': '" + selectedValue + "'");
 			}
@@ -105,10 +121,10 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(1);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
@@ -119,54 +135,54 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
-			if (UtilMethods.isSet(referrerUrl)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (inputValue.equalsIgnoreCase(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!inputValue.equalsIgnoreCase(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (inputValue.startsWith(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (inputValue.endsWith(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (inputValue.contains(referrerUrl)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(referrerUrl);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
+		if (!UtilMethods.isSet(referrerUrl)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (referrerUrl.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!referrerUrl.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (referrerUrl.startsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (referrerUrl.endsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (referrerUrl.contains(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue);
+			Matcher matcher = pattern.matcher(referrerUrl);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 }

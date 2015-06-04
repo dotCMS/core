@@ -47,7 +47,7 @@ public class UsersStateConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
-	
+
 	@Override
 	protected String getName() {
 		return CONDITIONLET_NAME;
@@ -67,7 +67,7 @@ public class UsersStateConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
@@ -104,7 +104,7 @@ public class UsersStateConditionlet extends Conditionlet {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ inputField.getId() + "': '" + selectedValue + "'");
 			}
-		} // set error message when no inputid is specified
+		}
 		return validationResult;
 	}
 
@@ -189,8 +189,6 @@ public class UsersStateConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
-			// TODO
-			// ipAddress = "54.209.28.36";
 			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
@@ -222,6 +220,8 @@ public class UsersStateConditionlet extends Conditionlet {
 					return false;
 				}
 			}
+			// If none of the values match, return true
+			return true;
 		}
 		return false;
 	}

@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -75,7 +76,7 @@ public class UsersHostConditionlet extends Conditionlet {
 	public ValidationResults validate(Comparison comparison,
 			Set<ConditionletInputValue> inputValues) {
 		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues)) {
+		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
 			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
@@ -97,9 +98,24 @@ public class UsersHostConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
 						+ INPUT_ID + "': '" + selectedValue + "'");
 			}
@@ -125,54 +141,54 @@ public class UsersHostConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String hostName = getHostName(request);
-			if (UtilMethods.isSet(hostName)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				String inputValue = null;
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-					inputValue = value.getValue();
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					if (comparison.getId().equals(COMPARISON_IS)) {
-						if (hostName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-						if (!hostName.equalsIgnoreCase(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().startsWith(
-							COMPARISON_STARTSWITH)) {
-						if (hostName.startsWith(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-						if (hostName.endsWith(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-						if (hostName.contains(inputValue)) {
-							result = true;
-						}
-					} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-						Pattern pattern = Pattern.compile(inputValue);
-						Matcher matcher = pattern.matcher(hostName);
-						if (matcher.find()) {
-							result = true;
-						}
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		String hostName = getHostName(request);
+		if (!UtilMethods.isSet(hostName)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			if (hostName.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			if (!hostName.equalsIgnoreCase(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			if (hostName.startsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			if (hostName.endsWith(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			if (hostName.contains(inputValue)) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue);
+			Matcher matcher = pattern.matcher(hostName);
+			if (matcher.find()) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	/**
@@ -181,21 +197,22 @@ public class UsersHostConditionlet extends Conditionlet {
 	 * 
 	 * @param request
 	 *            - The {@code HttpServletRequest} object.
-	 * @return The name of the site, or {@code null} if an error occurred when
-	 *         retrieving the site information.
+	 * @return The name of the site, or {@code null} if the site information is
+	 *         not available.
 	 */
 	private String getHostName(HttpServletRequest request) {
-		String hostName = null;
 		try {
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			hostName = host.getHostname();
+			if (host != null) {
+				return host.getHostname();
+			}
 		} catch (PortalException | SystemException | DotDataException
 				| DotSecurityException e) {
 			Logger.error(this,
 					"Could not retrieve current host information for: "
 							+ request.getRequestURL());
 		}
-		return hostName;
+		return null;
 	}
 
 }
