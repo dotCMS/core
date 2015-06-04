@@ -351,6 +351,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
 
+			//The url is now stored under the identifier for html pages, so we need to index that also.
+			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
+			}
+
             return mlowered;
 		} catch (Exception e) {
 			//Logger.error(this.getClass(), e.getMessage(), e);
