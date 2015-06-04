@@ -87,8 +87,6 @@ let clauseRepo = {
     transform(_group, key) {
 
     },
-    transform(_clause) {
-    }
   },
   outward: {
     transform(clause) {

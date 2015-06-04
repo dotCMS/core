@@ -64,6 +64,16 @@ gulp.task('jspmInstall', function (done) {
 
 })
 
+gulp.task('bundleDist', ['unbundle'], function (done) {
+    jspm.bundle('src/rules-engine-ng2/index.es6',
+        config.depBundles + '/rules-engine-app.bundle.js',
+        {
+            inject: true,
+            minify: true,
+            sourceMaps: false
+        })
+})
+
 
 gulp.task('bundleDeps', ['unbundle'], function (done) {
   var deps = pConfig.jspm.dependencies || {}
