@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.com.sun.jersey.server.impl.ThreadLocalInvoker;
 import com.dotcms.repackage.javax.portlet.*;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -10,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.ResponseBuilder;
+import com.dotcms.repackage.org.glassfish.jersey.servlet.internal.ThreadLocalInvoker;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;

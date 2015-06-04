@@ -25,6 +25,8 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -33,8 +35,6 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 
 @Path("/bundlePublisher")
 public class BundlePublisherResource extends WebResource {

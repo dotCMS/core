@@ -3,9 +3,7 @@ package com.dotcms.rest.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.dotcms.rest.EnvironmentResource;
-import com.dotcms.rest.RestExamplePortlet;
-import com.dotcms.rest.elasticsearch.ESContentResourcePortlet;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
@@ -17,6 +15,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 				if(REST_CLASSES ==null){
 
 					REST_CLASSES = 	new HashSet<Class<?>>();
+                    REST_CLASSES.add(MultiPartFeature.class);
 					REST_CLASSES.add(com.dotcms.rest.ESIndexResource.class);
 					REST_CLASSES.add(com.dotcms.rest.RoleResource.class);
 					REST_CLASSES.add(com.dotcms.rest.BundleResource.class);
@@ -30,8 +29,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.OSGIResource.class);
 					REST_CLASSES.add(com.dotcms.rest.UserResource.class);
 					REST_CLASSES.add(com.dotcms.rest.ClusterResource.class);
-					REST_CLASSES.add(EnvironmentResource.class);
-					REST_CLASSES.add(RestExamplePortlet.class);
+					REST_CLASSES.add(com.dotcms.rest.EnvironmentResource.class);
+					REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.NotificationResource.class);
 					REST_CLASSES.add(com.dotcms.rest.IntegrityResource.class);
 					REST_CLASSES.add(com.dotcms.rest.LicenseResource.class);
@@ -39,6 +38,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.RulesResource.class);
+
 				}
 			}
 		}

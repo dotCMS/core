@@ -26,6 +26,8 @@ import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -35,8 +37,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.repackage.com.google.gson.Gson;
-import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 
 @Path("/esindex")
 public class ESIndexResource extends WebResource {

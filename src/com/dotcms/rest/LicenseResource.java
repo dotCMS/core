@@ -10,8 +10,6 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.action.ResetLicenseServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.FormParam;
@@ -23,6 +21,8 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.json.JSONArray;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -83,7 +83,7 @@ public class LicenseResource extends WebResource {
     @Path("/upload/{params:.*}")
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     public Response putZipFile(@Context HttpServletRequest request, @PathParam("params") String params,
-            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail, 
+            @FormDataParam("file") InputStream inputFile, @FormDataParam("file") FormDataContentDisposition inputFileDetail,
             @FormDataParam("return") String ret) {
         InitDataObject initData = init(params, true, request, true, "9");
         try {

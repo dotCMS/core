@@ -44,7 +44,6 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
 	public Response search(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
 

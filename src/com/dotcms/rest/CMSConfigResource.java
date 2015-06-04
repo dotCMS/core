@@ -4,6 +4,8 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -17,8 +19,6 @@ import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 
 import javax.servlet.http.HttpServletRequest;
@@ -272,7 +272,7 @@ public class CMSConfigResource extends WebResource {
     @Produces (MediaType.TEXT_HTML)
     @Consumes (MediaType.MULTIPART_FORM_DATA)
     public Response saveCompanyLogo ( @Context HttpServletRequest request,
-                                      @FormDataParam ("user") String user, @FormDataParam ("password") String password,
+                                      @FormDataParam("user") String user, @FormDataParam ("password") String password,
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 

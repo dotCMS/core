@@ -55,8 +55,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.javax.ws.rs.core.Application;
 
+import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
+import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
 import com.dotmarketing.business.DotStateException;
-import com.dotcms.repackage.com.sun.jersey.spi.container.servlet.ServletContainer;
 
 
 
@@ -88,11 +89,11 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
 
 	public ReloadableServletContainer(Class<? extends Application> appClass) {
-		container = new ServletContainer(appClass);
+		container = new ServletContainer(ResourceConfig.forApplicationClass(appClass));
 	}
 
 	public ReloadableServletContainer(Application app) {
-		container = new ServletContainer(app);
+        container = new ServletContainer(ResourceConfig.forApplication(app));
 	}
 
 	// GenericServlet
@@ -131,7 +132,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
 
 	public static void reload(Application app) {
-		container = new ServletContainer(app);
+		container = new ServletContainer(ResourceConfig.forApplication(app));
 		try {
 			container.init(servletConfig);
 		} catch (ServletException e) {

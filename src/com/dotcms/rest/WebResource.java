@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -23,8 +24,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.com.sun.jersey.core.util.Base64;
-import com.dotcms.repackage.com.sun.jersey.spi.container.ContainerRequest;
+import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 
 public class WebResource {
 
@@ -206,7 +206,7 @@ public class WebResource {
 
 		if(UtilMethods.isSet(authentication) && authentication.startsWith("Basic ")) {
 			authentication = authentication.substring("Basic ".length());
-			String[] values = new String(Base64.base64Decode(authentication)).split(":");
+			String[] values = new String(Base64.decodeAsString(authentication)).split(":");
 			if (values.length < 2) {
 				// "Invalid syntax for username and password"
 				throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -225,7 +225,7 @@ public class WebResource {
 		String authentication = request.getHeader("DOTAUTH");
 
 		if(UtilMethods.isSet(authentication)) {
-			String[] values = new String(Base64.base64Decode(authentication)).split(":");
+			String[] values = new String(Base64.decodeAsString(authentication)).split(":");
 			if (values.length < 2) {
 				// "Invalid syntax for username and password"
 				throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);

@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
-import com.dotcms.repackage.com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.apache.http.client.methods.HttpGet;
+import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
+import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -32,15 +30,10 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import static com.dotcms.repackage.org.junit.Assert.*;
 
-import com.dotcms.repackage.org.mockito.Mockito;
-import com.liferay.util.Http;
-
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
@@ -71,10 +64,11 @@ public class RulesAPITest extends TestBase {
         User user = APILocator.getUserAPI().getSystemUser();
         Host defaultHost = hostAPI.findDefaultHost(user, false);
 
-        Client client = Client.create();
-        client.addFilter(new HTTPBasicAuthFilter("admin@dotcms.com", "admin"));
+        Client client = RestClientBuilder.newClient();
+        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
+        client.register(feature);
 
-        WebResource resource = client.resource("http://" + serverName + ":" + serverPort + "/api/rules-engine");
+        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/rules-engine");
 
         final String modifiedRuleName = "testRuleModified";
         final String modifiedConditionName = "testConditionModified";
@@ -87,11 +81,11 @@ public class RulesAPITest extends TestBase {
         ruleJSON.put("enabled", "true");
         ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
 
-        ClientResponse response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, ruleJSON.toString());
+        Response response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(ruleJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        String responseStr = response.getEntity(String.class);
+        String responseStr = response.readEntity(String.class);
         JSONObject responseJSON = new JSONObject(responseStr);
         ruleId = (String) responseJSON.get("id");
 
@@ -102,11 +96,11 @@ public class RulesAPITest extends TestBase {
         groupJSON.put("ruleId", ruleId);
         groupJSON.put("operator", Condition.Operator.AND.name());
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, groupJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(groupJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         String groupId = (String) responseJSON.get("id");
 
@@ -127,11 +121,11 @@ public class RulesAPITest extends TestBase {
 
         conditionJSON.put("values", valuesJSON);
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, conditionJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(conditionJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         String conditionId = (String) responseJSON.get("id");
         JSONObject conditionValues = (JSONObject) responseJSON.get("values");
@@ -141,11 +135,11 @@ public class RulesAPITest extends TestBase {
         JSONObject actionJSON = new JSONObject();
         actionJSON.put("actionlet", "TestActionlet");
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions").type(MediaType.APPLICATION_JSON_TYPE).post(ClientResponse.class, actionJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(actionJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         String actionId = (String) responseJSON.get("id");
 
@@ -157,9 +151,9 @@ public class RulesAPITest extends TestBase {
         ruleJSON.put("enabled", "false");
         ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, ruleJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(ruleJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         Rule rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
         assertTrue(rule.getName().equals(modifiedRuleName));
@@ -171,9 +165,9 @@ public class RulesAPITest extends TestBase {
         groupJSON.put("ruleId", ruleId);
         groupJSON.put("operator", Condition.Operator.OR.name());
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, groupJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(groupJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         ConditionGroup group = APILocator.getRulesAPI().getConditionGroupById(groupId, user, false);
         assertTrue(group.getOperator() == Condition.Operator.OR);
@@ -199,9 +193,9 @@ public class RulesAPITest extends TestBase {
 
         conditionJSON.put("values", valuesJSON);
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, conditionJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(conditionJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         Condition condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
         assertTrue(condition.getName().equals(modifiedConditionName));
@@ -215,62 +209,62 @@ public class RulesAPITest extends TestBase {
         actionJSON.put("ruleId", ruleId);
         actionJSON.put("priority", 10);
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).type(MediaType.APPLICATION_JSON_TYPE).put(ClientResponse.class, actionJSON.toString());
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(actionJSON.toString()));
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         RuleAction action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
         assertTrue(action.getPriority() == 10);
 
         // Get Rules
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules").type(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules").request(MediaType.APPLICATION_JSON_TYPE).get();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         ruleJSON = (JSONObject) responseJSON.get(ruleId);
         assertTrue(ruleJSON.getString("name").equals(modifiedRuleName));
 
         // Get Rule
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).type(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).request(MediaType.APPLICATION_JSON_TYPE).get();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         ruleJSON = new JSONObject(responseStr);
         assertTrue(ruleJSON.getString("name").equals(modifiedRuleName));
 
         // Get Conditions
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").type(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").request(MediaType.APPLICATION_JSON_TYPE).get();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         JSONObject conditionsJSON = new JSONObject(responseStr);
         conditionJSON = (JSONObject) conditionsJSON.get(conditionId);
         assertTrue(conditionJSON.getString("name").equals(modifiedConditionName));
 
         // Get Condition
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).type(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).get();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         conditionJSON = new JSONObject(responseStr);
         assertTrue(conditionJSON.getString("name").equals(modifiedConditionName));
 
         // Get Conditionlets
 
-        response = resource.path("/conditionlets").type(MediaType.APPLICATION_JSON_TYPE).get(ClientResponse.class);
+        response = target.path("/conditionlets").request(MediaType.APPLICATION_JSON_TYPE).get();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
-        responseStr = response.getEntity(String.class);
+        responseStr = response.readEntity(String.class);
         JSONObject conditionletJSON = new JSONObject(responseStr);
 
         assertTrue(conditionletJSON.getString(UsersCountryConditionlet.class.getSimpleName()) != null);
@@ -278,36 +272,36 @@ public class RulesAPITest extends TestBase {
 
         // Delete Condition
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).type(MediaType.APPLICATION_JSON_TYPE).delete(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
         assertNull(condition);
 
         // Delete Condition Group
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).type(MediaType.APPLICATION_JSON_TYPE).delete(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         group = APILocator.getRulesAPI().getConditionGroupById(conditionId, user, false);
         assertNull(group);
 
         // Delete Rule Action
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).type(MediaType.APPLICATION_JSON_TYPE).delete(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
         assertNull(action);
 
         // Delete Rule
 
-        response = resource.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).type(MediaType.APPLICATION_JSON_TYPE).delete(ClientResponse.class);
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
         assertNull(rule);

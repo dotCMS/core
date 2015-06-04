@@ -2,10 +2,9 @@ package com.dotcms.rest.config;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
-import com.dotcms.repackage.com.sun.jersey.core.util.Base64;
-import com.dotcms.repackage.com.sun.jersey.spi.container.ContainerRequest;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
 import com.dotmarketing.business.ApiProvider;
@@ -18,6 +17,8 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -89,7 +90,7 @@ public class AuthenticationProvider {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.base64Decode(authentication).split(":");
+            String[] values = Base64.decodeAsString(authentication).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -108,7 +109,7 @@ public class AuthenticationProvider {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.base64Decode(authentication).split(":");
+            String[] values = Base64.decodeAsString(authentication).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
