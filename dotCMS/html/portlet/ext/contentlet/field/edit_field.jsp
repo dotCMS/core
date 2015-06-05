@@ -907,6 +907,16 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
   else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+
+      %>
+        <script>
+            dojo.ready(function () {
+                setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+                recolorTable('<%=field.getFieldContentlet()%>');
+            });
+        </script>
+      <%
+
 	  java.util.Map<String, Object> keyValueMap = null;
 	  String JSONValue = UtilMethods.isSet(value)? (String)value:"";
 	  //Convert JSON to Table Display {key, value, order}
@@ -968,12 +978,6 @@
    <%} %>
    </div>
 
-    <script>
-        dojo.ready(function () {
-            setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
-            recolorTable('<%=field.getFieldContentlet()%>');
-        });
-    </script>
 <%}%>
 
 </div>
