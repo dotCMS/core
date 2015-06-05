@@ -1,4 +1,4 @@
-<div class="clause-group-separator" *if="index > 1">
+<div class="clause-group-separator" *NgIf="index > 1">
   <div class="row">
     <div class="col-sm-1">
       <button class="btn btn-default field-operator" (click)="toggleOperator(rule, group)">
@@ -35,7 +35,7 @@
     </div>
   </div>
   <div class="panel-body collapse" [class.in]="!isCollapse">
-    <clause *for="var clause of clauses; var i=index"
+    <clause *NgFor="var clause of clauses; var i=index"
             [rule]="rule"
             [group]="group"
             [clause]="clause"

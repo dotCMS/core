@@ -3,14 +3,14 @@ let log = XDebug('RulesEngineNg2.RulesEngineComponent');
 
 import Reflect from 'reflect-metadata';
 
-import {bootstrap, For, If} from 'angular2/angular2';
+import {bootstrap, NgFor, NgIf} from 'angular2/angular2';
 
 // TODO(ggranum): Once the application is transpiled by TS instead of Traceur,
 // add those imports back into 'angular2/angular2';
 import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
 import {View} from 'angular2/src/core/annotations_impl/view';
 
-import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
+import {FormBuilder, Validators, formDirectives, ControlGroup} from 'angular2/forms';
 
 import {Core} from 'src/dc/index.es6'
 import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
@@ -26,6 +26,7 @@ import ruleActionTemplate from './rule-action.tpl.html!text'
 import clauseGroupTemplate from './clause-group.tpl.html!text'
 import clauseTemplate from './clause.tpl.html!text'
 
+log("Hello?", rulesEngineTemplate)
 
 @Component({
   selector: 'rule-action',
@@ -37,7 +38,7 @@ import clauseTemplate from './clause.tpl.html!text'
 })
 @View({
   template: ruleActionTemplate,
-  directives: [FormDirectives, If, For],
+  directives: [formDirectives, NgIf, NgFor],
   injectables: [FormBuilder]
 })
 class RuleActionComponent {
@@ -96,7 +97,7 @@ class RuleActionComponent {
 })
 @View({
   template: clauseTemplate,
-  directives: [FormDirectives, If, For]
+  directives: [formDirectives, NgIf, NgFor]
 })
 class ClauseComponent {
   _clause:any;
@@ -148,7 +149,7 @@ class ClauseComponent {
 })
 @View({
   template: clauseGroupTemplate,
-  directives: [ClauseComponent, FormDirectives, If, For]
+  directives: [ClauseComponent, formDirectives, NgIf, NgFor]
 })
 class ClauseGroupComponent {
   _group;
@@ -227,7 +228,7 @@ class ClauseGroupComponent {
 })
 @View({
   template: ruleTemplate,
-  directives: [RuleActionComponent, ClauseGroupComponent, FormDirectives, If, For]
+  directives: [RuleActionComponent, ClauseGroupComponent, formDirectives, NgIf, NgFor]
 })
 class RuleComponent {
   _rule:any;
@@ -282,7 +283,7 @@ class RuleComponent {
 })
 @View({
   template: rulesEngineTemplate,
-  directives: [FormDirectives, For, RuleComponent, If]
+  directives: [formDirectives, NgIf, NgFor, RuleComponent]
 })
 class RulesEngine {
   rules:Array;

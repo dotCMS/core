@@ -1,1 +1,0 @@
-{"version":3,"sources":["visibility.es6"],"names":[],"mappings":"AAAA,KAAO,CAAA,CACL,8BAA6B,CAC7B,2BAAyB,CACzB,KAAO,iCAA+B,CAAC;AAAA","file":"angular2/src/core/annotations/visibility.es6","sourcesContent":["export {\n  Ancestor as AncestorAnnotation,\n  Parent as ParentAnnotation,\n  } from '../annotations_impl/visibility';\n"]}

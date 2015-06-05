@@ -19,7 +19,7 @@
 
             <hr/>
 
-            <rule class="row" *for="var r of rules; var i=index"
+            <rule class="row" *NgFor="var r of rules; var i=index"
                   [rule]="r"
                   [index]="i + 1"></rule>
 
