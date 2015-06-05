@@ -1,3 +1,10 @@
+html, body {
+  background-color: #3e484f;
+  color: #8c9ca8; }
+
+hr {
+  border-top-color: #68757E; }
+
 .action-item h4.separator {
   line-height: 34px;
   margin: 0;
@@ -17,6 +24,7 @@
     background-color: #f2f2f2; }
 
 .clause-group .panel-title {
+  color: #f2f2f2;
   line-height: 34px;
   display: inline-block;
   vertical-align: middle;
@@ -27,19 +35,14 @@
 .clause-group-separator {
   margin-bottom: 20px; }
 
-.clause-selector {
-  -moz-border-radius: 0;
-  -webkit-appearance: none;
-  -webkit-border-radius: 0;
-  border-radius: 0;
-  border: none;
-  border-bottom: solid 1px #ccc;
-  cursor: pointer;
-  box-shadow: none;
-  display: inline-block;
-  font-size: 18px;
-  margin: 0 10px 0 0;
-  padding: 0 5px; }
+.form-control {
+  color: #3e484f; }
+
+.panel-default {
+  border: none; }
+  .panel-default > .panel-heading {
+    border: none;
+    background-color: #68757E; }
 
 .operations {
   text-align: right; }
@@ -51,12 +54,19 @@
   .page-title-search .form-group {
     margin-bottom: 0; }
 
+.rule {
+  -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  background-color: #384046; }
+
 .rule-operations label {
+  color: #fff;
+  font-weight: normal;
   margin-right: 5px; }
 .rule-operations .separator {
   display: inline-block;
   width: 1px;
-  border-right: solid 1px #ccc;
+  border-right: solid 1px #8c9ca8;
   height: 34px;
   vertical-align: top;
   margin: 0 10px; }
@@ -66,7 +76,7 @@
   font-weight: bold;
   border-color: rgba(0, 0, 0, 0.1);
   box-shadow: none;
-  background-color: transparent; }
+  background-color: rgba(255, 255, 255, 0.25); }
   .rule-title:hover {
     background-color: #ffffcc; }
   .rule-title:focus {
@@ -76,7 +86,7 @@
   position: relative;
   text-align: center; }
   .section-separator h2 {
-    background-color: #fff;
+    background-color: #384046;
     display: inline-block;
     margin-top: 0;
     padding: 0 20px;
@@ -88,4 +98,4 @@
     position: relative;
     top: -27px; }
 
-/*# sourceMappingURL=main.css.map */
+/*# sourceMappingURL=theme-dark.css.map */
