@@ -18,7 +18,7 @@ import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
 
 import "bootstrap/css/bootstrap.css!";
 import "./css/rules-engine.css!";
-import "../ui-static/scss/theme-dark.css!";
+import "../../styles/theme-dark.css!";
 
 import rulesEngineTemplate from './rules-engine-ng2.html!text'
 import ruleTemplate from './rule.tpl.html!text'
