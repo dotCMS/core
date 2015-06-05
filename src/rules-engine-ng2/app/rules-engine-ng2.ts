@@ -26,8 +26,6 @@ import ruleActionTemplate from './rule-action.tpl.html!text'
 import clauseGroupTemplate from './clause-group.tpl.html!text'
 import clauseTemplate from './clause.tpl.html!text'
 
-log("Hello?", rulesEngineTemplate)
-
 @Component({
   selector: 'rule-action',
   properties: {
