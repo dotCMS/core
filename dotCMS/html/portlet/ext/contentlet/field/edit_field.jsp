@@ -967,6 +967,13 @@
     <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
    <%} %>
    </div>
+
+    <script>
+        dojo.ready(function () {
+            setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+            recolorTable('<%=field.getFieldContentlet()%>');
+        });
+    </script>
 <%}%>
 
 </div>
