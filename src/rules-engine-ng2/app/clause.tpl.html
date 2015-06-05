@@ -10,7 +10,7 @@
         <div class="row">
           <div class="col-sm-5">
             <select class="form-control clause-selector" [value]="clause.type">
-              <option value="clauseType.id" *NgFor="var clauseType of clauseTypes; var i=index">{{clauseType.id}}</option>
+              <option value="clauseType.id" *ng-for="var clauseType of clauseTypes; var i=index">{{clauseType.id}}</option>
             </select>
           </div>
           <div class="col-sm-1">
@@ -18,7 +18,7 @@
           </div>
           <div class="col-sm-4">
             <select class="form-control clause-selector" [value]="clause.comparison">
-              <option value="comparison.id" *NgFor="var comparison of comparisons">{{comparison.id}}</option>
+              <option value="comparison.id" *ng-for="var comparison of comparisons">{{comparison.id}}</option>
             </select>
           </div>
           <div class="col-sm-2">
