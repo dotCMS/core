@@ -8,8 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -97,8 +97,6 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 	}
 
 	private List convertListToObjects(List<Map<String, Object>> rs, Class clazz) throws DotDataException {
-		final ObjectMapper m = new ObjectMapper();
-
 		final List ret = new ArrayList();
 		try {
 			for (final Map<String, Object> map : rs) {

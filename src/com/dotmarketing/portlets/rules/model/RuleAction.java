@@ -1,9 +1,10 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.Date;
 import java.util.List;
 
-import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
 
 public class RuleAction {
     private String id;

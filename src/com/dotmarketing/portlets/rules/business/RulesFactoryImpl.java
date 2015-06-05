@@ -3,8 +3,8 @@ package com.dotmarketing.portlets.rules.business;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -623,8 +623,6 @@ public class RulesFactoryImpl implements RulesFactory {
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
 			throws DotDataException {
-		final ObjectMapper m = new ObjectMapper();
-
 		final List ret = new ArrayList();
 		try {
 			for (final Map<String, Object> map : rs) {
@@ -640,8 +638,6 @@ public class RulesFactoryImpl implements RulesFactory {
 
     private Set convertListToObjectsSet(List<Map<String, Object>> rs, Class clazz)
             throws DotDataException {
-        final ObjectMapper m = new ObjectMapper();
-
         final Set ret = new HashSet();
         try {
             for (final Map<String, Object> map : rs) {

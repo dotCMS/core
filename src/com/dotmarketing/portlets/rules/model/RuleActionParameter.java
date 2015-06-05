@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.UtilMethods;
 
 import java.io.Serializable;

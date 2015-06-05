@@ -15,9 +15,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationConfig;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -68,7 +69,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 			}
 
 			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
 			CategoryAPI catAPI = APILocator.getCategoryAPI();
 			int start = -1;
