@@ -42,6 +42,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "country";
 	private static final String CONDITIONLET_NAME = "User's Country";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -99,7 +100,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputField.getId() + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;

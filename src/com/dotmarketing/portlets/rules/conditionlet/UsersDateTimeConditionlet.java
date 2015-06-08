@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.LinkedHashMap;
@@ -38,11 +38,12 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "datetime";
 	private static final String CONDITIONLET_NAME = "User's Date & Time";
+	
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
-	private static final String COMPARISON_LOWER_THAN = "lower";
 	private static final String COMPARISON_LOWER_THAN_OR_EQUAL_TO = "lowerOrEqual";
+	private static final String COMPARISON_LOWER_THAN = "lower";
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
@@ -63,11 +64,11 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 					"Is Greater Than or Equal To"));
 			this.comparisons.add(new Comparison(COMPARISON_EQUAL_TO,
 					"Is Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
-					"Is Lower Than"));
 			this.comparisons.add(new Comparison(
 					COMPARISON_LOWER_THAN_OR_EQUAL_TO,
 					"Is Lower Than or Equal To"));
+			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
+					"Is Lower Than"));
 		}
 		return this.comparisons;
 	}
@@ -78,7 +79,6 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -103,7 +103,7 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -113,10 +113,10 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(1);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
@@ -127,73 +127,62 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			long clientDateTime = 0;
-			InetAddress ipAddress = null;
-			String ip = null;
-			try {
-				ipAddress = HttpRequestDataUtil.getIpAddress(request);
-				ip = ipAddress.getHostAddress();
-				// TODO Remove later
-				ip = "54.209.28.36";
-				Date date = GeoIp2CityDbUtil.getInstance().getDateTime(ip);
-				clientDateTime = date.getTime();
-			} catch (UnknownHostException e) {
-				Logger.error(this,
-						"Could not retrieved a valid date from request: "
-								+ request.getRequestURL());
-			} catch (IOException e) {
-				Logger.error(this,
-						"Could not establish connection to GeoIP2 database for IP "
-								+ ip);
-			} catch (GeoIp2Exception e) {
-				Logger.error(this,
-						"Current date could not be retreived for IP " + ip);
-			}
-			if (clientDateTime == 0) {
-				return result;
-			}
-			Comparison comparison = getComparisonById(comparisonId);
-			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-			String inputValue = null;
-			for (ConditionValue value : values) {
-				inputValues.add(new ConditionletInputValue(INPUT_ID, value
-						.getValue()));
-				inputValue = value.getValue();
-			}
-			ValidationResults validationResults = validate(comparison,
-					inputValues);
-			if (!validationResults.hasErrors()) {
-				long conditionletInput = Long.parseLong(inputValue);
-				if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-					if (clientDateTime > conditionletInput) {
-						result = true;
-					}
-				}
-				if (comparison.getId().equals(
-						COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-					if (clientDateTime >= conditionletInput) {
-						result = true;
-					}
-				} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
-					if (clientDateTime == conditionletInput) {
-						result = true;
-					}
-				} else if (comparison.getId().startsWith(
-						COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-					if (clientDateTime <= conditionletInput) {
-						result = true;
-					}
-				} else if (comparison.getId().startsWith(COMPARISON_LOWER_THAN)) {
-					if (clientDateTime < conditionletInput) {
-						result = true;
-					}
-				}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		long clientDateTime = 0;
+		try {
+			InetAddress ipAddress = HttpRequestDataUtil.getIpAddress(request);
+			String ip = ipAddress.getHostAddress();
+			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(ip);
+			clientDateTime = date.getTime().getTime();
+		} catch (IOException | GeoIp2Exception e) {
+			Logger.error(
+					this,
+					"Could not retrieved a valid date from request: "
+							+ request.getRequestURL());
+		}
+		if (clientDateTime == 0) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		long conditionletInput = Long.parseLong(inputValue);
+		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+			if (clientDateTime > conditionletInput) {
+				return true;
 			}
 		}
-		return result;
+		if (comparison.getId().equals(COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+			if (clientDateTime >= conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+			if (clientDateTime == conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(
+				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+			if (clientDateTime <= conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_LOWER_THAN)) {
+			if (clientDateTime < conditionletInput) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

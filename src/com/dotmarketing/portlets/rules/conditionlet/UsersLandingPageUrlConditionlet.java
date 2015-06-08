@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +18,7 @@ import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -35,6 +37,7 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "landing-url";
 	private static final String CONDITIONLET_NAME = "User's Landing Page URL";
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -74,7 +77,6 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -94,12 +96,26 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputValue.getConditionletInputId() + "': '"
-						+ selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -109,12 +125,12 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-			ConditionletInput inputField1 = new ConditionletInput();
-			// Set field configuration and available options
-			inputField1.setId(INPUT_ID);
-			inputField1.setUserInputAllowed(true);
-			inputField1.setMultipleSelectionAllowed(false);
-			this.inputValues.put(inputField1.getId(), inputField1);
+			ConditionletInput inputField = new ConditionletInput();
+			inputField.setId(INPUT_ID);
+			inputField.setUserInputAllowed(true);
+			inputField.setMultipleSelectionAllowed(false);
+			inputField.setMinNum(2);
+			this.inputValues.put(inputField.getId(), inputField);
 		}
 		return this.inputValues.values();
 	}
@@ -142,35 +158,38 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 		if (validationResults.hasErrors()) {
 			return false;
 		}
-		Clickstream clickstream = (Clickstream) request.getSession()
+		Clickstream clickstream = (Clickstream) request.getSession(true)
 				.getAttribute("clickstream");
+		if (clickstream == null) {
+			return false;
+		}
 		String firstUrl = null;
 		List<ClickstreamRequest> clickstreamRequests = clickstream
 				.getClickstreamRequests();
-		if (clickstreamRequests != null && clickstreamRequests.size() > 1) {
+		if (clickstreamRequests != null && clickstreamRequests.size() > 0) {
 			firstUrl = clickstreamRequests.get(0).getRequestURI();
 		}
 		if (!UtilMethods.isSet(firstUrl)) {
 			return false;
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (conditionletValue.equalsIgnoreCase(firstUrl)) {
+			if (firstUrl.equalsIgnoreCase(conditionletValue)) {
 				return true;
 			}
 		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			if (!conditionletValue.equalsIgnoreCase(firstUrl)) {
+			if (!firstUrl.equalsIgnoreCase(conditionletValue)) {
 				return true;
 			}
 		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-			if (conditionletValue.startsWith(firstUrl)) {
+			if (firstUrl.startsWith(conditionletValue)) {
 				return true;
 			}
 		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-			if (conditionletValue.endsWith(firstUrl)) {
+			if (firstUrl.endsWith(conditionletValue)) {
 				return true;
 			}
 		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-			if (conditionletValue.contains(firstUrl)) {
+			if (firstUrl.contains(conditionletValue)) {
 				return true;
 			}
 		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {

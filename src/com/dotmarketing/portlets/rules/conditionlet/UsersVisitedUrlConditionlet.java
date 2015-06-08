@@ -44,6 +44,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "has-visited-url";
 	private static final String CONDITIONLET_NAME = "User's Visited URL";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -121,7 +122,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -191,7 +192,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 			return false;
 		}
 		Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request
-				.getSession().getAttribute(
+				.getSession(true).getAttribute(
 						WebKeys.RULES_CONDITIONLET_VISITEDURLS);
 		Set<String> urlSet = null;
 		if (visitedUrls == null) {
@@ -206,7 +207,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 			if (UtilMethods.isSet(uri) && !urlSet.contains(uri)) {
 				urlSet.add(uri);
 				visitedUrls.put(hostId, urlSet);
-				request.getSession().setAttribute(
+				request.getSession(true).setAttribute(
 						WebKeys.RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
 			}
 		} catch (UnsupportedEncodingException e) {
@@ -255,6 +256,50 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	 */
 	private boolean validateUrl(Collection<String> urlList, String inputValue,
 			Comparison comparison) {
+		if (comparison.getId().equals(COMPARISON_IS)) {
+			for (String urlInSession : urlList) {
+				if (urlInSession.equalsIgnoreCase(inputValue)) {
+					return true;
+				}
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+			boolean found = false;
+			for (String urlInSession : urlList) {
+				if (urlInSession.equalsIgnoreCase(inputValue)) {
+					found = true;
+					break;
+				}
+			}
+			return !found;
+		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+			for (String urlInSession : urlList) {
+				if (urlInSession.startsWith(inputValue)) {
+					return true;
+				}
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+			for (String urlInSession : urlList) {
+				if (urlInSession.endsWith(inputValue)) {
+					return true;
+				}
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+			for (String urlInSession : urlList) {
+				if (urlInSession.contains(inputValue)) {
+					return true;
+				}
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+			for (String urlInSession : urlList) {
+				Pattern pattern = Pattern.compile(inputValue);
+				Matcher matcher = pattern.matcher(urlInSession);
+				if (matcher.find()) {
+					return true;
+				}
+			}
+		}
+		return false;
+		/*
 		if (urlList == null || urlList.size() == 0
 				|| !UtilMethods.isSet(inputValue)) {
 			return false;
@@ -296,6 +341,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 			}
 		}
 		return false;
+		*/
 	}
 
 }

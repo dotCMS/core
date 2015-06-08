@@ -19,6 +19,7 @@ import com.dotmarketing.util.UtilMethods;
 public class SiteVisitCacheImpl extends SiteVisitCache {
 
 	protected DotCacheAdministrator cache = null;
+	protected static final String APPENDER = "##";
 
 	/**
 	 * Default constructor. Instantiates the {@link DotCacheAdministrator}
@@ -36,36 +37,27 @@ public class SiteVisitCacheImpl extends SiteVisitCache {
 	}
 
 	@Override
-	public boolean setSiteVisits(String hostId, int visits) {
+	public boolean setSiteVisits(String userId, String hostId, int visits) {
 		if (UtilMethods.isSet(hostId)) {
-			this.cache.put(hostId, visits, PRIMARY_GROUP);
+			this.cache.put(userId + APPENDER + hostId, visits, PRIMARY_GROUP);
 			return true;
 		}
 		return false;
 	}
 
 	@Override
-	public boolean addSiteVisit(String hostId) {
-		int visits = getSiteVisits(hostId);
-		if (visits >= 0) {
-			visits++;
-			return setSiteVisits(hostId, visits);
-		}
-		return false;
-	}
-
-	@Override
-	public int getSiteVisits(String hostId) {
+	public int getSiteVisits(String userId, String hostId) {
 		if (UtilMethods.isSet(hostId)) {
 			try {
-				Object result = this.cache.get(hostId, PRIMARY_GROUP);
+				Object result = this.cache.get(userId + APPENDER + hostId,
+						PRIMARY_GROUP);
 				if (UtilMethods.isSet(result)) {
 					return (int) result;
 				}
 			} catch (DotCacheException e) {
 				Logger.debug(this,
 						"SiteVisitCache entry could not be retrieved for Host ID: "
-								+ hostId);
+								+ hostId + " and user " + userId);
 			}
 		}
 		return -1;

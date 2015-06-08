@@ -41,6 +41,7 @@ public class UsersPlatformConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "platform";
 	private static final String CONDITIONLET_NAME = "User's Platform";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -68,7 +69,6 @@ public class UsersPlatformConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -92,7 +92,6 @@ public class UsersPlatformConditionlet extends Conditionlet {
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
 			for (EntryOption option : inputOptions) {
-				// Validate that the selected value is correct
 				if (option.getId().equals(selectedValue)) {
 					validationResult.setValid(true);
 					break;
@@ -100,7 +99,7 @@ public class UsersPlatformConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputField.getId() + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -110,18 +109,17 @@ public class UsersPlatformConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration and available options
 			inputField.setId(INPUT_ID);
 			inputField.setMultipleSelectionAllowed(true);
 			inputField.setDefaultValue("");
 			inputField.setMinNum(1);
 			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
-			options.add(new EntryOption("computer", "Computer"));
-			options.add(new EntryOption("mobile", "Mobile Device"));
-			options.add(new EntryOption("tablet", "Tablet"));
-			options.add(new EntryOption("wearable", "Wearable Device"));
-			options.add(new EntryOption("dmr", "Digital Media Receiver"));
-			options.add(new EntryOption("game_console", "Game Console"));
+			options.add(new EntryOption("Computer", "Computer"));
+			options.add(new EntryOption("Mobile", "Mobile Device"));
+			options.add(new EntryOption("Tablet", "Tablet"));
+			options.add(new EntryOption("Wearable computer", "Wearable Device"));
+			options.add(new EntryOption("Digital media receiver", "Digital Media Receiver"));
+			options.add(new EntryOption("Game console", "Game Console"));
 			inputField.setData(options);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
 			this.inputValues.put(inputField.getId(), inputField);
@@ -133,28 +131,30 @@ public class UsersPlatformConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			String userAgentInfo = request.getHeader("User-Agent");
-			UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-			String platform = agent.getOperatingSystem().getDeviceType()
-					.getName();
-			if (UtilMethods.isSet(platform)) {
-				Comparison comparison = getComparisonById(comparisonId);
-				Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-				for (ConditionValue value : values) {
-					inputValues.add(new ConditionletInputValue(INPUT_ID, value
-							.getValue()));
-				}
-				ValidationResults validationResults = validate(comparison,
-						inputValues);
-				if (!validationResults.hasErrors()) {
-					result = evaluateInput(inputValues, platform, comparison);
-				}
-			}
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
 		}
-		return result;
+		String userAgentInfo = request.getHeader("User-Agent");
+		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
+		String platform = null;
+		if (agent != null && agent.getOperatingSystem() != null) {
+			platform = agent.getOperatingSystem().getDeviceType().getName();
+		}
+		if (!UtilMethods.isSet(platform)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (!validationResults.hasErrors()) {
+			return evaluateInput(inputValues, platform, comparison);
+		}
+		return false;
 	}
 
 	/**
@@ -172,7 +172,6 @@ public class UsersPlatformConditionlet extends Conditionlet {
 	 */
 	private boolean evaluateInput(Set<ConditionletInputValue> inputValues,
 			String platform, Comparison comparison) {
-		boolean result = false;
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			for (ConditionletInputValue input : inputValues) {
 				if (input.getValue().equalsIgnoreCase(platform)) {
@@ -189,7 +188,7 @@ public class UsersPlatformConditionlet extends Conditionlet {
 			}
 			return !found;
 		}
-		return result;
+		return false;
 	}
 
 }

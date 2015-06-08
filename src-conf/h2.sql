@@ -3083,3 +3083,14 @@ create table rule_action (id varchar(36) primary key,name varchar(255) not null,
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id),key varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
+CREATE TABLE analytic_summary_user_visits (
+    user_id VARCHAR(255) NOT NULL,
+    host_id VARCHAR(36) NOT NULL,
+    visits BIGINT NOT NULL,
+    last_start_date TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, host_id),
+    UNIQUE (user_id, host_id)
+);      
+CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
+CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
+CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);

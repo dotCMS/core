@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -32,6 +34,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	private static final String INPUT1_ID = "browser-header";
 	private static final String INPUT2_ID = "header-value";
 	private static final String CONDITIONLET_NAME = "User's Browser Header";
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -71,7 +74,6 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -104,8 +106,22 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 					}
 				}
 			} else {
-				if (UtilMethods.isSet(selectedValue)) {
-					validationResult.setValid(true);
+				String comparisonId = comparison.getId();
+				if (comparisonId.equals(COMPARISON_IS)
+						|| comparisonId.equals(COMPARISON_ISNOT)
+						|| comparisonId.equals(COMPARISON_STARTSWITH)
+						|| comparisonId.equals(COMPARISON_ENDSWITH)
+						|| comparisonId.equals(COMPARISON_CONTAINS)) {
+					if (UtilMethods.isSet(selectedValue)) {
+						validationResult.setValid(true);
+					}
+				} else if (comparisonId.equals(COMPARISON_REGEX)) {
+					try {
+						Pattern.compile(selectedValue);
+						validationResult.setValid(true);
+					} catch (PatternSyntaxException e) {
+						Logger.debug(this, "Invalid RegEx " + selectedValue);
+					}
 				}
 			}
 			if (!validationResult.isValid()) {
@@ -123,7 +139,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 			// Set field #1 configuration and available options
 			ConditionletInput inputField = new ConditionletInput();
 			inputField.setId(INPUT1_ID);
-			inputField.setMultipleSelectionAllowed(true);
+			inputField.setMultipleSelectionAllowed(false);
 			inputField.setDefaultValue("");
 			inputField.setMinNum(1);
 			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
@@ -181,6 +197,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 			inputField2.setId(INPUT2_ID);
 			inputField2.setMultipleSelectionAllowed(false);
 			inputField2.setDefaultValue("");
+			inputField2.setMinNum(1);
 			this.inputValues.put(inputField2.getId(), inputField2);
 		}
 		return this.inputValues.values();
@@ -190,30 +207,28 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
 		if (!UtilMethods.isSet(values) && values.size() == 0
 				&& !UtilMethods.isSet(comparisonId)) {
 			return false;
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		List<String> selectedHeaders = new ArrayList<String>();
+		String selectedHeader = null;
 		String headerValue = null;
 		for (ConditionValue value : values) {
 			inputValues.add(new ConditionletInputValue(value.getId(), value
 					.getValue()));
 			if (INPUT1_ID.equalsIgnoreCase(value.getId())) {
-				selectedHeaders.add(value.getValue());
+				selectedHeader = value.getValue();
 			} else {
 				headerValue = value.getValue();
 			}
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
-		if (!validationResults.hasErrors()) {
-			return evaluateInput(request, comparison, selectedHeaders,
-					headerValue);
+		if (validationResults.hasErrors()) {
+			return false;
 		}
-		return false;
+		return evaluateInput(request, comparison, selectedHeader, headerValue);
 	}
 
 	/**
@@ -224,28 +239,21 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	 *            - The {@link HttpServletRequest} object.
 	 * @param comparison
 	 *            - The {@link Comparison} mechanism for the values.
-	 * @param selectedHeaders
-	 *            - The list of selected headers specified in the conditionlet
+	 * @param selectedHeader
+	 *            - The selected header specified in the conditionlet
 	 * @param conditionletInput
-	 *            - The value that matches the selected header(s).
-	 * @return If the input value matches the header(s) values(2), returns
-	 *         {@code true}. Otherwise, returns {@code false}.
+	 *            - The value that matches the selected header.
+	 * @return If the input value matches the header value, returns {@code true}
+	 *         . Otherwise, returns {@code false}.
 	 */
 	private boolean evaluateInput(HttpServletRequest request,
-			Comparison comparison, List<String> selectedHeaders,
+			Comparison comparison, String selectedHeader,
 			String conditionletInput) {
-		boolean result = false;
-		for (String headerName : selectedHeaders) {
-			String headerValue = request.getHeader(headerName);
-			if (!UtilMethods.isSet(headerValue)) {
-				return false;
-			}
-			result = compare(comparison, headerValue, conditionletInput);
-			if (!result) {
-				break;
-			}
+		String headerValue = request.getHeader(selectedHeader);
+		if (!UtilMethods.isSet(headerValue)) {
+			return false;
 		}
-		return result;
+		return compare(comparison, headerValue, conditionletInput);
 	}
 
 	/**

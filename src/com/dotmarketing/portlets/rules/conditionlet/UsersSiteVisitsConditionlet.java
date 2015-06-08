@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -13,12 +12,12 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Config;
@@ -26,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+import com.liferay.portal.model.User;
 
 /**
  * This conditionlet will allow CMS users to check the number of times a
@@ -42,11 +42,12 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "site-visits";
 	private static final String CONDITIONLET_NAME = "User's Visits to Site";
+
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
-	private static final String COMPARISON_LOWER_THAN = "lower";
 	private static final String COMPARISON_LOWER_THAN_OR_EQUAL_TO = "lowerOrEqual";
+	private static final String COMPARISON_LOWER_THAN = "lower";
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
@@ -67,11 +68,11 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 					"Is Greater Than or Equal To"));
 			this.comparisons.add(new Comparison(COMPARISON_EQUAL_TO,
 					"Is Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
-					"Is Lower Than"));
 			this.comparisons.add(new Comparison(
 					COMPARISON_LOWER_THAN_OR_EQUAL_TO,
 					"Is Lower Than or Equal To"));
+			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
+					"Is Lower Than"));
 		}
 		return this.comparisons;
 	}
@@ -105,7 +106,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -148,37 +149,32 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 			return false;
 		}
 		String hostId = getHostId(request);
-		if (!UtilMethods.isSet(hostId)) {
+		String userId = getLoggedInUserId(request);
+		if (!UtilMethods.isSet(hostId) || !UtilMethods.isSet(userId)) {
 			return false;
 		}
-		Clickstream clickstream = (Clickstream) request
-				.getSession().getAttribute("clickstream");
-		int visitCounter = Integer.parseInt(inputValue);
-		int visits = getSiteVisits(hostId);
-		// Increase the visit counter cache with new sessions
-		CacheLocator.getSiteVisitCache().addSiteVisit(hostId);
-		// Take current session into account
-		visits++;
+		int conditionletValue = Integer.parseInt(inputValue);
+		int visits = getSiteVisits(userId, hostId);
 		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-			if (visits > visitCounter) {
+			if (visits > conditionletValue) {
 				return true;
 			}
 		} else if (comparison.getId().startsWith(
 				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-			if (visits >= visitCounter) {
+			if (visits >= conditionletValue) {
 				return true;
 			}
 		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
-			if (visits == visitCounter) {
-				return true;
-			}
-		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
-			if (visits < visitCounter) {
+			if (visits == conditionletValue) {
 				return true;
 			}
 		} else if (comparison.getId().endsWith(
 				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-			if (visits <= visitCounter) {
+			if (visits <= conditionletValue) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+			if (visits < conditionletValue) {
 				return true;
 			}
 		}
@@ -208,34 +204,57 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 	}
 
 	/**
-	 * Returns the amount of visits to a specific site. The information
+	 * Returns the ID of the logged-in user based on the
+	 * {@code HttpServletRequest} object.
 	 * 
+	 * @param request
+	 *            - The {@code HttpServletRequest} object.
+	 * @return The ID of the user, or {@code null} if an error occurred when
+	 *         retrieving the user information.
+	 */
+	private String getLoggedInUserId(HttpServletRequest request) {
+		try {
+			User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+			if (user != null) {
+				return user.getUserId();
+			}
+		} catch (DotRuntimeException | PortalException | SystemException e) {
+			Logger.error(this, "Could not retrieve current user information.");
+		}
+		return null;
+	}
+
+	/**
+	 * Returns the number of times a user has visited the site that the URL
+	 * belongs to.
+	 * 
+	 * @param userId
+	 *            - The ID of the currently logged-in user.
 	 * @param hostId
 	 *            - The ID of the host that the URL belongs to.
-	 * @return A {@code List<String>} containing the URLs that the specified
-	 *         user has requested to the specified host.
+	 * 
+	 * @return The number of visits.
 	 */
-	private int getSiteVisits(String hostId) {
-		int visits = CacheLocator.getSiteVisitCache().getSiteVisits(hostId);
+	public int getSiteVisits(String userId, String hostId) {
+		int visits = CacheLocator.getSiteVisitCache().getSiteVisits(userId,
+				hostId);
 		if (visits < 0) {
 			visits = 0;
 			DotConnect dc = new DotConnect();
-			String query = "select coalesce(sum(visits), 0) as visits "
-					+ "from analytic_summary where host_id = ?";
+			String query = "SELECT visits FROM analytic_summary_user_visits WHERE user_id = ? AND host_id = ?";
 			dc.setSQL(query);
+			dc.addParam(userId);
 			dc.addParam(hostId);
 			try {
 				List<Map<String, Object>> results = dc.loadObjectResults();
-				for (Map<String, Object> record : results) {
-					Object obj = record.get("visits");
-					if (UtilMethods.isSet(obj)) {
-						BigDecimal value = (BigDecimal) obj;
-						visits = value.intValue();
-					}
+				if (!results.isEmpty()) {
+					Map<String, Object> record = results.get(0);
+					Long visitsLong = (Long) record.get("visits");
+					visits = visitsLong.intValue();
 				}
 				if (visits > 0) {
-					CacheLocator.getSiteVisitCache().setSiteVisits(hostId,
-							visits);
+					CacheLocator.getSiteVisitCache().setSiteVisits(userId,
+							hostId, visits);
 				}
 			} catch (DotDataException e) {
 				Logger.error(this,
