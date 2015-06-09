@@ -195,6 +195,7 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.jersey-guava', version:'2.17_1'
 	compile group: 'com.dotcms.lib', name: 'dot.jersey-media-jaxb', version:'2.17_1'
 	compile group: 'com.dotcms.lib', name: 'dot.jersey-media-multipart', version:'2.17_1'
+	compile group: 'com.dotcms.lib', name: 'dot.jersey-media-json-jackson', version:'2.17_1'
 	compile group: 'com.dotcms.lib', name: 'dot.jersey-server', version:'2.17_1'
 	compile group: 'com.dotcms.lib', name: 'dot.org.osgi.core', version:'4.2.0_1'
 	compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version:'1.0.1_1'
