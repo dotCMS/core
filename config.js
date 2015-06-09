@@ -1,6 +1,7 @@
 System.config({
   "baseURL": "/",
-  "transpiler": "traceur",
+  "defaultJSExtensions": true,
+  "transpiler": "typescript",
   "traceurOptions": {
     "annotations": true,
     "memberVariables": true,
@@ -8,13 +9,18 @@ System.config({
     "typeAssertionModule": "rtts_assert/rtts_assert",
     "types": true
   },
+  "typescriptOptions": {
+    "allowNonTsExtensions": true,
+    "emitDecoratorMetadata": true
+  },
   "paths": {
-    "src/*": "src/*",
     "*.css": "*.css",
     "*.html": "*.html",
-    "github:*": "jspm_packages/github/*.js",
-    "npm:*": "jspm_packages/npm/*.js",
-    "*": "*.js"
+    "github:*": "jspm_packages/github/*",
+    "npm:*": "jspm_packages/npm/*"
+  },
+  "packages": {
+    "src": {}
   }
 });
 
@@ -37,17 +43,27 @@ System.config({
     "flux": "npm:flux@2.0.3",
     "jsonp": "npm:jsonp@0.2.0",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
+    "requires": "npm:requires@1.0.2",
     "rest": "github:cujojs/rest@1.3.1",
     "rtts_assert": "npm:rtts_assert@2.0.0-alpha.26",
     "rx": "npm:rx@2.5.3",
+    "src": "/src",
     "text": "github:systemjs/plugin-text@0.0.2",
     "traceur": "github:jmcriffey/bower-traceur@0.0.88",
     "traceur-runtime": "github:jmcriffey/bower-traceur-runtime@0.0.88",
+    "ts": "github:frankwallis/plugin-typescript@1.0.5",
+    "typescript": "github:mhegazy/typescript@v1.5-beta2",
     "zone.js": "npm:zone.js@0.4.4",
     "github:cujojs/rest@1.3.1": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0",
       "when": "npm:when@3.7.3"
+    },
+    "github:frankwallis/plugin-typescript@1.0.5": {
+      "convert-source-map": "npm:convert-source-map@0.4.1",
+      "path": "npm:path@0.11.14",
+      "requires": "npm:requires@1.0.2",
+      "typescript": "npm:typescript@1.5.0-beta"
     },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
@@ -211,6 +227,11 @@ System.config({
     "npm:constants-browserify@0.0.1": {
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
+    "npm:convert-source-map@0.4.1": {
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
+      "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "path": "github:jspm/nodelibs-path@0.1.0"
+    },
     "npm:core-util-is@1.0.1": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0"
     },
@@ -247,14 +268,6 @@ System.config({
       "pbkdf2": "npm:pbkdf2@3.0.4",
       "public-encrypt": "npm:public-encrypt@2.0.1",
       "randombytes": "npm:randombytes@2.0.1"
-    },
-    "npm:debug@2.1.3": {
-      "fs": "github:jspm/nodelibs-fs@0.1.2",
-      "ms": "npm:ms@0.7.0",
-      "net": "github:jspm/nodelibs-net@0.1.2",
-      "process": "github:jspm/nodelibs-process@0.1.1",
-      "tty": "github:jspm/nodelibs-tty@0.1.0",
-      "util": "github:jspm/nodelibs-util@0.1.0"
     },
     "npm:debug@2.2.0": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
@@ -306,7 +319,7 @@ System.config({
       "util": "github:jspm/nodelibs-util@0.1.0"
     },
     "npm:jsonp@0.2.0": {
-      "debug": "npm:debug@2.1.3"
+      "debug": "npm:debug@2.2.0"
     },
     "npm:miller-rabin@2.0.1": {
       "bn.js": "npm:bn.js@2.0.5",
@@ -332,6 +345,11 @@ System.config({
     },
     "npm:path-browserify@0.0.0": {
       "process": "github:jspm/nodelibs-process@0.1.1"
+    },
+    "npm:path@0.11.14": {
+      "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "process": "github:jspm/nodelibs-process@0.1.1",
+      "util": "github:jspm/nodelibs-util@0.1.0"
     },
     "npm:pbkdf2@3.0.4": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
@@ -453,6 +471,14 @@ System.config({
       "source-map-support": "npm:source-map-support@0.2.10",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0",
       "util": "github:jspm/nodelibs-util@0.1.0"
+    },
+    "npm:typescript@1.5.0-beta": {
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0",
+      "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "os": "github:jspm/nodelibs-os@0.1.0",
+      "path": "github:jspm/nodelibs-path@0.1.0",
+      "process": "github:jspm/nodelibs-process@0.1.1",
+      "readline": "github:jspm/nodelibs-readline@0.1.0"
     },
     "npm:url@0.10.3": {
       "assert": "github:jspm/nodelibs-assert@0.1.0",

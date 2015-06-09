@@ -26,7 +26,7 @@
           XDebug.enable("jasmine, *, .*"); // String of comma separated regex. Not glob patterns.
 
           Promise.all([
-            System.import('src/rules-engine/SpecRunner.ts')
+            System.import('src/rules-engine/SpecRunner.ts!')
           ]).then(
               function (p2) {
                 var tests = p2[0];

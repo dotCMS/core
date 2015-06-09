@@ -1,6 +1,6 @@
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
-import {Core, Check} from 'src/dc/index.es6';
-import {Rule} from 'src/rules-engine/api/RuleEngineTypes.es6'
+import * as RuleEngine from 'src/rules-engine/RuleEngine.js';
+import {Core, Check} from 'src/dc/index.js';
+import {Rule} from 'src/rules-engine/api/RuleEngineTypes.js'
 
 
 describe('RuleEngineTypes.rule', function () {

@@ -1,6 +1,6 @@
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
-import {Core, Check} from 'src/dc/index.es6';
-import {mocks} from 'src/rules-engine/datamocks/rule.mocks.es6'
+import * as RuleEngine from 'src/rules-engine/RuleEngine.js';
+import {Core, Check} from 'src/dc/index.js';
+import {mocks} from 'src/rules-engine/datamocks/rule.mocks.js'
 
 import rest from 'rest';
 

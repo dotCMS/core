@@ -1,7 +1,7 @@
-import XDebug from 'src/dc/log-config.es6';
+import XDebug from 'src/dc/log-config.js';
 let log = XDebug('DC.Check');
 
-import {Verify} from 'src/entity-forge/Verify.es6'
+import {Verify} from 'src/entity-forge/Verify.js'
 
 
 let createCheckError = function (validation, value,  message) {

@@ -2,9 +2,9 @@ import events from 'events';
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.store');
 
-import {Core} from 'src/dc/index.es6'
-import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
+import {Core} from 'src/dc/index.js'
+import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts!';
+import * as RuleEngine from 'src/rules-engine/RuleEngine.js';
 
 
 let CHANGE_EVENT = 'change';

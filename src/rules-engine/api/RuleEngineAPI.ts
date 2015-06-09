@@ -1,12 +1,12 @@
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.api');
 
-import {mocks} from 'src/rules-engine/datamocks/rule.mocks.es6';
+import {mocks} from 'src/rules-engine/datamocks/rule.mocks.js';
 
-import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
-import {Core, Check} from 'src/dc/index.es6';
-import * as RuleEngine from 'src/rules-engine/actions/RuleEngineActionCreators.es6';
-import * as RuleTypes from  'src/rules-engine/api/RuleEngineTypes.es6';
+import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts!';
+import {Core, Check} from 'src/dc/index.js';
+import * as RuleEngine from 'src/rules-engine/actions/RuleEngineActionCreators.js';
+import * as RuleTypes from  'src/rules-engine/api/RuleEngineTypes.js';
 
 
 let dispatchToken = AppDispatcher.register((action) => {

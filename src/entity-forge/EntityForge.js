@@ -1,6 +1,6 @@
-import {LazyVerify, Verify} from 'src/entity-forge/Verify.es6'
-import {ValidationError} from 'src/entity-forge/Validation.es6'
-import {EntityBase} from 'src/entity-forge/EntityBaseTypes.es6'
+import {LazyVerify, Verify} from 'src/entity-forge/Verify.js'
+import {ValidationError} from 'src/entity-forge/Validation.js'
+import {EntityBase} from 'src/entity-forge/EntityBaseTypes.js'
 
 let propertyErrorsToString = function () {
   return '[' + this.errors.map((error)=> error.validator.msg).join("],    [") + ']'

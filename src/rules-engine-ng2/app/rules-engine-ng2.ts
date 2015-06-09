@@ -3,17 +3,13 @@ let log = XDebug('RulesEngineNg2.RulesEngineComponent');
 
 import Reflect from 'reflect-metadata';
 
-import {bootstrap, NgFor, NgIf} from 'angular2/angular2';
+import {bootstrap, NgFor, NgIf, EventEmitter, Component, View} from 'angular2/angular2';
 
-// TODO(ggranum): Once the application is transpiled by TS instead of Traceur,
-// add those imports back into 'angular2/angular2';
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
+import {FormBuilder, Validators, formDirectives, ControlGroup, Control,
+    ControlArray} from 'angular2/forms';
 
-import {FormBuilder, Validators, formDirectives, ControlGroup} from 'angular2/forms';
-
-import {Core} from 'src/dc/index.es6'
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
+import {Core} from 'src/dc/index.js'
+import * as RuleEngine from 'src/rules-engine/RuleEngine.js';
 
 
 import "bootstrap/css/bootstrap.css!";
@@ -37,7 +33,7 @@ import clauseTemplate from './clause.tpl.html!text'
 @View({
   template: ruleActionTemplate,
   directives: [formDirectives, NgIf, NgFor],
-  injectables: [FormBuilder]
+  appInjector: [FormBuilder]
 })
 class RuleActionComponent {
   _ruleAction:any;
@@ -220,7 +216,7 @@ class ClauseGroupComponent {
     "rule": "rule",
     "index": "index"
   },
-  injectables: [
+  appInjector: [
     FormBuilder
   ]
 })
@@ -229,25 +225,27 @@ class ClauseGroupComponent {
   directives: [RuleActionComponent, ClauseGroupComponent, formDirectives, NgIf, NgFor]
 })
 class RuleComponent {
-  _rule:any;
+  _rule:Object;
   form:ControlGroup;
   index:number;
   builder:FormBuilder;
-  isCollapse: any;
+  isCollapse: boolean;
 
   constructor(b:FormBuilder) {
+    this._rule = {};
     this.builder = b;
     this.isCollapse = true;
+
   }
 
-  get rule():any {
+  get rule():Object {
     return this._rule
   }
 
-  set rule(rule:any) {
+  set rule(rule:Object) {
     this._rule = rule
     var ruleControl = this.builder.group({
-      "name": [rule.name, Validators.required]
+      "name": [rule['name'], Validators.required]
     });
     ruleControl.controls.name.valueChanges.toRx().subscribe((v) => log("it changed: ", v))
     this.form = ruleControl
@@ -272,12 +270,12 @@ class RuleComponent {
   removeRule() {
     //RuleActionCreators.removeRule(this.rule.$key)
   }
-
 }
 
 
 @Component({
-  selector: 'rules-engine'
+  selector: 'rules-engine',
+  appInjector: [FormBuilder]
 })
 @View({
   template: rulesEngineTemplate,
@@ -294,7 +292,10 @@ class RulesEngine {
   }
 
   onChange(event) {
-    RuleEngine.store.get().then((rulesAry)=> this.rules = rulesAry)
+    RuleEngine.store.get().then((rulesAry)=> {
+      log("hmmm?", rulesAry)
+      this.rules = [{name: "Hello"}, {name: "World"}]
+    })
   }
 
 
