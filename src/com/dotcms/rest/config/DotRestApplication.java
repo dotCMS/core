@@ -3,6 +3,7 @@ package com.dotcms.rest.config;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
@@ -16,6 +17,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES = 	new HashSet<Class<?>>();
                     REST_CLASSES.add(MultiPartFeature.class);
+                    REST_CLASSES.add(JacksonFeature.class);
 					REST_CLASSES.add(com.dotcms.rest.ESIndexResource.class);
 					REST_CLASSES.add(com.dotcms.rest.RoleResource.class);
 					REST_CLASSES.add(com.dotcms.rest.BundleResource.class);

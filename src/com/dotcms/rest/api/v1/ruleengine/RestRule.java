@@ -19,11 +19,9 @@ public class RestRule {
     public final String name;
     public final String fireOn;
     public final Boolean shortCircuit;
-    public final String site;
     public final String folder;
     public final Integer priority;
     public final Boolean enabled;
-    public final Date modDate;
 
 
     private RestRule(Builder builder) {
@@ -31,11 +29,9 @@ public class RestRule {
         name = builder.name;
         fireOn = builder.fireOn;
         shortCircuit = builder.shortCircuit;
-        site = builder.site;
         folder = builder.folder;
         priority = builder.priority;
         enabled = builder.enabled;
-        modDate = builder.modDate;
     }
 
     @JsonIgnoreProperties({"groups", "actions"})
@@ -44,11 +40,9 @@ public class RestRule {
         @JsonProperty private String name;
         @JsonProperty private String fireOn;
         @JsonProperty private Boolean shortCircuit=false;
-        @JsonProperty private String site;
         @JsonProperty private String folder;
         @JsonProperty private Integer priority=0;
         @JsonProperty private Boolean enabled=false;
-        @JsonProperty private Date modDate;
 
         /*
             RestRule restRule = new RestRule.Builder()
@@ -85,11 +79,6 @@ public class RestRule {
             return this;
         }
 
-        public Builder site(String site) {
-            this.site = site;
-            return this;
-        }
-
         public Builder folder(String folder) {
             this.folder = folder;
             return this;
@@ -105,21 +94,14 @@ public class RestRule {
             return this;
         }
 
-        public Builder modDate(Date modDate) {
-            this.modDate = modDate;
-            return this;
-        }
-
         public Builder from(RestRule copy) {
             id = copy.id;
             name = copy.name;
             fireOn = copy.fireOn;
             shortCircuit = copy.shortCircuit;
-            site = copy.site;
             folder = copy.folder;
             priority = copy.priority;
             enabled = copy.enabled;
-            modDate = copy.modDate;
             return this;
         }
 
