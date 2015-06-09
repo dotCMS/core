@@ -263,7 +263,7 @@ public class GeoIp2CityDbUtil {
 	 * @throws GeoIp2Exception
 	 *             If the IP address is not present in the service database.
 	 */
-	public Date getDateTime(String ipAddress) throws UnknownHostException,
+	public Calendar getDateTime(String ipAddress) throws UnknownHostException,
 			IOException, GeoIp2Exception {
 		TimeZone timeZone = getTimeZone(ipAddress);
 		Calendar calendar = Calendar.getInstance(timeZone);
@@ -275,7 +275,8 @@ public class GeoIp2CityDbUtil {
 		int second = calendar.get(Calendar.SECOND);
 		long clientDateTime = new GregorianCalendar(year, month, day, hour,
 				minute, second).getTimeInMillis();
-		return new Date(clientDateTime);
+		calendar.setTimeInMillis(clientDateTime);
+		return calendar;
 	}
 
 }

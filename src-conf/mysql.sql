@@ -1826,8 +1826,8 @@ create table clickstream (
    clickstream_id bigint not null auto_increment,
    cookie_id varchar(255),
    user_id varchar(255),
-   start_date datetime,
-   end_date datetime,
+   start_date datetime(3),
+   end_date datetime(3),
    referer varchar(255),
    remote_address varchar(255),
    remote_hostname varchar(255),
@@ -3177,3 +3177,15 @@ create table rule_condition_value (id varchar(36) primary key,condition_id varch
 create table rule_action (id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date datetime);
 create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id),key varchar(255) not null,value text);
 create index idx_rules_fire_on on dot_rule (fire_on);
+
+CREATE TABLE analytic_summary_user_visits (
+    user_id VARCHAR(255) NOT NULL,
+    host_id VARCHAR(36) NOT NULL,
+    visits BIGINT NOT NULL,
+    last_start_date DATETIME(3) NOT NULL,
+    PRIMARY KEY (user_id, host_id),
+    UNIQUE (user_id, host_id)
+);
+CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
+CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
+CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);

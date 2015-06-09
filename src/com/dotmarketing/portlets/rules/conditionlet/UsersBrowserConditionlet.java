@@ -44,6 +44,7 @@ public class UsersBrowserConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "browser";
 	private static final String CONDITIONLET_NAME = "User's Browser";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -122,7 +123,7 @@ public class UsersBrowserConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;

@@ -1,6 +1,8 @@
 package com.dotmarketing.factories;
 
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -69,7 +71,19 @@ public class ClickstreamFactory {
 			associatedIdentifier = (String) request.getAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE);
 		}
 		if (!UtilMethods.isSet(associatedIdentifier)) {
-			associatedIdentifier = APILocator.getIdentifierAPI().find(host, pointer ).getInode();
+			String uri = "";
+			try {
+				uri = URLDecoder.decode(request.getRequestURI(),
+						UtilMethods.getCharsetConfiguration());
+			} catch (UnsupportedEncodingException e) {
+				Logger.debug(ClickstreamFactory.class,
+						"Could not retrieve URI from request.");
+			}
+			if (!UtilMethods.isSet(uri)) {
+				uri = pointer;
+			}
+			associatedIdentifier = APILocator.getIdentifierAPI()
+					.find(host, uri).getInode();
 		}
 
 		if (UtilMethods.isSet(associatedIdentifier)) {

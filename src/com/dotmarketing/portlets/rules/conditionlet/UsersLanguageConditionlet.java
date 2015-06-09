@@ -31,6 +31,7 @@ public class UsersLanguageConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "language";
 	private static final String CONDITIONLET_NAME = "User's Language";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -88,7 +89,7 @@ public class UsersLanguageConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputField.getId() + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;

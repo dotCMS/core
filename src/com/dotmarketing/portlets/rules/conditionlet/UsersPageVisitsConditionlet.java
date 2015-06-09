@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -12,6 +14,7 @@ import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -39,6 +42,7 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "number-visited-pages";
 	private static final String CONDITIONLET_NAME = "User's Visited Pages";
+	
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
@@ -64,11 +68,11 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 					"Is Greater Than or Equal To"));
 			this.comparisons.add(new Comparison(COMPARISON_EQUAL_TO,
 					"Is Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
-					"Is Lower Than"));
 			this.comparisons.add(new Comparison(
 					COMPARISON_LOWER_THAN_OR_EQUAL_TO,
 					"Is Lower Than or Equal To"));
+			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
+					"Is Lower Than"));
 		}
 		return this.comparisons;
 	}
@@ -79,7 +83,6 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -103,7 +106,7 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 				validationResult.setValid(true);
 			} else {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -113,7 +116,6 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
-			// Set field configuration
 			inputField.setId(INPUT_ID);
 			inputField.setUserInputAllowed(true);
 			inputField.setMultipleSelectionAllowed(false);
@@ -127,48 +129,48 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		boolean result = false;
-		if (UtilMethods.isSet(values) && values.size() > 0
-				&& UtilMethods.isSet(comparisonId)) {
-			Comparison comparison = getComparisonById(comparisonId);
-			Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-			String inputValue = null;
-			for (ConditionValue value : values) {
-				inputValues.add(new ConditionletInputValue(INPUT_ID, value
-						.getValue()));
-				inputValue = value.getValue();
+		if (!UtilMethods.isSet(values) || values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)) {
+			return false;
+		}
+		Comparison comparison = getComparisonById(comparisonId);
+		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+		String inputValue = null;
+		for (ConditionValue value : values) {
+			inputValues.add(new ConditionletInputValue(value.getId(), value
+					.getValue()));
+			inputValue = value.getValue();
+		}
+		ValidationResults validationResults = validate(comparison, inputValues);
+		if (validationResults.hasErrors()) {
+			return false;
+		}
+		int visitedPages = getTotalVisitedPages(request);
+		int conditionletInput = Integer.parseInt(inputValue);
+		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+			if (visitedPages > conditionletInput) {
+				return true;
 			}
-			ValidationResults validationResults = validate(comparison,
-					inputValues);
-			if (!validationResults.hasErrors()) {
-				int visitedPages = getTotalVisitedPages(request);
-				int conditionletInput = Integer.parseInt(inputValue);
-				if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-					if (visitedPages > conditionletInput) {
-						return true;
-					}
-				} else if (comparison.getId().startsWith(
-						COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-					if (visitedPages >= conditionletInput) {
-						return true;
-					}
-				} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
-					if (visitedPages == conditionletInput) {
-						return true;
-					}
-				} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
-					if (visitedPages < conditionletInput) {
-						return true;
-					}
-				} else if (comparison.getId().endsWith(
-						COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-					if (visitedPages <= conditionletInput) {
-						return true;
-					}
-				}
+		} else if (comparison.getId().startsWith(
+				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+			if (visitedPages >= conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+			if (visitedPages == conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(
+				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+			if (visitedPages <= conditionletInput) {
+				return true;
+			}
+		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+			if (visitedPages < conditionletInput) {
+				return true;
 			}
 		}
-		return result;
+		return false;
 	}
 
 	/**
@@ -181,18 +183,35 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 	 */
 	private int getTotalVisitedPages(HttpServletRequest request) {
 		String hostId = getHostId(request);
-		if (UtilMethods.isSet(hostId)) {
-			Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request
-					.getSession().getAttribute(
-							WebKeys.RULES_CONDITIONLET_VISITEDURLS);
-			if (visitedUrls != null && visitedUrls.containsKey(hostId)) {
-				Set<String> urlSet = visitedUrls.get(hostId);
-				if (urlSet != null) {
-					return urlSet.size();
-				}
-			}
+		if (!UtilMethods.isSet(hostId)) {
+			return 0;
 		}
-		return 0;
+		Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request
+				.getSession(true).getAttribute(
+						WebKeys.RULES_CONDITIONLET_VISITEDURLS);
+		if (visitedUrls == null) {
+			visitedUrls = new HashMap<String, Set<String>>();
+		}
+		Set<String> urlSet = null;
+		String uri = null;
+		try {
+			uri = HttpRequestDataUtil.getUri(request);
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Could not retrieved a valid URI from request: "
+					+ request.getRequestURL());
+		}
+		if (!visitedUrls.containsKey(hostId)) {
+			urlSet = new LinkedHashSet<String>();
+		} else {
+			urlSet = visitedUrls.get(hostId);
+		}
+		if (UtilMethods.isSet(uri) && !urlSet.contains(uri)) {
+			urlSet.add(uri);
+			visitedUrls.put(hostId, urlSet);
+			request.getSession(true).setAttribute(
+					WebKeys.RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
+		}
+		return urlSet.size();
 	}
 
 	/**
@@ -205,17 +224,18 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 	 *         retrieving the site information.
 	 */
 	private String getHostId(HttpServletRequest request) {
-		String hostId = null;
 		try {
 			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-			hostId = host.getIdentifier();
+			if (host != null) {
+				return host.getIdentifier();
+			}
 		} catch (PortalException | SystemException | DotDataException
 				| DotSecurityException e) {
 			Logger.error(this,
 					"Could not retrieve current host information for: "
 							+ request.getRequestURL());
 		}
-		return hostId;
+		return null;
 	}
 
 }

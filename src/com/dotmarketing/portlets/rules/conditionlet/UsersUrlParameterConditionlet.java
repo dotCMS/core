@@ -10,12 +10,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
@@ -34,6 +36,7 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 	private static final String INPUT1_ID = "urlparam-name";
 	private static final String INPUT2_ID = "urlparam-value";
 	private static final String CONDITIONLET_NAME = "User's URL Parameter";
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -73,7 +76,6 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -93,12 +95,26 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			if (UtilMethods.isSet(selectedValue)) {
-				validationResult.setValid(true);
-			} else {
+			String comparisonId = comparison.getId();
+			if (comparisonId.equals(COMPARISON_IS)
+					|| comparisonId.equals(COMPARISON_ISNOT)
+					|| comparisonId.equals(COMPARISON_STARTSWITH)
+					|| comparisonId.equals(COMPARISON_ENDSWITH)
+					|| comparisonId.equals(COMPARISON_CONTAINS)) {
+				if (UtilMethods.isSet(selectedValue)) {
+					validationResult.setValid(true);
+				}
+			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+				try {
+					Pattern.compile(selectedValue);
+					validationResult.setValid(true);
+				} catch (PatternSyntaxException e) {
+					Logger.debug(this, "Invalid RegEx " + selectedValue);
+				}
+			}
+			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputValue.getConditionletInputId() + "': '"
-						+ selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -113,13 +129,14 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 			inputField1.setId(INPUT1_ID);
 			inputField1.setUserInputAllowed(true);
 			inputField1.setMultipleSelectionAllowed(false);
+			inputField1.setMinNum(1);
 			this.inputValues.put(inputField1.getId(), inputField1);
 			ConditionletInput inputField2 = new ConditionletInput();
 			// Set field #2 configuration and available options
 			inputField2.setId(INPUT2_ID);
 			inputField2.setUserInputAllowed(true);
 			inputField2.setMultipleSelectionAllowed(false);
-			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
+			inputField1.setMinNum(1);
 			this.inputValues.put(inputField2.getId(), inputField2);
 		}
 		return this.inputValues.values();
@@ -173,9 +190,9 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 				return true;
 			}
 		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(urlParamValue);
+			Pattern pattern = Pattern.compile(conditionletValues.get(INPUT2_ID));
 			Matcher matcher = pattern
-					.matcher(conditionletValues.get(INPUT2_ID));
+					.matcher(urlParamValue);
 			if (matcher.find()) {
 				return true;
 			}

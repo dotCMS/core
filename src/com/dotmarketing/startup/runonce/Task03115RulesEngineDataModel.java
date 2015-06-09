@@ -4,6 +4,16 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
 
 import java.util.List;
 
+/**
+ * This task creates and updates a number of tables involved in the Rules Engine
+ * implementation, namely, the core structure of the Rules Engine functionality,
+ * Conditionlet-specific modifications, among others.
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since 03-04-2015
+ *
+ */
 public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
 
 
@@ -73,9 +83,24 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("key varchar(255) not null,")
             .append("value text")
-            .append(");");
-
-
+            .append(");")
+    		
+			 // Create the ANALYTIC_SUMMARY_USER_VISITS table
+			.append("CREATE TABLE analytic_summary_user_visits (")
+			.append("user_id VARCHAR(255) NOT NULL,")
+			.append("host_id VARCHAR(36) NOT NULL,")
+			.append("visits BIGINT NOT NULL,")
+			.append("last_start_date DATETIME(3) NOT NULL,")
+			.append("PRIMARY KEY (user_id, host_id)")
+			.append(");")
+    		
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);")
+    		
+    		.append("ALTER TABLE clickstream MODIFY start_date DATETIME(3);")
+    		.append("ALTER TABLE clickstream MODIFY end_date DATETIME(3);");
+    
     private final StringBuilder POSTGRES = new StringBuilder()
             // create RULE table
             .append("create table dot_rule(")
@@ -140,7 +165,20 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("key varchar(255) not null,")
             .append("value text")
-            .append(");");
+            .append(");")
+            
+            // Create the ANALYTIC_SUMMARY_USER_VISITS table
+			.append("CREATE TABLE analytic_summary_user_visits (")
+			.append("user_id VARCHAR(255) NOT NULL,")
+			.append("host_id VARCHAR(36) NOT NULL,")
+			.append("visits INT8 NOT NULL,")
+			.append("last_start_date TIMESTAMP NOT NULL,")
+			.append("PRIMARY KEY (user_id, host_id)")
+			.append(");")
+    		
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
+    		.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
 
     private final StringBuilder ORACLE = new StringBuilder()
             // create RULE table
@@ -207,7 +245,20 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar2(36) references rule_action(id),")
             .append("key varchar2(255) not null,")
             .append("value nclob")
-            .append(");");
+            .append(");")
+    
+    		// Create the ANALYTIC_SUMMARY_USER_VISITS table
+ 			.append("CREATE TABLE analytic_summary_user_visits (")
+ 			.append("user_id VARCHAR2(255) NOT NULL,")
+ 			.append("host_id VARCHAR2(36) NOT NULL,")
+ 			.append("visits NUMBER(19,0) NOT NULL,")
+ 			.append("last_start_date TIMESTAMP NOT NULL,")
+ 			.append("PRIMARY KEY (user_id, host_id)")
+ 			.append(");")
+     		
+     		.append("CREATE INDEX idx_analytic_user_visits_1 ON analytic_summary_user_visits (user_id);")
+     		.append("CREATE INDEX idx_analytic_user_visits_2 ON analytic_summary_user_visits (host_id);")
+     		.append("CREATE INDEX idx_analytic_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
 
     private final StringBuilder MSSQL = new StringBuilder()
             // create RULE table
@@ -272,7 +323,20 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("key varchar(255) not null,")
             .append("value text")
-            .append(");");
+            .append(");")
+    
+	        // Create the ANALYTIC_SUMMARY_USER_VISITS table
+			.append("CREATE TABLE analytic_summary_user_visits (")
+			.append("user_id VARCHAR(255) NOT NULL,")
+			.append("host_id VARCHAR(36) NOT NULL,")
+			.append("visits NUMERIC(19,0) NOT NULL,")
+			.append("last_start_date DATETIME NOT NULL,")
+			.append("PRIMARY KEY (user_id, host_id)")
+			.append(");")
+			
+			.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
+			.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
+			.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
 
     private final StringBuilder H2 = new StringBuilder()
             // create RULE table
@@ -338,7 +402,20 @@ public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("rule_action_id varchar(36) references rule_action(id),")
             .append("key varchar(255) not null,")
             .append("value text")
-            .append(");");
+            .append(");")
+    
+            // Create the ANALYTIC_SUMMARY_USER_VISITS table
+ 			.append("CREATE TABLE analytic_summary_user_visits (")
+ 			.append("user_id VARCHAR(255) NOT NULL,")
+ 			.append("host_id VARCHAR(36) NOT NULL,")
+ 			.append("visits BIGINT NOT NULL,")
+ 			.append("last_start_date TIMESTAMP NOT NULL,")
+ 			.append("PRIMARY KEY (user_id, host_id)")
+ 			.append(");")
+ 			
+ 			.append("CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);")
+ 			.append("CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);")
+ 			.append("CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);");
 
 
     @Override

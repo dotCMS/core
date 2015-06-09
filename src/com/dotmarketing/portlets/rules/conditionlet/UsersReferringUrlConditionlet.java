@@ -34,6 +34,7 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "referring-url";
 	private static final String CONDITIONLET_NAME = "User's Referring URL";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -111,7 +112,7 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;

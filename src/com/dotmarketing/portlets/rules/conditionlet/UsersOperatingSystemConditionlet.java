@@ -44,6 +44,7 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "os";
 	private static final String CONDITIONLET_NAME = "User's Operating System";
+	
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -122,7 +123,7 @@ public class UsersOperatingSystemConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+ INPUT_ID + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
