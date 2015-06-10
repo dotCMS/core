@@ -6,28 +6,28 @@ var minimist = require('minimist')
 var jspm = require('jspm')
 var pConfig = require('./package.json')
 var imports = {
-  exec:      require('child_process').exec,
-  karma:     require('karma').server,
+  exec: require('child_process').exec,
+  karma: require('karma').server,
   webServer: require('gulp-webserver')
 }
 
 var config = {
-  appProtocol:        'http',
-  appHostname:        'localhost',
-  appPort:            9000,
-  proxyProtocol:      'http',
-  proxyHostname:      'localhost',
-  proxyPort:          8080,
-  depBundles:         './jspm_bundles',
+  appProtocol: 'http',
+  appHostname: 'localhost',
+  appPort: 9000,
+  proxyProtocol: 'http',
+  proxyHostname: 'localhost',
+  proxyPort: 8080,
+  depBundles: './jspm_bundles',
   nonStandardBundles: {
-    'angular2/angular2':        'angular2',
-    'rtts_assert/rtts_assert':  'rtts_assert'
+    'angular2/angular2': 'angular2',
+    'rtts_assert/rtts_assert': 'rtts_assert'
   },
-  noBundle:           ['css', 'text'],
+  noBundle: ['css', 'text'],
   /**
    *  WARNING! These directories are deleted by the 'reset-workspace' task.
-  *   Do not add any directory that is present after a fresh 'clone' operation.
-  */
+   *   Do not add any directory that is present after a fresh 'clone' operation.
+   */
   transientDirectories: [
     './node_modules',
     './jspm_packages',
@@ -40,12 +40,12 @@ config.proxyHost = config.proxyProtocol + '://' + config.proxyHostname + ':' + c
 
 var minimistCliOpts = {
   boolean: ['open'],
-  alias:   {
+  alias: {
     'open': ['o']
   },
   default: {
     open: false,
-    env:  process.env.NODE_ENV || 'production'
+    env: process.env.NODE_ENV || 'production'
   }
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
@@ -65,13 +65,21 @@ gulp.task('jspmInstall', function (done) {
 })
 
 gulp.task('bundleDist', ['unbundle'], function (done) {
-    jspm.bundle('src/rules-engine-ng2/index.es6',
-        config.depBundles + '/rules-engine-app.bundle.js',
-        {
-            inject: true,
-            minify: true,
-            sourceMaps: false
-        })
+  jspm.bundle('src/rules-engine-ng2/index.es6',
+      config.depBundles + '/core-web.min.js',
+      {
+        inject: true,
+        minify: true,
+        sourceMaps: false
+      }).then(function () {
+        jspm.bundle('src/rules-engine-ng2/index.es6',
+            config.depBundles + '/core-web.js',
+            {
+              inject: true,
+              minify: false,
+              sourceMaps: true
+            }).then(done)
+      })
 })
 
 
@@ -81,27 +89,29 @@ gulp.task('bundleDeps', ['unbundle'], function (done) {
   for (var nm in deps) {
     if (config.noBundle.indexOf(nm) < 0) {
       promises.push(jspm.bundle(nm,
-        config.depBundles +
-        '/' +
-        nm +
-        '.bundle.js',
-        {inject:      true,
-          minify:     true,
-          sourceMaps: false
-        }))
+          config.depBundles +
+          '/' +
+          nm +
+          '.bundle.js',
+          {
+            inject: true,
+            minify: true,
+            sourceMaps: false
+          }))
     }
   }
   deps = config.nonStandardBundles || {}
   for (nm in deps) {
     promises.push(jspm.bundle(nm,
-      config.depBundles +
-      '/' +
-      deps[nm] +
-      '.bundle.js',
-      {inject:      true,
-        minify:     true,
-        sourceMaps: false
-      }))
+        config.depBundles +
+        '/' +
+        deps[nm] +
+        '.bundle.js',
+        {
+          inject: true,
+          minify: true,
+          sourceMaps: false
+        }))
   }
   Promise.all(promises).then(function (results) {
     done()
@@ -120,7 +130,7 @@ gulp.task('unbundle', ['default'], function (done) {
   })
 })
 
-gulp.task('karma', [], function(done){
+gulp.task('karma', [], function (done) {
   imports.karma.start({
     configFile: __dirname + '/karma.conf.js',
     singleRun: false,
@@ -128,7 +138,7 @@ gulp.task('karma', [], function(done){
   }, done);
 })
 
-gulp.task('i-test', function(done){
+gulp.task('i-test', function (done) {
 
   imports.karma.start({
     configFile: __dirname + '/karma.conf.js',
@@ -141,8 +151,8 @@ gulp.task('i-test', function(done){
       useBundles: true,
       loadFiles: ['src/**/*.it.es6'],
       serveFiles: ['src/**/*.ts', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
-                   'jspm_bundles/**/*.js',
-                   'thirdparty/**/*.{es6,ts}']
+        'jspm_bundles/**/*.js',
+        'thirdparty/**/*.{es6,ts}']
     }
   }, done)
 
@@ -189,22 +199,81 @@ gulp.task('start-server', function (done) {
   app.use(serveIndex('./'))
 
   http.createServer(app)
-    .listen(config.appPort)
-    .on('listening', function () {
-      console.log('Started connect web server on ' + config.appHost)
-      if (config.args.open) {
-        open(config.appHost)
-      }
-      else {
-        console.log("add the '-o' flag to automatically open the default browser")
-      }
-    })
+      .listen(config.appPort)
+      .on('listening', function () {
+        console.log('Started connect web server on ' + config.appHost)
+        if (config.args.open) {
+          open(config.appHost)
+        }
+        else {
+          console.log("add the '-o' flag to automatically open the default browser")
+        }
+      })
 
   done()
 })
 
+
+/**
+ *  Deploy Tasks
+ */
+gulp.task('packageRelease', ['bundleDist'], function (done) {
+  var outDir = __dirname + '/deploy'
+  var outPath = outDir + '/core-web.zip'
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir)
+  }
+  var output = fs.createWriteStream(outPath)
+  var archiver = require('archiver')
+  var archive = archiver.create('zip', {})
+
+  output.on('close', function () {
+    console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
+    done()
+  });
+
+  archive.on('error', function (err) {
+    throw err;
+  });
+
+  archive.pipe(output);
+
+  archive.append(fs.createReadStream('./jspm_bundles/core-web.min.js'), {name: 'core-web.min.js'})
+      .append(fs.createReadStream('./jspm_bundles/core-web.js'), {name: 'core-web.js'})
+      .append(fs.createReadStream('./jspm_bundles/core-web.js.map'), {name: 'core-web.js.map'})
+      .finalize()
+
+});
+
+gulp.task('deployRelease', ['packageRelease'], function (done) {
+  /* warning: Untested! Waiting on naming discussion - and artifactory credentials. */
+  var getRev = require('git-rev')
+  var config = require('./deploy-config.js').artifactory.release
+  var version = require('./package.json').version
+  var artifactoryUpload = require('gulp-artifactory-upload');
+
+  var deployName = 'core-web-' + version + ".zip";
+  console.log("Deploying artifact: ", deployName)
+  done();
+
+  //getRev.short(function (rev) {
+  //  console.log(config)
+  //  console.log("Git Revision", rev)
+  //  gulp.src('./deploy/core-web.zip')
+  //      .pipe(artifactoryUpload({
+  //        url: config.url,
+  //        username: config.username,
+  //        password: config.password,
+  //        rename: function (filename) {
+  //          return deployName
+  //        } // optional
+  //      }))
+  //      .on('error', function(err){throw err})
+  //})
+});
+
 //noinspection JSUnusedLocalSymbols
-gulp.task('play', ['start-server'], function(done){
+gulp.task('play', ['start-server'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
@@ -213,8 +282,9 @@ gulp.task('clean', ['unbundle'], function (done) {
   del(['./dist'], done)
 })
 
-gulp.task('reset-workspace', function(done){
+gulp.task('reset-workspace', function (done) {
   del(config.transientDirectories, done)
 })
 
-gulp.task('default', function () {});
+gulp.task('default', function () {
+});

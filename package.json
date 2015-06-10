@@ -1,4 +1,5 @@
 {
+  "version": "0.0.1",
   "description": "JSPM Components using React, Angular2.0, es6, and other related magic.",
   "repository": {
     "type": "git",
@@ -26,12 +27,15 @@
     }
   },
   "devDependencies": {
+    "archiver": "^0.14.4",
     "connect": "^3.3.4",
     "connect-livereload": "^0.5.3",
     "connect-modrewrite": "^0.8.1",
     "del": "^1.1.1",
+    "git-rev": "^0.2.1",
     "glob": "^5.0.5",
     "gulp": "^3.8.11",
+    "gulp-artifactory-upload": "^1.1.0",
     "gulp-concat": "~2.5.0",
     "gulp-watch": "^4.2.4",
     "gulp-webserver": "^0.9.1",
@@ -43,6 +47,7 @@
     "karma-jasmine": "^0.3.2",
     "karma-jspm": "git://github.com/ggranum/karma-jspm.git",
     "minimist": "^1.1.1",
+    "node-zip": "^1.1.1",
     "open": "0.0.5",
     "proxy-middleware": "^0.11.0",
     "serve-index": "^1.6.3",

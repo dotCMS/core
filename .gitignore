@@ -20,6 +20,10 @@ bower_components/
 jspm_packages/
 jspm_bundles/
 
+#################
+# Local config files
+#################
+*.local.*
 
 #################
 # IntelliJ Idea (this is actually including IntelliJ files!)
