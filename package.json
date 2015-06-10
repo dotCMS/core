@@ -19,10 +19,9 @@
       "requires": "npm:requires@^1.0.2",
       "rest": "github:cujojs/rest@^1.x.x",
       "rtts_assert": "npm:rtts_assert@^2.0.0-alpha.26",
-      "rx": "npm:rx@^2.x.x",
+      "rx": "npm:rx@^2.5.2",
       "text": "github:systemjs/plugin-text@^0.0.2",
-      "typescript": "github:mhegazy/typescript@v1.5-beta2",
-      "zone.js": "npm:zone.js@^0.x.x"
+      "zone.js": "npm:zone.js@^0.4.3"
     },
     "devDependencies": {
       "traceur": "github:jmcriffey/bower-traceur@0.0.88",

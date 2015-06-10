@@ -1,8 +1,8 @@
-<div class="panel panel-default rule" [control-group]="form">
+<div class="panel panel-default rule" [ng-form-model]="form" #f="form">
   <div class="panel-heading">
     <div class="row">
       <div class="col-sm-8">
-        <input type="text" class="form-control  rule-title" placeholder="Describe the rule" control="name">
+        <input type="text" class="form-control  rule-title" placeholder="Describe the rule" ng-control="name">
       </div>
       <div class="col-sm-4">
         <div class="operations rule-operations">
@@ -32,35 +32,35 @@
       </div>
     </div>
   </div>
-  <div class="panel-body collapse" [class.in]="!isCollapse">
-    <div class="section-separator">
-      <h2>When</h2>
-      <hr/>
-    </div>
-    <clause-group *ng-for="var cg of rule.groups; var i=index"
-                    [rule]="rule"
-                    [group]="cg"
-                    [index]="i + 1">
-    </clause-group>
+  <!--<div class="panel-body collapse" [class.in]="!isCollapse">-->
+    <!--<div class="section-separator">-->
+      <!--<h2>When</h2>-->
+      <!--<hr/>-->
+    <!--</div>-->
+    <!--<clause-group *ng-for="var cg of rule.groups; var i=index"-->
+                    <!--[rule]="rule"-->
+                    <!--[group]="cg"-->
+                    <!--[index]="i + 1">-->
+    <!--</clause-group>-->
 
-    <div class="section-separator">
-      <h2>Then</h2>
-      <hr/>
-    </div>
+    <!--<div class="section-separator">-->
+      <!--<h2>Then</h2>-->
+      <!--<hr/>-->
+    <!--</div>-->
 
-    <div class="panel panel-default actions">
-      <ul class="list-group">
-        <rule-action *ng-for="var act of rule.ruleActions; var i=index"
-                     [rule]="rule"
-                     [rule-action]="act"
-                     [index]="i + 1">
-        </rule-action>
-      </ul>
-    </div>
-    <button class="btn btn-default" ">
-      <span class="glyphicon glyphicon-plus-sign"></span>
-      <span>Add Action</span>
-    </button>
+    <!--<div class="panel panel-default actions">-->
+      <!--<ul class="list-group">-->
+        <!--<rule-action *ng-for="var act of rule.ruleActions; var i=index"-->
+                     <!--[rule]="rule"-->
+                     <!--[rule-action]="act"-->
+                     <!--[index]="i + 1">-->
+        <!--</rule-action>-->
+      <!--</ul>-->
+    <!--</div>-->
+    <!--<button class="btn btn-default" ">-->
+      <!--<span class="glyphicon glyphicon-plus-sign"></span>-->
+      <!--<span>Add Action</span>-->
+    <!--</button>-->
 
-  </div>
+  <!--</div>-->
 </div>
