@@ -34,7 +34,7 @@ System.config({
     "css": "github:systemjs/plugin-css@0.1.12",
     "debug": "npm:debug@2.2.0",
     "events": "github:jspm/nodelibs-events@0.1.1",
-    "firebase": "github:firebase/firebase-bower@2.2.6",
+    "firebase": "github:firebase/firebase-bower@2.2.7",
     "flux": "npm:flux@2.0.3",
     "jsonp": "npm:jsonp@0.2.0",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
@@ -120,7 +120,7 @@ System.config({
     "github:twbs/bootstrap@3.3.4": {
       "jquery": "github:components/jquery@2.1.4"
     },
-    "npm:amdefine@0.1.0": {
+    "npm:amdefine@0.1.1": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "module": "github:jspm/nodelibs-module@0.1.0",
       "path": "github:jspm/nodelibs-path@0.1.0",
@@ -208,7 +208,7 @@ System.config({
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "inherits": "npm:inherits@2.0.1",
       "ripemd160": "npm:ripemd160@1.0.1",
-      "sha.js": "npm:sha.js@2.4.1",
+      "sha.js": "npm:sha.js@2.4.2",
       "stream": "github:jspm/nodelibs-stream@0.1.0"
     },
     "npm:create-hmac@1.1.3": {
@@ -343,14 +343,14 @@ System.config({
     "npm:rx@2.5.3": {
       "process": "github:jspm/nodelibs-process@0.1.1"
     },
-    "npm:sha.js@2.4.1": {
+    "npm:sha.js@2.4.2": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "inherits": "npm:inherits@2.0.1",
       "process": "github:jspm/nodelibs-process@0.1.1"
     },
     "npm:source-map@0.1.43": {
-      "amdefine": "npm:amdefine@0.1.0",
+      "amdefine": "npm:amdefine@0.1.1",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.1"
