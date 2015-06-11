@@ -27,7 +27,7 @@
 	<path id="files-classpath">
 
 		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
-		<fileset dir="${target.root.dir}/../../lib" erroronmissingdir="false">
+		<fileset dir="${basedir}/../../${target.root.dir}/../../lib" erroronmissingdir="false">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="${target.root.dir}/../libs/buildlibs" erroronmissingdir="false">
@@ -35,7 +35,10 @@
 		</fileset>
 		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
 
-		<fileset dir="${target.root.dir}/WEB-INF/lib">
+		<fileset dir="${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="lib">
