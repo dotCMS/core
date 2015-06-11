@@ -350,4 +350,13 @@ public class ContentMap {
 		return content.isHTMLPage();
 	}
 
+	/**
+	 * Returns the {@link Contentlet} object this map is associated to.
+	 * 
+	 * @return The {@link Contentlet} object. 
+	 */
+	public Contentlet getContent() {
+		return this.content;
+	}
+
 }
