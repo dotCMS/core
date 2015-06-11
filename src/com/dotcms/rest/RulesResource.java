@@ -17,8 +17,12 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.ruleengine.RestCondition;
+import com.dotcms.rest.api.v1.ruleengine.RestConditionGroup;
 import com.dotcms.rest.api.v1.ruleengine.RestRule;
+import com.dotcms.rest.api.v1.ruleengine.RestRuleAction;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -110,6 +114,22 @@ public class RulesResource extends WebResource {
     }
 
     @VisibleForTesting
+    RuleAction getRuleAction(String ruleActionId, User user) {
+        try {
+            RuleAction ruleAction = rulesAPI.getRuleActionById(ruleActionId, user, false);
+            if (ruleAction == null) {
+                throw new NotFoundException("Rule Action not found: '%s'", ruleActionId);
+            }
+            return ruleAction;
+        } catch (DotDataException e) {
+            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    @VisibleForTesting
     ConditionGroup getConditionGroup(String groupId, User user) {
         try {
             ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
@@ -117,6 +137,22 @@ public class RulesResource extends WebResource {
                 throw new NotFoundException("ConditionGroup not found: '%s'", groupId);
             }
             return group;
+        } catch (DotDataException e) {
+            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    @VisibleForTesting
+    Condition getCondition(String conditionId, User user) {
+        try {
+            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
+            if (condition == null) {
+                throw new NotFoundException("Condition not found: '%s'", conditionId);
+            }
+            return condition;
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
@@ -201,23 +237,10 @@ public class RulesResource extends WebResource {
         User user = getUser(request);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
+            getHost(siteId, user);
+            getRule(ruleId, user);
 
             JSONObject groupsJSON = new JSONObject();
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
             List<ConditionGroup> conditionGroups = rulesAPI.getConditionGroupsByRule(ruleId, user, false);
 
             for (ConditionGroup conditionGroup : conditionGroups) {
@@ -262,27 +285,9 @@ public class RulesResource extends WebResource {
 
         try {
 
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
-
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            ConditionGroup group = getConditionGroup(groupId, user);
 
             JSONObject groupJSON = new com.dotmarketing.util.json.JSONObject(group, new String[]{"operator", "priority"});
 
@@ -331,27 +336,9 @@ public class RulesResource extends WebResource {
 
         try {
 
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (!UtilMethods.isSet(rule) || !UtilMethods.isSet(rule.getId())) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
-
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            ConditionGroup group = getConditionGroup(groupId, user);
 
             List<Condition> conditions = rulesAPI.getConditionsByConditionGroup(group.getId(), user, false);
 
@@ -397,27 +384,9 @@ public class RulesResource extends WebResource {
         User user = getUser(request);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            getConditionGroup(groupId, user);
 
             Condition condition = rulesAPI.getConditionById(conditionId, user, false);
             JSONObject conditionObject = new com.dotmarketing.util.json.JSONObject(condition);
@@ -442,8 +411,7 @@ public class RulesResource extends WebResource {
     @Path("/conditionlets")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getConditionlets(@Context HttpServletRequest request) throws JSONException {
-        InitDataObject initData = init(null, true, request, true);
-
+        User user = getUser(request);
 
         JSONObject jsonConditionlets = new JSONObject();
 
@@ -492,7 +460,6 @@ public class RulesResource extends WebResource {
     public Response getComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         User user = getUser(request);
 
-
         JSONObject jsonComparisons = new JSONObject();
 
         if (!UtilMethods.isSet(conditionletId)) {
@@ -534,8 +501,7 @@ public class RulesResource extends WebResource {
     @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getConditionletInputs(@Context HttpServletRequest request, @PathParam("id") String conditionletId, @PathParam("comparison") String comparison) throws JSONException {
-        InitDataObject initData = init(null, true, request, true);
-
+        User user = getUser(request);
 
         com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
 
@@ -571,8 +537,7 @@ public class RulesResource extends WebResource {
     @Path("/ruleactionlets")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getRuleActionlets(@Context HttpServletRequest request) throws JSONException {
-        InitDataObject initData = init(null, true, request, true);
-
+        User user = getUser(request);
 
         JSONObject jsonActionlets = new JSONObject();
 
@@ -611,20 +576,8 @@ public class RulesResource extends WebResource {
         JSONObject jsonActions = new JSONObject();
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
+            getHost(siteId, user);
+            Rule rule = getRule(ruleId, user);
 
             List<RuleAction> actions = rulesAPI.getRuleActionsByRule(rule.getId(), user, false);
 
@@ -634,7 +587,6 @@ public class RulesResource extends WebResource {
                 actionletObject.put("actionlet", action.getActionlet());
                 jsonActions.put(action.getId(), actionletObject);
             }
-
 
             return Response.ok(jsonActions.toString(), MediaType.APPLICATION_JSON).build();
 
@@ -683,7 +635,7 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response putRule(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
+    public RestRule putRule(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
@@ -691,7 +643,7 @@ public class RulesResource extends WebResource {
 
         updateRuleInternal(user, host.getIdentifier(), ruleId, restRule);
 
-        return Response.ok(restRule, MediaType.APPLICATION_JSON).build();
+        return restRule;
     }
 
     /**
@@ -707,40 +659,21 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, JSONObject groupJSON) throws
+    public Response postConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestConditionGroup conditionGroup) throws
             JSONException {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
         User user = getUser(request);
+        Host host = getHost(siteId, user);
+        Rule rule = getRule(ruleId, user);
 
-        JSONObject resultsObject = new JSONObject();
+        String conditionGroupId = createConditionGroupInternal(rule.getId(), conditionGroup, user);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = new ConditionGroup();
-            group.setRuleId(ruleId);
-            group.setOperator(Condition.Operator.valueOf(groupJSON.optString("operator", Condition.Operator.AND.name())));
-            group.setPriority(groupJSON.optInt("priority", 0));
-
-            rulesAPI.saveConditionGroup(group, user, false);
-            resultsObject.put("id", group.getId());
-            return Response.ok(resultsObject.toString(), MediaType.APPLICATION_JSON).build();
-
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error saving Condition Group", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+            URI path = new URI(ruleId);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{ \"id\": \"" + conditionGroupId + "\" }").build();
+        } catch (URISyntaxException e) {
+            throw new InternalServerException(e, "Could not create valid URI to Rule id '%s'", ruleId);
         }
     }
 
@@ -757,48 +690,17 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, @PathParam("groupId") String groupId,
-                                         JSONObject groupJSON) throws JSONException {
+    public RestConditionGroup putConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, @PathParam("groupId") String groupId,
+                                         RestConditionGroup conditionGroup) throws JSONException {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
+        Host host = getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
+        Rule rule = getRule(ruleId, user);
 
-        try {
+        updateConditionGroupInternal(user, rule.getId(), groupId, conditionGroup);
 
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            if (!UtilMethods.isSet(groupId)) {
-                Logger.info(getClass(), "Unable to update Condition Group - 'id' not provided");
-                throw new DotDataException("Unable to update Condition Group - 'id' not provided");
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
-
-            group.setOperator(Condition.Operator.valueOf(groupJSON.optString("operator", Condition.Operator.AND.name())));
-            group.setPriority(groupJSON.optInt("priority", 0));
-
-            return Response.ok(groupJSON.toString(), MediaType.APPLICATION_JSON).build();
-
-
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error updating Condition Group", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        return conditionGroup;
     }
 
     /**
@@ -846,7 +748,7 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response putCondition(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId,
+    public RestCondition putCondition(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId,
                                     @PathParam("groupId") String groupId, @PathParam("conditionId") String conditionId, RestCondition restCondition) throws DotDataException, DotSecurityException, JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -858,7 +760,7 @@ public class RulesResource extends WebResource {
 
         updateConditionInternal(user, ruleId, groupId, conditionId, restCondition);
 
-        return Response.ok(restCondition, MediaType.APPLICATION_JSON).build();
+        return restCondition;
     }
 
     /**
@@ -874,67 +776,21 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/actions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response saveRuleAction(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, JSONObject actionJSON) throws
+    public Response postRuleAction(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRuleAction ruleAction) throws
             JSONException {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
         User user = getUser(request);
+        Host host = getHost(siteId, user);
+        Rule rule = getRule(ruleId, user);
 
-        JSONObject resultsObject = new JSONObject();
+        String ruleActionId = createRuleActionInternal(rule.getId(), ruleAction, user);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            RuleAction action = new RuleAction();
-            action.setRuleId(ruleId);
-
-            RuleActionlet actionlet = rulesAPI.findActionlet(actionJSON.getString("actionlet"));
-
-            if (actionlet == null) {
-                Logger.info(this, "Rule Actionlet not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule Actionlet not found").build();
-            }
-
-            action.setName(actionlet.getName());
-            action.setPriority(actionJSON.optInt("priority", 0));
-            action.setActionlet(actionJSON.getString("actionlet"));
-
-
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray parametersJSON = actionJSON.optJSONArray("parameters");
-            List<RuleActionParameter> parameters = new ArrayList<>();
-
-            if (UtilMethods.isSet(parametersJSON)) {
-                for (int i = 0; i < parametersJSON.length(); i++) {
-                    JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
-                    RuleActionParameter parameter = new RuleActionParameter();
-                    parameter.setKey(parameterJSON.getString("key"));
-                    parameter.setValue(parameterJSON.getString("value"));
-                    parameters.add(parameter);
-                }
-            }
-
-
-            action.setParameters(parameters);
-
-            rulesAPI.saveRuleAction(action, user, false);
-
-            resultsObject.put("id", action.getId());
-            return Response.ok(resultsObject.toString(), MediaType.APPLICATION_JSON).build();
-
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error saving Rule Action", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+            URI path = new URI(ruleId);
+            return Response.ok().type(MediaType.APPLICATION_JSON).entity("{ \"id\": \"" + ruleActionId + "\" }").build();
+        } catch (URISyntaxException e) {
+            throw new InternalServerException(e, "Could not create valid URI to Rule id '%s'", ruleId);
         }
     }
 
@@ -951,70 +807,16 @@ public class RulesResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateRuleAction(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, @PathParam("actionId") String actionId, JSONObject actionJSON) throws
+    public RestRuleAction updateRuleAction(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId,
+                                           @PathParam("actionId") String actionId, RestRuleAction ruleAction) throws
             JSONException {
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
+        getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
-        try {
+        updateRuleActionInternal(user, ruleId, actionId, ruleAction);
 
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            RuleAction action = rulesAPI.getRuleActionById(actionId, user, false);
-
-            if (action == null) {
-                Logger.info(this, "Rule Action not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule Action not found").build();
-            }
-
-
-            action.setRuleId(actionJSON.getString("ruleId"));
-
-            RuleActionlet actionlet = rulesAPI.findActionlet(actionJSON.getString("actionlet"));
-
-            if (actionlet == null) {
-                Logger.info(this, "Rule Actionlet not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule Actionlet not found").build();
-            }
-
-            action.setName(actionlet.getName());
-            action.setPriority(actionJSON.optInt("priority", 0));
-            action.setActionlet(actionJSON.getString("actionlet"));
-
-            com.dotcms.repackage.org.codehaus.jettison.json.JSONArray parametersJSON = actionJSON.optJSONArray("parameters");
-            List<RuleActionParameter> parameters = new ArrayList<>();
-
-            if (UtilMethods.isSet(parametersJSON)) {
-                for (int i = 0; i < parametersJSON.length(); i++) {
-                    JSONObject parameterJSON = (JSONObject) parametersJSON.get(i);
-                    RuleActionParameter parameter = rulesAPI.getRuleActionParameterById(parameterJSON.getString("id"), user, false);
-                    parameter.setKey(parameterJSON.getString("key"));
-                    parameter.setValue(parameterJSON.getString("value"));
-                    parameters.add(parameter);
-                }
-            }
-
-            action.setParameters(parameters);
-
-            rulesAPI.saveRuleAction(action, user, false);
-
-            return Response.ok(actionJSON.toString(), MediaType.APPLICATION_JSON).build();
-
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error updating Rule Action", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        return ruleAction;
     }
 
 
@@ -1034,21 +836,8 @@ public class RulesResource extends WebResource {
         User user = getUser(request);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
+            getHost(siteId, user);
+            Rule rule = getRule(ruleId, user);
             rulesAPI.deleteRule(rule, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
@@ -1069,33 +858,14 @@ public class RulesResource extends WebResource {
     @DELETE
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{conditionGroupId}")
     public Response deleteConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId,
-                                         @PathParam("ruleId") String ruleId, @PathParam("conditionGroupId") String conditionGroupId) throws
+                                         @PathParam("ruleId") String ruleId, @PathParam("conditionGroupId") String groupId) throws
             JSONException {
         User user = getUser(request);
 
         try {
-
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(conditionGroupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
-
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            ConditionGroup group = getConditionGroup(groupId, user);
             rulesAPI.deleteConditionGroup(group, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
@@ -1121,34 +891,10 @@ public class RulesResource extends WebResource {
         User user = getUser(request);
 
         try {
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            ConditionGroup group = rulesAPI.getConditionGroupById(groupId, user, false);
-
-            if (group == null) {
-                Logger.info(this, "Condition Group not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition Group not found").build();
-            }
-
-            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
-
-            if (condition == null) {
-                Logger.info(this, "Condition not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Condition not found").build();
-            }
-
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            getConditionGroup(groupId, user);
+            Condition condition = getCondition(conditionId, user);
             rulesAPI.deleteCondition(condition, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
@@ -1176,27 +922,9 @@ public class RulesResource extends WebResource {
         User user = getUser(request);
 
         try {
-            Host host = getHost(siteId, user);
-
-            if (host == null) {
-
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Site not found").build();
-            }
-
-            Rule rule = rulesAPI.getRuleById(ruleId, user, false);
-
-            if (rule == null) {
-                Logger.info(this, "Rule not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule not found").build();
-            }
-
-            RuleAction action = rulesAPI.getRuleActionById(actionId, user, false);
-
-            if (action == null) {
-                Logger.info(this, "Rule Action not found");
-                return Response.status(HttpStatus.SC_NOT_FOUND).entity("Rule Action not found").build();
-            }
-
+            getHost(siteId, user);
+            getRule(ruleId, user);
+            RuleAction action = getRuleAction(actionId, user);
             rulesAPI.deleteRuleAction(action, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
@@ -1266,6 +994,79 @@ public class RulesResource extends WebResource {
         rule.setPriority(restRule.priority);
         rule.setShortCircuit(restRule.shortCircuit);
         rule.setEnabled(restRule.enabled);
+    }
+
+    private String createRuleActionInternal(String ruleId, RestRuleAction restRuleAction, User user) {
+        try {
+            RuleAction ruleAction = new RuleAction();
+            applyRestRuleActionToRuleAction(ruleId, restRuleAction, ruleAction);
+            rulesAPI.saveRuleAction(ruleAction, user, false);
+            return ruleAction.getId();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    private String updateRuleActionInternal(User user, String ruleId, String ruleActionId, RestRuleAction restRuleAction) {
+        try {
+            RuleAction ruleAction = rulesAPI.getRuleActionById(ruleActionId, user, false);
+
+            if (ruleAction == null) {
+                throw new NotFoundException("Rule Action with id '%s' not found: ", ruleId);
+            }
+            applyRestRuleActionToRuleAction(ruleId, restRuleAction, ruleAction);
+            rulesAPI.saveRuleAction(ruleAction, user, false);
+            return ruleAction.getId();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    private void applyRestRuleActionToRuleAction(String ruleId, RestRuleAction restRuleAction, RuleAction ruleAction) {
+        ruleAction.setRuleId(ruleId);
+        ruleAction.setName(restRuleAction.getName());
+        ruleAction.setActionlet(restRuleAction.getActionlet());
+        ruleAction.setPriority(restRuleAction.getPriority());
+        ruleAction.setParameters(restRuleAction.getParameters());
+    }
+
+    private String createConditionGroupInternal(String ruleId, RestConditionGroup restConditionGroup, User user) {
+        try {
+            ConditionGroup conditionGroup = new ConditionGroup();
+            applyRestConditionGroupToConditionGroup(ruleId, restConditionGroup, conditionGroup);
+            rulesAPI.saveConditionGroup(conditionGroup, user, false);
+            return conditionGroup.getId();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    private String updateConditionGroupInternal(User user, String ruleId, String conditionGroupId, RestConditionGroup restConditionGroup) {
+        try {
+            ConditionGroup conditionGroup = rulesAPI.getConditionGroupById(conditionGroupId, user, false);
+            if (conditionGroup == null) {
+                throw new NotFoundException("Condition Group with id '%s' not found: ", conditionGroupId);
+            }
+            applyRestConditionGroupToConditionGroup(ruleId, restConditionGroup, conditionGroup);
+            rulesAPI.saveConditionGroup(conditionGroup, user, false);
+            return conditionGroup.getId();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    private void applyRestConditionGroupToConditionGroup(String ruleId, RestConditionGroup restConditionGroup, ConditionGroup conditionGroup) {
+        conditionGroup.setRuleId(ruleId);
+        conditionGroup.setOperator(restConditionGroup.getOperator());
+        conditionGroup.setPriority(restConditionGroup.getPriority());
     }
 
     private String createConditionInternal(String ruleId, String groupId, RestCondition restCondition, User user) {
