@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.ruleengine;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -13,14 +14,14 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 public class RestConditionGroup {
 
     private final String id;
-    private final Condition.Operator operator;
+    private final String operator;
     private final int priority;
 
     public String getId() {
         return id;
     }
 
-    public Condition.Operator getOperator() {
+    public String getOperator() {
         return operator;
     }
 
@@ -35,9 +36,9 @@ public class RestConditionGroup {
     }
 
     public static final class Builder {
-        private String id;
-        private Condition.Operator operator;
-        private int priority=0;
+        @JsonProperty private String id;
+        @JsonProperty private String operator;
+        @JsonProperty private int priority=0;
 
         public Builder() {}
 
@@ -46,7 +47,7 @@ public class RestConditionGroup {
             return this;
         }
 
-        public Builder operator(Condition.Operator operator) {
+        public Builder operator(String operator) {
             this.operator = operator;
             return this;
         }
@@ -65,7 +66,13 @@ public class RestConditionGroup {
 
 
         public void validate(){
-            checkNotNull(operator, BadRequestException.class, "condition.operator is required.");
+            checkNotNull(operator, BadRequestException.class, "conditionGroup.operator is required.");
+
+            try {
+                Condition.Operator.valueOf(operator);
+            } catch(IllegalArgumentException iae) {
+                throw new BadRequestException(iae, "conditionGroup.operator is invalid.");
+            }
         }
 
         public RestConditionGroup build() {

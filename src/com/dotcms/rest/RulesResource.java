@@ -17,12 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.rest.InitDataObject;
-import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.ruleengine.RestCondition;
-import com.dotcms.rest.api.v1.ruleengine.RestConditionGroup;
-import com.dotcms.rest.api.v1.ruleengine.RestRule;
-import com.dotcms.rest.api.v1.ruleengine.RestRuleAction;
+import com.dotcms.rest.api.v1.ruleengine.*;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -1065,7 +1060,7 @@ public class RulesResource extends WebResource {
 
     private void applyRestConditionGroupToConditionGroup(String ruleId, RestConditionGroup restConditionGroup, ConditionGroup conditionGroup) {
         conditionGroup.setRuleId(ruleId);
-        conditionGroup.setOperator(restConditionGroup.getOperator());
+        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.getOperator()));
         conditionGroup.setPriority(restConditionGroup.getPriority());
     }
 
@@ -1102,11 +1097,25 @@ public class RulesResource extends WebResource {
         condition.setRuleId(ruleId);
         condition.setConditionGroup(groupId);
         condition.setName(restCondition.getName());
-        condition.setConditionletId(restCondition.getConditionletId());
+        condition.setConditionletId(restCondition.getConditionlet());
         condition.setComparison(restCondition.getComparison());
         condition.setOperator(restCondition.getOperator());
         condition.setPriority(restCondition.getPriority());
+
+        if(restCondition.getValues()!=null && !restCondition.getValues().isEmpty()) {
+            List<ConditionValue> values = new ArrayList<>();
+
+            for(RestConditionValue value: restCondition.getValues()){
+                ConditionValue newValue = new ConditionValue();
+                newValue.setId(value.getId());
+                newValue.setValue(value.getValue());
+                newValue.setPriority(value.getPriority());
+            }
+
+            condition.setValues(values);
+        }
     }
+
 
     @VisibleForTesting
     RestRule mapJsonToRestRule(Host host, JsonNode json) {

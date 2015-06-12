@@ -17,7 +17,6 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
 					REST_CLASSES = 	new HashSet<Class<?>>();
                     REST_CLASSES.add(MultiPartFeature.class);
-                    REST_CLASSES.add(JacksonFeature.class);
 					REST_CLASSES.add(com.dotcms.rest.ESIndexResource.class);
 					REST_CLASSES.add(com.dotcms.rest.RoleResource.class);
 					REST_CLASSES.add(com.dotcms.rest.BundleResource.class);

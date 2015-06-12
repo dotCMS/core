@@ -13,7 +13,7 @@ public class RuleAction {
     private int priority;
     private String actionlet;
     private Date modDate;
-    List<RuleActionParameter> parameters;
+    private List<RuleActionParameter> parameters;
 
     public String getId() {
         return id;

@@ -76,7 +76,6 @@ public class RulesAPITest extends TestBase {
         // Create new Rule
 
         JSONObject ruleJSON = new JSONObject();
-        ruleJSON.put("site", defaultHost.getIdentifier());
         ruleJSON.put("name", "testRule");
         ruleJSON.put("enabled", "true");
         ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
@@ -93,7 +92,6 @@ public class RulesAPITest extends TestBase {
         // Create new Condition Group
 
         JSONObject groupJSON = new JSONObject();
-        groupJSON.put("ruleId", ruleId);
         groupJSON.put("operator", Condition.Operator.AND.name());
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(groupJSON.toString()));

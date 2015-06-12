@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.rules.model;
 
 public class ConditionValue {
-    String id;
-    String conditionId;
-    String value;
-    int priority;
+    private String id;
+    private String conditionId;
+    private String value;
+    private int priority;
 
     public String getId() {
         return id;
