@@ -7,37 +7,9 @@
 
 </head>
 <body>
-  <rules-engine>Loading...</rules-engine>
+<rules-engine>Loading...</rules-engine>
 
-  <!-- DEV MODE -->
-  <script src="jspm_packages/system.src.js"></script>
-  <script src="config.js"></script>
-
-  <script>
-
-    Promise.all([
-      System.import('zone.js'),
-      System.import('debug')
-    ]).then(
-        function (p1) {
-          var XDebug = p1[1];
-          XDebug.disable(); // Clear LocalStorage so changes to log-config files 'take'
-          System.import('src/rules-engine-ng2/index.es6').then(
-              function (app) {
-                app.main().then(function () {})
-              });
-        });
-
-
-  </script>
-
-  <!-- PRODUCTION MODE --><!-- to generate build.js, run: jspm bundle-sfx --minify proj/main -->
-
-  <!--<script src="../jspm_packages/github/jmcriffey/bower-traceur-runtime@0.0.87/traceur-runtime.min.js"></script>--><!--<script src="../dist/rules-engine.sfx.js"></script>-->
-
-
-  <!-- -->
-
+<script src="./jspm_bundles/core-web.sfx.js"></script>
 
 </body>
 </html>

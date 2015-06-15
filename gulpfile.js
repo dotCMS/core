@@ -18,7 +18,7 @@ var config = {
   proxyProtocol: 'http',
   proxyHostname: 'localhost',
   proxyPort: 8080,
-  depBundles: './jspm_bundles',
+  depBundles: './dist',
   nonStandardBundles: {
     'angular2/angular2': 'angular2',
     'rtts_assert/rtts_assert': 'rtts_assert'
@@ -31,7 +31,7 @@ var config = {
   transientDirectories: [
     './node_modules',
     './jspm_packages',
-    './jspm_bundles'
+    './build'
   ]
 }
 config.appHost = config.appProtocol + '://' + config.appHostname + ':' + config.appPort
@@ -50,36 +50,42 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-
-gulp.task('jspmInstall', function (done) {
-  imports.exec('jspm install', function (error, stdout, stderr) {
-    if (stdout) {
-      console.log(stdout);
-    }
-    if (stderr) {
-      console.warn(stderr)
-    }
-    done();
-  })
-
-})
-
 gulp.task('bundleDist', ['unbundle'], function (done) {
-  jspm.bundle('src/rules-engine-ng2/index.es6',
-      config.depBundles + '/core-web.min.js',
+
+  var bundleSfx = function () {
+    var sfxPath = config.depBundles + '/core-web.sfx.js'
+    console.info("Bundling self-executing build to " + sfxPath)
+
+    jspm.bundleSFX('./index',
+        sfxPath,
+        {
+          inject: false,
+          minify: true,
+          sourceMaps: false
+        }).then(done)
+  };
+
+  var bundleDev = function () {
+    var devPath = config.depBundles + '/core-web.js'
+    console.info("Bundling unminified build to " + devPath)
+    jspm.bundle('./index',
+        devPath,
+        {
+          inject: false,
+          minify: false,
+          sourceMaps: true
+        }).then(bundleSfx)
+  }
+  var minifiedPath = config.depBundles + '/core-web.min.js'
+  console.info("Bundling minified build to " + minifiedPath)
+  jspm.bundle('./index',
+      minifiedPath,
       {
-        inject: true,
+        inject: false,
         minify: true,
         sourceMaps: false
-      }).then(function () {
-        jspm.bundle('src/rules-engine-ng2/index.es6',
-            config.depBundles + '/core-web.js',
-            {
-              inject: true,
-              minify: false,
-              sourceMaps: true
-            }).then(done)
-      })
+      }).then(bundleDev)
+
 })
 
 
@@ -151,7 +157,7 @@ gulp.task('i-test', function (done) {
       useBundles: true,
       loadFiles: ['src/**/*.it.es6'],
       serveFiles: ['src/**/*.ts', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
-        'jspm_bundles/**/*.js',
+        'build/**/*.js',
         'thirdparty/**/*.{es6,ts}']
     }
   }, done)
@@ -213,12 +219,16 @@ gulp.task('start-server', function (done) {
   done()
 })
 
+gulp.task('build', function(done){
+  return gulp.src('./*.html').pipe(gulp.dest('./dist/'))
+})
+
 
 /**
  *  Deploy Tasks
  */
-gulp.task('packageRelease', ['bundleDist'], function (done) {
-  var outDir = __dirname + '/deploy'
+gulp.task('packageRelease', ['build','bundleDist'], function (done) {
+  var outDir = __dirname + '/dist'
   var outPath = outDir + '/core-web.zip'
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir)
@@ -238,14 +248,15 @@ gulp.task('packageRelease', ['bundleDist'], function (done) {
 
   archive.pipe(output);
 
-  archive.append(fs.createReadStream('./jspm_bundles/core-web.min.js'), {name: 'core-web.min.js'})
-      .append(fs.createReadStream('./jspm_bundles/core-web.js'), {name: 'core-web.js'})
-      .append(fs.createReadStream('./jspm_bundles/core-web.js.map'), {name: 'core-web.js.map'})
+  archive.append(fs.createReadStream('./dist/core-web.min.js'), {name: 'core-web.min.js'})
+      .append(fs.createReadStream('./dist/core-web.js'), {name: 'core-web.js'})
+      .append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})
+      .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .finalize()
 
 });
 
-gulp.task('deployRelease', ['packageRelease'], function (done) {
+gulp.task('publishArtifacts', ['packageRelease'], function (done) {
   /* warning: Untested! Waiting on naming discussion - and artifactory credentials. */
   var getRev = require('git-rev')
   var config = require('./deploy-config.js').artifactory.release
@@ -272,6 +283,10 @@ gulp.task('deployRelease', ['packageRelease'], function (done) {
   //})
 });
 
+gulp.task('publishGitHubPage', ['packageRelease'], function(done){
+
+} )
+
 //noinspection JSUnusedLocalSymbols
 gulp.task('play', ['start-server'], function (done) {
   // if 'done' is not passed in this task will not block.
@@ -279,7 +294,7 @@ gulp.task('play', ['start-server'], function (done) {
 
 
 gulp.task('clean', ['unbundle'], function (done) {
-  del(['./dist'], done)
+  del(['./dist', './build'], done)
 })
 
 gulp.task('reset-workspace', function (done) {
