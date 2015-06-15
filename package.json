@@ -37,6 +37,7 @@
     "gulp": "^3.8.11",
     "gulp-artifactory-upload": "^1.1.0",
     "gulp-concat": "~2.5.0",
+    "gulp-replace": "^0.5.3",
     "gulp-watch": "^4.2.4",
     "gulp-webserver": "^0.9.1",
     "http-proxy": "^1.11.1",

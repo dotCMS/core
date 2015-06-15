@@ -5,6 +5,8 @@ var del = require('del')
 var minimist = require('minimist')
 var jspm = require('jspm')
 var pConfig = require('./package.json')
+var replace = require('gulp-replace')
+
 var imports = {
   exec: require('child_process').exec,
   karma: require('karma').server,
@@ -18,7 +20,7 @@ var config = {
   proxyProtocol: 'http',
   proxyHostname: 'localhost',
   proxyPort: 8080,
-  depBundles: './dist',
+  depBundles: './build/',
   nonStandardBundles: {
     'angular2/angular2': 'angular2',
     'rtts_assert/rtts_assert': 'rtts_assert'
@@ -31,7 +33,8 @@ var config = {
   transientDirectories: [
     './node_modules',
     './jspm_packages',
-    './build'
+    './build',
+    './dist'
   ]
 }
 config.appHost = config.appProtocol + '://' + config.appHostname + ':' + config.appPort
@@ -218,16 +221,21 @@ gulp.task('start-server', function (done) {
 
   done()
 })
-
-gulp.task('build', function(done){
-  return gulp.src('./*.html').pipe(gulp.dest('./dist/'))
+gulp.task('copyBootstrap', function(){
+  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
+})
+gulp.task('copyMain', function(){
+  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
+})
+gulp.task('copyAll', ['bundleDist', 'copyMain', 'copyBootstrap'], function () {
+  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
 
 
 /**
  *  Deploy Tasks
  */
-gulp.task('packageRelease', ['build','bundleDist'], function (done) {
+gulp.task('packageRelease', ['copyAll'], function (done) {
   var outDir = __dirname + '/dist'
   var outPath = outDir + '/core-web.zip'
   if (!fs.existsSync(outDir)) {
@@ -283,9 +291,77 @@ gulp.task('publishArtifacts', ['packageRelease'], function (done) {
   //})
 });
 
-gulp.task('publishGitHubPage', ['packageRelease'], function(done){
+gulp.task('ghPages-clone', ['packageRelease'], function(done){
+  var exec = require('child_process').exec;
 
-} )
+  var options = {
+    cwd: __dirname,
+    timeout: 60000
+  }
+  if (fs.existsSync(__dirname + '/gh_pages')) {
+    del.sync('./gh_pages')
+  }
+  exec('git clone -b gh-pages git@github.com:dotCMS/core-web.git gh_pages', options, function (err, stdout, stderr) {
+    console.log(stdout);
+    if (err) {
+      console.log(stderr);
+      throw err;
+    }
+    del.sync(['./gh_pages/*.js', './gh_pages/*.map', './gh_pages/*.html', './gh_pages/*.zip'])
+    gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function(){
+      done()
+    })
+  })
+
+
+})
+
+gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
+  var exec = require('child_process').exec;
+
+  var options = {
+    cwd: __dirname + '/gh_pages',
+    timeout: 60000
+  }
+
+  var gitAdd = function(opts){
+    console.log('adding files to git.')
+    exec('git add .', opts, function (err, stdout, stderr) {
+      console.log(stdout);
+      if (err) {
+        console.log(stderr);
+        done(err);
+      } else {
+        gitCommit(opts)
+      }
+
+    })
+  }
+
+  var gitCommit = function(opts){
+    exec('git commit -m "Autobuild gh-pages..."', opts, function (err, stdout, stderr) {
+      console.log(stdout);
+      if (err) {
+        console.log(stderr);
+        done(err);
+      } else {
+        gitPush(opts)
+      }
+    })
+  }
+
+  var gitPush = function(opts){
+    exec('git push -u  origin gh-pages', opts, function (err, stdout, stderr) {
+      if (err) {
+        console.log(stderr);
+        done(err);
+      } else {
+        done()
+      }
+    })
+  }
+  gitAdd(options)
+})
 
 //noinspection JSUnusedLocalSymbols
 gulp.task('play', ['start-server'], function (done) {
@@ -294,12 +370,14 @@ gulp.task('play', ['start-server'], function (done) {
 
 
 gulp.task('clean', ['unbundle'], function (done) {
-  del(['./dist', './build'], done)
+  del.sync(['./dist', './build', './gh_pages'])
+  done()
 })
 
 gulp.task('reset-workspace', function (done) {
   del(config.transientDirectories, done)
 })
 
-gulp.task('default', function () {
+gulp.task('default', function (done) {
+  done()
 });
