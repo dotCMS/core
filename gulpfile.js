@@ -265,7 +265,6 @@ gulp.task('packageRelease', ['copyAll'], function (done) {
 });
 
 gulp.task('publishSnapshot', ['packageRelease'], function (done) {
-  /* warning: Untested! Waiting on naming discussion - and artifactory credentials. */
   var getRev = require('git-rev')
   var config = require('./deploy-config.js').artifactory.snapshot
   var version = require('./package.json').version
