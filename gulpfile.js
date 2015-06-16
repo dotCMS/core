@@ -20,7 +20,7 @@ var config = {
   proxyProtocol: 'http',
   proxyHostname: 'localhost',
   proxyPort: 8080,
-  depBundles: './build/',
+  depBundles: './build',
   nonStandardBundles: {
     'angular2/angular2': 'angular2',
     'rtts_assert/rtts_assert': 'rtts_assert'
@@ -264,31 +264,36 @@ gulp.task('packageRelease', ['copyAll'], function (done) {
 
 });
 
-gulp.task('publishArtifacts', ['packageRelease'], function (done) {
+gulp.task('publishSnapshot', ['packageRelease'], function (done) {
   /* warning: Untested! Waiting on naming discussion - and artifactory credentials. */
   var getRev = require('git-rev')
-  var config = require('./deploy-config.js').artifactory.release
+  var config = require('./deploy-config.js').artifactory.snapshot
   var version = require('./package.json').version
   var artifactoryUpload = require('gulp-artifactory-upload');
 
-  var deployName = 'core-web-' + version + ".zip";
-  console.log("Deploying artifact: ", deployName)
-  done();
+  getRev.short(function (rev) {
+    var dateStr = new Date().toISOString().replace(/T.+/, '').replace(/-/g, '')
+    var versionStr = dateStr + 'R' + rev + '-SNAPSHOT';
+    var deployName = 'core-web-' + versionStr + ".zip"
+    config.url = config.url + '/com/dotcms/core-web/' + versionStr
 
-  //getRev.short(function (rev) {
-  //  console.log(config)
-  //  console.log("Git Revision", rev)
-  //  gulp.src('./deploy/core-web.zip')
-  //      .pipe(artifactoryUpload({
-  //        url: config.url,
-  //        username: config.username,
-  //        password: config.password,
-  //        rename: function (filename) {
-  //          return deployName
-  //        } // optional
-  //      }))
-  //      .on('error', function(err){throw err})
-  //})
+    console.log("Deploying artifact: PUT ", config.url + '/' + deployName)
+    console.log("Name: ", deployName)
+    console.log("Date: ", dateStr)
+    console.log("Rev: ", rev)
+    console.log("Version: ", versionStr)
+
+    return gulp.src('./dist/core-web.zip')
+        .pipe(artifactoryUpload({
+          url: config.url,
+          username: config.username,
+          password: config.password,
+          rename: function (filename) {
+            return deployName
+          }
+        }))
+        .on('error', function(err){throw err})
+  })
 });
 
 gulp.task('ghPages-clone', ['packageRelease'], function(done){
