@@ -3,8 +3,8 @@ package com.dotcms.rest.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
+import com.dotcms.rest.api.v1.ruleengine.RulesResource;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
@@ -38,7 +38,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
-					REST_CLASSES.add(com.dotcms.rest.RulesResource.class);
+					REST_CLASSES.add(RulesResource.class);
 
 				}
 			}

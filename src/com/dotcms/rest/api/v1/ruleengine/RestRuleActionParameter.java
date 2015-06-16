@@ -7,10 +7,11 @@ import com.dotcms.rest.exception.BadRequestException;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
-@JsonDeserialize(builder = RestConditionValue.Builder.class)
-class RestConditionValue {
+@JsonDeserialize(builder = RestRuleActionParameter.Builder.class)
+class RestRuleActionParameter {
 
     private final String id;
+    private final String key;
     private final String value;
     private final int priority;
 
@@ -26,19 +27,26 @@ class RestConditionValue {
         return priority;
     }
 
-    private RestConditionValue(Builder builder) {
+    public String getKey() {
+        return key;
+    }
+
+    private RestRuleActionParameter(Builder builder) {
         id = builder.id;
+        key = builder.key;
         value = builder.value;
         priority = builder.priority;
     }
 
     public static final class Builder {
         @JsonProperty private String id;
+        @JsonProperty private final String key;
         @JsonProperty private final String value;
         @JsonProperty private int priority = 0;
 
         @JsonCreator
-        public Builder(@JsonProperty("value") String value) {
+        public Builder(@JsonProperty("key") String key, @JsonProperty("value") String value) {
+            this.key = key;
             this.value = value;
         }
 
@@ -53,12 +61,13 @@ class RestConditionValue {
         }
 
         public void validate(){
+            checkNotNull(key, BadRequestException.class, "conditionValue.key is required.");
             checkNotNull(value, BadRequestException.class, "conditionValue.value is required.");
         }
 
-        public RestConditionValue build() {
+        public RestRuleActionParameter build() {
             this.validate();
-            return new RestConditionValue(this);
+            return new RestRuleActionParameter(this);
         }
     }
 }

@@ -131,6 +131,7 @@ public class RulesAPITest extends TestBase {
         // Create new Rule Action
 
         JSONObject actionJSON = new JSONObject();
+        actionJSON.put("name", "myTestRuleAction");
         actionJSON.put("actionlet", "TestActionlet");
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(actionJSON.toString()));

@@ -13,7 +13,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
  * @author Geoff M. Granum
  */
 @JsonDeserialize(builder = RestRule.Builder.class)
-public class RestRule {
+class RestRule {
 
     public final String id;
     public final String name;

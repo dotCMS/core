@@ -1,4 +1,4 @@
-package com.dotcms.rest;
+package com.dotcms.rest.api.v1.ruleengine;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,6 +17,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.ruleengine.*;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
@@ -148,6 +149,22 @@ public class RulesResource extends WebResource {
                 throw new NotFoundException("Condition not found: '%s'", conditionId);
             }
             return condition;
+        } catch (DotDataException e) {
+            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    @VisibleForTesting
+    Conditionlet getConditionlet(String conditionletId) {
+        try {
+            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
+            if (conditionlet == null) {
+                throw new NotFoundException("Conditionlet not found: '%s'", conditionletId);
+            }
+            return conditionlet;
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
@@ -991,6 +1008,8 @@ public class RulesResource extends WebResource {
         rule.setEnabled(restRule.enabled);
     }
 
+
+
     private String createRuleActionInternal(String ruleId, RestRuleAction restRuleAction, User user) {
         try {
             RuleAction ruleAction = new RuleAction();
@@ -1026,7 +1045,20 @@ public class RulesResource extends WebResource {
         ruleAction.setName(restRuleAction.getName());
         ruleAction.setActionlet(restRuleAction.getActionlet());
         ruleAction.setPriority(restRuleAction.getPriority());
-        ruleAction.setParameters(restRuleAction.getParameters());
+
+        if(restRuleAction.getParameters()!=null && !restRuleAction.getParameters().isEmpty()) {
+            List<RuleActionParameter> parameters = new ArrayList<>();
+
+            for(RestRuleActionParameter restParameter: restRuleAction.getParameters()) {
+                RuleActionParameter parameter = new RuleActionParameter();
+                parameter.setId(restParameter.getId());
+                parameter.setKey(restParameter.getKey());
+                parameter.setValue(restParameter.getValue());
+                parameters.add(parameter);
+            }
+
+            ruleAction.setParameters(parameters);
+        }
     }
 
     private String createConditionGroupInternal(String ruleId, RestConditionGroup restConditionGroup, User user) {
@@ -1116,15 +1148,5 @@ public class RulesResource extends WebResource {
         }
     }
 
-
-    @VisibleForTesting
-    RestRule mapJsonToRestRule(Host host, JsonNode json) {
-        try {
-            RestRule restRule = restRuleMapper.readValue(json.toString(), RestRule.class);
-            return restRule;
-        } catch (IOException e) {
-            throw new BadRequestException(e, e.getMessage());
-        }
-    }
 
 }

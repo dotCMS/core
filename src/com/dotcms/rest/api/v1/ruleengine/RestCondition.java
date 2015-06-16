@@ -10,7 +10,7 @@ import java.util.List;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @JsonDeserialize(builder = RestCondition.Builder.class)
-public class RestCondition {
+class RestCondition {
 
     private final String id;
     private final String name;

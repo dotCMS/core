@@ -13,13 +13,13 @@ import java.util.List;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestRuleAction.Builder.class)
-public class RestRuleAction {
+class RestRuleAction {
 
     private final String id;
     private final String name;
     private final int priority;
     private final String actionlet;
-    private final List<RuleActionParameter> parameters;
+    private final List<RestRuleActionParameter> parameters;
 
     public String getId() {
         return id;
@@ -33,7 +33,7 @@ public class RestRuleAction {
         return actionlet;
     }
 
-    public List<RuleActionParameter> getParameters() {
+    public List<RestRuleActionParameter> getParameters() {
         return parameters;
     }
 
@@ -53,7 +53,7 @@ public class RestRuleAction {
         private String id; // optional - not present when creating - present when updating
         private final String name; // required
         private final String actionlet; // required
-        private List<RuleActionParameter> parameters; // optional
+        private List<RestRuleActionParameter> parameters; // optional
         private int priority=0; // optional - default value
 
         @JsonCreator // needed for non default constructors
@@ -73,7 +73,7 @@ public class RestRuleAction {
             return this;
         }
 
-        public Builder parameters(List<RuleActionParameter> parameters) {
+        public Builder parameters(List<RestRuleActionParameter> parameters) {
             this.parameters = parameters;
             return this;
         }

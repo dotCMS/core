@@ -11,7 +11,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)
-public class RestConditionGroup {
+class RestConditionGroup {
 
     private final String id;
     private final String operator;
