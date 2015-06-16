@@ -669,7 +669,7 @@ public class ConditionletTest extends TestBase {
 	}
 
 	@Test
-	public void testUsersSiteVisits1() {
+	public void testUsersSiteVisits() {
 		Conditionlet visitsConditionlet = new UsersSiteVisitsConditionlet();
 		// Conditionlet has the input field
 		Collection<ConditionletInput> inputCollection = visitsConditionlet
