@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.ruleengine;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
@@ -37,18 +38,16 @@ class RestConditionGroup {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private String operator;
+        @JsonProperty private final String operator;
         @JsonProperty private int priority=0;
 
-        public Builder() {}
+        @JsonCreator // needed for non default constructors
+        public Builder(@JsonProperty("operator") String operator) {
+            this.operator = operator;
+        }
 
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder operator(String operator) {
-            this.operator = operator;
             return this;
         }
 
@@ -56,14 +55,6 @@ class RestConditionGroup {
             this.priority = priority;
             return this;
         }
-
-        public Builder from(RestConditionGroup copy) {
-            id = copy.id;
-            operator = copy.operator;
-            priority = copy.priority;
-            return this;
-        }
-
 
         public void validate(){
             checkNotNull(operator, BadRequestException.class, "conditionGroup.operator is required.");

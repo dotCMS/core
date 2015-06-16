@@ -1,9 +1,12 @@
 package com.dotcms.rest.api.v1.ruleengine;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.portlets.rules.model.Rule;
+
 import java.util.Date;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -19,7 +22,6 @@ class RestRule {
     public final String name;
     public final String fireOn;
     public final Boolean shortCircuit;
-    public final String folder;
     public final Integer priority;
     public final Boolean enabled;
 
@@ -29,7 +31,6 @@ class RestRule {
         name = builder.name;
         fireOn = builder.fireOn;
         shortCircuit = builder.shortCircuit;
-        folder = builder.folder;
         priority = builder.priority;
         enabled = builder.enabled;
     }
@@ -37,10 +38,9 @@ class RestRule {
     @JsonIgnoreProperties({"groups", "actions"})
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private String name;
-        @JsonProperty private String fireOn;
+        @JsonProperty private final String name;
+        @JsonProperty private String fireOn = Rule.FireOn.EVERY_PAGE.name();
         @JsonProperty private Boolean shortCircuit=false;
-        @JsonProperty private String folder;
         @JsonProperty private Integer priority=0;
         @JsonProperty private Boolean enabled=false;
 
@@ -57,15 +57,14 @@ class RestRule {
             .modDate( input.getModDate() )
             .build();
         */
-        public Builder() {}
+
+        @JsonCreator // needed for non default constructors
+        public Builder(@JsonProperty("name") String name) {
+            this.name = name;
+        }
 
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder name(String name) {
-            this.name = name;
             return this;
         }
 
@@ -76,11 +75,6 @@ class RestRule {
 
         public Builder shortCircuit(boolean shortCircuit) {
             this.shortCircuit = shortCircuit;
-            return this;
-        }
-
-        public Builder folder(String folder) {
-            this.folder = folder;
             return this;
         }
 
@@ -96,10 +90,8 @@ class RestRule {
 
         public Builder from(RestRule copy) {
             id = copy.id;
-            name = copy.name;
             fireOn = copy.fireOn;
             shortCircuit = copy.shortCircuit;
-            folder = copy.folder;
             priority = copy.priority;
             enabled = copy.enabled;
             return this;

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.ruleengine;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
@@ -17,7 +18,7 @@ class RestCondition {
     private final String conditionlet;
     private final String comparison;
     private final List<RestConditionValue> values;
-    private final Condition.Operator operator;
+    private final String operator;
     private final int priority;
 
     public String getId() {
@@ -40,7 +41,7 @@ class RestCondition {
         return values;
     }
 
-    public Condition.Operator getOperator() {
+    public String getOperator() {
         return operator;
     }
 
@@ -60,32 +61,26 @@ class RestCondition {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private String name;
-        @JsonProperty private String conditionlet;
-        @JsonProperty private String comparison;
+        @JsonProperty private final String name;
+        @JsonProperty private final String conditionlet;
+        @JsonProperty private final String comparison;
+        @JsonProperty private final String operator;
         @JsonProperty private List<RestConditionValue> values;
-        @JsonProperty private Condition.Operator operator;
-        @JsonProperty private int priority;
+        @JsonProperty private int priority = 0;
 
-        public Builder() {}
+        @JsonCreator // needed for non default constructors
+        public Builder(@JsonProperty("name") String name,
+                       @JsonProperty("conditionlet") String conditionlet,
+                       @JsonProperty("comparison") String comparison,
+                       @JsonProperty("operator") String operator) {
+            this.name = name;
+            this.conditionlet = conditionlet;
+            this.comparison = comparison;
+            this.operator = operator;
+        }
 
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder name(String name) {
-            this.name = name;
-            return this;
-        }
-
-        public Builder conditionlet(String conditionlet) {
-            this.conditionlet = conditionlet;
-            return this;
-        }
-
-        public Builder comparison(String comparison) {
-            this.comparison = comparison;
             return this;
         }
 
@@ -94,30 +89,22 @@ class RestCondition {
             return this;
         }
 
-        public Builder operator(Condition.Operator operator) {
-            this.operator = operator;
-            return this;
-        }
-
         public Builder priority(int priority) {
             this.priority = priority;
             return this;
         }
 
-        public Builder from(RestCondition copy) {
-            id = copy.id;
-            name = copy.name;
-            conditionlet = copy.conditionlet;
-            comparison = copy.comparison;
-            values = copy.values;
-            operator = copy.operator;
-            priority = copy.priority;
-            return this;
-        }
-
-
         public void validate(){
             checkNotEmpty(name, BadRequestException.class, "condition.name is required.");
+            checkNotEmpty(conditionlet, BadRequestException.class, "condition.conditionlet is required.");
+            checkNotEmpty(comparison, BadRequestException.class, "condition.comparison is required.");
+            checkNotEmpty(operator, BadRequestException.class, "condition.operator is required.");
+
+            try {
+                Condition.Operator.valueOf(operator);
+            } catch(IllegalArgumentException iae) {
+                throw new BadRequestException(iae, "conditionGroup.operator is invalid.");
+            }
         }
 
         public RestCondition build() {

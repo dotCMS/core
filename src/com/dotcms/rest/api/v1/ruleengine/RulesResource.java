@@ -1131,7 +1131,7 @@ public class RulesResource extends WebResource {
         condition.setName(restCondition.getName());
         condition.setConditionletId(restCondition.getConditionlet());
         condition.setComparison(restCondition.getComparison());
-        condition.setOperator(restCondition.getOperator());
+        condition.setOperator(Condition.Operator.valueOf(restCondition.getOperator()));
         condition.setPriority(restCondition.getPriority());
 
         if(restCondition.getValues()!=null && !restCondition.getValues().isEmpty()) {
