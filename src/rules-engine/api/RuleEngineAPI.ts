@@ -4,7 +4,7 @@ let log = XDebug('RulesEngine.api');
 import {mocks} from '../datamocks/rule.mocks.js';
 
 import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
-import {Core, Check} from '../../dc/index.js';
+import {Core, Check} from '../../coreweb/index.js';
 import * as RuleEngine from '../actions/RuleEngineActionCreators.js';
 import * as RuleTypes from  './RuleEngineTypes.js';
 

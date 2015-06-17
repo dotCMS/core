@@ -2,7 +2,7 @@ import events from 'events';
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.store');
 
-import {Core} from '../../dc/index.js'
+import {Core} from '../../coreweb/index.js'
 import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
 import * as RuleEngine from '../RuleEngine.js';
 

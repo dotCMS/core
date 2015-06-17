@@ -1,6 +1,6 @@
 import XDebug from 'debug';
 let log = XDebug('Check.specs');
-import {Check} from 'src/dc/api/Check.ts';
+import {Check} from 'src/coreweb/api/Check.ts';
 
 describe('Check.notEmpty', function () {
   beforeEach(function () {

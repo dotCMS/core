@@ -1,7 +1,7 @@
 import 'zone.js'
 import * as XDebug from 'debug'
 
-import * as Core from 'src/dc/index.js';
+import * as Core from 'src/coreweb/index.js';
 import * as RulesEngine from 'src/rules-engine-ng2/index.js';
 import * as logConfig from 'src/rules-engine-ng2/log-config.js';
 import {mocks} from 'src/rules-engine/datamocks/rule.mocks.js';

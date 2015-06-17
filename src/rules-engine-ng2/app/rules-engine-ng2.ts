@@ -12,7 +12,7 @@ import {View} from 'angular2/src/core/annotations_impl/view';
 
 import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
 
-import {Core} from '../../dc/index.js'
+import {Core} from '../../coreweb/index.js'
 import * as RuleEngine from '../../rules-engine/RuleEngine.js';
 
 

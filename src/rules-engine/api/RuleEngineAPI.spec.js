@@ -1,5 +1,5 @@
 import  * as RuleEngine from 'src/rules-engine/RuleEngine.js'
-import  {Core, Check} from 'src/dc/index.js'
+import  {Core, Check} from 'src/coreweb/index.js'
 import  {mocks} from 'src/rules-engine/datamocks/rule.mocks.js'
 
 import rest from 'rest';

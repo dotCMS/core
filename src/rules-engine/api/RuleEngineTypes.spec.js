@@ -1,5 +1,5 @@
 import  * as RuleEngine from 'src/rules-engine/RuleEngine.js'
-import  {Core, Check} from 'src/dc/index.js'
+import  {Core, Check} from 'src/coreweb/index.js'
 import  {Rule} from 'src/rules-engine/api/RuleEngineTypes.js'
 
 

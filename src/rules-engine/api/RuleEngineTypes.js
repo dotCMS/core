@@ -1,7 +1,7 @@
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.api');
 
-import  {Core} from 'src/dc/index.js'
+import  {Core} from 'src/coreweb/index.js'
 import  {EntityForge as EF, ValidationError} from 'src/entity-forge/EntityForge.js'
 
 

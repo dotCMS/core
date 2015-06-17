@@ -2,7 +2,7 @@ import  XDebug from 'src/rules-engine/log-config'
 let log = XDebug('RulesEngine.api.it');
 
 import  * as RuleEngine from 'src/rules-engine/RuleEngine'
-import  {Core, Check} from 'src/dc/index'
+import  {Core, Check} from 'src/coreweb/index'
 import  {Rule} from 'src/rules-engine/api/RuleEngineTypes.js'
 
 import rest from 'rest';
