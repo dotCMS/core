@@ -48,7 +48,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
-@Path("/rules-engine")
+@Path("/v1/rules-engine")
 public class RulesResource extends WebResource {
 
     private final RulesAPI rulesAPI;
@@ -291,7 +291,7 @@ public class RulesResource extends WebResource {
     @GET
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionGroups(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId,
+    public Response getConditionGroup(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId,
                                        @PathParam("groupId") String groupId) throws JSONException {
         User user = getUser(request);
 

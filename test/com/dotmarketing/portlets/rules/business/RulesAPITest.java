@@ -68,7 +68,7 @@ public class RulesAPITest extends TestBase {
         HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
         client.register(feature);
 
-        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/rules-engine");
+        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/v1/rules-engine");
 
         final String modifiedRuleName = "testRuleModified";
         final String modifiedConditionName = "testConditionModified";
