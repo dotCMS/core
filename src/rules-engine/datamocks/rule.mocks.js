@@ -1,7 +1,7 @@
 import XDebug from 'debug';
-let log = XDebug('RulesEngine.mocks');
+let log = XDebug('RulesEngine.mocks.js');
 
-import RuleEngine from 'src/rules-engine/RuleEngine.es6';
+import  RuleEngine from 'src/rules-engine/RuleEngine.js'
 
 
 var clauses = {

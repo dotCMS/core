@@ -1,9 +1,9 @@
-import XDebug from 'src/rules-engine/log-config.es6';
+import  XDebug from 'src/rules-engine/log-config'
 let log = XDebug('RulesEngine.api.it');
 
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
-import {Core, Check} from 'src/dc/index.es6';
-import {Rule} from 'src/rules-engine/api/RuleEngineTypes.es6';
+import  * as RuleEngine from 'src/rules-engine/RuleEngine'
+import  {Core, Check} from 'src/dc/index'
+import  {Rule} from 'src/rules-engine/api/RuleEngineTypes.js'
 
 import rest from 'rest';
 import basicAuth from 'rest/interceptor/basicAuth';

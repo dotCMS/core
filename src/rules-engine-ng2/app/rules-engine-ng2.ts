@@ -12,8 +12,8 @@ import {View} from 'angular2/src/core/annotations_impl/view';
 
 import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
 
-import {Core} from 'src/dc/index.es6'
-import * as RuleEngine from 'src/rules-engine/RuleEngine.es6';
+import {Core} from '../../dc/index.js'
+import * as RuleEngine from '../../rules-engine/RuleEngine.js';
 
 
 import "bootstrap/css/bootstrap.css!";

@@ -1,10 +1,10 @@
 import 'zone.js'
 import * as XDebug from 'debug'
 
-import * as Core from 'src/dc/index.es6';
-import * as RulesEngine from 'src/rules-engine-ng2/index.es6';
-import * as logConfig from 'src/rules-engine-ng2/log-config.es6';
-import {mocks} from 'src/rules-engine/datamocks/rule.mocks.es6';
+import * as Core from 'src/dc/index.js';
+import * as RulesEngine from 'src/rules-engine-ng2/index.js';
+import * as logConfig from 'src/rules-engine-ng2/log-config.js';
+import {mocks} from 'src/rules-engine/datamocks/rule.mocks.js';
 export let dot = {
   XDebug: XDebug.default,
   Core,
