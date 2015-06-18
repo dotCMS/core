@@ -22,12 +22,15 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This conditionlet will allow CMS users to check the city a user request comes
- * from.
+ * from. The comparison of city names is case-insensitive, except for the
+ * regular expression comparison. This {@link Conditionlet} provides a drop-down
+ * menu with the available comparison mechanisms, and a drop-down menu with the
+ * capital cities of the states in the USA, where users can select one or more
+ * values that will match the selected criterion.
  * <p>
  * The location of the request is determined by the IP address of the client
  * that issued the request. Geographic information is then retrieved via the <a
- * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>,
- * which will allow CMS users to display content based on geographic data.
+ * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
  * </p>
  * 
  * @author Jose Castro
@@ -40,8 +43,8 @@ public class UsersCityConditionlet extends Conditionlet {
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "city";
-	private static final String CONDITIONLET_NAME = "Visitor's USA City";
-	
+	private static final String CONDITIONLET_NAME = "User's City (USA)";
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -69,7 +72,6 @@ public class UsersCityConditionlet extends Conditionlet {
 		ValidationResults results = new ValidationResults();
 		if (UtilMethods.isSet(inputValues) && comparison != null) {
 			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
 			for (ConditionletInputValue inputValue : inputValues) {
 				ValidationResult validation = validate(comparison, inputValue);
 				if (!validation.isValid()) {
@@ -89,11 +91,14 @@ public class UsersCityConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparison.getId());
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
 			for (EntryOption option : inputOptions) {
-				// Validate that the selected value is correct
 				if (option.getId().equals(selectedValue)) {
 					validationResult.setValid(true);
 					break;
@@ -187,6 +192,8 @@ public class UsersCityConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
 			city = geoIp2Util.getCityName(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
@@ -199,7 +206,7 @@ public class UsersCityConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);

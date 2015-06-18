@@ -22,6 +22,10 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This conditionlet will allow CMS users to check the current URL in a request.
+ * The comparison of URLs is case-insensitive, except for the regular expression
+ * comparison. This {@link Conditionlet} provides a drop-down menu with the
+ * available comparison mechanisms, and a text field to enter the value to
+ * compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -34,7 +38,7 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "current-url";
 	private static final String CONDITIONLET_NAME = "User's Current URL";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -112,7 +116,7 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 			}
 			if (!validationResult.isValid()) {
 				validationResult.setErrorMessage("Invalid value for input '"
-						+inputId + "': '" + selectedValue + "'");
+						+ inputId + "': '" + selectedValue + "'");
 			}
 		}
 		return validationResult;
@@ -152,37 +156,37 @@ public class UsersCurrentUrlConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
+		}
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			requestUri = requestUri.toLowerCase();
+			inputValue = inputValue.toLowerCase();
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			if (requestUri.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			if (!requestUri.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			if (requestUri.startsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			if (requestUri.endsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			if (requestUri.contains(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			Pattern pattern = Pattern.compile(inputValue);
 			Matcher matcher = pattern.matcher(requestUri);
 			if (matcher.find()) {

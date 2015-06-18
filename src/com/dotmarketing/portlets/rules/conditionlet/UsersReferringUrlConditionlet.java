@@ -20,8 +20,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the referring URL where the
- * user request came from.
+ * This conditionlet will allow dotCMS users to check the referring URL where
+ * the user request came from. For example, the users will be able to determine
+ * if the incoming request came as a result of a Google search, or from a link
+ * in a specific Web site, etc. The comparison of URLs is case-insensitive,
+ * except for the regular expression comparison. This {@link Conditionlet}
+ * provides a drop-down menu with the available comparison mechanisms, and a
+ * text field to enter the value to compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -34,7 +39,7 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "referring-url";
 	private static final String CONDITIONLET_NAME = "User's Referring URL";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -146,37 +151,37 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
+		}
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			referrerUrl = referrerUrl.toLowerCase();
+			inputValue = inputValue.toLowerCase();
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			if (referrerUrl.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			if (!referrerUrl.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			if (referrerUrl.startsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			if (referrerUrl.endsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			if (referrerUrl.contains(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			Pattern pattern = Pattern.compile(inputValue);
 			Matcher matcher = pattern.matcher(referrerUrl);
 			if (matcher.find()) {

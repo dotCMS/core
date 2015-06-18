@@ -23,7 +23,10 @@ import com.dotmarketing.util.UtilMethods;
 /**
  * This conditionlet will allow CMS users to check the state/province/region a
  * user request comes from. The available options of this conditionlet will be
- * represented as a one or two-character values.
+ * represented as a one or two-character values (depending on the country). This
+ * {@link Conditionlet} provides a drop-down menu with the available comparison
+ * mechanisms, and a drop-down menu with the states in the USA, where users can
+ * select one or more values that will match the selected criterion.
  * <p>
  * The location of the request is determined by the IP address of the client
  * that issued the request. Geographic information is then retrieved via the <a
@@ -42,7 +45,7 @@ public class UsersStateConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "state";
 	private static final String CONDITIONLET_NAME = "User's State/Province/Region";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -89,7 +92,10 @@ public class UsersStateConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			getInputs(comparison.getId());
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparison.getId());
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
@@ -190,6 +196,8 @@ public class UsersStateConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
 			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
@@ -202,7 +210,7 @@ public class UsersStateConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
@@ -221,7 +229,6 @@ public class UsersStateConditionlet extends Conditionlet {
 					return false;
 				}
 			}
-			// If none of the values match, return true
 			return true;
 		}
 		return false;

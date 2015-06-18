@@ -19,7 +19,10 @@ import com.dotmarketing.util.UtilMethods;
  * This conditionlet will allow CMS users to check the platform a user request
  * comes from, such as, mobile, tablet, desktop, etc. The information is
  * obtained by reading the {@code User-Agent} header in the
- * {@link HttpServletRequest} object.
+ * {@link HttpServletRequest} object. This {@link Conditionlet} provides a
+ * drop-down menu with the available comparison mechanisms, and a drop-down menu
+ * containing the different platforms that can be detected, where users can
+ * select one or more values that will match the selected criterion.
  * <p>
  * The format of the {@code User-Agent} is not standardized (basically free
  * format), which makes it difficult to decipher it. This conditionlet uses a
@@ -41,7 +44,7 @@ public class UsersPlatformConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "platform";
 	private static final String CONDITIONLET_NAME = "User's Platform";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -88,11 +91,16 @@ public class UsersPlatformConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			String comparisonId = comparison.getId();
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparisonId);
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
 			for (EntryOption option : inputOptions) {
-				if (option.getId().equals(selectedValue)) {
+				if (option.getId().equalsIgnoreCase(selectedValue)) {
 					validationResult.setValid(true);
 					break;
 				}
@@ -118,7 +126,8 @@ public class UsersPlatformConditionlet extends Conditionlet {
 			options.add(new EntryOption("Mobile", "Mobile Device"));
 			options.add(new EntryOption("Tablet", "Tablet"));
 			options.add(new EntryOption("Wearable computer", "Wearable Device"));
-			options.add(new EntryOption("Digital media receiver", "Digital Media Receiver"));
+			options.add(new EntryOption("Digital media receiver",
+					"Digital Media Receiver"));
 			options.add(new EntryOption("Game console", "Game Console"));
 			inputField.setData(options);
 			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
@@ -147,46 +156,26 @@ public class UsersPlatformConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
-		if (!validationResults.hasErrors()) {
-			return evaluateInput(inputValues, platform, comparison);
+		if (validationResults.hasErrors()) {
+			return false;
 		}
-		return false;
-	}
-
-	/**
-	 * Performs the comparison between the selected values in the contentlet and
-	 * the platform information in the request.
-	 * 
-	 * @param inputValues
-	 *            - The specified contentlet input values.
-	 * @param platform
-	 *            - The platform name obtained from the request.
-	 * @param comparison
-	 *            - The comparison mechanism.
-	 * @return If the comparison mechanism is meets the validation criterion,
-	 *         returns {@code true}. Otherwise, returns {@code false}.
-	 */
-	private boolean evaluateInput(Set<ConditionletInputValue> inputValues,
-			String platform, Comparison comparison) {
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			for (ConditionletInputValue input : inputValues) {
 				if (input.getValue().equalsIgnoreCase(platform)) {
 					return true;
 				}
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			boolean found = false;
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			for (ConditionletInputValue input : inputValues) {
 				if (input.getValue().equalsIgnoreCase(platform)) {
-					found = true;
-					break;
+					return false;
 				}
 			}
-			return !found;
+			return true;
 		}
 		return false;
 	}

@@ -20,7 +20,11 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This conditionlet will allow CMS users to check the value of any of the HTTP
- * headers sent with the every {@link HttpServletRequest} object.
+ * headers that are part of the {@link HttpServletRequest} object. The
+ * comparison of header names and values is case-insensitive, except for the
+ * regular expression comparison. This {@link Conditionlet} provides a drop-down
+ * menu with the available comparison mechanisms, a drop-down menu with some of
+ * the most common HTTP Headers, and a text field to enter the value to compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -93,6 +97,11 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			String comparisonId = comparison.getId();
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparisonId);
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			if (INPUT1_ID.equalsIgnoreCase(inputId)) {
@@ -106,7 +115,6 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 					}
 				}
 			} else {
-				String comparisonId = comparison.getId();
 				if (comparisonId.equals(COMPARISON_IS)
 						|| comparisonId.equals(COMPARISON_ISNOT)
 						|| comparisonId.equals(COMPARISON_STARTSWITH)
@@ -207,93 +215,51 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) && values.size() == 0
+		if (!UtilMethods.isSet(values) && values.size() < 2
 				&& !UtilMethods.isSet(comparisonId)) {
 			return false;
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String selectedHeader = null;
-		String headerValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			if (INPUT1_ID.equalsIgnoreCase(value.getId())) {
-				selectedHeader = value.getValue();
-			} else {
-				headerValue = value.getValue();
-			}
-		}
+		String selectedHeader = values.get(0).getValue();
+		String headerValue = values.get(1).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT1_ID, selectedHeader));
+		inputValues.add(new ConditionletInputValue(INPUT2_ID, headerValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
 		}
-		return evaluateInput(request, comparison, selectedHeader, headerValue);
-	}
-
-	/**
-	 * Evaluates the list of values entered in the conditionlet with the headers
-	 * in the request object.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @param comparison
-	 *            - The {@link Comparison} mechanism for the values.
-	 * @param selectedHeader
-	 *            - The selected header specified in the conditionlet
-	 * @param conditionletInput
-	 *            - The value that matches the selected header.
-	 * @return If the input value matches the header value, returns {@code true}
-	 *         . Otherwise, returns {@code false}.
-	 */
-	private boolean evaluateInput(HttpServletRequest request,
-			Comparison comparison, String selectedHeader,
-			String conditionletInput) {
-		String headerValue = request.getHeader(selectedHeader);
-		if (!UtilMethods.isSet(headerValue)) {
+		String headerValueInReq = request.getHeader(selectedHeader);
+		if (!UtilMethods.isSet(headerValueInReq)) {
 			return false;
 		}
-		return compare(comparison, headerValue, conditionletInput);
-	}
-
-	/**
-	 * Compares the value of a header with the specified value in the
-	 * conditionlet according to the {@link Comparison} mechanism.
-	 * 
-	 * @param comparison
-	 *            - The {@link Comparison} method.
-	 * @param headerValue
-	 *            - The value of the request header.
-	 * @param conditionletInput
-	 *            - The validation input in the conditionlet.
-	 * @return If the input value matches the header value, returns {@code true}
-	 *         . Otherwise, returns {@code false}.
-	 */
-	private boolean compare(Comparison comparison, String headerValue,
-			String conditionletInput) {
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			headerValueInReq = headerValueInReq.toLowerCase();
+			headerValue = headerValue.toLowerCase();
+		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (headerValue.equalsIgnoreCase(conditionletInput)) {
+			if (headerValueInReq.equalsIgnoreCase(headerValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			if (!headerValue.equalsIgnoreCase(conditionletInput)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+			if (!headerValueInReq.equalsIgnoreCase(headerValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-			if (headerValue.startsWith(conditionletInput)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+			if (headerValueInReq.startsWith(headerValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-			if (headerValue.endsWith(conditionletInput)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+			if (headerValueInReq.endsWith(headerValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-			if (headerValue.contains(conditionletInput)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+			if (headerValueInReq.contains(headerValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(conditionletInput);
-			Matcher matcher = pattern.matcher(headerValue);
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(headerValue);
+			Matcher matcher = pattern.matcher(headerValueInReq);
 			if (matcher.find()) {
 				return true;
 			}

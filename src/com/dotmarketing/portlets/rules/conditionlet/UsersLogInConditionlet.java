@@ -18,8 +18,13 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 /**
- * This conditionlet will allow CMS users to check whether the user that issued
- * the request is currently logged in or not.
+ * This conditionlet will allow dotCMS users to check whether the user that
+ * issued the request is currently logged in or not. The login status of a user
+ * is in the {@link HttpServletRequest} object, which is used to perform the
+ * validation and is retrieved using our own API. This {@link Conditionlet}
+ * provides a single drop-down menu with the available comparison mechanisms,
+ * and it will check the login status with the back-end system, no other user
+ * input is to be required or validated.
  * 
  * @author Jose Castro
  * @version 1.0

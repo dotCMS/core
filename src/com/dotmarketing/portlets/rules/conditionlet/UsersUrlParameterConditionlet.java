@@ -21,8 +21,12 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the value of a specific
- * parameter in the URL (a query String parameter).
+ * This conditionlet will allow dotCMS users to check the value of a specific
+ * parameter in the URL (a query String parameter). The comparison of parameter
+ * names and values is case-insensitive, except for the regular expression
+ * comparison. This {@link Conditionlet} provides a drop-down menu with the
+ * available comparison mechanisms, and a text field to enter the name of the
+ * parameter, and text field for the value to it.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -146,53 +150,55 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
+		if (!UtilMethods.isSet(values) || values.size() < 2
 				|| !UtilMethods.isSet(comparisonId)) {
 			return false;
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		Map<String, String> conditionletValues = new HashMap<String, String>();
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			conditionletValues.put(value.getId(), value.getValue());
-		}
+		String inputValue1 = values.get(0).getValue();
+		String inputValue2 = values.get(1).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
+		conditionletValues.put(INPUT1_ID, inputValue1);
+		inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
+		conditionletValues.put(INPUT2_ID, inputValue2);
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
 		}
 		String urlParamValue = HttpRequestDataUtil.getUrlParameterValue(
-				request, conditionletValues.get(INPUT1_ID));
+				request, inputValue1);
 		if (!UtilMethods.isSet(urlParamValue)) {
 			return false;
 		}
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			urlParamValue = urlParamValue.toLowerCase();
+			inputValue2 = inputValue2.toLowerCase();
+		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (urlParamValue.equalsIgnoreCase(conditionletValues
-					.get(INPUT2_ID))) {
+			if (urlParamValue.equalsIgnoreCase(inputValue2)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			if (!urlParamValue.equalsIgnoreCase(conditionletValues
-					.get(INPUT2_ID))) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+			if (!urlParamValue.equalsIgnoreCase(inputValue2)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-			if (urlParamValue.startsWith(conditionletValues.get(INPUT2_ID))) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+			if (urlParamValue.startsWith(inputValue2)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-			if (urlParamValue.endsWith(conditionletValues.get(INPUT2_ID))) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+			if (urlParamValue.endsWith(inputValue2)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-			if (urlParamValue.contains(conditionletValues.get(INPUT2_ID))) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+			if (urlParamValue.contains(inputValue2)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(conditionletValues.get(INPUT2_ID));
-			Matcher matcher = pattern
-					.matcher(urlParamValue);
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+			Pattern pattern = Pattern.compile(inputValue2);
+			Matcher matcher = pattern.matcher(urlParamValue);
 			if (matcher.find()) {
 				return true;
 			}

@@ -22,7 +22,11 @@ import com.dotmarketing.util.UtilMethods;
 /**
  * This conditionlet will allow CMS users to check the browser name a user
  * request is issued from. The information is obtained by reading the
- * {@code User-Agent} header in the {@link HttpServletRequest} object.
+ * {@code User-Agent} header in the {@link HttpServletRequest} object. The
+ * comparison of browser names is case-insensitive, except for the regular
+ * expression comparison. This {@link Conditionlet} provides a drop-down menu
+ * with the available comparison mechanisms, and a single text field to enter
+ * the value to compare.
  * <p>
  * The format of the {@code User-Agent} is not standardized (basically free
  * format), which makes it difficult to decipher it. This conditionlet uses a
@@ -31,6 +35,15 @@ import com.dotmarketing.util.UtilMethods;
  * which parses HTTP requests in real time and gather information about the user
  * agent, detecting a high amount of browsers, browser types, operating systems,
  * device types, rendering engines, and Web applications.
+ * </p>
+ * <p>
+ * The User Agent Utils API uses regular expressions to extract the browser's
+ * name from the {@code User-Agent} header. Given that the format is not
+ * standard, the name might also contain version numbers. For example, the API
+ * can return values like "Chrome", "Safari 7", "Firefox 37",
+ * "Internet Explorer 11", and so on. Therefore, if you need to validate against
+ * a browser in general without considering versions, say "Firefox", you can
+ * select the "Contains" comparison to just lookup the word "Firefox".
  * </p>
  * 
  * @author Jose Castro
@@ -44,7 +57,7 @@ public class UsersBrowserConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "browser";
 	private static final String CONDITIONLET_NAME = "User's Browser";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -160,41 +173,39 @@ public class UsersBrowserConditionlet extends Conditionlet {
 		if (!UtilMethods.isSet(browserName)) {
 			return false;
 		}
-		browserName = browserName.toLowerCase();
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
 		}
-		inputValue = inputValue.toLowerCase();
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			inputValue = inputValue.toLowerCase();
+			browserName = browserName.toLowerCase();
+		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (browserName.equalsIgnoreCase(inputValue)) {
+			if (browserName.equals(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			if (!browserName.equalsIgnoreCase(inputValue)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+			if (!browserName.equals(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			if (browserName.startsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			if (browserName.endsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			if (browserName.contains(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			Pattern pattern = Pattern.compile(inputValue);
 			Matcher matcher = pattern.matcher(browserName);
 			if (matcher.find()) {

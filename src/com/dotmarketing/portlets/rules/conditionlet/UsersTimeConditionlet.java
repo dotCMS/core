@@ -24,8 +24,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the user's current time when
- * a page was requested.
+ * This conditionlet will allow dotCMS users to check the client's current time
+ * when a page was requested. This {@link Conditionlet} provides a drop-down
+ * menu with the available comparison mechanisms, and a text field to enter the
+ * time to compare. If the selected comparison method is "Between" another
+ * textfield will be available for the users to be able to enter a range of
+ * times. This time parameter(s) will be expressed in milliseconds in order to
+ * avoid any format-related and time zone issues.
+ * <p>
+ * The time of the request is determined by the IP address of the client that
+ * issued the request. Geographic information is then retrieved via the <a
+ * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
+ * </p>
  * 
  * @author Jose Castro
  * @version 1.0
@@ -148,15 +158,20 @@ public class UsersTimeConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() > 0
-				&& !UtilMethods.isSet(comparisonId)) {
+		if (!UtilMethods.isSet(values)
+				|| values.size() == 0
+				|| !UtilMethods.isSet(comparisonId)
+				|| (comparisonId.equals(COMPARISON_BETWEEN) && values.size() < 2)) {
 			return false;
 		}
 		long clientDateTime = 0;
 		try {
-			InetAddress ipAddress = HttpRequestDataUtil.getIpAddress(request);
-			String ip = ipAddress.getHostAddress();
-			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(ip);
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+			String ipAddress = address.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
+			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(
+					ipAddress);
 			clientDateTime = date.getTime().getTime();
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(
@@ -170,10 +185,13 @@ public class UsersTimeConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		Map<String, String> conditionletValues = new HashMap<String, String>();
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			conditionletValues.put(value.getId(), value.getValue());
+		String inputValue1 = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
+		conditionletValues.put(INPUT1_ID, inputValue1);
+		if (comparisonId.equals(COMPARISON_BETWEEN)) {
+			String inputValue2 = values.get(1).getValue();
+			inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
+			conditionletValues.put(INPUT2_ID, inputValue2);
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
@@ -211,20 +229,19 @@ public class UsersTimeConditionlet extends Conditionlet {
 			if (clientTime >= conditionletTime1) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
 			if (clientTime == conditionletTime1) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(
-				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
 			if (clientTime <= conditionletTime1) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_LOWER_THAN)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
 			if (clientTime <= conditionletTime1) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_BETWEEN)) {
+		} else if (comparison.getId().equals(COMPARISON_BETWEEN)) {
 			int conditionletTime2 = getTimeFromDate(Long
 					.valueOf(conditionletValues.get(INPUT2_ID)));
 			if (clientTime >= conditionletTime1
@@ -240,7 +257,7 @@ public class UsersTimeConditionlet extends Conditionlet {
 	 * that it can be compared with other times. The value of the hour will be
 	 * extracted (using the 24-hour format) and appended to the value of
 	 * minutes. This will generate a simple integer number that can be easily
-	 * compared with some other time.
+	 * compared with some other time (the date part is ignored).
 	 * 
 	 * @param dateInMillis
 	 *            - The date in milliseconds where the time will be extracted.

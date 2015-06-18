@@ -17,8 +17,11 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This conditionlet will allow CMS users to check the language a user has set
- * in their request. The language selected by the user is saved in the
- * {@link HttpServletRequest} object, which is used to validate this condition.
+ * in their request. The language selected by the user is in the
+ * {@link HttpServletRequest} object, which is used to perform the validation
+ * and is retrieved using our own API. This {@link Conditionlet} provides a
+ * drop-down menu with the available comparison mechanisms, and a drop-down menu
+ * where users can select one or more languages to compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -31,7 +34,7 @@ public class UsersLanguageConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "language";
 	private static final String CONDITIONLET_NAME = "User's Language";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -78,6 +81,11 @@ public class UsersLanguageConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			String comparisonId = comparison.getId();
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparisonId);
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
@@ -175,7 +183,7 @@ public class UsersLanguageConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
@@ -184,13 +192,13 @@ public class UsersLanguageConditionlet extends Conditionlet {
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			for (ConditionValue value : values) {
-				if (value.getValue().startsWith(language)) {
+				if (value.getValue().equalsIgnoreCase(language)) {
 					return true;
 				}
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			for (ConditionValue value : values) {
-				if (value.getValue().equals(language)) {
+				if (value.getValue().equalsIgnoreCase(language)) {
 					return false;
 				}
 			}
