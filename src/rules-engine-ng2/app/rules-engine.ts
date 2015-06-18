@@ -1,26 +1,23 @@
 import XDebug from 'debug';
 let log = XDebug('RulesEngineNg2.RulesEngineComponent');
 
-import Reflect from 'reflect-metadata';
 
 import {bootstrap, For, If} from 'angular2/angular2';
 
-// TODO(ggranum): Once the application is transpiled by TS instead of Traceur,
-// add those imports back into 'angular2/angular2';
 import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
 import {View} from 'angular2/src/core/annotations_impl/view';
 
 import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
 
 import {Core} from '../../coreweb/index.js'
-import * as RuleEngine from '../../rules-engine/RuleEngine.js';
+import {RuleEngine} from '../../rules-engine/RuleEngine.js';
 
 
 import "bootstrap/css/bootstrap.css!";
 import "./styles/rules-engine.css!";
 import "./styles/theme-dark.css!";
 
-import rulesEngineTemplate from './rules-engine-ng2.html!text'
+import rulesEngineTemplate from './rules-engine.tpl.html!text'
 import ruleTemplate from './rule.tpl.html!text'
 import ruleActionTemplate from './rule-action.tpl.html!text'
 import clauseGroupTemplate from './clause-group.tpl.html!text'
@@ -256,7 +253,7 @@ class RuleComponent {
 
   addRule() {
     log('ADD RULE')
-    RuleEngine.api.ruleRepo.push({
+    RuleEngine.ruleRepo.push({
       $key: Core.Key.next(),
       enabled: true,
       groups: [{
@@ -298,11 +295,9 @@ class RulesEngine {
     RuleEngine.store.get().then((rulesAry)=> this.rules = rulesAry)
   }
 
-
-  nameFieldKeyUp(event, rule, foo) {
-    log("key typed", arguments);
+  addRule() {
+    console.log("hi")
   }
-
 }
 
 export function main() {

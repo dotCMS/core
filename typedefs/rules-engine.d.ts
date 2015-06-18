@@ -9,11 +9,7 @@ declare module Core {
 
 }
 declare module RuleEngine {
-  declare module api {
-    declare interface ruleRepo {
-      push(rule:any)
-
-    }
-
+    declare module ruleRepo {
+      declare function push(rule:any)
   }
 }

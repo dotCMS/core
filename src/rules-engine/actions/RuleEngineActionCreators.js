@@ -1,6 +1,6 @@
-import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
+import {AppDispatcher} from '../dispatcher/AppDispatcher.js';
 
-import  {Core} from 'src/coreweb/index.js'
+import  {Core} from '../../coreweb/index.js'
 
 
 export let actionTypes = Core.Collections.asSymmetricObjectMap({

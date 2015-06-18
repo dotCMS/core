@@ -1,3 +1,3 @@
-export * from 'src/coreweb/api/Core.ts'
-export * from 'src/coreweb/api/Check.js'
+export * from './api/Core.js'
+export * from './api/Check.js'
 

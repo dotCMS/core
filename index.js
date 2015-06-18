@@ -1,6 +1,7 @@
 import 'zone.js'
 import * as XDebug from 'debug'
 
+import 'reflect-metadata';
 import * as Core from 'src/coreweb/index.js';
 import * as RulesEngine from 'src/rules-engine-ng2/index.js';
 import * as logConfig from 'src/rules-engine-ng2/log-config.js';
@@ -22,7 +23,3 @@ mocks.init().then(function () {
 });
 
 console.log("Loading rules-engine component.")
-
-RulesEngine.main();
-
-

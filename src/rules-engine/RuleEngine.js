@@ -1,7 +1,14 @@
-import * as api from 'src/rules-engine/api/RuleEngineAPI.ts';
-import  {actions, actionTypes} from 'src/rules-engine/actions/RuleEngineActionCreators.js';
-import {RuleStore} from 'src/rules-engine/stores/RuleEngineStore.ts';
+import {ruleRepo} from '../rules-engine/api/RuleEngineAPI.js';
+import {actions, actionTypes} from '../rules-engine/actions/RuleEngineActionCreators.js';
+import {RuleStore} from '../rules-engine/stores/RuleEngineStore.js';
 
-export {api, actions, actionTypes, RuleStore as store};
+let RuleEngine = {
+  ruleRepo: ruleRepo,
+  actions: actions,
+  actionTypes: actionTypes,
+  store: RuleStore
+}
+
+export {RuleEngine};
 
 

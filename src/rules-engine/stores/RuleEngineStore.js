@@ -2,17 +2,18 @@ import events from 'events';
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.store');
 
-import {Core} from '../../coreweb/index.js'
-import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
-import * as RuleEngine from '../RuleEngine.js';
-
+import {Core} from '../../coreweb/api/Core.js';
+import {Check} from '../../coreweb/api/Check.js';
+import {AppDispatcher} from '../../rules-engine/dispatcher/AppDispatcher.js';
+import {ruleRepo} from '../api/RuleEngineAPI.js'
+import {actionTypes} from '../actions/RuleEngineActionCreators.js'
 
 let CHANGE_EVENT = 'change';
 
 
 class _RuleStore extends events.EventEmitter {
 
-  dispatchToken:any;
+  dispatchToken;
 
   constructor() {
     super()
@@ -35,7 +36,7 @@ class _RuleStore extends events.EventEmitter {
   }
 
   init() {
-    RuleEngine.api.ruleRepo.init()
+    ruleRepo.init()
   }
 
   get(key) {
@@ -52,7 +53,7 @@ class _RuleStore extends events.EventEmitter {
     }
     else {
       p = new Promise((resolve, reject) => {
-        RuleEngine.api.ruleRepo.get(key).then((rule)=> {
+        ruleRepo.get(key).then((rule)=> {
           resolve(rule ? true : false)
         }, (e) => reject(e) )
       });
@@ -60,16 +61,16 @@ class _RuleStore extends events.EventEmitter {
     return p
   }
 }
-let _store:Map<any,any> = new Map()
+let _store = new Map()
 
 let registrationFn = function (action) {
   switch (action.key) {
-    case RuleEngine.actionTypes.ADD_RULE:
+    case actionTypes.ADD_RULE:
       _store.set(action.rule.$key, action.rule)
       log(action.key, action.rule.$key, action.rule.name, 'count:' + _store.size)
       RuleStore.emitChange(action)
       break;
-    case RuleEngine.actionTypes.REMOVE_RULE:
+    case actionTypes.REMOVE_RULE:
       _store.delete(action.ruleKey)
       log(action.key, action.rule.$key, action.ruleKey, 'count:  ' + _store.size)
       RuleStore.emitChange(action)

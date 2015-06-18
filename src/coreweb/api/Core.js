@@ -49,7 +49,7 @@ let Core = {
 
   Collections: {
 
-    asSymmetricObjectMap(keyMap, prefix:string = '') {
+    asSymmetricObjectMap(keyMap, prefix = '') {
       let x = {}
       Object.keys(keyMap).forEach((key) => {
         x[key] = prefix + key
@@ -57,7 +57,7 @@ let Core = {
       return x
     },
 
-    asArray(mapObject, transformFn:Function = null) {
+    asArray(mapObject, transformFn = null) {
       let a = [];
       Object.keys(mapObject).forEach((key)=> {
         a.push(transformFn ? transformFn(mapObject[key], key) : mapObject[key])
@@ -65,7 +65,7 @@ let Core = {
       return a;
     },
 
-    asMapObject(map:Map<string, any>, transformFn:Function = null) {
+    asMapObject(map, transformFn = null) {
       let objectMap = {}
 
       map.forEach((value, key) => {
@@ -75,7 +75,7 @@ let Core = {
       return objectMap;
     },
 
-    newMap(objectMap, transformFn:Function = null):Map<string,any> {
+    newMap(objectMap, transformFn = null) {
       let map = new Map();
       Object.keys(objectMap).forEach((key) => {
         map.set(key, transformFn ? transformFn(objectMap[key], key) : objectMap[key])
@@ -83,7 +83,7 @@ let Core = {
       return map;
     },
 
-    newSet(objectMap):Set {
+    newSet(objectMap) {
       let theSet = new Set();
       Object.keys(objectMap).forEach((key) => {
         objectMap[key]['$key'] = key;

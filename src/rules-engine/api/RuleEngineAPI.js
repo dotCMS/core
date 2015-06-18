@@ -3,8 +3,10 @@ let log = XDebug('RulesEngine.api');
 
 import {mocks} from '../datamocks/rule.mocks.js';
 
-import {AppDispatcher} from 'src/rules-engine/dispatcher/AppDispatcher.ts';
-import {Core, Check} from '../../coreweb/index.js';
+import {AppDispatcher} from '../../rules-engine/dispatcher/AppDispatcher.js';
+import {Core} from '../../coreweb/api/Core.js';
+import {Check} from '../../coreweb/api/Check.js';
+
 import * as RuleEngine from '../actions/RuleEngineActionCreators.js';
 import * as RuleTypes from  './RuleEngineTypes.js';
 
@@ -21,31 +23,31 @@ let Storage = {
   get length() {
     return localStorage.length
   },
-  key(idx:number):string {
+  key(idx) {
     return localStorage.key(idx)
   },
   clear() {
     localStorage.clear()
   },
-  setItem(key:string, value:Object) {
+  setItem(key, value) {
     key = Check.exists(key, "Cannot save with an empty key")
     value = Check.exists(value, "Cannot save empty values. Did you mean to remove?")
     localStorage.setItem(key, JSON.stringify(value))
   },
-  getItem(key:string):any {
+  getItem(key) {
     let item = localStorage.getItem(key)
     item = item === null ? null : JSON.parse(item)
     return item
   },
-  getItems(...keys):Array<any>{
+  getItems(...keys){
     return keys.map((key) => {
       return Storage.getItem(key)
     })
   },
-  hasItem(key:string):boolean {
+  hasItem(key){
     return localStorage.getItem(key) !== null
   },
-  removeItem(key:string) {
+  removeItem(key) {
     let itemJson = localStorage.getItem(key)
     let item = null
     if(itemJson !== null){
@@ -54,24 +56,24 @@ let Storage = {
     localStorage.removeItem(key)
     return item;
   },
-  childKeys(path:string):Array<string> {
+  childKeys(path){
     let pathLen = path.length
     let childKeys = Storage.childPaths(path).map((childPath) => {
       return childPath.substring(pathLen)
     })
     return childKeys;
   },
-  childPaths(path:string):Array<string> {
+  childPaths(path) {
     let childPaths = []
     for (let i = 0; i < localStorage.length; i++) {
-      let childPath:string = localStorage.key(i)
+      let childPath = localStorage.key(i)
       if (childPath.startsWith(path)) {
         childPaths.push(childPath)
       }
     }
     return childPaths;
   },
-  childItems(path:string):Array<any>{
+  childItems(path){
     let pathLen = path.length
     return Storage.childPaths(path).map((childPath) => {
       return { path:childPath,  key: childPath.substring(pathLen), val: Storage.getItem(childPath) }
@@ -135,7 +137,7 @@ let clauseRepo = {
 }
 
 
-export let ruleRepo:any = {
+let ruleRepo = {
   basePath: '/api/rules-engine/rules/',
   inward: {
     transform(_rule, key) {
@@ -243,6 +245,8 @@ export let ruleRepo:any = {
   }
 
 }
+
+export {ruleRepo};
 
 
 

@@ -17,7 +17,8 @@ System.config({
     "angular2/*": "thirdparty/ng2dist/js/prod/es6/angular2/*.es6",
     "rtts_assert/*": "thirdparty/ng2dist/js/prod/es6/rtts_assert/*.es6",
     "*": "*.js"
-  }
+  },
+  "defaultJSExtensions": true
 });
 
 System.config({

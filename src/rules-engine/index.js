@@ -1,3 +1,3 @@
-export * from 'src/rules-engine/RuleEngine.js';
-export * from 'src/rules-engine/dispatcher/AppDispatcher.ts';
+export * from './rules-engine/RuleEngine.js';
+export * from './rules-engine/dispatcher/AppDispatcher.js';
 
