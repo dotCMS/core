@@ -135,7 +135,7 @@ let clauseRepo = {
 }
 
 
-export let ruleRepo = {
+export let ruleRepo:any = {
   basePath: '/api/rules-engine/rules/',
   inward: {
     transform(_rule, key) {
@@ -181,7 +181,7 @@ export let ruleRepo = {
         }
         _rule.groups[group.$key] = group;
         group.clauses.forEach((clause) => {
-          clause.owningGroup = group.$key
+          clause["owningGroup"] = group.$key;
           clauses.push(clause)
         })
       })
