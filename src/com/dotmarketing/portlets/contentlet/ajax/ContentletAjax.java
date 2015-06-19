@@ -1835,6 +1835,7 @@ public class ContentletAjax {
 					APILocator.getCategoryAPI().getParents(cont, user, false),
 					APILocator.getPermissionAPI().getPermissions(cont, false, true), user, false);
 				
+                callbackData.put("isNewContentletInodeHtmlPage", draftContentlet.isHTMLPage());
 				callbackData.put("newContentletInode", draftContentlet.getInode());
 			}
 		}catch (DotContentletValidationException ve) {
