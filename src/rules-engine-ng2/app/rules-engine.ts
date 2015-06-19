@@ -12,7 +12,6 @@ import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/fo
 import {Core} from '../../coreweb/index.js'
 import {RuleEngine} from '../../rules-engine/RuleEngine.js';
 
-
 import "bootstrap/css/bootstrap.css!";
 import "./styles/rules-engine.css!";
 import "./styles/theme-dark.css!";
@@ -57,10 +56,10 @@ class RuleActionComponent {
       "name": [ruleAction.name, Validators.required]
     });
     ruleActionControl.controls.name.valueChanges.toRx().debounce(500).subscribe(
-      (v) => {
-        this._ruleAction = this._ruleAction.clone().withName(v).build()
-        this.saveChanges()
-      })
+        (v) => {
+          this._ruleAction = this._ruleAction.clone().withName(v).build()
+          this.saveChanges()
+        })
     this.form = ruleActionControl
     this._ruleAction = ruleAction
   }
@@ -152,7 +151,7 @@ class ClauseGroupComponent {
   rule;
   index:number;
   clauses:Array = null;
-  isCollapse: any;
+  isCollapse:any;
 
   constructor() {
     //ClauseStore.addChangeListener(this.onChange.bind(this))
@@ -231,7 +230,7 @@ class RuleComponent {
   form:ControlGroup;
   index:number;
   builder:FormBuilder;
-  isCollapse: any;
+  isCollapse:any;
 
   constructor(b:FormBuilder) {
     this.builder = b;
@@ -249,18 +248,6 @@ class RuleComponent {
     });
     ruleControl.controls.name.valueChanges.toRx().subscribe((v) => log("it changed: ", v))
     this.form = ruleControl
-  }
-
-  addRule() {
-    log('ADD RULE')
-    RuleEngine.ruleRepo.push({
-      $key: Core.Key.next(),
-      enabled: true,
-      groups: [{
-        $key: Core.Key.next(),
-        enabled:true
-      }]
-    })
   }
 
   toggleCollapse() {
@@ -296,7 +283,15 @@ class RulesEngine {
   }
 
   addRule() {
-    console.log("hi")
+    let testRule = new RuleEngine.Rule();
+    testRule.name = "CoreWeb created this rule" + new Date().toISOString()
+    testRule.enabled = true
+    testRule.priority = 10
+    testRule.fireOn = "EVERY_PAGE"
+    testRule.shortCircuit = false
+    testRule.groups = {}
+    testRule.actions = {}
+    RuleEngine.ruleRepo.push(testRule)
   }
 }
 

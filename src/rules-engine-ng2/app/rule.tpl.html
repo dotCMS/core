@@ -37,26 +37,26 @@
       <h2>When</h2>
       <hr/>
     </div>
-    <clause-group *for="var cg of rule.groups; var i=index"
-                    [rule]="rule"
-                    [group]="cg"
-                    [index]="i + 1">
-    </clause-group>
+    <!--<clause-group *for="var cg of rule.groups; var i=index"-->
+                    <!--[rule]="rule"-->
+                    <!--[group]="cg"-->
+                    <!--[index]="i + 1">-->
+    <!--</clause-group>-->
 
     <div class="section-separator">
       <h2>Then</h2>
       <hr/>
     </div>
 
-    <div class="panel panel-default actions">
-      <ul class="list-group">
-        <rule-action *for="var act of rule.ruleActions; var i=index"
-                     [rule]="rule"
-                     [rule-action]="act"
-                     [index]="i + 1">
-        </rule-action>
-      </ul>
-    </div>
+    <!--<div class="panel panel-default actions">-->
+      <!--<ul class="list-group">-->
+        <!--<rule-action *for="var act of rule.ruleActions; var i=index"-->
+                     <!--[rule]="rule"-->
+                     <!--[rule-action]="act"-->
+                     <!--[index]="i + 1">-->
+        <!--</rule-action>-->
+      <!--</ul>-->
+    <!--</div>-->
     <button class="btn btn-default" ">
       <span class="glyphicon glyphicon-plus-sign"></span>
       <span>Add Action</span>

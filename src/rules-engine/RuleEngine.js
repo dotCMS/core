@@ -1,12 +1,13 @@
-import {ruleRepo} from '../rules-engine/api/RuleEngineAPI.js';
-import {actions, actionTypes} from '../rules-engine/actions/RuleEngineActionCreators.js';
-import {RuleStore} from '../rules-engine/stores/RuleEngineStore.js';
-
+import {ruleRepo} from './api/RuleEngineAPI.js';
+import {actions, actionTypes} from './actions/RuleEngineActionCreators.js';
+import {RuleStore} from './stores/RuleEngineStore.js';
+import {Rule} from './api/RuleEngineTypes.js'
 let RuleEngine = {
   ruleRepo: ruleRepo,
   actions: actions,
   actionTypes: actionTypes,
-  store: RuleStore
+  store: RuleStore,
+  Rule: Rule
 }
 
 export {RuleEngine};

@@ -10,6 +10,8 @@ import {Check} from '../../coreweb/api/Check.js';
 import * as RuleEngine from '../actions/RuleEngineActionCreators.js';
 import * as RuleTypes from  './RuleEngineTypes.js';
 
+//import {LocalDataStore as Storage} from '../../coreweb/util/LocalDataStore.js'
+import {RestDataStore as Storage} from '../../coreweb/util/RestDataStore.js'
 
 let dispatchToken = AppDispatcher.register((action) => {
   switch (action.key) {
@@ -19,68 +21,6 @@ let dispatchToken = AppDispatcher.register((action) => {
     // do nothing
   }
 });
-let Storage = {
-  get length() {
-    return localStorage.length
-  },
-  key(idx) {
-    return localStorage.key(idx)
-  },
-  clear() {
-    localStorage.clear()
-  },
-  setItem(key, value) {
-    key = Check.exists(key, "Cannot save with an empty key")
-    value = Check.exists(value, "Cannot save empty values. Did you mean to remove?")
-    localStorage.setItem(key, JSON.stringify(value))
-  },
-  getItem(key) {
-    let item = localStorage.getItem(key)
-    item = item === null ? null : JSON.parse(item)
-    return item
-  },
-  getItems(...keys){
-    return keys.map((key) => {
-      return Storage.getItem(key)
-    })
-  },
-  hasItem(key){
-    return localStorage.getItem(key) !== null
-  },
-  removeItem(key) {
-    let itemJson = localStorage.getItem(key)
-    let item = null
-    if(itemJson !== null){
-      item = JSON.parse(item)
-    }
-    localStorage.removeItem(key)
-    return item;
-  },
-  childKeys(path){
-    let pathLen = path.length
-    let childKeys = Storage.childPaths(path).map((childPath) => {
-      return childPath.substring(pathLen)
-    })
-    return childKeys;
-  },
-  childPaths(path) {
-    let childPaths = []
-    for (let i = 0; i < localStorage.length; i++) {
-      let childPath = localStorage.key(i)
-      if (childPath.startsWith(path)) {
-        childPaths.push(childPath)
-      }
-    }
-    return childPaths;
-  },
-  childItems(path){
-    let pathLen = path.length
-    return Storage.childPaths(path).map((childPath) => {
-      return { path:childPath,  key: childPath.substring(pathLen), val: Storage.getItem(childPath) }
-    })
-  }
-
-}
 
 
 let clauseRepo = {
@@ -136,9 +76,11 @@ let clauseRepo = {
   }
 }
 
-
-let ruleRepo = {
-  basePath: '/api/rules-engine/rules/',
+let defaultSiteKey = "48190c8c-42c4-46af-8d1a-0cd5db894797"
+let SERVER_CREATES_KEYS = true
+let ruleRepo = {};
+ruleRepo = {
+  basePath: '/api/rules-engine/sites/{{siteKey}}/rules/{{ruleKey}}',
   inward: {
     transform(_rule, key) {
       let groups = Core.Collections.asArray(_rule.groups || {}, ruleRepo.inward.transformGroup)
@@ -174,16 +116,18 @@ let ruleRepo = {
       let _rule = {
         name: rule.name,
         enabled: rule.enabled,
-        groups: {}
+        priority: rule.priority,
+        fireOn: rule.fireOn,
+        shortCircuit: rule.shortCircuit,
+        groups: {},
+        actions: {}
       }
       let clauses = []
-      rule.groups.forEach((group) => {
-        let _group = {
-          operator: group.operator
-        }
-        _rule.groups[group.$key] = group;
+      Object.keys(rule.groups).forEach((groupId) => {
+        let group = rule.groups[groupId]
+        _rule.groups[group.$key] = group
         group.clauses.forEach((clause) => {
-          clause["owningGroup"] = group.$key;
+          clause["owningGroup"] = group.$key
           clauses.push(clause)
         })
       })
@@ -194,53 +138,68 @@ let ruleRepo = {
       }
     }
   },
+  getPath(siteKey, ruleKey) {
+    let path = ruleRepo.basePath.replace('{{siteKey}}', siteKey).replace('{{ruleKey}}', ruleKey)
+    if(path.endsWith('/')){
+      path = path.substring(0, path.length-1)
+    }
+    return path;
+  },
   push(rule) {
     if (rule.$key) {
       throw new Error("Cannot push Rule: rule already has a key. Use #set()")
     }
     rule.$key = Core.Key.next()
-    return ruleRepo.set(rule)
+    return ruleRepo.set(rule, true)
   },
-  set(rule) {
+  set(rule, isNew) {
     rule = Check.exists(rule, "Cannot save null rule.")
     Check.notEmpty(rule.name, "Name is required to save a Rule")
-
+    /* @todo ggranum: SiteKey should be defined programatically, however... it's not yet. */
     return new Promise((resolve, reject) => {
       let _xForm = ruleRepo.outward.transform(rule)
-      let path = ruleRepo.basePath + _xForm.key
-      let previous = Storage.getItem(path)
-      Storage.setItem(path, _xForm.val)
+      let path
+      if(isNew === true && SERVER_CREATES_KEYS){
+        path = ruleRepo.getPath( defaultSiteKey, '')
+      } else {
+        path = ruleRepo.getPath( defaultSiteKey, _xForm.key)
+      }
+      Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
       let clausePromises = _xForm.clauses.map(clauseRepo.set)
       Promise.all(clausePromises).then((_clausesAry)=> {
-        if (previous) {
-          RuleEngine.actions.updateRule(rule)
-        } else {
+        if (isNew) {
           RuleEngine.actions.addRule(rule)
+        } else {
+          RuleEngine.actions.updateRule(rule)
         }
         resolve(rule)
-      }, (e) => {throw e;})
+      }, (e) => {
+        throw e;
+      })
+
     })
   },
   get(ruleKey) {
-    let _rule = Storage.getItem(ruleRepo.basePath + ruleKey)
-    return ruleRepo.inward.transform(_rule, ruleKey).then((rule) => {
-      RuleEngine.actions.addRule(rule)
-      return rule;
-    });
+     return Storage.getItem(ruleRepo.getPath(defaultSiteKey, ruleKey)).then((_rule)=> {
+       return ruleRepo.inward.transform(_rule, ruleKey).then((rule) => {
+         RuleEngine.actions.addRule(rule)
+         return rule;
+       });
+     })
   },
   remove(ruleKey) {
     return new Promise((resolve, reject) => {
-      let path = ruleRepo.basePath + ruleKey
+      let path = ruleRepo.getPath(defaultSiteKey, ruleKey)
       resolve(Storage.removeItem(path))
     });
 
   },
   init() {
-    let paths = Storage.childKeys(ruleRepo.basePath)
-    let rules = paths.map(ruleRepo.get)
-
-    return Promise.all(rules).then((resolvedRules) => {
-      return resolvedRules
+    return Storage.childKeys(ruleRepo.getPath(defaultSiteKey, '') + '/').then((paths) => {
+      let rules = paths.map(ruleRepo.get)
+      return Promise.all(rules).then((resolvedRules) => {
+        return resolvedRules
+      })
     })
   }
 

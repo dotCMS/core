@@ -1,8 +1,8 @@
 import XDebug from 'debug';
 let log = XDebug('RulesEngine.api');
 
-import  {Core} from 'src/coreweb/index.js'
-import  {EntityForge as EF, ValidationError} from 'src/entity-forge/EntityForge.js'
+import  {Core} from '../../coreweb/index.js'
+import  {EntityForge as EF, ValidationError} from '../../entity-forge/EntityForge.js'
 
 
 let defaultSiteId = '48190c8c-42c4-46af-8d1a-0cd5db894797'
