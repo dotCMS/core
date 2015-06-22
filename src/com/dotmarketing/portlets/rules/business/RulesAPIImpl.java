@@ -38,17 +38,26 @@ public class RulesAPIImpl implements RulesAPI {
 
         // Add default conditionlet classes
         conditionletClasses.addAll(Arrays.asList(new Class[]{
-                UsersCountryConditionlet.class,
-                UsersCityConditionlet.class,
-                UsersStateConditionlet.class,
-                UsersLanguageConditionlet.class,
-                UsersBrowserConditionlet.class,
-                UsersHostConditionlet.class,
-                UsersIpAddressConditionlet.class,
-                UsersOperatingSystemConditionlet.class,
-                UsersSiteVisitsConditionlet.class,
-                UsersVisitedUrlConditionlet.class,
-                MockTrueConditionlet.class
+        		UsersBrowserConditionlet.class,
+        		UsersBrowserHeaderConditionlet.class,
+        		UsersCityConditionlet.class,
+        		UsersCountryConditionlet.class,
+        		UsersCurrentUrlConditionlet.class,
+        		UsersDateTimeConditionlet.class,
+        		UsersHostConditionlet.class,
+        		UsersIpAddressConditionlet.class,
+        		UsersLandingPageUrlConditionlet.class,
+        		UsersLanguageConditionlet.class,
+        		UsersLogInConditionlet.class,
+        		UsersOperatingSystemConditionlet.class,
+        		UsersPageVisitsConditionlet.class,
+        		UsersPlatformConditionlet.class,
+        		UsersReferringUrlConditionlet.class,
+        		UsersSiteVisitsConditionlet.class,
+        		UsersStateConditionlet.class,
+        		UsersTimeConditionlet.class,
+        		UsersUrlParameterConditionlet.class,
+        		UsersVisitedUrlConditionlet.class
         }));
 
         actionletClasses.addAll(Arrays.asList(new Class[]{

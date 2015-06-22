@@ -23,8 +23,18 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * This conditionlet will allow CMS users to check the URL of the first page
- * that a user has visited in its current session. For this conditionlet to
- * work, the Clickstream feature must be enabled.
+ * that a user has visited in its current session. The comparison of URLs is
+ * case-insensitive, except for the regular expression comparison. This
+ * {@link Conditionlet} provides a drop-down menu with the available comparison
+ * mechanisms, and a single text field to enter the value to compare.
+ * <p>
+ * This conditionlet uses Clickstream, which is a user tracking component for
+ * Java web applications, and it must be enabled in your dotCMS configuration.
+ * To do it, just go to the {@code dotmarketing-config.properties} file, look
+ * for a property called {@code ENABLE_CLICKSTREAM_TRACKING} and set its value to
+ * {@code true}. You can also take a look at the other Clickstream configuration
+ * properties to have it running according to your environment's resources.
+ * </p>
  * 
  * @author Jose Castro
  * @version 1.0
@@ -148,12 +158,9 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String conditionletValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			conditionletValue = value.getValue();
-		}
+		String conditionletValue = values.get(0).getValue();
+		inputValues
+				.add(new ConditionletInputValue(INPUT_ID, conditionletValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
@@ -172,27 +179,31 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 		if (!UtilMethods.isSet(firstUrl)) {
 			return false;
 		}
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			firstUrl = firstUrl.toLowerCase();
+			conditionletValue = conditionletValue.toLowerCase();
+		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			if (firstUrl.equalsIgnoreCase(conditionletValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			if (!firstUrl.equalsIgnoreCase(conditionletValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			if (firstUrl.startsWith(conditionletValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			if (firstUrl.endsWith(conditionletValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			if (firstUrl.contains(conditionletValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			Pattern pattern = Pattern.compile(conditionletValue);
 			Matcher matcher = pattern.matcher(firstUrl);
 			if (matcher.find()) {

@@ -25,8 +25,13 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 /**
- * This conditionlet will allow CMS users to check the host name a user request
- * is directed to.
+ * This conditionlet will allow dotCMS users to check the host name a user
+ * request is directed to. The information is obtained by extracting the host
+ * information the {@link HttpServletRequest} object using our own API. The
+ * comparison of host names is case-insensitive, except for the regular
+ * expression comparison. This {@link Conditionlet} provides a drop-down menu
+ * with the available comparison mechanisms, and a single text field to enter
+ * the value to compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -39,7 +44,7 @@ public class UsersHostConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "host";
 	private static final String CONDITIONLET_NAME = "User's Host";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -142,7 +147,7 @@ public class UsersHostConditionlet extends Conditionlet {
 	public boolean evaluate(HttpServletRequest request,
 			HttpServletResponse response, String comparisonId,
 			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
+		if (!UtilMethods.isSet(values) || values.size() < 1
 				|| !UtilMethods.isSet(comparisonId)) {
 			return false;
 		}
@@ -152,37 +157,37 @@ public class UsersHostConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
+		}
+		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+			hostName = hostName.toLowerCase();
+			inputValue = inputValue.toLowerCase();
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			if (hostName.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			if (!hostName.equalsIgnoreCase(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			if (hostName.startsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			if (hostName.endsWith(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			if (hostName.contains(inputValue)) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			Pattern pattern = Pattern.compile(inputValue);
 			Matcher matcher = pattern.matcher(hostName);
 			if (matcher.find()) {

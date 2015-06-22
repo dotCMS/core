@@ -5,7 +5,6 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -24,8 +23,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 /**
- * This conditionlet will allow CMS users to check the user's current date and
- * time when a page was requested.
+ * This conditionlet will allow dotCMS users to check the client's current date
+ * and time when a page was requested. This {@link Conditionlet} provides a
+ * drop-down menu with the available comparison mechanisms, and a text field to
+ * enter the date and time to compare. This date/time parameter will be
+ * expressed in milliseconds in order to avoid any format-related and time zone
+ * issues.
+ * <p>
+ * The date and time of the request is determined by the IP address of the
+ * client that issued the request. Geographic information is then retrieved via
+ * the <a href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java
+ * API</a>.
+ * </p>
  * 
  * @author Jose Castro
  * @version 1.0
@@ -38,7 +47,7 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "datetime";
 	private static final String CONDITIONLET_NAME = "User's Date & Time";
-	
+
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
@@ -133,9 +142,12 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 		}
 		long clientDateTime = 0;
 		try {
-			InetAddress ipAddress = HttpRequestDataUtil.getIpAddress(request);
-			String ip = ipAddress.getHostAddress();
-			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(ip);
+			InetAddress ip = HttpRequestDataUtil.getIpAddress(request);
+			String ipAddress = ip.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
+			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(
+					ipAddress);
 			clientDateTime = date.getTime().getTime();
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(
@@ -148,12 +160,8 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
@@ -168,16 +176,15 @@ public class UsersDateTimeConditionlet extends Conditionlet {
 			if (clientDateTime >= conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
 			if (clientDateTime == conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(
-				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
 			if (clientDateTime <= conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_LOWER_THAN)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
 			if (clientDateTime < conditionletInput) {
 				return true;
 			}

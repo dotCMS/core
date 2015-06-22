@@ -27,9 +27,13 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 
 /**
- * This conditionlet will allow CMS users to check the number of pages that a
+ * This conditionlet will allow dotCMS users to check the number of pages that a
  * user has visited during its current session. The information on the visited
- * pages will be available until the user's session ends.
+ * pages will be available until the user's session ends. This
+ * {@link Conditionlet} provides a drop-down menu with the available comparison
+ * mechanisms, and a single text field to enter the number of visits to take
+ * into account. The user session has a {@link Map} object holding the URLs that
+ * the user has visited per site.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -42,7 +46,7 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "number-visited-pages";
 	private static final String CONDITIONLET_NAME = "User's Visited Pages";
-	
+
 	private static final String COMPARISON_GREATER_THAN = "greater";
 	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
 	private static final String COMPARISON_EQUAL_TO = "equal";
@@ -135,12 +139,8 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
@@ -151,21 +151,20 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 			if (visitedPages > conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(
+		} else if (comparison.getId().equals(
 				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
 			if (visitedPages >= conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
 			if (visitedPages == conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(
-				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
 			if (visitedPages <= conditionletInput) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
 			if (visitedPages < conditionletInput) {
 				return true;
 			}

@@ -31,7 +31,11 @@ import com.liferay.portal.SystemException;
 /**
  * This conditionlet will allow CMS users to check whether a user has already
  * visited the current URL or not. The information on the visited pages will be
- * available until the user's session ends.
+ * available until the user's session ends. The comparison of URLs is
+ * case-insensitive, except for the regular expression comparison. This
+ * {@link Conditionlet} provides a drop-down menu with the available comparison
+ * mechanisms, and a text field to enter the value to compare. The user session
+ * has a {@link Map} object holding the URLs that the user has visited per site.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -44,7 +48,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "has-visited-url";
 	private static final String CONDITIONLET_NAME = "User's Visited URL";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -152,12 +156,8 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
@@ -262,7 +262,7 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 					return true;
 				}
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			boolean found = false;
 			for (String urlInSession : urlList) {
 				if (urlInSession.equalsIgnoreCase(inputValue)) {
@@ -271,25 +271,25 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 				}
 			}
 			return !found;
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
 			for (String urlInSession : urlList) {
 				if (urlInSession.startsWith(inputValue)) {
 					return true;
 				}
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
+		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
 			for (String urlInSession : urlList) {
 				if (urlInSession.endsWith(inputValue)) {
 					return true;
 				}
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
+		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
 			for (String urlInSession : urlList) {
 				if (urlInSession.contains(inputValue)) {
 					return true;
 				}
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
 			for (String urlInSession : urlList) {
 				Pattern pattern = Pattern.compile(inputValue);
 				Matcher matcher = pattern.matcher(urlInSession);
@@ -299,49 +299,6 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 			}
 		}
 		return false;
-		/*
-		if (urlList == null || urlList.size() == 0
-				|| !UtilMethods.isSet(inputValue)) {
-			return false;
-		}
-		List<String> urls = new ArrayList<String>(urlList);
-		int listSize = urls.size() - 1;
-		for (String urlInSession : urls) {
-			if (comparison.getId().equals(COMPARISON_IS)) {
-				if (urlInSession.equalsIgnoreCase(inputValue)) {
-					return true;
-				}
-			} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-				if (urlInSession.equalsIgnoreCase(inputValue)) {
-					// If at least one is equal, break and return false
-					break;
-				}
-				if (urls.indexOf(urlInSession) == listSize) {
-					// If none of the URLs match, return true
-					return true;
-				}
-			} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-				if (urlInSession.startsWith(inputValue)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_ENDSWITH)) {
-				if (urlInSession.endsWith(inputValue)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_CONTAINS)) {
-				if (urlInSession.contains(inputValue)) {
-					return true;
-				}
-			} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-				Pattern pattern = Pattern.compile(inputValue);
-				Matcher matcher = pattern.matcher(urlInSession);
-				if (matcher.find()) {
-					return true;
-				}
-			}
-		}
-		return false;
-		*/
 	}
 
 }

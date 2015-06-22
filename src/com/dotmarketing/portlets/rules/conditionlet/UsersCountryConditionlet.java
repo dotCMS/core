@@ -23,12 +23,14 @@ import com.dotmarketing.util.UtilMethods;
 /**
  * This conditionlet will allow CMS users to check the country a user request
  * comes from. The available options of this conditionlet will be represented as
- * two-character values.
+ * two-character values. This {@link Conditionlet} provides a drop-down menu
+ * with the available comparison mechanisms, and a drop-down menu with the
+ * countries of the world, where users can select one or more values that will
+ * match the selected criterion.
  * <p>
  * The location of the request is determined by the IP address of the client
  * that issued the request. Geographic information is then retrieved via the <a
- * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>,
- * which will allow CMS users to display content based on geographic data.
+ * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
  * </p>
  * 
  * @author Jose Castro
@@ -42,7 +44,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "country";
 	private static final String CONDITIONLET_NAME = "User's Country";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
@@ -89,6 +91,10 @@ public class UsersCountryConditionlet extends Conditionlet {
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
+			if (this.inputValues == null
+					|| this.inputValues.get(inputId) == null) {
+				getInputs(comparison.getId());
+			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
 			validationResult.setConditionletInputId(inputId);
 			Set<EntryOption> inputOptions = inputField.getData();
@@ -360,8 +366,10 @@ public class UsersCountryConditionlet extends Conditionlet {
 		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
 		String country = null;
 		try {
-			InetAddress address = HttpRequestDataUtil.getIpAddress(request); // 181.193.84.158
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
 			country = geoIp2Util.getCountryIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
@@ -374,7 +382,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
+			inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);
@@ -383,17 +391,16 @@ public class UsersCountryConditionlet extends Conditionlet {
 		}
 		if (comparison.getId().equals(COMPARISON_IS)) {
 			for (ConditionValue value : values) {
-				if (value.getValue().equals(country)) {
+				if (value.getValue().equalsIgnoreCase(country)) {
 					return true;
 				}
 			}
 		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
 			for (ConditionValue value : values) {
-				if (value.getValue().equals(country)) {
+				if (value.getValue().equalsIgnoreCase(country)) {
 					return false;
 				}
 			}
-			// If none of the values match, return true
 			return true;
 		}
 		return false;

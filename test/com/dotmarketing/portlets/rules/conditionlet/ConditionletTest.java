@@ -350,7 +350,7 @@ public class ConditionletTest extends TestBase {
 	}
 
 	@Test
-	public void usersOperatingSystem() {
+	public void testUsersOperatingSystem() {
 		Conditionlet osConditionlet = new UsersOperatingSystemConditionlet();
 		// Conditionlet has the input field
 		Collection<ConditionletInput> inputCollection = osConditionlet

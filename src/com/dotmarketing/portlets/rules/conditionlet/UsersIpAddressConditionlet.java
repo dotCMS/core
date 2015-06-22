@@ -26,7 +26,9 @@ import com.dotmarketing.util.UtilMethods;
  * that issued the request. The information is obtained by reading a specific
  * list of headers in the {@link HttpServletRequest} object that might contain
  * the actual IP address. The address can be compared with other specified IP
- * addresses and also with a specific netmask.
+ * addresses and also with a specific netmask. This {@link Conditionlet}
+ * provides a drop-down menu with the available comparison mechanisms, and a
+ * single text field to enter the value to compare.
  * 
  * @author Jose Castro
  * @version 1.0
@@ -39,7 +41,7 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 
 	private static final String INPUT_ID = "ip-address";
 	private static final String CONDITIONLET_NAME = "User's IP Address";
-	
+
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 	private static final String COMPARISON_STARTSWITH = "startsWith";
@@ -149,6 +151,8 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			ipAddress = address.getHostAddress();
+			// TODO: Remove
+			ipAddress = "170.123.234.133";
 		} catch (UnknownHostException e) {
 			Logger.error(this,
 					"Could not retrieved a valid IP address from request: "
@@ -159,12 +163,8 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;

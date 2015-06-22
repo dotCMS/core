@@ -28,8 +28,29 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
 /**
- * This conditionlet will allow CMS users to check the number of times a
- * specific user has visited a site.
+ * This conditionlet will allow CMS users to check the number of times that <b>A
+ * LOGGED-IN USER</b> has visited a site. This {@link Conditionlet} provides a
+ * drop-down menu with the available comparison mechanisms, and a text field to
+ * enter the number of visits to compare.
+ * <p>
+ * This conditionlet uses Clickstream, which is a user tracking component for
+ * Java web applications, and it must be enabled in your dotCMS configuration.
+ * To do it, just go to the {@code dotmarketing-config.properties} file, look
+ * for a property called {@code ENABLE_CLICKSTREAM_TRACKING} and set its value
+ * to {@code true}. You can also take a look at the other Clickstream
+ * configuration properties to have it running according to your environment's
+ * resources.
+ * </p>
+ * <p>
+ * The information on the number of times as user visits a specific site is
+ * stored in the database. A new entry will be added every time the session of
+ * an authenticated user ends. The Dashboard job in dotCMS will be in charge of,
+ * among other tasks, generating the report on the number of times a specific
+ * user has visited a site. The {@code dotmarketing-config.properties} file
+ * contains a property called {@code DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION},
+ * which determines the moment that the job is scheduled to run. You can change
+ * this property accordingly.
+ * </p>
  * 
  * @author Jose Castro
  * @version 1.0
@@ -138,12 +159,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = null;
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(value.getId(), value
-					.getValue()));
-			inputValue = value.getValue();
-		}
+		String inputValue = values.get(0).getValue();
+		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
 			return false;
@@ -159,21 +176,20 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 			if (visits > conditionletValue) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(
+		} else if (comparison.getId().equals(
 				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
 			if (visits >= conditionletValue) {
 				return true;
 			}
-		} else if (comparison.getId().startsWith(COMPARISON_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
 			if (visits == conditionletValue) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(
-				COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
 			if (visits <= conditionletValue) {
 				return true;
 			}
-		} else if (comparison.getId().endsWith(COMPARISON_LOWER_THAN)) {
+		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
 			if (visits < conditionletValue) {
 				return true;
 			}
@@ -239,7 +255,6 @@ public class UsersSiteVisitsConditionlet extends Conditionlet {
 		int visits = CacheLocator.getSiteVisitCache().getSiteVisits(userId,
 				hostId);
 		if (visits < 0) {
-			visits = 0;
 			DotConnect dc = new DotConnect();
 			String query = "SELECT visits FROM analytic_summary_user_visits WHERE user_id = ? AND host_id = ?";
 			dc.setSQL(query);
