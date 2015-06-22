@@ -15,31 +15,11 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestRuleAction.Builder.class)
 class RestRuleAction {
 
-    private final String id;
-    private final String name;
-    private final int priority;
-    private final String actionlet;
-    private final List<RestRuleActionParameter> parameters;
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getActionlet() {
-        return actionlet;
-    }
-
-    public List<RestRuleActionParameter> getParameters() {
-        return parameters;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
+    public final String id;
+    public final String name;
+    public final int priority;
+    public final String actionlet;
+    public final List<RestRuleActionParameter> parameters;
 
     private RestRuleAction(Builder builder) {
         id = builder.id;

@@ -13,41 +13,13 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 @JsonDeserialize(builder = RestCondition.Builder.class)
 class RestCondition {
 
-    private final String id;
-    private final String name;
-    private final String conditionlet;
-    private final String comparison;
-    private final List<RestConditionValue> values;
-    private final String operator;
-    private final int priority;
-
-    public String getId() {
-        return id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getConditionlet() {
-        return conditionlet;
-    }
-
-    public String getComparison() {
-        return comparison;
-    }
-
-    public List<RestConditionValue> getValues() {
-        return values;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
+    public final String id;
+    public final String name;
+    public final String conditionlet;
+    public final String comparison;
+    public final List<RestConditionValue> values;
+    public final String operator;
+    public final int priority;
 
     private RestCondition(Builder builder) {
         id = builder.id;

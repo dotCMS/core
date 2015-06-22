@@ -1042,18 +1042,18 @@ public class RulesResource extends WebResource {
 
     private void applyRestRuleActionToRuleAction(String ruleId, RestRuleAction restRuleAction, RuleAction ruleAction) {
         ruleAction.setRuleId(ruleId);
-        ruleAction.setName(restRuleAction.getName());
-        ruleAction.setActionlet(restRuleAction.getActionlet());
-        ruleAction.setPriority(restRuleAction.getPriority());
+        ruleAction.setName(restRuleAction.name);
+        ruleAction.setActionlet(restRuleAction.actionlet);
+        ruleAction.setPriority(restRuleAction.priority);
 
-        if(restRuleAction.getParameters()!=null && !restRuleAction.getParameters().isEmpty()) {
+        if(restRuleAction.parameters!=null && !restRuleAction.parameters.isEmpty()) {
             List<RuleActionParameter> parameters = new ArrayList<>();
 
-            for(RestRuleActionParameter restParameter: restRuleAction.getParameters()) {
+            for(RestRuleActionParameter restParameter: restRuleAction.parameters) {
                 RuleActionParameter parameter = new RuleActionParameter();
-                parameter.setId(restParameter.getId());
-                parameter.setKey(restParameter.getKey());
-                parameter.setValue(restParameter.getValue());
+                parameter.setId(restParameter.id);
+                parameter.setKey(restParameter.key);
+                parameter.setValue(restParameter.value);
                 parameters.add(parameter);
             }
 
@@ -1092,8 +1092,8 @@ public class RulesResource extends WebResource {
 
     private void applyRestConditionGroupToConditionGroup(String ruleId, RestConditionGroup restConditionGroup, ConditionGroup conditionGroup) {
         conditionGroup.setRuleId(ruleId);
-        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.getOperator()));
-        conditionGroup.setPriority(restConditionGroup.getPriority());
+        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.operator));
+        conditionGroup.setPriority(restConditionGroup.priority);
     }
 
     private String createConditionInternal(String ruleId, String groupId, RestCondition restCondition, User user) {
@@ -1128,20 +1128,20 @@ public class RulesResource extends WebResource {
     private void applyRestConditionToCondition(String ruleId, String groupId, RestCondition restCondition, Condition condition) {
         condition.setRuleId(ruleId);
         condition.setConditionGroup(groupId);
-        condition.setName(restCondition.getName());
-        condition.setConditionletId(restCondition.getConditionlet());
-        condition.setComparison(restCondition.getComparison());
-        condition.setOperator(Condition.Operator.valueOf(restCondition.getOperator()));
-        condition.setPriority(restCondition.getPriority());
+        condition.setName(restCondition.name);
+        condition.setConditionletId(restCondition.conditionlet);
+        condition.setComparison(restCondition.comparison);
+        condition.setOperator(Condition.Operator.valueOf(restCondition.operator));
+        condition.setPriority(restCondition.priority);
 
-        if(restCondition.getValues()!=null && !restCondition.getValues().isEmpty()) {
+        if(restCondition.values!=null && !restCondition.values.isEmpty()) {
             List<ConditionValue> values = new ArrayList<>();
 
-            for(RestConditionValue value: restCondition.getValues()){
+            for(RestConditionValue value: restCondition.values){
                 ConditionValue newValue = new ConditionValue();
-                newValue.setId(value.getId());
-                newValue.setValue(value.getValue());
-                newValue.setPriority(value.getPriority());
+                newValue.setId(value.id);
+                newValue.setValue(value.value);
+                newValue.setPriority(value.priority);
             }
 
             condition.setValues(values);

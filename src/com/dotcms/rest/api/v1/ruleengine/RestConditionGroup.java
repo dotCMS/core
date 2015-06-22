@@ -14,21 +14,9 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)
 class RestConditionGroup {
 
-    private final String id;
-    private final String operator;
-    private final int priority;
-
-    public String getId() {
-        return id;
-    }
-
-    public String getOperator() {
-        return operator;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
+    public final String id;
+    public final String operator;
+    public final int priority;
 
     private RestConditionGroup(Builder builder) {
         id = builder.id;
