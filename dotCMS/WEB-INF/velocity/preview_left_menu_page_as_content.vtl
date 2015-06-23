@@ -23,7 +23,7 @@
 
 #set($wfScheme = $workflowtool.findSchemeForStruct($dotPageContent.structure))
 
-#set($wfStep  = $workflowtool.findStepByContentlet($dotPageContent))
+#set($wfStep = $workflowtool.findStepByContentlet($dotPageContent.contentObject))
 #set($wfActions = $workflowtool.findActions($wfStep, $backendUser))
 #set($isLocked = $contents.isLocked($dotPageContent.inode))
 #set($iCanLock = $contents.canLock($dotPageContent.inode))
