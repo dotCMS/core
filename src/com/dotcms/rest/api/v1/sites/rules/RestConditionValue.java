@@ -10,21 +10,9 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestConditionValue.Builder.class)
 class RestConditionValue {
 
-    private final String id;
-    private final String value;
-    private final int priority;
-
-    public String getId() {
-        return id;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
+    public final String id;
+    public final String value;
+    public final int priority;
 
     private RestConditionValue(Builder builder) {
         id = builder.id;

@@ -10,26 +10,10 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestRuleActionParameter.Builder.class)
 class RestRuleActionParameter {
 
-    private final String id;
-    private final String key;
-    private final String value;
-    private final int priority;
-
-    public String getId() {
-        return id;
-    }
-
-    public String getValue() {
-        return value;
-    }
-
-    public int getPriority() {
-        return priority;
-    }
-
-    public String getKey() {
-        return key;
-    }
+    public final String id;
+    public final String key;
+    public final String value;
+    public final int priority;
 
     private RestRuleActionParameter(Builder builder) {
         id = builder.id;
