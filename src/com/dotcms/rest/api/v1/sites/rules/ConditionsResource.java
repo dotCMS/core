@@ -313,20 +313,20 @@ public class ConditionsResource {
     private void applyRestConditionToCondition(String ruleId, String groupId, RestCondition restCondition, Condition condition) {
         condition.setRuleId(ruleId);
         condition.setConditionGroup(groupId);
-        condition.setName(restCondition.getName());
-        condition.setConditionletId(restCondition.getConditionlet());
-        condition.setComparison(restCondition.getComparison());
-        condition.setOperator(Condition.Operator.valueOf(restCondition.getOperator()));
-        condition.setPriority(restCondition.getPriority());
+        condition.setName(restCondition.name);
+        condition.setConditionletId(restCondition.conditionlet);
+        condition.setComparison(restCondition.comparison);
+        condition.setOperator(Condition.Operator.valueOf(restCondition.operator));
+        condition.setPriority(restCondition.priority);
 
-        if(restCondition.getValues() != null && !restCondition.getValues().isEmpty()) {
+        if(restCondition.values != null && !restCondition.values.isEmpty()) {
             List<ConditionValue> values = new ArrayList<>();
 
-            for (RestConditionValue value : restCondition.getValues()) {
+            for (RestConditionValue value : restCondition.values) {
                 ConditionValue newValue = new ConditionValue();
-                newValue.setId(value.getId());
-                newValue.setValue(value.getValue());
-                newValue.setPriority(value.getPriority());
+                newValue.setId(value.id);
+                newValue.setValue(value.value);
+                newValue.setPriority(value.priority);
             }
 
             condition.setValues(values);

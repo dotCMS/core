@@ -9,7 +9,7 @@ import com.dotmarketing.portlets.rules.model.Condition;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)
-class RestConditionGroup {
+public class RestConditionGroup {
 
     public final String id;
     public final String operator;
@@ -22,9 +22,9 @@ class RestConditionGroup {
     }
 
     public static final class Builder {
-        @JsonProperty private String id;
         @JsonProperty private final String operator;
-        @JsonProperty private int priority=0;
+        @JsonProperty private String id;
+        @JsonProperty private int priority = 0;
 
         @JsonCreator // needed for non default constructors
         public Builder(@JsonProperty("operator") String operator) {
@@ -41,12 +41,12 @@ class RestConditionGroup {
             return this;
         }
 
-        public void validate(){
+        public void validate() {
             checkNotNull(operator, BadRequestException.class, "conditionGroup.operator is required.");
 
             try {
                 Condition.Operator.valueOf(operator);
-            } catch(IllegalArgumentException iae) {
+            } catch (IllegalArgumentException iae) {
                 throw new BadRequestException(iae, "conditionGroup.operator is invalid.");
             }
         }

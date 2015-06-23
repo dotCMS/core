@@ -248,18 +248,18 @@ public class ActionsResource {
 
     private void applyRestRuleActionToRuleAction(String ruleId, RestRuleAction restRuleAction, RuleAction ruleAction) {
         ruleAction.setRuleId(ruleId);
-        ruleAction.setName(restRuleAction.getName());
-        ruleAction.setActionlet(restRuleAction.getActionlet());
-        ruleAction.setPriority(restRuleAction.getPriority());
+        ruleAction.setName(restRuleAction.name);
+        ruleAction.setActionlet(restRuleAction.actionlet);
+        ruleAction.setPriority(restRuleAction.priority);
 
-        if(restRuleAction.getParameters() != null && !restRuleAction.getParameters().isEmpty()) {
+        if(restRuleAction.parameters != null && !restRuleAction.parameters.isEmpty()) {
             List<RuleActionParameter> parameters = new ArrayList<>();
 
-            for (RestRuleActionParameter restParameter : restRuleAction.getParameters()) {
+            for (RestRuleActionParameter restParameter : restRuleAction.parameters) {
                 RuleActionParameter parameter = new RuleActionParameter();
-                parameter.setId(restParameter.getId());
-                parameter.setKey(restParameter.getKey());
-                parameter.setValue(restParameter.getValue());
+                parameter.setId(restParameter.id);
+                parameter.setKey(restParameter.key);
+                parameter.setValue(restParameter.value);
                 parameters.add(parameter);
             }
 

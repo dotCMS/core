@@ -302,8 +302,8 @@ public class ConditionGroupsResource extends WebResource {
 
     private void applyRestConditionGroupToConditionGroup(String ruleId, RestConditionGroup restConditionGroup, ConditionGroup conditionGroup) {
         conditionGroup.setRuleId(ruleId);
-        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.getOperator()));
-        conditionGroup.setPriority(restConditionGroup.getPriority());
+        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.operator));
+        conditionGroup.setPriority(restConditionGroup.priority);
     }
 
     private String updateConditionGroupInternal(User user, String ruleId, String conditionGroupId, RestConditionGroup restConditionGroup) {
