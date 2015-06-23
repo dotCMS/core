@@ -1,52 +1,55 @@
-package com.dotcms.rest.api.v1.ruleengine;
+package com.dotcms.rest.api.v1.sites.rules;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Rule;
-
-import java.util.Date;
+import java.util.List;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 /**
  * Note: Pretend this class exists in a separate module from the core data types, and cannot have any knowledge of those types. Because it should.
+ *
  * @author Geoff M. Granum
  */
 @JsonDeserialize(builder = RestRule.Builder.class)
-class RestRule {
+public class RestRule {
 
-    public final String id;
+    public final String key;
     public final String name;
     public final String fireOn;
     public final Boolean shortCircuit;
     public final Integer priority;
     public final Boolean enabled;
-
+    public final List<String> groups;
 
     private RestRule(Builder builder) {
-        id = builder.id;
+        key = builder.key;
         name = builder.name;
         fireOn = builder.fireOn;
         shortCircuit = builder.shortCircuit;
         priority = builder.priority;
         enabled = builder.enabled;
+        groups = builder.groups;
     }
 
     @JsonIgnoreProperties({"groups", "actions"})
     public static final class Builder {
-        @JsonProperty private String id;
-        @JsonProperty private final String name;
+        @JsonProperty private String key;
+        @JsonProperty private String name;
         @JsonProperty private String fireOn = Rule.FireOn.EVERY_PAGE.name();
-        @JsonProperty private Boolean shortCircuit=false;
-        @JsonProperty private Integer priority=0;
-        @JsonProperty private Boolean enabled=false;
+        @JsonProperty private Boolean shortCircuit = false;
+        @JsonProperty private Integer priority = 0;
+        @JsonProperty private Boolean enabled = false;
+        @JsonProperty private List<String> groups = ImmutableList.of();
+
 
         /*
             RestRule restRule = new RestRule.Builder()
-            .id( input.getId() )
+            .key( input.getId() )
             .name( input.getName() )
             .fireOn( input.getFireOn() )
             .shortCircuit( input.getShortCircuit() )
@@ -58,14 +61,21 @@ class RestRule {
             .build();
         */
 
-        @JsonCreator // needed for non default constructors
-        public Builder(@JsonProperty("name") String name) {
-            this.name = name;
+        public Builder() {
         }
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder name( String name) {
+            this.name = name;
             return this;
+        }
+
+        public Builder key(String key) {
+            this.key = key;
+            return this;
+        }
+
+        public String key(){
+            return key;
         }
 
         public Builder fireOn(String fireOn) {
@@ -88,23 +98,28 @@ class RestRule {
             return this;
         }
 
+        public Builder groups(List<String> groups) {
+            this.groups = ImmutableList.copyOf(groups);
+            return this;
+        }
+
         public Builder from(RestRule copy) {
-            id = copy.id;
+            key = copy.key;
             fireOn = copy.fireOn;
             shortCircuit = copy.shortCircuit;
             priority = copy.priority;
             enabled = copy.enabled;
+            groups = ImmutableList.copyOf(copy.groups);
             return this;
-        }
-
-
-        public void validate(){
-            checkNotEmpty(name, BadRequestException.class, "rule.name is required.");
         }
 
         public RestRule build() {
             this.validate();
             return new RestRule(this);
+        }
+
+        public void validate() {
+            checkNotEmpty(name, BadRequestException.class, "rule.name is required.");
         }
     }
 }

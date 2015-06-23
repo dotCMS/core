@@ -1,13 +1,10 @@
-package com.dotcms.rest.api.v1.ruleengine;
+package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;

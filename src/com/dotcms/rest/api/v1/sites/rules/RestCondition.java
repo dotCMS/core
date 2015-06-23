@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.ruleengine;
+package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;

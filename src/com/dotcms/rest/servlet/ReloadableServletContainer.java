@@ -59,8 +59,6 @@ import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
 import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
 import com.dotmarketing.business.DotStateException;
 
-
-
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
 	/**
@@ -68,25 +66,14 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 	 */
 	private static final long serialVersionUID = 1L;
 
-
-
-	@Override
-	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-		container.doFilter(req, res, chain);
-
-	}
-
 	private static ServletContainer container = null;
 
-	private static FilterConfig filterConfig;
 	private static ServletConfig servletConfig;
 
 
 	public ReloadableServletContainer() {
 		container = new ServletContainer();
 	}
-
-
 
 	public ReloadableServletContainer(Class<? extends Application> appClass) {
 		container = new ServletContainer(ResourceConfig.forApplicationClass(appClass));
@@ -96,14 +83,15 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
         container = new ServletContainer(ResourceConfig.forApplication(app));
 	}
 
-	// GenericServlet
 
+    // GenericServlet
 
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        container.doFilter(req, res, chain);
+    }
 
-	public ServletContext getServletContext() {
-		if (filterConfig != null)
-			return filterConfig.getServletContext();
-
+    public ServletContext getServletContext() {
 		return this.getServletContext();
 	}
 
@@ -116,8 +104,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
 	@Override
 	public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
-
-		container.service(req,res);
+		container.service(req, res);
 	}
 
 
@@ -154,9 +141,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 	// Filter
 
 	public void init(FilterConfig filterConfig) throws ServletException {
-		filterConfig = filterConfig;
 		container.init(filterConfig);
-
 	}
 
 }

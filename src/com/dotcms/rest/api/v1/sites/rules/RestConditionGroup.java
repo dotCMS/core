@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.ruleengine;
+package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
@@ -6,9 +6,6 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Condition;
 
-import java.util.Date;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)

@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
-import com.dotcms.rest.api.v1.ruleengine.RulesResource;
+import com.dotcms.rest.api.v1.sites.rules.RulesResource;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
