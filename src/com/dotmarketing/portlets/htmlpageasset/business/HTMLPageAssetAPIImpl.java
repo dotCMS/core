@@ -698,7 +698,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     @Override
     public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-                          String contentId, User user, long langId, String userAgent)
+                          String contentId, User user, Long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException {
         String uri = htmlPage.getURI();
         Host host = getParentHost(htmlPage);
@@ -709,14 +709,14 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 	public String getHTML(String uri, Host host, boolean liveMode,
 			String contentId, User user, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
-		return getHTML(uri, host, liveMode, contentId, user, 0, userAgent);
+		return getHTML(uri, host, liveMode, contentId, user, null, userAgent);
 	}
 
 
 
 	@Override
 	public String getHTML(String uri, Host host, boolean liveMode,
-			String contentId, User user, long langId, String userAgent)
+			String contentId, User user, Long langId, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException {
 		/*
 		 * The below code is copied from VelocityServlet.doLiveMode() and
@@ -756,10 +756,10 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 			cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host, langId)
 					: WorkingCache.getPathFromCache(uri, host, langId);
 		}else{
-			// Checking the path is really live using the livecache
-						cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
-								: WorkingCache.getPathFromCache(uri, host);
-		}
+            // Checking the path is really live using the livecache
+            cachedUri = (liveMode) ? LiveCache.getPathFromCache(uri, host)
+                    : WorkingCache.getPathFromCache(uri, host);
+        }
 
 		// if we still have nothing.
 		if (!InodeUtils.isSet(idInode) || cachedUri == null) {
@@ -859,7 +859,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 				requestProxy.setAttribute(WebKeys.WIKI_CONTENTLET, contentId);
 			}
 
-			if (langId > 0) {
+			if (langId != null && langId > 0) {
 				requestProxy.setAttribute(WebKeys.HTMLPAGE_LANGUAGE,
 						Long.toString(langId));
 			}
@@ -868,7 +868,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
 			context = VelocityUtil.getWebContext(requestProxy, responseProxy);
 
-			if (langId > 0) {
+			if (langId != null && langId > 0) {
 				context.put("language", Long.toString(langId));
 			}
 
@@ -876,21 +876,20 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 				context.put("PREVIEW_MODE", new Boolean(true));
 			} else {
 				context.put("PREVIEW_MODE", new Boolean(false));
-			}
+            }
 
-			context.put("host", host);
+            context.put("host", host);
 			VelocityEngine ve = VelocityUtil.getEngine();
 
 			Logger.debug(HTMLPageAssetAPIImpl.class, "Got the template!!!!"
 					+ idInode);
 
 			requestProxy.setAttribute("velocityContext", context);
-			
-			String langStr = "_" + Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-			
-			if(UtilMethods.isSet(contentId)) {
-				langStr = "_" + APILocator.getContentletAPI().find(contentId, user, false).getLanguageId();
-			}
+
+            String langStr = "";
+            if ( langId != null && langId > 0 ) {
+                langStr = "_" + langId;
+            }
 
 			String VELOCITY_HTMLPAGE_EXTENSION = Config
 					.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");

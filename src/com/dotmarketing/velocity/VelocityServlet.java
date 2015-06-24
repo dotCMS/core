@@ -347,7 +347,10 @@ public abstract class VelocityServlet extends HttpServlet {
 		request.setAttribute("idInode", id.getInode());
 		
 		IHTMLPage htmlPage = VelocityUtil.getPage(id, request, false, context);
-		String languageStr = "_" + VelocityUtil.getLanguageId(request);
+		String languageStr = "";
+		if ( htmlPage.isContent() ) {
+			languageStr = "_" + VelocityUtil.getLanguageId(request);
+		}
 		VelocityUtil.makeBackendContext(context, htmlPage, "", id.getURI(), request, true, false, false, host);
 
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
@@ -547,9 +550,16 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "HTMLPage Identifier:" + ident.getInode());
 
     		try {
-    			VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId()
-    					+ "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
-    		} catch (Throwable e) {
+
+				if ( page.isContent() ) {
+					VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode() + "_" + page.getLanguageId()
+							+ "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+				} else {
+					VelocityUtil.getEngine().getTemplate("/live/" + ident.getInode()
+							+ "." + VELOCITY_HTMLPAGE_EXTENSION).merge(context, out);
+				}
+
+			} catch (Throwable e) {
     			Logger.warn(this, "can't do live mode merge", e);
     		}
     		session = request.getSession(false);
