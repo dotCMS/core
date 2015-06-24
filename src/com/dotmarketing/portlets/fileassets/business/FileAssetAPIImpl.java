@@ -172,7 +172,10 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 	}
 
 	public FileAsset fromContentlet(Contentlet con) throws DotStateException {
-		if (con == null || con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_FILEASSET) {
+		if (con == null) {
+			throw new DotStateException("Contentlet : is null");
+		}
+		if (con.getStructure().getStructureType() != Structure.STRUCTURE_TYPE_FILEASSET) {
 			throw new DotStateException("Contentlet : " + con.getInode() + " is not a FileAsset");
 		}
 
