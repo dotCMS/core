@@ -44,7 +44,8 @@ public class RuleTransform {
                 groupIds.add(group.getId());
             }
 
-            RestRule rest = new RestRule.Builder().key(app.getId())
+            RestRule rest = new RestRule.Builder()
+                                    .key(app.getId())
                                     .name(app.getName())
                                     .fireOn(app.getFireOn().getCamelCaseName())
                                     .shortCircuit(app.isShortCircuit())
