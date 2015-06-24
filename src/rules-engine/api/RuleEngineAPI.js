@@ -24,7 +24,7 @@ let dispatchToken = AppDispatcher.register((action) => {
 
 
 let clauseRepo = {
-  basePath: '/api/rules-engine/clauses/',
+  basePath: '/api/v1/rules/clauses/',
   inward: {
     transform(_group, key) {
 
@@ -80,7 +80,7 @@ let defaultSiteKey = "48190c8c-42c4-46af-8d1a-0cd5db894797"
 let SERVER_CREATES_KEYS = true
 let ruleRepo = {};
 ruleRepo = {
-  basePath: '/api/rules-engine/sites/{{siteKey}}/rules/{{ruleKey}}',
+  basePath: '/sites/{{siteKey}}/rules/{{ruleKey}}',
   inward: {
     transform(_rule, key) {
       let groups = Core.Collections.asArray(_rule.groups || {}, ruleRepo.inward.transformGroup)

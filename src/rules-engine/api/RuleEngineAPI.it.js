@@ -32,7 +32,7 @@ describe('RuleEngine.remote.api', function () {
   ruleToAdd.actions[Core.Key.next()] = {"priority": 2}
   ruleToAdd.actions[Core.Key.next()] = {"priority": 1000}
 
-  let ruleApiUrl = '/api/rules-engine/sites/' + defaultSiteId + '/rules'
+  let ruleApiUrl = '/api/v1/sites/' + defaultSiteId + '/rules'
 
   let client;
   let testRule;

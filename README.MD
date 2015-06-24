@@ -1,5 +1,12 @@
 # Core-Web
 
+## Demo
+
+Check out the demo at [http://dotcms.github.io/core-web/](http://dotcms.github.io/core-web/). 
+
+If you have an up to date instance of the [Rules Engine branch](https://github.com/dotCMS/core/tree/issue-7391-rules-engine) of dotCMS Core  running locally you can point to it by setting the Base URL value at the top of the page. Otherwise the demo will  (eventually) default to using LocalStorage for persistence.
+
+
 ## To Run:
 
   * Checkout this repo

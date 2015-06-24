@@ -22,6 +22,8 @@ import ruleActionTemplate from './rule-action.tpl.html!text'
 import clauseGroupTemplate from './clause-group.tpl.html!text'
 import clauseTemplate from './clause.tpl.html!text'
 
+import jsonp from 'jsonp'
+import {ServerManager} from '../../coreweb/ServerManager.js'
 
 @Component({
   selector: 'rule-action',
@@ -270,12 +272,26 @@ class RuleComponent {
 })
 class RulesEngine {
   rules:Array;
+  baseUrl:string;
 
   constructor() {
     this.rules = []
+    this.baseUrl = ServerManager.baseUrl;
     log("creating rules engine");
     RuleEngine.store.addChangeListener(this.onChange.bind(this))
     RuleEngine.store.init()
+  }
+
+  updateBaseUrl(value){
+    let oldUrl = ServerManager.baseUrl
+    ServerManager.baseUrl = value;
+    this.baseUrl = value;
+    this.testBaseUrl(value).catch((e => {
+      debugger
+      this.baseUrl = oldUrl;
+      ServerManager.baseUrl = oldUrl
+    }))
+
   }
 
   onChange(event) {
@@ -292,6 +308,12 @@ class RulesEngine {
     testRule.groups = {}
     testRule.actions = {}
     RuleEngine.ruleRepo.push(testRule)
+  }
+
+  testBaseUrl(baseUrl) {
+    return new Promise((resolve, reject) => {
+      RuleEngine.store.init();
+    })
   }
 }
 

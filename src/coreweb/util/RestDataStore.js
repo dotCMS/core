@@ -5,7 +5,9 @@ let log = XDebug('CoreWeb.RestDataStore');
 import rest from 'rest';
 import basicAuth from 'rest/interceptor/basicAuth';
 
-import  {Core, Check} from '../../coreweb/index.js'
+import  {Core} from '../api/Core.js'
+import  {Check} from '../api/Check.js'
+import  {ServerManager} from '../ServerManager.js'
 
 let client = rest.wrap(basicAuth);
 
@@ -20,11 +22,11 @@ let transformValidResponse = function (response) {
 
 let remoteSet = function (path, entity) {
   return new Promise((resolve, reject)=> {
-    path = path + "?t=" + new Date().getTime() // break cache hack.
-
+    let url = ServerManager.baseUrl + path;
+    console.log("Saving entity to: ", url )
     client({
       username: 'admin@dotcms.com', password: 'admin',
-      path: path,
+      path: url,
       entity: JSON.stringify(entity),
       headers: {'Content-Type': 'application/json'}
     }).then((response) => {
@@ -37,16 +39,15 @@ let remoteSet = function (path, entity) {
 }
 
 let remoteGet = function (path) {
-
   return new Promise((resolve, reject) => {
     if(path.endsWith('/')){
       path = path.substring(0, path.length - 1)
     }
-    path = path + "?t=" + new Date().getTime() // break cache hack.
-
+    let url = ServerManager.baseUrl + path
+    console.log("Getting entity from: ", url )
     client({
       username: 'admin@dotcms.com', password: 'admin',
-      path: path,
+      path: url,
       headers: {'Content-Type': 'application/json'}
     }).then((response) => {
       resolve(transformValidResponse(response))
