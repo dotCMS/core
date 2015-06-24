@@ -318,9 +318,9 @@ public class RulesFactoryImpl implements RulesFactory {
 			db.loadResult();
 
             cache.removeRule(rule);
-
-
 		}
+
+        cache.addRule(rule);
 
         Set<Rule> rules = cache.getRules(rule.getHost(), rule.getFireOn());
         if(rules==null) {
@@ -369,6 +369,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(group.getModDate());
             db.addParam(group.getId());
             db.loadResult();
+            cache.removeConditionGroup(group.getRuleId(), group);
         }
         cache.addConditionGroup(group.getRuleId(), group);
     }
@@ -447,6 +448,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 cache.removeCondition(condition.getConditionGroup(), condition);
             }
 
+            cache.addCondition(condition.getConditionGroup(), condition);
             HibernateUtil.commitTransaction();
 
         } catch(DotDataException e) {
@@ -499,8 +501,6 @@ public class RulesFactoryImpl implements RulesFactory {
                 }
             }
 
-            cache.addAction(ruleAction.getRuleId(), ruleAction);
-
 		} else {
 			db.setSQL(sql.UPDATE_RULE_ACTION);
 			db.addParam(ruleAction.getName());
@@ -523,8 +523,10 @@ public class RulesFactoryImpl implements RulesFactory {
             }
 
             cache.removeAction(ruleAction.getRuleId(), ruleAction);
-            cache.addAction(ruleAction.getRuleId(), ruleAction);
+
 		}
+
+        cache.addAction(ruleAction.getRuleId(), ruleAction);
 	}
 
 	@Override
