@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -31,6 +32,7 @@ import com.liferay.portal.model.User;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -72,7 +74,13 @@ public class RulesResource {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);
-        return Response.ok(getRulesInternal(user, host)).build();
+        List<RestRule> restRules = getRulesInternal(user, host);
+        Map<String, RestRule> hash = Maps.newHashMapWithExpectedSize(restRules.size());
+        for (RestRule restRule : restRules) {
+            hash.put(restRule.key, restRule);
+        }
+
+        return Response.ok(hash).build();
     }
 
     /**

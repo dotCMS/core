@@ -40,49 +40,46 @@
 
 package com.dotcms.rest.servlet;
 
+import com.dotcms.repackage.javax.ws.rs.core.Application;
+import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
+import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
+import com.dotcms.rest.api.CorsFilter;
+import com.dotcms.rest.config.DotRestApplication;
+import com.dotmarketing.business.DotStateException;
 import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.javax.ws.rs.core.Application;
-
-import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
-import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
-import com.dotmarketing.business.DotStateException;
 
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
-	private static ServletContainer container = null;
+    private static ServletContainer container = null;
 
-	private static ServletConfig servletConfig;
+    private static ServletConfig servletConfig;
 
+    public ReloadableServletContainer() {
+        this(new DotRestApplication());
+    }
 
-	public ReloadableServletContainer() {
-		container = new ServletContainer();
-	}
+    public ReloadableServletContainer(Class<? extends Application> appClass) {
+        container = new ServletContainer(createResourceConfig(appClass));
+    }
 
-	public ReloadableServletContainer(Class<? extends Application> appClass) {
-		container = new ServletContainer(ResourceConfig.forApplicationClass(appClass));
-	}
-
-	public ReloadableServletContainer(Application app) {
-        container = new ServletContainer(ResourceConfig.forApplication(app));
-	}
-
+    public ReloadableServletContainer(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
+    }
 
     // GenericServlet
 
@@ -91,57 +88,54 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
         container.doFilter(req, res, chain);
     }
 
-    public ServletContext getServletContext() {
-		return this.getServletContext();
-	}
+    @Override
+    public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+        container.service(req, res);
+    }
 
-	@Override
-	protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		container.service(req,res);
-	}
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        servletConfig = config;
+        container.init(config);
+    }
 
+    public static void reload(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
+        try {
+            container.init(servletConfig);
+        } catch (ServletException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+    }
 
+    /**
+     * Destroy this Servlet or Filter.
+     */
+    @Override
+    public void destroy() {
+        if(container != null) {
+            container.destroy();
+        }
+    }
 
-	@Override
-	public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
-		container.service(req, res);
-	}
+    public void init(FilterConfig filterConfig) throws ServletException {
+        container.init(filterConfig);
+    }
 
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        container.service(req, res);
+    }
 
+    private static ResourceConfig createResourceConfig(Application app) {
+        return configureResourceConfig(ResourceConfig.forApplication(app));
+    }
 
-	@Override
-	public void init(ServletConfig config) throws ServletException {
-		servletConfig = config;
-		container.init(config);
-	}
+    private static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
+        return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
+    }
 
-
-
-
-	public static void reload(Application app) {
-		container = new ServletContainer(ResourceConfig.forApplication(app));
-		try {
-			container.init(servletConfig);
-		} catch (ServletException e) {
-			throw new DotStateException(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Destroy this Servlet or Filter.
-	 * 
-	 */
-	@Override
-	public void destroy() {
-		if (container != null) {
-			container.destroy();
-		}
-	}
-
-	// Filter
-
-	public void init(FilterConfig filterConfig) throws ServletException {
-		container.init(filterConfig);
-	}
-
+    private static ResourceConfig configureResourceConfig(ResourceConfig config) {
+        return config.register(CorsFilter.class);
+    }
 }
