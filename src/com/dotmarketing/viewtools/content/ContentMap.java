@@ -80,7 +80,7 @@ public class ContentMap {
 		this.host = host;
 		this.context = context;
 	}
-
+	
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -106,22 +106,22 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-
+	
 	public Object get(String fieldVariableName) {
 		return get(fieldVariableName, true);
 	}
-
+	
 	/**
 	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-
+	
 	public Object getRaw(String fieldVariableName) {
 		return get(fieldVariableName, false);
 	}
 
-
+	
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
 			Object ret = null;
@@ -359,8 +359,8 @@ public class ContentMap {
 
 	/**
 	 * Returns the {@link Contentlet} object this map is associated to.
-	 *
-	 * @return The {@link Contentlet} object.
+	 * 
+	 * @return The {@link Contentlet} object. 
 	 */
 	public Contentlet getContentObject() {
 		return this.content;
