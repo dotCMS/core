@@ -80,7 +80,7 @@ public class ContentMap {
 		this.host = host;
 		this.context = context;
 	}
-	
+
 	/**
 	 * Use to get a value of the field on a content returned from the ContentTool Viewtool
 	 * This method gets called automatically when you place a "." after the contentmap object in Velocity<br/>
@@ -106,22 +106,22 @@ public class ContentMap {
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object get(String fieldVariableName) {
 		return get(fieldVariableName, true);
 	}
-	
+
 	/**
 	 * Use to get an unparsed value of the field on a content returned from the ContentTool Viewtool, even if it contains velocity code
 	 * @param fieldVariableName The velocity Variable name from the structure.
 	 * @return
 	 */
-	
+
 	public Object getRaw(String fieldVariableName) {
 		return get(fieldVariableName, false);
 	}
 
-	
+
 	private Object get(String fieldVariableName, Boolean parseVelocity) {
 		try {
 			Object ret = null;
@@ -243,7 +243,7 @@ public class ContentMap {
 					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name
 					return identifier.getParentPath() + identifier.getAssetName();
 				}else{
-					Logger.debug(this, "There URL can't be get from empty identifier, the page might not exists on the identifier table.");
+					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
 				}
 				return null;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
@@ -339,7 +339,7 @@ public class ContentMap {
 		title = content.getTitle();
 		return title;
 	}
-	
+
 	public boolean isLive() throws Exception {
 	    return content.isLive();
 	}
@@ -359,8 +359,8 @@ public class ContentMap {
 
 	/**
 	 * Returns the {@link Contentlet} object this map is associated to.
-	 * 
-	 * @return The {@link Contentlet} object. 
+	 *
+	 * @return The {@link Contentlet} object.
 	 */
 	public Contentlet getContentObject() {
 		return this.content;
