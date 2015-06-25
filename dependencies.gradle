@@ -204,6 +204,7 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version:'2.6.0-rc1_1'
 	compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version:'2.6.0-rc1_1'
 	compile group: 'com.dotcms.lib', name: 'dot.jersey-entity-filtering', version:'2.17_1'
+	compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version:'2.6.0-rc2_1'
 	
 	
 
