@@ -33,23 +33,41 @@ import com.dotcms.repackage.org.xml.sax.SAXException;
 public class HTMLDiffer implements Differ{
 
     private DiffOutput output;
+    private RangeDifference[] differences = null;
 
     public HTMLDiffer(DiffOutput dm) {
         output = dm;
     }
 
     /**
+     * Compares two given Text nodes and returns the differences between them.
+     *
+     * @param leftComparator
+     * @param rightComparator
+     * @return
+     */
+    public RangeDifference[] getDifferences ( TextNodeComparator leftComparator,
+                                              TextNodeComparator rightComparator ) {
+
+        if ( differences == null ) {
+            LCSSettings settings = new LCSSettings();
+            settings.setUseGreedyMethod(false);
+            // settings.setPowLimit(1.5);
+            // settings.setTooLong(100000*100000);
+
+            differences = RangeDifferencer.findDifferences(settings, leftComparator, rightComparator);
+        }
+
+        return differences;
+    }
+
+    /**
      * {@inheritDoc}
      */
-    public void diff(TextNodeComparator leftComparator,
-            TextNodeComparator rightComparator) throws SAXException {
-        LCSSettings settings = new LCSSettings();
-        settings.setUseGreedyMethod(false);
-        // settings.setPowLimit(1.5);
-        // settings.setTooLong(100000*100000);
+    public void diff(TextNodeComparator leftComparator, TextNodeComparator rightComparator) throws SAXException {
 
-        RangeDifference[] differences = RangeDifferencer.findDifferences(
-                settings, leftComparator, rightComparator);
+        //Search for the differences
+        RangeDifference[] differences = getDifferences(leftComparator, rightComparator);
 
         List<RangeDifference> pdifferences = preProcess(differences);
 
