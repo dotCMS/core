@@ -63,13 +63,17 @@ public class HostAPITest {
         
         // wait for the copy to be done. 
         //#6084: If the license is not Enterprise it should NOT get stuck.
-        //It will wait for 5 minutes only. 
+        //It will wait for 10 minutes only. 
         int milliseconds = 0;
-        int maxMilliseconds = 600000; //5 Minutes
+        int maxMilliseconds = 600000; //10 Minutes
         
         while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
             Thread.sleep(500);
             milliseconds += 500;
+        }
+        
+        if (QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup()) < 0) {
+        	Assert.fail("testDeleteHost The host copy task did not start");
         }
         
         if(milliseconds >= maxMilliseconds){
