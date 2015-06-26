@@ -33,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -206,7 +207,8 @@ public class RulesResource {
     private List<RestRule> getRulesInternal(User user, Host host) {
         try {
             List<Rule> rules = rulesAPI.getRulesByHost(host.getIdentifier(), user, false);
-            return Lists.newArrayList(Lists.transform(rules, ruleTransform.appToRestFn()));
+//            return Lists.newArrayList(Lists.transform(rules, ruleTransform.appToRestFn()));
+            return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {
