@@ -5,7 +5,7 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
-$import.read("/html/common/messages_inc.jsp") 
+<script type='text/javascript' src='/html/js/messages.js'></script>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
