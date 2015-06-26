@@ -1,5 +1,10 @@
 package com.dotcms.rest.config;
 
+import com.dotcms.rest.api.v1.sites.rules.ActionletsResource;
+import com.dotcms.rest.api.v1.sites.rules.ActionsResource;
+import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
+import com.dotcms.rest.api.v1.sites.rules.ConditionletsResource;
+import com.dotcms.rest.api.v1.sites.rules.ConditionsResource;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,6 +44,11 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
 					REST_CLASSES.add(RulesResource.class);
+					REST_CLASSES.add(ConditionGroupsResource.class);
+					REST_CLASSES.add(ConditionsResource.class);
+					REST_CLASSES.add(ConditionletsResource.class);
+					REST_CLASSES.add(ActionsResource.class);
+					REST_CLASSES.add(ActionletsResource.class);
 
 				}
 			}

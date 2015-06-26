@@ -16,6 +16,7 @@ public class CorsFilter implements ContainerResponseFilter {
         MultivaluedMap<String, Object> headers = responseContext.getHeaders();
 
         headers.add("Access-Control-Allow-Origin", "*");
+        headers.add("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, DELETE, OPTIONS");
         headers.add("Access-Control-Allow-Headers", "Authorization, Accept, Content-Type, Cookies");
     }
 }
