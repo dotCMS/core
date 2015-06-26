@@ -105,6 +105,7 @@ public class RestRule {
 
         public Builder from(RestRule copy) {
             key = copy.key;
+            name = copy.name;
             fireOn = copy.fireOn;
             shortCircuit = copy.shortCircuit;
             priority = copy.priority;
