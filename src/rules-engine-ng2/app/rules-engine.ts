@@ -250,7 +250,7 @@ class RuleComponent {
 
   updateRule(name:string){
     this._rule.name = name;
-    RuleEngine.ruleRepo.push(this._rule)
+    RuleEngine.ruleRepo.set(this._rule)
   }
 
   addGroup() {

@@ -65,6 +65,11 @@ let _store = new Map()
 
 let registrationFn = function (action) {
   switch (action.key) {
+    case actionTypes.UPDATE_RULE:
+      _store.set(action.rule.$key, action.rule)
+      log(action.key, action.rule.$key, action.rule.name, 'count:' + _store.size)
+      RuleStore.emitChange(action)
+      break;
     case actionTypes.ADD_RULE:
       _store.set(action.rule.$key, action.rule)
       log(action.key, action.rule.$key, action.rule.name, 'count:' + _store.size)

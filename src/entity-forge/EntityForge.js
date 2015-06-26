@@ -42,8 +42,8 @@ let propertyErrorsToString = function () {
  */
 class BaseForge {
 
-  constructor() {
-    this._defaultValue = null
+  constructor(defaultValue = null) {
+    this._defaultValue = defaultValue
     this._v = {}
     // need to iterate by insertion order; can't reuse 'v'
     this._vAry = []
@@ -155,12 +155,16 @@ class BaseForge {
 
 class ObjectForge extends BaseForge {
 
-  constructor() {
-    super()
+  constructor(fieldName, fields = null, defaultValue = null) {
+    super(defaultValue)
+    this.fieldName = fieldName
+    this.fieldDefinitions = fields || {}
   }
 
   asNewable() {
-    let ctor = this.newInstance
+    let ctor = function(cfg = null) {
+      return this.newInstance(cfg)
+    }
     ctor.prototype = this
     return ctor
   }
@@ -243,10 +247,7 @@ class ObjectForge extends BaseForge {
   /**********************   Fluent config methods.  **********************/
 
   static obj(fieldName, fields = {}, defaultValue = null, msg = "@validations.obj.invalidChildMember") {
-    let forge = new ObjectForge()
-    forge._defaultValue = defaultValue
-    forge.fieldDefinitions = fields
-    forge.fieldName = fieldName
+    let forge = new ObjectForge(fieldName, fields, defaultValue )
     return forge._applyValidation({
       name: 'obj',
       fn: ObjectForge.memberPropertiesValid,

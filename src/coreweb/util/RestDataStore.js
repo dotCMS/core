@@ -29,11 +29,12 @@ let transformStatusErrorResponse = function (response) {
   }
 }
 
-let remoteSet = function (path, entity) {
+let remoteSet = function (path, entity, create = false) {
   return new Promise((resolve, reject)=> {
     let url = ServerManager.baseUrl + path;
     log("Saving entity to: ", url )
     client({
+      method: create ? "POST" : "PUT",
       username: 'admin@dotcms.com', password: 'admin',
       path: url,
       entity: JSON.stringify(entity),
@@ -107,7 +108,7 @@ let RestDataStore = {
     return new Promise((resolve, reject) => {
       path = Check.exists(path, "Cannot save with an empty key")
       entity = Check.exists(entity, "Cannot save empty values. Did you mean to remove?")
-      remoteSet(path, entity).then((response) => {
+      remoteSet(path, entity, isNewHack).then((response) => {
         if (response.status.code === 200) {
           if (isNewHack === true) {
             path = path + '/' + response.entity.id

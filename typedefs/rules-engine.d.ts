@@ -11,6 +11,7 @@ declare module Core {
 declare module RuleEngine {
     declare module ruleRepo {
       declare function push(rule:any):Promise
+      declare function set(rule:any):Promise
       declare function remove(rule:any):Promise
   }
 }

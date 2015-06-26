@@ -39,7 +39,7 @@ let RuleGroupDefinition = {
 
 
 
-let Rule = EF.obj('Rule', RuleDefinition).asNewable()
 let RuleGroup = EF.obj('RuleGroup', RuleGroupDefinition).asNewable()
+let Rule = EF.obj('Rule', RuleDefinition).asNewable()
 
 export {Rule, RuleGroup}

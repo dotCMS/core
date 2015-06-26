@@ -100,7 +100,7 @@ ruleRepo = {
       let group = {
         $key: key,
         operator: _group.operator,
-        clauses: {}
+        priority: _group.priority
       }
       clausesPromises.push(clauseRepo.getByGroup(key).then((clauses) => {
         group.clauses = clauses
@@ -116,25 +116,15 @@ ruleRepo = {
       let _rule = {
         name: rule.name,
         enabled: rule.enabled,
-        priority: rule.priority,
+        priority: rule.priority || 1,
         fireOn: rule.fireOn,
         shortCircuit: rule.shortCircuit,
         groups: {},
         actions: {}
       }
-      let clauses = []
-      Object.keys(rule.groups).forEach((groupId) => {
-        let group = rule.groups[groupId]
-        _rule.groups[group.$key] = group
-        group.clauses.forEach((clause) => {
-          clause["owningGroup"] = group.$key
-          clauses.push(clause)
-        })
-      })
       return {
         key: rule.$key,
-        val: _rule,
-        clauses: clauses
+        val: _rule
       }
     }
   },
@@ -152,7 +142,7 @@ ruleRepo = {
     rule.$key = Core.Key.next()
     return ruleRepo.set(rule, true)
   },
-  set(rule, isNew) {
+  set(rule, isNew = false) {
     rule = Check.exists(rule, "Cannot save null rule.")
     Check.notEmpty(rule.name, "Name is required to save a Rule")
     /* @todo ggranum: SiteKey should be defined programatically, however... it's not yet. */
@@ -165,18 +155,12 @@ ruleRepo = {
         path = ruleRepo.getPath(defaultSiteKey, _xForm.key)
       }
       Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
-      let clausePromises = _xForm.clauses.map(clauseRepo.set)
-      Promise.all(clausePromises).then((_clausesAry)=> {
         if (isNew) {
           RuleEngine.actions.addRule(rule)
         } else {
           RuleEngine.actions.updateRule(rule)
         }
         resolve(rule)
-      }, (e) => {
-        throw e;
-      })
-
     })
   },
   get(ruleKey) {
