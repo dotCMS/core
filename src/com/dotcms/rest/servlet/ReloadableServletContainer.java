@@ -46,6 +46,7 @@ import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.config.DotRestApplication;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -90,7 +91,12 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
-        container.service(req, res);
+        try {
+            container.service(req, res);
+        } catch (ServletException | IOException e) {
+            Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
+            throw e;
+        }
     }
 
     @Override
