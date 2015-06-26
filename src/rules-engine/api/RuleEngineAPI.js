@@ -24,7 +24,7 @@ let dispatchToken = AppDispatcher.register((action) => {
 
 
 let clauseRepo = {
-  basePath: '/api/v1/rules/clauses/',
+  basePath: 'api/v1/rules/clauses/',
   inward: {
     transform(_group, key) {
 
@@ -58,7 +58,7 @@ let clauseRepo = {
   getByGroup(groupKey) {
     return new Promise((resolve, reject) => {
       let clausesByGroup = new Map();
-      let _clauses = Storage.childItems(clauseRepo.basePath).filter((_stub)=>{
+      let _clauses = Storage.childItems(clauseRepo.basePath).filter((_stub)=> {
         return _stub.val.owningGroup == groupKey
       }).map((_stub) => {
         return {
@@ -80,7 +80,7 @@ let defaultSiteKey = "48190c8c-42c4-46af-8d1a-0cd5db894797"
 let SERVER_CREATES_KEYS = true
 let ruleRepo = {};
 ruleRepo = {
-  basePath: '/sites/{{siteKey}}/rules/{{ruleKey}}',
+  basePath: 'api/v1/sites/{{siteKey}}/rules/{{ruleKey}}',
   inward: {
     transform(_rule, key) {
       let groups = Core.Collections.asArray(_rule.groups || {}, ruleRepo.inward.transformGroup)
@@ -140,8 +140,8 @@ ruleRepo = {
   },
   getPath(siteKey, ruleKey) {
     let path = ruleRepo.basePath.replace('{{siteKey}}', siteKey).replace('{{ruleKey}}', ruleKey)
-    if(path.endsWith('/')){
-      path = path.substring(0, path.length-1)
+    if (path.endsWith('/')) {
+      path = path.substring(0, path.length - 1)
     }
     return path;
   },
@@ -159,10 +159,10 @@ ruleRepo = {
     return new Promise((resolve, reject) => {
       let _xForm = ruleRepo.outward.transform(rule)
       let path
-      if(isNew === true && SERVER_CREATES_KEYS){
-        path = ruleRepo.getPath( defaultSiteKey, '')
+      if (isNew === true && SERVER_CREATES_KEYS) {
+        path = ruleRepo.getPath(defaultSiteKey, '')
       } else {
-        path = ruleRepo.getPath( defaultSiteKey, _xForm.key)
+        path = ruleRepo.getPath(defaultSiteKey, _xForm.key)
       }
       Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
       let clausePromises = _xForm.clauses.map(clauseRepo.set)
@@ -180,19 +180,16 @@ ruleRepo = {
     })
   },
   get(ruleKey) {
-     return Storage.getItem(ruleRepo.getPath(defaultSiteKey, ruleKey)).then((_rule)=> {
-       return ruleRepo.inward.transform(_rule, ruleKey).then((rule) => {
-         RuleEngine.actions.addRule(rule)
-         return rule;
-       });
-     })
+    return Storage.getItem(ruleRepo.getPath(defaultSiteKey, ruleKey)).then((_rule)=> {
+      return ruleRepo.inward.transform(_rule, ruleKey).then((rule) => {
+        RuleEngine.actions.addRule(rule)
+        return rule;
+      });
+    })
   },
   remove(ruleKey) {
-    return new Promise((resolve, reject) => {
-      let path = ruleRepo.getPath(defaultSiteKey, ruleKey)
-      resolve(Storage.removeItem(path))
-    });
-
+    let path = ruleRepo.getPath(defaultSiteKey, ruleKey)
+    return Storage.removeItem(path)
   },
   init() {
     return Storage.childKeys(ruleRepo.getPath(defaultSiteKey, '') + '/').then((paths) => {
@@ -202,10 +199,55 @@ ruleRepo = {
       })
     })
   }
-
 }
 
-export {ruleRepo};
+let ruleGroupRepo = {};
+ruleGroupRepo = {
+  basePath: 'api/v1/sites/{{siteKey}}/rules/{{ruleKey}}/conditiongroups/{{groupKey}}',
+  outward: {
+    transform(group) {
+      let _group = {
+        priority: group.priority,
+        operator: group.operator || "OR"
+      }
+      return {
+        key: group.$key,
+        val: _group
+      }
+    }
+  },
+  getPath(siteKey, ruleKey, groupKey) {
+    let path = ruleGroupRepo.basePath
+        .replace('{{siteKey}}', siteKey)
+        .replace('{{ruleKey}}', ruleKey)
+        .replace('{{groupKey}}', groupKey)
+    if (path.endsWith('/')) {
+      path = path.substring(0, path.length - 1)
+    }
+    return path;
+  },
+  push(group){
+    if (group.$key) {
+      throw new Error("Cannot push Group: group already has a key. Use #set()")
+    }
+    group.$key = Core.Key.next()
+    return ruleGroupRepo.set(group, true)
+  },
+  set(group, isNew) {
+    return new Promise((resolve, reject) => {
+      let _xForm = ruleGroupRepo.outward.transform(group)
+      let path
+      if (isNew === true && SERVER_CREATES_KEYS) {
+        path = ruleGroupRepo.getPath(defaultSiteKey, group.ruleKey, '')
+      } else {
+        path = ruleGroupRepo.getPath(defaultSiteKey, group.ruleKey, _xForm.key)
+      }
+      Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
+    })
+  }
+}
+
+export {ruleRepo, ruleGroupRepo};
 
 
 

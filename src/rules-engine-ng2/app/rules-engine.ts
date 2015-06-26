@@ -225,39 +225,51 @@ class ClauseGroupComponent {
 })
 @View({
   template: ruleTemplate,
-  directives: [RuleActionComponent, ClauseGroupComponent, FormDirectives, If, For]
+  directives: [ClauseGroupComponent, If, For]
 })
 class RuleComponent {
   _rule:any;
-  form:ControlGroup;
+  ruleGroups:Array;
   index:number;
-  builder:FormBuilder;
-  isCollapse:any;
+  collapsed:boolean;
 
-  constructor(b:FormBuilder) {
-    this.builder = b;
-    this.isCollapse = true;
+  constructor() {
+    this.collapsed = false;
+  }
+
+  set rule(rule:any){
+    this._rule = rule
+    this.ruleGroups = Object.keys(rule.groups || {}).map((key) => {
+      return rule.groups[key]
+    })
   }
 
   get rule():any {
     return this._rule
   }
 
-  set rule(rule:any) {
-    this._rule = rule
-    var ruleControl = this.builder.group({
-      "name": [rule.name, Validators.required]
-    });
-    ruleControl.controls.name.valueChanges.toRx().subscribe((v) => log("it changed: ", v))
-    this.form = ruleControl
+  updateRule(name:string){
+    this._rule.name = name;
+    RuleEngine.ruleRepo.push(this._rule)
   }
 
-  toggleCollapse() {
-    this.isCollapse = !this.isCollapse
+  addGroup() {
+    let group = new RuleEngine.RuleGroup();
+    group.priority = 10
+    group.operator = 'OR'
+    group.ruleKey = this._rule.$key
+    RuleEngine.ruleGroupRepo.push(group).then((group) => {
+      this._rule.groups[group.$key] = true
+    })
   }
 
   removeRule() {
-    //RuleActionCreators.removeRule(this.rule.$key)
+    RuleEngine.ruleRepo.remove(this.rule.$key).then((x) => {
+      log("Yay! ", x)
+    }).catch((e) => {
+      log("Not yay :~(: ", e)
+      throw e
+    })
   }
 
 }
@@ -268,7 +280,7 @@ class RuleComponent {
 })
 @View({
   template: rulesEngineTemplate,
-  directives: [FormDirectives, For, RuleComponent, If]
+  directives: [For, RuleComponent, If]
 })
 class RulesEngine {
   rules:Array;
@@ -287,9 +299,11 @@ class RulesEngine {
     ServerManager.baseUrl = value;
     this.baseUrl = value;
     this.testBaseUrl(value).catch((e => {
-      debugger
+      alert("Error using provided Base Url. Check the development console.");
+      log("Error using provided Base Url: ", e)
       this.baseUrl = oldUrl;
       ServerManager.baseUrl = oldUrl
+      throw e
     }))
 
   }

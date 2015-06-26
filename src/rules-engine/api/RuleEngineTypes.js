@@ -30,5 +30,16 @@ let RuleDefinition = {
 }
 
 
+let RuleGroupDefinition = {
+  $key: EF.string(),
+  priority: EF.int(0).min(0).max(100),
+  operator: EF.string(),
+  ruleKey: EF.string()
+}
+
+
+
 let Rule = EF.obj('Rule', RuleDefinition).asNewable()
-export {Rule}
+let RuleGroup = EF.obj('RuleGroup', RuleGroupDefinition).asNewable()
+
+export {Rule, RuleGroup}

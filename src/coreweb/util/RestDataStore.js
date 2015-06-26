@@ -20,17 +20,31 @@ let transformValidResponse = function (response) {
   }
 }
 
+let transformStatusErrorResponse = function (response) {
+  return {
+    status: response.status || {},
+    headers: response.headers || {},
+    entity: response.entity || "",
+    request: response.request || {}
+  }
+}
+
 let remoteSet = function (path, entity) {
   return new Promise((resolve, reject)=> {
     let url = ServerManager.baseUrl + path;
-    console.log("Saving entity to: ", url )
+    log("Saving entity to: ", url )
     client({
       username: 'admin@dotcms.com', password: 'admin',
       path: url,
       entity: JSON.stringify(entity),
       headers: {'Content-Type': 'application/json'}
     }).then((response) => {
-      resolve(transformValidResponse(response))
+      if(response.status.code > 199 && response.status.code < 300)
+      {
+        resolve(transformValidResponse(response))
+      } else {
+        reject(transformStatusErrorResponse(response))
+      }
     }).catch((e)=> {
       log("Save operation resulted in an error: ", e)
       reject(e)
@@ -44,7 +58,7 @@ let remoteGet = function (path) {
       path = path.substring(0, path.length - 1)
     }
     let url = ServerManager.baseUrl + path
-    console.log("Getting entity from: ", url )
+    log("Getting entity from: ", url )
     client({
       username: 'admin@dotcms.com', password: 'admin',
       path: url,
@@ -56,6 +70,27 @@ let remoteGet = function (path) {
     })
   })
 }
+
+
+let remoteDelete = function (path) {
+  return new Promise((resolve, reject)=> {
+    let url = ServerManager.baseUrl + path;
+    log("Deleting entity at: ", url )
+    client({
+      method: "DELETE",
+      username: 'admin@dotcms.com', password: 'admin',
+      path: url,
+      headers: {'Content-Type': 'application/json'},
+    }).then((response) => {
+      resolve(transformValidResponse(response))
+    }).catch((e)=> {
+      log("Delete operation resulted in an error: ", e)
+      reject(e)
+    })
+  })
+}
+
+
 
 let RestDataStore = {
   get length() {
@@ -92,10 +127,12 @@ let RestDataStore = {
       remoteGet(path).then((response) => {
         resolve(response.entity)
       }).catch((err)=>{
-        debugger;
         reject(err)
       })
     })
+  },
+  removeItem(path) {
+    return remoteDelete(path);
   },
   getItems(...keys){
     return keys.map((key) => {
@@ -105,15 +142,7 @@ let RestDataStore = {
   hasItem(key){
     return localStorage.getItem(key) !== null
   },
-  removeItem(key) {
-    let itemJson = localStorage.getItem(key)
-    let item = null
-    if (itemJson !== null) {
-      item = JSON.parse(item)
-    }
-    localStorage.removeItem(key)
-    return item;
-  },
+
   childKeys(path){
     return new Promise((resolve, reject) => {
       remoteGet(path).then((response) => {
@@ -124,7 +153,6 @@ let RestDataStore = {
     })
   },
   childPaths(path) {
-    debugger;
     let childPaths = []
     for (let i = 0; i < localStorage.length; i++) {
       let childPath = localStorage.key(i)
@@ -135,7 +163,6 @@ let RestDataStore = {
     return childPaths;
   },
   childItems(path){
-    debugger;
     let pathLen = path.length
     return RestDataStore.childPaths(path).map((childPath) => {
       return {path: childPath, key: childPath.substring(pathLen), val: RestDataStore.getItem(childPath)}

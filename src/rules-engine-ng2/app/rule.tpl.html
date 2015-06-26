@@ -1,12 +1,16 @@
-<div class="panel panel-default rule" [control-group]="form">
+<div class="panel panel-default rule" >
   <div class="panel-heading">
     <div class="row">
       <div class="col-sm-8">
-        <input type="text" class="form-control  rule-title" placeholder="Describe the rule" control="name">
+        <input type="text" class="form-control  rule-title"
+               placeholder="Describe the rule"
+               [value]="rule.name"
+               (change)="updateRule($event.target.value)"
+            >
       </div>
       <div class="col-sm-4">
         <div class="operations rule-operations">
-          <label for="">Fire on:</label>
+          <label>Fire on:</label>
           <div class="btn-group">
             <button type="button" class="btn btn-default">Every page</button>
             <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
@@ -19,10 +23,10 @@
             </ul>
           </div>
           <div class="separator"></div>
-          <button type="button" class="btn btn-default btn-md" aria-label="Toggle collapse clause group" (click)="toggleCollapse()">
+          <button type="button" class="btn btn-default btn-md" aria-label="Toggle collapse clause group" (click)="collapsed = !collapsed">
             <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
           </button>
-          <button type="button" class="btn btn-default btn-md" arial-label="Add new rule" (click)="addRule()">
+          <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
           </button>
           <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule" (click)="removeRule()">
@@ -32,16 +36,16 @@
       </div>
     </div>
   </div>
-  <div class="panel-body collapse" [class.in]="!isCollapse">
+  <div class="panel-body collapse" [class.in]="!collapsed">
     <div class="section-separator">
       <h2>When</h2>
       <hr/>
     </div>
-    <!--<clause-group *for="var cg of rule.groups; var i=index"-->
-                    <!--[rule]="rule"-->
-                    <!--[group]="cg"-->
-                    <!--[index]="i + 1">-->
-    <!--</clause-group>-->
+    <clause-group *for="var cg of ruleGroups; var i=index"
+                    [rule]="rule"
+                    [group]="cg"
+                    [index]="i + 1">
+    </clause-group>
 
     <div class="section-separator">
       <h2>Then</h2>
@@ -57,10 +61,6 @@
         <!--</rule-action>-->
       <!--</ul>-->
     <!--</div>-->
-    <button class="btn btn-default" ">
-      <span class="glyphicon glyphicon-plus-sign"></span>
-      <span>Add Action</span>
-    </button>
 
   </div>
 </div>
