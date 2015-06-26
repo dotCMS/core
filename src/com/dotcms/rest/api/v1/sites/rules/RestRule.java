@@ -4,9 +4,11 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnorePropertie
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
@@ -24,7 +26,7 @@ public class RestRule {
     public final Boolean shortCircuit;
     public final Integer priority;
     public final Boolean enabled;
-    public final List<String> groups;
+    public final Map<String, Boolean> groups;
 
     private RestRule(Builder builder) {
         key = builder.key;
@@ -44,7 +46,7 @@ public class RestRule {
         @JsonProperty private Boolean shortCircuit = false;
         @JsonProperty private Integer priority = 0;
         @JsonProperty private Boolean enabled = false;
-        @JsonProperty private List<String> groups = ImmutableList.of();
+        @JsonProperty private Map<String, Boolean> groups = ImmutableMap.of();
 
 
         /*
@@ -98,8 +100,8 @@ public class RestRule {
             return this;
         }
 
-        public Builder groups(List<String> groups) {
-            this.groups = ImmutableList.copyOf(groups);
+        public Builder groups(Map<String, Boolean> groups) {
+            this.groups = ImmutableMap.copyOf(groups);
             return this;
         }
 
@@ -109,7 +111,7 @@ public class RestRule {
             shortCircuit = copy.shortCircuit;
             priority = copy.priority;
             enabled = copy.enabled;
-            groups = ImmutableList.copyOf(copy.groups);
+            groups = ImmutableMap.copyOf(copy.groups);
             return this;
         }
 
