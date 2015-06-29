@@ -632,7 +632,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             Identifier htmlPageIdentifier = APILocator.getIdentifierAPI().find(multitree.getParent1());
             //Get the pages
             try{
-                IHTMLPage page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, APILocator.getUserAPI().getSystemUser(), false);
+
+                //Get the contenlet language in order to find the proper language page to invalidate
+                Long languageId = contentlet.getLanguageId();
+                //Search for the page with a given identifier and for a given language (in case of Pages as content)
+                IHTMLPage page = loadPageByIdentifier(htmlPageIdentifier.getId(), true, languageId, APILocator.getUserAPI().getSystemUser(), false);
 
                 if(page != null && page.isLive()){
                     //Rebuild the pages' files
@@ -722,16 +726,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         return cal.getTime();
     }
-    
-    private IHTMLPage loadPageByIdentifier(String ident, boolean live, User user, boolean frontRoles) throws DotDataException, DotContentletStateException, DotSecurityException {
+
+    /**
+     * Searches for a HTML Page with a given identifier and a given languageId, the languageId will be use only
+     * the new HTML Pages (pages as content).
+     *
+     * @param ident
+     * @param live
+     * @param languageId
+     * @param user
+     * @param frontRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotContentletStateException
+     * @throws DotSecurityException
+     */
+    private IHTMLPage loadPageByIdentifier ( String ident, boolean live, Long languageId, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
+
         Identifier ii = APILocator.getIdentifierAPI().find(ident);
-        if(ii.getAssetType().equals("contentlet")) {
-            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, 0, user, frontRoles));
-        }
-        else {
-            return live? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles) 
+        if ( ii.getAssetType().equals("contentlet") ) {
+            return APILocator.getHTMLPageAssetAPI().fromContentlet(APILocator.getContentletAPI().findContentletByIdentifier(ident, live, languageId, user, frontRoles));
+        } else {
+            return live ? (IHTMLPage) APILocator.getVersionableAPI().findLiveVersion(ii, user, frontRoles)
                     : (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(ii, user, frontRoles);
         }
+    }
+
+    private IHTMLPage loadPageByIdentifier ( String ident, boolean live, User user, boolean frontRoles ) throws DotDataException, DotContentletStateException, DotSecurityException {
+        return loadPageByIdentifier(ident, live, 0L, user, frontRoles);
     }
 
     public List<Map<String, Object>> getContentletReferences(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotContentletStateException {
