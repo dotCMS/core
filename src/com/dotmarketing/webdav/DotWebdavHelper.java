@@ -1182,9 +1182,13 @@ public class DotWebdavHelper {
 				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
 					Logger.debug(this, "Calling Folderfactory to rename " + fromPath + " to " + toPath);
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(toPath), host,user,false);
-						removeObject(toPath, user);
-						fc.removeFolder(folder,idapi.find(folder));
+					    // Folder must end with "/", otherwise we get the parent folder
+                        String folderToPath = getPath(toPath);
+                        if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+
+                        Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
+                        removeObject(toPath, user);
+                        fc.removeFolder(folder, idapi.find(folder));
 					}catch (Exception e) {
 						Logger.debug(this, "Unable to delete toPath " + toPath);
 					}
@@ -1295,20 +1299,20 @@ public class DotWebdavHelper {
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI()
 			    		.findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-			    
-			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length. 
-			    //No need to wait 10 seconds with files with 0 length. 
-			    if(canDelete 
-			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null 
+
+			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
+			    //No need to wait 10 seconds with files with 0 length.
+			    if(canDelete
+			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
 			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
-			    	
+
 			    	try{
 				        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
 				    }catch (Exception e) {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
 				    }
-			    	
+
 				    WorkingCache.removeAssetFromCache(fileAssetCont);
 				    LiveCache.removeAssetFromCache(fileAssetCont);
 				    fileResourceCache.remove(uri + "|" + user.getUserId());

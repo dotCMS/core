@@ -7,14 +7,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.regex.Matcher;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
@@ -23,14 +21,12 @@ import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.cache.FolderCache;
@@ -49,7 +45,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -62,7 +57,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 /**
@@ -371,14 +365,14 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 				}
 			} catch (DotSecurityException e) {}
-			
+
 			try {
                 for(IHTMLPage page : APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false)) {
                     if(page.isShowOnMenu()) {
                         filesListSubChildren.add(page);
                     }
                 }
-                
+
             } catch (DotSecurityException e) {}
 
 			// gets all subitems
@@ -549,7 +543,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
-		
+
 		//Content Pages
 		List<IHTMLPage> pageAssetList=new ArrayList<IHTMLPage>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
@@ -559,7 +553,7 @@ public class FolderFactoryImpl extends FolderFactory {
             APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
             pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
 		}
-		
+
 
 		// issues/1736
 		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);
@@ -951,9 +945,13 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
 		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
-		String newPath=ident.getParentPath()+newName;
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
+
+		// New folder path must end with "/", otherwise we get the parent folder
+        String newPath = ident.getParentPath()+newName;
+        if(!newPath.endsWith("/")) { newPath = newPath + "/"; }
 		Folder nFolder=findFolderByPath(newPath, host);
+
 		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
