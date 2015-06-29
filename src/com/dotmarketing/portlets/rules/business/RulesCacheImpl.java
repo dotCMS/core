@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.rules.business;
 import java.util.*;
 
 import com.dotcms.repackage.org.apache.commons.collections.IteratorUtils;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -126,7 +125,8 @@ public class RulesCacheImpl extends RulesCache {
 	public void removeRule(Rule rule) {
 		if (rule != null && UtilMethods.isSet(rule.getId())) {
 			this.cache.remove(rule.getId(), getPrimaryGroup());
-            getRules(rule.getHost(), rule.getFireOn()).remove(rule);
+            Set<Rule> rules = getRules(rule.getHost(), rule.getFireOn());
+            if(rules!=null) rules.remove(rule);
 		}
 	}
 

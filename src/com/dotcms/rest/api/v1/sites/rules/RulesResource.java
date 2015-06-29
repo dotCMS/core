@@ -23,11 +23,14 @@ import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -162,10 +165,16 @@ public class RulesResource {
         try {
             getHost(siteId, user);
             Rule rule = getRule(ruleId, user);
+            HibernateUtil.startTransaction();
             rulesAPI.deleteRule(rule, user, false);
-
-            return Response.status(HttpStatus.SC_NO_CONTENT).build();
+            HibernateUtil.commitTransaction();
+            return Response.status(HttpStatus.SC_OK).build();
         } catch (DotDataException | DotSecurityException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.error(RulesResource.class, "Error while rolling back transaction", e);
+            }
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }

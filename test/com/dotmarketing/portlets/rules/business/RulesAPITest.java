@@ -273,7 +273,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
         assertNull(condition);
@@ -282,7 +282,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         group = APILocator.getRulesAPI().getConditionGroupById(conditionId, user, false);
         assertNull(group);
@@ -291,7 +291,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
         assertNull(action);
@@ -300,7 +300,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
         assertNull(rule);
