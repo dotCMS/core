@@ -1,5 +1,5 @@
-import XDebug from 'debug';
-let log = XDebug('RulesEngine.Core');
+import XDebug from './log-config.js';
+let log = XDebug('RuleEngine.Core');
 
 let KEY_CHARS = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";
 let prevGenTime = 0;
@@ -49,7 +49,7 @@ let Core = {
 
   Collections: {
 
-    asSymmetricObjectMap(keyMap, prefix = '') {
+    copyKeysToValues(keyMap, prefix = '') {
       let x = {}
       Object.keys(keyMap).forEach((key) => {
         x[key] = prefix + key

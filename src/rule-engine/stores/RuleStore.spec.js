@@ -1,5 +1,5 @@
 import XDebug from 'debug';
-let log = XDebug('RulesEngine.RuleStore.specs')
+let log = XDebug('RuleEngine.RuleStore.specs')
 
 
 describe('RuleStore', function () {

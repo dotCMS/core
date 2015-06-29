@@ -1,9 +1,10 @@
-import {AppDispatcher} from '../dispatcher/AppDispatcher.js';
-
 import  {Core} from '../../coreweb/index.js'
 
+import {AppDispatcher} from '../dispatcher/AppDispatcher.js';
 
-export let actionTypes = Core.Collections.asSymmetricObjectMap({
+
+
+export let actionTypes = Core.Collections.copyKeysToValues({
   ADD_RULE: null,
   REMOVE_RULE: null,
   UPDATE_RULE: null,
@@ -37,6 +38,5 @@ export let actions = {
   }
 
 }
-
 
 

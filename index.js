@@ -3,13 +3,13 @@ import * as XDebug from 'debug'
 
 import 'reflect-metadata';
 import * as Core from './src/coreweb/index.js';
-import * as RulesEngine from './src/rules-engine-ng2/index.js';
-import * as logConfig from './src/rules-engine-ng2/log-config.js';
-import {mocks} from './src/rules-engine/datamocks/rule.mocks.js';
+import * as RuleEngine from 'src/rule-engine-view/index.js';
+import * as logConfig from 'src/rule-engine-view/log-config.js';
+import {mocks} from 'src/rule-engine/datamocks/rule.mocks.js';
 export let dot = {
   XDebug: XDebug.default,
   Core,
-  RulesEngine
+  RuleEngine
 }
 
 var root = dot
@@ -17,9 +17,9 @@ var root = dot
 root.XDebug.disable() // Clear LocalStorage so changes to log-config files 'take'
 root.XDebug.enable("*, .*") // String of comma separated regex. Not glob patterns.
 mocks.init().then(function () {
-  root.RulesEngine.main().then(function () {
-    console.log("Loaded rules-engine component.")
+  root.RuleEngine.main().then(function () {
+    console.log("Loaded rule-engine component.")
   });
 });
 
-console.log("Loading rules-engine component.")
+console.log("Loading rule-engine component.")

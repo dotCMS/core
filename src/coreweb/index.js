@@ -1,3 +1,6 @@
-export * from './api/Core.js'
-export * from './api/Check.js'
+export * from './Core.js'
+export * from './Check.js'
+export * from './ServerManager.js'
+export * from './util/LocalDataStore.js'
+export * from './util/RestDataStore.js'
 

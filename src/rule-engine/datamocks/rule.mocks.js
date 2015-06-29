@@ -1,8 +1,5 @@
 import XDebug from 'debug';
-let log = XDebug('RulesEngine.mocks.js');
-
-import  RuleEngine from 'src/rules-engine/RuleEngine.js'
-
+let log = XDebug('RuleEngine.mocks.js');
 
 var clauses = {
   'rule01-group01-clause01': {
@@ -76,8 +73,8 @@ export let mocks = {
   clauses: clauses,
   init(rootPath='/api'){
     return new Promise((resolve, reject) => {
-      let rulePath = rootPath + '/rules-engine/rules/'
-      let clausePath = rootPath + '/rules-engine/clauses/'
+      let rulePath = rootPath + '/rule-engine/rules/'
+      let clausePath = rootPath + '/rule-engine/clauses/'
       Object.keys(rules).forEach((key)=> {
         localStorage.setItem(rulePath + key, JSON.stringify(rules[key]))
       });

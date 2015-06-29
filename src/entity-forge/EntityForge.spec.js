@@ -1,4 +1,4 @@
-import  {EntityForge as EF} from 'src/entity-forge/EntityForge.js'
+import  {EntityForge as EF} from './EntityForge.js'
 
 describe('EntityForge.string', function () {
   beforeEach(function () {

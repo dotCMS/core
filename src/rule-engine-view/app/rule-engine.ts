@@ -1,5 +1,5 @@
 import XDebug from 'debug';
-let log = XDebug('RulesEngineNg2.RulesEngineComponent');
+let log = XDebug('RuleEngineView.RuleEngineComponent');
 
 
 import {bootstrap, For, If} from 'angular2/angular2';
@@ -9,21 +9,21 @@ import {View} from 'angular2/src/core/annotations_impl/view';
 
 import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
 
-import {Core} from '../../coreweb/index.js'
-import {RuleEngine} from '../../rules-engine/RuleEngine.js';
+import jsonp from 'jsonp'
+
+import {Core, ServerManager} from '../../coreweb/index.js'
+import {RuleEngineAPI, ruleRepo, ruleGroupRepo, Rule, RuleGroup, RuleStore} from '../../rule-engine/index.js';
 
 import "bootstrap/css/bootstrap.css!";
-import "./styles/rules-engine.css!";
+import "./styles/rule-engine.css!";
 import "./styles/theme-dark.css!";
 
-import rulesEngineTemplate from './rules-engine.tpl.html!text'
+import ruleEngineTemplate from './rule-engine.tpl.html!text'
 import ruleTemplate from './rule.tpl.html!text'
 import ruleActionTemplate from './rule-action.tpl.html!text'
 import clauseGroupTemplate from './clause-group.tpl.html!text'
 import clauseTemplate from './clause.tpl.html!text'
 
-import jsonp from 'jsonp'
-import {ServerManager} from '../../coreweb/ServerManager.js'
 
 @Component({
   selector: 'rule-action',
@@ -250,21 +250,21 @@ class RuleComponent {
 
   updateRule(name:string){
     this._rule.name = name;
-    RuleEngine.ruleRepo.set(this._rule)
+    ruleRepo.set(this._rule)
   }
 
   addGroup() {
-    let group = new RuleEngine.RuleGroup();
+    let group = new RuleGroup();
     group.priority = 10
     group.operator = 'OR'
     group.ruleKey = this._rule.$key
-    RuleEngine.ruleGroupRepo.push(group).then((group) => {
+    ruleGroupRepo.push(group).then((group) => {
       this._rule.groups[group.$key] = true
     })
   }
 
   removeRule() {
-    RuleEngine.ruleRepo.remove(this.rule.$key).then((x) => {
+    ruleRepo.remove(this.rule.$key).then((x) => {
       log("Yay! ", x)
     }).catch((e) => {
       log("Not yay :~(: ", e)
@@ -276,13 +276,13 @@ class RuleComponent {
 
 
 @Component({
-  selector: 'rules-engine'
+  selector: 'rule-engine'
 })
 @View({
-  template: rulesEngineTemplate,
+  template: ruleEngineTemplate,
   directives: [For, RuleComponent, If]
 })
-class RulesEngine {
+class RuleEngine {
   rules:Array;
   baseUrl:string;
 
@@ -290,8 +290,8 @@ class RulesEngine {
     this.rules = []
     this.baseUrl = ServerManager.baseUrl;
     log("creating rules engine");
-    RuleEngine.store.addChangeListener(this.onChange.bind(this))
-    RuleEngine.store.init()
+    RuleStore.addChangeListener(this.onChange.bind(this))
+    RuleEngineAPI.rules.list()
   }
 
   updateBaseUrl(value){
@@ -309,11 +309,11 @@ class RulesEngine {
   }
 
   onChange(event) {
-    RuleEngine.store.get().then((rulesAry)=> this.rules = rulesAry)
+    RuleStore.get().then((rulesAry)=> this.rules = rulesAry)
   }
 
   addRule() {
-    let testRule = new RuleEngine.Rule();
+    let testRule = new Rule();
     testRule.name = "CoreWeb created this rule" + new Date().toISOString()
     testRule.enabled = true
     testRule.priority = 10
@@ -321,17 +321,17 @@ class RulesEngine {
     testRule.shortCircuit = false
     testRule.groups = {}
     testRule.actions = {}
-    RuleEngine.ruleRepo.push(testRule)
+    ruleRepo.push(testRule)
   }
 
   testBaseUrl(baseUrl) {
     return new Promise((resolve, reject) => {
-      RuleEngine.store.init();
+      RuleStore.init();
     })
   }
 }
 
 export function main() {
   log("Bootstrapping rules engine")
-  return bootstrap(RulesEngine);
+  return bootstrap(RuleEngine);
 }

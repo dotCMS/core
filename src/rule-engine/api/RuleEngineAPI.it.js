@@ -1,12 +1,12 @@
-import  XDebug from 'src/rules-engine/log-config'
-let log = XDebug('RulesEngine.api.it');
-
-import  {RuleEngine} from '../RuleEngine'
-import  {Core, Check} from '../../coreweb/index'
-import  {Rule} from '../api/RuleEngineTypes.js'
+import  XDebug from '../log-config.js'
+let log = XDebug('RuleEngine.api.it');
 
 import rest from 'rest';
 import basicAuth from 'rest/interceptor/basicAuth';
+
+import {Core, Check} from '../../coreweb/index'
+import {Rule} from './RuleEngineTypes.js'
+
 
 
 describe('RuleEngine.remote.api', function () {

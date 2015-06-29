@@ -1,6 +1,5 @@
-import  * as RuleEngine from 'src/rules-engine/RuleEngine.js'
-import  {Core, Check} from 'src/coreweb/index.js'
-import  {Rule} from 'src/rules-engine/api/RuleEngineTypes.js'
+import  {Core, Check} from '../../coreweb/index.js'
+import  {Rule} from './RuleEngineTypes.js'
 
 
 describe('RuleEngineTypes.rule', function () {

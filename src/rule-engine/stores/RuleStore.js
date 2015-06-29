@@ -1,10 +1,12 @@
-import events from 'events';
 import XDebug from 'debug';
-let log = XDebug('RulesEngine.store');
+let log = XDebug('RuleEngine.store');
 
-import {Core} from '../../coreweb/api/Core.js';
-import {Check} from '../../coreweb/api/Check.js';
-import {AppDispatcher} from '../../rules-engine/dispatcher/AppDispatcher.js';
+
+import events from 'events';
+
+import {Core, Check} from '../../coreweb/index.js';
+
+import {AppDispatcher} from '../dispatcher/AppDispatcher.js';
 import {ruleRepo} from '../api/RuleEngineAPI.js'
 import {actionTypes} from '../actions/RuleEngineActionCreators.js'
 
@@ -33,10 +35,6 @@ class _RuleStore extends events.EventEmitter {
 
   removeChangeListener(callback) {
     this.removeListener(CHANGE_EVENT, callback);
-  }
-
-  init() {
-    ruleRepo.init()
   }
 
   get(key) {

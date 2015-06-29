@@ -1,5 +1,5 @@
-import  {LazyVerify, Verify} from 'src/entity-forge/Verify.js'
-import  {ValidationError} from 'src/entity-forge/Validation.js'
+import  {LazyVerify, Verify} from './Verify.js'
+import  {ValidationError} from './Validation.js'
 
 class EntityBase {
 

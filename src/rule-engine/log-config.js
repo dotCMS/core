@@ -9,8 +9,8 @@
 import XDebug from 'debug';
 
 XDebug.enable([
-  "RulesEngine.*",
-  "-RulesEngine.Core"
+  "RuleEngine.*",
+  "-RuleEngine.Core"
 ].join(', '))
 
 export default XDebug

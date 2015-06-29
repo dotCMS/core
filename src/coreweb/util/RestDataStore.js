@@ -5,8 +5,8 @@ let log = XDebug('CoreWeb.RestDataStore');
 import rest from 'rest';
 import basicAuth from 'rest/interceptor/basicAuth';
 
-import  {Core} from '../api/Core.js'
-import  {Check} from '../api/Check.js'
+import  {Core} from '../Core.js'
+import  {Check} from '../Check.js'
 import  {ServerManager} from '../ServerManager.js'
 
 let client = rest.wrap(basicAuth);
