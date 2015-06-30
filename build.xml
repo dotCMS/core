@@ -25,7 +25,7 @@
     <property name="build.war" value="${build.dir}/war" />
     <property name="build.compiler.fulldepend" value="true" />
     <property name="deploy.dir" value="${basedir}/dotCMS/WEB-INF/lib" />
-    <property name="ant.build.javac.target" value="1.7"/>
+    <property name="ant.build.javac.target" value="1.8"/>
     <property name="war.name" value="dotcms"/>
     <property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
     <property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
@@ -107,8 +107,12 @@
         </fileset>
     </path>
 
-    <!-- include ant-contrib -->
-    <taskdef resource="net/sf/antcontrib/antlib.xml"/>
+    <!-- include ant-contrib -->    
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="/Users/danielsilva/Documents/apache-ant-1.9.4/lib/ant-contrib-1.0b3.jar"/>
+        </classpath>
+    </taskdef>
 
     <!-- Target to create the build directories prior to the -->
     <!-- compile target. -->
@@ -173,7 +177,7 @@
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
@@ -320,8 +324,8 @@
 
         </jasper2>
         <javac debug="true" debuglevel="lines,vars,source"  encoding="UTF-8"
-               fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.7"
-               target="1.7" compiler="javac1.7" nowarn="true" optimize="true"
+               fork="true" srcdir="${src.jsp}" destdir="${build.classes}" source="1.8"
+               target="1.8" compiler="javac1.8" nowarn="true" optimize="true"
                memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
@@ -479,7 +483,7 @@
     </target>
 
     <target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
         <copy todir="${build.classes}">
@@ -492,7 +496,7 @@
 
     <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
         <copy todir="${build.dir}/testbuild">
@@ -792,7 +796,7 @@
     <target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
         <mkdir dir="${build.autoupdater}" />
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
-               source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true"
+               source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true"
                memoryinitialsize="256m" memorymaximumsize="512m" >
             <classpath refid="autoupdater-classpath" />
             <include name="com/dotcms/autoupdater/**"/>
