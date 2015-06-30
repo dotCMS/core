@@ -234,7 +234,8 @@ class RuleComponent {
   collapsed:boolean;
 
   constructor() {
-    this.collapsed = false;
+    log('init RuleComponent')
+    this.collapsed = true
   }
 
   set rule(rule:any){

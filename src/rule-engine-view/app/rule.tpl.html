@@ -1,15 +1,15 @@
 <div class="panel panel-default rule" >
   <div class="panel-heading">
-    <div class="row">
+    <div class="row" (click)="collapsed = !collapsed">
       <div class="col-sm-8">
         <input type="text" class="form-control  rule-title"
                placeholder="Describe the rule"
                [value]="rule.name"
                (change)="updateRule($event.target.value)"
-            >
+               (focus)="collapsed = false">
       </div>
       <div class="col-sm-4">
-        <div class="operations rule-operations">
+        <div class="operations rule-operations" >
           <label>Fire on:</label>
           <div class="btn-group">
             <button type="button" class="btn btn-default">Every page</button>
@@ -23,9 +23,6 @@
             </ul>
           </div>
           <div class="separator"></div>
-          <button type="button" class="btn btn-default btn-md" aria-label="Toggle collapse clause group" (click)="collapsed = !collapsed">
-            <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
-          </button>
           <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
             <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
           </button>
