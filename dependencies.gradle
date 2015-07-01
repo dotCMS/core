@@ -1,7 +1,7 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'b8924a9-SNAPSHOT'
-    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'b8924a9'
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
     compile group: 'com.dotcms', name: 'starter', version: '20150420', ext: 'zip'
 
