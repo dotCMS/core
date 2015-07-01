@@ -2,15 +2,14 @@ package com.dotmarketing.common.reindex;
 
 import java.sql.Connection;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.repackage.org.elasticsearch.action.ActionListener;
+import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkItemResponse;
 import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
 import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkResponse;
 import com.dotcms.repackage.org.elasticsearch.client.Client;
@@ -28,6 +27,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 public class ReindexThread extends Thread {
 
@@ -42,6 +44,7 @@ public class ReindexThread extends Thread {
 	private boolean work = false;
 	private int sleep = 100;
 	private int delay = 7500;
+	private int failedAttemptsCount = 0;
 	private boolean reindexSleepDuringIndex = false;
 	private int reindexSleepDuringIndexTime = 0;
 
@@ -54,6 +57,33 @@ public class ReindexThread extends Thread {
 	    synchronized(remoteDelQ) {
 	        remoteDelQ.addAll(records);
 	    }
+	}
+
+	/**
+	 * Counts the failed attempts when indexing and handles error notifications
+	 */
+	private void addIndexingFailedAttempt () {
+
+		synchronized (remoteQ) {
+
+			failedAttemptsCount += 1;
+
+			if ( failedAttemptsCount == 10 ) {//We just want to create one notification error
+
+				try {
+					//System user
+					User systemUser = APILocator.getUserAPI().getSystemUser();
+
+					//Error message
+					String errorMessage = LanguageUtil.get(systemUser, "notification.reindexing.error");
+
+					//Add a notification to the back-end
+					APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());
+				} catch ( DotDataException | LanguageException e ) {
+					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
+				}
+			}
+		}
 	}
 	
 	private void startProcessing(int sleep, int delay) {
@@ -105,8 +135,21 @@ public class ReindexThread extends Thread {
                                     Thread.sleep(2000L);
                                     
     					            indexAPI.fullReindexSwitchover(conn);
-    					            
-    					            // wait a bit while elasticsearch flushes it state
+
+									try {
+										//System user
+										User systemUser = APILocator.getUserAPI().getSystemUser();
+
+										//Success message
+										String successMessage = LanguageUtil.get(systemUser.getLocale(), "notification.reindexing.success");
+
+										//Add a notification to the back-end
+										APILocator.getNotificationAPI().generateNotification(successMessage, NotificationLevel.INFO, systemUser.getUserId());
+									} catch ( DotDataException | LanguageException e ) {
+										Logger.error(this, "Error creating a system notification for a successfully indexing process.", e);
+									}
+
+									// wait a bit while elasticsearch flushes it state
     	                            Thread.sleep(2000L);
     					        }
     					    }
@@ -155,7 +198,7 @@ public class ReindexThread extends Thread {
 					    wait=false;
 					    Client client=new ESClient().getClient();
 						BulkRequestBuilder bulk=client.prepareBulk();
-						final ArrayList<IndexJournal<String>> recordsToDelete=new ArrayList<IndexJournal<String>>();
+						final ArrayList<IndexJournal<String>> recordsToDelete= new ArrayList<>();
 						while(!remoteQ.isEmpty()) {
     					    IndexJournal<String> idx = remoteQ.removeFirst();
 					        writeDocumentToIndex(bulk,idx);
@@ -171,19 +214,110 @@ public class ReindexThread extends Thread {
 						HibernateUtil.closeSession();
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
-				                void deleteRecords() {
-				                    addRecordsToDelete(recordsToDelete);
-				                }
-                                public void onResponse(BulkResponse resp) {
-                                    deleteRecords();
-                                    if(resp.hasFailures())
-                                        Logger.warn(this, resp.buildFailureMessage());
-                                }
-                                public void onFailure(Throwable ex) {
-                                    Logger.error(ReindexThread.class,"Error indexing records", ex);
-                                    deleteRecords();
-                                }
-                            });
+
+								void deleteRecords () {
+									addRecordsToDelete(recordsToDelete);
+								}
+
+								public void onResponse ( BulkResponse resp ) {
+
+									//Handle failures on the re-index process if any
+									failureHandler(resp);
+
+									/*
+									Set the list of the records we can remove from the index journal table,
+									in this list (recordsToDelete) should only exist successfully indexed records.
+									 */
+									deleteRecords();
+								}
+
+								public void onFailure ( Throwable ex ) {
+
+									Logger.error(ReindexThread.class, "Error indexing records", ex);
+
+									//On this case we don' really know which items failed, so just re-try the whole chunk
+									remoteQ.addAll(recordsToDelete);
+
+									//Counts the failed attempts when indexing and handles error notifications
+									addIndexingFailedAttempt();
+
+									try {
+										Thread.sleep(delay);
+									} catch ( InterruptedException e ) {
+										Logger.error(this, e.getMessage(), e);
+									}
+								}
+
+								/**
+								 * Checks if we had failures when indexing, on failure we will retry the indexing process of the records that failed,
+								 * the process WON'T continue with failed records.
+								 *
+								 * @param resp
+								 */
+								private void failureHandler ( BulkResponse resp ) {
+
+									//Verify if we have failures to handle
+									if ( resp.hasFailures() ) {
+
+										Logger.error(this, "Error indexing content [" + resp.buildFailureMessage() + "]");
+
+										//Counts the failed attempts when indexing and handles error notifications
+										addIndexingFailedAttempt();
+
+										//List of records that failed and will be added to the queue for more attempts
+										ArrayList<IndexJournal<String>> toRestore = new ArrayList<>();
+
+										//Search for the failed items
+										for ( BulkItemResponse itemResponse : resp.getItems() ) {
+
+											//Check if the indexing process failed for this item
+											if ( itemResponse.isFailed() ) {
+
+												//Get the data of the failed record
+												String initialId = itemResponse.getId();
+												//Remove the language from the id in order to get just the inode/identifier
+												int languageIndex = initialId.lastIndexOf("_");
+												String failedId = initialId;
+												if ( languageIndex != -1 ) {
+													failedId = initialId.substring(0, languageIndex);
+												}
+
+												//Search the failed record into the list of records to delete
+												Iterator<IndexJournal<String>> toDeleteIterator = recordsToDelete.iterator();
+												while ( toDeleteIterator.hasNext() ) {
+
+													IndexJournal<String> indexToDelete = toDeleteIterator.next();
+													if ( indexToDelete.getInodeToIndex().equals(failedId) || indexToDelete.getIdentToIndex().equals(failedId) ) {
+
+														//Add it to the list of records that failed and needs to be re-index
+														toRestore.add(indexToDelete);
+
+														/*
+														Remove the record from the list of contents to remove from the index journal table
+														as it indexing process failed.
+														 */
+														toDeleteIterator.remove();
+													}
+												}
+											}
+										}
+
+										if ( !toRestore.isEmpty() ) {
+
+											//Re-try with the records that failed
+											Logger.error(this, "Trying to re-index [" + String.valueOf(toRestore.size()) + "] failed records.");
+											remoteQ.addAll(toRestore);
+
+											try {
+												Thread.sleep(delay);
+											} catch ( InterruptedException e ) {
+												Logger.error(this, e.getMessage(), e);
+											}
+										}
+									}
+								}
+
+							});
 				        }
 				        else if(recordsToDelete.size()>0) {
 				            addRecordsToDelete(recordsToDelete);
