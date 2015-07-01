@@ -84,7 +84,7 @@ public class RuleTransform {
         RestRule rest = new RestRule.Builder()
                 .key(app.getId())
                 .name(app.getName())
-                .fireOn(app.getFireOn().getCamelCaseName())
+                .fireOn(app.getFireOn().toString())
                 .shortCircuit(app.isShortCircuit())
                 .priority(app.getPriority())
                 .enabled(app.isEnabled())
