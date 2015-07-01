@@ -38,8 +38,17 @@ let RuleGroupDefinition = {
 }
 
 
+let ConditionDefinition = {
+  $key: EF.string(),
+  name: EF.string().minLength(5).maxLength(100),
+  conditionlet: EF.string(),
+  comparison: EF.string(),
+  operator: EF.string(),
+  priority: EF.int(0).min(0).max(100),
+}
 
 let RuleGroup = EF.obj('RuleGroup', RuleGroupDefinition).asNewable()
 let Rule = EF.obj('Rule', RuleDefinition).asNewable()
+let Condition = EF.obj('Condition', ConditionDefinition).asNewable()
 
-export {Rule, RuleGroup}
+export {Rule, RuleGroup, Condition}

@@ -11,7 +11,7 @@ import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/fo
 
 import jsonp from 'jsonp'
 
-import {Core, ServerManager} from '../../coreweb/index.js'
+import {Core, ServerManager, EntityMeta} from '../../coreweb/index.js'
 import {RuleEngineAPI, ruleRepo, ruleGroupRepo, Rule, RuleGroup, RuleStore} from '../../rule-engine/index.js';
 
 import "bootstrap/css/bootstrap.css!";
@@ -216,8 +216,7 @@ class ClauseGroupComponent {
 @Component({
   selector: 'rule',
   properties: {
-    "rule": "rule",
-    "index": "index"
+    "ruleSnap": "rule-snap"
   },
   injectables: [
     FormBuilder
@@ -228,39 +227,55 @@ class ClauseGroupComponent {
   directives: [ClauseGroupComponent, If, For]
 })
 class RuleComponent {
-  _rule:any;
-  ruleGroups:Array;
-  index:number;
+  rule:any;
+  _ruleSnap:any;
   collapsed:boolean;
+  fireOnDropDownExpanded:boolean;
 
   constructor() {
     log('init RuleComponent')
     this.collapsed = true
+    this.fireOnDropDownExpanded = false
   }
 
-  set rule(rule:any){
-    this._rule = rule
-    this.ruleGroups = Object.keys(rule.groups || {}).map((key) => {
-      return rule.groups[key]
-    })
+  set ruleSnap(ruleSnap:any) {
+    this._ruleSnap = ruleSnap
+    this.rule = ruleSnap.val()
   }
 
-  get rule():any {
-    return this._rule
+  get ruleSnap():any {
+    return this._ruleSnap
   }
 
-  updateRule(name:string){
-    this._rule.name = name;
-    ruleRepo.set(this._rule)
+  getRuleGroups() {
+    let groups = this.rule.groups
+    return Object.keys(groups).map((key) => {
+      return groups[key]
+    });
+  }
+
+  setFireOn(value:string) {
+    this.rule.fireOn = value
+    this.fireOnDropDownExpanded = false
+    this.updateRule()
+  }
+
+  setRuleName(name:string) {
+    this.rule.name = name
+    this.updateRule()
+  }
+
+  updateRule() {
+    this.ruleSnap.ref().set(this.rule)
   }
 
   addGroup() {
     let group = new RuleGroup();
     group.priority = 10
     group.operator = 'OR'
-    group.ruleKey = this._rule.$key
+    group.ruleKey = this._ruleSnap.key()
     ruleGroupRepo.push(group).then((group) => {
-      this._rule.groups[group.$key] = true
+      this._ruleSnap.val().groups[group.$key] = group
     })
   }
 
@@ -286,16 +301,17 @@ class RuleComponent {
 class RuleEngine {
   rules:Array;
   baseUrl:string;
+  rulesEntityMeta:any;
 
   constructor() {
     this.rules = []
     this.baseUrl = ServerManager.baseUrl;
+    this.rulesEntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
     log("creating rules engine");
-    RuleStore.addChangeListener(this.onChange.bind(this))
-    RuleEngineAPI.rules.list()
+    this.onChange()
   }
 
-  updateBaseUrl(value){
+  updateBaseUrl(value) {
     let oldUrl = ServerManager.baseUrl
     ServerManager.baseUrl = value;
     this.baseUrl = value;
@@ -309,13 +325,23 @@ class RuleEngine {
 
   }
 
-  onChange(event) {
-    RuleStore.get().then((rulesAry)=> this.rules = rulesAry)
+  onChange(event = null) {
+    this.rulesEntityMeta.once('value', (result) => {
+      this.rules = []
+      if (result && result.forEach) {
+        result.forEach((ruleSnap) => {
+          this.rules.push(ruleSnap)
+        })
+      }
+      else {
+        throw result
+      }
+    })
   }
 
   addRule() {
     let testRule = new Rule();
-    testRule.name = "CoreWeb created this rule" + new Date().toISOString()
+    testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
     testRule.enabled = true
     testRule.priority = 10
     testRule.fireOn = "EVERY_PAGE"

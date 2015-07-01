@@ -1,63 +1,77 @@
-<div class="panel panel-default rule" >
+<div class="panel panel-default rule">
   <div class="panel-heading">
-    <div class="row" (click)="collapsed = !collapsed">
-      <div class="col-sm-8">
-        <input type="text" class="form-control  rule-title"
-               placeholder="Describe the rule"
-               [value]="rule.name"
-               (change)="updateRule($event.target.value)"
-               (focus)="collapsed = false">
-      </div>
-      <div class="col-sm-4">
-        <div class="operations rule-operations" >
-          <label>Fire on:</label>
-          <div class="btn-group">
-            <button type="button" class="btn btn-default">Every page</button>
-            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
-              <span class="caret"></span>
-              <span class="sr-only">Toggle Dropdown</span>
-            </button>
-            <ul class="dropdown-menu" role="menu">
-              <li><a href="#">Once per visit</a></li>
-              <li><a href="#">Once per visitor</a></li>
-            </ul>
+    <div class="container">
+      <div class="row" (click)="collapsed = !collapsed">
+        <div class="col-xs-6">
+          <input type="text" class="form-control  rule-title"
+                 placeholder="Describe the rule"
+                 [value]="rule.name"
+                 (change)="setRuleName($event.target.value)"
+                 (focus)="collapsed = false">
+        </div>
+
+        <div class="col-xs-3 col-xs-offset-1">
+          <div class="operations rule-operations">
+            <label>Fire on:</label>
+
+            <div class="btn-group">
+              <button type="button" class="btn btn-default" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">
+                {{rule.fireOn}}
+              </button>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"
+                      (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">
+                <span class="caret"></span>
+                <span class="sr-only">Toggle Drop Down</span>
+              </button>
+              <ul class="dropdown-menu collapse" role="menu" [class.in]="fireOnDropDownExpanded">
+                <li (click)="setFireOn('EVERY_PAGE')"><a href="#" (click)="setFireOn('EVERY_PAGE')">Every page</a></li>
+                <li (click)="setFireOn('ONCE_PER_VISIT')"><a href="#" (click)="setFireOn('ONCE_PER_VISIT')">Once per
+                  visit</a></li>
+                <li (click)="setFireOn('ONCE_PER_VISITOR')"><a href="#" (click)="setFireOn('ONCE_PER_VISITOR')">Once per
+                  visitor</a></li>
+                <li (click)="setFireOn('EVERY_REQUEST')"><a href="#" (click)="setFireOn('EVERY_REQUEST')">Every
+                  request</a></li>
+              </ul>
+            </div>
           </div>
-          <div class="separator"></div>
-          <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
-            <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule" (click)="removeRule()">
-            <span class="glyphicon glyphicon-trash"></span>
-          </button>
+          </div>
+          <div class="col-xs-2">
+            <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
+              <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
+            </button>
+            <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
+                    (click)="removeRule()">
+              <span class="glyphicon glyphicon-trash"></span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-  <div class="panel-body collapse" [class.in]="!collapsed">
-    <div class="section-separator">
-      <h2>When</h2>
-      <hr/>
-    </div>
-    <clause-group *for="var cg of ruleGroups; var i=index"
-                    [rule]="rule"
-                    [group]="cg"
-                    [index]="i + 1">
-    </clause-group>
+    <div class="panel-body collapse" [class.in]="!collapsed">
+      <div class="section-separator">
+        <h2>When</h2>
+        <hr/>
+      </div>
+      <clause-group *for="var cg of getRuleGroups(); var i=index"
+      [rule]="rule"
+      [group]="cg"
+      [index]="i + 1">
+      </clause-group>
 
-    <div class="section-separator">
-      <h2>Then</h2>
-      <hr/>
-    </div>
+      <div class="section-separator">
+        <h2>Then</h2>
+        <hr/>
+      </div>
 
-    <!--<div class="panel panel-default actions">-->
+      <!--<div class="panel panel-default actions">-->
       <!--<ul class="list-group">-->
-        <!--<rule-action *for="var act of rule.ruleActions; var i=index"-->
-                     <!--[rule]="rule"-->
-                     <!--[rule-action]="act"-->
-                     <!--[index]="i + 1">-->
-        <!--</rule-action>-->
+      <!--<rule-action *for="var act of rule.ruleActions; var i=index"-->
+      <!--[rule]="rule"-->
+      <!--[rule-action]="act"-->
+      <!--[index]="i + 1">-->
+      <!--</rule-action>-->
       <!--</ul>-->
-    <!--</div>-->
+      <!--</div>-->
 
+    </div>
   </div>
-</div>

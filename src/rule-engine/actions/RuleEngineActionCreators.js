@@ -5,6 +5,7 @@ import {AppDispatcher} from '../dispatcher/AppDispatcher.js';
 
 
 export let actionTypes = Core.Collections.copyKeysToValues({
+  UPDATE: null,
   ADD_RULE: null,
   REMOVE_RULE: null,
   UPDATE_RULE: null,
@@ -16,9 +17,17 @@ export let actionTypes = Core.Collections.copyKeysToValues({
 
 export let actions = {
 
+  update(path){
+    AppDispatcher.dispatch({
+      key: actionTypes.UPDATE,
+      path: path
+    });
+  },
+
   addRule(rule) {
     AppDispatcher.dispatch({
       key: actionTypes.ADD_RULE,
+      path: rule.path,
       rule: rule
     });
   },
@@ -26,6 +35,7 @@ export let actions = {
   updateRule(rule) {
     AppDispatcher.dispatch({
       key: actionTypes.UPDATE_RULE,
+      path: rule.path,
       rule: rule
     });
   },
@@ -33,6 +43,7 @@ export let actions = {
   removeRule(ruleKey) {
     AppDispatcher.dispatch({
       key: actionTypes.REMOVE_RULE,
+      path: rule.path,
       ruleKey: ruleKey
     });
   }

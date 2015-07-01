@@ -78,6 +78,9 @@ let registrationFn = function (action) {
       log(action.key, action.rule.$key, action.ruleKey, 'count:  ' + _store.size)
       RuleStore.emitChange(action)
       break;
+    case actionTypes.UPDATE:
+      RuleStore.emitChange(action)
+      log(action.key, action.path)
     default:
       log(action.key, "Unhandled")
   }

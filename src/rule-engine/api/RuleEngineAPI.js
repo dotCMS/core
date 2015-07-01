@@ -7,7 +7,7 @@ import {Core, Check} from '../../coreweb/index.js';
 import {actions, actionTypes} from '../actions/RuleEngineActionCreators.js';
 import {Rule, RuleGroup} from  './RuleEngineTypes.js';
 
-import {RestDataStore as Storage} from '../../coreweb/util/RestDataStore.js'
+import {RestDataStore as Storage, EntityMeta} from '../../coreweb/util/RestDataStore.js'
 
 let defaultSiteKey = "48190c8c-42c4-46af-8d1a-0cd5db894797"
 let SERVER_CREATES_KEYS = true
@@ -106,7 +106,9 @@ ruleRepo = {
   },
   remove(ruleKey) {
     let path = ruleRepo.getPath(defaultSiteKey, ruleKey)
-    return Storage.removeItem(path)
+    var item = Storage.removeItem(path);
+    actions.update()
+    return item
   },
   list() {
     return Storage.childKeys(ruleRepo.getPath(defaultSiteKey, '') + '/').then((paths) => {
@@ -160,11 +162,10 @@ ruleGroupRepo = {
         path = ruleGroupRepo.getPath(defaultSiteKey, group.ruleKey, _xForm.key)
       }
       Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
+      actions.update(path)
     })
   }
 }
-
-
 
 
 export let clauseRepo = {
@@ -197,6 +198,7 @@ export let clauseRepo = {
       let _xForm = clauseRepo.outward.transform(clause);
       Storage.setItem(clauseRepo.basePath + _xForm.key, _xForm.val)
       resolve(clause)
+      actions.update()
     })
   },
   getByGroup(groupKey) {
@@ -221,38 +223,63 @@ export let clauseRepo = {
 }
 
 
-
 export let RuleEngineAPI = {
 
   rules: {
-    list: function(){
-      return ruleRepo.list()
-
+    list: function () {
+      //return ruleRepo.list()
+      let foo = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
+      return foo.once('value', (result) => {
+        result.forEach((ruleSnap) => {
+          ruleRepo.inward.transform(ruleSnap.val(), ruleSnap.key()).then((rule) => {
+            actions.addRule(rule)
+          })
+        })
+      })
     },
-    self: function(key){},
-    remove: function(key){},
-    update: function(rule){},
-    add: function(rule){},
+    self: function (key) {
+    },
+    remove: function (key) {
+    },
+    update: function (rule) {
+    },
+    add: function (rule) {
+    },
     conditionGroups: {
-      list: function(rule){},
-      self: function(rule, groupKey){},
-      remove: function(rule, groupKey){},
-      update: function(rule, group){},
-      add: function(ruleGroup, group){}
+      list: function (rule) {
+      },
+      self: function (rule, groupKey) {
+      },
+      remove: function (rule, groupKey) {
+      },
+      update: function (rule, group) {
+      },
+      add: function (ruleGroup, group) {
+      }
     },
     conditions: {
-      list: function(ruleGroup){},
-      self: function(rule, conditionKey){},
-      remove: function(rule, conditionKey){},
-      update: function(rule, condition){},
-      add: function(ruleGroup, condition){}
+      list: function (ruleGroup) {
+      },
+      self: function (rule, conditionKey) {
+      },
+      remove: function (rule, conditionKey) {
+      },
+      update: function (rule, condition) {
+      },
+      add: function (ruleGroup, condition) {
+      }
     },
     ruleActions: {
-      list: function(rule){},
-      self: function(rule, actionKey){},
-      remove: function(rule, actionKey ){},
-      update: function(rule, action){},
-      add: function(rule, action){}
+      list: function (rule) {
+      },
+      self: function (rule, actionKey) {
+      },
+      remove: function (rule, actionKey) {
+      },
+      update: function (rule, action) {
+      },
+      add: function (rule, action) {
+      }
     }
   }
 }

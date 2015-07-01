@@ -45,7 +45,7 @@ hr {
     background-color: #68757E; }
 
 .operations {
-  text-align: right; }
+  text-align: left; }
 
 .page-title-search {
   margin-top: 40px; }
@@ -84,7 +84,7 @@ hr {
 
 .section-separator {
   position: relative;
-  text-align: center; }
+  text-align: left; }
   .section-separator h2 {
     background-color: #384046;
     display: inline-block;
