@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.net.sf.hibernate.collection.Map;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -322,11 +323,11 @@ public class ConditionsResource {
         if(restCondition.values != null && !restCondition.values.isEmpty()) {
             List<ConditionValue> values = new ArrayList<>();
 
-            for (RestConditionValue value : restCondition.values) {
+            for (Map.Entry<String,RestConditionValue> value : restCondition.values.entrySet()) {
                 ConditionValue newValue = new ConditionValue();
-                newValue.setId(value.id);
-                newValue.setValue(value.value);
-                newValue.setPriority(value.priority);
+                newValue.setId(value.getValue().id);
+                newValue.setValue(value.getValue().value);
+                newValue.setPriority(value.getValue().priority);
             }
 
             condition.setValues(values);

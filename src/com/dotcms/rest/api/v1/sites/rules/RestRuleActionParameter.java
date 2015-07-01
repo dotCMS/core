@@ -13,34 +13,30 @@ class RestRuleActionParameter {
     public final String id;
     public final String key;
     public final String value;
-    public final int priority;
 
     private RestRuleActionParameter(Builder builder) {
         id = builder.id;
         key = builder.key;
         value = builder.value;
-        priority = builder.priority;
     }
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private final String key;
-        @JsonProperty private final String value;
-        @JsonProperty private int priority = 0;
+        @JsonProperty private String key;
+        @JsonProperty private String value;
 
-        @JsonCreator
-        public Builder(@JsonProperty("key") String key, @JsonProperty("value") String value) {
+        public Builder key(String key) {
             this.key = key;
+            return this;
+        }
+
+        public Builder value(String value) {
             this.value = value;
+            return this;
         }
 
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder priority(int priority) {
-            this.priority = priority;
             return this;
         }
 

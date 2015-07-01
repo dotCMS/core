@@ -216,7 +216,6 @@ public class RulesResource {
     private List<RestRule> getRulesInternal(User user, Host host) {
         try {
             List<Rule> rules = rulesAPI.getRulesByHost(host.getIdentifier(), user, false);
-//            return Lists.newArrayList(Lists.transform(rules, ruleTransform.appToRestFn()));
             return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
@@ -232,7 +231,7 @@ public class RulesResource {
 
     private String createRuleInternal(String siteId, RestRule restRule, User user) {
         try {
-            Rule rule = ruleTransform.restToApp(restRule);
+            Rule rule = ruleTransform.restToApp(restRule, user);
             rule.setHost(siteId);
             rulesAPI.saveRule(rule, user, false);
             return rule.getId();
@@ -249,7 +248,7 @@ public class RulesResource {
             if(rule == null) {
                 throw new NotFoundException("Rule with key '%s' not found: ", restRule.key);
             }
-            ruleTransform.applyRestToApp(restRule, rule);
+            ruleTransform.applyRestToApp(restRule, rule, user);
             rulesAPI.saveRule(rule, user, false);
             return rule.getId();
         } catch (DotDataException e) {

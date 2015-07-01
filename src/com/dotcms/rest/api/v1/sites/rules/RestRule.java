@@ -26,7 +26,7 @@ public class RestRule {
     public final Boolean shortCircuit;
     public final Integer priority;
     public final Boolean enabled;
-    public final Map<String, Boolean> groups;
+    public final Map<String, RestConditionGroup> groups;
 
     private RestRule(Builder builder) {
         key = builder.key;
@@ -46,7 +46,7 @@ public class RestRule {
         @JsonProperty private Boolean shortCircuit = false;
         @JsonProperty private Integer priority = 0;
         @JsonProperty private Boolean enabled = false;
-        @JsonProperty private Map<String, Boolean> groups = ImmutableMap.of();
+        @JsonProperty private Map<String, RestConditionGroup> groups = ImmutableMap.of();
 
 
         /*
@@ -100,7 +100,7 @@ public class RestRule {
             return this;
         }
 
-        public Builder groups(Map<String, Boolean> groups) {
+        public Builder groups(Map<String, RestConditionGroup> groups) {
             this.groups = ImmutableMap.copyOf(groups);
             return this;
         }

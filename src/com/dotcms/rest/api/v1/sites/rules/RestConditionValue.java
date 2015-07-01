@@ -22,12 +22,12 @@ class RestConditionValue {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private final String value;
+        @JsonProperty private String value;
         @JsonProperty private int priority = 0;
 
-        @JsonCreator
-        public Builder(@JsonProperty("value") String value) {
+        public Builder value(String value) {
             this.value = value;
+            return this;
         }
 
         public Builder id(String id) {

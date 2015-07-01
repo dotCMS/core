@@ -7,6 +7,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Condition;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
@@ -17,7 +18,7 @@ class RestCondition {
     public final String name;
     public final String conditionlet;
     public final String comparison;
-    public final List<RestConditionValue> values;
+    public final Map<String, RestConditionValue> values;
     public final String operator;
     public final int priority;
 
@@ -33,22 +34,31 @@ class RestCondition {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private final String name;
-        @JsonProperty private final String conditionlet;
-        @JsonProperty private final String comparison;
-        @JsonProperty private final String operator;
-        @JsonProperty private List<RestConditionValue> values;
+        @JsonProperty private String name;
+        @JsonProperty private String conditionlet;
+        @JsonProperty private String comparison;
+        @JsonProperty private String operator;
+        @JsonProperty private Map<String, RestConditionValue> values;
         @JsonProperty private int priority = 0;
 
-        @JsonCreator // needed for non default constructors
-        public Builder(@JsonProperty("name") String name,
-                       @JsonProperty("conditionlet") String conditionlet,
-                       @JsonProperty("comparison") String comparison,
-                       @JsonProperty("operator") String operator) {
+        public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder conditionlet(String conditionlet) {
             this.conditionlet = conditionlet;
+            return this;
+        }
+
+        public Builder comparison(String comparison) {
             this.comparison = comparison;
+            return this;
+        }
+
+        public Builder operator(String operator) {
             this.operator = operator;
+            return this;
         }
 
         public Builder id(String id) {
@@ -56,7 +66,7 @@ class RestCondition {
             return this;
         }
 
-        public Builder values(List<RestConditionValue> values) {
+        public Builder values(Map<String, RestConditionValue> values) {
             this.values = values;
             return this;
         }

@@ -12,6 +12,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.net.sf.hibernate.collection.Map;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
@@ -255,11 +256,11 @@ public class ActionsResource {
         if(restRuleAction.parameters != null && !restRuleAction.parameters.isEmpty()) {
             List<RuleActionParameter> parameters = new ArrayList<>();
 
-            for (RestRuleActionParameter restParameter : restRuleAction.parameters) {
+            for (Map.Entry<String, RestRuleActionParameter> restParameter : restRuleAction.parameters.entrySet()) {
                 RuleActionParameter parameter = new RuleActionParameter();
-                parameter.setId(restParameter.id);
-                parameter.setKey(restParameter.key);
-                parameter.setValue(restParameter.value);
+                parameter.setId(restParameter.getValue().id);
+                parameter.setKey(restParameter.getValue().key);
+                parameter.setValue(restParameter.getValue().value);
                 parameters.add(parameter);
             }
 

@@ -38,12 +38,6 @@ public class Rule implements Permissionable {
 
     }
 
-    private static final String BEGIN_CONDITION = "com.dotmarketing.portlets.rules.BeginCondition";
-    private static final String END_CONDITION = "com.dotmarketing.portlets.rules.EndCondition";
-    private static final String CONDITION_ = "com.dotmarketing.portlets.rules.EndCondition";
-
-
-
     private String id;
     private String name;
     private FireOn fireOn = FireOn.EVERY_PAGE;

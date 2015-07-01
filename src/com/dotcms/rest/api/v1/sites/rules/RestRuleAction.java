@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.rest.exception.BadRequestException;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
@@ -16,7 +17,7 @@ class RestRuleAction {
     public final String name;
     public final int priority;
     public final String actionlet;
-    public final List<RestRuleActionParameter> parameters;
+    public final Map<String, RestRuleActionParameter> parameters;
 
     private RestRuleAction(Builder builder) {
         id = builder.id;
@@ -28,16 +29,19 @@ class RestRuleAction {
 
     public static final class Builder {
         private String id; // optional - not present when creating - present when updating
-        private final String name; // required
-        private final String actionlet; // required
-        private List<RestRuleActionParameter> parameters; // optional
+        private String name; // required
+        private String actionlet; // required
+        private Map<String, RestRuleActionParameter> parameters; // optional
         private int priority=0; // optional - default value
 
-        @JsonCreator // needed for non default constructors
-        public Builder(@JsonProperty("name") String name,
-                       @JsonProperty("actionlet") String actionlet) {
+        public Builder name(String name) {
             this.name = name;
+            return this;
+        }
+
+        public Builder actionlet(String actionlet) {
             this.actionlet = actionlet;
+            return this;
         }
 
         public Builder id(String id) {
@@ -50,7 +54,7 @@ class RestRuleAction {
             return this;
         }
 
-        public Builder parameters(List<RestRuleActionParameter> parameters) {
+        public Builder parameters(Map<String, RestRuleActionParameter> parameters) {
             this.parameters = parameters;
             return this;
         }
