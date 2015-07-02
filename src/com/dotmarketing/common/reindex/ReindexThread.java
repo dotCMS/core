@@ -242,19 +242,13 @@ public class ReindexThread extends Thread {
 
 								public void onFailure ( Throwable ex ) {
 
-									Logger.error(ReindexThread.class, "Error indexing records", ex);
+									Logger.error(ReindexThread.class, "Indexing process failed", ex);
 
-									//On this case we don' really know which items failed, so just re-try the whole chunk
-									remoteQ.addAll(recordsToDelete);
+									//Delete the records that failed in order to allow the indexing process to be terminated
+									deleteRecords();
 
-									//Counts the failed attempts when indexing and handles error notifications
-									addIndexingFailedAttempt();
-
-									try {
-										Thread.sleep(delay);
-									} catch ( InterruptedException e ) {
-										Logger.error(this, e.getMessage(), e);
-									}
+									//Reset the failed attempts count as the onFailure will finish the indexing process
+									failedAttemptsCount = 0;
 								}
 
 								/**
