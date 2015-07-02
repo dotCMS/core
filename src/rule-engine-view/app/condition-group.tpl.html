@@ -1,7 +1,7 @@
 <div class="clause-group-separator" *if="index > 1">
   <div class="row">
     <div class="col-sm-1">
-      <button class="btn btn-default field-operator" (click)="toggleOperator(rule, group)">
+      <button class="btn btn-default field-operator" (click)="toggleOperator()">
         {{group.operator}}
       </button>
     </div>
@@ -12,17 +12,19 @@
   <div class="panel-heading">
     <div class="row">
       <div class="col-xs-6">
-        <button type="button" class="btn btn-default btn-md js-info-button" data-toggle="popover" data-placement="top" title="Teaser about the rule" data-content="Visitor is from France, user is anonymous and device is tablet">
+        <button type="button" class="btn btn-default btn-md js-info-button" data-toggle="popover"
+                data-placement="top" title="Teaser about the rule"
+                data-content="Visitor is from France, user is anonymous and device is tablet">
           <span class="glyphicon glyphicon-question-sign js-info-button" aria-hidden="true"></span>
         </button>
-        <h4 class="panel-title js-rule-teaser">We need to add the teaser dynamically...</h4>
+        <h4 class="panel-title js-rule-teaser">{Dynamically generated description of Conditions in this Group}</h4>
       </div>
       <div class="col-xs-6">
         <div class="operations clause-group-operations">
-          <button type="button" class="btn btn-default btn-md" (click)="toggleCollapse()">
+          <button type="button" class="btn btn-default btn-md" (click)="collapsed = !collapsed">
             <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
           </button>
-          <button type="button" class="btn btn-default btn-md" aria-label="Add Clause" (click)="addGroup(rule)">
+          <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
             <span class="glyphicon glyphicon-plus" aria-hidden="true" ></span>
           </button>
         </div>
@@ -34,12 +36,9 @@
       </div>
     </div>
   </div>
-  <div class="panel-body collapse" [class.in]="!isCollapse">
-    <clause *for="var clause of clauses; var i=index"
-            [rule]="rule"
-            [group]="group"
-            [clause]="clause"
-            [index]="i + 1">
-    </clause>
+  <div class="panel-body collapse" [class.in]="!collapsed">
+    <rule-condition *for="var snap of getConditions(); var i=index"
+            [condition-snap]="snap">
+    </rule-condition>
   </div>
 </div>

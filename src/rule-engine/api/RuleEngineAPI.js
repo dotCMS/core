@@ -161,8 +161,12 @@ ruleGroupRepo = {
       } else {
         path = ruleGroupRepo.getPath(defaultSiteKey, group.ruleKey, _xForm.key)
       }
-      Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS)
-      actions.update(path)
+      Storage.setItem(path, _xForm.val, isNew === true && SERVER_CREATES_KEYS).then((result) => {
+        resolve(result)
+      }).catch((e) => {
+        reject(e)
+      })
+
     })
   }
 }

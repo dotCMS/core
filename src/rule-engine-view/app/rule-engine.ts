@@ -7,12 +7,12 @@ import {bootstrap, For, If} from 'angular2/angular2';
 import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
 import {View} from 'angular2/src/core/annotations_impl/view';
 
-import {FormBuilder, Validators, FormDirectives, ControlGroup} from 'angular2/forms';
+import {FormBuilder, Validators, ControlGroup} from 'angular2/forms';
 
 import jsonp from 'jsonp'
 
 import {Core, ServerManager, EntityMeta} from '../../coreweb/index.js'
-import {RuleEngineAPI, ruleRepo, ruleGroupRepo, Rule, RuleGroup, RuleStore} from '../../rule-engine/index.js';
+import {RuleEngineAPI, ruleRepo, ruleGroupRepo, Rule, RuleGroup, RuleStore, actions} from '../../rule-engine/index.js';
 
 import "bootstrap/css/bootstrap.css!";
 import "./styles/rule-engine.css!";
@@ -21,54 +21,164 @@ import "./styles/theme-dark.css!";
 import ruleEngineTemplate from './rule-engine.tpl.html!text'
 import ruleTemplate from './rule.tpl.html!text'
 import ruleActionTemplate from './rule-action.tpl.html!text'
-import clauseGroupTemplate from './clause-group.tpl.html!text'
-import clauseTemplate from './clause.tpl.html!text'
+import conditionGroupTemplate from './condition-group.tpl.html!text'
+import conditionTemplate from './condition.tpl.html!text'
+
+
+@Component({
+  selector: 'rule-condition',
+  properties: {
+    "conditionSnap": "condition-snap"
+  }
+})
+@View({
+  template: conditionTemplate,
+  directives: [If, For]
+})
+class ConditionComponent {
+  _conditionSnap:any;
+  condition:any;
+  clauseTypes:Array;
+  comparisons:Array;
+
+  constructor() {
+    this.clauseTypes = [{id: 'hello', text: 'foo'}, {id: 'goodbye', text: 'bar'}]
+    this.comparisons = [{id: 'compHello', text: 'cFoo'}, {id: 'compGoodbye', text: 'cBar'}];
+  }
+
+  set conditionSnap(conditionSnap) {
+    this._conditionSnap = conditionSnap
+    this.condition = conditionSnap.val()
+  }
+
+  get conditionSnap() {
+    return this._conditionSnap;
+  }
+
+
+  removeCondition() {
+    //ClauseActionCreators.removeClause(this._clause)
+  }
+
+  toggleOperator() {
+    //ClauseActionCreators.toggleOperator(this._clause)
+  }
+
+  updateCondition() {
+    this.conditionSnap.ref().set(this.condition)
+  }
+
+}
+
+
+@Component({
+  selector: 'condition-group',
+  properties: {
+    "rule": "rule",
+    "groupSnap": "group-snap"
+  }
+})
+@View({
+  template: conditionGroupTemplate,
+  directives: [ConditionComponent, If, For]
+})
+class ConditionGroupComponent {
+  _groupSnap:any;
+  group:any;
+  collapsed:boolean;
+
+  constructor() {
+    this.collapsed = false;
+  }
+
+  set groupSnap(groupSnap) {
+    this._groupSnap = groupSnap
+    this.group = groupSnap.val()
+  }
+
+  get groupSnap() {
+    return this._groupSnap;
+  }
+
+  getConditions(){
+    let referenceSnaps = []
+    let conditionMetas = []
+    this.groupSnap.child('conditions').forEach((childSnap) => {
+      referenceSnaps.push(childSnap.key()) // the snap value is 'true', as this is a reference.
+      conditionMetas.push(new EntityMeta(childSnap['entityeMeta'].path))
+    })
+    return referenceSnaps
+  }
+
+  addCondition() {
+    let condition = {
+      priority: 10,
+      name: "Condition. " + new Date().toISOString(),
+      conditionlet: '',
+      comparison: 'Is',
+      operator: 'Equal',
+      values: {
+        a: {
+          id: 'a',
+          value: 'something',
+          priority: 10
+        }
+      }
+    }
+
+    this.groupSnap.ref().child('conditions').push(condition).then((result) => {
+      this.group.conditionGroups[result.key()] = true
+      this.updateGroup()
+    }).catch((e) => {
+      log(e)
+    })
+  }
+
+  toggleOperator() {
+    this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
+    this.updateGroup()
+  }
+
+  toggleCollapse() {
+    this.collapsed = !this.collapsed
+  }
+
+  updateGroup() {
+    this.groupSnap.ref().set(this.group)
+  }
+
+}
 
 
 @Component({
   selector: 'rule-action',
   properties: {
-    "rule": "rule",
+    "actionSnap": "action-snap",
     "ruleAction": "rule-action",
     "index": "index"
   }
 })
 @View({
   template: ruleActionTemplate,
-  directives: [FormDirectives, If, For],
-  injectables: [FormBuilder]
+  directives: [If, For],
 })
 class RuleActionComponent {
-  _ruleAction:any;
-  form:ControlGroup;
-  rule:any;
+  _actionSnap:any;
+  ruleAction:any;
   index:number;
-  builder:FormBuilder;
 
-  constructor(b:FormBuilder) {
-    this.builder = b;
+  constructor() {
   }
 
-  get ruleAction():any {
-    return this._ruleAction;
+  get actionSnap():any {
+    return this._actionSnap;
   }
 
-  set ruleAction(ruleAction:any) {
-    var ruleActionControl = this.builder.group({
-      "name": [ruleAction.name, Validators.required]
-    });
-    ruleActionControl.controls.name.valueChanges.toRx().debounce(500).subscribe(
-        (v) => {
-          this._ruleAction = this._ruleAction.clone().withName(v).build()
-          this.saveChanges()
-        })
-    this.form = ruleActionControl
-    this._ruleAction = ruleAction
+  set ruleAction(actionSnap:any) {
+    this._actionSnap = actionSnap
+    this.ruleAction = actionSnap.val();
   }
 
-  addRuleAction() {
-    //RuleActionActionCreators.addRuleAction(RuleActionBuilder.fromJson({owningRule: this.rule.$key.value}).build(), this.rule)
-  }
 
   saveChanges() {
     //RuleActionActionCreators.updateRuleAction(this._ruleAction)
@@ -84,136 +194,6 @@ class RuleActionComponent {
 
 
 @Component({
-  selector: 'clause',
-  properties: {
-    "rule": "rule",
-    "group": "group",
-    "clause": "clause",
-    "index": "index"
-  }
-})
-@View({
-  template: clauseTemplate,
-  directives: [FormDirectives, If, For]
-})
-class ClauseComponent {
-  _clause:any;
-  group:any;
-  rule:any;
-  index:number;
-  clauseTypes:Array;
-  comparisons:Array;
-
-  constructor() {
-    //ClauseStore.addChangeListener(this.onChange.bind(this))
-    this.clauseTypes = [{id: 'hello', text: 'foo'}, {id: 'goodbye', text: 'bar'}]
-    this.comparisons = [{id: 'compHello', text: 'cFoo'}, {id: 'compGoodbye', text: 'cBar'}];
-  }
-
-  get clause() {
-    return this._clause;
-  }
-
-  set clause(clause) {
-    this._clause = clause
-  }
-
-  onChange(action) {
-  }
-
-  addClause(rule, group) {
-    //let clause = ClauseBuilder.fromCfg({owningGroup: group.$key}).build()
-    //ClauseActionCreators.addClause(clause, rule.$key)
-  }
-
-  removeClause() {
-    //ClauseActionCreators.removeClause(this._clause)
-  }
-
-  toggleOperator() {
-    //ClauseActionCreators.toggleOperator(this._clause)
-  }
-}
-
-
-@Component({
-  selector: 'clause-group',
-  properties: {
-    "rule": "rule",
-    "group": "group",
-    "index": "index"
-  }
-})
-@View({
-  template: clauseGroupTemplate,
-  directives: [ClauseComponent, FormDirectives, If, For]
-})
-class ClauseGroupComponent {
-  _group;
-  rule;
-  index:number;
-  clauses:Array = null;
-  isCollapse:any;
-
-  constructor() {
-    //ClauseStore.addChangeListener(this.onChange.bind(this))
-    this.isCollapse = true;
-  }
-
-  get group() {
-    return this._group;
-  }
-
-  set group(group) {
-    this._group = group
-    var idx = 1
-    // TODO: remove this :)
-    this.clauses = [
-      {
-        $key: 'rule0' + idx + '-group02-clause01',
-        type: 'IsAuthenticated',
-        name: 'User is authenticated',
-        owningGroup: 'rule0' + idx + '-group02',
-        value: true,
-        operator: 'AND'
-      },
-      {
-        $key: 'rule0' + idx + '-group02-clause02',
-        type: 'VisitorLocation',
-        name: 'User is visiting from france',
-        owningGroup: 'rule0' + idx + '-group02',
-        value: 'CA',
-        operator: 'AND'
-      }
-    ]
-    //debugger
-    //this.clauses = ClauseStore.getAll(this._group)
-  }
-
-  onChange(action) {
-    //this.clauses = ClauseStore.getAll(this._group);
-  }
-
-  addGroup(rule:any) {
-    //RuleActionCreators.addGroup(rule.$key, new ClauseGroupBuilder().build())
-  }
-
-  removeGroup() {
-    //RuleActionCreators.removeGroup(this.rule.$key, this._group.$key)
-  }
-
-  toggleOperator(rule, group) {
-    //RuleActionCreators.toggleClauseGroupOperator(this.rule, this._group)
-    //log("Toggle group operator", rule, group)
-  }
-
-  toggleCollapse() {
-    this.isCollapse = !this.isCollapse
-  }
-}
-
-
-@Component({
   selector: 'rule',
   properties: {
     "ruleSnap": "rule-snap"
@@ -224,7 +204,7 @@ class ClauseGroupComponent {
 })
 @View({
   template: ruleTemplate,
-  directives: [ClauseGroupComponent, If, For]
+  directives: [ConditionGroupComponent, If, For]
 })
 class RuleComponent {
   rule:any;
@@ -248,11 +228,13 @@ class RuleComponent {
   }
 
   getRuleGroups() {
-    let groups = this.rule.groups
-    return Object.keys(groups).map((key) => {
-      return groups[key]
-    });
+    let groupSnaps = []
+    this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
+      groupSnaps.push(childSnap)
+    })
+    return groupSnaps
   }
+
 
   setFireOn(value:string) {
     this.rule.fireOn = value
@@ -265,27 +247,40 @@ class RuleComponent {
     this.updateRule()
   }
 
-  updateRule() {
-    this.ruleSnap.ref().set(this.rule)
-  }
-
   addGroup() {
-    let group = new RuleGroup();
-    group.priority = 10
-    group.operator = 'OR'
-    group.ruleKey = this._ruleSnap.key()
-    ruleGroupRepo.push(group).then((group) => {
-      this._ruleSnap.val().groups[group.$key] = group
+    let group = {
+      priority: 10,
+      operator: 'OR'
+    }
+
+    this.ruleSnap.ref().child('conditiongroups').push(group).then((result) => {
+      this.rule.conditionGroups[result.key()] = result['val']()
+      this.updateRule()
+    }).catch((e) => {
+      log(e)
     })
   }
 
+  addRuleAction() {
+    let action = {
+      name: "CoreWeb created this action: " + new Date().toISOString(),
+      priority: 10,
+      actionlet: 'Set user variable'
+    }
+  }
+
+
   removeRule() {
-    ruleRepo.remove(this.rule.$key).then((x) => {
-      log("Yay! ", x)
+    this.ruleSnap.ref().remove().then((x) => {
+      actions.update(x)
     }).catch((e) => {
       log("Not yay :~(: ", e)
       throw e
     })
+  }
+
+  updateRule() {
+    this.ruleSnap.ref().set(this.rule)
   }
 
 }
@@ -309,6 +304,7 @@ class RuleEngine {
     this.rulesEntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
     log("creating rules engine");
     this.onChange()
+    RuleStore.addChangeListener(this.onChange.bind(this))
   }
 
   updateBaseUrl(value) {
@@ -326,6 +322,7 @@ class RuleEngine {
   }
 
   onChange(event = null) {
+    log("Handling change event: ", event)
     this.rulesEntityMeta.once('value', (result) => {
       this.rules = []
       if (result && result.forEach) {
@@ -346,7 +343,7 @@ class RuleEngine {
     testRule.priority = 10
     testRule.fireOn = "EVERY_PAGE"
     testRule.shortCircuit = false
-    testRule.groups = {}
+    testRule.conditionGroups = {}
     testRule.actions = {}
     ruleRepo.push(testRule)
   }

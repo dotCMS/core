@@ -36,14 +36,14 @@ let transformStatusErrorResponse = function (response) {
   }
 }
 
-let pathToUrl = function(path){
-  if(path.startsWith('/')){
+let pathToUrl = function (path) {
+  if (path.startsWith('/')) {
     path = path.substring(1)
   }
   if (path.endsWith('/')) {
     path = path.substring(0, path.length - 1)
   }
-  return ServerManager.baseUrl + path
+  return ServerManager.baseUrl + path.toLowerCase()
 }
 
 let remoteSet = function (path, entity, create = false) {
@@ -96,7 +96,11 @@ let remoteDelete = function (path) {
       path: url,
       headers: {'Content-Type': 'application/json'},
     }).then((response) => {
-      resolve(transformValidResponse(response))
+      if (response.status.code > 199 && response.status.code < 300) {
+        resolve(transformValidResponse(response))
+      } else {
+        reject(transformStatusErrorResponse(response))
+      }
     }).catch((e)=> {
       log("Delete operation resulted in an error: ", e)
       reject(e)
@@ -131,7 +135,8 @@ let RestDataStore = {
             path = path.substring(0, path.lastIndexOf('/') + 1) + response.entity.id
           }
           localStorage.setItem(path, JSON.stringify(entity))
-          resolve(entity)
+          response.path = path
+          resolve(response)
         } else {
           reject(response)
         }
@@ -203,9 +208,9 @@ export class MetaManager {
     this.metasByPath = new Map()
   }
 
-  register(meta){
+  register(meta) {
     let instances = this.metasByPath.get(meta.path)
-    if(!instances){
+    if (!instances) {
       instances = new Set()
       this.metasByPath.put(meta.path, instances)
     }
@@ -213,7 +218,7 @@ export class MetaManager {
   }
 
 
-  notify(path, eventType){
+  notify(path, eventType) {
 
   }
 
@@ -226,7 +231,7 @@ export class EntitySnapshot {
     this.entity = entity
   }
 
-  val(){
+  val() {
     return this.entity
   }
 
@@ -238,10 +243,18 @@ export class EntitySnapshot {
     return this.entityMeta
   }
 
-  forEach(childAction){
+  child(key) {
+    let childPath = this.entityMeta.path + '/' + key
+    let childVal = null
+    if (this.entity.hasOwnProperty(key)) {
+      childVal = this.entity[key]
+    }
+    return new EntitySnapshot(new EntityMeta(childPath), childVal)
+  }
+
+  forEach(childAction) {
     Object.keys(this.entity).every((key) => {
-      let childPath = this.entityMeta.path + '/' + key
-      let snap = new EntitySnapshot(new EntityMeta(childPath), this.entity[key])
+      let snap = this.child(key)
       return childAction(snap) !== true // break if 'true' returned by callback.
     })
   }
@@ -280,8 +293,6 @@ export class EntityMeta {
     }
     return persistPromise.then((result) => {
       return onComplete(result)
-    }).catch((e) => {
-      return onComplete(e)
     })
   }
 
@@ -302,8 +313,7 @@ export class EntityMeta {
   push(data, onComplete = emptyFn) {
     return Foo.getPersistenceHandler().setItem(this.path, data, true)
         .then((result) => {
-          return new EntityMeta(this.path + "/", result.key)
-        }).catch(() => {
+          return new EntitySnapshot(new EntityMeta(result.path ), result)
         })
 
   }

@@ -39,6 +39,9 @@
             <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
               <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
             </button>
+            <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
+              <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+            </button>
             <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
                     (click)="removeRule()">
               <span class="glyphicon glyphicon-trash"></span>
@@ -52,11 +55,11 @@
         <h2>When</h2>
         <hr/>
       </div>
-      <clause-group *for="var cg of getRuleGroups(); var i=index"
+      <condition-group *for="var groupSnap of getRuleGroups(); var i=index"
       [rule]="rule"
-      [group]="cg"
+      [group-snap]="groupSnap"
       [index]="i + 1">
-      </clause-group>
+      </condition-group>
 
       <div class="section-separator">
         <h2>Then</h2>
