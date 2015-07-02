@@ -75,7 +75,12 @@ public class ReindexThread extends Thread {
 					User systemUser = APILocator.getUserAPI().getSystemUser();
 
 					//Error message
-					String errorMessage = LanguageUtil.get(systemUser, "notification.reindexing.error");
+					String languageKey = "notification.reindexing.error";
+					String errorMessage = LanguageUtil.get(systemUser, languageKey);
+					//If the indexing is running when the system starts for the first time the language resources could be not available
+					if ( errorMessage.equals(languageKey) ) {
+						errorMessage = "An error has occurred during the indexing process, please check your logs and retry later";
+					}
 
 					//Add a notification to the back-end
 					APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());
@@ -137,6 +142,10 @@ public class ReindexThread extends Thread {
     					            indexAPI.fullReindexSwitchover(conn);
 
 									try {
+
+										//Reset the failed attempts count
+										failedAttemptsCount = 0;
+
 										//System user
 										User systemUser = APILocator.getUserAPI().getSystemUser();
 
