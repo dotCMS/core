@@ -3,11 +3,9 @@ package com.dotcms.rest.api.v1.sites.rules;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.portlets.rules.model.Rule;
-import java.util.List;
 import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -26,7 +24,7 @@ public class RestRule {
     public final Boolean shortCircuit;
     public final Integer priority;
     public final Boolean enabled;
-    public final Map<String, RestConditionGroup> groups;
+    public final Map<String, RestConditionGroup> conditionGroups;
 
     private RestRule(Builder builder) {
         key = builder.key;
@@ -35,7 +33,7 @@ public class RestRule {
         shortCircuit = builder.shortCircuit;
         priority = builder.priority;
         enabled = builder.enabled;
-        groups = builder.groups;
+        conditionGroups = builder.conditionGroups;
     }
 
     @JsonIgnoreProperties({"groups", "actions"})
@@ -46,7 +44,7 @@ public class RestRule {
         @JsonProperty private Boolean shortCircuit = false;
         @JsonProperty private Integer priority = 0;
         @JsonProperty private Boolean enabled = false;
-        @JsonProperty private Map<String, RestConditionGroup> groups = ImmutableMap.of();
+        @JsonProperty private Map<String, RestConditionGroup> conditionGroups = ImmutableMap.of();
 
 
         /*
@@ -100,8 +98,8 @@ public class RestRule {
             return this;
         }
 
-        public Builder groups(Map<String, RestConditionGroup> groups) {
-            this.groups = ImmutableMap.copyOf(groups);
+        public Builder conditionGroups(Map<String, RestConditionGroup> conditionGroups) {
+            this.conditionGroups = ImmutableMap.copyOf(conditionGroups);
             return this;
         }
 
@@ -112,7 +110,7 @@ public class RestRule {
             shortCircuit = copy.shortCircuit;
             priority = copy.priority;
             enabled = copy.enabled;
-            groups = ImmutableMap.copyOf(copy.groups);
+            conditionGroups = ImmutableMap.copyOf(copy.conditionGroups);
             return this;
         }
 
