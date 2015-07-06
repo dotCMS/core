@@ -19,6 +19,7 @@ public class ConditionValueTransform {
     public final Function<ConditionValue, RestConditionValue> toRest = (app) -> {
 
         RestConditionValue rest = new RestConditionValue.Builder()
+                .id(app.getId())
                 .value(app.getValue())
                 .priority(app.getPriority())
                 .build();
