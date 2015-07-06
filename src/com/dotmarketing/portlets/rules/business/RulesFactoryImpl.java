@@ -196,23 +196,6 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public List<Condition> getConditionsByRule(String ruleId)
-            throws DotDataException {
-        List<Condition> conditions = cache.getConditions(ruleId);
-        if (conditions == null) {
-            final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_CONDITIONS_BY_RULE);
-            db.addParam(ruleId);
-            conditions = convertListToObjects(db.loadObjectResults(),
-                    Condition.class);
-
-            getConditionValuesFromDB(conditions, db);
-        }
-        return conditions;
-    }
-
-
-    @Override
     public List<Condition> getConditionsByGroup(String groupId)
             throws DotDataException {
         List<Condition> conditions = cache.getConditionsByGroupId(groupId);
@@ -408,7 +391,6 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.setSQL(sql.INSERT_CONDITION);
                 db.addParam(condition.getId());
                 db.addParam(condition.getName());
-                db.addParam(condition.getRuleId());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
                 db.addParam(condition.getComparison());
@@ -432,7 +414,6 @@ public class RulesFactoryImpl implements RulesFactory {
             } else {
                 db.setSQL(sql.UPDATE_CONDITION);
                 db.addParam(condition.getName());
-                db.addParam(condition.getRuleId());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
                 db.addParam(condition.getComparison());
@@ -700,7 +681,6 @@ public class RulesFactoryImpl implements RulesFactory {
         Condition c = new Condition();
         c.setId(row.get("id").toString());
         c.setName(row.get("name").toString());
-        c.setRuleId(row.get("rule_id").toString());
         c.setConditionletId(row.get("conditionlet").toString());
         c.setConditionGroup(row.get("condition_group").toString());
         c.setComparison(row.get("comparison").toString());

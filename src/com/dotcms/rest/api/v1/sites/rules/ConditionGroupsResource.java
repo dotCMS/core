@@ -36,17 +36,22 @@ import com.liferay.portal.model.User;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
+import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1")
 public class ConditionGroupsResource extends WebResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
+    private final ConditionGroupTransform groupTransform = new ConditionGroupTransform();
     private HostAPI hostAPI;
 
+    @SuppressWarnings("unused")
     public ConditionGroupsResource() {
         this(new ApiProvider());
     }
@@ -65,90 +70,35 @@ public class ConditionGroupsResource extends WebResource {
     @GET
     @Path("sites/{siteId}/rules/{ruleId}/conditiongroups")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionGroups(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
+    public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
             throws JSONException {
 
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        ruleId = checkNotEmpty(siteId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
+        getHost(siteId, user);
+        Rule rule = getRule(ruleId, user);
+        List<RestConditionGroup> restConditionGroups = getGroupsInternal(user, rule);
+        java.util.Map<String, RestConditionGroup> hash = restConditionGroups.stream()
+                .collect(Collectors.toMap(restGroup -> restGroup.id, Function.identity()));
 
-        try {
-            getHost(siteId, user);
-            getRule(ruleId, user);
-
-            JSONObject groupsJSON = new JSONObject();
-            List<ConditionGroup> conditionGroups = rulesAPI.getConditionGroupsByRule(ruleId, user, false);
-
-            for (ConditionGroup conditionGroup : conditionGroups) {
-
-                JSONObject groupJSON = new com.dotmarketing.util.json.JSONObject(conditionGroup, new String[]{"operator", "priority"});
-
-                List<Condition> conditions = rulesAPI.getConditionsByConditionGroup(conditionGroup.getId(), user, false);
-
-                JSONObject conditionsJSON = new JSONObject();
-
-                for (Condition condition : conditions) {
-                    JSONObject conditionJSON = new com.dotmarketing.util.json.JSONObject(condition);
-
-                    JSONObject valuesJSON = new JSONObject();
-                    for (ConditionValue value : condition.getValues()) {
-                        valuesJSON.put(value.getId(), new com.dotmarketing.util.json.JSONObject(value, new String[]{"value", "priority"}));
-                    }
-
-                    conditionJSON.put("values", valuesJSON);
-                    conditionsJSON.put(condition.getId(), conditionJSON);
-                }
-
-                groupJSON.put("conditions", conditionsJSON);
-
-                groupsJSON.put(conditionGroup.getId(), groupJSON);
-            }
-
-            return Response.ok(groupsJSON.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Conditions", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        return Response.ok(hash).build();
     }
 
     @GET
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionGroup(@Context HttpServletRequest request,
+    public RestConditionGroup self(@Context HttpServletRequest request,
                                       @PathParam("siteId") String siteId,
                                       @PathParam("ruleId") String ruleId,
                                       @PathParam("groupId") String groupId) throws JSONException {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        ruleId = checkNotEmpty(siteId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
-
-        try {
-
-            getHost(siteId, user);
-            getRule(ruleId, user);
-            ConditionGroup group = getConditionGroup(groupId, user);
-
-            JSONObject groupJSON = new com.dotmarketing.util.json.JSONObject(group, new String[]{"operator", "priority"});
-
-            List<Condition> conditions = rulesAPI.getConditionsByConditionGroup(group.getId(), user, false);
-
-            JSONObject conditionsJSON = new JSONObject();
-
-            for (Condition condition : conditions) {
-                JSONObject conditionJSON = new com.dotmarketing.util.json.JSONObject(condition);
-
-                JSONObject valuesJSON = new JSONObject();
-                for (ConditionValue value : condition.getValues()) {
-                    valuesJSON.put(value.getId(), new com.dotmarketing.util.json.JSONObject(value, new String[]{"value", "priority"}));
-                }
-
-                conditionJSON.put("values", valuesJSON);
-                conditionsJSON.put(condition.getId(), conditionJSON);
-            }
-
-            groupJSON.put("conditions", conditionsJSON);
-
-            return Response.ok(groupJSON.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Conditions", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        getHost(siteId, user);
+        getRule(ruleId, user);
+        groupId = checkNotEmpty(groupId, BadRequestException.class, "Condition Group Id is required.");
+        return getGroupInternal(groupId, user);
     }
 
     /**
@@ -161,17 +111,17 @@ public class ConditionGroupsResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postConditionGroup(@Context HttpServletRequest request,
+    public Response add(@Context HttpServletRequest request,
                                        @PathParam("siteId") String siteId,
                                        @PathParam("ruleId") String ruleId,
                                        RestConditionGroup conditionGroup) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
         User user = getUser(request);
-        Host host = getHost(siteId, user);
-        Rule rule = getRule(ruleId, user);
+        getHost(siteId, user);
+        getRule(ruleId, user);
 
-        String conditionGroupId = createConditionGroupInternal(rule.getId(), conditionGroup, user);
+        String conditionGroupId = createConditionGroupInternal(conditionGroup, user);
 
         try {
             URI path = new URI(ruleId);
@@ -191,7 +141,7 @@ public class ConditionGroupsResource extends WebResource {
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public RestConditionGroup putConditionGroup(@Context HttpServletRequest request,
+    public RestConditionGroup update(@Context HttpServletRequest request,
                                                 @PathParam("siteId") String siteId,
                                                 @PathParam("ruleId") String ruleId,
                                                 @PathParam("groupId") String groupId,
@@ -216,7 +166,7 @@ public class ConditionGroupsResource extends WebResource {
 
     @DELETE
     @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{conditionGroupId}")
-    public Response deleteConditionGroup(@Context HttpServletRequest request,
+    public Response remove(@Context HttpServletRequest request,
                                          @PathParam("siteId") String siteId,
                                          @PathParam("ruleId") String ruleId,
                                          @PathParam("conditionGroupId") String groupId) throws JSONException {
@@ -271,6 +221,22 @@ public class ConditionGroupsResource extends WebResource {
         }
     }
 
+    private RestConditionGroup getGroupInternal(String groupId, User user) {
+        ConditionGroup input = getConditionGroup(groupId, user);
+        return groupTransform.appToRest(input);
+    }
+
+    private List<RestConditionGroup> getGroupsInternal(User user, Rule rule) {
+        try {
+            List<ConditionGroup> groups = rulesAPI.getConditionGroupsByRule(rule.getId(), user, false);
+            return groups.stream().map(groupTransform.appToRestFn()).collect(Collectors.toList());
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
     @VisibleForTesting
     ConditionGroup getConditionGroup(String groupId, User user) {
         try {
@@ -287,10 +253,9 @@ public class ConditionGroupsResource extends WebResource {
         }
     }
 
-    private String createConditionGroupInternal(String ruleId, RestConditionGroup restConditionGroup, User user) {
+    private String createConditionGroupInternal(RestConditionGroup restConditionGroup, User user) {
         try {
-            ConditionGroup conditionGroup = new ConditionGroup();
-            applyRestConditionGroupToConditionGroup(ruleId, restConditionGroup, conditionGroup);
+            ConditionGroup conditionGroup = groupTransform.restToApp(restConditionGroup);
             rulesAPI.saveConditionGroup(conditionGroup, user, false);
             return conditionGroup.getId();
         } catch (DotDataException e) {
@@ -300,19 +265,11 @@ public class ConditionGroupsResource extends WebResource {
         }
     }
 
-    private void applyRestConditionGroupToConditionGroup(String ruleId, RestConditionGroup restConditionGroup, ConditionGroup conditionGroup) {
-        conditionGroup.setRuleId(ruleId);
-        conditionGroup.setOperator(Condition.Operator.valueOf(restConditionGroup.operator));
-        conditionGroup.setPriority(restConditionGroup.priority);
-    }
-
     private String updateConditionGroupInternal(User user, String ruleId, String conditionGroupId, RestConditionGroup restConditionGroup) {
         try {
             ConditionGroup conditionGroup = rulesAPI.getConditionGroupById(conditionGroupId, user, false);
-            if(conditionGroup == null) {
-                throw new NotFoundException("Condition Group with id '%s' not found: ", conditionGroupId);
-            }
-            applyRestConditionGroupToConditionGroup(ruleId, restConditionGroup, conditionGroup);
+            checkNotNull(conditionGroup, NotFoundException.class, "Condition Group with id '%s' not found: ", conditionGroupId);
+            groupTransform.applyRestToApp(restConditionGroup, conditionGroup);
             rulesAPI.saveConditionGroup(conditionGroup, user, false);
             return conditionGroup.getId();
         } catch (DotDataException e) {

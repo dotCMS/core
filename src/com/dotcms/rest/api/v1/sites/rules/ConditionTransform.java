@@ -28,6 +28,9 @@ public class ConditionTransform {
     }
 
     public Condition applyRestToApp(RestCondition rest, Condition app) {
+        app.setName(rest.name);
+        app.setConditionletId(rest.conditionlet);
+        app.setComparison(rest.comparison);
         app.setOperator(Condition.Operator.valueOf(rest.operator));
         app.setPriority(rest.priority);
         app.setValues(rest.values.values().stream()
@@ -36,7 +39,16 @@ public class ConditionTransform {
         return app;
     }
 
-    public final Function<Condition, RestCondition> toRest = (app) -> {
+    public RestCondition appToRest(Condition c) {
+
+        return toRest.apply(c);
+    }
+
+    public Function<Condition, RestCondition> appToRestFn() {
+        return toRest;
+    }
+
+    private final Function<Condition, RestCondition> toRest = (app) -> {
 
         RestCondition rest = new RestCondition.Builder()
                 .id(app.getId())

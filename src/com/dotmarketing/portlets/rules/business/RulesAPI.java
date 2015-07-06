@@ -138,17 +138,6 @@ public interface RulesAPI {
 
     /**
      *
-     * @param ruleId
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
-
-    /**
-     *
      * @param id
      * @param user
      * @param respectFrontendRoles

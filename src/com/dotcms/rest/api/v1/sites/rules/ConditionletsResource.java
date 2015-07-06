@@ -59,7 +59,7 @@ public class ConditionletsResource {
     @GET
     @Path("/system/conditionlets")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionlets(@Context HttpServletRequest request) throws JSONException {
+    public Response list(@Context HttpServletRequest request) throws JSONException {
         User user = getUser(request);
 
         JSONObject jsonConditionlets = new JSONObject();
@@ -102,7 +102,7 @@ public class ConditionletsResource {
     @GET
     @Path("/conditionlets/{id}/comparisons")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
+    public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         User user = getUser(request);
 
         JSONObject jsonComparisons = new JSONObject();
@@ -142,7 +142,7 @@ public class ConditionletsResource {
     @GET
     @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getConditionletInputs(@Context HttpServletRequest request,
+    public Response listConditionletInputs(@Context HttpServletRequest request,
                                           @PathParam("id") String conditionletId,
                                           @PathParam("comparison") String comparison) throws JSONException {
         User user = getUser(request);

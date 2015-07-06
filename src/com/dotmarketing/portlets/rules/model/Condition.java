@@ -25,7 +25,6 @@ public class Condition {
 
     private String id;
     private String name;
-    private String ruleId;
     private String conditionletId;
     private String conditionGroup;
     private String comparison;
@@ -49,14 +48,6 @@ public class Condition {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getRuleId() {
-        return ruleId;
-    }
-
-    public void setRuleId(String ruleId) {
-        this.ruleId = ruleId;
     }
 
     public String getConditionletId() {
@@ -132,8 +123,8 @@ public class Condition {
     }
 	@Override
 	public String toString() {
-		return "Condition [id=" + id + ", name=" + name + ", ruleId=" + ruleId
-				+ ", conditionletId=" + conditionletId + ", conditionGroup="
+		return "Condition [id=" + id + ", name=" + name
+                + ", conditionletId=" + conditionletId + ", conditionGroup="
 				+ conditionGroup + ", comparison=" + comparison + ", values="
 				+ values + ", modDate=" + modDate + ", operator=" + operator
 				+ ", priority=" + priority + "]";

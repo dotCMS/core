@@ -31,8 +31,6 @@ public interface RulesFactory {
 
     ConditionGroup getConditionGroupById(String conditionGroupId) throws DotDataException;
 
-    List<Condition> getConditionsByRule(String ruleId) throws DotDataException;
-
     List<Condition> getConditionsByGroup(String groupId) throws DotDataException;
 
     Condition getConditionById(String id) throws DotDataException ;

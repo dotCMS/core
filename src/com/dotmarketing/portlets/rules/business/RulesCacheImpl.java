@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import java.util.*;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.collections.IteratorUtils;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -240,7 +241,7 @@ public class RulesCacheImpl extends RulesCache {
 				}
 			}
 		}
-		return conditions;
+		return conditions!=null?ImmutableList.copyOf(conditions):null;
 	}
 
 	@Override
@@ -361,7 +362,7 @@ public class RulesCacheImpl extends RulesCache {
 						+ ruleId);
 			}
 		}
-		return conditionGroups;
+		return conditionGroups!=null?ImmutableList.copyOf(conditionGroups):null;
 	}
 
 	@Override
@@ -464,7 +465,7 @@ public class RulesCacheImpl extends RulesCache {
 				Logger.debug(this, "ActionsCache entry not found: " + ruleId);
 			}
 		}
-		return actions;
+		return actions!=null?ImmutableList.copyOf(actions):null;
 	}
 
 	@Override

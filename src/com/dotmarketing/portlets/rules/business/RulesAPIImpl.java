@@ -128,9 +128,7 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        List<ConditionGroup> auxList = new ArrayList<>(groups);
-
-        for (int i = 0; i < auxList.size(); i++) {
+        for (int i = 0; i < groups.size(); i++) {
 
             ConditionGroup group = groups.get(i);
 
@@ -156,10 +154,8 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<RuleAction> actions = rulesFactory.getRuleActionsByRule(rule.getId());
 
-        List<RuleAction> aux = new ArrayList<>(actions);
-
         // delete action parameters
-        for (RuleAction action : aux) {
+        for (RuleAction action : actions) {
             rulesFactory.deleteRuleActionsParameters(action);
 
             // delete the action
@@ -274,20 +270,6 @@ public class RulesAPIImpl implements RulesAPI {
         return rulesFactory.getConditionsByGroup(conditionGroup.getId());
     }
 
-    public List<Condition> getConditionsByRule(String ruleId, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        Rule rule = rulesFactory.getRuleById(ruleId);
-
-        if(!UtilMethods.isSet(rule)) {
-            Logger.info(this, "There is no rule with the given id: " + ruleId);
-            return new ArrayList<>();
-        }
-
-        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_USE, user, true)) {
-            throw new DotSecurityException("User " + user + " cannot read rule: " + rule.getId());
-        }
-        return rulesFactory.getConditionsByRule(ruleId);
-    }
-
     public Condition getConditionById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         Condition condition = rulesFactory.getConditionById(id);
 
@@ -296,10 +278,12 @@ public class RulesAPIImpl implements RulesAPI {
             return null;
         }
 
-        Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, true);
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
+            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
             return null;
         }
 
@@ -330,7 +314,9 @@ public class RulesAPIImpl implements RulesAPI {
             return null;
         }
 
-        Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, true);
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
 
         if(rule==null) {
             Logger.info(this, "There is no rule associated with the given Condition Value: " + id);
@@ -377,10 +363,12 @@ public class RulesAPIImpl implements RulesAPI {
         if(!UtilMethods.isSet(condition))
             return;
 
-        Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, true);
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
+            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
             return;
         }
 
@@ -414,11 +402,13 @@ public class RulesAPIImpl implements RulesAPI {
             return;
         }
 
-        Rule rule = rulesFactory.getRuleById(condition.getRuleId());
+        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, true);
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
 
         if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + condition.getRuleId());
-            throw new DotDataException("There is no Rule with the provided ruleId: " + condition.getRuleId());
+            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
+            throw new DotDataException("There is no Rule with the provided ruleId: " + group.getRuleId());
         }
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {

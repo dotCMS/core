@@ -49,7 +49,7 @@ public class ActionletsResource {
     @GET
     @Path("/ruleactionlets")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRuleActionlets(@Context HttpServletRequest request) throws JSONException {
+    public Response list(@Context HttpServletRequest request) throws JSONException {
         User user = getUser(request);
 
         JSONObject jsonActionlets = new JSONObject();

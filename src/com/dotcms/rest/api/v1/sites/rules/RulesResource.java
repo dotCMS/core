@@ -1,16 +1,8 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -32,12 +24,13 @@ import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
@@ -74,7 +67,7 @@ public class RulesResource {
     @JSONP
     @Path("/sites/{id}/rules")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response list(@Context HttpServletRequest request, @PathParam("id") String siteId) {
+    public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("id") String siteId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);
@@ -84,7 +77,7 @@ public class RulesResource {
             hash.put(restRule.key, restRule);
         }
 
-        return Response.ok(hash).build();
+        return hash;
     }
 
     /**
@@ -96,11 +89,12 @@ public class RulesResource {
     @JSONP
     @Path("/sites/{siteId}/rules/{ruleId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Response self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
-        checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
+    public RestRule self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
-        return Response.ok(getRuleInternal(ruleId, user)).build();
+        getHost(siteId, user);
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
+        return getRuleInternal(ruleId, user);
     }
 
     /**

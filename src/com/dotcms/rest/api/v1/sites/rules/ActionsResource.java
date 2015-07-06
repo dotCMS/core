@@ -1,21 +1,14 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.DELETE;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.PUT;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.net.sf.hibernate.collection.Map;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -29,14 +22,14 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
-import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
@@ -45,6 +38,7 @@ public class ActionsResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
+    private final RuleActionTransform actionTransform = new RuleActionTransform();
     private HostAPI hostAPI;
 
     public ActionsResource() {
@@ -70,32 +64,42 @@ public class ActionsResource {
     @GET
     @Path("sites/{siteId}/rules/{ruleId}/actions")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRuleActions(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
+    public Map<String, RestRuleAction> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
             throws JSONException {
-
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        ruleId = checkNotEmpty(siteId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
-
-        JSONObject jsonActions = new JSONObject();
-
-        try {
-            getHost(siteId, user);
-            Rule rule = getRule(ruleId, user);
-
-            List<RuleAction> actions = rulesAPI.getRuleActionsByRule(rule.getId(), user, false);
-
-            for (RuleAction action : actions) {
-                JSONObject actionletObject = new JSONObject();
-                actionletObject.put("name", action.getName());
-                actionletObject.put("actionlet", action.getActionlet());
-                jsonActions.put(action.getId(), actionletObject);
-            }
-
-            return Response.ok(jsonActions.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Rule Action", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        getHost(siteId, user);
+        Rule rule = getRule(ruleId, user);
+        List<RestRuleAction> restActions = getActionsInternal(user, rule);
+        Map<String, RestRuleAction> hash = Maps.newHashMapWithExpectedSize(restActions.size());
+        for (RestRuleAction restAction : restActions) {
+            hash.put(restAction.id, restAction);
         }
+
+        return hash;
     }
+
+    /**
+     * <p>Returns a JSON representation of the Rule with the given ruleId
+     * <p/>
+     * Usage: GET api/rules-engine/sites/{siteId}/rules/{ruleId}
+     */
+    @GET
+    @JSONP
+    @Path("/sites/{siteId}/rules/{ruleId}/actions/{actionId}")
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public RestRuleAction self(@Context HttpServletRequest request,
+                         @PathParam("siteId") String siteId,
+                         @PathParam("ruleId") String ruleId,
+                         @PathParam("actionId") String actionId) {
+        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        User user = getUser(request);
+        getHost(siteId, user);
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
+        return getActionInternal(ruleId, user);
+    }
+
 
     /**
      * <p>Saves a Rule Action
@@ -108,14 +112,14 @@ public class ActionsResource {
     @Path("/sites/{siteId}/rules/{ruleId}/actions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response postRuleAction(@Context HttpServletRequest request,
+    public Response add(@Context HttpServletRequest request,
                                    @PathParam("siteId") String siteId,
                                    @PathParam("ruleId") String ruleId,
                                    RestRuleAction ruleAction) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule id is required.");
         User user = getUser(request);
-        Host host = getHost(siteId, user);
+        getHost(siteId, user);
         Rule rule = getRule(ruleId, user);
 
         String ruleActionId = createRuleActionInternal(rule.getId(), ruleAction, user);
@@ -139,7 +143,7 @@ public class ActionsResource {
     @Path("/sites/{siteId}/rules/{ruleId}/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public RestRuleAction updateRuleAction(@Context HttpServletRequest request,
+    public RestRuleAction update(@Context HttpServletRequest request,
                                            @PathParam("siteId") String siteId,
                                            @PathParam("ruleId") String ruleId,
                                            @PathParam("actionId") String actionId,
@@ -163,7 +167,7 @@ public class ActionsResource {
     @Path("/sites/{siteId}/rules/{ruleId}/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response deleteRuleAction(@Context HttpServletRequest request,
+    public Response remove(@Context HttpServletRequest request,
                                      @PathParam("siteId") String siteId,
                                      @PathParam("ruleId") String ruleId,
                                      @PathParam("actionId") String actionId) throws JSONException {
@@ -234,12 +238,10 @@ public class ActionsResource {
         }
     }
 
-    private String createRuleActionInternal(String ruleId, RestRuleAction restRuleAction, User user) {
+    private List<RestRuleAction> getActionsInternal(User user, Rule rule) {
         try {
-            RuleAction ruleAction = new RuleAction();
-            applyRestRuleActionToRuleAction(ruleId, restRuleAction, ruleAction);
-            rulesAPI.saveRuleAction(ruleAction, user, false);
-            return ruleAction.getId();
+            List<RuleAction> actions = rulesAPI.getRuleActionsByRule(rule.getId(), user, false);
+            return actions.stream().map(actionTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {
@@ -247,24 +249,20 @@ public class ActionsResource {
         }
     }
 
-    private void applyRestRuleActionToRuleAction(String ruleId, RestRuleAction restRuleAction, RuleAction ruleAction) {
-        ruleAction.setRuleId(ruleId);
-        ruleAction.setName(restRuleAction.name);
-        ruleAction.setActionlet(restRuleAction.actionlet);
-        ruleAction.setPriority(restRuleAction.priority);
+    private RestRuleAction getActionInternal(String ruleId, User user) {
+        RuleAction input = getRuleAction(ruleId, user);
+        return actionTransform.appToRest(input);
+    }
 
-        if(restRuleAction.parameters != null && !restRuleAction.parameters.isEmpty()) {
-            List<RuleActionParameter> parameters = new ArrayList<>();
-
-            for (Map.Entry<String, RestRuleActionParameter> restParameter : restRuleAction.parameters.entrySet()) {
-                RuleActionParameter parameter = new RuleActionParameter();
-                parameter.setId(restParameter.getValue().id);
-                parameter.setKey(restParameter.getValue().key);
-                parameter.setValue(restParameter.getValue().value);
-                parameters.add(parameter);
-            }
-
-            ruleAction.setParameters(parameters);
+    private String createRuleActionInternal(String ruleId, RestRuleAction restRuleAction, User user) {
+        try {
+            RuleAction action = actionTransform.restToApp(restRuleAction);
+            rulesAPI.saveRuleAction(action, user, false);
+            return action.getId();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 
@@ -275,7 +273,7 @@ public class ActionsResource {
             if(ruleAction == null) {
                 throw new NotFoundException("Rule Action with id '%s' not found: ", ruleId);
             }
-            applyRestRuleActionToRuleAction(ruleId, restRuleAction, ruleAction);
+            actionTransform.applyRestToApp(restRuleAction, ruleAction);
             rulesAPI.saveRuleAction(ruleAction, user, false);
             return ruleAction.getId();
         } catch (DotDataException e) {
