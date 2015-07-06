@@ -189,7 +189,13 @@ public class ReindexThread extends Thread {
 				                if(toDelete.size()>=200) {
 				                    toDelete=remoteDelQ.subList(0, 200);
 				                }
-				                jAPI.deleteReindexEntryForServer(toDelete);
+
+								/*
+								Set the server id to the already processed records, setting a server id for
+								a record in the dist_reindex_journal means the record was successfully indexed.
+								 */
+								jAPI.setServerForReindexEntry(toDelete);
+
 				                if(toDelete.size()==remoteDelQ.size()) {
 				                    remoteDelQ.clear();
 				                } else {
@@ -268,7 +274,7 @@ public class ReindexThread extends Thread {
 										addIndexingFailedAttempt();
 
 										//List of records that failed and will be added to the queue for more attempts
-										ArrayList<IndexJournal<String>> toRestore = new ArrayList<>();
+										List<IndexJournal<String>> toRestore = new ArrayList<>();
 
 										//Search for the failed items
 										for ( BulkItemResponse itemResponse : resp.getItems() ) {
@@ -293,7 +299,9 @@ public class ReindexThread extends Thread {
 													if ( indexToDelete.getInodeToIndex().equals(failedId) || indexToDelete.getIdentToIndex().equals(failedId) ) {
 
 														//Add it to the list of records that failed and needs to be re-index
-														toRestore.add(indexToDelete);
+														if ( !exist(toRestore, indexToDelete) ) {
+															toRestore.add(indexToDelete);
+														}
 
 														/*
 														Remove the record from the list of contents to remove from the index journal table
@@ -318,6 +326,27 @@ public class ReindexThread extends Thread {
 											}
 										}
 									}
+								}
+
+								/**
+								 * Checks if a given record already exist on a given list
+								 *
+								 * @param toRestore
+								 * @param toCompare
+								 * @return
+								 */
+								private boolean exist ( List<IndexJournal<String>> toRestore, IndexJournal<String> toCompare ) {
+
+									boolean exist = false;
+									for ( IndexJournal<String> current : toRestore ) {
+
+										if ( current.getId() == toCompare.getId() ) {
+											exist = true;
+											break;
+										}
+									}
+
+									return exist;
 								}
 
 							});
