@@ -1,24 +1,16 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine;
 
+import com.dotcms.rest.api.v1.sites.rules.ConditionValueTransform;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ConditionTransform {
-    private final RulesAPI rulesAPI;
     private ConditionValueTransform conditionValueTransform;
 
-    public ConditionTransform() { this(new ApiProvider()); }
-
     public ConditionTransform(ApiProvider apiProvider) {
-        this.rulesAPI = apiProvider.rulesAPI();
         conditionValueTransform = new ConditionValueTransform(apiProvider);
     }
 

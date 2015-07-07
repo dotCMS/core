@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.rest.exception.BadRequestException;
@@ -8,7 +7,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestConditionValue.Builder.class)
-class RestConditionValue {
+public final class RestConditionValue {
 
     public final String id;
     public final String value;

@@ -4,7 +4,7 @@ import com.dotcms.rest.api.v1.sites.rules.ActionletsResource;
 import com.dotcms.rest.api.v1.sites.rules.ActionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionletsResource;
-import com.dotcms.rest.api.v1.sites.rules.ConditionsResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
 import java.util.HashSet;
 import java.util.Set;
 

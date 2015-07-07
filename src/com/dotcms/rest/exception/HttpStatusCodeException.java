@@ -3,6 +3,7 @@ package com.dotcms.rest.exception;
 import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
@@ -35,6 +36,7 @@ public abstract class HttpStatusCodeException extends WebApplicationException {
 
     HttpStatusCodeException(Throwable cause, Response.Status status, String key, String message, String... messageArgs) {
         super(cause, toResponse(status, key, String.format(message, (Object[])messageArgs)));
+        Logger.getLogger(this.getClass()).warn(this.getResponse().getEntity().toString(), this);
     }
 
     private static Response toResponse(Response.Status status,
