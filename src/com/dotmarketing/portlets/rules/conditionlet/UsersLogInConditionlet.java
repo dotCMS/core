@@ -42,9 +42,8 @@ public class UsersLogInConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 
-	@Override
-	protected String getName() {
-		return CONDITIONLET_NAME;
+	public UsersLogInConditionlet() {
+		super(CONDITIONLET_NAME);
 	}
 
 	@Override

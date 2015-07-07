@@ -61,9 +61,8 @@ public class UsersTimeConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValuesType1 = null;
 	private Map<String, ConditionletInput> inputValuesType2 = null;
 
-	@Override
-	protected String getName() {
-		return CONDITIONLET_NAME;
+	public UsersTimeConditionlet() {
+		super(CONDITIONLET_NAME);
 	}
 
 	@Override

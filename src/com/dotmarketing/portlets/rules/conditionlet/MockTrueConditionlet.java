@@ -10,9 +10,10 @@ import java.util.List;
 import java.util.Set;
 
 public class MockTrueConditionlet extends Conditionlet {
-    @Override
-    protected String getName() {
-        return "MockTrueConditionlet";
+    private static final String CONDITIONLET_NAME = "MockTrueConditionlet";
+
+    public MockTrueConditionlet() {
+        super(CONDITIONLET_NAME);
     }
 
     @Override

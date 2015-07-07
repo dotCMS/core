@@ -19,6 +19,15 @@ public abstract class Conditionlet implements Serializable {
     private static final long serialVersionUID = -8179010054316951177L;
 
     private String languageId;
+    private final String name;
+
+    public Conditionlet() {
+        this("");
+    }
+
+    protected Conditionlet(String name) {
+        this.name = name;
+    }
 
     /**
      * This method looks for the name in the language.properties
@@ -46,7 +55,9 @@ public abstract class Conditionlet implements Serializable {
      *
      * @return the name of this Conditionlet
      */
-    protected abstract String getName();
+    public final String getName(){
+        return this.name;
+    };
 
     /**
      * Returns a Map object whoose keys are the operators' names and values are the operators' labels (for presentation)

@@ -58,9 +58,8 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
-	@Override
-	protected String getName() {
-		return CONDITIONLET_NAME;
+	public UsersLandingPageUrlConditionlet() {
+		super(CONDITIONLET_NAME);
 	}
 
 	@Override
