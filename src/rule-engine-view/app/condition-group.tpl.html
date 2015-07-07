@@ -21,11 +21,11 @@
       </div>
       <div class="col-xs-6">
         <div class="operations clause-group-operations">
-          <button type="button" class="btn btn-default btn-md" (click)="collapsed = !collapsed">
+          <button type="button" class="btn btn-default btn-md" (click)="groupCollapsed = !groupCollapsed">
             <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
           </button>
           <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
-            <span class="glyphicon glyphicon-plus" aria-hidden="true" ></span>
+            <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addCondition()"></span>
           </button>
         </div>
 
@@ -36,7 +36,7 @@
       </div>
     </div>
   </div>
-  <div class="panel-body collapse" [class.in]="!collapsed">
+  <div class="panel-body collapse" [class.in]="!groupCollapsed">
     <rule-condition *for="var snap of getConditions(); var i=index"
             [condition-snap]="snap">
     </rule-condition>

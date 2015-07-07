@@ -22,7 +22,7 @@ let RuleDefinition = {
   ]).initTo(0),
   folder: EF.string().minLength(5).maxLength(250),
   shortCircuit: EF.bool(true),
-  groups: EF.obj('groups', {
+  conditionGroups: EF.obj('conditionGroups', {
     operator: EF.enum().values(['AND', 'OR']),
     priority: EF.int(0).min(0).max(100)
   }),
@@ -40,6 +40,8 @@ let RuleGroupDefinition = {
 
 let ConditionDefinition = {
   $key: EF.string(),
+  rule: EF.string(),
+  conditionGroup: EF.string(),
   name: EF.string().minLength(5).maxLength(100),
   conditionlet: EF.string(),
   comparison: EF.string(),

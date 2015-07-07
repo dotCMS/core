@@ -313,7 +313,7 @@ export class EntityMeta {
   push(data, onComplete = emptyFn) {
     return Foo.getPersistenceHandler().setItem(this.path, data, true)
         .then((result) => {
-          return new EntitySnapshot(new EntityMeta(result.path ), result)
+          return new EntitySnapshot(new EntityMeta(result.path ), data)
         })
 
   }

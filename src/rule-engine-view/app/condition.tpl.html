@@ -2,14 +2,14 @@
   <div class="panel-body">
     <div class="row">
       <div class="col-sm-1">
-        <button type="button"class="btn btn-default" (click)="toggleOperator(clause)">
-          {{clause.operator}}
+        <button type="button"class="btn btn-default" (click)="toggleOperator()">
+          {{condition.operator}}
         </button>
       </div>
       <div class="col-sm-11">
         <div class="row">
           <div class="col-sm-5">
-            <select class="form-control clause-selector" [value]="clause.type">
+            <select class="form-control clause-selector" [value]="condition.type">
               <option value="clauseType.id" *for="var clauseType of clauseTypes; var i=index">{{clauseType.id}}</option>
             </select>
           </div>
@@ -17,16 +17,13 @@
             <h4 class="separator">is</h4>
           </div>
           <div class="col-sm-4">
-            <select class="form-control clause-selector" [value]="clause.comparison">
+            <select class="form-control clause-selector" [value]="condition.comparison">
               <option value="comparison.id" *for="var comparison of comparisons">{{comparison.id}}</option>
             </select>
           </div>
           <div class="col-sm-2">
             <div class="operations clause-operations">
-              <button type="button" class="btn btn-default btn-md" (click)="addClause(rule, group)">
-                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-              </button>
-              <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause" (click)="removeClause(clause)">
+              <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause" (click)="removeCondition()">
                 <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
               </button>
             </div>

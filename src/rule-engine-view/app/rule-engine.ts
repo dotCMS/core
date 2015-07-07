@@ -36,7 +36,8 @@ import conditionTemplate from './condition.tpl.html!text'
   directives: [If, For]
 })
 class ConditionComponent {
-  _conditionSnap:any;
+  _conditionMeta:any;
+  conditionSnap:any;
   condition:any;
   clauseTypes:Array;
   comparisons:Array;
@@ -44,15 +45,19 @@ class ConditionComponent {
   constructor() {
     this.clauseTypes = [{id: 'hello', text: 'foo'}, {id: 'goodbye', text: 'bar'}]
     this.comparisons = [{id: 'compHello', text: 'cFoo'}, {id: 'compGoodbye', text: 'cBar'}];
+    this.condition = {}
   }
 
-  set conditionSnap(conditionSnap) {
-    this._conditionSnap = conditionSnap
-    this.condition = conditionSnap.val()
+  set conditionMeta(conditionMeta) {
+    this._conditionMeta = conditionMeta
+    conditionMeta.once('value', (snap)=>{
+      this.condition = snap.val()
+      this.conditionSnap = snap
+    })
   }
 
-  get conditionSnap() {
-    return this._conditionSnap;
+  get conditionMeta() {
+    return this._conditionMeta;
   }
 
 
@@ -85,10 +90,11 @@ class ConditionComponent {
 class ConditionGroupComponent {
   _groupSnap:any;
   group:any;
-  collapsed:boolean;
+  rule:any;
+  groupCollapsed:boolean;
 
   constructor() {
-    this.collapsed = false;
+    this.groupCollapsed = false;
   }
 
   set groupSnap(groupSnap) {
@@ -104,19 +110,24 @@ class ConditionGroupComponent {
     let referenceSnaps = []
     let conditionMetas = []
     this.groupSnap.child('conditions').forEach((childSnap) => {
-      referenceSnaps.push(childSnap.key()) // the snap value is 'true', as this is a reference.
-      conditionMetas.push(new EntityMeta(childSnap['entityeMeta'].path))
+      let key = childSnap.key()
+      let childMeta = childSnap['entityMeta']
+      referenceSnaps.push(key) // the snap value is 'true', as this is a reference.
+      conditionMetas.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions/' + key))
     })
-    return referenceSnaps
+    return conditionMetas
   }
 
   addCondition() {
     let condition = {
       priority: 10,
+
       name: "Condition. " + new Date().toISOString(),
-      conditionlet: '',
+      rule: this.rule.key,
+      conditionGroup: this.groupSnap.key(),
+      conditionlet: 'bob',
       comparison: 'Is',
-      operator: 'Equal',
+      operator: 'AND',
       values: {
         a: {
           id: 'a',
@@ -125,9 +136,12 @@ class ConditionGroupComponent {
         }
       }
     }
+    debugger;
+    let condRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
 
-    this.groupSnap.ref().child('conditions').push(condition).then((result) => {
-      this.group.conditionGroups[result.key()] = true
+    condRoot.push(condition).then((result) => {
+      this.group.conditions = this.group.conditions || {}
+      this.group.conditions[result.key()] = true
       this.updateGroup()
     }).catch((e) => {
       log(e)
@@ -137,10 +151,6 @@ class ConditionGroupComponent {
   toggleOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
     this.updateGroup()
-  }
-
-  toggleCollapse() {
-    this.collapsed = !this.collapsed
   }
 
   updateGroup() {
@@ -253,8 +263,10 @@ class RuleComponent {
       operator: 'OR'
     }
 
-    this.ruleSnap.ref().child('conditiongroups').push(group).then((result) => {
-      this.rule.conditionGroups[result.key()] = result['val']()
+    this.ruleSnap.ref().child('conditiongroups').push(group).then((snapshot) => {
+      let group = snapshot['val']()
+      this.rule.conditionGroups[snapshot.key()] = group
+      group.conditions = group.conditions || {}
       this.updateRule()
     }).catch((e) => {
       log(e)
@@ -345,7 +357,8 @@ class RuleEngine {
     testRule.shortCircuit = false
     testRule.conditionGroups = {}
     testRule.actions = {}
-    ruleRepo.push(testRule)
+    ruleRepo.push(testRule).then(()=> this.onChange())
+
   }
 
   testBaseUrl(baseUrl) {
