@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -12,6 +12,8 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -23,9 +25,10 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1")
+@Path("/v1/system")
 public class ConditionletsResource {
 
     private final RulesAPI rulesAPI;
@@ -45,62 +48,30 @@ public class ConditionletsResource {
         this.authProxy = authProxy;
     }
 
-    @VisibleForTesting
-    User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
-    }
-
     /**
      * <p>Returns a JSON with all the Conditionlet Objects defined.
      * <br>Each Conditionlet node contains only its name
-     * <p/>
+     * <p>
      * Usage: /conditionlets/
      */
     @GET
-    @Path("/system/conditionlets")
+    @Path("/conditionlets")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@Context HttpServletRequest request) throws JSONException {
+    public Response list(@Context HttpServletRequest request) {
         User user = getUser(request);
-
-        JSONObject jsonConditionlets = new JSONObject();
-
-        try {
-
-            List<Conditionlet> conditionlets = rulesAPI.findConditionlets();
-
-            for (Conditionlet conditionlet : conditionlets) {
-                JSONObject conditionletObject = new JSONObject();
-                conditionletObject.put("name", conditionlet.getLocalizedName());
-
-                Set<Comparison> comparisons = conditionlet.getComparisons();
-                JSONObject jsonComparisons = new JSONObject();
-
-                for (Comparison comparison : comparisons) {
-                    JSONObject comparisonJSON = new JSONObject();
-                    comparisonJSON.put("name", comparison.getLabel());
-                    jsonComparisons.put(comparison.getId(), comparisonJSON);
-                }
-
-                conditionletObject.put("comparisons", jsonComparisons);
-
-                jsonConditionlets.put(conditionlet.getClass().getSimpleName(), conditionletObject);
-            }
-
-            return Response.ok(jsonConditionlets.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Conditionlets", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        List<Conditionlet> conditionlets = getConditionletsInternal();
+        List<RestConditionlet> restConditionlets = conditionlets.stream().map(new ConditionletTransform().appToRestFn()).collect(Collectors.toList());
+        return Response.ok(restConditionlets).build();
     }
 
     /**
      * <p>Returns a JSON with the Comparisons of a given contentlet.
      * <br>Each Comparisons node contains the id and label
-     * <p/>
+     * <p>
      * Usage: /comparisons/conditionlet/{id}
      */
     @GET
-    @Path("/conditionlets/{id}/comparisons")
+    @Path("/{id}/comparisons")
     @Produces(MediaType.APPLICATION_JSON)
     public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         User user = getUser(request);
@@ -136,15 +107,16 @@ public class ConditionletsResource {
     /**
      * <p>Returns a JSON with the Comparisons of a given contentlet.
      * <br>Each Comparisons node contains the id and label
-     * <p/>
+     * <p>
      * Usage: /conditionletInputs/
      */
     @GET
     @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response listConditionletInputs(@Context HttpServletRequest request,
-                                          @PathParam("id") String conditionletId,
-                                          @PathParam("comparison") String comparison) throws JSONException {
+    public Response listConditionletInputs(
+                                                  @Context HttpServletRequest request,
+                                                  @PathParam("id") String conditionletId,
+                                                  @PathParam("comparison") String comparison) throws JSONException {
         User user = getUser(request);
 
         com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
@@ -169,4 +141,17 @@ public class ConditionletsResource {
         }
     }
 
+    private List<Conditionlet> getConditionletsInternal() {
+        try {
+            return rulesAPI.findConditionlets();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    private User getUser(@Context HttpServletRequest request) {
+        return authProxy.authenticate(request);
+    }
 }
