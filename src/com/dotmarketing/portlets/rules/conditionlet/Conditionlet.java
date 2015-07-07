@@ -21,10 +21,6 @@ public abstract class Conditionlet implements Serializable {
     private String languageId;
     private final String name;
 
-    public Conditionlet() {
-        this("");
-    }
-
     protected Conditionlet(String name) {
         this.name = name;
     }
