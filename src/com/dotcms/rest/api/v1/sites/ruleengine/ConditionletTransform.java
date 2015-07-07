@@ -8,7 +8,7 @@ public class ConditionletTransform {
     private final Function<Conditionlet, RestConditionlet> toRest = (app) -> {
 
         RestConditionlet rest = new RestConditionlet.Builder()
-                                        .id("stub")
+                                        .id(app.getName())
                                         .localizedName(app.getLocalizedName())
                                         .languageId(app.getLanguageId())
                                         .build();

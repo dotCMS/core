@@ -23,8 +23,8 @@ public class RulesAPIImpl implements RulesAPI {
     private PermissionAPI perAPI;
     private RulesFactory rulesFactory;
 
-    private List<Class> conditionletClasses;
-    private List<Class> actionletClasses;
+    private List<Class<?extends Conditionlet>> conditionletClasses;
+    private List<Class<? extends RuleActionlet>> actionletClasses;
 
     private static Map<String, Conditionlet> conditionletMap;
     private static Map<String, RuleActionlet> actionletMap;
@@ -33,37 +33,33 @@ public class RulesAPIImpl implements RulesAPI {
         perAPI = APILocator.getPermissionAPI();
         rulesFactory = FactoryLocator.getRulesFactory();
 
-        conditionletClasses = new ArrayList<Class>();
-        actionletClasses = new ArrayList<Class>();
+        conditionletClasses = new ArrayList<>();
+        actionletClasses = new ArrayList<>();
 
         // Add default conditionlet classes
-        conditionletClasses.addAll(Arrays.asList(new Class[]{
-        		UsersBrowserConditionlet.class,
-        		UsersBrowserHeaderConditionlet.class,
-        		UsersCityConditionlet.class,
-        		UsersCountryConditionlet.class,
-        		UsersCurrentUrlConditionlet.class,
-        		UsersDateTimeConditionlet.class,
-        		UsersHostConditionlet.class,
-        		UsersIpAddressConditionlet.class,
-        		UsersLandingPageUrlConditionlet.class,
-        		UsersLanguageConditionlet.class,
-        		UsersLogInConditionlet.class,
-        		UsersOperatingSystemConditionlet.class,
-        		UsersPageVisitsConditionlet.class,
-        		UsersPlatformConditionlet.class,
-        		UsersReferringUrlConditionlet.class,
-        		UsersSiteVisitsConditionlet.class,
-        		UsersStateConditionlet.class,
-        		UsersTimeConditionlet.class,
-        		UsersUrlParameterConditionlet.class,
-        		UsersVisitedUrlConditionlet.class
-        }));
+        conditionletClasses.addAll(Arrays.asList(UsersBrowserConditionlet.class,
+                                                 UsersBrowserHeaderConditionlet.class,
+                                                 UsersCityConditionlet.class,
+                                                 UsersCountryConditionlet.class,
+                                                 UsersCurrentUrlConditionlet.class,
+                                                 UsersDateTimeConditionlet.class,
+                                                 UsersHostConditionlet.class,
+                                                 UsersIpAddressConditionlet.class,
+                                                 UsersLandingPageUrlConditionlet.class,
+                                                 UsersLanguageConditionlet.class,
+                                                 UsersLogInConditionlet.class,
+                                                 UsersOperatingSystemConditionlet.class,
+                                                 UsersPageVisitsConditionlet.class,
+                                                 UsersPlatformConditionlet.class,
+                                                 UsersReferringUrlConditionlet.class,
+                                                 UsersSiteVisitsConditionlet.class,
+                                                 UsersStateConditionlet.class,
+                                                 UsersTimeConditionlet.class,
+                                                 UsersUrlParameterConditionlet.class,
+                                                 UsersVisitedUrlConditionlet.class));
 
-        actionletClasses.addAll(Arrays.asList(new Class[]{
-                CountRequestsActionlet.class,
-                TestActionlet.class
-        }));
+        actionletClasses.addAll(Arrays.asList(CountRequestsActionlet.class,
+                                              TestActionlet.class));
 
         refreshConditionletMap();
         refreshActionletMap();
@@ -128,22 +124,19 @@ public class RulesAPIImpl implements RulesAPI {
 
         List<ConditionGroup> groups = rulesFactory.getConditionGroupsByRule(rule.getId());
 
-        for (int i = 0; i < groups.size(); i++) {
-
-            ConditionGroup group = groups.get(i);
-
+        for (ConditionGroup group : groups) {
             deleteConditionGroup(group, user, respectFrontendRoles);
         }
 
         // delete the Rule Actions
 
-        deleteRuleActionsByRule(rule, user, respectFrontendRoles);
+        deleteRuleActionsByRule(rule, user);
 
         // delete the Rule
         rulesFactory.deleteRule(rule);
     }
 
-    public void deleteRuleActionsByRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException  {
+    public void deleteRuleActionsByRule(Rule rule, User user) throws DotDataException, DotSecurityException  {
         if(!UtilMethods.isSet(rule)) {
             return;
         }
@@ -422,7 +415,7 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteCondition(condition);
     }
 
-    public void deleteConditions(ConditionGroup group, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public void deleteConditions(ConditionGroup group, User user) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(group)) {
             return;
         }
@@ -465,7 +458,7 @@ public class RulesAPIImpl implements RulesAPI {
 
         // delete the conditions
 
-        deleteConditions(conditionGroup, user, respectFrontendRoles);
+        deleteConditions(conditionGroup, user);
 
         rulesFactory.deleteConditionGroup(conditionGroup);
     }
@@ -546,90 +539,76 @@ public class RulesAPIImpl implements RulesAPI {
 
     private void refreshConditionletMap() {
         conditionletMap = null;
-        if (conditionletMap == null) {
-            synchronized (this.getClass()) {
-                if (conditionletMap == null) {
+        synchronized (this.getClass()) {
+            if (conditionletMap == null) {
 
-                    // get the dotmarketing-config.properties conditionlet classes
-                    List<Conditionlet> conditionletList = getCustomClasses(WebKeys.RULES_CONDITIONLET_CLASSES);
+                // get the dotmarketing-config.properties conditionlet classes
+                List<Conditionlet> conditionletList = getCustomClasses(WebKeys.RULES_CONDITIONLET_CLASSES);
 
-                    // get the included (shipped with) actionlet classes
-                    for (Class<Conditionlet> z : conditionletClasses) {
-                        try {
-                            conditionletList.add(z.newInstance());
-                        } catch (InstantiationException e) {
-                            Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-                        } catch (IllegalAccessException e) {
-                            Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-                        }
+                // get the included (shipped with) actionlet classes
+                for (Class<? extends Conditionlet> z : conditionletClasses) {
+                    try {
+                        conditionletList.add(z.newInstance());
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        Logger.error(RulesAPIImpl.class, e.getMessage(), e);
                     }
+                }
 
-                    Collections.sort(conditionletList, new ConditionletComparator());
-                    conditionletMap = new LinkedHashMap<String, Conditionlet>();
-                    for(Conditionlet conditionlet : conditionletList){
+                Collections.sort(conditionletList, new ConditionletComparator());
+                conditionletMap = new LinkedHashMap<>();
+                for(Conditionlet conditionlet : conditionletList){
 
-                        try {
-                            conditionletMap.put(conditionlet.getClass().getSimpleName(),conditionlet.getClass().newInstance());
-                            if ( !conditionletClasses.contains( conditionlet.getClass() ) ) {
-                                conditionletClasses.add( conditionlet.getClass() );
-                            }
-                        } catch (InstantiationException e) {
-                            Logger.error(RulesAPIImpl.class,e.getMessage(),e);
-                        } catch (IllegalAccessException e) {
-                            Logger.error(RulesAPIImpl.class,e.getMessage(),e);
+                    try {
+                        conditionletMap.put(conditionlet.getClass().getSimpleName(),conditionlet.getClass().newInstance());
+                        if ( !conditionletClasses.contains( conditionlet.getClass() ) ) {
+                            conditionletClasses.add( conditionlet.getClass() );
                         }
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        Logger.error(RulesAPIImpl.class,e.getMessage(),e);
                     }
                 }
             }
-
         }
     }
 
 
     private void refreshActionletMap() {
         actionletMap = null;
-        if (actionletMap == null) {
-            synchronized (this.getClass()) {
-                if (actionletMap == null) {
+        synchronized (this.getClass()) {
+            if (actionletMap == null) {
 
-                    // get the dotmarketing-config.properties actionlet classes
-                    List<RuleActionlet> actionletList = getCustomClasses(WebKeys.RULES_ACTIONLET_CLASSES);
+                // get the dotmarketing-config.properties actionlet classes
+                List<RuleActionlet> actionletList = getCustomClasses(WebKeys.RULES_ACTIONLET_CLASSES);
 
-                    // get the included (shipped with) actionlet classes
-                    for (Class<RuleActionlet> z : actionletClasses) {
-                        try {
-                            actionletList.add(z.newInstance());
-                        } catch (InstantiationException e) {
-                            Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-                        } catch (IllegalAccessException e) {
-                            Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-                        }
+                // get the included (shipped with) actionlet classes
+                for (Class<? extends RuleActionlet> z : actionletClasses) {
+                    try {
+                        actionletList.add(z.newInstance());
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        Logger.error(RulesAPIImpl.class, e.getMessage(), e);
                     }
+                }
 
-                    Collections.sort(actionletList, new ActionletComparator());
-                    actionletMap = new LinkedHashMap<String, RuleActionlet>();
-                    for(RuleActionlet actionlet : actionletList){
+                Collections.sort(actionletList, new ActionletComparator());
+                actionletMap = new LinkedHashMap<>();
+                for(RuleActionlet actionlet : actionletList){
 
-                        try {
-                            actionletMap.put(actionlet.getClass().getSimpleName(),actionlet.getClass().newInstance());
-                            if ( !actionletClasses.contains( actionlet.getClass() ) ) {
-                                actionletClasses.add( actionlet.getClass() );
-                            }
-                        } catch (InstantiationException e) {
-                            Logger.error(RulesAPIImpl.class,e.getMessage(),e);
-                        } catch (IllegalAccessException e) {
-                            Logger.error(RulesAPIImpl.class,e.getMessage(),e);
+                    try {
+                        actionletMap.put(actionlet.getClass().getSimpleName(),actionlet.getClass().newInstance());
+                        if ( !actionletClasses.contains( actionlet.getClass() ) ) {
+                            actionletClasses.add( actionlet.getClass() );
                         }
+                    } catch (InstantiationException | IllegalAccessException e) {
+                        Logger.error(RulesAPIImpl.class,e.getMessage(),e);
                     }
                 }
             }
-
         }
     }
 
     private <E> List<E> getCustomClasses(String webKey) {
-        List<E> customClasses = new ArrayList<E>();
-        String customClassesStr = Config.getStringProperty(webKey);
+        List<E> customClasses = new ArrayList<>();
+        String customClassesStr = Config.getStringProperty(webKey, "" );
 
         StringTokenizer st = new StringTokenizer(customClassesStr, ",");
         while (st.hasMoreTokens()) {
