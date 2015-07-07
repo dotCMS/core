@@ -184,7 +184,7 @@ class RuleActionComponent {
     return this._actionSnap;
   }
 
-  set ruleAction(actionSnap:any) {
+  set actionSnap(actionSnap:any) {
     this._actionSnap = actionSnap
     this.ruleAction = actionSnap.val();
   }
