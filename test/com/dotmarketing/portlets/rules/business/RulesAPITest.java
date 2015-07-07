@@ -455,7 +455,6 @@ public class RulesAPITest extends TestBase {
 
         Condition condition =new Condition();
         condition.setName("testCondition");
-        condition.setRuleId(rule.getId());
         condition.setConditionGroup(group.getId());
         condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
         condition.setOperator(Condition.Operator.AND);
