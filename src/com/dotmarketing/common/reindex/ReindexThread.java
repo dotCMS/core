@@ -190,11 +190,8 @@ public class ReindexThread extends Thread {
 				                    toDelete=remoteDelQ.subList(0, 200);
 				                }
 
-								/*
-								Set the server id to the already processed records, setting a server id for
-								a record in the dist_reindex_journal means the record was successfully indexed.
-								 */
-								jAPI.setServerForReindexEntry(toDelete);
+								//Delete from the dist_reindex_journal the records that were successfully indexed.
+								jAPI.deleteReindexEntryForServer(toDelete);
 
 				                if(toDelete.size()==remoteDelQ.size()) {
 				                    remoteDelQ.clear();

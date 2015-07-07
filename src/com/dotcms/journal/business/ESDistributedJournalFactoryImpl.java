@@ -214,46 +214,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
-    protected void setServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
-
-        DotConnect dc = new DotConnect();
-        StringBuilder sql = new StringBuilder().append("UPDATE dist_reindex_journal SET serverid=? where id in (");
-        boolean first = true;
-        for ( IndexJournal<T> idx : recordsToModify ) {
-            if ( !first ) sql.append(',');
-            else first = false;
-            sql.append(idx.getId());
-        }
-        sql.append(") AND serverid IS NULL");
-
-        dc.setSQL(sql.toString());
-        Connection con = null;
-        try {
-            con = DbConnectionFactory.getDataSource().getConnection();
-            con.setAutoCommit(true);
-            dc.addParam(ConfigUtils.getServerId());
-            dc.loadResult(con);
-        } catch ( SQLException e ) {
-            try {
-                if ( con != null ) {
-                    con.rollback();
-                }
-            } catch ( SQLException e1 ) {
-                Logger.error(this.getClass(), e.getMessage(), e);
-            }
-            Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
-        } finally {
-            try {
-                if ( con != null ) {
-                    con.close();
-                }
-            } catch ( SQLException e ) {
-                Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
-            }
-        }
-    }
-
-    @Override
     protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         DotConnect dc = new DotConnect();
         StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where id in (");

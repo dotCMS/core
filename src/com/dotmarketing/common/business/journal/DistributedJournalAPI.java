@@ -69,15 +69,6 @@ public interface DistributedJournalAPI<T> {
 	public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException;
 
 	/**
-	 * Set the server id to a list of already processed records, setting a server id for
-	 * a record in the dist_reindex_journal means the record was successfully indexed.
-	 *
-	 * @param recordsToModify
-	 * @throws DotDataException
-	 */
-	public void setServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException;
-
-	/**
 	 * Will find the number of records left to index on this server
 	 * @return
 	 * @throws DotDataException

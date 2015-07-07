@@ -97,15 +97,6 @@ public abstract class DistributedJournalFactory<T> {
 	protected abstract void addStructureReindexEntries(T structureInode) throws DotDataException;
 
 	/**
-	 * Set the server id to a list of already processed records, setting a server id for
-	 * a record in the dist_reindex_journal means the record was successfully indexed.
-	 *
-	 * @param recordsToModify
-	 * @throws DotDataException
-	 */
-	protected abstract void setServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException;
-
-	/**
 	 * Deletes the specific build new index entry for the local server.  
 	 * This is intended to be called after a switch of the index.
 	 * @throws DotDataException
