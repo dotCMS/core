@@ -87,6 +87,25 @@ public class ReindexThread extends Thread {
 				} catch ( DotDataException | LanguageException e ) {
 					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
 				}
+			} else {
+
+				/*
+				Check every TEN failures if we still have records on the dist_reindex_journal as a fall back
+				in case the user wants to finish the re-index process clearing that table or if we have some endless
+				running thread.
+				 */
+				if ( failedAttemptsCount % 10 == 0 ) {
+					try {
+
+						long foundRecords = jAPI.recordsLeftToIndexForServer();
+						if ( foundRecords == 0 ) {
+							remoteQ.clear();
+							shutdownThread();
+						}
+					} catch ( DotDataException e ) {
+						e.printStackTrace();
+					}
+				}
 			}
 		}
 	}
@@ -212,9 +231,31 @@ public class ReindexThread extends Thread {
 						BulkRequestBuilder bulk=client.prepareBulk();
 						final ArrayList<IndexJournal<String>> recordsToDelete= new ArrayList<>();
 						while(!remoteQ.isEmpty()) {
-    					    IndexJournal<String> idx = remoteQ.removeFirst();
-					        writeDocumentToIndex(bulk,idx);
-    				        recordsToDelete.add(idx);
+
+							IndexJournal<String> idx = remoteQ.removeFirst();
+
+							try {
+								writeDocumentToIndex(bulk, idx);
+							} catch ( Exception e ) {
+
+								Logger.error(this, "Unable to index record with id [" + idx.getIdentToIndex() + "]", e);
+
+								//Counts the failed attempts when indexing and handles error notifications
+								addIndexingFailedAttempt();
+
+								try {
+									Thread.sleep(delay);
+								} catch ( InterruptedException ie ) {
+									Logger.error(this, ie.getMessage(), ie);
+								}
+
+								/*
+								This continue will avoid to remove this failed record from the index journal table so
+								can be grab it again in another iteration.
+								 */
+								continue;
+							}
+							recordsToDelete.add(idx);
     				        if(reindexSleepDuringIndex){
 	    				        try {
 	    							Thread.sleep(delay);
@@ -263,7 +304,7 @@ public class ReindexThread extends Thread {
 								private void failureHandler ( BulkResponse resp ) {
 
 									//Verify if we have failures to handle
-									if ( resp.hasFailures() ) {
+									if ( resp.hasFailures() && isWorking() ) {
 
 										Logger.error(this, "Error indexing content [" + resp.buildFailureMessage() + "]");
 
@@ -583,7 +624,7 @@ public class ReindexThread extends Thread {
 	public boolean isWorking() {
 		return work;
 	}
-	
+
 	public void stopFullReindexation() throws DotDataException {
 	    HibernateUtil.startTransaction();
 	    pause();
