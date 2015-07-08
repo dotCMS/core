@@ -24,7 +24,9 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
@@ -60,7 +62,10 @@ public class ConditionletsResource {
     public Response list(@Context HttpServletRequest request) {
         User user = getUser(request);
         List<Conditionlet> conditionlets = getConditionletsInternal();
-        List<RestConditionlet> restConditionlets = conditionlets.stream().map(new ConditionletTransform().appToRestFn()).collect(Collectors.toList());
+        Map<String, RestConditionlet> restConditionlets = conditionlets
+                                                                  .stream()
+                                                                  .map(new ConditionletTransform().appToRestFn())
+                                                                  .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity()));
         return Response.ok(restConditionlets).build();
     }
 

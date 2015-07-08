@@ -57,7 +57,8 @@ public class RulesAPIImpl implements RulesAPI {
     private final PermissionAPI perAPI;
     private final RulesFactory rulesFactory;
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
-            ImmutableList.<Class<? extends Conditionlet>>builder().add(UsersBrowserConditionlet.class)
+            ImmutableList.<Class<? extends Conditionlet>>builder()
+                         .add(UsersBrowserConditionlet.class)
                          .add(UsersBrowserHeaderConditionlet.class)
                          .add(UsersCityConditionlet.class)
                          .add(UsersCountryConditionlet.class)
@@ -79,12 +80,13 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(UsersVisitedUrlConditionlet.class)
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
-            ImmutableList.<Class<? extends RuleActionlet>>builder().add(CountRequestsActionlet.class).add(TestActionlet.class).build();
+            ImmutableList.<Class<? extends RuleActionlet>>builder()
+                         .add(CountRequestsActionlet.class)
+                         .add(TestActionlet.class).build();
 
     public RulesAPIImpl() {
         perAPI = APILocator.getPermissionAPI();
         rulesFactory = FactoryLocator.getRulesFactory();
-        // Add default conditionlet classes
         initConditionlets();
         initActionletMap();
     }
@@ -570,8 +572,10 @@ public class RulesAPIImpl implements RulesAPI {
             for (Conditionlet conditionlet : conditionlets) {
                 try {
                     Class<? extends Conditionlet> clazz = conditionlet.getClass();
-                    if(!conditionletMap.containsKey(clazz.getSimpleName())){
-                        conditionletMap.put(clazz.getSimpleName(), clazz.newInstance());
+                    Conditionlet instance = clazz.newInstance();
+                    String id = instance.getId();
+                    if(!conditionletMap.containsKey(id)){
+                        conditionletMap.putIfAbsent(id, instance);
                     }
                     else {
                         Logger.warn(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");

@@ -14,7 +14,6 @@ public final class RestCondition {
 
     public final String id;
     public final String name;
-    public final String rule;
     public final String conditionGroup;
     public final String conditionlet;
     public final String comparison;
@@ -25,7 +24,6 @@ public final class RestCondition {
     private RestCondition(Builder builder) {
         id = builder.id;
         name = builder.name;
-        rule = builder.rule;
         conditionGroup = builder.conditionGroup;
         conditionlet = builder.conditionlet;
         comparison = builder.comparison;
@@ -37,7 +35,6 @@ public final class RestCondition {
     public static final class Builder {
         @JsonProperty private String id;
         @JsonProperty private String name;
-        @JsonProperty private String rule;
         @JsonProperty private String conditionGroup;
         @JsonProperty private String conditionlet;
         @JsonProperty private String comparison;
@@ -47,11 +44,6 @@ public final class RestCondition {
 
         public Builder name(String name) {
             this.name = name;
-            return this;
-        }
-
-        public Builder rule(String rule) {
-            this.rule = rule;
             return this;
         }
 
@@ -92,7 +84,6 @@ public final class RestCondition {
 
         public void validate(){
             checkNotEmpty(name, BadRequestException.class, "condition.name is required.");
-            checkNotEmpty(rule, BadRequestException.class, "condition.rule is required.");
             checkNotEmpty(conditionlet, BadRequestException.class, "condition.conditionlet is required.");
             checkNotEmpty(comparison, BadRequestException.class, "condition.comparison is required.");
             checkNotEmpty(operator, BadRequestException.class, "condition.operator is required.");

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
@@ -18,11 +19,31 @@ public abstract class Conditionlet implements Serializable {
 
     private static final long serialVersionUID = -8179010054316951177L;
 
-    private String languageId;
     private final String name;
 
     protected Conditionlet(String name) {
         this.name = name;
+    }
+
+    /**
+     * The unique id for this Conditionlet implementation.
+     *
+     * @return a unique id for this Conditionlet
+     */
+    @NotNull
+    public final String getId() {
+        return this.getClass().getSimpleName();
+
+    }
+
+    /**
+     * Returns the human readable name for this Conditionlet
+     *
+     * @return the name of this Conditionlet
+     */
+    @NotNull
+    public final String getName() {
+        return this.name;
     }
 
     /**
@@ -33,27 +54,21 @@ public abstract class Conditionlet implements Serializable {
      * @return the name in the language.properties, if exists, value of getName() if not.
      */
     public String getLocalizedName() {
-        String val = null;
+        String val;
         try {
             String key = this.getClass().getCanonicalName() + ".name";
             val = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(), PublicCompanyFactory.getDefaultCompany().getLocale(), key);
-            if (val != null &&! key.equals(val)) {
-                return val;
+            if(val == null || key.equals(val)) {
+                val = getName();
             }
         } catch (LanguageException e) {
             Logger.error(this.getClass(), e.getMessage(), e);
+            val = getName();
         }
-        return getName();
+        return val;
     }
 
-    /**
-     * Returns the human readable name for this Conditionlet
-     *
-     * @return the name of this Conditionlet
-     */
-    public final String getName(){
-        return this.name;
-    };
+
 
     /**
      * Returns a Map object whoose keys are the operators' names and values are the operators' labels (for presentation)
@@ -82,13 +97,6 @@ public abstract class Conditionlet implements Serializable {
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, String comparisonId, List<ConditionValue> values);
 
-    public String getLanguageId() {
-        return languageId;
-    }
-
-    public void setLanguageId(String languageId) {
-        this.languageId = languageId;
-    }
 
 	/**
 	 * Traverses the list of {@link Comparison} criteria and returns the one

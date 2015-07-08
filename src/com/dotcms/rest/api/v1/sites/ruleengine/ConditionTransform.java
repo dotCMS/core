@@ -50,8 +50,8 @@ public class ConditionTransform {
                 .operator(app.getOperator().name())
                 .priority(app.getPriority())
                 .values(app.getValues().stream()
-                        .map(conditionValueTransform.toRest)
-                        .collect(Collectors.toMap(rcv->rcv.id, Function.identity())))
+                           .map(conditionValueTransform.toRest)
+                           .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity())))
                 .build();
 
         return rest;

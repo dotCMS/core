@@ -9,9 +9,8 @@ public class ConditionletTransform {
     private final Function<Conditionlet, RestConditionlet> toRest = (app) -> {
         ComparisonTransform comparisonTransform = new ComparisonTransform();
         RestConditionlet rest = new RestConditionlet.Builder()
-                                        .id(app.getName())
-                                        .localizedName(app.getLocalizedName())
-                                        .languageId(app.getLanguageId())
+                                        .id(app.getId())
+                                        .name(app.getName())
                                         .comparisons(app.getComparisons()
                                                         .stream()
                                                         .map(comparisonTransform.appToRestFn())
