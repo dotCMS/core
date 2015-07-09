@@ -56,7 +56,7 @@ public class ConditionsResource {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;
-        this.conditionTransform = new ConditionTransform(apiProvider);
+        this.conditionTransform = new ConditionTransform();
     }
 
     /**

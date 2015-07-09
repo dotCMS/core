@@ -1,18 +1,12 @@
 package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotcms.rest.api.v1.sites.rules.ConditionValueTransform;
-import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.model.Condition;
-
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ConditionTransform {
-    private ConditionValueTransform conditionValueTransform;
-
-    public ConditionTransform(ApiProvider apiProvider) {
-        conditionValueTransform = new ConditionValueTransform(apiProvider);
-    }
+    private final ConditionValueTransform conditionValueTransform = new ConditionValueTransform();
 
     public Condition restToApp(RestCondition rest) {
         Condition app = new Condition();

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;

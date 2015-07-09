@@ -14,7 +14,6 @@ public final class RestCondition {
 
     public final String id;
     public final String name;
-    public final String conditionGroup;
     public final String conditionlet;
     public final String comparison;
     public final Map<String, RestConditionValue> values;
@@ -24,7 +23,6 @@ public final class RestCondition {
     private RestCondition(Builder builder) {
         id = builder.id;
         name = builder.name;
-        conditionGroup = builder.conditionGroup;
         conditionlet = builder.conditionlet;
         comparison = builder.comparison;
         values = builder.values;
@@ -35,7 +33,6 @@ public final class RestCondition {
     public static final class Builder {
         @JsonProperty private String id;
         @JsonProperty private String name;
-        @JsonProperty private String conditionGroup;
         @JsonProperty private String conditionlet;
         @JsonProperty private String comparison;
         @JsonProperty private String operator;
@@ -44,11 +41,6 @@ public final class RestCondition {
 
         public Builder name(String name) {
             this.name = name;
-            return this;
-        }
-
-        public Builder conditionGroup(String conditionGroup) {
-            this.conditionGroup = conditionGroup;
             return this;
         }
 

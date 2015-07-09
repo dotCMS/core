@@ -1,15 +1,14 @@
 package com.dotcms.rest.config;
 
-import com.dotcms.rest.api.v1.sites.rules.ActionletsResource;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ActionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
+import com.dotcms.rest.api.v1.sites.rules.RulesResource;
+import com.dotcms.rest.api.v1.system.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ConditionletsResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
 import java.util.HashSet;
 import java.util.Set;
-
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
-import com.dotcms.rest.api.v1.sites.rules.RulesResource;
 
 public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Application {
 	protected volatile static Set<Class<?>> REST_CLASSES = null;
