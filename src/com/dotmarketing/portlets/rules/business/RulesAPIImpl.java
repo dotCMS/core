@@ -589,15 +589,17 @@ public class RulesAPIImpl implements RulesAPI {
 
     private List<Conditionlet> getCustomConditionlets() {
         List<Conditionlet> customClasses = Lists.newArrayList();
-        String customClassesStr = Config.getStringProperty(WebKeys.RULES_CONDITIONLET_CLASSES, "");
+        String customClassesStr = Config.getStringProperty(WebKeys.RULES_CONDITIONLET_CLASSES, null, false);
+        if(customClassesStr != null) {
 
-        String[] st = customClassesStr.split(",");
-        for (String className : st) {
-            try {
-                Conditionlet e = (Conditionlet)Class.forName(className.trim()).newInstance();
-                customClasses.add(e);
-            } catch (Exception e1) {
-                Logger.error(RulesAPIImpl.class, e1.getMessage(), e1);
+            String[] st = customClassesStr.split(",");
+            for (String className : st) {
+                try {
+                    Conditionlet e = (Conditionlet)Class.forName(className.trim()).newInstance();
+                    customClasses.add(e);
+                } catch (Exception e1) {
+                    Logger.error(RulesAPIImpl.class, "Error instantiating class '" + className + "' " + e1.getMessage(), e1);
+                }
             }
         }
         return customClasses;
@@ -655,15 +657,17 @@ public class RulesAPIImpl implements RulesAPI {
 
     private List<RuleActionlet> getCustomActionlets() {
         List<RuleActionlet> instances = Lists.newArrayList();
-        String customClassesStr = Config.getStringProperty(WebKeys.RULES_ACTIONLET_CLASSES, "");
+        String customClassesStr = Config.getStringProperty(WebKeys.RULES_ACTIONLET_CLASSES, null, false);
+        if(customClassesStr != null) {
 
-        String[] st =customClassesStr.split( ",");
-        for (String clazzName : st) {
-            try {
-                RuleActionlet e1 = (RuleActionlet)Class.forName(clazzName.trim()).newInstance();
-                instances.add(e1);
-            } catch (Exception e1) {
-                Logger.error(RulesAPIImpl.class, e1.getMessage(), e1);
+            String[] st = customClassesStr.split(",");
+            for (String className : st) {
+                try {
+                    RuleActionlet e1 = (RuleActionlet)Class.forName(className.trim()).newInstance();
+                    instances.add(e1);
+                } catch (Exception e1) {
+                    Logger.error(RulesAPIImpl.class, "Error instantiating class '" + className + "' " + e1.getMessage(), e1);
+                }
             }
         }
         return instances;

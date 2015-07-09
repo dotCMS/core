@@ -1,27 +1,28 @@
 package com.dotmarketing.portlets.rules.business;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.model.*;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class RulesFactoryImpl implements RulesFactory {
 
@@ -31,7 +32,8 @@ public class RulesFactoryImpl implements RulesFactory {
 
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
-        cache = CacheLocator.getRulesCache();
+//        cache = CacheLocator.getRulesCache();
+        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
@@ -152,7 +154,7 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.SELECT_RULE_ACTION_PARAMS);
         db.addParam(id);
         List<RuleActionParameter> result = convertListToObjects(db.loadObjectResults(),
-                RuleActionParameter.class);
+                                                                RuleActionParameter.class);
         if (!result.isEmpty()) {
             param = result.get(0);
         }
@@ -673,7 +675,7 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setFolder(row.get("folder").toString());
         r.setPriority(Integer.parseInt(row.get("priority").toString()));
         r.setEnabled(DbConnectionFactory
-                .isDBTrue(row.get("enabled").toString()));
+                             .isDBTrue(row.get("enabled").toString()));
         return r;
     }
 
