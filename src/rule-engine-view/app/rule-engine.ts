@@ -38,9 +38,11 @@ let count = 0;
 class ConditionComponent {
   idCount:number;
   _conditionMeta:any;
-  holder:any;
   condition:any;
+  conditionValue:string;
+  conditionlet:any;
   conditionlets:Array;
+
 
   constructor() {
     this.idCount = count;
@@ -50,13 +52,18 @@ class ConditionComponent {
       this.conditionlets = conditionletsAry
     })
     this.condition = {}
-    this.holder = {}
+    this.conditionValue = ''
+    this.conditionlet = {}
+
   }
 
   onChange(snapshot){
     log(this.idCount, " Condition's type is ", this.condition);
     this.condition = snapshot.val()
+    this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
+    this.conditionValue = this.getComparisonValue()
   }
+
 
   set conditionMeta(conditionMeta) {
     log(this.idCount, " Setting conditionMeta: ", conditionMeta.key())
@@ -71,6 +78,38 @@ class ConditionComponent {
   setConditionlet(condtitionletId){
     log('Setting conditionlet id to: ', condtitionletId)
     this.condition.conditionlet = condtitionletId
+    this.conditionlet =  conditionletsMap.get(this.condition.conditionlet)
+    this.updateCondition()
+  }
+
+  setComparison(comparisonId){
+    log('Setting conditionlet comparison id to: ', comparisonId)
+    this.condition.comparison = comparisonId
+    this.updateCondition()
+
+  }
+
+  getComparisonValueKey(){
+    let key = null
+    let keys = Object.keys(this.condition.values)
+    if(keys.length){
+      key = keys[0]
+    }
+    return key
+  }
+
+  getComparisonValue(){
+    let value = ''
+    let key = this.getComparisonValueKey()
+    if(key) {
+      value = this.condition.values[key].value
+    }
+    return value
+  }
+
+  setComparisonValue(newValue){
+    let key = this.getComparisonValueKey() || 'aFakeId'
+    this.condition.values[key] = {id:key, priority: 10, value: newValue}
     this.updateCondition()
   }
 
@@ -144,14 +183,13 @@ class ConditionGroupComponent {
 
       name: "Condition. " + new Date().toISOString(),
       rule: this.rule.key,
-      conditionGroup: this.groupSnap.key(),
-      conditionlet: 'bob',
+      conditionlet: 'UsersCountryConditionlet',
       comparison: 'Is',
       operator: 'AND',
       values: {
         a: {
           id: 'a',
-          value: 'something',
+          value: 'US',
           priority: 10
         }
       }
@@ -397,16 +435,20 @@ class RuleEngine {
 }
 
 var conditionletsAry = []
+var conditionletsMap = new Map()
+
 var conditionletsPromise;
 var actionletsAry = []
 let initConditionlets = function () {
   let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
   conditionletsPromise = new Promise((resolve, reject) => {
     conditionletsRef.once('value').then((snap) => {
-      let val = snap['val']()
-      let results = (Object.keys(val).map((key) => {
-        return val[key]
+      let conditionlets = snap['val']()
+      let results = (Object.keys(conditionlets).map((key) => {
+        conditionletsMap.set(key, conditionlets[key])
+        return conditionlets[key]
       }))
+
       Array.prototype.push.apply(conditionletsAry,results);
       resolve(snap);
     })
