@@ -207,18 +207,13 @@ public class ConditionsResource {
         }
     }
 
-    private void applyRestConditionToCondition(RestCondition rest, Condition app) {
-        //        condition.setConditionGroup(restCondition.owningGroup);
-
-    }
-
     private String updateConditionInternal(User user, String conditionId, RestCondition restCondition) {
         try {
             Condition condition = rulesAPI.getConditionById(conditionId, user, false);
             if(condition == null) {
                 throw new NotFoundException("Condition with id '%s' not found: ", conditionId);
             }
-            applyRestConditionToCondition(restCondition, condition);
+            conditionTransform.applyRestToApp(restCondition, condition);
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
         } catch (DotDataException e) {
