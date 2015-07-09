@@ -15,3 +15,7 @@ declare module RuleEngine {
       declare function remove(rule:any):Promise
   }
 }
+
+declare class EntityMeta {
+  once(eventType:string, callback:Function):Promise;
+}

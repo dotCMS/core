@@ -37,8 +37,8 @@
     </div>
   </div>
   <div class="panel-body collapse" [class.in]="!groupCollapsed">
-    <rule-condition *for="var snap of getConditions(); var i=index"
-            [condition-snap]="snap">
+    <rule-condition *for="var meta of conditions; var i=index"
+            [condition-meta]="meta">
     </rule-condition>
   </div>
 </div>

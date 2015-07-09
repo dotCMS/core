@@ -24,11 +24,11 @@ import ruleActionTemplate from './rule-action.tpl.html!text'
 import conditionGroupTemplate from './condition-group.tpl.html!text'
 import conditionTemplate from './condition.tpl.html!text'
 
-
+let count = 0;
 @Component({
   selector: 'rule-condition',
   properties: {
-    "conditionSnap": "condition-snap"
+    "conditionMeta": "condition-meta"
   }
 })
 @View({
@@ -36,30 +36,43 @@ import conditionTemplate from './condition.tpl.html!text'
   directives: [If, For]
 })
 class ConditionComponent {
+  idCount:number;
   _conditionMeta:any;
-  conditionSnap:any;
+  holder:any;
   condition:any;
-  clauseTypes:Array;
-  comparisons:Array;
+  conditionlets:Array;
 
   constructor() {
-    this.clauseTypes = [{id: 'hello', text: 'foo'}, {id: 'goodbye', text: 'bar'}]
-    this.comparisons = [{id: 'compHello', text: 'cFoo'}, {id: 'compGoodbye', text: 'cBar'}];
+    this.idCount = count;
+    log('Creating ConditionComponent: ', count++)
+    this.conditionlets = []
+    conditionletsPromise.then((result)=>{
+      this.conditionlets = conditionletsAry
+    })
     this.condition = {}
+    this.holder = {}
+  }
+
+  onChange(snapshot){
+    log(this.idCount, " Condition's type is ", this.condition);
+    this.condition = snapshot.val()
   }
 
   set conditionMeta(conditionMeta) {
+    log(this.idCount, " Setting conditionMeta: ", conditionMeta.key())
     this._conditionMeta = conditionMeta
-    conditionMeta.once('value', (snap)=>{
-      this.condition = snap.val()
-      this.conditionSnap = snap
-    })
+    conditionMeta.once('value', this.onChange.bind(this))
   }
 
   get conditionMeta() {
     return this._conditionMeta;
   }
 
+  setConditionlet(condtitionletId){
+    log('Setting conditionlet id to: ', condtitionletId)
+    this.condition.conditionlet = condtitionletId
+    this.updateCondition()
+  }
 
   removeCondition() {
     //ClauseActionCreators.removeClause(this._clause)
@@ -70,7 +83,8 @@ class ConditionComponent {
   }
 
   updateCondition() {
-    this.conditionSnap.ref().set(this.condition)
+    log('Updating Condition: ', this.condition)
+    this.conditionMeta.set(this.condition)
   }
 
 }
@@ -92,21 +106,26 @@ class ConditionGroupComponent {
   group:any;
   rule:any;
   groupCollapsed:boolean;
+  conditions:Array;
 
   constructor() {
-    this.groupCollapsed = false;
+    log('Creating ConditionGroupComponent')
+    this.groupCollapsed = false
+    this.conditions = []
   }
 
   set groupSnap(groupSnap) {
+    log('Setting ConditionGroup snapshot: ', groupSnap.key())
     this._groupSnap = groupSnap
     this.group = groupSnap.val()
+    this.conditions = this.getConditions()
   }
 
   get groupSnap() {
     return this._groupSnap;
   }
 
-  getConditions(){
+  getConditions() {
     let referenceSnaps = []
     let conditionMetas = []
     this.groupSnap.child('conditions').forEach((childSnap) => {
@@ -119,6 +138,7 @@ class ConditionGroupComponent {
   }
 
   addCondition() {
+    log('Adding condition to ConditionsGroup')
     let condition = {
       priority: 10,
 
@@ -136,7 +156,6 @@ class ConditionGroupComponent {
         }
       }
     }
-    debugger;
     let condRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
 
     condRoot.push(condition).then((result) => {
@@ -154,6 +173,7 @@ class ConditionGroupComponent {
   }
 
   updateGroup() {
+    log('Updating ConditionsGroup')
     this.groupSnap.ref().set(this.group)
   }
 
@@ -221,29 +241,36 @@ class RuleComponent {
   _ruleSnap:any;
   collapsed:boolean;
   fireOnDropDownExpanded:boolean;
+  ruleGroups:Array;
 
   constructor() {
-    log('init RuleComponent')
+    log('Creating RuleComponent')
     this.collapsed = true
     this.fireOnDropDownExpanded = false
+    this.ruleGroups = []
   }
 
   set ruleSnap(ruleSnap:any) {
+    log('Setting Rule snapshot')
     this._ruleSnap = ruleSnap
     this.rule = ruleSnap.val()
+    this.ruleGroups = []
+    this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
+      this.ruleGroups.push(childSnap)
+    })
   }
 
   get ruleSnap():any {
     return this._ruleSnap
   }
-
-  getRuleGroups() {
-    let groupSnaps = []
-    this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
-      groupSnaps.push(childSnap)
-    })
-    return groupSnaps
-  }
+  //
+  //getRuleGroups() {
+  //  let groupSnaps = []
+  //  this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
+  //    groupSnaps.push(childSnap)
+  //  })
+  //  return groupSnaps
+  //}
 
 
   setFireOn(value:string) {
@@ -292,6 +319,7 @@ class RuleComponent {
   }
 
   updateRule() {
+    log('Updating Rule')
     this.ruleSnap.ref().set(this.rule)
   }
 
@@ -308,13 +336,13 @@ class RuleComponent {
 class RuleEngine {
   rules:Array;
   baseUrl:string;
-  rulesEntityMeta:any;
+  rulesRef:EntityMeta;
 
   constructor() {
+    log('Creating RuleEngine component.')
     this.rules = []
     this.baseUrl = ServerManager.baseUrl;
-    this.rulesEntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
-    log("creating rules engine");
+    this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
     this.onChange()
     RuleStore.addChangeListener(this.onChange.bind(this))
   }
@@ -334,21 +362,22 @@ class RuleEngine {
   }
 
   onChange(event = null) {
-    log("Handling change event: ", event)
-    this.rulesEntityMeta.once('value', (result) => {
+    log("RuleEngine change event: ", event)
+    this.rulesRef.once('value', (rulesSnap) => {
       this.rules = []
-      if (result && result.forEach) {
-        result.forEach((ruleSnap) => {
+      if (rulesSnap && rulesSnap.forEach) {
+        rulesSnap.forEach((ruleSnap) => {
           this.rules.push(ruleSnap)
         })
       }
       else {
-        throw result
+        throw rulesSnap
       }
     })
   }
 
   addRule() {
+    log("Adding Rule")
     let testRule = new Rule();
     testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
     testRule.enabled = true
@@ -357,8 +386,7 @@ class RuleEngine {
     testRule.shortCircuit = false
     testRule.conditionGroups = {}
     testRule.actions = {}
-    ruleRepo.push(testRule).then(()=> this.onChange())
-
+    this.rulesRef.push(testRule).then((ruleRef) => this.onChange())
   }
 
   testBaseUrl(baseUrl) {
@@ -368,7 +396,25 @@ class RuleEngine {
   }
 }
 
+var conditionletsAry = []
+var conditionletsPromise;
+var actionletsAry = []
+let initConditionlets = function () {
+  let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
+  conditionletsPromise = new Promise((resolve, reject) => {
+    conditionletsRef.once('value').then((snap) => {
+      let val = snap['val']()
+      let results = (Object.keys(val).map((key) => {
+        return val[key]
+      }))
+      Array.prototype.push.apply(conditionletsAry,results);
+      resolve(snap);
+    })
+  });
+}
+
 export function main() {
   log("Bootstrapping rules engine")
+  initConditionlets()
   return bootstrap(RuleEngine);
 }
