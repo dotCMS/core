@@ -3,7 +3,7 @@ package com.dotcms.rest.config;
 import com.dotcms.rest.api.v1.sites.rules.ActionletsResource;
 import com.dotcms.rest.api.v1.sites.rules.ActionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionletsResource;
+import com.dotcms.rest.api.v1.system.ConditionletsResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
 import java.util.HashSet;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.system;
 
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import java.util.function.Function;
