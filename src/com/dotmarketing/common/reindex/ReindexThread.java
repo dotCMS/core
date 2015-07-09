@@ -44,6 +44,7 @@ public class ReindexThread extends Thread {
 	private boolean work = false;
 	private int sleep = 100;
 	private int delay = 7500;
+	private int delayOnError = 500;
 	private int failedAttemptsCount = 0;
 	private boolean reindexSleepDuringIndex = false;
 	private int reindexSleepDuringIndexTime = 0;
@@ -248,7 +249,7 @@ public class ReindexThread extends Thread {
 								addIndexingFailedAttempt();
 
 								try {
-									Thread.sleep(delay);
+									Thread.sleep(delayOnError);
 								} catch ( InterruptedException ie ) {
 									Logger.error(this, ie.getMessage(), ie);
 								}
@@ -356,7 +357,7 @@ public class ReindexThread extends Thread {
 										Logger.error(this, "Reindex thread will try to re-index [" + String.valueOf(toRetry) + "] failed records.");
 
 										try {
-											Thread.sleep(delay);
+											Thread.sleep(delayOnError);
 										} catch ( InterruptedException e ) {
 											Logger.error(this, e.getMessage(), e);
 										}
