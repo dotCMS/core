@@ -99,11 +99,15 @@ public class ReindexThread extends Thread {
 
 						long foundRecords = jAPI.recordsLeftToIndexForServer();
 						if ( foundRecords == 0 ) {
-							remoteQ.clear();
-							shutdownThread();
+							stopFullReindexation();
 						}
 					} catch ( DotDataException e ) {
-						e.printStackTrace();
+						Logger.error(this, "Error verifying pending records for indexing", e);
+						try {
+							stopFullReindexation();
+						} catch ( DotDataException e1 ) {
+							Logger.error(this, "Error forcing the index thread to stop", e);
+						}
 					}
 				}
 			}
@@ -311,8 +315,8 @@ public class ReindexThread extends Thread {
 										//Counts the failed attempts when indexing and handles error notifications
 										addIndexingFailedAttempt();
 
-										//List of records that failed and will be added to the queue for more attempts
-										List<IndexJournal<String>> toRestore = new ArrayList<>();
+										//Tracking how many records failed
+										int toRetry = 0;
 
 										//Search for the failed items
 										for ( BulkItemResponse itemResponse : resp.getItems() ) {
@@ -336,14 +340,12 @@ public class ReindexThread extends Thread {
 													IndexJournal<String> indexToDelete = toDeleteIterator.next();
 													if ( indexToDelete.getInodeToIndex().equals(failedId) || indexToDelete.getIdentToIndex().equals(failedId) ) {
 
-														//Add it to the list of records that failed and needs to be re-index
-														if ( !exist(toRestore, indexToDelete) ) {
-															toRestore.add(indexToDelete);
-														}
+														//Records that failed in this bulk
+														toRetry++;
 
 														/*
 														Remove the record from the list of contents to remove from the index journal table
-														as it indexing process failed.
+														as it indexing process failed and we want a re-try with those records.
 														 */
 														toDeleteIterator.remove();
 													}
@@ -351,40 +353,14 @@ public class ReindexThread extends Thread {
 											}
 										}
 
-										if ( !toRestore.isEmpty() ) {
+										Logger.error(this, "Reindex thread will try to re-index [" + String.valueOf(toRetry) + "] failed records.");
 
-											//Re-try with the records that failed
-											Logger.error(this, "Trying to re-index [" + String.valueOf(toRestore.size()) + "] failed records.");
-											remoteQ.addAll(toRestore);
-
-											try {
-												Thread.sleep(delay);
-											} catch ( InterruptedException e ) {
-												Logger.error(this, e.getMessage(), e);
-											}
+										try {
+											Thread.sleep(delay);
+										} catch ( InterruptedException e ) {
+											Logger.error(this, e.getMessage(), e);
 										}
 									}
-								}
-
-								/**
-								 * Checks if a given record already exist on a given list
-								 *
-								 * @param toRestore
-								 * @param toCompare
-								 * @return
-								 */
-								private boolean exist ( List<IndexJournal<String>> toRestore, IndexJournal<String> toCompare ) {
-
-									boolean exist = false;
-									for ( IndexJournal<String> current : toRestore ) {
-
-										if ( current.getId() == toCompare.getId() ) {
-											exist = true;
-											break;
-										}
-									}
-
-									return exist;
 								}
 
 							});
