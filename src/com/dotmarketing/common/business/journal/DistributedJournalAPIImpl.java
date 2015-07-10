@@ -114,4 +114,9 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
     public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         distFac.deleteReindexEntryForServer(recordsToDelete);
     }
+
+	public void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
+		distFac.resetServerForReindexEntry(recordsToModify);
+	}
+
 }
