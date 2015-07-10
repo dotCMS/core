@@ -43,7 +43,6 @@ class ConditionComponent {
   conditionlet:any;
   conditionlets:Array;
 
-
   constructor() {
     this.idCount = count;
     log('Creating ConditionComponent: ', count++)
@@ -221,9 +220,7 @@ class ConditionGroupComponent {
 @Component({
   selector: 'rule-action',
   properties: {
-    "actionSnap": "action-snap",
-    "ruleAction": "rule-action",
-    "index": "index"
+    "actionMeta": "action-meta"
   }
 })
 @View({
@@ -231,28 +228,52 @@ class ConditionGroupComponent {
   directives: [If, For],
 })
 class RuleActionComponent {
-  _actionSnap:any;
-  ruleAction:any;
-  index:number;
+  idCount:number;
+  _actionMeta:any;
+  action:any;
+  actionValue:string;
+  actionlet:any;
+  actionlets:Array;
 
   constructor() {
+    this.idCount = count;
+    log('Creating actionComponent: ', count++)
+    this.actionlets = []
+    actionletsPromise.then((result)=>{
+      this.actionlets = actionletsAry
+    })
+    this.action = {}
+    this.actionValue = ''
+    this.actionlet = {}
   }
 
-  get actionSnap():any {
-    return this._actionSnap;
+
+  onChange(snapshot){
+    log(this.idCount, " action's type is ", this.action);
+    this.action = snapshot.val()
+    this.actionlet = actionletsMap.get(this.action.actionlet)
   }
 
-  set actionSnap(actionSnap:any) {
-    this._actionSnap = actionSnap
-    this.ruleAction = actionSnap.val();
+
+  set actionMeta(actionMeta) {
+    log(this.idCount, " Setting actionMeta: ", actionMeta.key())
+    this._actionMeta = actionMeta
+    this._actionMeta.once('value', this.onChange.bind(this))
+  }
+
+  get actionMeta() {
+    return this._actionMeta;
+  }
+
+  setActionlet(actionletId){
+    log('Setting actionlet id to: ', actionletId)
+    this.action.actionlet = actionletId
+    this.actionlet =  actionletsMap.get(this.action.actionlet)
+    this.updateAction()
   }
 
 
-  saveChanges() {
-    //RuleActionActionCreators.updateRuleAction(this._ruleAction)
-  }
-
-  onChange(action) {
+  updateAction() {
   }
 
   removeRuleAction() {
@@ -272,7 +293,7 @@ class RuleActionComponent {
 })
 @View({
   template: ruleTemplate,
-  directives: [ConditionGroupComponent, If, For]
+  directives: [RuleActionComponent, ConditionGroupComponent, If, For]
 })
 class RuleComponent {
   rule:any;
@@ -280,12 +301,16 @@ class RuleComponent {
   collapsed:boolean;
   fireOnDropDownExpanded:boolean;
   ruleGroups:Array;
+  ruleActions:Array;
+
 
   constructor() {
     log('Creating RuleComponent')
     this.collapsed = true
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
+    this.ruleActions = []
+
   }
 
   set ruleSnap(ruleSnap:any) {
@@ -296,20 +321,25 @@ class RuleComponent {
     this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
       this.ruleGroups.push(childSnap)
     })
+    this.ruleActions = this.getRuleActions()
+
+  }
+
+  getRuleActions(){
+    let actionMetas = []
+    let actionsSnap = this.ruleSnap.child('ruleActions')
+    if (actionsSnap.exists()) {
+      actionsSnap.forEach((childSnap) => {
+        let key = childSnap.key()
+        actionMetas.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions/' + key))
+      })
+    }
+    return actionMetas
   }
 
   get ruleSnap():any {
     return this._ruleSnap
   }
-  //
-  //getRuleGroups() {
-  //  let groupSnaps = []
-  //  this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
-  //    groupSnaps.push(childSnap)
-  //  })
-  //  return groupSnaps
-  //}
-
 
   setFireOn(value:string) {
     this.rule.fireOn = value
@@ -342,8 +372,16 @@ class RuleComponent {
     let action = {
       name: "CoreWeb created this action: " + new Date().toISOString(),
       priority: 10,
-      actionlet: 'Set user variable'
+      owningRule: this.ruleSnap.key(),
+      actionlet: 'CountRequestsActionlet'
     }
+    let actionRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions')
+
+    actionRoot.push(action).then((snapshot)=>{
+      this.rule.actions = this.rule.ruleActions || {}
+      this.rule.actions[snapshot.key()] = true
+      this.updateRule()
+    })
   }
 
 
@@ -436,9 +474,12 @@ class RuleEngine {
 
 var conditionletsAry = []
 var conditionletsMap = new Map()
-
 var conditionletsPromise;
+
 var actionletsAry = []
+var actionletsMap = new Map()
+var actionletsPromise;
+
 let initConditionlets = function () {
   let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
   conditionletsPromise = new Promise((resolve, reject) => {
@@ -455,8 +496,25 @@ let initConditionlets = function () {
   });
 }
 
+let initActionlets = function () {
+  let actionletsRef:EntityMeta = new EntityMeta('/api/v1/system/ruleengine/actionlets')
+  actionletsPromise = new Promise((resolve, reject) => {
+    actionletsRef.once('value').then((snap) => {
+      let actionlets = snap['val']()
+      let results = (Object.keys(actionlets).map((key) => {
+        actionletsMap.set(key, actionlets[key])
+        return actionlets[key]
+      }))
+
+      Array.prototype.push.apply(actionletsAry,results);
+      resolve(snap);
+    })
+  });
+}
+
 export function main() {
   log("Bootstrapping rules engine")
   initConditionlets()
+  initActionlets()
   return bootstrap(RuleEngine);
 }

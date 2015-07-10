@@ -243,6 +243,10 @@ export class EntitySnapshot {
     return this.entityMeta
   }
 
+  exists(){
+    return this.entity != null
+  }
+
   child(key) {
     let childPath = this.entityMeta.path + '/' + key
     let childVal = null
