@@ -266,6 +266,18 @@ public class ReindexThread extends Thread {
 								addIndexingFailedAttempt();
 
 								try {
+									/*
+									Reset to null the server id of the failed records in the reindex journal table
+									in order to make them available again for the reindex process.
+									 */
+									List<IndexJournal<String>> failedRecords = new ArrayList<>();
+									failedRecords.add(idx);
+									jAPI.resetServerForReindexEntry(failedRecords);
+								} catch ( DotDataException dataException ) {
+									Logger.error(this, "Error adding back failed records to reindex queue", dataException);
+								}
+
+								try {
 									Thread.sleep(delayOnError);
 								} catch ( InterruptedException ie ) {
 									Logger.error(this, ie.getMessage(), ie);
@@ -290,28 +302,39 @@ public class ReindexThread extends Thread {
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
 
-								void deleteRecords () {
+								void handleRecords (List<IndexJournal<String>> failedRecords) {
+
+									//List of records to delete from the reindex journal table
 									addRecordsToDelete(recordsToDelete);
+
+									try {
+										if ( failedRecords != null && !failedRecords.isEmpty() ) {
+											/*
+											Reset to null the server id of the failed records in the reindex journal table
+											in order to make them available again for the reindex process.
+											 */
+											jAPI.resetServerForReindexEntry(failedRecords);
+										}
+									} catch ( DotDataException e ) {
+										Logger.error(this, "Error adding back failed records to reindex queue", e);
+									}
 								}
 
 								public void onResponse ( BulkResponse resp ) {
 
 									//Handle failures on the re-index process if any
-									failureHandler(resp);
+									List<IndexJournal<String>> failedRecords = failureHandler(resp);
 
-									/*
-									Set the list of the records we can remove from the index journal table,
-									in this list (recordsToDelete) should only exist successfully indexed records.
-									 */
-									deleteRecords();
+									//Handle the processed records
+									handleRecords(failedRecords);
 								}
 
 								public void onFailure ( Throwable ex ) {
 
 									Logger.error(ReindexThread.class, "Indexing process failed", ex);
 
-									//Delete the records that failed in order to allow the indexing process to be terminated
-									deleteRecords();
+									//Handle the processed records
+									handleRecords(null);
 
 									//Reset the failed attempts count as the onFailure will finish the indexing process
 									failedAttemptsCount = 0;
@@ -323,7 +346,10 @@ public class ReindexThread extends Thread {
 								 *
 								 * @param resp
 								 */
-								private void failureHandler ( BulkResponse resp ) {
+								private List<IndexJournal<String>> failureHandler ( BulkResponse resp ) {
+
+									//List of records that failed and will be added to the queue for more attempts
+									List<IndexJournal<String>> failedRecords = new ArrayList<>();
 
 									//Verify if we have failures to handle
 									if ( resp.hasFailures() && isWorking() ) {
@@ -332,9 +358,6 @@ public class ReindexThread extends Thread {
 
 										//Counts the failed attempts when indexing and handles error notifications
 										addIndexingFailedAttempt();
-
-										//Tracking how many records failed
-										int toRetry = 0;
 
 										//Search for the failed items
 										for ( BulkItemResponse itemResponse : resp.getItems() ) {
@@ -358,8 +381,10 @@ public class ReindexThread extends Thread {
 													IndexJournal<String> indexToDelete = toDeleteIterator.next();
 													if ( indexToDelete.getInodeToIndex().equals(failedId) || indexToDelete.getIdentToIndex().equals(failedId) ) {
 
-														//Records that failed in this bulk
-														toRetry++;
+														//Add it to the list of records that failed and needs to be added back to the reindex queue
+														if ( !exist(failedRecords, indexToDelete) ) {
+															failedRecords.add(indexToDelete);
+														}
 
 														/*
 														Remove the record from the list of contents to remove from the index journal table
@@ -371,14 +396,40 @@ public class ReindexThread extends Thread {
 											}
 										}
 
-										Logger.error(this, "Reindex thread will try to re-index [" + String.valueOf(toRetry) + "] failed records.");
+										if ( !failedRecords.isEmpty() ) {
 
-										try {
-											Thread.sleep(delayOnError);
-										} catch ( InterruptedException e ) {
-											Logger.error(this, e.getMessage(), e);
+											Logger.error(this, "Reindex thread will try to re-index [" + String.valueOf(failedRecords.size()) + "] failed records.");
+
+											try {
+												Thread.sleep(delayOnError);
+											} catch ( InterruptedException e ) {
+												Logger.error(this, e.getMessage(), e);
+											}
 										}
 									}
+
+									return failedRecords;
+								}
+
+								/**
+								 * Checks if a given record already exist on a given list
+								 *
+								 * @param toRestore
+								 * @param toCompare
+								 * @return
+								 */
+								private boolean exist ( List<IndexJournal<String>> toRestore, IndexJournal<String> toCompare ) {
+
+									boolean exist = false;
+									for ( IndexJournal<String> current : toRestore ) {
+
+										if ( current.getId() == toCompare.getId() ) {
+											exist = true;
+											break;
+										}
+									}
+
+									return exist;
 								}
 
 							});

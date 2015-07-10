@@ -32,9 +32,8 @@ public interface DistributedJournalAPI<T> {
 	public void addCacheEntry(String key, String group) throws DotDataException;
 
 	/**
-	 * Returns the entries to reindex, records from the dist_reindex_journal table where the serverid IS NULL
-	 * are valid entries to reindex.
-	 *
+	 * Will return only the reindex entries for the specific server the code is executed on
+	 * This method will also delete all entries from the table that are returned in the select
 	 * @return
 	 * @throws DotDataException
 	 */
@@ -67,6 +66,15 @@ public interface DistributedJournalAPI<T> {
 	 */
 	public void deleteReindexEntryForServer(IndexJournal<T> ijournal) throws DotDataException;
 	public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException;
+
+	/**
+	 * Resets the server id to NULL to a list of failed records, setting the server id to NULL for
+	 * a record in the dist_reindex_journal means the record will be added back to the queue of record to process.
+	 *
+	 * @param recordsToModify
+	 * @throws DotDataException
+	 */
+	public void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException;
 
 	/**
 	 * Will find the number of records left to index on this server

@@ -12,7 +12,6 @@ import java.util.Map;
 
 import oracle.jdbc.OracleTypes;
 
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
@@ -27,8 +26,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactory<T> {
 
@@ -214,6 +211,45 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
+    protected void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+        StringBuilder sql = new StringBuilder().append("UPDATE dist_reindex_journal SET serverid=NULL where id in (");
+        boolean first = true;
+        for ( IndexJournal<T> idx : recordsToModify ) {
+            if ( !first ) sql.append(',');
+            else first = false;
+            sql.append(idx.getId());
+        }
+        sql.append(")");
+
+        dc.setSQL(sql.toString());
+        Connection con = null;
+        try {
+            con = DbConnectionFactory.getDataSource().getConnection();
+            con.setAutoCommit(true);
+            dc.loadResult(con);
+        } catch ( SQLException e ) {
+            try {
+                if ( con != null ) {
+                    con.rollback();
+                }
+            } catch ( SQLException e1 ) {
+                Logger.error(this.getClass(), e.getMessage(), e);
+            }
+            Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
+        } finally {
+            try {
+                if ( con != null ) {
+                    con.close();
+                }
+            } catch ( SQLException e ) {
+                Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
     protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         DotConnect dc = new DotConnect();
         StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where id in (");
@@ -332,57 +368,82 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
-    protected List<IndexJournal<T>> findContentReindexEntriesToReindex () throws DotDataException {
-
+    protected List<IndexJournal<T>> findContentReindexEntriesToReindex()
+            throws DotDataException {
         DotConnect dc = new DotConnect();
-        List<IndexJournal<T>> recordsToReindex = new ArrayList<>();
+        List<IndexJournal<T>> x = new ArrayList<IndexJournal<T>>();
         List<Map<String, Object>> results;
         Connection con = null;
+        String serverId = ConfigUtils.getServerId();
 
         try {
-
             con = DbConnectionFactory.getConnection();
             con.setAutoCommit(false);
+            if(DbConnectionFactory.isOracle()) {
+                CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?) }");
+                call.registerOutParameter(1, OracleTypes.CURSOR);
+                call.setString(2, serverId);
+                call.setInt(3, 50);
+                call.execute();
+                ResultSet r = (ResultSet)call.getObject(1);
+                results = new ArrayList<Map<String,Object>>();
+                while(r.next()) {
+                    Map<String,Object> m=new HashMap<String,Object>();
+                    m.put("id", r.getInt("id"));
+                    m.put("inode_to_index", r.getString("inode_to_index"));
+                    m.put("ident_to_index", r.getString("ident_to_index"));
+                    m.put("priority", r.getInt("priority"));
+                    results.add(m);
+                }
+                r.close();
+                call.close();
+            } else if(DbConnectionFactory.isMsSql()) {
+                // we need to make sure this setting is ON because of the READPAST we use
+                // in the stored procedure
+                dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
+                dc.loadResult();
 
-            //Get the number of records to fetch
-            int recordsToFetch = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 50);
+                dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
+                dc.setForceQuery(true);
+                results = dc.loadObjectResults(con);
+            } else if(DbConnectionFactory.isH2()) {
+                dc.setSQL("call load_records_to_index(?,?)");
+                dc.addParam(serverId);
+                dc.addParam(50);
+                results = dc.loadObjectResults();
+            } else {
+                dc.setSQL(REINDEXENTRIESSELECTSQL);
+                dc.addParam(serverId);
+                dc.addParam(50);
+                results = dc.loadObjectResults(con);
+            }
 
-            //Execute the select query
-            dc.setSQL("SELECT * FROM dist_reindex_journal WHERE serverid IS NULL limit ?");
-            dc.addParam(recordsToFetch);
-            results = dc.loadObjectResults(con);
-
-            for ( Map<String, Object> r : results ) {
+            for (Map<String, Object> r : results) {
                 IndexJournal<T> ij = new IndexJournal<T>();
-                ij.setId(((Number) r.get("id")).longValue());
-                T o = (T) r.get("inode_to_index");
-                T o1 = (T) r.get("ident_to_index");
+                ij.setId(((Number)r.get("id")).longValue());
+                T o = (T)r.get("inode_to_index");
+                T o1 = (T)r.get("ident_to_index");
                 ij.setInodeToIndex(o);
                 ij.setIdentToIndex(o1);
-                ij.setPriority(((Number) (r.get("priority"))).intValue());
-                recordsToReindex.add(ij);
+                ij.setPriority(((Number)(r.get("priority"))).intValue());
+                x.add(ij);
             }
-        } catch ( SQLException e1 ) {
+        } catch (SQLException e1) {
             throw new DotDataException(e1.getMessage(), e1);
         } finally {
             try {
-                if ( con != null ) {
-                    con.commit();
-                }
-            } catch ( Exception e ) {
+                con.commit();
+            } catch (Exception e) {
                 Logger.error(this, e.getMessage(), e);
             } finally {
                 try {
-                    if ( con != null ) {
-                        con.close();
-                    }
-                } catch ( Exception e ) {
+                    con.close();
+                } catch (Exception e) {
                     Logger.error(this, e.getMessage(), e);
                 }
             }
         }
-
-        return recordsToReindex;
+        return x;
     }
 
     @Override
@@ -455,7 +516,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("select count(*) as count from dist_reindex_journal where serverid is null");
+        dc.setSQL("select count(*) as count from dist_reindex_journal");
         List<Map<String, String>> results = results = dc.loadResults(conn);
         String c = results.get(0).get("count");
         return Long.parseLong(c);
