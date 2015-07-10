@@ -194,6 +194,16 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return structure;
     }
 
+    public boolean hasAssetNameExtension() {
+        boolean hasExtension = false;
+        if (getStructure() != null
+                && getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+            hasExtension = true;
+        }
+
+        return hasExtension;
+    }
+
     public Date getLastReview() {
     	return (Date)map.get(LAST_REVIEW_KEY);
     }

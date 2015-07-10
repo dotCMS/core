@@ -1654,19 +1654,18 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function copyHTMLPage (objId, parentId, referer) {
-		BrowserAjax.copyHTMLPage(objId, parentId, copyHTMLPageCallback);
-		//if(selectedFolder == parentId)
+		BrowserAjax.copyHTMLPage(objId, parentId, function (response) {
+			// copyHTMLPageCallback
+			if (response.status == "success") {
+				setTimeout("reloadContent()", 1000);
+				showDotCMSSystemMessage(response.message);
+				return;
+			}
 
-	}
-
-	function copyHTMLPageCallback (response) {
-		if (!response) {
-			reloadContent ();
-			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-copy-check-you-have-the-required-permissions")) %>');
-		} else {
-			setTimeout('reloadContent()',1000);
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Page-copied")) %>');
-		}
+			// An error happened
+			reloadContent();
+			showDotCMSErrorMessage(response.message);
+		});
 	}
 
 	function moveHTMLPage (objId, parentId, referer) {
@@ -1912,21 +1911,18 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	}
 
 	function copyFile (objId, parentId, referer) {
-		BrowserAjax.copyFile(objId, parentId, copyFileCallback);
-		//if(selectedFolder == parentId)
+		BrowserAjax.copyFile(objId, parentId, function(response) {
+			// copyFileCallback
+			if (response.status == "success") {
+				setTimeout("reloadContent()", 1000);
+				showDotCMSSystemMessage(response.message);
+				return;
+			}
 
-	}
-
-	function copyFileCallback (response) {
-		if (response == "File-failed-to-copy-check-you-have-the-required-permissions") {
-			reloadContent ();
-			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "File-failed-to-copy-check-you-have-the-required-permissions")) %>');
-		} else if(response == "message.file_asset.error.filename.filters"){
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.file_asset.error.filename.filters")) %>');
-		} else if(response == "File-copied"){
-			setTimeout('reloadContent()',1000);
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "File-copied")) %>');
-		}
+			// An error happened
+			reloadContent();
+			showDotCMSErrorMessage(response.message);
+		});
 	}
 
 	function moveFile (objId, parentId, referer) {
