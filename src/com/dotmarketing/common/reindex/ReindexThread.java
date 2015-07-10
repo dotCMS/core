@@ -1,6 +1,7 @@
 package com.dotmarketing.common.reindex;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
@@ -93,21 +94,37 @@ public class ReindexThread extends Thread {
 				/*
 				Check every TEN failures if we still have records on the dist_reindex_journal as a fall back
 				in case the user wants to finish the re-index process clearing that table or if we have some endless
-				running thread.
+				running thread because the server didn't notice the reindex was cancelled.
 				 */
 				if ( failedAttemptsCount % 10 == 0 ) {
+
+					Connection conn = null;
+
 					try {
 
-						long foundRecords = jAPI.recordsLeftToIndexForServer();
+						conn = DbConnectionFactory.getDataSource().getConnection();
+						conn.setAutoCommit(false);
+						long foundRecords = jAPI.recordsLeftToIndexForServer(conn);
 						if ( foundRecords == 0 ) {
 							stopFullReindexation();
+							stopThread();
 						}
-					} catch ( DotDataException e ) {
+
+					} catch ( Exception e ) {
 						Logger.error(this, "Error verifying pending records for indexing", e);
 						try {
 							stopFullReindexation();
+							stopThread();
 						} catch ( DotDataException e1 ) {
 							Logger.error(this, "Error forcing the index thread to stop", e);
+						}
+					} finally {
+						if ( conn != null ) {
+							try {
+								conn.close();
+							} catch ( SQLException e ) {
+								Logger.error(this, "Error closing connection", e);
+							}
 						}
 					}
 				}

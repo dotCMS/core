@@ -1659,6 +1659,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // then we let the reindexThread start working
             ReindexThread.getInstance().unlockCluster();
+            //Make sure all the flags are on and the thread is ready
+            ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 
             HibernateUtil.commitTransaction();
 
