@@ -21,6 +21,7 @@ import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
 import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
+import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
 import com.dotmarketing.startup.runalways.Task00003CreateSystemRoles;
 import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
@@ -129,6 +130,7 @@ public class TaskLocatorUtil {
         ret.add(Task03105HTMLPageGenericPermissions.class);
         ret.add(Task03120AddInodeToContainerStructure.class);
 		ret.add(Task03130ActionletsFromPlugin.class);
+		ret.add(Task03135FixStructurePageDetail.class);
 
         return ret;
     }
@@ -142,6 +144,8 @@ public class TaskLocatorUtil {
 		ret.add(Task00006CreateSystemLayout.class);
 		ret.add(Task00007RemoveSitesearchQuartzJob.class);
 		ret.add(Task00009ClusterInitialize.class);
+		ret.add(Task00010CheckAnonymousUser.class);
+		
 		return ret;
 	}
 
