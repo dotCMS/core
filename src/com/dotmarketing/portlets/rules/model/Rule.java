@@ -14,6 +14,7 @@ import java.util.List;
 
 public class Rule implements Permissionable {
 
+
     public enum FireOn {
         EVERY_PAGE("EveryPage"),
         ONCE_PER_VISIT("OncePerVisit"),
@@ -48,6 +49,7 @@ public class Rule implements Permissionable {
     private boolean enabled;
     private Date modDate;
     private List<ConditionGroup> groups;
+    private List<RuleAction> ruleActions;
 
     @JSONIgnore
     public String getId() {
@@ -147,6 +149,17 @@ public class Rule implements Permissionable {
         if(groups!=null) {
             groups.remove(group);
         }
+    }
+
+    public List<RuleAction> getRuleActions() {
+        if(ruleActions == null) {
+            try {
+                ruleActions = FactoryLocator.getRulesFactory().getRuleActionsByRule(id);
+            } catch (DotDataException e) {
+                Logger.error(this, "Unable to get rule actions for rule: " + id, e);
+            }
+        }
+        return ruleActions;
     }
     // Beginning Permissionable methods
 

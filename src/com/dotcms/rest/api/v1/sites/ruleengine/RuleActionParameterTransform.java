@@ -1,8 +1,7 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 
 import java.util.function.Function;

@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+
 public class RulesAPIImpl implements RulesAPI {
 
     private static final Map<String, Conditionlet> conditionletMap = Maps.newHashMap();
@@ -350,8 +352,8 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveRule(Rule rule, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(rule))
-            return;
+        rule = checkNotNull(rule, "Rule is required.");
+        user = checkNotNull(user, "User is required.");
 
         if (!perAPI.doesUserHavePermissions(PermissionAPI.PermissionableType.RULES, PermissionAPI.PERMISSION_EDIT, user)) {
             throw new DotSecurityException("User " + user + " does not have permissions to Edit Rules");
@@ -399,8 +401,8 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(ruleAction))
-            return;
+        ruleAction = checkNotNull(ruleAction, "RuleAction is required");
+        user = checkNotNull(user, "User is required");
 
         Rule rule = rulesFactory.getRuleById(ruleAction.getRuleId());
 
@@ -622,17 +624,18 @@ public class RulesAPIImpl implements RulesAPI {
         synchronized (actionletMap) {
             // get the dotmarketing-config.properties actionlet classes
             List<RuleActionlet> defaultActionlets = getCustomActionlets();
-
-            List<RuleActionlet> actionlets =Lists.newArrayList(defaultActionlets);
+            List<RuleActionlet> actionlets = Lists.newArrayList(defaultActionlets);
             actionlets.addAll(getDefaultActionlets(defaultActionlets));
 
             for (RuleActionlet actionlet : actionlets) {
                 try {
                     Class<? extends RuleActionlet> clazz = actionlet.getClass();
-                    if(!actionletMap.containsKey(clazz.getSimpleName())) {
-                        actionletMap.put(clazz.getSimpleName(), clazz.newInstance());
+                    RuleActionlet instance = clazz.newInstance();
+                    String id = instance.getId();
+                    if(!actionletMap.containsKey(id)) {
+                        actionletMap.put(id, instance);
                     } else {
-                        Logger.warn(RulesAPIImpl.class, "Actionlet with name '" + clazz.getSimpleName() + "' already registered.");
+                        Logger.warn(RulesAPIImpl.class, "Actionlet with name '" + id + "' already registered.");
                     }
                 } catch (InstantiationException | IllegalAccessException e) {
                     Logger.error(RulesAPIImpl.class, e.getMessage(), e);
@@ -685,7 +688,7 @@ public class RulesAPIImpl implements RulesAPI {
         return new ArrayList<>(actionletMap.values());
     }
 
-    public RuleActionlet findActionlet(String clazz) throws DotDataException, DotSecurityException {
-        return actionletMap.get(clazz);
+    public RuleActionlet findActionlet(String actionletId) throws DotDataException, DotSecurityException {
+        return actionletMap.get(actionletId);
     }
 }

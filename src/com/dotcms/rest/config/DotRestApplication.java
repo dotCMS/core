@@ -2,7 +2,7 @@ package com.dotcms.rest.config;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
-import com.dotcms.rest.api.v1.sites.rules.ActionsResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ActionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
 import com.dotcms.rest.api.v1.sites.rules.RulesResource;
 import com.dotcms.rest.api.v1.system.ActionletsResource;

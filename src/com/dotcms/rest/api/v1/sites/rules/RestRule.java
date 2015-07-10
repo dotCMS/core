@@ -25,6 +25,7 @@ public final class RestRule {
     public final Integer priority;
     public final Boolean enabled;
     public final Map<String, RestConditionGroup> conditionGroups;
+    public final Map<String, Boolean> ruleActions;
 
     private RestRule(Builder builder) {
         key = builder.key;
@@ -34,6 +35,7 @@ public final class RestRule {
         priority = builder.priority;
         enabled = builder.enabled;
         conditionGroups = builder.conditionGroups;
+        ruleActions = builder.ruleActions;
     }
 
     @JsonIgnoreProperties({"groups", "actions"})
@@ -45,6 +47,7 @@ public final class RestRule {
         @JsonProperty private Integer priority = 0;
         @JsonProperty private Boolean enabled = false;
         @JsonProperty private Map<String, RestConditionGroup> conditionGroups = ImmutableMap.of();
+        @JsonProperty private Map<String, Boolean> ruleActions = ImmutableMap.of();
 
 
         /*
@@ -103,6 +106,11 @@ public final class RestRule {
             return this;
         }
 
+        public Builder ruleActions(Map<String, Boolean> ruleActions) {
+            this.ruleActions = ImmutableMap.copyOf(ruleActions);
+            return this;
+        }
+
         public Builder from(RestRule copy) {
             key = copy.key;
             name = copy.name;
@@ -111,6 +119,7 @@ public final class RestRule {
             priority = copy.priority;
             enabled = copy.enabled;
             conditionGroups = ImmutableMap.copyOf(copy.conditionGroups);
+            ruleActions = ImmutableMap.copyOf(copy.ruleActions);
             return this;
         }
 

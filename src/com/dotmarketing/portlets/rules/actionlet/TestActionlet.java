@@ -1,14 +1,12 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 public class TestActionlet extends RuleActionlet {
-    @Override
-    public String getName() {
-        return "TestActionlet";
+    public TestActionlet(String name) {
+        super("TestActionlet");
     }
 
     @Override
@@ -18,6 +16,6 @@ public class TestActionlet extends RuleActionlet {
 
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
-       //
+        //
     }
 }

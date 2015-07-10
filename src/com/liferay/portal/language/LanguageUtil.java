@@ -22,20 +22,9 @@
 
 package com.liferay.portal.language;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.jsp.PageContext;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
@@ -47,6 +36,15 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <a href="LanguageUtil.java.html"><b><i>View Source</i></b></a>
@@ -110,33 +108,36 @@ public class LanguageUtil {
 	
 		return value;
 	}
-	
-	
-	
-	
-	public static String get(String companyId, Locale locale, String key)
-		throws LanguageException {
 
-		String value = null;
-		Logger.debug(LanguageUtil.class, key);
-		try {
-			MessageResources resources = (MessageResources)WebAppPool.get(
-				companyId, Globals.MESSAGES_KEY);
-			
-			if (resources != null)
-				value = resources.getMessage(locale, key);
-		}
-		catch (Exception e) {
-			throw new LanguageException(e);
-		}
+    public static String get(String companyId, Locale locale, String key) throws LanguageException {
 
-		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
-			value = key;
-		}
+        Optional<String> optValue = getOpt(companyId, locale, key);
 
-		return value;
-	}
+        if(!optValue.isPresent()) {
+            Logger.warn(LanguageUtil.class, key);
+        }
+        return optValue.orElse(key);
+    }
+
+    public static Optional<String> getOpt(String companyId, Locale locale, String key) throws LanguageException {
+        Optional<String> value = Optional.empty();
+        Logger.debug(LanguageUtil.class, key);
+        try {
+            MessageResources resources = (MessageResources)WebAppPool.get(companyId, Globals.MESSAGES_KEY);
+
+            if(resources != null) {
+                value = Optional.ofNullable(resources.getMessage(locale, key));
+            }
+        } catch (Exception e) {
+            throw new LanguageException(e);
+        }
+
+        if(!value.isPresent()) {
+            Logger.warn(LanguageUtil.class, key);
+        }
+
+        return value;
+    }
 
 	public static String get(PageContext pageContext, String key)
 		throws LanguageException {
@@ -478,4 +479,5 @@ public class LanguageUtil {
 	private Map _localesByLanguageCode;
 	private Map _charEncodings;
 
+    private static class MessageResult {}
 }

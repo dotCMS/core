@@ -1,9 +1,8 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -27,6 +26,7 @@ public class RuleActionTransform {
 
     public RuleAction applyRestToApp(RestRuleAction rest, RuleAction app) {
         app.setId(rest.id);
+        app.setRuleId(rest.owningRule);
         app.setName(rest.name);
         app.setActionlet(rest.actionlet);
         app.setPriority(rest.priority);
@@ -50,6 +50,7 @@ public class RuleActionTransform {
         RestRuleAction rest = new RestRuleAction.Builder()
                 .id(app.getId())
                 .name(app.getName())
+                .owningRule(app.getRuleId())
                 .actionlet(app.getActionlet())
                 .priority(app.getPriority())
                 .parameters(params)

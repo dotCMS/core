@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RulesFactoryImpl implements RulesFactory {
 
@@ -306,11 +307,12 @@ public class RulesFactoryImpl implements RulesFactory {
             // remove groups who were not provided
 
             List<ConditionGroup> dbGroups = getConditionGroupsByRule(rule.getId());
-            List<ConditionGroup> groupsToRemove = new ArrayList(dbGroups);
-            groupsToRemove.removeAll(rule.getGroups());
-
-            for(ConditionGroup groupToRemove: groupsToRemove) deleteConditionGroup(groupToRemove);
-
+            List<String> updatedGroups = rule.getGroups().stream()
+                                                 .map(ConditionGroup::getId)
+                                                 .collect(Collectors.toList());
+            dbGroups.stream()
+                    .filter(group -> updatedGroups.contains(group.getId()))
+                    .map(this::deleteRemovedGroupFromRule);
         }
 
         cache.addRule(rule);
@@ -324,6 +326,16 @@ public class RulesFactoryImpl implements RulesFactory {
 
         cache.addRules(rules, rule.getHost(), rule.getFireOn());
 
+    }
+
+    private Boolean deleteRemovedGroupFromRule(ConditionGroup group) {
+        try {
+            deleteConditionGroup(group);
+            return true;
+        } catch (DotDataException e) {
+            Logger.debug(this.getClass(), e.getMessage(), e);
+        }
+        return false;
     }
 
     @Override

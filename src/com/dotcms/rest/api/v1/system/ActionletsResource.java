@@ -7,25 +7,27 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1")
+@Path("/v1/system/ruleengine")
 public class ActionletsResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
+    private final ActionletTransform transform = new ActionletTransform();
 
     public ActionletsResource() {
         this(new ApiProvider());
@@ -43,31 +45,25 @@ public class ActionletsResource {
 
     /**
      * <p>Returns a JSON with all the RuleActionlet Objects defined.
-     * <p/>
+     * <p>
      * Usage: /ruleactionlets/
      */
     @GET
-    @Path("/ruleactionlets")
+    @Path("/actionlets")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response list(@Context HttpServletRequest request) throws JSONException {
+    public Response list(@Context HttpServletRequest request) {
         User user = getUser(request);
+        return Response.ok(getActionletsInternal()).build();
+    }
 
-        JSONObject jsonActionlets = new JSONObject();
-
+    public Map<String, RestActionlet> getActionletsInternal() {
         try {
-
             List<RuleActionlet> actionlets = rulesAPI.findActionlets();
-
-            for (RuleActionlet actionlet : actionlets) {
-                JSONObject actionletObject = new JSONObject();
-                actionletObject.put("name", actionlet.getLocalizedName());
-                jsonActionlets.put(actionlet.getClass().getSimpleName(), actionletObject);
-            }
-
-            return Response.ok(jsonActionlets.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Rule Actionlets", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+            return actionlets.stream().map(transform.appToRestFn()).collect(Collectors.toMap(restAction -> restAction.id, Function.identity()));
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 

@@ -6,9 +6,9 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 public class SetVariantActionlet extends RuleActionlet {
-    @Override
-    public String getName() {
-        return "Set Variant";
+
+    public SetVariantActionlet(String name) {
+        super("Set Variant");
     }
 
     @Override

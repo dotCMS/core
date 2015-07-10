@@ -61,12 +61,7 @@ public class ConditionletsResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request) {
         User user = getUser(request);
-        List<Conditionlet> conditionlets = getConditionletsInternal();
-        Map<String, RestConditionlet> restConditionlets = conditionlets
-                                                                  .stream()
-                                                                  .map(new ConditionletTransform().appToRestFn())
-                                                                  .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity()));
-        return Response.ok(restConditionlets).build();
+        return Response.ok(getConditionletsInternal()).build();
     }
 
     /**
@@ -146,9 +141,13 @@ public class ConditionletsResource {
         }
     }
 
-    private List<Conditionlet> getConditionletsInternal() {
+    private Map<String, RestConditionlet> getConditionletsInternal() {
         try {
-            return rulesAPI.findConditionlets();
+            List<Conditionlet> conditionlets = rulesAPI.findConditionlets();
+            return conditionlets
+                           .stream()
+                           .map(new ConditionletTransform().appToRestFn())
+                           .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity()));
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {

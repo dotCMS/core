@@ -1,16 +1,14 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 public class CountRequestsActionlet extends RuleActionlet {
-    @Override
-    public String getName() {
-        return "EveryPageActionlet";
+
+    public CountRequestsActionlet() {
+        super("EveryPageActionlet");
     }
 
     @Override

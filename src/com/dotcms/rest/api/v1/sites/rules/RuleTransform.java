@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -43,7 +44,14 @@ public class RuleTransform {
         app.setPriority(rest.priority);
         app.setShortCircuit(rest.shortCircuit);
         app.setEnabled(rest.enabled);
-        List<ConditionGroup> groups = new ArrayList();
+        List<ConditionGroup> groups = checkGroupsExist(rest, app, user);
+
+        app.setGroups(groups);
+        return app;
+    }
+
+    private List<ConditionGroup> checkGroupsExist(RestRule rest, Rule app, User user) {
+        List<ConditionGroup> groups = new ArrayList<>();
 
         for (Map.Entry<String, RestConditionGroup> group : rest.conditionGroups.entrySet()) {
             try {
@@ -59,9 +67,7 @@ public class RuleTransform {
                 throw new BadRequestException(e, e.getMessage());
             }
         }
-
-        app.setGroups(groups);
-        return app;
+        return groups;
     }
 
     public RestRule appToRest(Rule app) {
@@ -73,10 +79,15 @@ public class RuleTransform {
     }
 
     private final Function<Rule, RestRule> toRest = (app) -> {
-        Map<String, RestConditionGroup> groups = app.getGroups().stream()
-                .map(groupTransform.appToRestFn()).collect(Collectors.toMap(group -> group.id, Function.identity()));
+        Map<String, RestConditionGroup> groups = app.getGroups()
+                                                    .stream()
+                                                    .collect(Collectors.toMap(ConditionGroup::getId, groupTransform.appToRestFn()));
 
-        RestRule rest = new RestRule.Builder()
+        Map<String, Boolean> ruleActions = app.getRuleActions()
+                                                         .stream()
+                                                         .collect(Collectors.toMap(RuleAction::getId, ruleAction -> true));
+
+        return new RestRule.Builder()
                 .key(app.getId())
                 .name(app.getName())
                 .fireOn(app.getFireOn().toString())
@@ -84,9 +95,8 @@ public class RuleTransform {
                 .priority(app.getPriority())
                 .enabled(app.isEnabled())
                 .conditionGroups(groups)
+                .ruleActions(ruleActions)
                 .build();
-
-        return rest;
     };
 
 }
