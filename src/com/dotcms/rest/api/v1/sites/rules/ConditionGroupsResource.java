@@ -14,7 +14,6 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
@@ -27,11 +26,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
-import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -121,7 +117,7 @@ public class ConditionGroupsResource extends WebResource {
         getHost(siteId, user);
         getRule(ruleId, user);
 
-        String conditionGroupId = createConditionGroupInternal(conditionGroup, user);
+        String conditionGroupId = createConditionGroupInternal(ruleId, conditionGroup, user);
 
         try {
             URI path = new URI(ruleId);
@@ -253,9 +249,10 @@ public class ConditionGroupsResource extends WebResource {
         }
     }
 
-    private String createConditionGroupInternal(RestConditionGroup restConditionGroup, User user) {
+    private String createConditionGroupInternal(String ruleId, RestConditionGroup restConditionGroup, User user) {
         try {
             ConditionGroup conditionGroup = groupTransform.restToApp(restConditionGroup);
+            conditionGroup.setRuleId(ruleId);
             rulesAPI.saveConditionGroup(conditionGroup, user, false);
             return conditionGroup.getId();
         } catch (DotDataException e) {

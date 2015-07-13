@@ -363,15 +363,8 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(conditionGroup))
-            return;
-
-        Rule rule = rulesFactory.getRuleById(conditionGroup.getRuleId());
-
-        if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + conditionGroup.getRuleId());
-            return;
-        }
+        conditionGroup = checkNotNull(conditionGroup, "ConditionGroup is required.");
+        Rule rule = checkNotNull(rulesFactory.getRuleById(conditionGroup.getRuleId()), "There is no rule with the given id: " + conditionGroup.getRuleId());
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its groups/conditions ");
@@ -381,17 +374,13 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(condition))
-            return;
+        condition = checkNotNull(condition, "Condition is required.");
 
-        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, true);
+        ConditionGroup group = checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+                                                   "Invalid ConditionGroup specified: %s",
+                                                   condition.getConditionGroup());
 
-        Rule rule = rulesFactory.getRuleById(group.getRuleId());
-
-        if(rule==null) {
-            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
-            return;
-        }
+        Rule rule = rulesFactory.getRuleById(group.getRuleId()); // Can only be null if there is a schema integrity failure.
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its conditions ");

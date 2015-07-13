@@ -198,6 +198,7 @@ public class ConditionsResource {
     private String createConditionInternal(RestCondition restCondition, User user) {
         try {
             Condition condition = conditionTransform.restToApp(restCondition);
+
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
         } catch (DotDataException e) {

@@ -15,6 +15,7 @@ public class ConditionTransform {
 
     public Condition applyRestToApp(RestCondition rest, Condition app) {
         app.setName(rest.name);
+        app.setConditionGroup(rest.owningGroup);
         app.setConditionletId(rest.conditionlet);
         app.setComparison(rest.comparison);
         app.setOperator(Condition.Operator.valueOf(rest.operator));
@@ -39,6 +40,7 @@ public class ConditionTransform {
         RestCondition rest = new RestCondition.Builder()
                 .id(app.getId())
                 .name(app.getName())
+                .owningGroup(app.getConditionGroup())
                 .conditionlet(app.getConditionletId())
                 .comparison(app.getComparison())
                 .operator(app.getOperator().name())
