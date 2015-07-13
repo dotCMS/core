@@ -1,19 +1,13 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 public class SetVariantActionlet extends RuleActionlet {
 
     public SetVariantActionlet(String name) {
         super("Set Variant");
-    }
-
-    @Override
-    public String getHowTo() {
-        return "";
     }
 
     @Override

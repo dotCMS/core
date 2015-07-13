@@ -10,11 +10,6 @@ public class TestActionlet extends RuleActionlet {
     }
 
     @Override
-    public String getHowTo() {
-        return null;
-    }
-
-    @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
         //
     }
