@@ -179,9 +179,8 @@ class ConditionGroupComponent {
     log('Adding condition to ConditionsGroup')
     let condition = {
       priority: 10,
-
       name: "Condition. " + new Date().toISOString(),
-      rule: this.rule.key,
+      owningGroup: this._groupSnap.key(),
       conditionlet: 'UsersCountryConditionlet',
       comparison: 'Is',
       operator: 'AND',
@@ -252,6 +251,7 @@ class RuleActionComponent {
     log(this.idCount, " action's type is ", this.action);
     this.action = snapshot.val()
     this.actionlet = actionletsMap.get(this.action.actionlet)
+    log('Loaded action with actionlet: ', this.actionlet)
   }
 
 
@@ -274,6 +274,9 @@ class RuleActionComponent {
 
 
   updateAction() {
+    log('Updating RuleAction: ', this.action)
+    this.actionMeta.set(this.action)
+
   }
 
   removeRuleAction() {

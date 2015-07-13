@@ -1,13 +1,20 @@
 <li class="list-group-item action-item">
   <div class="row">
-    <div class="col-sm-10">
+    <div class="col-sm-5">
       <input type="text" class="form-control" placeholder="Action Description" [value]="action.name" />
     </div>
+    <div class="col-sm-1">
+    </div>
+    <div class="col-sm-3">
+      <select class="form-control clause-selector" [value]="actionlet.id" (change)="setActionlet($event.target.value)">
+        <option value="{{actionlet.id}}" *for="var actionlet of actionlets">{{actionlet.name}}</option>
+      </select>
+    </div>
     <div class="col-sm-2">
+      <!--<input type="text" class="form-control" placeholder="Action Description" [value]="action.name" />-->
+    </div>
+    <div class="col-sm-1">
       <div class="operations actions-operations">
-        <button type="button" class="btn btn-default btn-md" aria-label="Add Action" (click)="addRuleAction(rule)">
-          <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-        </button>
         <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Remove Action" (click)="removeAction(action)">
           <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
         </button>

@@ -114,7 +114,7 @@ class BaseForge {
     }
     Object.defineProperty(entityInstance, fieldName, {
       configurable: false,
-      enumerable: true,
+      enumerable: this.isEnumerable !== false,
       set: this._createSetter(wrapper),
       get() {
         return wrapper.value
@@ -150,6 +150,11 @@ class BaseForge {
     return this._applyValidation({name: 'notNull', fn: LazyVerify.exists, msg: msg, abortOnFail: true})
   }
 
+  enumerable(isEnumerable = true) {
+    this.isEnumerable = isEnumerable
+    return this
+  }
+
 }
 
 
@@ -173,10 +178,28 @@ class ObjectForge extends BaseForge {
     cfg = cfg || this.defaultValue || {}
     let theInstance = new EntityBase(this)
 
+    this._createValidateFn(theInstance)
+
     if (this._v.obj.allowEmptyAtInit !== true) {
       this._initMemberProperties(theInstance, cfg)
     }
     return theInstance
+  }
+
+  _createValidateFn(entityInstance){
+    var typeDefinition = this
+    Object.defineProperty(entityInstance, 'validate', {
+      configurable: false,
+      enumerable: false,
+      writable: false,
+      value: function () {
+        let results = typeDefinition.validate(this, typeDefinition.fieldName)
+        if (results.valid === false) {
+          throw new ValidationError(results, typeDefinition.fieldName)
+        }
+        return this
+      }
+    })
   }
 
   _initMemberProperties(theInstance, cfg) {

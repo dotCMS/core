@@ -18,7 +18,7 @@
           </div>
           <div class="col-sm-3">
             <select class="form-control clause-selector" [value]="condition.comparison" (change)="setComparison($event.target.value)">
-              <option value="comparison.id" *for="var comparison of conditionlet.comparisons">{{comparison.label}}</option>
+              <option value="{{comparison.id}}" *for="var comparison of conditionlet.comparisons">{{comparison.label}}</option>
             </select>
           </div>
           <div class="col-sm-1">

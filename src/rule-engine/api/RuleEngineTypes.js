@@ -9,10 +9,9 @@ let defaultSiteId = '48190c8c-42c4-46af-8d1a-0cd5db894797'
 let objFn = (function () {return {}})
 
 let RuleDefinition = {
-  $key: EF.string(),
+  $key: EF.string().enumerable(false),
   name: EF.string().minLength(5).maxLength(100),
   enabled: EF.bool(true),
-  site: EF.string().minLength(36).maxLength(36),
   priority: EF.int(0).min(0).max(100),
   fireOn: EF.enum().values([
     'EVERY_PAGE',
@@ -20,7 +19,6 @@ let RuleDefinition = {
     'ONCE_PER_VISITOR',
     'EVERY_REQUEST'
   ]).initTo(0),
-  folder: EF.string().minLength(5).maxLength(250),
   shortCircuit: EF.bool(true),
   conditionGroups: EF.obj('conditionGroups', {
     operator: EF.enum().values(['AND', 'OR']),
@@ -40,7 +38,6 @@ let RuleGroupDefinition = {
 
 let ConditionDefinition = {
   $key: EF.string(),
-  rule: EF.string(),
   conditionGroup: EF.string(),
   name: EF.string().minLength(5).maxLength(100),
   conditionlet: EF.string(),
