@@ -20,6 +20,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -530,8 +532,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Container> containers = containerFactory.findAllContainers();
-		return permissionAPI.filterCollection(containers, PermissionAPI.PERMISSION_USE, respectFrontendRoles, user);
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		if ((user != null)
+				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
+			return containerFactory.findAllContainers();
+		} else {
+			return PermissionedWebAssetUtil.findContainersForLimitedUser(null,
+					null, true, "title", 0, -1, PermissionAPI.PERMISSION_READ,
+					user, false);
+		}
 	}
 
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
