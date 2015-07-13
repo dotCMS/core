@@ -728,7 +728,7 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setName(row.get("name").toString());
         r.setRuleId(row.get("rule_id").toString());
         r.setPriority(Integer.parseInt(row.get("priority").toString()));
-        r.setActionlet(row.get("rule_id").toString());
+        r.setActionlet(row.get("actionlet").toString());
         return r;
     }
 
