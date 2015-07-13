@@ -10,6 +10,7 @@ public class ActionletTransform implements RestTransform<RuleActionlet, RestActi
         RestActionlet rest = new RestActionlet.Builder()
                                      .id(app.getId())
                                      .name(app.getName())
+                                     .i18nKey(app.getI18nKey())
                                      .build();
 
         return rest;
