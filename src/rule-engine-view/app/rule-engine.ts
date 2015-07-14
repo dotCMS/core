@@ -112,9 +112,6 @@ class ConditionComponent {
     this.updateCondition()
   }
 
-  removeCondition() {
-    //ClauseActionCreators.removeClause(this._clause)
-  }
 
   toggleOperator() {
     //ClauseActionCreators.toggleOperator(this._clause)
@@ -125,6 +122,10 @@ class ConditionComponent {
     this.conditionMeta.set(this.condition)
   }
 
+  removeCondition() {
+    log('Removing Condition: ', this.condition)
+    this.conditionMeta.remove()
+  }
 }
 
 
@@ -211,6 +212,7 @@ class ConditionGroupComponent {
   updateGroup() {
     log('Updating ConditionsGroup')
     this.groupSnap.ref().set(this.group)
+    this.conditions = this.getConditions()
   }
 
 }
@@ -280,7 +282,7 @@ class RuleActionComponent {
   }
 
   removeRuleAction() {
-    //RuleActionActionCreators.removeRuleAction(this._ruleAction.$key)
+    this.actionMeta.remove()
   }
 }
 
@@ -400,6 +402,7 @@ class RuleComponent {
   updateRule() {
     log('Updating Rule')
     this.ruleSnap.ref().set(this.rule)
+    this.ruleActions = this.getRuleActions()
   }
 
 }
