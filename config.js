@@ -37,15 +37,15 @@ System.config({
       "npm:flux@2.0.3/index",
       "npm:flux@2.0.3"
     ],
-    "build/rtts_assert.bundle": [
-      "rtts_assert/src/rtts_assert",
-      "rtts_assert/rtts_assert"
-    ],
     "build/events.bundle": [
       "npm:events@1.0.2/events",
       "npm:events@1.0.2",
       "github:jspm/nodelibs-events@0.1.1/index",
       "github:jspm/nodelibs-events@0.1.1"
+    ],
+    "build/rtts_assert.bundle": [
+      "rtts_assert/src/rtts_assert",
+      "rtts_assert/rtts_assert"
     ],
     "build/bootstrap.bundle": [
       "github:components/jquery@2.1.4/jquery",

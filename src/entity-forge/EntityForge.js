@@ -1,6 +1,22 @@
 import  {LazyVerify, Verify} from './Verify.js'
-import  {ValidationError} from './Validation.js'
-import  {EntityBase} from './EntityBaseTypes.js'
+import  {ValidationError} from './ValidationError.js'
+
+class EntityBlank {
+
+  constructor() {
+  }
+
+  toJson(validate=true){
+    if(validate !== false){
+      this.validate()
+    }
+    return JSON.stringify(this)
+  }
+
+}
+
+export {EntityBlank}
+
 
 let propertyErrorsToString = function () {
   return '[' + this.errors.map((error)=> error.validator.msg).join("],    [") + ']'
@@ -176,7 +192,7 @@ class ObjectForge extends BaseForge {
 
   newInstance(cfg = null) {
     cfg = cfg || this.defaultValue || {}
-    let theInstance = new EntityBase(this)
+    let theInstance = new EntityBlank(this)
 
     this._createValidateFn(theInstance)
 

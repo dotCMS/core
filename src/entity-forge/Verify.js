@@ -1,5 +1,5 @@
 import XDebug from 'debug';
-let log = XDebug('DC.Verify');
+let log = XDebug('EntityForge.Verify');
 
 /**
  * Lazy Verifiers DO NOT CHECK ASSUMPTIONS before executing the validation logic.

@@ -11,8 +11,9 @@ import {FormBuilder, Validators, ControlGroup} from 'angular2/forms';
 
 import jsonp from 'jsonp'
 
-import {Core, ServerManager, EntityMeta} from '../../coreweb/index.js'
-import {RuleEngineAPI, ruleRepo, ruleGroupRepo, Rule, RuleGroup, RuleStore, actions} from '../../rule-engine/index.js';
+import {Core} from '../../coreweb/index.js'
+import {ConnectionManager, EntityMeta, RestDataStore} from '../../entity-forge/index.js'
+import {Rule, RuleGroup, actions} from '../../rule-engine/index.js';
 
 import "bootstrap/css/bootstrap.css!";
 import "./styles/rule-engine.css!";
@@ -23,6 +24,8 @@ import ruleTemplate from './rule.tpl.html!text'
 import ruleActionTemplate from './rule-action.tpl.html!text'
 import conditionGroupTemplate from './condition-group.tpl.html!text'
 import conditionTemplate from './condition.tpl.html!text'
+
+
 
 let count = 0;
 @Component({
@@ -423,21 +426,20 @@ class RuleEngine {
   constructor() {
     log('Creating RuleEngine component.')
     this.rules = []
-    this.baseUrl = ServerManager.baseUrl;
+    this.baseUrl = ConnectionManager.baseUrl;
     this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
     this.onChange()
-    RuleStore.addChangeListener(this.onChange.bind(this))
   }
 
   updateBaseUrl(value) {
-    let oldUrl = ServerManager.baseUrl
-    ServerManager.baseUrl = value;
+    let oldUrl = ConnectionManager.baseUrl
+    ConnectionManager.baseUrl = value;
     this.baseUrl = value;
     this.testBaseUrl(value).catch((e => {
       alert("Error using provided Base Url. Check the development console.");
       log("Error using provided Base Url: ", e)
       this.baseUrl = oldUrl;
-      ServerManager.baseUrl = oldUrl
+      ConnectionManager.baseUrl = oldUrl
       throw e
     }))
 
@@ -473,7 +475,7 @@ class RuleEngine {
 
   testBaseUrl(baseUrl) {
     return new Promise((resolve, reject) => {
-      RuleStore.init();
+      // get rules.
     })
   }
 }
@@ -520,6 +522,7 @@ let initActionlets = function () {
 
 export function main() {
   log("Bootstrapping rules engine")
+  ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()
   return bootstrap(RuleEngine);

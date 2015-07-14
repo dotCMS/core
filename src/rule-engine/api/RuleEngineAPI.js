@@ -7,7 +7,7 @@ import {Core, Check} from '../../coreweb/index.js';
 import {actions, actionTypes} from '../actions/RuleEngineActionCreators.js';
 import {Rule, RuleGroup} from  './RuleEngineTypes.js';
 
-import {RestDataStore as Storage, EntityMeta} from '../../coreweb/util/RestDataStore.js'
+import {RestDataStore as Storage, EntityMeta} from '../../entity-forge/index.js'
 
 let defaultSiteKey = "48190c8c-42c4-46af-8d1a-0cd5db894797"
 let SERVER_CREATES_KEYS = true
