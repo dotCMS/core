@@ -381,14 +381,13 @@ function doConvertPagesToContent(){
 }
 
 function doConvertPagesToContentCallback(result) {
-	if(result!=null && result=="success") {
+
+	if(result) {
 		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %>';
 	} else {
 		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %>';
 	}
 }
-
-
 
 function doDropAssets(){
    var dateInput = dijit.byId('removeassetsdate');
