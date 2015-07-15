@@ -392,7 +392,7 @@ public class PermissionedWebAssetUtil {
 		permissionRefSQL.append(assetWhereClause).append(" ");
 		if(!userIsAdmin){
 		    if(permissionType.length==1) {
-		        permissionRefSQL.append("AND permission.permission_type = '").append(permissionType).append("' ");
+		        permissionRefSQL.append("AND permission.permission_type = '").append(permissionType[0]).append("' ");
 		    }
 		    else {
 		        permissionRefSQL.append(" AND (");
