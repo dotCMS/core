@@ -7,7 +7,7 @@
     </div>
     <div class="col-sm-3">
       <select class="form-control clause-selector" [value]="actionlet.id" (change)="setActionlet($event.target.value)">
-        <option value="{{actionlet.id}}" *for="var actionlet of actionlets">{{actionlet.name}}</option>
+        <option value="{{actionlet.id}}" *ng-for="var actionlet of actionlets">{{actionlet.name}}</option>
       </select>
     </div>
     <div class="col-sm-2">

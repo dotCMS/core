@@ -1,4 +1,4 @@
-<div class="clause-group-separator" *if="index > 1">
+<div class="clause-group-separator" *ng-if="index > 1">
   <div class="row">
     <div class="col-sm-1">
       <button class="btn btn-default field-operator" (click)="toggleOperator()">
@@ -37,8 +37,6 @@
     </div>
   </div>
   <div class="panel-body collapse" [class.in]="!groupCollapsed">
-    <rule-condition *for="var meta of conditions; var i=index"
-            [condition-meta]="meta">
-    </rule-condition>
+    <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta"> </rule-condition>
   </div>
 </div>

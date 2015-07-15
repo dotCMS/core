@@ -3,11 +3,7 @@
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.ConditionComponent');
 
-import {For, If} from 'angular2/angular2';
-
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
-
+import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 var conditionletsAry = []
 var conditionletsMap = new Map()
@@ -33,16 +29,13 @@ let initConditionlets = function () {
 
 @Component({
   selector: 'rule-condition',
-  properties: {
-    "conditionMeta": "condition-meta"
-  }
+  properties: ["conditionMeta"]
 })
 @View({
   template: RuleEngine.templates.conditionTemplate,
-  directives: [If, For]
+  directives: [NgIf, NgFor]
 })
 class ConditionComponent {
-  idCount:number;
   _conditionMeta:any;
   condition:any;
   conditionValue:string;
@@ -61,8 +54,8 @@ class ConditionComponent {
 
   }
 
-  onChange(snapshot) {
-    log(this.idCount, " Condition's type is ", this.condition);
+  onSetConditionMeta(snapshot) {
+    log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
     this.conditionValue = this.getComparisonValue()
@@ -70,9 +63,9 @@ class ConditionComponent {
 
 
   set conditionMeta(conditionMeta) {
-    log(this.idCount, " Setting conditionMeta: ", conditionMeta.key())
+    log("Setting conditionMeta: ", conditionMeta.key())
     this._conditionMeta = conditionMeta
-    conditionMeta.once('value', this.onChange.bind(this))
+    conditionMeta.once('value', this.onSetConditionMeta.bind(this))
   }
 
   get conditionMeta() {

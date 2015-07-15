@@ -3,23 +3,19 @@
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.ConditionGroupComponent');
 
-import {For, If} from 'angular2/angular2';
-
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
-
-import {ConditionComponent} from './condition-component.ts';
+import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {ConditionComponent} from './rule-condition-component.ts';
 
 @Component({
   selector: 'condition-group',
-  properties: {
-    "rule": "rule",
-    "groupSnap": "group-snap"
-  }
+  properties: [
+    "rule",
+    "groupSnap"
+  ]
 })
 @View({
   template: RuleEngine.templates.conditionGroupTemplate,
-  directives: [ConditionComponent, If, For]
+  directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
   _groupSnap:any;

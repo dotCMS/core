@@ -2,23 +2,19 @@
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.RuleComponent');
-import {For, If} from 'angular2/angular2';
 
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
+import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 import {RuleActionComponent} from './rule-action-component.ts';
-import {ConditionGroupComponent} from './condition-group-component.ts';
+import {ConditionGroupComponent} from './rule-condition-group-component.ts';
 
 @Component({
   selector: 'rule',
-  properties: {
-    "ruleSnap": "rule-snap"
-  }
+  properties: ["ruleSnap"]
 })
 @View({
   template: RuleEngine.templates.ruleTemplate,
-  directives: [RuleActionComponent, ConditionGroupComponent, If, For]
+  directives: [RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
 })
 class RuleComponent {
   rule:any;

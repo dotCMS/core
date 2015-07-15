@@ -1,16 +1,15 @@
+/// <reference path="../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../typings/debug/debug.d.ts" />
+/// <reference path="../../../typings/es6-promise/es6-promise.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.RuleEngineComponent');
 
-
-import {bootstrap, For, If} from 'angular2/angular2';
-
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
+import {bootstrap, NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 import {initActionlets} from './rule-action-component.ts';
-import {initConditionlets} from './condition-component.ts';
+import {initConditionlets} from './rule-condition-component.ts';
 import {RuleComponent} from './rule-component.ts';
 
 
@@ -19,7 +18,7 @@ import {RuleComponent} from './rule-component.ts';
 })
 @View({
   template: RuleEngine.templates.ruleEngineTemplate,
-  directives: [RuleComponent, For, If]
+  directives: [RuleComponent, NgFor, NgIf]
 })
 class RuleEngineComponent {
   rules:Array<any>;

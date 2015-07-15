@@ -1,13 +1,13 @@
-import 'zone.js'
+//import 'zone.js'
 import XDebug from 'debug'
 
 import 'reflect-metadata';
 
 import ruleEngineTemplate from './src/rule-engine-view/app/rule-engine.tpl.html!text'
-import ruleTemplate from './src/rule-engine-view/app/rule.tpl.html!text'
-import ruleActionTemplate from './src/rule-engine-view/app/rule-action.tpl.html!text'
-import conditionGroupTemplate from './src/rule-engine-view/app/condition-group.tpl.html!text'
-import conditionTemplate from './src/rule-engine-view/app/condition.tpl.html!text'
+import ruleTemplate from './src/rule-engine-view/app/rule-component.tpl.html!text'
+import ruleActionTemplate from './src/rule-engine-view/app/rule-action-component.tpl.html!text'
+import conditionGroupTemplate from './src/rule-engine-view/app/rule-condition-group-component.tpl.html!text'
+import conditionTemplate from './src/rule-engine-view/app/rule-condition-component.tpl.html!text'
 
 var templates = {
   ruleEngineTemplate: ruleEngineTemplate,

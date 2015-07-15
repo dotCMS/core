@@ -3,11 +3,7 @@
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.RuleActionComponent');
 
-import {For, If} from 'angular2/angular2';
-
-import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
-import {View} from 'angular2/src/core/annotations_impl/view';
-
+import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 var actionletsAry = []
 var actionletsMap = new Map()
 var actionletsPromise;
@@ -30,13 +26,11 @@ export let initActionlets = function () {
 }
 @Component({
   selector: 'rule-action',
-  properties: {
-    "actionMeta": "action-meta"
-  }
+  properties: ["actionMeta"]
 })
 @View({
   template: RuleEngine.templates.ruleActionTemplate,
-  directives: [If, For],
+  directives: [NgIf, NgFor],
 })
 export class RuleActionComponent {
   _actionMeta:any;
@@ -57,8 +51,8 @@ export class RuleActionComponent {
   }
 
 
-  onChange(snapshot){
-    log("Action's type is ", this.action);
+  onSetActionMeta(snapshot){
+    log("Action's type is ", this.action, snapshot);
     this.action = snapshot.val()
     this.actionlet = actionletsMap.get(this.action.actionlet)
     log('Loaded action with actionlet: ', this.actionlet)
@@ -68,7 +62,7 @@ export class RuleActionComponent {
   set actionMeta(actionMeta) {
     log("Setting actionMeta: ", actionMeta.key())
     this._actionMeta = actionMeta
-    this._actionMeta.once('value', this.onChange.bind(this))
+    this._actionMeta.once('value', this.onSetActionMeta.bind(this))
   }
 
   get actionMeta() {
