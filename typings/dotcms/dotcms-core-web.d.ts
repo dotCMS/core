@@ -1,4 +1,5 @@
 declare module RuleEngine {
+  var templates:any;
   class Rule{
     name:string;
     enabled:boolean;

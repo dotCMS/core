@@ -20,10 +20,12 @@ var templates = {
 import {Core, Rule, RuleGroup, ConnectionManager, EntityMeta, RestDataStore} from './src/index.js'
 
 Object.assign(window, {
+
   Core,
   RuleEngine: {
     Rule,
-    RuleGroup
+    RuleGroup,
+    templates
   },
   ConnectionManager, EntityMeta, RestDataStore
 })

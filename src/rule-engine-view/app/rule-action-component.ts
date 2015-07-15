@@ -1,19 +1,12 @@
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-
-
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.RuleActionComponent');
 
-
-import {bootstrap, For, If} from 'angular2/angular2';
+import {For, If} from 'angular2/angular2';
 
 import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
 import {View} from 'angular2/src/core/annotations_impl/view';
-
-import ruleActionTemplate from './rule-action.tpl.html!text'
-
-let count = 0;
 
 var actionletsAry = []
 var actionletsMap = new Map()
@@ -42,11 +35,10 @@ export let initActionlets = function () {
   }
 })
 @View({
-  template: ruleActionTemplate,
+  template: RuleEngine.templates.ruleActionTemplate,
   directives: [If, For],
 })
 export class RuleActionComponent {
-  idCount:number;
   _actionMeta:any;
   action:any;
   actionValue:string;
@@ -54,10 +46,9 @@ export class RuleActionComponent {
   actionlets:Array;
 
   constructor() {
-    this.idCount = count;
-    log('Creating actionComponent: ', count++)
+    log('Creating actionComponent')
     this.actionlets = []
-    actionletsPromise.then((result)=>{
+    actionletsPromise.then(()=> {
       this.actionlets = actionletsAry
     })
     this.action = {}
@@ -67,7 +58,7 @@ export class RuleActionComponent {
 
 
   onChange(snapshot){
-    log(this.idCount, " action's type is ", this.action);
+    log("Action's type is ", this.action);
     this.action = snapshot.val()
     this.actionlet = actionletsMap.get(this.action.actionlet)
     log('Loaded action with actionlet: ', this.actionlet)
@@ -75,7 +66,7 @@ export class RuleActionComponent {
 
 
   set actionMeta(actionMeta) {
-    log(this.idCount, " Setting actionMeta: ", actionMeta.key())
+    log("Setting actionMeta: ", actionMeta.key())
     this._actionMeta = actionMeta
     this._actionMeta.once('value', this.onChange.bind(this))
   }
