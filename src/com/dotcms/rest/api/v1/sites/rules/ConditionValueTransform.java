@@ -17,5 +17,12 @@ public class ConditionValueTransform {
         app.setValue(rest.value);
         return app;
     };
+
+    public ConditionValue applyRestToApp(RestConditionValue rest, ConditionValue app) {
+        app.setId(rest.id);
+        app.setPriority(rest.priority);
+        app.setValue(rest.value);
+        return app;
+    }
 }
 

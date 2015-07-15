@@ -11,27 +11,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserHeaderConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCityConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersCurrentUrlConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersDateTimeConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersHostConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersIpAddressConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersLandingPageUrlConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersLanguageConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersLogInConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersOperatingSystemConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPageVisitsConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersReferringUrlConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersStateConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersTimeConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersUrlParameterConditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.UsersVisitedUrlConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
@@ -80,6 +60,7 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(UsersTimeConditionlet.class)
                          .add(UsersUrlParameterConditionlet.class)
                          .add(UsersVisitedUrlConditionlet.class)
+                         .add(MockTrueConditionlet.class)
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
             ImmutableList.<Class<? extends RuleActionlet>>builder()
@@ -377,8 +358,8 @@ public class RulesAPIImpl implements RulesAPI {
         condition = checkNotNull(condition, "Condition is required.");
 
         ConditionGroup group = checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
-                                                   "Invalid ConditionGroup specified: %s",
-                                                   condition.getConditionGroup());
+                "Invalid ConditionGroup specified: %s",
+                condition.getConditionGroup());
 
         Rule rule = rulesFactory.getRuleById(group.getRuleId()); // Can only be null if there is a schema integrity failure.
 
@@ -387,6 +368,26 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveCondition(condition);
+    }
+
+    public void saveConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        conditionValue = checkNotNull(conditionValue, "Condition Value is required.");
+
+        Condition condition = checkNotNull(getConditionById(conditionValue.getConditionId(), user, true),
+                "Invalid Condition specified: %s",
+                conditionValue.getConditionId());
+
+        ConditionGroup group = checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+                "Invalid ConditionGroup specified: %s",
+                condition.getConditionGroup());
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId()); // Can only be null if there is a schema integrity failure.
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its conditions ");
+        }
+
+        rulesFactory.saveConditionValue(conditionValue);
     }
 
     public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {

@@ -43,6 +43,8 @@ public interface RulesFactory {
 
     void saveCondition(Condition condition) throws DotDataException;
 
+    void saveConditionValue(ConditionValue conditionValue) throws DotDataException;
+
     void saveRuleAction(RuleAction ruleAction) throws DotDataException;
 
     void deleteRule(Rule rule) throws DotDataException;

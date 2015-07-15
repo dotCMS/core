@@ -68,7 +68,7 @@ public class RulesAPITest extends TestBase {
         HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
         client.register(feature);
 
-        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/v1/rules-engine");
+        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/v1");
 
         final String modifiedRuleName = "testRuleModified";
         final String modifiedConditionName = "testConditionModified";
@@ -109,17 +109,18 @@ public class RulesAPITest extends TestBase {
         conditionJSON.put("conditionlet", UsersCountryConditionlet.class.getSimpleName());
         conditionJSON.put("comparison", "is");
         conditionJSON.put("operator", Condition.Operator.AND.name());
+        conditionJSON.put("owningGroup", groupId);
 
         JSONObject valueJSON = new JSONObject();
         valueJSON.put("value", "FR");
         valueJSON.put("priority", 0);
 
-        JSONArray valuesJSON = new JSONArray();
-        valuesJSON.add(valueJSON);
+        JSONObject valuesJSON = new JSONObject();
+        valuesJSON.put("123", valueJSON);
 
         conditionJSON.put("values", valuesJSON);
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(conditionJSON.toString()));
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(conditionJSON.toString()));
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -134,7 +135,7 @@ public class RulesAPITest extends TestBase {
         actionJSON.put("name", "myTestRuleAction");
         actionJSON.put("actionlet", "TestActionlet");
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(actionJSON.toString()));
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(actionJSON.toString()));
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -175,7 +176,6 @@ public class RulesAPITest extends TestBase {
 
         conditionJSON = new JSONObject();
         conditionJSON.put("name", modifiedConditionName);
-        conditionJSON.put("ruleId", ruleId);
         conditionJSON.put("conditionGroupId", groupId);
         conditionJSON.put("conditionlet", UsersCountryConditionlet.class.getSimpleName());
         conditionJSON.put("comparison", "is");
@@ -187,12 +187,12 @@ public class RulesAPITest extends TestBase {
         valueJSON.put("value", "VE");
         valueJSON.put("priority", 0);
 
-        valuesJSON = new JSONArray();
-        valuesJSON.add(valueJSON);
+        valuesJSON = new JSONObject();
+        valuesJSON.put("123", valueJSON);
 
         conditionJSON.put("values", valuesJSON);
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(conditionJSON.toString()));
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(conditionJSON.toString()));
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -208,7 +208,7 @@ public class RulesAPITest extends TestBase {
         actionJSON.put("ruleId", ruleId);
         actionJSON.put("priority", 10);
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(actionJSON.toString()));
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(actionJSON.toString()));
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -238,7 +238,7 @@ public class RulesAPITest extends TestBase {
 
         // Get Conditions
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions").request(MediaType.APPLICATION_JSON_TYPE).get();
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions").request(MediaType.APPLICATION_JSON_TYPE).get();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -249,7 +249,7 @@ public class RulesAPITest extends TestBase {
 
         // Get Condition
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).get();
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).get();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -271,7 +271,7 @@ public class RulesAPITest extends TestBase {
 
         // Delete Condition
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -289,7 +289,7 @@ public class RulesAPITest extends TestBase {
 
         // Delete Rule Action
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/actions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 

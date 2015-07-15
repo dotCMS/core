@@ -396,7 +396,6 @@ public class RulesFactoryImpl implements RulesFactory {
             condition.setId(UUIDGenerator.generateUuid());
         }
 
-        HibernateUtil.startTransaction();
         final DotConnect db = new DotConnect();
 
         try {
@@ -452,7 +451,60 @@ public class RulesFactoryImpl implements RulesFactory {
             }
 
             cache.addCondition(condition.getConditionGroup(), condition);
-            HibernateUtil.commitTransaction();
+
+        } catch (DotDataException e) {
+            try {
+                HibernateUtil.rollbackTransaction();
+            } catch (DotHibernateException e1) {
+                Logger.warn(this, e1.getMessage(), e1);
+            }
+
+            throw e;
+        }
+
+
+    }
+
+
+    @Override
+    public void saveConditionValue(ConditionValue conditionValue) throws DotDataException {
+
+        boolean isNew = true;
+        if (UtilMethods.isSet(conditionValue.getId())) {
+            try {
+                if (getConditionById(conditionValue.getId()) != null) {
+                    isNew = false;
+                }
+            } catch (final Exception e) {
+                Logger.debug(this.getClass(), e.getMessage(), e);
+            }
+        } else {
+            conditionValue.setId(UUIDGenerator.generateUuid());
+        }
+
+        final DotConnect db = new DotConnect();
+
+        try {
+            if (isNew) {
+
+                db.setSQL(sql.INSERT_CONDITION_VALUE);
+                db.addParam(conditionValue.getId());
+                db.addParam(conditionValue.getConditionId());
+                db.addParam(conditionValue.getValue());
+                db.addParam(conditionValue.getPriority());
+                db.loadResult();
+
+            } else {
+                db.setSQL(sql.UPDATE_CONDITION_VALUE);
+                db.addParam(conditionValue.getConditionId());
+                db.addParam(conditionValue.getValue());
+                db.addParam(conditionValue.getPriority());
+                db.addParam(conditionValue.getId());
+                db.loadResult();
+//                cache.removeConditionV(condition.getConditionGroup(), condition);
+            }
+
+//            cache.addCondition(conditionValue.getConditionGroup(), condition);
 
         } catch (DotDataException e) {
             try {
