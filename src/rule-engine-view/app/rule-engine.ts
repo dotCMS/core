@@ -1,3 +1,7 @@
+/// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
+/// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
+
+
 import XDebug from 'debug';
 let log = XDebug('RuleEngineView.RuleEngineComponent');
 
@@ -6,25 +10,11 @@ import {bootstrap, For, If} from 'angular2/angular2';
 
 import {Component, Directive} from 'angular2/src/core/annotations_impl/annotations';
 import {View} from 'angular2/src/core/annotations_impl/view';
-
-import {FormBuilder, Validators, ControlGroup} from 'angular2/forms';
-
 import jsonp from 'jsonp'
 
-import {Core} from '../../coreweb/index.js'
-import {ConnectionManager, EntityMeta, RestDataStore} from '../../entity-forge/index.js'
-import {Rule, RuleGroup, actions} from '../../rule-engine/index.js';
+import {RuleActionComponent, initActionlets} from './rule-action-component.ts';
 
-import "bootstrap/css/bootstrap.css!";
-import "./styles/rule-engine.css!";
-import "./styles/theme-dark.css!";
-
-import ruleEngineTemplate from './rule-engine.tpl.html!text'
-import ruleTemplate from './rule.tpl.html!text'
-import ruleActionTemplate from './rule-action.tpl.html!text'
-import conditionGroupTemplate from './condition-group.tpl.html!text'
-import conditionTemplate from './condition.tpl.html!text'
-
+var templates:any;
 
 
 let count = 0;
@@ -35,7 +25,7 @@ let count = 0;
   }
 })
 @View({
-  template: conditionTemplate,
+  template: templates.conditionTemplate,
   directives: [If, For]
 })
 class ConditionComponent {
@@ -44,13 +34,13 @@ class ConditionComponent {
   condition:any;
   conditionValue:string;
   conditionlet:any;
-  conditionlets:Array;
+  conditionlets:Array<any>;
 
   constructor() {
     this.idCount = count;
     log('Creating ConditionComponent: ', count++)
     this.conditionlets = []
-    conditionletsPromise.then((result)=>{
+    conditionletsPromise.then(()=>{
       this.conditionlets = conditionletsAry
     })
     this.condition = {}
@@ -140,7 +130,7 @@ class ConditionComponent {
   }
 })
 @View({
-  template: conditionGroupTemplate,
+  template: templates.conditionGroupTemplate,
   directives: [ConditionComponent, If, For]
 })
 class ConditionGroupComponent {
@@ -148,7 +138,7 @@ class ConditionGroupComponent {
   group:any;
   rule:any;
   groupCollapsed:boolean;
-  conditions:Array;
+  conditions:Array<any>;
 
   constructor() {
     log('Creating ConditionGroupComponent')
@@ -220,87 +210,14 @@ class ConditionGroupComponent {
 
 }
 
-
-@Component({
-  selector: 'rule-action',
-  properties: {
-    "actionMeta": "action-meta"
-  }
-})
-@View({
-  template: ruleActionTemplate,
-  directives: [If, For],
-})
-class RuleActionComponent {
-  idCount:number;
-  _actionMeta:any;
-  action:any;
-  actionValue:string;
-  actionlet:any;
-  actionlets:Array;
-
-  constructor() {
-    this.idCount = count;
-    log('Creating actionComponent: ', count++)
-    this.actionlets = []
-    actionletsPromise.then((result)=>{
-      this.actionlets = actionletsAry
-    })
-    this.action = {}
-    this.actionValue = ''
-    this.actionlet = {}
-  }
-
-
-  onChange(snapshot){
-    log(this.idCount, " action's type is ", this.action);
-    this.action = snapshot.val()
-    this.actionlet = actionletsMap.get(this.action.actionlet)
-    log('Loaded action with actionlet: ', this.actionlet)
-  }
-
-
-  set actionMeta(actionMeta) {
-    log(this.idCount, " Setting actionMeta: ", actionMeta.key())
-    this._actionMeta = actionMeta
-    this._actionMeta.once('value', this.onChange.bind(this))
-  }
-
-  get actionMeta() {
-    return this._actionMeta;
-  }
-
-  setActionlet(actionletId){
-    log('Setting actionlet id to: ', actionletId)
-    this.action.actionlet = actionletId
-    this.actionlet =  actionletsMap.get(this.action.actionlet)
-    this.updateAction()
-  }
-
-
-  updateAction() {
-    log('Updating RuleAction: ', this.action)
-    this.actionMeta.set(this.action)
-
-  }
-
-  removeRuleAction() {
-    this.actionMeta.remove()
-  }
-}
-
-
 @Component({
   selector: 'rule',
   properties: {
     "ruleSnap": "rule-snap"
-  },
-  injectables: [
-    FormBuilder
-  ]
+  }
 })
 @View({
-  template: ruleTemplate,
+  template: templates.ruleTemplate,
   directives: [RuleActionComponent, ConditionGroupComponent, If, For]
 })
 class RuleComponent {
@@ -308,8 +225,8 @@ class RuleComponent {
   _ruleSnap:any;
   collapsed:boolean;
   fireOnDropDownExpanded:boolean;
-  ruleGroups:Array;
-  ruleActions:Array;
+  ruleGroups:Array<any>;
+  ruleActions:Array<any>;
 
 
   constructor() {
@@ -395,7 +312,7 @@ class RuleComponent {
 
   removeRule() {
     this.ruleSnap.ref().remove().then((x) => {
-      actions.update(x)
+      // update
     }).catch((e) => {
       log("Not yay :~(: ", e)
       throw e
@@ -415,11 +332,11 @@ class RuleComponent {
   selector: 'rule-engine'
 })
 @View({
-  template: ruleEngineTemplate,
+  template: templates.ruleEngineTemplate,
   directives: [For, RuleComponent, If]
 })
-class RuleEngine {
-  rules:Array;
+class RuleEngineComponent {
+  rules:Array<any>;
   baseUrl:string;
   rulesRef:EntityMeta;
 
@@ -462,7 +379,7 @@ class RuleEngine {
 
   addRule() {
     log("Adding Rule")
-    let testRule = new Rule();
+    let testRule = new RuleEngine.Rule();
     testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
     testRule.enabled = true
     testRule.priority = 10
@@ -484,9 +401,6 @@ var conditionletsAry = []
 var conditionletsMap = new Map()
 var conditionletsPromise;
 
-var actionletsAry = []
-var actionletsMap = new Map()
-var actionletsPromise;
 
 let initConditionlets = function () {
   let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
@@ -504,26 +418,12 @@ let initConditionlets = function () {
   });
 }
 
-let initActionlets = function () {
-  let actionletsRef:EntityMeta = new EntityMeta('/api/v1/system/ruleengine/actionlets')
-  actionletsPromise = new Promise((resolve, reject) => {
-    actionletsRef.once('value').then((snap) => {
-      let actionlets = snap['val']()
-      let results = (Object.keys(actionlets).map((key) => {
-        actionletsMap.set(key, actionlets[key])
-        return actionlets[key]
-      }))
 
-      Array.prototype.push.apply(actionletsAry,results);
-      resolve(snap);
-    })
-  });
-}
-
-export function main() {
+export function main(providedTemplates:any) {
+  templates = providedTemplates;
   log("Bootstrapping rules engine")
   ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()
-  return bootstrap(RuleEngine);
+  return bootstrap(RuleEngineComponent);
 }

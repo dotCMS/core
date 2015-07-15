@@ -1,25 +1,40 @@
 import 'zone.js'
-import * as XDebug from 'debug'
+import XDebug from 'debug'
 
 import 'reflect-metadata';
-import * as Core from './src/coreweb/index.js';
-import * as RuleEngine from 'src/rule-engine-view/index.js';
-import * as logConfig from 'src/rule-engine-view/log-config.js';
-import {mocks} from 'src/rule-engine/datamocks/rule.mocks.js';
-export let dot = {
-  XDebug: XDebug.default,
-  Core,
-  RuleEngine
+
+import ruleEngineTemplate from './src/rule-engine-view/app/rule-engine.tpl.html!text'
+import ruleTemplate from './src/rule-engine-view/app/rule.tpl.html!text'
+import ruleActionTemplate from './src/rule-engine-view/app/rule-action.tpl.html!text'
+import conditionGroupTemplate from './src/rule-engine-view/app/condition-group.tpl.html!text'
+import conditionTemplate from './src/rule-engine-view/app/condition.tpl.html!text'
+
+var templates = {
+  ruleEngineTemplate: ruleEngineTemplate,
+  ruleTemplate: ruleTemplate,
+  ruleActionTemplate: ruleActionTemplate,
+  conditionGroupTemplate: conditionGroupTemplate,
+  conditionTemplate: conditionTemplate
 }
 
-var root = dot
+import {Core, Rule, RuleGroup, ConnectionManager, EntityMeta, RestDataStore} from './src/index.js'
 
-root.XDebug.disable() // Clear LocalStorage so changes to log-config files 'take'
-root.XDebug.enable("*, .*") // String of comma separated regex. Not glob patterns.
-mocks.init().then(function () {
-  root.RuleEngine.main().then(function () {
-    console.log("Loaded rule-engine component.")
-  });
+Object.assign(window, {
+  Core,
+  RuleEngine: {
+    Rule,
+    RuleGroup
+  },
+  ConnectionManager, EntityMeta, RestDataStore
+})
+
+import * as RuleEngineView from 'src/rule-engine-view/index.js';
+
+XDebug.disable() // Clear LocalStorage so changes to log-config files 'take'
+XDebug.enable("*, .*") // String of comma separated regex. Not glob patterns.
+
+RuleEngineView.main(templates).then(function () {
+  console.log("Loaded rule-engine component.")
 });
 
 console.log("Loading rule-engine component.")
