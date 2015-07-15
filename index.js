@@ -1,4 +1,3 @@
-//import 'zone.js'
 import XDebug from 'debug'
 
 import 'reflect-metadata';
