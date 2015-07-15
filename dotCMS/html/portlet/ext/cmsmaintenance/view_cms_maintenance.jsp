@@ -374,8 +374,8 @@ function doDeletePushedAssetsCallback(result) {
 
 function doConvertPagesToContent(){
 	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-migrate-pages") %>")){
-		 	$("convertPagesMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></font>';
-		 	$("convertPagesButton").disabled = true;
+			$("convertPagesMessage").innerHTML= '<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-migrating-pages") %></b></spanstyle>';
+			dijit.byId("convertPagesButton").attr('disabled', true);
 			CMSMaintenanceAjax.migrateHTMLPagesToContent(doConvertPagesToContentCallback);
 		}
 }
@@ -383,10 +383,11 @@ function doConvertPagesToContent(){
 function doConvertPagesToContentCallback(result) {
 
 	if(result) {
-		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %>';
+		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-were-succesfully-converted")) %></b></spanstyle>';
 	} else {
-		document.getElementById("convertPagesMessage").innerHTML='<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %>';
+		document.getElementById("convertPagesMessage").innerHTML='<spanstyle="font-family: Arial; font-size: x-small; color: #ff0000><b><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"htmlpages-could-not-be-converted")) %></b></spanstyle>';
 	}
+	dijit.byId("convertPagesButton").attr('disabled', false);
 }
 
 function doDropAssets(){
