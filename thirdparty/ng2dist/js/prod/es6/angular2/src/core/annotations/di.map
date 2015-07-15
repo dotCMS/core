@@ -1,1 +1,0 @@
-{"version":3,"sources":["di.es6"],"names":[],"mappings":"AAAA,KAAO,CAAA,CACL,wBAAuB,CACvB,iCAA+B,CACjC,KAAO,yBAAuB,CAAC;AAAA","file":"angular2/src/core/annotations/di.es6","sourcesContent":["export {\n  Query as QueryAnnotation,\n  Attribute as AttributeAnnotation,\n} from '../annotations_impl/di';\n"]}
