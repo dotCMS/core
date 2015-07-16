@@ -301,7 +301,7 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                         req.execute().actionGet();
 
                 } catch (Exception e) {
-                    Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
+					throw new RuntimeException(e);
                 }
             }
         };
@@ -348,7 +348,8 @@ public class ESContentletIndexAPI implements ContentletIndexAPI{
                 }
             }
             catch(DotMappingException ex) {
-                Logger.error(this, "Can't get a mapping for contentlet with id_lang:"+id+" Content data: "+con.getMap(), ex);
+				Logger.error(this, "Can't get a mapping for contentlet with id_lang:" + id + " Content data: " + con.getMap(), ex);
+				throw ex;
             }
         }
 		
