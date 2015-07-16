@@ -293,14 +293,14 @@ public class ReindexThread extends Thread {
 							recordsToDelete.add(idx);
 
 							//If the REINDEX_SLEEP_DURING_INDEX was set
-    				        if(reindexSleepDuringIndex){
-	    				        try {
+							if ( reindexSleepDuringIndex ) {
+								try {
 									int sleepTime = getReindexSleepDuringIndexTime();
 									Thread.sleep(sleepTime);
-	    						} catch (InterruptedException e) {
-	    							Logger.error(this, e.getMessage(), e);
-	    						}
-    				        }
+								} catch ( InterruptedException e ) {
+									Logger.error(this, e.getMessage(), e);
+								}
+							}
 
 						}
 
@@ -541,7 +541,7 @@ public class ReindexThread extends Thread {
 	/**
 	 * Tells the thread to start processing. Starts the thread
 	 */
-	public synchronized static void startThread(int sleep, int delay) {
+	public synchronized static void startThread ( int sleep, int delay ) {
 
 		Logger.info(ReindexThread.class, "ContentIndexationThread ordered to start processing");
 
