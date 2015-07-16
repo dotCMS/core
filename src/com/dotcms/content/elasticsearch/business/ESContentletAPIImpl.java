@@ -1659,6 +1659,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             // then we let the reindexThread start working
             ReindexThread.getInstance().unlockCluster();
+            //Make sure all the flags are on and the thread is ready
+            ReindexThread.startThread(Config.getIntProperty("REINDEX_THREAD_SLEEP", 500), Config.getIntProperty("REINDEX_THREAD_INIT_DELAY", 5000));
 
             HibernateUtil.commitTransaction();
 
@@ -4648,8 +4650,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
             for (RegExMatch match: matches) {
                 urlMapField = match.getMatch();
                 urlMapFieldValue = contentlet.getStringProperty(urlMapField.substring(1, (urlMapField.length() - 1)));
-                urlMapField = urlMapField.replaceFirst("\\{", "\\\\{");
-                urlMapField = urlMapField.replaceFirst("\\}", "\\\\}");
+
+                //Clean up the contents before to replace the values
+                urlMapFieldValue = sanitizeForURLMap(urlMapFieldValue);
+                urlMapField = sanitizeForURLMap(urlMapField);
+
                 if (UtilMethods.isSet(urlMapFieldValue)){
                 	result = result.replaceAll(urlMapField, urlMapFieldValue);
                 }
@@ -4689,6 +4694,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         return result;
+    }
+
+    /**
+     * Sanitizes a given value in order to be properly use when replacing url mapping values
+     *
+     * @param value
+     * @return
+     */
+    private String sanitizeForURLMap ( String value ) {
+
+        if ( UtilMethods.isSet(value) ) {
+            value = value.replaceFirst("\\{", "\\\\{");
+            value = value.replaceFirst("\\}", "\\\\}");
+            value = value.replaceFirst("\\$", "\\\\\\$");
+        }
+
+        return value;
     }
 
     public Contentlet saveDraft(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws IllegalArgumentException,DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException{

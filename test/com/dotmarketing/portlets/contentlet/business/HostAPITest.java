@@ -172,14 +172,17 @@ public class HostAPITest {
         /*
          * Delete the new test host
          */
+        Thread.sleep(600); // wait a bit for the index
         try{
         	HibernateUtil.startTransaction();
+        	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
         	HibernateUtil.commitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
+        Thread.sleep(600); // wait a bit for the index
         /*
          * Validate if the current Original default host is the current default one
          */

@@ -44,14 +44,14 @@ public abstract class DistributedJournalFactory<T> {
 	 * @param key
 	 * @throws DotDataException
 	 */
-	protected abstract void addCacheEntry(String key, String group) throws DotDataException; 
-	
+	protected abstract void addCacheEntry(String key, String group) throws DotDataException;
+
 	/**
 	 * Will return only the reindex entries for the specific server the code is executed on
 	 * @return
 	 * @throws DotDataException
 	 */
-	protected abstract List<IndexJournal<T>> findContentReindexEntriesToReindex() throws DotDataException;
+	protected abstract List<IndexJournal<T>> findContentReindexEntriesToReindex () throws DotDataException;
 	
 	/**
 	 * Will delete all content reindex entries for a specific serverId less then the id passed in 
@@ -95,7 +95,16 @@ public abstract class DistributedJournalFactory<T> {
 	protected abstract void addStructureReindexEntries(T structureInode) throws DotDataException;
 
 	/**
-	 * Deletes the specific build new index entry for the local server.  
+	 * Resets the server id to NULL to a list of failed records, setting the server id to NULL for
+	 * a record in the dist_reindex_journal means the record will be added back to the queue of record to process.
+	 *
+	 * @param recordsToModify
+	 * @throws DotDataException
+	 */
+	protected abstract void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException;
+
+	/**
+	 * Deletes the specific build new index entry for the local server.
 	 * This is intended to be called after a switch of the index.
 	 * @throws DotDataException
 	 */
