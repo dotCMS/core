@@ -289,15 +289,21 @@ public class ReindexThread extends Thread {
 								 */
 								continue;
 							}
+
 							recordsToDelete.add(idx);
-    				        if(reindexSleepDuringIndex){
-	    				        try {
-	    							Thread.sleep(delay);
-	    						} catch (InterruptedException e) {
-	    							Logger.error(this, e.getMessage(), e);
-	    						}
-    				        }
+
+							//If the REINDEX_SLEEP_DURING_INDEX was set
+							if ( reindexSleepDuringIndex ) {
+								try {
+									int sleepTime = getReindexSleepDuringIndexTime();
+									Thread.sleep(sleepTime);
+								} catch ( InterruptedException e ) {
+									Logger.error(this, e.getMessage(), e);
+								}
+							}
+
 						}
+
 						HibernateUtil.closeSession();
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
@@ -535,14 +541,13 @@ public class ReindexThread extends Thread {
 	/**
 	 * Tells the thread to start processing. Starts the thread
 	 */
-	public synchronized static void startThread(int sleep, int delay) {
-		Logger.info(ReindexThread.class,
-				"ContentIndexationThread ordered to start processing");
+	public synchronized static void startThread ( int sleep, int delay ) {
 
-		if (instance == null) {
-			instance = new ReindexThread();
-			instance.start();
-		}
+		Logger.info(ReindexThread.class, "ContentIndexationThread ordered to start processing");
+
+		//Creates and starts a thread
+		createThread();
+
 		instance.startProcessing(sleep, delay);
 	}
 
