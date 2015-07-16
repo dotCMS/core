@@ -814,7 +814,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 						   '	</td>\n' +
 						   '	<td class="menuTD" id="' + asset.inode + '-MenuTD">\n' +
 						   '   		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
-				if (asset.showOnMenu > 0) {
+				if (asset.showOnMenu) {
 					html = html + '>';
 				}
 				else {
@@ -892,7 +892,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 							'		<span id="' + asset.inode + '-ShowOnMenuSPAN"';
 							
 							
-				if (asset.showOnMenu > 0) {
+				if (asset.showOnMenu || asset.showOnMenu == 'true') {
 					html = html + '>';
 				}
 				else {
