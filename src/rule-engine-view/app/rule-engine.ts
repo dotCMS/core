@@ -1,16 +1,18 @@
+/// <reference path="../../../typings/es6/lib.es6.d.ts" />
+
 /// <reference path="../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../typings/debug/debug.d.ts" />
-/// <reference path="../../../typings/es6-promise/es6-promise.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-import XDebug from 'debug';
-let log = XDebug('RuleEngineView.RuleEngineComponent');
+
+/// <reference path="./rule-action-component.ts" />
+/// <reference path="./rule-condition-component.ts" />
+/// <reference path="./rule-component.ts" />
 
 import {bootstrap, NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
-import {initActionlets} from './rule-action-component.ts';
-import {initConditionlets} from './rule-condition-component.ts';
-import {RuleComponent} from './rule-component.ts';
+import {initActionlets} from './rule-action-component';
+import {initConditionlets} from './rule-condition-component';
+import {RuleComponent} from './rule-component';
 
 
 @Component({
@@ -26,7 +28,7 @@ class RuleEngineComponent {
   rulesRef:EntityMeta;
 
   constructor() {
-    log('Creating RuleEngine component.')
+    console.log('Creating RuleEngine component.')
     this.rules = []
     this.baseUrl = ConnectionManager.baseUrl;
     this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
@@ -39,7 +41,7 @@ class RuleEngineComponent {
     this.baseUrl = value;
     this.testBaseUrl(value).catch((e => {
       alert("Error using provided Base Url. Check the development console.");
-      log("Error using provided Base Url: ", e)
+      console.log("Error using provided Base Url: ", e)
       this.baseUrl = oldUrl;
       ConnectionManager.baseUrl = oldUrl
       throw e
@@ -48,7 +50,7 @@ class RuleEngineComponent {
   }
 
   onChange(event = null) {
-    log("RuleEngine change event: ", event)
+    console.log("RuleEngine change event: ", event)
     this.rulesRef.once('value', (rulesSnap) => {
       this.rules = []
       if (rulesSnap && rulesSnap.forEach) {
@@ -63,7 +65,7 @@ class RuleEngineComponent {
   }
 
   addRule() {
-    log("Adding Rule")
+    console.log("Adding Rule, yo")
     let testRule = new RuleEngine.Rule();
     testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
     testRule.enabled = true
@@ -84,7 +86,7 @@ class RuleEngineComponent {
 
 
 export function main() {
-  log("Bootstrapping rules engine")
+  console.log("Bootstrapping rules engine")
   ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()

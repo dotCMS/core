@@ -9,14 +9,15 @@ System.config({
     "types": true
   },
   "paths": {
-    "src/*": "src/*",
+    "*": "*.js",
+    "src/*": "build/*.js",
+    "src/*.js": "src/*.js",
     "*.css": "*.css",
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*.js",
     "npm:*": "jspm_packages/npm/*.js",
     "angular2/*": "thirdparty/ng2dist/2.0.0-alpha.31/*.dev.js",
-    "rtts_assert/*": "thirdparty/ng2dist/js/prod/es6/rtts_assert/*.es6",
-    "*": "*.js"
+    "rtts_assert/*": "thirdparty/ng2dist/js/prod/es6/rtts_assert/*.es6"
   },
   "defaultJSExtensions": true
 });

@@ -1,12 +1,14 @@
+/// <reference path="../../../typings/es6/lib.es6.d.ts" />
+
+/// <reference path="../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-import XDebug from 'debug';
-let log = XDebug('RuleEngineView.RuleComponent');
+
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
-import {RuleActionComponent} from './rule-action-component.ts';
-import {ConditionGroupComponent} from './rule-condition-group-component.ts';
+import {RuleActionComponent} from './rule-action-component';
+import {ConditionGroupComponent} from './rule-condition-group-component';
 
 @Component({
   selector: 'rule',
@@ -26,7 +28,7 @@ class RuleComponent {
 
 
   constructor() {
-    log('Creating RuleComponent')
+    console.log('Creating RuleComponent')
     this.collapsed = true
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
@@ -35,7 +37,7 @@ class RuleComponent {
   }
 
   set ruleSnap(ruleSnap:any) {
-    log('Setting Rule snapshot')
+    console.log('Setting Rule snapshot')
     this._ruleSnap = ruleSnap
     this.rule = ruleSnap.val()
     this.ruleGroups = []
@@ -85,7 +87,7 @@ class RuleComponent {
       group.conditions = group.conditions || {}
       this.updateRule()
     }).catch((e) => {
-      log(e)
+      console.log(e)
     })
   }
 
@@ -110,13 +112,13 @@ class RuleComponent {
     this.ruleSnap.ref().remove().then((x) => {
       // update
     }).catch((e) => {
-      log("Not yay :~(: ", e)
+      console.log("Not yay :~(: ", e)
       throw e
     })
   }
 
   updateRule() {
-    log('Updating Rule')
+    console.log('Updating Rule')
     this.ruleSnap.ref().set(this.rule)
     this.ruleActions = this.getRuleActions()
   }

@@ -47,7 +47,6 @@ to a change list you won't commit. ALWAYS run 'jspm unbundle' before a pull, or 
 #### Angular2
   * [Angular](https://angular.io/)
   * [Requisite John Lindquist intro video](https://egghead.io/lessons/angularjs-angular-2-template-syntax)
-  * [Forms in Angular2](http://angularjs.blogspot.com/2015/03/forms-in-angular-2.html)
   * [Angular 2 + Flux](http://victorsavkin.com/post/99998937651/building-angular-apps-using-flux-architecture)
   * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
   

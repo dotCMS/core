@@ -1,10 +1,12 @@
+/// <reference path="../../../typings/es6/lib.es6.d.ts" />
+
+/// <reference path="../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-import XDebug from 'debug';
-let log = XDebug('RuleEngineView.ConditionGroupComponent');
+
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
-import {ConditionComponent} from './rule-condition-component.ts';
+import {ConditionComponent} from './rule-condition-component';
 
 @Component({
   selector: 'condition-group',
@@ -25,13 +27,13 @@ export class ConditionGroupComponent {
   conditions:Array<any>;
 
   constructor() {
-    log('Creating ConditionGroupComponent')
+    console.log('Creating ConditionGroupComponent')
     this.groupCollapsed = false
     this.conditions = []
   }
 
   set groupSnap(groupSnap) {
-    log('Setting ConditionGroup snapshot: ', groupSnap.key())
+    console.log('Setting ConditionGroup snapshot: ', groupSnap.key())
     this._groupSnap = groupSnap
     this.group = groupSnap.val()
     this.conditions = this.getConditions()
@@ -54,7 +56,7 @@ export class ConditionGroupComponent {
   }
 
   addCondition() {
-    log('Adding condition to ConditionsGroup')
+    console.log('Adding condition to ConditionsGroup')
     let condition = {
       priority: 10,
       name: "Condition. " + new Date().toISOString(),
@@ -77,7 +79,7 @@ export class ConditionGroupComponent {
       this.group.conditions[result.key()] = true
       this.updateGroup()
     }).catch((e) => {
-      log(e)
+      console.log(e)
     })
   }
 
@@ -87,7 +89,7 @@ export class ConditionGroupComponent {
   }
 
   updateGroup() {
-    log('Updating ConditionsGroup')
+    console.log('Updating ConditionsGroup')
     this.groupSnap.ref().set(this.group)
     this.conditions = this.getConditions()
   }

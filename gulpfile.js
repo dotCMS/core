@@ -6,7 +6,8 @@ var minimist = require('minimist')
 var jspm = require('jspm')
 var pConfig = require('./package.json')
 var replace = require('gulp-replace')
-
+var ts = require('gulp-typescript');
+var merge = require('merge2');
 var imports = {
   exec: require('child_process').exec,
   karma: require('karma').server,
@@ -167,6 +168,8 @@ gulp.task('i-test', function (done) {
 
 
 })
+
+
 
 gulp.task('start-server', function (done) {
 
@@ -367,8 +370,31 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
   gitAdd(options)
 })
 
+
+var tsProject = ts.createProject({
+  outDir: './build',
+  module: 'commonjs',
+  target :'es5',
+  emitDecoratorMetadata: true,
+  typescript: require('typescript')
+});
+
+gulp.task('scripts', function() {
+  var tsResult = gulp.src('./src/**/*.ts')
+      .pipe(ts(tsProject));
+
+  return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
+    tsResult.dts.pipe(gulp.dest('build/definitions')),
+    tsResult.js.pipe(gulp.dest('build'))
+  ]);
+});
+
+gulp.task('watch', ['scripts'], function() {
+  return gulp.watch('./src/**/*.ts', ['scripts']);
+});
+
 //noinspection JSUnusedLocalSymbols
-gulp.task('play', ['start-server'], function (done) {
+gulp.task('play', ['start-server', 'watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 

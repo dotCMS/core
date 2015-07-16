@@ -8,6 +8,10 @@ declare module RuleEngine {
     shortCircuit:boolean;
     conditionGroups:any;
     actions:any;
-
   }
+
+}
+
+declare module Logger {
+  function getLogger(prefix:string);
 }

@@ -38,6 +38,7 @@
     "gulp-artifactory-upload": "^1.1.0",
     "gulp-concat": "~2.5.0",
     "gulp-replace": "^0.5.3",
+    "gulp-typescript": "^2.7.8",
     "gulp-watch": "^4.2.4",
     "gulp-webserver": "^0.9.1",
     "http-proxy": "^1.11.1",
@@ -47,12 +48,14 @@
     "karma-chrome-launcher": "^0.1.7",
     "karma-jasmine": "^0.3.2",
     "karma-jspm": "git://github.com/ggranum/karma-jspm.git",
+    "merge2": "^0.3.6",
     "minimist": "^1.1.1",
     "node-zip": "^1.1.1",
     "open": "0.0.5",
     "proxy-middleware": "^0.11.0",
     "serve-index": "^1.6.3",
     "serve-static": "~1.8.1",
-    "through2": "~0.6.3"
+    "through2": "~0.6.3",
+    "typescript": "1.5.0-beta"
   }
 }

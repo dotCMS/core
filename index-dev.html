@@ -15,11 +15,18 @@
 
 <script>
 
+
+
   Promise.all([
-    System.import('./index'),
+    System.import('./src/templates.js'),
   ]).then(
       function (p) {
-        console.log("Project load complete.")
+        Promise.all([
+          System.import('./index'),
+        ]).then(
+            function (p) {
+              console.log("Project load complete.")
+            });
       });
 </script>
 

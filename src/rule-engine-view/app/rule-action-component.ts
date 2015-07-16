@@ -1,7 +1,7 @@
+/// <reference path="../../../typings/es6/lib.es6.d.ts" />
+/// <reference path="../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-import XDebug from 'debug';
-let log = XDebug('RuleEngineView.RuleActionComponent');
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 var actionletsAry = []
@@ -37,10 +37,10 @@ export class RuleActionComponent {
   action:any;
   actionValue:string;
   actionlet:any;
-  actionlets:Array;
+  actionlets:Array<any>;
 
   constructor() {
-    log('Creating actionComponent')
+    console.log('Creating actionComponent')
     this.actionlets = []
     actionletsPromise.then(()=> {
       this.actionlets = actionletsAry
@@ -52,15 +52,15 @@ export class RuleActionComponent {
 
 
   onSetActionMeta(snapshot){
-    log("Action's type is ", this.action, snapshot);
+    console.log("Action's type is ", this.action, snapshot);
     this.action = snapshot.val()
     this.actionlet = actionletsMap.get(this.action.actionlet)
-    log('Loaded action with actionlet: ', this.actionlet)
+    console.log('Loaded action with actionlet: ', this.actionlet)
   }
 
 
   set actionMeta(actionMeta) {
-    log("Setting actionMeta: ", actionMeta.key())
+    console.log("Setting actionMeta: ", actionMeta.key())
     this._actionMeta = actionMeta
     this._actionMeta.once('value', this.onSetActionMeta.bind(this))
   }
@@ -70,7 +70,7 @@ export class RuleActionComponent {
   }
 
   setActionlet(actionletId){
-    log('Setting actionlet id to: ', actionletId)
+    console.log('Setting actionlet id to: ', actionletId)
     this.action.actionlet = actionletId
     this.actionlet =  actionletsMap.get(this.action.actionlet)
     this.updateAction()
@@ -78,7 +78,7 @@ export class RuleActionComponent {
 
 
   updateAction() {
-    log('Updating RuleAction: ', this.action)
+    console.log('Updating RuleAction: ', this.action)
     this.actionMeta.set(this.action)
 
   }

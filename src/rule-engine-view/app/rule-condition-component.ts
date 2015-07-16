@@ -1,7 +1,9 @@
+/// <reference path="../../../typings/es6/lib.es6.d.ts" />
+
+/// <reference path="../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
-import XDebug from 'debug';
-let log = XDebug('RuleEngineView.ConditionComponent');
+
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
@@ -43,7 +45,7 @@ class ConditionComponent {
   conditionlets:Array<any>;
 
   constructor() {
-    log('Creating ConditionComponent')
+    console.log('Creating ConditionComponent')
     this.conditionlets = []
     conditionletsPromise.then(()=> {
       this.conditionlets = conditionletsAry
@@ -55,7 +57,7 @@ class ConditionComponent {
   }
 
   onSetConditionMeta(snapshot) {
-    log("Condition's type is ", this.condition);
+    console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
     this.conditionValue = this.getComparisonValue()
@@ -63,7 +65,7 @@ class ConditionComponent {
 
 
   set conditionMeta(conditionMeta) {
-    log("Setting conditionMeta: ", conditionMeta.key())
+    console.log("Setting conditionMeta: ", conditionMeta.key())
     this._conditionMeta = conditionMeta
     conditionMeta.once('value', this.onSetConditionMeta.bind(this))
   }
@@ -73,14 +75,14 @@ class ConditionComponent {
   }
 
   setConditionlet(condtitionletId) {
-    log('Setting conditionlet id to: ', condtitionletId)
+    console.log('Setting conditionlet id to: ', condtitionletId)
     this.condition.conditionlet = condtitionletId
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
     this.updateCondition()
   }
 
   setComparison(comparisonId) {
-    log('Setting conditionlet comparison id to: ', comparisonId)
+    console.log('Setting conditionlet comparison id to: ', comparisonId)
     this.condition.comparison = comparisonId
     this.updateCondition()
 
@@ -116,12 +118,12 @@ class ConditionComponent {
   }
 
   updateCondition() {
-    log('Updating Condition: ', this.condition)
+    console.log('Updating Condition: ', this.condition)
     this.conditionMeta.set(this.condition)
   }
 
   removeCondition() {
-    log('Removing Condition: ', this.condition)
+    console.log('Removing Condition: ', this.condition)
     this.conditionMeta.remove()
   }
 }
