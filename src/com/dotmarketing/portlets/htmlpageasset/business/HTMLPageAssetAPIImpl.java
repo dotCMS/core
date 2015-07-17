@@ -26,6 +26,7 @@ import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.filters.ClickstreamFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.portlets.fileassets.business.FileAssetValidationException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -40,11 +41,13 @@ import com.dotmarketing.util.*;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.exception.ResourceNotFoundException;
 
 import javax.servlet.http.Cookie;
+
 import java.io.StringWriter;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
@@ -371,10 +374,18 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return newpage;
     }
     
+    /**
+     * Migrate all Legacy Pages to Contents
+     * @param user
+     * @param respectFrontEndPermissions
+     * @return Boolean
+     * @throws Exception
+     */
     @Override
-    public void migrateAllLegacyPages(final User user, boolean respectFrontEndPermissions) throws Exception {
-    	new Thread() {
-    		public void run() {
+    public boolean migrateAllLegacyPages(final User user, boolean respectFrontEndPermissions) throws Exception {
+    			boolean result = false;
+    			//Keep temp string of URL in case it fails, so logs would say where the problem is
+    			String htmlPageURI = "";
     			try {
     				int offset = 0;
     				int limit = 100;
@@ -384,6 +395,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
     					int migrated = 0;
 
     					for (HTMLPage htmlPage : elements) {
+    						
+    						htmlPageURI = htmlPage.getURI();
     						if(migrated==0)
     							HibernateUtil.startTransaction();
 
@@ -401,15 +414,25 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
 
     				//Create a new notification to inform the pages were migrated
     				APILocator.getNotificationAPI().generateNotification( LanguageUtil.get( user.getLocale(), "htmlpages-migration-finished" ), NotificationLevel.INFO, user.getUserId() );
-
+    				Logger.info(this, LanguageUtil.get( user.getLocale(), "htmlpages-were-succesfully-converted" ));
+    				result = true;
     			}
 
     			catch(Exception ex) {
     				try {
+    					//In case there is a problem with the Page URL
+    					if (ex instanceof FileAssetValidationException){
+    						Logger.error(this, "There was a problem migrating Pages to Contents: Please check HTMLPage: " + htmlPageURI );
+    					}
+    					//Show exception if it's caused by something else
+    					else{
+    						Logger.error(this, "There was a problem migrating Pages to Contents: " + ex.getMessage(), ex );
+    					}
                         HibernateUtil.rollbackTransaction();
                     } catch (DotHibernateException e1) {
                         Logger.warn(this, e1.getMessage(),e1);
                     }
+    				result = false;
     			}
     			finally {
     				try {
@@ -418,11 +441,8 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
                         Logger.error(LicenseUtil.class, "can't close session after adding to cluster",e);
                     }
     			}
-    		}
-    	}.start();
-
+    	return result;
     }
-        
     
     @Override
     public HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions) throws Exception {

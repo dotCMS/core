@@ -230,23 +230,23 @@ public class CMSMaintenanceAjax {
 		return result;
 	}
 	
-	public String migrateHTMLPagesToContent() throws PortalException, SystemException, DotDataException,DotSecurityException {
+	public boolean migrateHTMLPagesToContent() throws PortalException, SystemException, DotDataException,DotSecurityException {
 
 		validateUser();
 		
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		
-		String result = "success";
+		boolean result = true;
 
 		try {
 			
-			APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
+			result = APILocator.getHTMLPageAssetAPI().migrateAllLegacyPages(com.liferay.portal.util.PortalUtil.getUser(req), false);
 			
 		} catch(Exception e) {
 			Logger.error(getClass(), e.getMessage(), e);
-			result = "Could not migrate HTML Pages. " + e.getMessage();
+			result = false;
 		}
-
+		
 		return result;
 	}
 
