@@ -311,8 +311,11 @@ public class BinaryExporterServlet extends HttpServlet {
 					resp.sendError(404);
 					return;
 				}
+
+				com.dotmarketing.portlets.files.model.File file = (com.dotmarketing.portlets.files.model.File)APILocator.getVersionableAPI().findLiveVersion(id, user, respectFrontendRoles);
+
 				// no permissions, no soup!
-				if(!APILocator.getPermissionAPI().doesUserHavePermission(id, PermissionAPI.PERMISSION_READ, user)){
+				if(!APILocator.getPermissionAPI().doesUserHavePermission(file, PermissionAPI.PERMISSION_READ, user)){
 					Logger.debug(this,"user: " + user + " does not have read on File :" + id.getInode());
 					if(WebAPILocator.getUserWebAPI().isLoggedToFrontend(req)){
 						resp.sendError(403);
