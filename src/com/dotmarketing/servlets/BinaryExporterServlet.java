@@ -194,6 +194,12 @@ public class BinaryExporterServlet extends HttpServlet {
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
+
+			//If session is in Admin Mode (Edit Mode) we should respect front end roles also.
+			if(session != null && session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null){
+				respectFrontendRoles = true;
+			}
+
 			String downloadName = "file_asset";
 			long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 			try {
