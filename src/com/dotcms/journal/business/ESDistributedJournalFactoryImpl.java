@@ -377,13 +377,17 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         String serverId = ConfigUtils.getServerId();
 
         try {
+
+            //Get the number of records to fetch
+            int recordsToFetch = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 50);
+
             con = DbConnectionFactory.getConnection();
             con.setAutoCommit(false);
             if(DbConnectionFactory.isOracle()) {
                 CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?) }");
                 call.registerOutParameter(1, OracleTypes.CURSOR);
                 call.setString(2, serverId);
-                call.setInt(3, 50);
+                call.setInt(3, recordsToFetch);
                 call.execute();
                 ResultSet r = (ResultSet)call.getObject(1);
                 results = new ArrayList<Map<String,Object>>();
@@ -403,18 +407,18 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
                 dc.loadResult();
 
-                dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
+                dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToFetch));
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
             } else if(DbConnectionFactory.isH2()) {
                 dc.setSQL("call load_records_to_index(?,?)");
                 dc.addParam(serverId);
-                dc.addParam(50);
+                dc.addParam(recordsToFetch);
                 results = dc.loadObjectResults();
             } else {
                 dc.setSQL(REINDEXENTRIESSELECTSQL);
                 dc.addParam(serverId);
-                dc.addParam(50);
+                dc.addParam(recordsToFetch);
                 results = dc.loadObjectResults(con);
             }
 
