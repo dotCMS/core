@@ -363,24 +363,19 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void copyContentlet () throws DotSecurityException, DotDataException {
 
-        Contentlet copyContentlet = null;
-        try {
-        	HibernateUtil.startTransaction();
-            //Getting a known contentlet
-            Contentlet contentlet = contentlets.iterator().next();
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
 
-            //Copy the test contentlet
-            copyContentlet = contentletAPI.copyContentlet( contentlet, user, false );
+        //Copy the test contentlet
+        Contentlet copyContentlet = contentletAPI.copyContentlet( contentlet, user, false );
 
-            //validations
-            assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
-            assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.getHost(), contentlet.getHost() );
-        } finally {
-            contentletAPI.delete( copyContentlet, user, false );
-            HibernateUtil.commitTransaction();
-        }
+        //validations
+        assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
+        assertEquals(copyContentlet.getStructureInode(), contentlet.getStructureInode());
+        assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
+        assertEquals( copyContentlet.getHost(), contentlet.getHost() );
+
+        contentletAPI.delete(copyContentlet, user, false);
     }
 
     /**
@@ -396,27 +391,22 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void copyContentletWithFolder () throws DotSecurityException, DotDataException {
 
-        Contentlet copyContentlet = null;
-        try {
-        	HibernateUtil.startTransaction();
-            //Getting a known contentlet
-            Contentlet contentlet = contentlets.iterator().next();
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
 
-            //Getting the folder of the test contentlet
-            Folder folder = APILocator.getFolderAPI().find( contentlet.getFolder(), user, false );
+        //Getting the folder of the test contentlet
+        Folder folder = APILocator.getFolderAPI().find( contentlet.getFolder(), user, false );
 
-            //Copy the test contentlet
-            copyContentlet = contentletAPI.copyContentlet( contentlet, folder, user, false );
+        //Copy the test contentlet
+        Contentlet copyContentlet = contentletAPI.copyContentlet( contentlet, folder, user, false );
 
-            //validations
-            assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
-            assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
-        } finally {
-            contentletAPI.delete( copyContentlet, user, false );
-            HibernateUtil.commitTransaction();
-        }
+        //validations
+        assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
+        assertEquals(copyContentlet.getStructureInode(), contentlet.getStructureInode());
+        assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
+        assertEquals( copyContentlet.get("junitTestWysiwyg"), contentlet.get("junitTestWysiwyg") );
+
+        contentletAPI.delete(copyContentlet, user, false);
     }
 
     /**
@@ -432,25 +422,20 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void copyContentletWithHost () throws DotSecurityException, DotDataException {
 
-        Contentlet copyContentlet = null;
-        try {
-        	HibernateUtil.startTransaction();
-            //Getting a known contentlet
-            Contentlet contentlet = contentlets.iterator().next();
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
 
-            //Copy the test contentlet
-            copyContentlet = contentletAPI.copyContentlet( contentlet, defaultHost, user, false );
+        //Copy the test contentlet
+        Contentlet copyContentlet = contentletAPI.copyContentlet( contentlet, defaultHost, user, false );
 
-            //validations
-            assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
-            assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
-            assertEquals( copyContentlet.getHost(), contentlet.getHost() );
-        } finally {
-            contentletAPI.delete( copyContentlet, user, false );
-            HibernateUtil.commitTransaction();
-        }
+        //validations
+        assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
+        assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
+        assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
+        assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
+        assertEquals( copyContentlet.getHost(), contentlet.getHost() );
+
+        contentletAPI.delete( copyContentlet, user, false );
     }
 
     /**
@@ -466,27 +451,22 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void copyContentletWithFolderAppendCopy () throws DotSecurityException, DotDataException {
 
-        Contentlet copyContentlet = null;
-        try {
-        	HibernateUtil.startTransaction();
-            //Getting a known contentlet
-            Contentlet contentlet = contentlets.iterator().next();
+        //Getting a known contentlet
+        Contentlet contentlet = contentlets.iterator().next();
 
-            //Getting the folder of the test contentlet
-            Folder folder = APILocator.getFolderAPI().find( contentlet.getFolder(), user, false );
+        //Getting the folder of the test contentlet
+        Folder folder = APILocator.getFolderAPI().find( contentlet.getFolder(), user, false );
 
-            //Copy the test contentlet
-            copyContentlet = contentletAPI.copyContentlet( contentlet, folder, user, true, false );
+        //Copy the test contentlet
+        Contentlet copyContentlet = contentletAPI.copyContentlet( contentlet, folder, user, true, false );
 
-            //validations
-            assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
-            assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
-            assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
-            assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
-        } finally {
-            contentletAPI.delete( copyContentlet, user, false );
-            HibernateUtil.commitTransaction();
-        }
+        //validations
+        assertTrue( copyContentlet != null && !copyContentlet.getInode().isEmpty() );
+        assertEquals( copyContentlet.getStructureInode(), contentlet.getStructureInode() );
+        assertEquals( copyContentlet.getFolder(), contentlet.getFolder() );
+        assertEquals( copyContentlet.get( "junitTestWysiwyg" ), contentlet.get( "junitTestWysiwyg" ) );
+
+        contentletAPI.delete( copyContentlet, user, false );
     }
     
     @Test
