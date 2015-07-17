@@ -293,11 +293,17 @@ public class HTMLPageFactory {
             }
 
             identifier.setHostId( newHost.getIdentifier() );
-            identifier.setURI( workingWebAsset.getURI( parent ) );
+            //identifier.setURI( workingWebAsset.getURI( parent ) );
+			String newURI = workingWebAsset.getURI( parent );
+			identifier.setParentPath(newURI.substring(0, newURI.lastIndexOf("/")+1));
+			identifier.setAssetName(newURI.substring(newURI.lastIndexOf("/")+1));
         } else {//Directly under the host
             identifier.setHostId( host.getIdentifier() );
-            identifier.setURI( '/' + currentHTMLPage.getPageUrl() );
+            identifier.setParentPath("/");
+            identifier.setAssetName(currentHTMLPage.getPageUrl());
+            
         }
+        identifier.setAssetType("htmlpage");
 
         //HibernateUtil.saveOrUpdate(identifier);
         APILocator.getIdentifierAPI().save( identifier );
@@ -532,9 +538,11 @@ public class HTMLPageFactory {
    		WorkingCache.removeAssetFromCache(workingVersion);
    		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(workingVersion);
    		
-
-   		
-    	ident.setURI(page.getURI(folder));
+    	//ident.setURI(page.getURI(folder));
+		String newURI = page.getURI( folder );
+		ident.setParentPath(newURI.substring(0, newURI.lastIndexOf("/")+1));
+		ident.setAssetName(newURI.substring(newURI.lastIndexOf("/")+1));
+		ident.setAssetType("htmlpage");
     	//HibernateUtil.saveOrUpdate(ident);
     	APILocator.getIdentifierAPI().save(ident);
     	

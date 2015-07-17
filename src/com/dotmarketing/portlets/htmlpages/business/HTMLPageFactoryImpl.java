@@ -466,7 +466,11 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 			// gets identifier for this webasset and changes the uri and
 			// persists it
 			identifier.setHostId(APILocator.getHostAPI().findParentHost(newFolder, APILocator.getUserAPI().getSystemUser(), false).getIdentifier());
-			identifier.setURI(page.getURI(newFolder));
+			//identifier.setURI(page.getURI(newFolder));
+			String newURI = page.getURI(newFolder);
+			identifier.setParentPath(newURI.substring(0, newURI.lastIndexOf("/")+1));
+			identifier.setAssetName(newURI.substring(newURI.lastIndexOf("/")+1));
+			identifier.setAssetType("htmlpage");
 			APILocator.getIdentifierAPI().save(identifier);
 		}
 
