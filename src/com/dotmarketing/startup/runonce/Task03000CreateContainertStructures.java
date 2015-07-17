@@ -61,6 +61,16 @@ public class Task03000CreateContainertStructures implements StartupTask {
 		} catch (SQLException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
+		
+		//DDL Operations must be outside a Transaction for SQL Server Databases
+		try {
+			DotConnect dc = new DotConnect();
+			dc.executeStatement(addTemplateFK);
+			dc.executeStatement(createIndex);
+
+		} catch (SQLException e) {
+			throw new DotDataException(e.getMessage(), e);
+		}
 
 		//Migrating all the data.
 		HibernateUtil.startTransaction();
@@ -69,9 +79,6 @@ public class Task03000CreateContainertStructures implements StartupTask {
 			if (DbConnectionFactory.isMsSql()) {
 				dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 			}
-
-			dc.executeStatement(addTemplateFK);
-			dc.executeStatement(createIndex);
 
 			dc.setSQL(container_structures_relations);
 			List<Map<String, String>> relations = dc.loadResults();
@@ -91,25 +98,40 @@ public class Task03000CreateContainertStructures implements StartupTask {
 			}
 			dc.executeStatement(delete_code_when_content);
 
-			//Lets remove the foreign key if exists prior to drop the column.
-			try {
-				if (DbConnectionFactory.isMySql())
-					dc.executeStatement("alter table containers drop foreign key structure_fk ");
-				else
-					dc.executeStatement("alter table containers drop constraint structure_fk ");
-			} catch(Exception e) {
-				Logger.info(this, "foreign key for structure_inode on containers table didn't exist, not dropping anything here");
-			}
-
-			dc.executeStatement(drop_structure_column);
-			dc.executeStatement(drop_metadata_column);
-
 		} catch (Exception e) {
 			HibernateUtil.rollbackTransaction();
 			Logger.error(this, e.getMessage(),e);
 		}
+		
+		try{
+			HibernateUtil.commitTransaction();
+		}catch (Exception e){
+			//If for any reason the inserts fail, Throw exception and avoid next queries to drop columns from containers table
+			throw new DotDataException(e.getMessage(), e);
+		}
+		
+		//Lets remove the foreign key if exists prior to drop the column.
+		try {
+			DotConnect dc = new DotConnect();
+			if (DbConnectionFactory.isMySql()){
+				dc.executeStatement("alter table containers drop foreign key structure_fk ");
+			} else{
+				dc.executeStatement("alter table containers drop constraint structure_fk ");
+			}
+		} catch(Exception e) {
+			Logger.info(this, "foreign key for structure_inode on containers table didn't exist, not dropping anything here");
+		}
+		
+		//Lets remove the foreign key if exists prior to drop the column.
+		//DDL Operations must be outside a Transaction for SQL Server Databases
+		try {
+			DotConnect dc = new DotConnect();
+			dc.executeStatement(drop_structure_column);
+			dc.executeStatement(drop_metadata_column);
+		} catch(Exception e) {
+			Logger.info(this, "Columns from containers table could not be dropped: " + e.getMessage());
+		}
 
-		HibernateUtil.commitTransaction();
 	}
 
 }
