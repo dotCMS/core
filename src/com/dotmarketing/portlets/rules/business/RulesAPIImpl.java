@@ -433,6 +433,30 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteCondition(condition);
     }
 
+    public void deleteConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(conditionValue)) {
+            return;
+        }
+
+        Condition condition = getConditionById(conditionValue.getConditionId(), user, false);
+
+        ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, false);
+
+        Rule rule = rulesFactory.getRuleById(group.getRuleId());
+
+        if(rule==null) {
+            Logger.info(this, "There is no rule with the given id: " + group.getRuleId());
+            throw new DotDataException("There is no Rule with the provided ruleId: " + group.getRuleId());
+        }
+
+        if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
+            throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
+        }
+
+        rulesFactory.deleteConditionValue(conditionValue);
+
+    }
+
     public void deleteConditions(ConditionGroup group, User user) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(group)) {
             return;

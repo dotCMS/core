@@ -55,6 +55,8 @@ public interface RulesFactory {
 
     void deleteCondition(Condition condition) throws DotDataException;
 
+    void deleteConditionValue(ConditionValue conditionValue) throws DotDataException;
+
     void deleteRuleAction(RuleAction ruleAction) throws DotDataException;
 
     void deleteRuleActionsByRule(Rule rule) throws DotDataException;

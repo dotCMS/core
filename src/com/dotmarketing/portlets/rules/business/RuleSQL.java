@@ -45,6 +45,7 @@ abstract class RuleSQL {
     protected String SELECT_CONDITION_VALUES_BY_CONDITION = "select * from rule_condition_value where condition_id=?";
     protected String SELECT_CONDITION_VALUE_BY_ID = "select * from rule_condition_value where id=?";
     protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delete from rule_condition_value where condition_id=?";
+    protected String DELETE_CONDITION_VALUE_BY_ID = "delete from rule_condition_value where id=?";
 
 
     protected String INSERT_RULE_ACTION = "insert into rule_action (id, name, rule_id, priority, actionlet) values (?,?,?,?,?)";

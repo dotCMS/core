@@ -222,6 +222,16 @@ public interface RulesAPI {
 
     /**
      *
+     * @param conditionValue
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    void deleteConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
      * @param conditionGroup
      * @param user
      * @param respectFrontendRoles

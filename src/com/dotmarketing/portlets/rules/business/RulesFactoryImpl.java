@@ -155,7 +155,7 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.SELECT_RULE_ACTION_PARAMS);
         db.addParam(id);
         List<RuleActionParameter> result = convertListToObjects(db.loadObjectResults(),
-                                                                RuleActionParameter.class);
+                RuleActionParameter.class);
         if (!result.isEmpty()) {
             param = result.get(0);
         }
@@ -612,6 +612,14 @@ public class RulesFactoryImpl implements RulesFactory {
         db.addParam(condition.getId());
         db.loadResult();
         cache.removeCondition(condition.getConditionGroup(), condition);
+    }
+
+    @Override
+    public void deleteConditionValue(ConditionValue conditionValue) throws DotDataException {
+        final DotConnect db = new DotConnect();
+        db.setSQL(sql.DELETE_CONDITION_VALUE_BY_ID);
+        db.addParam(conditionValue.getId());
+        db.loadResult();
     }
 
     @Override

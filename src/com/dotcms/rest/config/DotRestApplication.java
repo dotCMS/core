@@ -1,6 +1,7 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionValuesResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.ActionsResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
@@ -45,6 +46,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(RulesResource.class);
 					REST_CLASSES.add(ConditionGroupsResource.class);
 					REST_CLASSES.add(ConditionsResource.class);
+					REST_CLASSES.add(ConditionValuesResource.class);
 					REST_CLASSES.add(ConditionletsResource.class);
 					REST_CLASSES.add(ActionsResource.class);
 					REST_CLASSES.add(ActionletsResource.class);

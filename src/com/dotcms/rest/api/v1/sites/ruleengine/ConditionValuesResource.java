@@ -171,15 +171,21 @@ public class ConditionValuesResource {
      * Usage: DELETE api/rules-engine/rules
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}")
-    public Response remove(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues/{valueId}")
+    public Response remove(@Context HttpServletRequest request,
+                           @PathParam("siteId") String siteId,
+                           @PathParam("conditionId") String conditionId,
+                           @PathParam("valueId") String valueId)
             throws JSONException {
         User user = getUser(request);
 
         try {
+            siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+            conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
             getHost(siteId, user);
-            Condition condition = getCondition(conditionId, user);
-            rulesAPI.deleteCondition(condition, user, false);
+            getCondition(conditionId, user);
+            ConditionValue value = getConditionValue(valueId, user);
+            rulesAPI.deleteConditionValue(value, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException | DotSecurityException e) {
@@ -216,6 +222,22 @@ public class ConditionValuesResource {
                 throw new NotFoundException("Condition not found: '%s'", conditionId);
             }
             return condition;
+        } catch (DotDataException e) {
+            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        }
+    }
+
+    @VisibleForTesting
+    ConditionValue getConditionValue(String valueId, User user) {
+        try {
+            ConditionValue value = rulesAPI.getConditionValueById(valueId, user, false);
+            if(value == null) {
+                throw new NotFoundException("Condition Value not found: '%s'", valueId);
+            }
+            return value;
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
