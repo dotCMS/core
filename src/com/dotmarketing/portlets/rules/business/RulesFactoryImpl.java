@@ -472,7 +472,7 @@ public class RulesFactoryImpl implements RulesFactory {
         boolean isNew = true;
         if (UtilMethods.isSet(conditionValue.getId())) {
             try {
-                if (getConditionById(conditionValue.getId()) != null) {
+                if (getConditionValueById(conditionValue.getId()) != null) {
                     isNew = false;
                 }
             } catch (final Exception e) {

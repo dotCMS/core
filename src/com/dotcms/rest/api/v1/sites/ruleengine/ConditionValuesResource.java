@@ -159,7 +159,7 @@ public class ConditionValuesResource {
         getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
         getCondition(conditionId, user); // forces check that condition exists. This should be handled by rulesAPI?
 
-        updateConditionValueInternal(user, conditionId, restConditionValue);
+        updateConditionValueInternal(user, valueId, restConditionValue);
 
         return restConditionValue;
     }
@@ -272,6 +272,7 @@ public class ConditionValuesResource {
                 throw new NotFoundException("Condition Value with id '%s' not found: ", valueId);
             }
             conditionValueTransform.applyRestToApp(restValue, conditionValue);
+            conditionValue.setId(valueId);
             rulesAPI.saveConditionValue(conditionValue, user, false);
             return conditionValue.getId();
         } catch (DotDataException e) {
