@@ -1,8 +1,11 @@
 import XDebug from 'debug'
 
+import 'zone.js'
 import 'reflect-metadata';
+import 'es6-shim';
 
 import {Core, Rule, RuleGroup, ConnectionManager, EntityMeta, RestDataStore} from './src/index.js'
+import * as RuleEngineView from './src/rule-engine-view/index.js';
 
 Object.assign(window, {
   Core,
@@ -13,12 +16,11 @@ window.RuleEngine = window.RuleEngine || {}
 window.RuleEngine.Rule = Rule;
 window.RuleEngine.RuleGroup = RuleGroup;
 
-import RuleEngineView from 'src/rule-engine-view/index.js';
 
 XDebug.disable() // Clear LocalStorage so changes to log-config files 'take'
 XDebug.enable("*, .*") // String of comma separated regex. Not glob patterns.
 
-RuleEngineView.main().then(function () {
+RuleEngineView.main(ConnectionManager, RestDataStore).then(function () {
   console.log("Loaded rule-engine component.")
 });
 

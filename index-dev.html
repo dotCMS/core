@@ -14,19 +14,11 @@
 <script src="config.js"></script>
 
 <script>
-
-
-
   Promise.all([
-    System.import('./src/templates.js'),
+    System.import('./index'),
   ]).then(
       function (p) {
-        Promise.all([
-          System.import('./index'),
-        ]).then(
-            function (p) {
-              console.log("Project load complete.")
-            });
+        console.log("Project load complete.")
       });
 </script>
 

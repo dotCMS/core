@@ -10,29 +10,36 @@
 
 import {bootstrap, NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
+
 import {initActionlets} from './rule-action-component';
 import {initConditionlets} from './rule-condition-component';
 import {RuleComponent} from './rule-component';
+
+import ruleEngineTemplate from './templates/rule-engine.tpl.html!text'
 
 
 @Component({
   selector: 'rule-engine'
 })
 @View({
-  template: RuleEngine.templates.ruleEngineTemplate,
+  template: ruleEngineTemplate,
   directives: [RuleComponent, NgFor, NgIf]
 })
 class RuleEngineComponent {
-  rules:Array<any>;
+  rules:any[];
   baseUrl:string;
   rulesRef:EntityMeta;
+  filterText:string;
 
   constructor() {
     console.log('Creating RuleEngine component.')
     this.rules = []
     this.baseUrl = ConnectionManager.baseUrl;
     this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
-    this.onChange()
+    this.filterText = ""
+    this.readSnapshots(this.rulesRef).then((snaps) => {
+      this.rules = snaps
+    }).catch((e) => console.log(e));
   }
 
   updateBaseUrl(value) {
@@ -46,22 +53,30 @@ class RuleEngineComponent {
       ConnectionManager.baseUrl = oldUrl
       throw e
     }))
-
   }
 
-  onChange(event = null) {
-    console.log("RuleEngine change event: ", event)
-    this.rulesRef.once('value', (rulesSnap) => {
-      this.rules = []
-      if (rulesSnap && rulesSnap.forEach) {
-        rulesSnap.forEach((ruleSnap) => {
-          this.rules.push(ruleSnap)
-        })
-      }
-      else {
-        throw rulesSnap
-      }
+  readSnapshots(rulesRef:EntityMeta) {
+    console.log("RuleEngine change event: ")
+    return new Promise((resolve, reject)=> {
+      let snaps = []
+      rulesRef.once('value', (rulesSnap) => {
+        if (rulesSnap && rulesSnap.forEach) {
+          rulesSnap.forEach((ruleSnap) => {
+            console.log('Rule read: ', ruleSnap)
+            snaps.push(ruleSnap)
+          })
+        }
+        else {
+          reject(rulesSnap)
+        }
+        resolve(snaps)
+      })
     })
+  }
+
+
+  onChange(a, b, c) {
+    console.log('onChange', arguments)
   }
 
   addRule() {
@@ -74,7 +89,13 @@ class RuleEngineComponent {
     testRule.shortCircuit = false
     testRule.conditionGroups = {}
     testRule.actions = {}
-    this.rulesRef.push(testRule).then((ruleRef) => this.onChange())
+    this.rulesRef.push(testRule).then((ruleSnap) => {
+      console.log('Created rule: ', ruleSnap)
+      this.rules.push(ruleSnap)
+    }).catch((e)=> {
+      console.log("Error adding rule: ", e)
+      throw e
+    })
   }
 
   testBaseUrl(baseUrl) {
@@ -90,5 +111,7 @@ export function main() {
   ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()
-  return bootstrap(RuleEngineComponent);
+  return bootstrap(RuleEngineComponent, null, [function (ex, stack) {
+    console.log('Eh!?', ex)
+  }]);
 }

@@ -18,7 +18,7 @@
                     <form class="form-horizontal">
                         <div class="form-group has-feedback">
                             <div class="col-sm-12">
-                                <input type="text" class="form-control" placeholder="Start typing to filter rules...">
+                                <input type="text" class="form-control" placeholder="Start typing to filter rules..." [value]="filterText">
                                 <span class="glyphicon glyphicon-search form-control-feedback"></span>
                             </div>
                         </div>
@@ -28,7 +28,8 @@
 
             <hr/>
 
-            <rule class="row" *ng-for="var r of rules; var i=index" [rule-snap]="r"></rule>
+            <rule class="row" *ng-for="var r of rules" [rule-snap]="r"></rule>
+            <!--<div class="row" *ng-for="var r of vals">{{r}}</div>-->
             <button type="button" class="btn btn-default btn-md" aria-label="Create a new Rule" (click)="addRule()">
                 <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Rule
             </button>

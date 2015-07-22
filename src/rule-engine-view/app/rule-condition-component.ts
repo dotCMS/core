@@ -6,6 +6,8 @@
 
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import conditionTemplate from './templates/rule-condition-component.tpl.html!text'
+
 
 var conditionletsAry = []
 var conditionletsMap = new Map()
@@ -34,7 +36,7 @@ let initConditionlets = function () {
   properties: ["conditionMeta"]
 })
 @View({
-  template: RuleEngine.templates.conditionTemplate,
+  template: conditionTemplate,
   directives: [NgIf, NgFor]
 })
 class ConditionComponent {

@@ -4,18 +4,19 @@
 /// <reference path="../../../typings/dotcms/dotcms-core-web.d.ts" />
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 
-
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
+
+import ruleTemplate from './templates/rule-component.tpl.html!text'
 
 @Component({
   selector: 'rule',
   properties: ["ruleSnap"]
 })
 @View({
-  template: RuleEngine.templates.ruleTemplate,
+  template: ruleTemplate,
   directives: [RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
 })
 class RuleComponent {
@@ -52,7 +53,7 @@ class RuleComponent {
     let actionMetas = []
     let actionsSnap = this.ruleSnap.child('ruleActions')
     if (actionsSnap.exists()) {
-      actionsSnap.forEach((childSnap) => {
+      actionsSnap.forEach((childSnap:EntitySnapshot) => {
         let key = childSnap.key()
         actionMetas.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions/' + key))
       })

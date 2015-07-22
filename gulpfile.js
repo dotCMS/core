@@ -54,7 +54,7 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-gulp.task('bundleDist', ['unbundle'], function (done) {
+gulp.task('bundleDist', ['unbundle', 'compile-ts'], function (done) {
 
   var bundleSfx = function () {
     var sfxPath = config.depBundles + '/core-web.sfx.js'
@@ -379,7 +379,7 @@ var tsProject = ts.createProject({
   typescript: require('typescript')
 });
 
-gulp.task('scripts', function() {
+gulp.task('compile-ts', function() {
   var tsResult = gulp.src('./src/**/*.ts')
       .pipe(ts(tsProject));
 
@@ -389,8 +389,8 @@ gulp.task('scripts', function() {
   ]);
 });
 
-gulp.task('watch', ['scripts'], function() {
-  return gulp.watch('./src/**/*.ts', ['scripts']);
+gulp.task('watch', ['compile-ts'], function() {
+  return gulp.watch('./src/**/*.ts', ['compile-ts']);
 });
 
 //noinspection JSUnusedLocalSymbols
@@ -398,6 +398,10 @@ gulp.task('play', ['start-server', 'watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
+
+gulp.task('build', ['copyAll'], function () {
+  return;
+})
 
 gulp.task('clean', ['unbundle'], function (done) {
   del.sync(['./dist', './build', './gh_pages'])

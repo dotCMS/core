@@ -124,7 +124,11 @@ export class EntityMeta {
   push(data, onComplete = emptyFn) {
     return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
         .then((result) => {
+          console.log("Push succeeded, creating snapshot")
           return new EntitySnapshot(new EntityMeta(result.path ), data)
+        }).catch((e) => {
+          console.log('Error creating snapshot', e)
+          throw e
         })
 
   }

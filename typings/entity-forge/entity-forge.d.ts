@@ -7,6 +7,11 @@ declare class EntityMeta {
   push(data:any):Promise<any>;
 }
 
+declare class EntitySnapshot {
+  key():string;
+  push(data:any):Promise<any>;
+}
+
 declare var RestDataStore:any;
 
 

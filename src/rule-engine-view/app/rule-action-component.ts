@@ -4,6 +4,10 @@
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import ruleActionTemplate from './templates/rule-action-component.tpl.html!text'
+
+
+
 var actionletsAry = []
 var actionletsMap = new Map()
 var actionletsPromise;
@@ -29,7 +33,7 @@ export let initActionlets = function () {
   properties: ["actionMeta"]
 })
 @View({
-  template: RuleEngine.templates.ruleActionTemplate,
+  template: ruleActionTemplate,
   directives: [NgIf, NgFor],
 })
 export class RuleActionComponent {

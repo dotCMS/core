@@ -8,6 +8,9 @@
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 import {ConditionComponent} from './rule-condition-component';
 
+import conditionGroupTemplate from './templates/rule-condition-group-component.tpl.html!text'
+
+
 @Component({
   selector: 'condition-group',
   properties: [
@@ -16,7 +19,7 @@ import {ConditionComponent} from './rule-condition-component';
   ]
 })
 @View({
-  template: RuleEngine.templates.conditionGroupTemplate,
+  template: conditionGroupTemplate,
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
