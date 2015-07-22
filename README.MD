@@ -9,7 +9,9 @@ relevant standards which are all approaching their final form. As part of this, 
 yet working, and the build hasn't been updated to pre-compile the typescript yet. TLDR; the demo doesn't work at the 
 moment, you'll need to run the dev version. See 'To Run' or 'To Develop', below.)
 
-If you have an up to date instance of the [Rules Engine branch](https://github.com/dotCMS/core/tree/issue-7391-rules-engine) of dotCMS Core  running locally you can point to it by setting the Base URL value at the top of the page. Otherwise the demo will  (eventually) default to using LocalStorage for persistence.
+If you have an up to date instance of the [Rules Engine branch](https://github.com/dotCMS/core/tree/issue-7391-rules-engine) 
+of dotCMS Core  running locally you can point to it by setting the Base URL value at the top of the page. 
+Otherwise the demo will default to using LocalStorage for persistence.
 
 
 ## To Run:
