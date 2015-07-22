@@ -394,7 +394,7 @@ gulp.task('watch', ['compile-ts'], function() {
 });
 
 //noinspection JSUnusedLocalSymbols
-gulp.task('play', ['start-server', 'watch'], function (done) {
+gulp.task('play', ['start-server'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
