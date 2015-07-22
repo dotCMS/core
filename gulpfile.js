@@ -221,7 +221,7 @@ gulp.task('start-server', function (done) {
       .on('listening', function () {
         console.log('Started connect web server on ' + config.appHost)
         if (config.args.open) {
-          open(config.appHost)
+          open(config.appHost + '/index-dev.html')
         }
         else {
           console.log("add the '-o' flag to automatically open the default browser")
