@@ -1,4 +1,4 @@
-import XDebug from './log-config.js';
+import XDebug from 'debug';
 let log = XDebug('RuleEngine.Core');
 
 let KEY_CHARS = "-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz";

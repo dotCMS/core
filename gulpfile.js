@@ -54,9 +54,7 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-gulp.task('bundleDist', ['unbundle', 'compile-ts'], function (done) {
-
-  var bundleSfx = function () {
+gulp.task('bundle-sfx', ['unbundle'], function(done){
     var sfxPath = config.depBundles + '/core-web.sfx.js'
     console.info("Bundling self-executing build to " + sfxPath)
 
@@ -64,22 +62,27 @@ gulp.task('bundleDist', ['unbundle', 'compile-ts'], function (done) {
         sfxPath,
         {
           inject: false,
-          minify: true,
-          sourceMaps: false
-        }).then(done)
-  };
-
-  var bundleDev = function () {
-    var devPath = config.depBundles + '/core-web.js'
-    console.info("Bundling unminified build to " + devPath)
-    jspm.bundle('./index',
-        devPath,
-        {
-          inject: false,
           minify: false,
           sourceMaps: true
-        }).then(bundleSfx)
-  }
+        }).then(done).catch(function(e){
+          console.log("eh?", e)
+          throw e
+        })
+})
+
+gulp.task('bundle-dev', ['unbundle'], function(done){
+  var devPath = config.depBundles + '/core-web.js'
+  console.info("Bundling unminified build to " + devPath)
+  jspm.bundle('./index',
+      devPath,
+      {
+        inject: false,
+        minify: false,
+        sourceMaps: true
+      }).then(done)
+})
+
+gulp.task('bundle-dist', ['unbundle'], function(done){
   var minifiedPath = config.depBundles + '/core-web.min.js'
   console.info("Bundling minified build to " + minifiedPath)
   jspm.bundle('./index',
@@ -88,10 +91,13 @@ gulp.task('bundleDist', ['unbundle', 'compile-ts'], function (done) {
         inject: false,
         minify: true,
         sourceMaps: false
-      }).then(bundleDev)
-
+      }).then(done)
 })
 
+
+gulp.task('bundle-all', ['bundle-dev', 'bundle-dist', 'bundle-sfx'], function (done) {
+  return done();
+})
 
 gulp.task('bundleDeps', ['unbundle'], function (done) {
   var deps = pConfig.jspm.dependencies || {}
@@ -230,7 +236,7 @@ gulp.task('copyBootstrap', function(){
 gulp.task('copyMain', function(){
   return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
-gulp.task('copyAll', ['bundleDist', 'copyMain', 'copyBootstrap'], function () {
+gulp.task('copyAll', ['bundle-all', 'copyMain', 'copyBootstrap'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
 

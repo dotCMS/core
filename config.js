@@ -269,6 +269,14 @@ System.config({
       "public-encrypt": "npm:public-encrypt@2.0.1",
       "randombytes": "npm:randombytes@2.0.1"
     },
+    "npm:debug@2.1.3": {
+      "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "ms": "npm:ms@0.7.0",
+      "net": "github:jspm/nodelibs-net@0.1.2",
+      "process": "github:jspm/nodelibs-process@0.1.1",
+      "tty": "github:jspm/nodelibs-tty@0.1.0",
+      "util": "github:jspm/nodelibs-util@0.1.0"
+    },
     "npm:debug@2.2.0": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "ms": "npm:ms@0.7.1",
@@ -307,7 +315,7 @@ System.config({
       "util": "github:jspm/nodelibs-util@0.1.0"
     },
     "npm:jsonp@0.2.0": {
-      "debug": "npm:debug@2.2.0"
+      "debug": "npm:debug@2.1.3"
     },
     "npm:miller-rabin@2.0.1": {
       "bn.js": "npm:bn.js@2.2.0",
