@@ -102,9 +102,10 @@ export class EntityMeta {
     } else {
       persistPromise = ConnectionManager.persistenceHandler.setItem(this.path, data)
     }
-    return persistPromise.then((result) => {
-      return onComplete(result)
+    persistPromise.then((result) => {
+      onComplete(result)
     })
+    return persistPromise
   }
 
   /**
