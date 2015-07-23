@@ -209,7 +209,7 @@ public class RulesResource {
 
     private List<RestRule> getRulesInternal(User user, Host host) {
         try {
-            List<Rule> rules = rulesAPI.getRulesByHost(host.getIdentifier(), user, false);
+            List<Rule> rules = rulesAPI.getAllRulesByHost(host.getIdentifier(), user, false);
             return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());

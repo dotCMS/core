@@ -74,12 +74,20 @@ public class RulesAPIImpl implements RulesAPI {
         initActionletMap();
     }
 
-    public List<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public List<Rule> getEnabledRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(host)) {
             return new ArrayList<>();
         }
 
-        return perAPI.filterCollection(rulesFactory.getRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        return perAPI.filterCollection(rulesFactory.getEnabledRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+    }
+
+    public List<Rule> getAllRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(host)) {
+            return new ArrayList<>();
+        }
+
+        return perAPI.filterCollection(rulesFactory.getAllRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
     public Set<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException {
@@ -95,7 +103,7 @@ public class RulesAPIImpl implements RulesAPI {
             return new ArrayList<>();
         }
 
-        return perAPI.filterCollection(rulesFactory.getRulesByHost(folder), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        return perAPI.filterCollection(rulesFactory.getEnabledRulesByHost(folder), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
     public List<Rule> getRulesByNameFilter(String nameFilter, User user, boolean respectFrontendRoles) {

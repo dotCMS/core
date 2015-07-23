@@ -127,13 +127,13 @@ public class RulesAPITest extends TestBase {
         responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         String conditionId = (String) responseJSON.get("id");
-        JSONObject conditionValues = (JSONObject) responseJSON.get("values");
 
         // Create new Rule Action
 
         JSONObject actionJSON = new JSONObject();
         actionJSON.put("name", "myTestRuleAction");
         actionJSON.put("actionlet", "TestActionlet");
+        actionJSON.put("owningRule", ruleId);
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(actionJSON.toString()));
 
@@ -146,7 +146,6 @@ public class RulesAPITest extends TestBase {
         // Update Rule
 
         ruleJSON = new JSONObject();
-        ruleJSON.put("site", defaultHost.getIdentifier());
         ruleJSON.put("name", modifiedRuleName);
         ruleJSON.put("enabled", "false");
         ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
@@ -162,7 +161,6 @@ public class RulesAPITest extends TestBase {
         // Update Condition Group
 
         groupJSON = new JSONObject();
-        groupJSON.put("ruleId", ruleId);
         groupJSON.put("operator", Condition.Operator.OR.name());
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(groupJSON.toString()));
@@ -176,13 +174,21 @@ public class RulesAPITest extends TestBase {
 
         conditionJSON = new JSONObject();
         conditionJSON.put("name", modifiedConditionName);
-        conditionJSON.put("conditionGroupId", groupId);
+        conditionJSON.put("owningGroup", groupId);
         conditionJSON.put("conditionlet", UsersCountryConditionlet.class.getSimpleName());
         conditionJSON.put("comparison", "is");
         conditionJSON.put("operator", Condition.Operator.OR.name());
 
+
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId + "/conditionvalues" ).request(MediaType.APPLICATION_JSON_TYPE).get();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        responseStr = response.readEntity(String.class);
+        responseJSON = new JSONObject(responseStr);
+        String valueId = (String) responseJSON.keys().next();
+
         valueJSON = new JSONObject();
-        String valueId = (String) conditionValues.keys().next();
         valueJSON.put("id", valueId);
         valueJSON.put("value", "VE");
         valueJSON.put("priority", 0);
@@ -192,7 +198,7 @@ public class RulesAPITest extends TestBase {
 
         conditionJSON.put("values", valuesJSON);
 
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditiongroups/" + groupId + "/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(conditionJSON.toString()));
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(conditionJSON.toString()));
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -205,7 +211,8 @@ public class RulesAPITest extends TestBase {
 
         actionJSON = new JSONObject();
         actionJSON.put("actionlet", "TestActionlet");
-        actionJSON.put("ruleId", ruleId);
+        actionJSON.put("name", "My Updated Action");
+        actionJSON.put("owningRule", ruleId);
         actionJSON.put("priority", 10);
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).put(Entity.json(actionJSON.toString()));

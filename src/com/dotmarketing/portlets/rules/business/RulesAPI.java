@@ -23,7 +23,7 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    List<Rule> getEnabledRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      *

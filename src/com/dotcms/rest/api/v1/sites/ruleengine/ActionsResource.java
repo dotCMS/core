@@ -107,7 +107,7 @@ public class ActionsResource {
      */
 
     @POST
-    @Path("/sites/{siteId}/ruleengine/ruleactions/")
+    @Path("/sites/{siteId}/ruleengine/ruleactions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -243,6 +243,7 @@ public class ActionsResource {
                 throw new NotFoundException("Rule Action with id '%s' not found: ", ruleActionId);
             }
             actionTransform.applyRestToApp(restRuleAction, ruleAction);
+            ruleAction.setId(ruleActionId);
             rulesAPI.saveRuleAction(ruleAction, user, false);
             return ruleAction.getId();
         } catch (DotDataException e) {

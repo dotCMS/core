@@ -11,7 +11,9 @@ import java.util.Set;
 
 public interface RulesFactory {
 
-    List<Rule> getRulesByHost(String host) throws DotDataException;
+    List<Rule> getEnabledRulesByHost(String host) throws DotDataException;
+
+    List<Rule> getAllRulesByHost(String host) throws DotDataException;
 
     Set<Rule> getRulesByHost(String host, Rule.FireOn fireOn) throws DotDataException;
 

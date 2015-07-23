@@ -38,11 +38,24 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public List<Rule> getRulesByHost(String host) throws DotDataException {
+    public List<Rule> getEnabledRulesByHost(String host) throws DotDataException {
         List<Rule> ruleList = cache.getRulesByHostId(host);
         if (ruleList == null) {
             final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_RULES_BY_HOST);
+            db.setSQL(sql.SELECT_ENABLED_RULES_BY_HOST);
+            db.addParam(host);
+            ruleList = convertListToObjects(db.loadObjectResults(), Rule.class);
+            cache.addRules(ruleList);
+        }
+        return ruleList;
+    }
+
+    @Override
+    public List<Rule> getAllRulesByHost(String host) throws DotDataException {
+        List<Rule> ruleList = cache.getRulesByHostId(host);
+        if (ruleList == null) {
+            final DotConnect db = new DotConnect();
+            db.setSQL(sql.SELECT_ALL_RULES_BY_HOST);
             db.addParam(host);
             ruleList = convertListToObjects(db.loadObjectResults(), Rule.class);
             cache.addRules(ruleList);
