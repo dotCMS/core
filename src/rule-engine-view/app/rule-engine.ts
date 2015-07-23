@@ -40,6 +40,9 @@ class RuleEngineComponent {
     this.readSnapshots(this.rulesRef).then((snaps) => {
       this.rules = snaps
     }).catch((e) => console.log(e));
+    this.rulesRef.on('child_removed', (snap) => {
+
+    } )
   }
 
   updateBaseUrl(value) {

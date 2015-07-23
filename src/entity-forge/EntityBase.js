@@ -9,24 +9,20 @@ let emptyFn = function () {
 }
 
 
-export class MetaManager {
-
-  constructor() {
-    this.metasByPath = new Map()
-  }
-
+let Dispatcher = {
+  queries: new Set(),
   register(meta) {
-    let instances = this.metasByPath.get(meta.path)
-    if (!instances) {
-      instances = new Set()
-      this.metasByPath.put(meta.path, instances)
-    }
-    instances.add(meta)
-  }
+    this.queries.add(meta)
+  },
 
+  deregister(meta){
+    this.queries.delete(meta)
+  },
 
-  notify(path, eventType) {
-
+  notify(path, eventType, payload = null) {
+    this.queries.forEach((query)=> {
+      query.notify(path, eventType, payload)
+    })
   }
 
 
@@ -50,7 +46,7 @@ export class EntitySnapshot {
     return this.entityMeta
   }
 
-  exists(){
+  exists() {
     return this.entity != null
   }
 
@@ -75,8 +71,16 @@ export class EntitySnapshot {
 export class EntityMeta {
   constructor(path) {
     this.path = path
+    this.pathTokens = path ? path.split("/") : []
+    this.latestSnapshot = null
     let idx = this.path.lastIndexOf('/')
     this.$key = idx < 0 ? this.path : this.path.substring(idx + 1, this.path.length)
+    this.watches = {
+      value: new Set(),
+      child_added: new Set(),
+      child_removed: new Set(),
+      child_changed: new Set()
+    }
   }
 
   child(key) {
@@ -96,16 +100,15 @@ export class EntityMeta {
    * @returns {*}
    */
   set(data, onComplete = emptyFn) {
-    let persistPromise;
     if (data === null) {
-      persistPromise = ConnectionManager.persistenceHandler.removeItem(this.path)
-    } else {
-      persistPromise = ConnectionManager.persistenceHandler.setItem(this.path, data)
+      return this.remove(onComplete)
     }
-    persistPromise.then((result) => {
-      onComplete(result)
-    })
-    return persistPromise
+    let prom = ConnectionManager.persistenceHandler.setItem(this.path, data)
+    prom.then(() => {
+      Dispatcher.notify(this.path, "change", new EntitySnapshot(this, data))
+      onComplete()
+    }).catch((e) => onComplete(e))
+    return prom
   }
 
   /**
@@ -119,42 +122,55 @@ export class EntityMeta {
   }
 
   remove(onComplete = emptyFn) {
-    return this.set(null, onComplete)
+    let prom = ConnectionManager.persistenceHandler.removeItem(this.path)
+    prom.then(() => {
+      Dispatcher.notify(this.path, 'removed', this.latestSnapshot)
+      onComplete()
+    }).catch((e) => onComplete(e))
+    return prom
   }
 
   push(data, onComplete = emptyFn) {
     return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
         .then((result) => {
-          console.log("Push succeeded, creating snapshot")
-          return new EntitySnapshot(new EntityMeta(result.path ), data)
+          log("Push succeeded, creating snapshot")
+          let snap = new EntitySnapshot(new EntityMeta(result.path), data)
+          Dispatcher.notify(result.path, 'added')
+          return snap
         }).catch((e) => {
-          console.log('Error creating snapshot', e)
+          log('Error creating snapshot', e)
           throw e
         })
-
   }
 
+
+  _sync(){
+    ConnectionManager.persistenceHandler.getItem(this.path).then((responseEntity) => {
+      let snap = new EntitySnapshot(this, responseEntity)
+      Dispatcher.notify(this.path, 'changed', snap)
+      return snap
+    }).catch((e) => {
+      log(e)
+      throw e
+    })
+  }
   once(eventType, callback = emptyFn, failureCallback = emptyFn) {
-    return new Promise((resolve, reject) => {
-      this.on(eventType, callback, failureCallback).then((result) => {
-        this.off(eventType, callback)
-        resolve(result)
-      }).catch((e) => {
-        this.off(eventType, callback)
-        reject(e)
-      })
-    });
+    this.on(eventType, (snap) => {
+      this.off(eventType, callback)
+      callback(snap)
+    }, (e) => {
+      this.off(eventType, callback)
+      failureCallback()
+    })
   }
 
-  off(eventType = null, callback = null) {
-    if (eventType === null) {
-      // remove all
-    }
-    else if (callback === null) {
-      // remove all for event type
+
+  off(eventType, callback = null) {
+    if (callback === null) {
+      this.watches[eventType].clear()
     }
     else {
-
+      this.watches[eventType].delete(callback)
     }
   }
 
@@ -176,34 +192,99 @@ export class EntityMeta {
         return this.onChildRemoved(callback)
         break
       default:
-        throw new Error("Invalid event name: '" + eventType + "'.")
+      {
+        let e = new Error("Invalid event name: '" + eventType + "'.")
+        log(e)
+        throw e
+      }
+
+    }
+  }
+
+  listen() {
+    if (!this.listening) {
+      Dispatcher.register(this)
+      this.listening = true
     }
   }
 
   onValue(callback) {
-    return ConnectionManager.persistenceHandler.getItem(this.path).then((responseEntity) => {
-      let snap = new EntitySnapshot(this, responseEntity)
-      callback(snap)
-      return snap
-    }).catch((err) => {
-      callback(err)
-    })
+    this.listen()
+    this.watches.value.add(callback)
+    this._sync()
+    return callback
   }
 
   onChildAdded(callback) {
-
+    this.listen()
+    this.watches.child_added.add(callback)
   }
 
   onChildRemoved(callback) {
+    this.listen()
+    this.watches.child_removed.add(callback)
 
   }
 
   onChildChanged(callback) {
+    this.listen()
+    this.watches.child_changed.add(callback)
 
   }
 
   onChildMoved(callback) {
 
+  }
+
+  notify(path, eventType, payload) {
+    try {
+      let isSelf = this.path.length == path.length && this.path == path
+      // this. path = /foo/abc/
+      //  --   path = /foo/abc/123
+      let isDescendant = !isSelf && path.startsWith(this.path)
+      let isAncestor = !isSelf && !isDescendant && this.path.startsWith(path)
+      if (isSelf) {
+        switch (eventType) {
+          case 'changed':
+            log('changed')
+            this.watches.value.forEach((cb) => {
+              cb(payload)
+            })
+            break;
+        }
+      } else if (isDescendant) {
+        let isChild = path.split("/").length === (this.pathTokens.length + 1)
+        if (isChild) {
+          switch (eventType) {
+            case 'changed':
+              log('child changed')
+              this.watches.child_changed.forEach((cb) => {
+                cb(payload)
+              })
+              break;
+            case 'added':
+              log('child added', payload)
+              this.watches.child_added.forEach((cb) => {
+                cb(payload)
+              })
+              break;
+            case 'removed':
+              log('child removed', payload)
+              this.watches.child_removed.forEach((cb) => {
+                cb(payload)
+              })
+              break;
+            case 'moved':
+              log('moved')
+              break;
+
+          }
+        }
+      }
+    }
+    catch (e) {
+      log("Notification error: ", e)
+    }
   }
 }
 
