@@ -56,7 +56,10 @@ export class EntitySnapshot {
     if (this.entity.hasOwnProperty(key)) {
       childVal = this.entity[key]
     }
-    return new EntitySnapshot(new EntityMeta(childPath), childVal)
+    var childMeta = new EntityMeta(childPath);
+    var childSnap = new EntitySnapshot(childMeta, childVal);
+    childMeta.latestSnapshot = childSnap
+    return childSnap
   }
 
   forEach(childAction) {
@@ -81,6 +84,7 @@ export class EntityMeta {
       child_removed: new Set(),
       child_changed: new Set()
     }
+    Dispatcher.register(this)
   }
 
   child(key) {
@@ -134,8 +138,10 @@ export class EntityMeta {
     return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
         .then((result) => {
           log("Push succeeded, creating snapshot")
-          let snap = new EntitySnapshot(new EntityMeta(result.path), data)
-          Dispatcher.notify(result.path, 'added')
+          let childMeta = new EntityMeta(result.path);
+          let snap = new EntitySnapshot(childMeta, data)
+          childMeta.latestSnapshot = snap
+          Dispatcher.notify(result.path, 'added', snap)
           return snap
         }).catch((e) => {
           log('Error creating snapshot', e)
@@ -144,7 +150,7 @@ export class EntityMeta {
   }
 
 
-  _sync(){
+  _sync() {
     ConnectionManager.persistenceHandler.getItem(this.path).then((responseEntity) => {
       let snap = new EntitySnapshot(this, responseEntity)
       Dispatcher.notify(this.path, 'changed', snap)
@@ -154,6 +160,7 @@ export class EntityMeta {
       throw e
     })
   }
+
   once(eventType, callback = emptyFn, failureCallback = emptyFn) {
     this.on(eventType, (snap) => {
       this.off(eventType, callback)
@@ -201,33 +208,22 @@ export class EntityMeta {
     }
   }
 
-  listen() {
-    if (!this.listening) {
-      Dispatcher.register(this)
-      this.listening = true
-    }
-  }
-
   onValue(callback) {
-    this.listen()
     this.watches.value.add(callback)
     this._sync()
     return callback
   }
 
   onChildAdded(callback) {
-    this.listen()
     this.watches.child_added.add(callback)
   }
 
   onChildRemoved(callback) {
-    this.listen()
     this.watches.child_removed.add(callback)
 
   }
 
   onChildChanged(callback) {
-    this.listen()
     this.watches.child_changed.add(callback)
 
   }
@@ -245,12 +241,16 @@ export class EntityMeta {
       let isAncestor = !isSelf && !isDescendant && this.path.startsWith(path)
       if (isSelf) {
         switch (eventType) {
+          case 'added':
           case 'changed':
-            log('changed')
+            log('added/changed: ', this.path)
+            this.latestSnapshot = payload
             this.watches.value.forEach((cb) => {
               cb(payload)
             })
             break;
+          default :
+            console.log("Unhandled event on self: ", eventType, this.path)
         }
       } else if (isDescendant) {
         let isChild = path.split("/").length === (this.pathTokens.length + 1)

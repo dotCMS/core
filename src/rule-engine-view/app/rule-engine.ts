@@ -41,8 +41,10 @@ class RuleEngineComponent {
       this.rules = snaps
     }).catch((e) => console.log(e));
     this.rulesRef.on('child_removed', (snap) => {
-
-    } )
+      this.rules = this.rules.filter((rule)=> {
+        return rule.key() !== snap.key()
+      })
+    })
   }
 
   updateBaseUrl(value) {
@@ -59,7 +61,6 @@ class RuleEngineComponent {
   }
 
   readSnapshots(rulesRef:EntityMeta) {
-    console.log("RuleEngine change event: ")
     return new Promise((resolve, reject)=> {
       let snaps = []
       rulesRef.once('value', (rulesSnap) => {
