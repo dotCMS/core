@@ -243,17 +243,6 @@ public class RulesAPITest extends TestBase {
         ruleJSON = new JSONObject(responseStr);
         assertTrue(ruleJSON.getString("name").equals(modifiedRuleName));
 
-        // Get Conditions
-
-        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions").request(MediaType.APPLICATION_JSON_TYPE).get();
-
-        assertTrue(response.getStatus() == HttpStatus.SC_OK);
-
-        responseStr = response.readEntity(String.class);
-        JSONObject conditionsJSON = new JSONObject(responseStr);
-        conditionJSON = (JSONObject) conditionsJSON.get(conditionId);
-        assertTrue(conditionJSON.getString("name").equals(modifiedConditionName));
-
         // Get Condition
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).get();
@@ -266,7 +255,7 @@ public class RulesAPITest extends TestBase {
 
         // Get Conditionlets
 
-        response = target.path("/conditionlets").request(MediaType.APPLICATION_JSON_TYPE).get();
+        response = target.path("/system/conditionlets").request(MediaType.APPLICATION_JSON_TYPE).get();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -275,12 +264,20 @@ public class RulesAPITest extends TestBase {
 
         assertTrue(conditionletJSON.getString(UsersCountryConditionlet.class.getSimpleName()) != null);
 
+        // Delete Condition Value
+
+        response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId + "/conditionvalues/" + valueId).request(MediaType.APPLICATION_JSON_TYPE).delete();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+
+        ConditionValue conditionValue = APILocator.getRulesAPI().getConditionValueById(valueId, user, false);
+        assertNull(conditionValue);
 
         // Delete Condition
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         condition = APILocator.getRulesAPI().getConditionById(conditionId, user, false);
         assertNull(condition);
@@ -289,7 +286,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId + "/conditiongroups/" + groupId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         group = APILocator.getRulesAPI().getConditionGroupById(conditionId, user, false);
         assertNull(group);
@@ -298,7 +295,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/ruleactions/" + actionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         action = APILocator.getRulesAPI().getRuleActionById(actionId, user, false);
         assertNull(action);
@@ -307,7 +304,7 @@ public class RulesAPITest extends TestBase {
 
         response = target.path("/sites/" + defaultHost.getIdentifier() + "/rules/" + ruleId).request(MediaType.APPLICATION_JSON_TYPE).delete();
 
-        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
 
         rule = APILocator.getRulesAPI().getRuleById(ruleId, user, false);
         assertNull(rule);

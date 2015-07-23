@@ -34,6 +34,17 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    List<Rule> getAllRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+    /**
+     *
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @return
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
     Set<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException;
 
 

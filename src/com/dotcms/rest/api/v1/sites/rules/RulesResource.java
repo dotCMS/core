@@ -162,7 +162,7 @@ public class RulesResource {
             HibernateUtil.startTransaction();
             rulesAPI.deleteRule(rule, user, false);
             HibernateUtil.commitTransaction();
-            return Response.status(HttpStatus.SC_OK).build();
+            return Response.status(HttpStatus.SC_NO_CONTENT).build();
         } catch (DotDataException | DotSecurityException e) {
             try {
                 HibernateUtil.rollbackTransaction();
