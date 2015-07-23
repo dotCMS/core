@@ -142,68 +142,86 @@ public class CookieUtil {
 	
 
 public static HttpServletResponse setCookiesSecurityHeaders(HttpServletRequest req, HttpServletResponse res, Set<String> cookies) {
-		
+
+		//there are cookies on the request
 		if(req.getCookies()!=null) {
-			StringBuilder headerStr = new StringBuilder();
 			for(Cookie cookie : req.getCookies()){
-				
-				if(cookies==null || cookies.remove(cookie.getName())) {
-					
-					String value = cookie.getValue();
-					
-					if(cookie.getName().equals(CookieKeys.ID)) 
-						continue;
-					
 
-                    if(cookie.getName().equals("JSESSIONID") && (!Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || ServerDetector.isWebSphere())) {
-                        continue;
-                    }
+				if(cookie.getName().equals(CookieKeys.ID))
+					continue;
 
-                    if(cookie.getName().equals("JSESSIONID") && req.getSession(false)!=null) {
-                        value = req.getSession(false).getId();
+				// if we are using websphere do not change the JSESSIONID vaules
+                if(cookie.getName().equals("JSESSIONID") && (!Config.getBooleanProperty("COOKIES_SESSION_COOKIE_FLAGS_MODIFIABLE", false) || ServerDetector.isWebSphere())) {
+                    continue;
+                }
+
+                // if JSESSIONID exists updates its value
+                if(cookie.getName().equals("JSESSIONID") && req.getSession(false)!=null) {
+                	cookie.setValue(req.getSession(false).getId());
+                	cookie.setPath("/");
+				}
+
+                // if the COOKIES_SECURE_FLAG is set to "https" or "always" in a secure connection
+                // all cookie's security flags are force to true
+                //
+                // Important: adding flags to cookie and moving it to the response will set
+                // the expire property to a value of -1 so the cookie will turn into a
+                // "session cookie".  This will happen only if the COOKIES_SECURE_FLAG property is
+                // is set to force the secure flags.  If the cookies do not need to be altered
+                // they won't be affected on the loop
+                //
+				if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
+						|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
+					if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)){
+						// add secure and httpOnly flag to the cookie
+						cookie.setSecure(true);
+						cookie.setHttpOnly(true);
+					}else{
+						// only secure flag added to he cookie
+						cookie.setSecure(true);
+						cookie.setHttpOnly(false);
 					}
-						
-
-					if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always") 
-							|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
-
-						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
-						else 
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(SECURE).append(";Path=/");
-
-					} else { 
-
-						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-							headerStr.append(cookie.getName()).append("=").append(value).append(";").append(HTTP_ONLY).append(";Path=/");
-						else 
-							headerStr.append(cookie.getName()).append("=").append(value).append(";Path=/");
+					// the cookie is added directly to the response
+					res.addCookie(cookie);
+				} else {
+					// if the connection is not secure we still need to set the JSESSIONID value and flags
+					if(cookie.getName().equals("JSESSIONID")){
+						if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)){
+							// only the httpOnly value is added to the cookie
+							cookie.setSecure(false);
+							cookie.setHttpOnly(true);
+						}
+						else{
+							// no flags added to the cookie
+							cookie.setSecure(false);
+							cookie.setHttpOnly(false);
+						}
+						res.addCookie(cookie);
 					}
-
-					res.addHeader("SET-COOKIE", headerStr.toString());
-					headerStr.setLength(0);
-
 				}
 			}
-		} 
-		
+		}
+
+		// if the JSESSIONID cookie does not exists create it
 		if(req.getSession(false)!=null && (req.getCookies()==null || !containsCookie(req.getCookies(), "JSESSIONID"))) {
-			StringBuilder headerStr = new StringBuilder();
 
 			if(Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("always")
 					|| (Config.getStringProperty("COOKIES_SECURE_FLAG", "https").equals("https") && req.isSecure())) {
-
-				String value = req.getSession(false).getId();
-
-				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false))
-					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";").append(HTTP_ONLY).append(";Path=/");
-				else
-					headerStr.append("JSESSIONID").append("=").append(value).append(";").append(SECURE).append(";Path=/");
-
-				res.addHeader("SET-COOKIE", headerStr.toString());
+				Cookie cookie = new Cookie("JSESSIONID", req.getSession(false).getId());
+				cookie.setPath("/");
+				if(Config.getBooleanProperty("COOKIES_HTTP_ONLY", false)){
+					// add secure and httpOnly flag to the cookie
+					cookie.setSecure(true);
+					cookie.setHttpOnly(true);
+				}
+				else{
+					// only secure flag added to he cookie
+					cookie.setSecure(true);
+					cookie.setHttpOnly(false);
+				}
+				res.addCookie(cookie);
 			}
 		}
-		
 		return res;
 	}
 	
