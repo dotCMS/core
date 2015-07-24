@@ -116,7 +116,8 @@ class ConditionComponent {
 
 
   toggleOperator() {
-    //ClauseActionCreators.toggleOperator(this._clause)
+    this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
+    this.updateCondition()
   }
 
   updateCondition() {
