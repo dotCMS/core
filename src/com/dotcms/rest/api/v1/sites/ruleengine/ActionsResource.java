@@ -63,7 +63,7 @@ public class ActionsResource {
      */
 //
 //    @GET
-//    @Path("/sites/{siteId}/ruleengine/ruleactions")
+//    @Path("/sites/{siteId}/ruleengine/ruleActions")
 //    @Produces(MediaType.APPLICATION_JSON)
 //    public Map<String, RestRuleAction> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId)
 //            throws JSONException {
@@ -87,7 +87,7 @@ public class ActionsResource {
      */
     @GET
     @JSONP
-    @Path("/sites/{siteId}/ruleengine/ruleactions/{actionId}")
+    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestRuleAction self(@Context HttpServletRequest request,
                          @PathParam("siteId") String siteId,
@@ -107,7 +107,7 @@ public class ActionsResource {
      */
 
     @POST
-    @Path("/sites/{siteId}/ruleengine/ruleactions")
+    @Path("/sites/{siteId}/ruleengine/ruleActions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -133,7 +133,7 @@ public class ActionsResource {
      */
 
     @PUT
-    @Path("/sites/{siteId}/ruleengine/ruleactions/{actionId}")
+    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestRuleAction update(@Context HttpServletRequest request,
@@ -152,10 +152,10 @@ public class ActionsResource {
      * <p>Deletes the RuleAction with the given ruleActionId
      * <br>
      * <p/>
-     * Usage: DELETE api/rules-engine/rules/ruleactions/{ruleActionId}
+     * Usage: DELETE api/rules-engine/rules/ruleActions/{ruleActionId}
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/ruleactions/{actionId}")
+    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response remove(@Context HttpServletRequest request,

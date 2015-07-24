@@ -64,7 +64,7 @@ public class ConditionGroupsResource extends WebResource {
     }
 
     @GET
-    @Path("sites/{siteId}/rules/{ruleId}/conditiongroups")
+    @Path("sites/{siteId}/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
             throws JSONException {
@@ -82,7 +82,7 @@ public class ConditionGroupsResource extends WebResource {
     }
 
     @GET
-    @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
+    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public RestConditionGroup self(@Context HttpServletRequest request,
                                       @PathParam("siteId") String siteId,
@@ -104,7 +104,7 @@ public class ConditionGroupsResource extends WebResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups")
+    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -134,7 +134,7 @@ public class ConditionGroupsResource extends WebResource {
      * Usage: /rules/
      */
     @PUT
-    @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{groupId}")
+    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionGroup update(@Context HttpServletRequest request,
@@ -157,11 +157,11 @@ public class ConditionGroupsResource extends WebResource {
      * <p>Deletes a Condition Group and all its child Conditions
      * <br>
      * <p/>
-     * Usage: DELETE api/rules-engine/conditiongroups
+     * Usage: DELETE api/rules-engine/conditionGroups
      */
 
     @DELETE
-    @Path("/sites/{siteId}/rules/{ruleId}/conditiongroups/{conditionGroupId}")
+    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{conditionGroupId}")
     public Response remove(@Context HttpServletRequest request,
                                          @PathParam("siteId") String siteId,
                                          @PathParam("ruleId") String ruleId,
