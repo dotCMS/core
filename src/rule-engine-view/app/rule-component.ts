@@ -26,7 +26,7 @@ class RuleComponent {
   fireOnDropDownExpanded:boolean;
   ruleGroups:Array<any>;
   ruleActions:Array<any>;
-
+  groupsSnap:EntitySnapshot;
 
   constructor() {
     console.log('Creating RuleComponent')
@@ -34,7 +34,6 @@ class RuleComponent {
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
     this.ruleActions = []
-
   }
 
   set ruleSnap(ruleSnap:any) {
@@ -42,11 +41,15 @@ class RuleComponent {
     this._ruleSnap = ruleSnap
     this.rule = ruleSnap.val()
     this.ruleGroups = []
-    this.ruleSnap.child('conditionGroups').forEach((childSnap) => {
+    this.groupsSnap = this.ruleSnap.child('conditionGroups')
+    this.groupsSnap.forEach((childSnap) => {
       this.ruleGroups.push(childSnap)
     })
-    this.ruleActions = this.getRuleActions()
+    this.groupsSnap.ref().on('child_added', (childSnap)=>{
+      this.ruleGroups.push(childSnap)
+    })
 
+    this.ruleActions = this.getRuleActions()
   }
 
   getRuleActions() {
@@ -82,7 +85,7 @@ class RuleComponent {
       operator: 'OR'
     }
 
-    this.ruleSnap.ref().child('conditiongroups').push(group).then((snapshot) => {
+    this.ruleSnap.ref().child('conditionGroups').push(group).then((snapshot) => {
       let group = snapshot['val']()
       this.rule.conditionGroups[snapshot.key()] = group
       group.conditions = group.conditions || {}
@@ -110,10 +113,8 @@ class RuleComponent {
 
 
   removeRule() {
-    this.ruleSnap.ref().remove().then((x) => {
-      // update
-    }).catch((e) => {
-      console.log("Not yay :~(: ", e)
+    this.ruleSnap.ref().remove().catch((e) => {
+      console.log("Error removing rule", e)
       throw e
     })
   }

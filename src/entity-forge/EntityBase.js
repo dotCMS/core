@@ -8,9 +8,9 @@ import  {ConnectionManager} from './ConnectionManager.js'
 let emptyFn = function () {
 }
 
-
 let Dispatcher = {
   queries: new Set(),
+  paths: new Set(),
   register(meta) {
     this.queries.add(meta)
   },
@@ -19,51 +19,78 @@ let Dispatcher = {
     this.queries.delete(meta)
   },
 
+  snapshotCreated(snap){
+    let url = snap.ref().toString()
+    if(!this.paths.has(url)){
+      this.notify(url, "added", snap)
+      this.paths.add(url)
+    }
+  },
+
   notify(path, eventType, payload = null) {
     this.queries.forEach((query)=> {
       query.notify(path, eventType, payload)
     })
   }
-
-
 }
 
+let RootMaker = {
+
+  gimme(){
+    let root = {}
+    Object.observe(root, RootMaker.ceilingCatWatchesForAdditions, ['add'] )
+  },
+
+  ceilingCatWatchesForAdditions(changes){
+    changes.forEach((change) => {
+
+    })
+
+  }
+}
+
+
 export class EntitySnapshot {
-  constructor(entityMeta, entity) {
-    this.entityMeta = entityMeta;
-    this.entity = entity
+  constructor(path, entity=null) {
+    this._path = path
+    this._entity = entity // @todo ggranum: this should be cloned
+    Dispatcher.snapshotCreated(this)
   }
 
   val() {
-    return this.entity
+    return this._entity
   }
 
   key() {
-    return this.entityMeta.key()
+    if(!this._key){
+      let idx = this._path.lastIndexOf('/')
+      this._key = idx < 0 ? this._path : this._path.substring(idx + 1, this._path.length)
+    }
+    return this._key
   }
 
   ref() {
-    return this.entityMeta
+    if(!this._meta){
+      this._meta = new EntityMeta(this._path)
+    }
+    return this._meta
   }
 
   exists() {
-    return this.entity != null
+    return this._entity != null
   }
 
   child(key) {
-    let childPath = this.entityMeta.path + '/' + key
+    let childPath = this._path + '/' + key
     let childVal = null
-    if (this.entity.hasOwnProperty(key)) {
-      childVal = this.entity[key]
+    if (this.exists() && this._entity.hasOwnProperty(key)) {
+      childVal = this._entity[key]
     }
-    var childMeta = new EntityMeta(childPath);
-    var childSnap = new EntitySnapshot(childMeta, childVal);
-    childMeta.latestSnapshot = childSnap
-    return childSnap
+    return new EntitySnapshot(childPath, childVal);
   }
 
   forEach(childAction) {
-    Object.keys(this.entity).every((key) => {
+    Object.keys(this._entity).every((key) => {
       let snap = this.child(key)
       return childAction(snap) !== true // break if 'true' returned by callback.
     })
@@ -72,9 +99,9 @@ export class EntitySnapshot {
 
 
 export class EntityMeta {
-  constructor(path) {
-    this.path = path
-    this.pathTokens = path ? path.split("/") : []
+  constructor(url) {
+    this.path = url
+    this.pathTokens = url ? url.split("/") : []
     this.latestSnapshot = null
     let idx = this.path.lastIndexOf('/')
     this.$key = idx < 0 ? this.path : this.path.substring(idx + 1, this.path.length)
@@ -85,6 +112,10 @@ export class EntityMeta {
       child_changed: new Set()
     }
     Dispatcher.register(this)
+  }
+
+  toString(){
+    return this.path
   }
 
   child(key) {
@@ -109,7 +140,7 @@ export class EntityMeta {
     }
     let prom = ConnectionManager.persistenceHandler.setItem(this.path, data)
     prom.then(() => {
-      Dispatcher.notify(this.path, "change", new EntitySnapshot(this, data))
+      Dispatcher.notify(this.path, "change", new EntitySnapshot(this.toString(), data))
       onComplete()
     }).catch((e) => onComplete(e))
     return prom
@@ -138,8 +169,8 @@ export class EntityMeta {
     return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
         .then((result) => {
           log("Push succeeded, creating snapshot")
+          let snap = new EntitySnapshot(result.path, data)
           let childMeta = new EntityMeta(result.path);
-          let snap = new EntitySnapshot(childMeta, data)
           childMeta.latestSnapshot = snap
           Dispatcher.notify(result.path, 'added', snap)
           return snap
@@ -152,7 +183,7 @@ export class EntityMeta {
 
   _sync() {
     ConnectionManager.persistenceHandler.getItem(this.path).then((responseEntity) => {
-      let snap = new EntitySnapshot(this, responseEntity)
+      let snap = new EntitySnapshot(this.toString(), responseEntity)
       Dispatcher.notify(this.path, 'changed', snap)
       return snap
     }).catch((e) => {
@@ -162,12 +193,14 @@ export class EntityMeta {
   }
 
   once(eventType, callback = emptyFn, failureCallback = emptyFn) {
-    this.on(eventType, (snap) => {
-      this.off(eventType, callback)
+    let tempCB = (snap) => {
+      this.off(eventType  , tempCB)
       callback(snap)
-    }, (e) => {
-      this.off(eventType, callback)
-      failureCallback()
+    }
+
+    this.on(eventType, tempCB, (e) => {
+      this.off(eventType, tempCB)
+      failureCallback(e)
     })
   }
 
@@ -257,19 +290,19 @@ export class EntityMeta {
         if (isChild) {
           switch (eventType) {
             case 'changed':
-              log('child changed')
+              log('child changed', path)
               this.watches.child_changed.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'added':
-              log('child added', payload)
+              log('child added', path, payload)
               this.watches.child_added.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'removed':
-              log('child removed', payload)
+              log('child removed', path, payload)
               this.watches.child_removed.forEach((cb) => {
                 cb(payload)
               })

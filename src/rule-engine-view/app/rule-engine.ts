@@ -37,9 +37,11 @@ class RuleEngineComponent {
     this.baseUrl = ConnectionManager.baseUrl;
     this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
     this.filterText = ""
-    this.readSnapshots(this.rulesRef).then((snaps) => {
-      this.rules = snaps
-    }).catch((e) => console.log(e));
+    this.readSnapshots(this.rulesRef).catch((e) => console.log(e));
+    this.rulesRef.on('child_added', (snap) => {
+      console.log("hello: ", snap)
+      this.rules = this.rules.concat(snap)
+    })
     this.rulesRef.on('child_removed', (snap) => {
       this.rules = this.rules.filter((rule)=> {
         return rule.key() !== snap.key()

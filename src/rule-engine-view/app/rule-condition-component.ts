@@ -17,7 +17,7 @@ var conditionletsPromise;
 let initConditionlets = function () {
   let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
   conditionletsPromise = new Promise((resolve, reject) => {
-    conditionletsRef.once('value').then((snap) => {
+    conditionletsRef.once('value', (snap) => {
       let conditionlets = snap['val']()
       let results = (Object.keys(conditionlets).map((key) => {
         conditionletsMap.set(key, conditionlets[key])

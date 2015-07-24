@@ -11,6 +11,8 @@ declare class EntityMeta {
 declare class EntitySnapshot {
   key():string;
   push(data:any):Promise<any>;
+  forEach(callback:Function);
+  ref():EntityMeta;
 }
 
 declare var RestDataStore:any;

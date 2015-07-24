@@ -55,7 +55,7 @@ let pathToUrl = function (path) {
   if (path.endsWith('/')) {
     path = path.substring(0, path.length - 1)
   }
-  return ConnectionManager.baseUrl + path.toLowerCase()
+  return ConnectionManager.baseUrl + path
 }
 
 let getAuthHeader = function () {
