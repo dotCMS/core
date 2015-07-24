@@ -855,8 +855,7 @@ public class DotWebdavHelper {
 
 			// If content is empty or null we cannot do anything
 			if(content == null || content.available() == 0) {
-                Logger.warn(this, "The 'content' param is null or empty.  We cannot process is content is not available or empty.");
-                return;
+                Logger.warn(this, "The 'content' param is null or empty. We are going to create an empty file.");
             }
 
 			if(destinationFile==null){
