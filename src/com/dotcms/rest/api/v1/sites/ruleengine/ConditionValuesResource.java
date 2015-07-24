@@ -61,7 +61,7 @@ public class ConditionValuesResource {
     }
 
     @GET
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues")
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
@@ -87,7 +87,7 @@ public class ConditionValuesResource {
      * Usage: /conditions/
      */
     @GET
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues/{valueId}")
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request,
                          @PathParam("siteId") String siteId,
@@ -114,7 +114,7 @@ public class ConditionValuesResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues")
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -144,7 +144,7 @@ public class ConditionValuesResource {
      * Usage: PUT /rules/conditiongroups/{groupId}/conditions
      */
     @PUT
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues/{valueId}")
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionValue update(@Context HttpServletRequest request,
@@ -171,7 +171,7 @@ public class ConditionValuesResource {
      * Usage: DELETE api/rules-engine/rules
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionvalues/{valueId}")
+    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
     public Response remove(@Context HttpServletRequest request,
                            @PathParam("siteId") String siteId,
                            @PathParam("conditionId") String conditionId,
