@@ -491,6 +491,10 @@ function getIntegrityResult(identifier) {
           	//Getting the htmlpages data
             var htmlPagesData = data.htmlpages;
             populateTabContent(htmlPagesData, "htmlPages");
+            
+          	// Getting the fileassets data
+            var fileAssetsData = data.fileassets;
+            populateTabContent(fileAssetsData, "fileAssets");
 
             //Display the integrity results dialog
             selectedEndpointId = identifier;
@@ -555,6 +559,9 @@ function populateTabContent(contentData, id) {
         if(values.length==0) {
             dijit.byId(fixButtonName).setAttribute('disabled', true);
             dijit.byId(discardButtonName).setAttribute('disabled', true);
+        } else {
+        	dijit.byId(fixButtonName).setAttribute('disabled', false);
+            dijit.byId(discardButtonName).setAttribute('disabled', false);
         }
 
         values.forEach(function (value) {
@@ -1064,7 +1071,7 @@ function deleteEnvPushHistory(envId) {
 <%--INTEGRITY RESULTS DIALOG--%>
 <%--++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--%>
 <style type="text/css">
-    #structuresTab,#foldersTab,#schemesTab {
+    #structuresTab,#foldersTab,#schemesTab,#htmlPagesTab,#fileAssetsTab {
         height:100%;
         min-height:250px;
         width:800px;
@@ -1121,6 +1128,20 @@ function deleteEnvPushHistory(envId) {
                         "push_publish_integrity_fix_conflicts")%></button>
                 <button dojoType="dijit.form.Button" id="htmlPagesDiscardButton"
                         onClick="discardConflicts(selectedEndpointId, 'htmlPages')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_discard_conflicts")%></button>
+                <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
+            </div>
+        </div>
+        
+        <!-- Content File Assets Tab -->
+        <div id="fileAssetsTab" style="width: 1100px" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "integritychecker.file-assets") %>" >
+            <div id="fileAssetsTabContentDiv"></div>
+            <div class="buttonRow">
+                <button dojoType="dijit.form.Button" id="fileAssetsFixButton"
+                        onClick="fixConflicts(selectedEndpointId, 'fileAssets')" iconClass="fixIcon"><%=LanguageUtil.get(pageContext,
+                        "push_publish_integrity_fix_conflicts")%></button>
+                <button dojoType="dijit.form.Button" id="fileAssetsDiscardButton"
+                        onClick="discardConflicts(selectedEndpointId, 'fileAssets')" iconClass="deleteIcon"><%=LanguageUtil.get(pageContext,
                         "push_publish_integrity_discard_conflicts")%></button>
                 <button dojoType="dijit.form.Button" onClick="closeIntegrityResultsDialog(selectedEndpointId)" iconClass="closeIcon"><%= LanguageUtil.get(pageContext, "close") %></button>
             </div>
