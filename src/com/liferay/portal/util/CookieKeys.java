@@ -39,4 +39,6 @@ public class CookieKeys {
 
 	public static final String SHARED_SESSION_ID = "SHARED_SESSION_ID";
 
+	public static final String JSESSIONID = "JSESSIONID";
+
 }
