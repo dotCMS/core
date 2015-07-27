@@ -23,7 +23,7 @@ import com.dotmarketing.util.UUIDGenerator;
 
 public class Task00010CheckAnonymousUser implements StartupTask{
 	
-	private static final String SQL_SELECT_CMS_ROLE = "SELECT id, parent from cms_role where role_name = ?";
+	private static final String SQL_SELECT_CMS_ROLE = "SELECT id, parent from cms_role where role_key = ?";
 	private static final String SQL_SELECT_USERS_CMS_ROLES = "SELECT id, role_id from users_cms_roles where role_id = ?";
 	private static final String SQL_INSERT_CMS_ROLE = "INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, " +
 		"edit_users, edit_layouts, locked, system) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -44,7 +44,7 @@ public class Task00010CheckAnonymousUser implements StartupTask{
         // Check if the anonymous user anonymous exists
         DotConnect dc = new DotConnect();
         dc.setSQL(SQL_SELECT_CMS_ROLE);
-        dc.addParam("anonymous user anonymous");
+        dc.addParam("anonymous");
         ArrayList<Map<String, String>> cmsRole = dc.loadResults();
         
       //If doesn't exists, creates it and also creates the reference in users_cms_role 
