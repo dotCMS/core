@@ -1,5 +1,10 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -8,11 +13,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 
 public interface FileAssetAPI {
@@ -229,6 +229,20 @@ public interface FileAssetAPI {
 	public String getRealAssetPath(String inode);
 
 	String getRealAssetPath(String inode, String fileName); 
+	
+	/**
+     * This method returns the relative path for assets
+     * 
+     * @return the relative folder of where assets are stored
+     */
+    public String getRelativeAssetsRootPath();
+
+    /**
+     * This method returns the root path for assets
+     * 
+     * @return the root folder of where assets are stored
+     */
+    public String getRealAssetsRootPath();
 	
 	/**
 	 * constructs the file path for content metadata assetpath/inode(0)/inode(1)/inode/metaData/content
