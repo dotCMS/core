@@ -7,14 +7,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.regex.Matcher;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.Pattern;
@@ -23,14 +21,12 @@ import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.cache.FolderCache;
@@ -49,7 +45,6 @@ import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.factories.HTMLPageFactory;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -62,7 +57,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
 /**
@@ -951,9 +945,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
 		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
-		String newPath=ident.getParentPath()+newName;
+		StringBuilder newPath = new StringBuilder(ident.getParentPath()).append(newName);
+		if(!newName.endsWith("/")) newPath.append("/"); // Folders must end with '/'
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
-		Folder nFolder=findFolderByPath(newPath, host);
+		Folder nFolder = findFolderByPath(newPath.toString(), host);
 		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 
