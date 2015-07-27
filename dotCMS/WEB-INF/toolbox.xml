@@ -300,11 +300,6 @@
 		<class>com.dotmarketing.viewtools.XsltTool</class>
 	</tool>
 	<tool>
-		<key>php</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.scripting.viewtool.PHPTool</class>
-	</tool>
-	<tool>
 		<key>groovy</key>
 		<scope>request</scope>
 		<class>com.dotmarketing.scripting.viewtool.GroovyTool</class>
