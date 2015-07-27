@@ -466,7 +466,7 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         List<MultiTree> multiTree = MultiTreeFactory.getMultiTree(working.getIdentifier());
         
         APILocator.getHTMLPageAPI().delete(working, user, respectFrontEndPermissions);
-        PageServices.invalidate(working);
+        PageServices.invalidateAll(working);
         HibernateUtil.getSession().clear();
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(legacyident.getId());
         
