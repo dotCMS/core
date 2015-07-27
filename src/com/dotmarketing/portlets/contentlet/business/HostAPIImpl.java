@@ -460,14 +460,18 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-			SQLQueryFactory factory = new SQLQueryFactory("SELECT * FROM Host WHERE isSystemHost = 1");
-			List<Map<String, Serializable>> hosts = factory.execute();
-			if(hosts.size() == 0) {
+			String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+			DotConnect db  = new DotConnect();
+			db.setSQL(systemHostSql);
+			db.addParam(Host.SYSTEM_HOST);
+			List<Map<String, Object>> rs = db.loadObjectResults();
+			if(rs.size() == 0) {
 				createSystemHost();
 			} else {
-				systemHost = new Host(conFac.find((String)hosts.get(0).get("inode")));
+				String hostWorkingInode = (String) rs.get(0).get("working_inode");
+				systemHost = new Host(conFac.find(hostWorkingInode));
 			}
-			if(hosts.size() > 1){
+			if(rs.size() > 1){
 				Logger.fatal(this, "There is more than one working version of the system host!!");
 			}
 		} catch (Exception e) {
@@ -763,10 +767,13 @@ public class HostAPIImpl implements HostAPI {
 	private synchronized Host createSystemHost() throws DotDataException,
 	DotSecurityException {
 
-		SQLQueryFactory factory = new SQLQueryFactory("SELECT * FROM Host WHERE isSystemHost = 1");
-		List<Map<String, Serializable>> hosts = factory.execute();
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		if(hosts.size() == 0) {
+		String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		DotConnect db  = new DotConnect();
+		db.setSQL(systemHostSql);
+		db.addParam(Host.SYSTEM_HOST);
+		List<Map<String, Object>> rs = db.loadObjectResults();
+		if(rs.size() == 0) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
 			systemHost.setHostname("system");
@@ -783,10 +790,12 @@ public class HostAPIImpl implements HostAPI {
 			APILocator.getVersionableAPI().setWorking(systemHost);
 			this.systemHost = systemHost;
 		} else {
-			this.systemHost = new Host(conFac.find((String)hosts.get(0).get("inode")));
+			String hostWorkingInode = (String) rs.get(0).get("working_inode");
+			this.systemHost = new Host(conFac.find(hostWorkingInode));
 		}
 		return systemHost;
 	}
+	
 	private List<Host> convertToHostList(List<Contentlet> list) {
 		List<Host> hosts = new ArrayList<Host>();
 		for(Contentlet c : list) {
