@@ -11,7 +11,7 @@ import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.ContentletBaseTest;
@@ -35,7 +35,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=StructureCache.getStructureByVelocityVarName("host");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);
@@ -85,7 +85,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         Container cc = new Container();
         BeanUtils.copyProperties(cc, c);
 
-        Structure st=StructureCache.getStructureByVelocityVarName("host");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);
@@ -140,7 +140,7 @@ public class ContainerAPITest extends ContentletBaseTest {
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
 
-        Structure st=StructureCache.getStructureByVelocityVarName("host");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
         User user = APILocator.getUserAPI().getSystemUser();
         Host host = APILocator.getHostAPI().findDefaultHost(user, false);

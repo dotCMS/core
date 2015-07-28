@@ -7,12 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotcms.sync.Exportable;
 import com.dotcms.sync.Importable;
 import com.dotcms.sync.exception.DotDependencyException;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.util.UtilMethods;
@@ -317,7 +316,7 @@ public class Field extends Inode implements Exportable, Importable
         oMap.put("fieldVelocityVarName", this.getVelocityVarName());
         oMap.put("fieldSortOrder", this.getSortOrder());
         oMap.put("fieldStructureInode", this.getStructureInode());
-        oMap.put("fieldStructureVarName", StructureCache.getStructureByInode(this.getStructureInode()).getVelocityVarName());
+        oMap.put("fieldStructureVarName", CacheLocator.getContentTypeCache().getStructureByInode(this.getStructureInode()).getVelocityVarName());
         oMap.put("fieldRequired", this.isRequired());
         oMap.put("fieldIndexed", this.isIndexed());
         oMap.put("fieldListed", this.isListed());

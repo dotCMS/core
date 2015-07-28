@@ -18,7 +18,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -251,7 +250,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         dc.executeStatement("insert into inode (inode, owner, idate, type) values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
                     }
 
-                    Structure fileAssetSt = StructureCache
+                    Structure fileAssetSt = CacheLocator.getContentTypeCache()
                             .getStructureByVelocityVarName("FileAsset");
 
                     // lets see if we have structures referencing the folder, if

@@ -10,17 +10,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
-
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
+import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.PermissionReference;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -2658,7 +2656,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		HibernateUtil persistenceService = new HibernateUtil(Permission.class);
 		persistenceService.setSQLQuery(query.toString());
 		if(onlyFoldersAndHosts) {
-            Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+            Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
             persistenceService.setParam(hostStructure.getInode());
             persistenceService.setParam(role.getId());
         }
@@ -3003,7 +3001,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 			if(isStructure) {
 				ContentletAPI contentAPI = APILocator.getContentletAPI();
-				Structure st = StructureCache.getStructureByInode(permissionable.getPermissionId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(permissionable.getPermissionId());
 				if(st != null)
 					contentAPI.refresh(st);
 			}
@@ -3438,7 +3436,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
 		for (Map<String, String> idMap : idsToUpdate) {
 			String id = idMap.get("inode");
-			Permissionable childPermissionable = StructureCache.getStructureByInode(id);
+			Permissionable childPermissionable = CacheLocator.getContentTypeCache().getStructureByInode(id);
 			savePermission(new Permission(id, role.getId(), permission, true), childPermissionable);
 			//http://jira.dotmarketing.net/browse/DOTCMS-6090
 			//If a structure we need to save permissions inheritable by children content

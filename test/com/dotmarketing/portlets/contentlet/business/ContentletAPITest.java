@@ -27,7 +27,6 @@ import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Ignore;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -39,7 +38,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cmis.proxy.DotInvocationHandler;
 import com.dotmarketing.cmis.proxy.DotRequestProxy;
 import com.dotmarketing.cmis.proxy.DotResponseProxy;
@@ -498,7 +496,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet file=new Contentlet();
         file.setHost(host1.getIdentifier());
         file.setFolder("SYSTEM_FOLDER");
-        file.setStructureInode(StructureCache.getStructureByVelocityVarName("FileAsset").getInode());
+        file.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset").getInode());
         file.setLanguageId(defLang);
         file.setStringProperty(FileAssetAPI.TITLE_FIELD,"test copy");
         file.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "hello.txt");
@@ -1977,7 +1975,7 @@ public class ContentletAPITest extends ContentletBaseTest {
     @Test
     public void widgetInvalidateAllLang() throws Exception {
 
-        Structure sw=StructureCache.getStructureByVelocityVarName("SimpleWidget");
+        Structure sw=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
         Language def=APILocator.getLanguageAPI().getDefaultLanguage();
         Contentlet w = new Contentlet();
         w.setStructureInode(sw.getInode());

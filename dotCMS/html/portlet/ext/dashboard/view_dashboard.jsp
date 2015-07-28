@@ -28,7 +28,7 @@
 <%@page import="com.dotmarketing.portlets.dashboard.model.DashboardWorkStream"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 
 
@@ -38,7 +38,7 @@
 java.util.Map params = new java.util.HashMap();
 params.put("struts_action",new String[] {"/ext/dashboard/view_dashboard"});
 String referer = java.net.URLDecoder.decode(com.dotmarketing.util.PortletURLUtil.getRenderURL(request,com.dotcms.repackage.javax.portlet.WindowState.MAXIMIZED.toString(),params));
-Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
 
 int pageNumber = 1;

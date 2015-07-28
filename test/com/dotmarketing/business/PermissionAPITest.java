@@ -1,11 +1,24 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.repackage.org.junit.Assert.assertFalse;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -27,15 +40,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
-
-import java.io.FileWriter;
-import java.util.*;
-
-import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class PermissionAPITest extends TestBase {
 
@@ -438,7 +442,7 @@ public class PermissionAPITest extends TestBase {
         s.setOwner(sysuser.getUserId());
         s.setVelocityVarName("testtesttest"+System.currentTimeMillis());
         StructureFactory.saveStructure(s);
-        StructureCache.addStructure(s);
+        CacheLocator.getContentTypeCache().add(s);
 
         Field field1 = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                 true, true, true, 3, "", "", "", true, false, true);
@@ -597,7 +601,7 @@ public class PermissionAPITest extends TestBase {
             s.setOwner(sysuser.getUserId());
             s.setVelocityVarName("str847"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
-            StructureCache.addStructure(s);
+            CacheLocator.getContentTypeCache().add(s);
 
             Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                     true, true, true, 3, "", "", "", true, false, true);
@@ -706,7 +710,7 @@ public class PermissionAPITest extends TestBase {
             FileUtils.copyFile(fdata, fcdata);
             APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
 
-            String FileAssetStInode=StructureCache.getStructureByVelocityVarName(
+            String FileAssetStInode=CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
             Contentlet ca=new Contentlet();
@@ -819,7 +823,7 @@ public class PermissionAPITest extends TestBase {
             s.setOwner(sysuser.getUserId());
             s.setVelocityVarName("issue560"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
-            StructureCache.addStructure(s);
+            CacheLocator.getContentTypeCache().add(s);
 
             Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                     true, true, true, 3, "", "", "", true, false, true);

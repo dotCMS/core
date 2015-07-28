@@ -60,7 +60,6 @@ import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -1959,7 +1958,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void relateContent(Contentlet contentlet, Relationship rel, List<Contentlet> records, User user, boolean respectFrontendRoles)throws DotDataException, DotSecurityException, DotContentletStateException {
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         boolean hasParent = RelationshipFactory.isParentOfTheRelationship(rel, st);
         ContentletRelationshipRecords related = new ContentletRelationships(contentlet).new ContentletRelationshipRecords(rel, hasParent);
         related.setRecords(records);
@@ -2301,7 +2300,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public Contentlet checkin(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
@@ -2320,7 +2319,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public Contentlet checkinWithoutVersioning(Contentlet contentlet, Map<Relationship, List<Contentlet>> contentRelationships, List<Category> cats ,List<Permission> permissions, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException, DotContentletValidationException {
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
@@ -2841,7 +2840,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			        }
 			    }
 
-				Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+				Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 				if ((contentlet != null) && InodeUtils.isSet(contentlet.getIdentifier()) && contentlet.getStructureInode().equals(hostStructure.getInode())) {
 				    HostAPI hostAPI = APILocator.getHostAPI();
 				    hostAPI.updateCache(new Host(contentlet));
@@ -3516,7 +3515,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
             throw new DotContentletValidationException("The contentlet: "+ (contentlet != null ? contentlet.getIdentifier() : "Unknown") 
             		+" structureInode must be set");
         }
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         
         
         
@@ -3635,7 +3634,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         boolean hasError = false;
         DotContentletValidationException cve = new DotContentletValidationException("Contentlets' fields are not valid");
         List<Field> fields = FieldsCache.getFieldsByStructureInode(stInode);
-        Structure structure = StructureCache.getStructureByInode(stInode);
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(stInode);
         Map<String, Object> conMap = contentlet.getMap();
         for (Field field : fields) {
             Object o = conMap.get(field.getVelocityVarName());
@@ -3899,7 +3898,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     public void validateContentlet(Contentlet contentlet,Map<Relationship, List<Contentlet>> contentRelationships,List<Category> cats)throws DotContentletValidationException {
-        Structure st = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         ContentletRelationships relationshipsData = new ContentletRelationships(contentlet);
         List<ContentletRelationshipRecords> relationshipsRecords = new ArrayList<ContentletRelationshipRecords> ();
         relationshipsData.setRelationshipsRecords(relationshipsRecords);
@@ -4666,7 +4665,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 
         // if there is no detail page, return
-        Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+        Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
         if(!UtilMethods.isSet(structure.getDetailPage())) {
         	return null;
         }
@@ -4891,7 +4890,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
 		List<Map<String, String>> result = new ArrayList<Map<String, String>>();
 
-		String structureInode = StructureCache.getStructureByVelocityVarName(structureVariableName).getInode();
+		String structureInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVariableName).getInode();
 		if(!UtilMethods.isSet(structureInode))
 			return result;
 
