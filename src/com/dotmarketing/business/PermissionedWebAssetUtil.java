@@ -219,7 +219,7 @@ public class PermissionedWebAssetUtil {
 		offset = offset < 0 ? 0 : offset;
 		String hostQuery = null;
 		if (searchHost) {
-			Structure st = StructureCache.getStructureByVelocityVarName("Host");
+			Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 			Field hostNameField = st.getFieldVar("hostName");
 			List<Contentlet> hostList = null;
 			try {
