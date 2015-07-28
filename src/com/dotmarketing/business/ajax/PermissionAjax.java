@@ -12,11 +12,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.PermissionableObjectDWR;
@@ -24,7 +24,6 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -413,7 +412,7 @@ public class PermissionAjax {
 		try {
 			// Retrieving the current user
 			User user = userWebAPI.getLoggedInUser(request);
-			Structure hostStrucuture = StructureCache.getStructureByVelocityVarName("Host");
+			Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 
 			if (InodeFactory.isInode(inodeOrIdentifier)) {
 				Inode inode = InodeFactory.find(inodeOrIdentifier);

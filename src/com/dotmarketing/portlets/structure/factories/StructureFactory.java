@@ -15,6 +15,7 @@ import com.dotcms.enterprise.cmis.QueryResult;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -23,8 +24,6 @@ import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cms.urlmap.filters.URLMapFilter;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -66,7 +65,7 @@ public class StructureFactory {
 
 	/**
 	 * Gets the structure by inode
-	 * @deprecated  Use StructureCache.getStructureByInode instead
+	 * @deprecated  Use CacheLocator.getContentTypeCache().getStructureByInode instead
 	 * @param inode is the contentlet inode
 	 */
 	public static Structure getStructureByInode(String inode) {
@@ -79,7 +78,7 @@ public class StructureFactory {
 	}
 	/**
 	 * Gets the structure by Type
-	 * @deprecated  Use StructureCache.getStructureByName instead
+	 * @deprecated  Use CacheLocator.getContentTypeCache().getStructureByName instead
 	 * @param type is the name of the structure
 	 */
 	public static Structure getStructureByType(String type)
@@ -412,7 +411,7 @@ public class StructureFactory {
 		HibernateUtil.saveOrUpdate(structure);
 
 		if(UtilMethods.isSet(structure.getUrlMapPattern())) {
-		    StructureCache.clearURLMasterPattern();
+		    CacheLocator.getContentTypeCache().clearURLMasterPattern();
 		}
 	}
 
@@ -790,7 +789,7 @@ public class StructureFactory {
 			}
 			structure.setFolder("SYSTEM_FOLDER");
 			HibernateUtil.saveOrUpdate(structure);
-			StructureCache.removeStructure(structure);
+			CacheLocator.getContentTypeCache().remove(structure);
 			permissionAPI.resetPermissionReferences(structure);
 
 		}

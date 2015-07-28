@@ -7,13 +7,12 @@
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.fileassets.business.FileAssetAPI" %>
-<%@ page import="com.dotmarketing.business.CacheLocator" %>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 
 <%
-Structure defaultFileAssetStructure = StructureCache.getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStructureByName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 
 
 String selectedLang=String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -1760,7 +1759,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 
         <%
              String defaultPageSt = "0";
-             Structure defaultHTMLPageST = StructureCache.getStructureByInode(APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost));
+             Structure defaultHTMLPageST = CacheLocator.getContentTypeCache().getStructureByInode(APILocator.getHTMLPageAssetAPI().getHostDefaultPageType(myHost));
              if(APILocator.getPermissionAPI().doesUserHavePermission(defaultHTMLPageST, PermissionAPI.PERMISSION_READ, user, false)) {
                defaultPageSt = defaultHTMLPageST.getInode();
              }

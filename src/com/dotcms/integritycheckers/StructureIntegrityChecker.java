@@ -16,7 +16,6 @@ import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -174,7 +173,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 String oldStructureInode = (String) result.get("local_inode");
                 String newStructureInode = (String) result.get("remote_inode");
 
-                Structure st = StructureCache.getStructureByInode(oldStructureInode);
+                Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
 
                 List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st,
                         APILocator.getUserAPI().getSystemUser(), false, 0, 0);
@@ -182,7 +181,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                     CacheLocator.getContentletCache().remove(contentlet.getInode());
                 }
 
-                StructureCache.removeStructure(st);
+                CacheLocator.getContentTypeCache().remove(st);
 
                 // THIS IS THE NEW CODE
 

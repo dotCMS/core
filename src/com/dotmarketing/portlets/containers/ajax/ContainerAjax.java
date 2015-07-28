@@ -17,10 +17,10 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -182,7 +182,7 @@ public class ContainerAjax {
 
 			for (ContainerStructure cs : csList) {
 				Map<String, String> result = new HashMap<String, String>();
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				result.put("inode", cs.getStructureId());
 				result.put("name", st.getName());
 				resultList.add(result);
@@ -212,7 +212,7 @@ public class ContainerAjax {
 
 			for (ContainerStructure cs : csList) {
 				Map<String, String> result = new HashMap<String, String>();
-				Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+				Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 				if(permissionAPI.doesUserHavePermission(st, PERMISSION_WRITE, user)){
 					result.put("inode", cs.getStructureId());
 					result.put("name", st.getName());

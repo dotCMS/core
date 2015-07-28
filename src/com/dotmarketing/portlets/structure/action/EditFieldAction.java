@@ -7,22 +7,20 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
-import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -117,7 +115,7 @@ public class EditFieldAction extends DotPortletAction {
 							// field.setFieldName(fieldForm.getFieldName());
 						}
 
-						Structure structure = StructureCache.getStructureByInode(field.getStructureInode());
+						Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
 
 						if (((structure.getStructureType() == Structure.STRUCTURE_TYPE_CONTENT) && !fAPI
 								.isElementConstant(field))
@@ -209,7 +207,7 @@ public class EditFieldAction extends DotPortletAction {
 		try {
 			FieldForm fieldForm = (FieldForm) form;
 			Field field = (Field) req.getAttribute(WebKeys.Field.FIELD);
-			Structure structure = StructureCache.getStructureByInode(field.getStructureInode());
+			Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
 			boolean isNew = false;
 			boolean wasIndexed = field.isIndexed();
 
@@ -451,7 +449,7 @@ public class EditFieldAction extends DotPortletAction {
 			}
 
 			FieldsCache.removeFields(structure);
-			StructureCache.removeStructure(structure);
+			CacheLocator.getContentTypeCache().remove(structure);
 			StructureServices.removeStructureFile(structure);
 			StructureFactory.saveStructure(structure);
 
@@ -548,7 +546,7 @@ public class EditFieldAction extends DotPortletAction {
 			ActivityLogger.logInfo(ActivityLogger.class, "Delete Field Action", "User " + _getUser(req).getUserId() + "/" + _getUser(req).getFirstName() + " deleted field " + field.getFieldName() + " to " + structure.getName()
 				    + " Structure.", HostUtil.hostNameUtil(req, _getUser(req)));
 
-			StructureCache.removeStructure(structure);
+			CacheLocator.getContentTypeCache().remove(structure);
 			StructureServices.removeStructureFile(structure);
 
 			//Refreshing permissions
