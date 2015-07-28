@@ -21,14 +21,12 @@ import com.dotmarketing.util.Logger;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletOutputStream;
-import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Locale;
 
 /**
@@ -179,16 +177,17 @@ public abstract class ImportSupport {
                 URL u = new URL(url);
                 //URL u = new URL("http", "proxy.hi.is", 8080, target);
                 final HttpURLConnection uc = (HttpURLConnection) u.openConnection();
-                Thread killme = new Thread(new Runnable() { public void run() { 
-			       try {
-			            Thread.sleep(timeout); 
-			        } catch (InterruptedException e) {
-			        	Logger.error(this.getClass(), "urlconnection killer inturupted", e);
-			        }
-			       Logger.warn(this.getClass(), "urlconnection exceeded " + timeout + "ms to " + url);
-			       uc.disconnect();
-        			
-        		}
+                Thread killme = new Thread(new Runnable() {
+                    public void run () {
+                        try {
+                            Thread.sleep(timeout);
+                        } catch ( InterruptedException e ) {
+                            Logger.error(this.getClass(), "urlconnection killer inturupted", e);
+                        }
+                        Logger.warn(this.getClass(), "urlconnection exceeded " + timeout + "ms to " + url);
+                        uc.disconnect();
+
+                    }
                 });
                 killme.start();
 

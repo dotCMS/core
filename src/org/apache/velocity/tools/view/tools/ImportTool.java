@@ -16,18 +16,11 @@
 
 package org.apache.velocity.tools.view.tools;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.ServletContext;
-
+import com.dotmarketing.util.Config;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
-import com.dotmarketing.util.Config;
 
 /**
  * General-purpose text-importing view tool for templates.
