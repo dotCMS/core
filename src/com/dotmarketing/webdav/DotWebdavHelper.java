@@ -1187,9 +1187,13 @@ public class DotWebdavHelper {
 				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
 					Logger.debug(this, "Calling Folderfactory to rename " + fromPath + " to " + toPath);
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(toPath), host,user,false);
-						removeObject(toPath, user);
-						fc.removeFolder(folder,idapi.find(folder));
+					    // Folder must end with "/", otherwise we get the parent folder
+                        String folderToPath = getPath(toPath);
+                        if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+
+                        Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
+                        removeObject(toPath, user);
+                        fc.removeFolder(folder, idapi.find(folder));
 					}catch (Exception e) {
 						Logger.debug(this, "Unable to delete toPath " + toPath);
 					}
@@ -1313,7 +1317,7 @@ public class DotWebdavHelper {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
 				    }
-			    	
+
 				    WorkingCache.removeAssetFromCache(fileAssetCont);
 				    LiveCache.removeAssetFromCache(fileAssetCont);
 				    fileResourceCache.remove(uri + "|" + user.getUserId());
