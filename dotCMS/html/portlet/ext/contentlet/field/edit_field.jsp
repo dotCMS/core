@@ -137,7 +137,12 @@
 		}
         boolean isWidget = false;
         ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-        int structureType = contentletForm.getStructure().getStructureType();
+	int structureType = 0;
+	if(UtilMethods.isSet(contentletForm)){
+        	structureType = contentletForm.getStructure().getStructureType();
+	}else{
+		structureType = contentlet.getStructure().getStructureType();
+	}
         if(structureType == 2){
         	 isWidget = true;
         }

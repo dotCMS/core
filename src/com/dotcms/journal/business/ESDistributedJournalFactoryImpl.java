@@ -12,7 +12,6 @@ import java.util.Map;
 
 import oracle.jdbc.OracleTypes;
 
-import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
@@ -27,8 +26,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactory<T> {
 
@@ -214,6 +211,45 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
+    protected void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
+
+        DotConnect dc = new DotConnect();
+        StringBuilder sql = new StringBuilder().append("UPDATE dist_reindex_journal SET serverid=NULL where id in (");
+        boolean first = true;
+        for ( IndexJournal<T> idx : recordsToModify ) {
+            if ( !first ) sql.append(',');
+            else first = false;
+            sql.append(idx.getId());
+        }
+        sql.append(")");
+
+        dc.setSQL(sql.toString());
+        Connection con = null;
+        try {
+            con = DbConnectionFactory.getDataSource().getConnection();
+            con.setAutoCommit(true);
+            dc.loadResult(con);
+        } catch ( SQLException e ) {
+            try {
+                if ( con != null ) {
+                    con.rollback();
+                }
+            } catch ( SQLException e1 ) {
+                Logger.error(this.getClass(), e.getMessage(), e);
+            }
+            Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
+        } finally {
+            try {
+                if ( con != null ) {
+                    con.close();
+                }
+            } catch ( SQLException e ) {
+                Logger.error(ESDistributedJournalFactoryImpl.class, e.getMessage(), e);
+            }
+        }
+    }
+
+    @Override
     protected void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {
         DotConnect dc = new DotConnect();
         StringBuilder sql=new StringBuilder().append("DELETE FROM dist_reindex_journal where id in (");
@@ -341,13 +377,17 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         String serverId = ConfigUtils.getServerId();
 
         try {
+
+            //Get the number of records to fetch
+            int recordsToFetch = Config.getIntProperty("REINDEX_RECORDS_TO_FETCH", 50);
+
             con = DbConnectionFactory.getConnection();
             con.setAutoCommit(false);
             if(DbConnectionFactory.isOracle()) {
                 CallableStatement call = con.prepareCall("{ ? = call load_records_to_index(?,?) }");
                 call.registerOutParameter(1, OracleTypes.CURSOR);
                 call.setString(2, serverId);
-                call.setInt(3, 50);
+                call.setInt(3, recordsToFetch);
                 call.execute();
                 ResultSet r = (ResultSet)call.getObject(1);
                 results = new ArrayList<Map<String,Object>>();
@@ -367,18 +407,18 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
                 dc.setSQL("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;");
                 dc.loadResult();
 
-                dc.setSQL("load_records_to_index @server_id='"+serverId+"', @records_to_fetch=50");
+                dc.setSQL("load_records_to_index @server_id='" + serverId + "', @records_to_fetch=" + String.valueOf(recordsToFetch));
                 dc.setForceQuery(true);
                 results = dc.loadObjectResults(con);
             } else if(DbConnectionFactory.isH2()) {
                 dc.setSQL("call load_records_to_index(?,?)");
                 dc.addParam(serverId);
-                dc.addParam(50);
+                dc.addParam(recordsToFetch);
                 results = dc.loadObjectResults();
             } else {
                 dc.setSQL(REINDEXENTRIESSELECTSQL);
                 dc.addParam(serverId);
-                dc.addParam(50);
+                dc.addParam(recordsToFetch);
                 results = dc.loadObjectResults(con);
             }
 
@@ -480,7 +520,7 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     @Override
     protected long recordsLeftToIndexForServer(Connection conn) throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("select count(*) as count from dist_reindex_journal where serverid is null");
+        dc.setSQL("select count(*) as count from dist_reindex_journal");
         List<Map<String, String>> results = results = dc.loadResults(conn);
         String c = results.get(0).get("count");
         return Long.parseLong(c);

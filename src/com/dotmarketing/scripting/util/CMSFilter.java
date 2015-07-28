@@ -23,11 +23,11 @@ public class CMSFilter extends com.dotmarketing.filters.CMSFilter {
 
         uri = URLDecoder.decode(uri, "UTF-8");
 
-        if(uri.endsWith(".php")){
-        	chain.doFilter(request, response);
-        	return;
-        }
+        //if(uri.endsWith(".php")){
+        //	chain.doFilter(request, response);
+        //	return;
+        //}
 		super.doFilter(req, res, chain);
 	}
-	
+
 }

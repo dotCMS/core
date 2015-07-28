@@ -12,7 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
-
+import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -28,7 +28,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
-
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class LanguageAjax {
@@ -187,17 +186,38 @@ public class LanguageAjax {
 			return "message.languagemanager.save";
 		}
 	}
-
+	
 	public List<Map<String, String>> getLanguages() throws LanguageException, DotRuntimeException, PortalException, SystemException {
+	    return getLanguages(false);
+	}
+	
+	public List<Map<String, String>> getLanguagesWithAllOption() throws LanguageException, DotRuntimeException, PortalException, SystemException {
+	    return getLanguages(true);
+	}
+
+	private List<Map<String, String>> getLanguages(boolean withAllOption) throws LanguageException, DotRuntimeException, PortalException, SystemException {
 		List<Language> languages =  APILocator.getLanguageAPI().getLanguages();
 		ArrayList<Map<String, String>> langList = new ArrayList<Map<String, String>> ();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
+		HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
 
+		final String sLanguage = LanguageUtil.get(uWebAPI.getLoggedInUser(request), "Language");
+
+		// Include ALL option
+		if(withAllOption) {
+		    Map<String, String> map = new HashMap<String, String>();
+		    map.put("title", sLanguage);
+            map.put("languageCode", Strings.EMPTY);
+            map.put("language", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "all"));
+            map.put("countryCode", Strings.EMPTY);
+            map.put("country", Strings.EMPTY);
+            map.put("id", Strings.EMPTY);
+            langList.add(map);
+		}
+		
 		for (Language language : languages) {
 			Map<String, String> map = new HashMap<String, String>();
-			map.put("title", LanguageUtil.get(uWebAPI.getLoggedInUser(request), "Language") );
+			map.put("title", sLanguage);
 			map.put("languageCode", language.getLanguageCode());
 			map.put("language", language.getLanguage());
 			map.put("countryCode", language.getCountryCode());

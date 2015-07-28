@@ -12,14 +12,12 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -60,7 +58,7 @@ public class CountContentClicksAction extends DispatchAction {
 					Logger.error(this, "Unable to look up content with inode " + inode, e);
 				}
 			
-				Structure contentletStructure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+				Structure contentletStructure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 				Identifier contentletIdentifier = APILocator.getIdentifierAPI().find(contentlet);
 		    	Field field;
 		    	

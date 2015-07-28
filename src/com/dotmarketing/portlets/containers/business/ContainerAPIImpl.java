@@ -15,12 +15,12 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -73,7 +73,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
        	newContainer.setTitle(source.getTitle() + appendToName);
 
         //Copy the structure relationship
-//        Structure st = StructureCache.getStructureByInode(source.getStructureInode());
+//        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(source.getStructureInode());
 //        newContainer.setStructureInode(st.getInode());
 
         //creates new identifier for this webasset and persists it
@@ -326,7 +326,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 				//Add the list to the cache.
 				//CacheLocator.getContainerCache().clearCache();
 				CacheLocator.getContainerCache().remove(containerIdentifier);
-				StructureCache.addContainerStructures(containerStructureList, containerIdentifier, containerInode);
+				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
 				
 			}catch(DotHibernateException e){
 				if(local){
@@ -357,7 +357,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 		
 		//Gets the list from cache.
-		List<ContainerStructure> containerStructures = StructureCache.getContainerStructures(container.getIdentifier(), container.getInode());
+		List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 		
 		//If there is not cache data for that container, go to the DB.
 		if(containerStructures == null){
@@ -372,7 +372,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			containerStructures = dh.list();
 			
 			//Add the list to cache. 
-			StructureCache.addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
+			CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
 		}
 		
 		return containerStructures;
@@ -395,7 +395,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		List<Structure> structureList = new ArrayList<Structure>();
 
 		for (ContainerStructure cs : csList) {
-			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 			structureList.add(st);
 		}
 
@@ -452,7 +452,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		for (ContainerStructure cs : containerStructureList) {
-			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 				throw new DotSecurityException("You don't have permission to use the structure. Structure Name: " + st.getName());
 			}
@@ -530,8 +530,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Container> containers = containerFactory.findAllContainers();
-		return permissionAPI.filterCollection(containers, PermissionAPI.PERMISSION_USE, respectFrontendRoles, user);
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		if ((user != null)
+				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
+			return containerFactory.findAllContainers();
+		} else {
+			return PermissionedWebAssetUtil.findContainersForLimitedUser(null,
+					null, true, "title", 0, -1, PermissionAPI.PERMISSION_READ,
+					user, false);
+		}
 	}
 
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -563,7 +570,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
                     "where container_id = '" + container.getIdentifier() + "'");
 			
 			//Remove the list from cache.
-			StructureCache.removeContainerStructures(container.getIdentifier(), container.getInode());
+			CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
 		}
 	}
 

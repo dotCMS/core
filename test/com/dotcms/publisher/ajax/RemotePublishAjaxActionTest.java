@@ -11,8 +11,6 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,8 +31,6 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
 import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
 import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
@@ -44,6 +40,8 @@ import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
 import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.junit.framework.Assert;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -51,9 +49,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -383,7 +381,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(structure.getInode());
 		contentlet.setHost(host.getIdentifier());
@@ -701,7 +699,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet1
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet1 = new Contentlet();
 		contentlet1.setStructureInode(structure.getInode());
 		contentlet1.setHost(host.getIdentifier());

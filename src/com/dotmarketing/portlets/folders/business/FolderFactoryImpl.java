@@ -365,14 +365,14 @@ public class FolderFactoryImpl extends FolderFactory {
 					}
 				}
 			} catch (DotSecurityException e) {}
-
+			
 			try {
                 for(IHTMLPage page : APILocator.getHTMLPageAssetAPI().getHTMLPages(folder, true, false, APILocator.getUserAPI().getSystemUser(), false)) {
                     if(page.isShowOnMenu()) {
                         filesListSubChildren.add(page);
                     }
                 }
-
+                
             } catch (DotSecurityException e) {}
 
 			// gets all subitems
@@ -543,7 +543,7 @@ public class FolderFactoryImpl extends FolderFactory {
 				filesCopied.put(cont.getInode(), new IFileAsset[] {fa , APILocator.getFileAssetAPI().fromContentlet(cont)});
 			}
 		}
-
+		
 		//Content Pages
 		List<IHTMLPage> pageAssetList=new ArrayList<IHTMLPage>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
@@ -553,7 +553,7 @@ public class FolderFactoryImpl extends FolderFactory {
             APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
             pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
 		}
-
+		
 
 		// issues/1736
 		APILocator.getContentletAPI().refreshContentUnderFolder(newFolder);
@@ -783,7 +783,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 			// republishes the page to reset the VTL_SERVLETURI variable
 			if (page.isLive()) {
-				PageServices.invalidate(page);
+				PageServices.invalidateAll(page);
 			}
 
 		}
@@ -945,13 +945,10 @@ public class FolderFactoryImpl extends FolderFactory {
 	protected boolean renameFolder(Folder folder, String newName, User user, boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		// checking if already exists
 		Identifier ident = APILocator.getIdentifierAPI().loadFromDb(folder.getIdentifier());
+		StringBuilder newPath = new StringBuilder(ident.getParentPath()).append(newName);
+		if(!newName.endsWith("/")) newPath.append("/"); // Folders must end with '/'
 		Host host = APILocator.getHostAPI().find(folder.getHostId(),user,respectFrontEndPermissions);
-
-		// New folder path must end with "/", otherwise we get the parent folder
-        String newPath = ident.getParentPath()+newName;
-        if(!newPath.endsWith("/")) { newPath = newPath + "/"; }
-		Folder nFolder=findFolderByPath(newPath, host);
-
+		Folder nFolder = findFolderByPath(newPath.toString(), host);
 		if(UtilMethods.isSet(nFolder.getInode()) && !folder.getIdentifier().equals(nFolder.getIdentifier()))
 			return false;
 

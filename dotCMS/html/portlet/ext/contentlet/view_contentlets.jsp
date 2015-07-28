@@ -14,7 +14,7 @@
 <%@ page import="com.dotmarketing.util.Config" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotmarketing.util.InodeUtils" %>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="com.liferay.portal.language.LanguageUtil"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="com.dotcms.publisher.endpoint.business.PublishingEndPointAPI"%>
@@ -58,8 +58,8 @@
 
 	if (lastSearch != null && !UtilMethods.isSet(structureSelected)) {
 		String ssstruc = (String)session.getAttribute("selectedStructure");
-		if(session.getAttribute("selectedStructure") != null && StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
-		        structure = StructureCache.getStructureByInode((String)session.getAttribute("selectedStructure"));
+		if(session.getAttribute("selectedStructure") != null && CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure")) !=null){
+		        structure = CacheLocator.getContentTypeCache().getStructureByInode((String)session.getAttribute("selectedStructure"));
 		        if(structures.contains(structure)){
 		                structureSelected = structure.getInode();
 		        }else{
@@ -103,7 +103,7 @@
                 }
         }
 
-        if (!InodeUtils.isSet(structureSelected) || !structures.contains(StructureCache.getStructureByInode(structureSelected))) {
+        if (!InodeUtils.isSet(structureSelected) || !structures.contains(CacheLocator.getContentTypeCache().getStructureByInode(structureSelected))) {
 
                 structureSelected = "_all";
 

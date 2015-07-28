@@ -49,25 +49,49 @@ import com.dotmarketing.velocity.DotResourceCache;
  */
 public class PageServices {
 
-	public static void invalidate(IHTMLPage htmlPage) throws DotStateException, DotDataException {
+    /**
+     * Invalidates live and working html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateAll(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, false);
+        invalidate(htmlPage, identifier, true);
+    }
 
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		invalidate(htmlPage, identifier, false);
-		invalidate(htmlPage, identifier, true);
+    /**
+     * Invalidates live html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateLive(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, false);
+    }
 
-	}
+    /**
+     * Invalidates working html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateWorking(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, true);
+    }
 
-	public static void invalidate(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		invalidate(htmlPage, identifier, EDIT_MODE);
-	}
-
-	public static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
+	private static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		removePageFile(htmlPage, identifier, EDIT_MODE);
-		
+
 		if(htmlPage instanceof Contentlet) {
-		    ContentletServices.removeContentletFile((Contentlet)htmlPage, identifier, EDIT_MODE);
+		    if(EDIT_MODE) {
+		        ContentletServices.invalidateWorking((Contentlet) htmlPage, identifier);
+		    } else {
+		        ContentletServices.invalidateLive((Contentlet) htmlPage, identifier);
+		    }
 		}
 	}
 
@@ -340,18 +364,6 @@ public class PageServices {
 			Logger.error(ContainerServices.class,e1.getMessage(), e1);
 		}
 		return result;
-	}
-
-	public static void unpublishPageFile(IHTMLPage htmlPage) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		removePageFile(htmlPage, identifier, false);
-	}
-
-	public static void removePageFile(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		removePageFile(htmlPage, identifier, EDIT_MODE);
 	}
 
 	public static void removePageFile (IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {

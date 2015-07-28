@@ -5,17 +5,16 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 import java.util.List;
 import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -27,7 +26,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -291,7 +289,7 @@ public class EditFolderAction extends DotPortletAction {
 				SessionMessages.add(req, "message", "message.folder.defaultfiletype.required");
 				return false;
 			}
-			Structure defaultStr = StructureCache.getStructureByInode(defaultFileType);
+			Structure defaultStr = CacheLocator.getContentTypeCache().getStructureByInode(defaultFileType);
 			if(defaultStr==null || !InodeUtils.isSet(defaultStr.getInode())){
 				SessionMessages.add(req, "message", "message.folder.defaultfiletype.required");
 				return false;

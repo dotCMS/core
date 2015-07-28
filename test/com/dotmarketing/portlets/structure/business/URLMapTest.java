@@ -3,9 +3,7 @@ package com.dotmarketing.portlets.structure.business;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 import static com.dotcms.repackage.org.junit.Assert.fail;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -13,27 +11,24 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
-
-import com.dotcms.TestBase;
-import com.dotcms.publisher.business.PublisherAPIImpl;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.MultiTreeFactory;
-import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -75,7 +70,7 @@ public class URLMapTest extends TestBase  {
 			// CONTAINER
 			container = new Container();
 
-			Structure simpleWidgetSt = StructureCache.getStructureByVelocityVarName("SimpleWidget");
+			Structure simpleWidgetSt = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("SimpleWidget");
 
 			container.setCode( "$!{story}" );
 			container.setFriendlyName( "newsTestContainer" );

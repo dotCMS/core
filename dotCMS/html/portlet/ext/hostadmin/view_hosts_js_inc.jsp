@@ -2,7 +2,7 @@
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.util.PortletURLUtil"%>
 <%@page import="java.net.URLDecoder"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
@@ -14,7 +14,7 @@
 
 <%
 
-	Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+	Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 	Language lang = APILocator.getLanguageAPI().getDefaultLanguage();
 
 	java.util.Map params = new java.util.HashMap();

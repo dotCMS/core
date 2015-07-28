@@ -8,16 +8,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -80,7 +80,7 @@ public class LinkCheckerAPITest extends TestBase {
             structure.setOwner(sysuser.getUserId());
             structure.setVelocityVarName("linkchecker_test_structure"+uuid.replaceAll("-", "_"));
             StructureFactory.saveStructure(structure);
-            StructureCache.addStructure(structure);
+            CacheLocator.getContentTypeCache().add(structure);
 
             field = new Field("html", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, structure,
                     true, true, true, 1, "", "", "", true, false, true);
@@ -125,7 +125,7 @@ public class LinkCheckerAPITest extends TestBase {
             urlmapstructure.setDetailPage(detailPage.getIdentifier());
             urlmapstructure.setUrlMapPattern("/test_mapped/{a}");
             StructureFactory.saveStructure(urlmapstructure);
-            StructureCache.addStructure(urlmapstructure);
+            CacheLocator.getContentTypeCache().add(urlmapstructure);
 
             urlmapfield = new Field("a", Field.FieldType.TEXT, Field.DataType.TEXT, urlmapstructure,
                     true, true, true, 1, "", "", "", true, false, true);

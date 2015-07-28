@@ -1,5 +1,7 @@
 package com.dotmarketing.factories;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -66,7 +68,20 @@ public class ClickstreamFactory {
 			associatedIdentifier = (String) request.getAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE);
 		}
 		if (!UtilMethods.isSet(associatedIdentifier)) {
-			associatedIdentifier = APILocator.getIdentifierAPI().find(host, pointer ).getInode();
+			// Maybe is a problem with the URL, so we need to find it
+			// in other place "request.getRequestURI()"
+			String uri = "";
+			try {
+				uri = URLDecoder.decode(request.getRequestURI(),
+						UtilMethods.getCharsetConfiguration());
+			} catch (UnsupportedEncodingException e) {
+				Logger.debug(ClickstreamFactory.class,
+						"Could not retrieve URI from request.");
+			}
+			if (!UtilMethods.isSet(uri)) {
+				uri = pointer;
+			}
+			associatedIdentifier = APILocator.getIdentifierAPI().find(host, uri).getInode();
 		}
 
 		if (UtilMethods.isSet(associatedIdentifier)) {

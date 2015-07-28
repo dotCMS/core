@@ -15,7 +15,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
@@ -25,8 +24,6 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -101,7 +98,7 @@ public class FileAssetConverter {
 				if(folder!=null){
 					java.io.File binFile = null;
 					try {
-						Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+						Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 						Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 						java.io.File assetFile = APILocator.getFileAPI().getAssetIOFile(file);
 						if(assetFile!=null && assetFile.exists()){

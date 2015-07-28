@@ -1,17 +1,17 @@
 package com.dotmarketing.portlets.templates.business;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.org.junit.Test;
-
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -86,7 +86,7 @@ public class TemplateAPITest extends TestBase {
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
-        Structure st=StructureCache.getStructureByVelocityVarName("host");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("host");
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();

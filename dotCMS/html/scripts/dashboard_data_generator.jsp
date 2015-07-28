@@ -28,14 +28,15 @@
 
 String action = (request.getParameter("action") !=null) 
 				?  request.getParameter("action")
-						: "add";
+						: "";
 int visits = 500;
 int days = 30;
-String[] urls = {"/home/index.html","/products/index.html","/about-us/index.html"};
+String[] urls = {"/index","/products/index","/about-us/index"};
 
 
 
 if("add".equals(action)){
+	try {
 	List<Contentlet> cons = APILocator.getContentletAPI().search("*", 100, 0, "modDate", APILocator.getUserAPI().getSystemUser(), false);
 
 	for(int g = 0;g<visits;g++){
@@ -118,17 +119,17 @@ if("add".equals(action)){
 	    Clickstream404 c404 = new Clickstream404();
 	    c404.setHostId(host.getIdentifier());
 	    c404.setTimestamp(cal.getTime());
-	    c404.setRefererURI("http://nowhere.com/testing.html");
-	    c404.setRequestURI("/this/doesnotwork/" + secBack+ ".html");
+	    c404.setRefererURI("http://nowhere.com/testing");
+	    c404.setRequestURI("/this/doesnotwork/" + secBack);
 
 	    ClickstreamFactory.save404(c404);
 
 	}
 
 	out.println("added " + visits );
-
-
-
+	} catch(Exception e) {
+		out.println("Error: " + e.getMessage() + " - " + e.getCause());
+	}
 }
 
 

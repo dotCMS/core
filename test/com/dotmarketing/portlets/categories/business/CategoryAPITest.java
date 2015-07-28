@@ -1,11 +1,21 @@
 package com.dotmarketing.portlets.categories.business;
 
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -19,14 +29,6 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
-import static com.dotcms.repackage.org.junit.Assert.*;
 
 /**
  * Created by Jonathan Gamba
@@ -391,7 +393,7 @@ public class CategoryAPITest extends TestBase {
 
         //Saving the structure
         StructureFactory.saveStructure( testStructure );
-        StructureCache.addStructure( testStructure );
+        CacheLocator.getContentTypeCache().add( testStructure );
 
         return testStructure;
     }
