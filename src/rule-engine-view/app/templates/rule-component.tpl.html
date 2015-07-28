@@ -55,7 +55,11 @@
         <h2>When</h2>
         <hr/>
       </div>
-      <condition-group *ng-for="var groupSnap of ruleGroups; var i=index" [rule]="rule" [group-snap]="groupSnap"></condition-group>
+      <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
+                       [rule]="rule"
+                       [group-snap]="groupSnap"
+                       [group-index]="i"
+          ></condition-group>
 
       <div class="section-separator">
         <h2>Then</h2>

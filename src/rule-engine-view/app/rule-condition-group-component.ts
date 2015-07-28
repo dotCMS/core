@@ -15,7 +15,8 @@ import conditionGroupTemplate from './templates/rule-condition-group-component.t
   selector: 'condition-group',
   properties: [
     "rule",
-    "groupSnap"
+    "groupSnap",
+    "groupIndex"
   ]
 })
 @View({
@@ -23,6 +24,7 @@ import conditionGroupTemplate from './templates/rule-condition-group-component.t
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
+  groupIndex:number;
   _groupSnap:any;
   group:any;
   rule:any;
@@ -33,6 +35,7 @@ export class ConditionGroupComponent {
     console.log('Creating ConditionGroupComponent')
     this.groupCollapsed = false
     this.conditions = []
+    this.groupIndex = 0
   }
 
   set groupSnap(groupSnap) {
@@ -86,7 +89,7 @@ export class ConditionGroupComponent {
     })
   }
 
-  toggleOperator() {
+  toggleGroupOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
     this.updateGroup()
   }

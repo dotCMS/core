@@ -5,7 +5,11 @@
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 
 
-import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
+
+import {SingleValueInput, ComparisonInput} from './conditionlets/single-value-input'
+import {UsersCountryConditionlet} from './conditionlets/users-country'
+
 import conditionTemplate from './templates/rule-condition-component.tpl.html!text'
 
 
@@ -33,21 +37,24 @@ let initConditionlets = function () {
 
 @Component({
   selector: 'rule-condition',
-  properties: ["conditionMeta"]
+  properties: ["conditionMeta", "index"]
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor]
+  directives: [NgIf, NgFor, SingleValueInput, ComparisonInput, UsersCountryConditionlet]
 })
 class ConditionComponent {
+  index:number;
   _conditionMeta:any;
   condition:any;
   conditionValue:string;
+  conditionType:string;
   conditionlet:any;
   conditionlets:Array<any>;
 
   constructor() {
     console.log('Creating ConditionComponent')
+    this.conditionType = 'text'
     this.conditionlets = []
     conditionletsPromise.then(()=> {
       this.conditionlets = conditionletsAry
@@ -55,13 +62,14 @@ class ConditionComponent {
     this.condition = {}
     this.conditionValue = ''
     this.conditionlet = {}
-
+    this.index = 0
   }
 
   onSetConditionMeta(snapshot) {
     console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
+    this.conditionType = this.getConditionletDataType(this.conditionlet.id)
     this.conditionValue = this.getComparisonValue()
   }
 
@@ -76,10 +84,39 @@ class ConditionComponent {
     return this._conditionMeta;
   }
 
+  getConditionletDataType(conditionletId) {
+    let dataType;
+    switch (conditionletId) {
+      case 'UsersTimeConditionlet':
+        dataType = 'time'
+        break;
+      case 'UsersDateTimeConditionlet':
+        dataType = 'date'
+        break;
+      default :
+      {
+        dataType = 'text'
+      }
+    }
+    return dataType
+
+  }
+
   setConditionlet(condtitionletId) {
     console.log('Setting conditionlet id to: ', condtitionletId)
+    let dataType = this.getConditionletDataType(condtitionletId)
+    if (dataType != this.conditionType) {
+      console.log('Condition Type changed, resetting value.')
+      let newVal = ''
+      let key = this.getComparisonValueKey() || 'aFakeId'
+      this.condition.values[key] = {id: key, priority: 10, value: newVal}
+      this.conditionValue = newVal
+
+      this.conditionType = dataType
+    }
     this.condition.conditionlet = condtitionletId
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
+
     this.updateCondition()
   }
 
@@ -109,11 +146,13 @@ class ConditionComponent {
   }
 
   setComparisonValue(newValue) {
+    if (newValue === undefined) {
+      return
+    }
     let key = this.getComparisonValueKey() || 'aFakeId'
     this.condition.values[key] = {id: key, priority: 10, value: newValue}
     this.updateCondition()
   }
-
 
   toggleOperator() {
     this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'

@@ -1,25 +1,12 @@
-<div class="clause-group-separator" *ng-if="index > 1">
-  <div class="row">
-    <div class="col-sm-1">
-      <button class="btn btn-default field-operator" (click)="toggleOperator()">
-        {{group.operator}}
-      </button>
-    </div>
-  </div>
-</div>
-
 <div class="panel panel-default clause-group">
   <div class="panel-heading">
     <div class="row">
-      <div class="col-xs-6">
-        <button type="button" class="btn btn-default btn-md js-info-button" data-toggle="popover"
-                data-placement="top" title="Teaser about the rule"
-                data-content="Visitor is from France, user is anonymous and device is tablet">
-          <span class="glyphicon glyphicon-question-sign js-info-button" aria-hidden="true"></span>
+      <div class="col-sm-1">
+        <button *ng-if="groupIndex !== 0" class="btn btn-default" (click)="toggleGroupOperator()">
+          {{group.operator}}
         </button>
-        <h4 class="panel-title js-rule-teaser">{Dynamically generated description of Conditions in this Group}</h4>
       </div>
-      <div class="col-xs-6">
+      <div class="col-xs-11">
         <div class="operations clause-group-operations">
           <button type="button" class="btn btn-default btn-md" (click)="groupCollapsed = !groupCollapsed">
             <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
@@ -37,6 +24,6 @@
     </div>
   </div>
   <div class="panel-body collapse" [class.in]="!groupCollapsed">
-    <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta"> </rule-condition>
+    <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta" [index]="i"> </rule-condition>
   </div>
 </div>

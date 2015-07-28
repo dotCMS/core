@@ -2,7 +2,7 @@
   <div class="panel-body">
     <div class="row">
       <div class="col-sm-1">
-        <button type="button"class="btn btn-default" (click)="toggleOperator()">
+        <button *ng-if="index !== 0" type="button"class="btn btn-default" (click)="toggleOperator()">
           {{condition.operator}}
         </button>
       </div>
@@ -16,17 +16,22 @@
           <div class="col-sm-1">
             <h4 class="separator"></h4>
           </div>
-          <div class="col-sm-3">
-            <select class="form-control clause-selector" [value]="condition.comparison" (change)="setComparison($event.target.value)">
-              <option value="{{comparison.id}}" *ng-for="var comparison of conditionlet.comparisons">{{comparison.label}}</option>
-            </select>
-          </div>
-          <div class="col-sm-1">
-            <h4 class="separator"></h4>
-          </div>
-          <div class="col-sm-3">
-            <input type="text" class="form-control condition-value" [value]="conditionValue" (change)="setComparisonValue($event.target.value)"/>
-          </div>
+          <conditionlet class="row col-sm-7">
+            <users-country *ng-if="conditionlet.id == 'UsersCountryConditionlet'"
+                           [condition]="condition"
+                           [conditionlet]="conditionlet"
+                           [value]="conditionValue"
+                           (change)="setComparisonValue($event)"></users-country>
+
+          </conditionlet>
+
+
+
+          <!--
+                 <single-value-input>
+            <bob></bob>
+          </single-value-input>
+          <!--<users-country class="conditionlet users-country" [value]="conditionValue" (change)="setComparisonValue($event)"></users-country>-->
           <div class="col-sm-1">
             <div class="operations clause-operations">
               <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause" (click)="removeCondition()">
