@@ -43,7 +43,7 @@ public class ClickstreamRequestFactory {
 	
     public static ClickstreamRequest getClickstreamRequest(HttpServletRequest request, Date timestamp) {
         
-        HttpSession session = request.getSession();
+        HttpSession session = request.getSession(true);
         long languageId = langAPI.getDefaultLanguage().getId();
         if (session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE) != null) {
             languageId = Long.parseLong(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString());

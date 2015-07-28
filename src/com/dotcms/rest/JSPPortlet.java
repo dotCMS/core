@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -33,19 +35,19 @@ public class JSPPortlet extends BaseRestPortlet {
 	@GET
 	@Path("/{params:.*}")
 	@Produces("text/html")
-	public Response layoutGet(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException,
+	public Response layoutGet(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
 			DotSecurityException, ServletException, IOException, DotRuntimeException, PortalException, SystemException {
 
-		return super.getLayout(request, params);
+		return super.getLayout(request, response, params);
 	}
 
 	@POST
 	@Path("/{params:.*}")
 	@Produces("text/html")
-	public Response layoutPost(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException,
+	public Response layoutPost(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException,
 			DotSecurityException, ServletException, IOException, DotRuntimeException, PortalException, SystemException {
 
-		return super.getLayout(request, params);
+		return super.getLayout(request, response, params);
 	}
 
 }

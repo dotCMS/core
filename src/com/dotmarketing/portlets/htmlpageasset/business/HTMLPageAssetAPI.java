@@ -182,7 +182,7 @@ public interface HTMLPageAssetAPI {
     
     HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions)  throws Exception;
     
-    public void migrateAllLegacyPages(User user, boolean respectFrontEndPermissions) throws Exception;
+    public boolean migrateAllLegacyPages(User user, boolean respectFrontEndPermissions) throws Exception;
         
     String getHostDefaultPageType(Host host);
 
@@ -211,7 +211,7 @@ public interface HTMLPageAssetAPI {
 			throws DotStateException, DotDataException, DotSecurityException;
 
     public String getHTML(IHTMLPage htmlPage, boolean liveMode,
-                          String contentId, User user, long langId, String userAgent)
+                          String contentId, User user, Long langId, String userAgent)
             throws DotStateException, DotDataException, DotSecurityException;
 
 	public String getHTML(String uri, Host host, boolean liveMode,
@@ -219,6 +219,6 @@ public interface HTMLPageAssetAPI {
 			throws DotStateException, DotDataException, DotSecurityException;
 
 	public String getHTML(String uri, Host host, boolean liveMode,
-			String contentId, User user, long langId, String userAgent)
+			String contentId, User user, Long langId, String userAgent)
 			throws DotStateException, DotDataException, DotSecurityException;
 }

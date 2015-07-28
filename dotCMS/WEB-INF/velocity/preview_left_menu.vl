@@ -2,7 +2,7 @@
 	#stop
 #end
 
-#if($dotPageContent.isContent())
+#if($dotPageContent.isHTMLPage())
 	#parse("/preview_left_menu_page_as_content.vtl")
 	#stop 
 #end
@@ -126,19 +126,16 @@
     }
 
     function editPage(){
-        document.getElementById('htmlPage').value='$htmlPageInode';
         document.getElementById('cmd').value="editHTMLPage";
         document.getElementById('submitParent').submit();
     }
     
     function migrate() {
-        document.getElementById('htmlPage').value='$htmlPageInode';
         document.getElementById('cmd').value="migrate";
         document.getElementById('submitParent').submit();
     }
 
     function viewStatistics(){
-        document.getElementById('htmlPage').value='$htmlPageInode';
         document.getElementById('cmd').value="viewStatistics";
         document.getElementById('submitParent').submit();
     }
@@ -151,7 +148,6 @@
 
     function publishAll(){
         if(confirm("$languagewebapi.getFromUserLanguage("message.confirm.modes.publish.page")")){
-            document.getElementById('htmlPage').value='$htmlPageInode';
             document.getElementById('cmd').value="publishHTMLPage";
             document.getElementById('submitParent').submit();
         }
@@ -165,13 +161,11 @@
     	parent.addToBundle();
     }
     function editTemplate(){
-            //document.getElementById('htmlPage').value='$htmlPageInode';
             document.getElementById('cmd').value="editTemplate";
             document.getElementById('submitParent').submit();
     }
 
     function makeHomePage(){
-            document.getElementById('htmlPage').value='$htmlPageInode';
             document.getElementById('cmd').value="makeHomePage";
             document.getElementById('submitParent').submit();
     }
@@ -211,11 +205,12 @@
         }
     }
     function viewDiff(){
-
+		var varHTMLPage = document.getElementById("htmlPage").value;
+		
         #if($UtilMethods.isSet($request.getAttribute('com.dotmarketing.wiki.contentlet')))
-            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=$htmlPageInode&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
+            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
         #else
-            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=$htmlPageInode";
+            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage;
         #end
 
     }

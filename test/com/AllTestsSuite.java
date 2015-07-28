@@ -19,6 +19,7 @@ import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotmarketing.business.IdentifierAPITest;
+import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
 import com.dotmarketing.business.RoleAPITest;
 import com.dotmarketing.db.DbConnectionFactoryUtilTest;
@@ -75,6 +76,7 @@ import com.dotmarketing.webdav.WebDavTest;
     WebDavTest.class,
     ContentResourceTest.class,
     RoleAPITest.class,
+    LanguageAPITest.class,
     FolderAPITest.class,
     WorkflowSearcherTest.class,
     NotificationAPITest.class,
@@ -83,14 +85,14 @@ import com.dotmarketing.webdav.WebDavTest;
     IdentifierAPITest.class,
     ImportUtilTest.class,
     SiteSearchAjaxActionTest.class,
-    RemotePublishAjaxActionTest.class, //Needs Enterprise License
     CSSPreProcessServletTest.class, //Needs Enterprise License
     ESContentFactoryImplTest.class,
     HibernateUtilTest.class,
     WorkflowAPITest.class,
     ContentletAjaxTest.class,
     SimpleNodeTest.class,
-    DbConnectionFactoryUtilTest.class
+    DbConnectionFactoryUtilTest.class,
+    RemotePublishAjaxActionTest.class //Needs Enterprise License
 })
 public class AllTestsSuite {
 

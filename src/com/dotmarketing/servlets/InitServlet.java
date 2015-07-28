@@ -138,9 +138,9 @@ public class InitServlet extends HttpServlet {
 
 		Logger.info(this, "");
 
-        String classPath = config.getServletContext().getRealPath("WEB-INF/lib");
+        String classPath = config.getServletContext().getRealPath("/WEB-INF/lib");
 
-    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("."),classPath);
+    	new PluginLoader().loadPlugins(config.getServletContext().getRealPath("/"),classPath);
 
 
 
@@ -172,7 +172,14 @@ public class InitServlet extends HttpServlet {
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "live").mkdirs();
         new java.io.File(ConfigUtils.getDynamicVelocityPath() + File.separator + "working").mkdirs();
 
+        //Used com.dotmarketing.viewtools.NavigationWebAPI
+        String velocityRootPath = ConfigUtils.getDynamicVelocityPath() + java.io.File.separator;
+        String menuVLTPath = velocityRootPath + "menus" + java.io.File.separator;
 
+        java.io.File fileFolder = new java.io.File(menuVLTPath);
+        if (!fileFolder.exists()) {
+            fileFolder.mkdirs();
+        }
         
         if(Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE_NAVTOOL", false)){
             // deletes all menues that have been generated
@@ -238,10 +245,6 @@ public class InitServlet extends HttpServlet {
 		} catch (DotDataException e1) {
 			Logger.error(InitServlet.class, e1.getMessage(), e1);
 			throw new ServletException("Unable to initialize system folder", e1);
-		}
-
-		if(Config.getBooleanProperty("ESCALATION_ENABLE",false)) {
-		    EscalationThread.getInstace().start();
 		}
 
         /*

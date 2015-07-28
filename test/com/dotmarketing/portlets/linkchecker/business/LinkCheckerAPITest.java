@@ -8,28 +8,24 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.model.Container;
-import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPI;
-import com.dotmarketing.portlets.contentlet.business.web.ContentletWebAPIImpl;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
-import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
@@ -39,10 +35,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import com.dotmarketing.filters.CmsUrlUtil;
 
 
 
@@ -56,6 +50,7 @@ public class LinkCheckerAPITest extends TestBase {
     protected static Container container=null;
     protected static String pageExt=null;
     protected static HTMLPage detailPage=null;
+    protected static List<Contentlet> pages=new ArrayList<Contentlet>();
 
     @BeforeClass
     public static void createStructure() throws Exception {
@@ -85,7 +80,7 @@ public class LinkCheckerAPITest extends TestBase {
             structure.setOwner(sysuser.getUserId());
             structure.setVelocityVarName("linkchecker_test_structure"+uuid.replaceAll("-", "_"));
             StructureFactory.saveStructure(structure);
-            StructureCache.addStructure(structure);
+            CacheLocator.getContentTypeCache().add(structure);
 
             field = new Field("html", Field.FieldType.WYSIWYG, Field.DataType.LONG_TEXT, structure,
                     true, true, true, 1, "", "", "", true, false, true);
@@ -130,7 +125,7 @@ public class LinkCheckerAPITest extends TestBase {
             urlmapstructure.setDetailPage(detailPage.getIdentifier());
             urlmapstructure.setUrlMapPattern("/test_mapped/{a}");
             StructureFactory.saveStructure(urlmapstructure);
-            StructureCache.addStructure(urlmapstructure);
+            CacheLocator.getContentTypeCache().add(urlmapstructure);
 
             urlmapfield = new Field("a", Field.FieldType.TEXT, Field.DataType.TEXT, urlmapstructure,
                     true, true, true, 1, "", "", "", true, false, true);
@@ -143,22 +138,19 @@ public class LinkCheckerAPITest extends TestBase {
             HibernateUtil.closeSession();
         }
     }
-
-    @AfterClass
+    
     public static void disposeThings() throws Exception {
         try {
-            HibernateUtil.closeSession();
             List<Contentlet> contentList=new ArrayList<Contentlet>();
             contentList.addAll(APILocator.getContentletAPI().findByStructure(structure.getInode(), sysuser, false, 0, 0));
             contentList.addAll(APILocator.getContentletAPI().findByStructure(urlmapstructure.getInode(), sysuser, false, 0, 0));
             APILocator.getContentletAPI().delete(contentList, sysuser, false);
 
-            
             for(HTMLPage pp : APILocator.getHTMLPageAPI().findHtmlPages(sysuser, false, null, null, null, null, template.getIdentifier(), 0, -1, null))
             		APILocator.getHTMLPageAPI().delete((HTMLPage)pp, sysuser, false);
-            for(IHTMLPage pp : APILocator.getHTMLPageAssetAPI().getHTMLPages(template.getIdentifier(), false, false, 0, 0, null, sysuser, false))
-            		APILocator.getContentletAPI().delete((Contentlet)pp, sysuser, false);
-
+            for(Contentlet pp : pages){
+            		APILocator.getContentletAPI().delete(pp, sysuser, false,true);
+            }
             APILocator.getTemplateAPI().delete(template, sysuser, false);
             APILocator.getContainerAPI().delete(container, sysuser, false);
 
@@ -354,6 +346,8 @@ public class LinkCheckerAPITest extends TestBase {
         IHTMLPage page7=createDummyPage("something","something", "something", template, Fahtml, host,true);
         IHTMLPage page8=createDummyPage("index","index", "index", template, Fabhtml, host, true);
         IHTMLPage page9=createDummyPage("something","something", "something", template, Fabhtml, host, true);
+        
+        
         extlinks=new String[] {
         	page6.getURI(), page7.getURI(),page8.getURI(), page9.getURI(), // direct hit!
             "/a_html_asset_test/", "/a_html_asset_test/b_html_asset_test", // should be good as it hits index page
@@ -394,8 +388,17 @@ public class LinkCheckerAPITest extends TestBase {
         assertTrue(invalids!=null);
         assertEquals(3,invalids.size());
         links=new HashSet<String>(Arrays.asList(new String[] {page6.getURI(),page7.getURI(),page8.getURI()}));
+        
+        APILocator.getVersionableAPI().setWorking(page6);
+        APILocator.getVersionableAPI().setWorking(page7);
+        APILocator.getVersionableAPI().setWorking(page8);
+        APILocator.getVersionableAPI().setWorking(page9);
+        HibernateUtil.flush();
+        HibernateUtil.closeSession();
+        
         for(InvalidLink link : invalids)
             assertTrue(links.remove(link.getUrl()));
+        disposeThings();
     }
 
     @Test
@@ -432,9 +435,10 @@ public class LinkCheckerAPITest extends TestBase {
             contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, URL);
             contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, title);
             contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getInode());
+            contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
             contentAsset.setFolder(folder.getInode());
             contentAsset=APILocator.getContentletAPI().checkin(contentAsset, sysuser, false);
+            pages.add(contentAsset);
             
             return APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset);
     	}

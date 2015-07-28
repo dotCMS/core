@@ -21,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
@@ -28,7 +29,6 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -53,7 +53,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -882,7 +881,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 				if(field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())){
 					if(field.getFieldContentlet().startsWith("date") && contentletFormData.get("fieldNeverExpire") != null){
 						String fieldNeverExpire = contentletFormData.get("fieldNeverExpire").toString();
-						Structure structure = StructureCache.getStructureByInode(contentlet.getStructureInode());
+						Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(contentlet.getStructureInode());
 						if(field.getVelocityVarName().equals(structure.getExpireDateVar())){
 							if(fieldNeverExpire.equalsIgnoreCase("true")){
 								contentlet.getMap().put("NeverExpire", "NeverExpire");

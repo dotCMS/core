@@ -1,11 +1,25 @@
 package com.dotmarketing.business;
 
+import static com.dotcms.repackage.org.junit.Assert.assertFalse;
+import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+
+import java.io.FileWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import com.dotcms.TestBase;
+import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.junit.AfterClass;
+import com.dotcms.repackage.org.junit.BeforeClass;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.ajax.RoleAjax;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,19 +35,11 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
-
-import java.io.FileWriter;
-import java.util.*;
-
-import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class PermissionAPITest extends TestBase {
 
@@ -48,7 +54,15 @@ public class PermissionAPITest extends TestBase {
         sysuser=APILocator.getUserAPI().getSystemUser();
         host = new Host();
         host.setHostname("testhost.demo.dotcms.com");
-        host=APILocator.getHostAPI().save(host, sysuser, false);
+        try{
+        	HibernateUtil.startTransaction();
+            host=APILocator.getHostAPI().save(host, sysuser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(PermissionAPITest.class, e.getMessage());
+        }
+ 
 
         perm.permissionIndividually(host.getParentPermissionable(), host, sysuser, false);
 
@@ -86,8 +100,16 @@ public class PermissionAPITest extends TestBase {
 
     @AfterClass
     public static void deleteTestHost() throws DotContentletStateException, DotDataException, DotSecurityException {
-        APILocator.getHostAPI().archive(host, sysuser, false);
-        APILocator.getHostAPI().delete(host, sysuser, false);
+        try{
+        	HibernateUtil.startTransaction();
+            APILocator.getHostAPI().archive(host, sysuser, false);
+            APILocator.getHostAPI().delete(host, sysuser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(PermissionAPITest.class, e.getMessage());
+        }
+
     }
 
     @Test
@@ -420,7 +442,7 @@ public class PermissionAPITest extends TestBase {
         s.setOwner(sysuser.getUserId());
         s.setVelocityVarName("testtesttest"+System.currentTimeMillis());
         StructureFactory.saveStructure(s);
-        StructureCache.addStructure(s);
+        CacheLocator.getContentTypeCache().add(s);
 
         Field field1 = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                 true, true, true, 3, "", "", "", true, false, true);
@@ -473,16 +495,23 @@ public class PermissionAPITest extends TestBase {
         assertTrue(perm.isInheritingPermissions(f4));
         assertTrue(perm.isInheritingPermissions(cont1));
         assertTrue(perm.isInheritingPermissions(cont2));
+        try{
+        	HibernateUtil.startTransaction();
+            APILocator.getContentletAPI().archive(cont1, sysuser, false);
+            APILocator.getContentletAPI().archive(cont2, sysuser, false);
+            APILocator.getContentletAPI().delete(cont1, sysuser, false);
+            APILocator.getContentletAPI().delete(cont2, sysuser, false);
 
-        APILocator.getContentletAPI().archive(cont1, sysuser, false);
-        APILocator.getContentletAPI().archive(cont2, sysuser, false);
-        APILocator.getContentletAPI().delete(cont1, sysuser, false);
-        APILocator.getContentletAPI().delete(cont2, sysuser, false);
-
-        FieldFactory.deleteField(field1);
-        FieldFactory.deleteField(field2);
-        StructureFactory.deleteStructure(s.getInode());
+            FieldFactory.deleteField(field1);
+            FieldFactory.deleteField(field2);
+            StructureFactory.deleteStructure(s.getInode());
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(PermissionAPITest.class, e.getMessage());
+        }
     }
+
 
     @Test
     public void permissionIndividually() throws DotStateException, DotDataException, DotSecurityException {
@@ -536,8 +565,16 @@ public class PermissionAPITest extends TestBase {
             assertTrue(perm.findParentPermissionable(f1).equals(hh));
         }
         finally {
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
+            try{
+            	HibernateUtil.startTransaction();
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            	HibernateUtil.commitTransaction();
+            }catch(Exception e){
+            	HibernateUtil.rollbackTransaction();
+            	Logger.error(PermissionAPITest.class, e.getMessage());
+            }
+
         }
     }
 
@@ -564,7 +601,7 @@ public class PermissionAPITest extends TestBase {
             s.setOwner(sysuser.getUserId());
             s.setVelocityVarName("str847"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
-            StructureCache.addStructure(s);
+            CacheLocator.getContentTypeCache().add(s);
 
             Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                     true, true, true, 3, "", "", "", true, false, true);
@@ -595,8 +632,15 @@ public class PermissionAPITest extends TestBase {
             assertTrue(perm.findParentPermissionable(cont1).equals(f2));
         }
         finally {
-            APILocator.getHostAPI().archive(hh, sysuser, false);
-            APILocator.getHostAPI().delete(hh, sysuser, false);
+            try{
+            	HibernateUtil.startTransaction();
+                APILocator.getHostAPI().archive(hh, sysuser, false);
+                APILocator.getHostAPI().delete(hh, sysuser, false);
+            	HibernateUtil.commitTransaction();
+            }catch(Exception e){
+            	HibernateUtil.rollbackTransaction();
+            	Logger.error(PermissionAPITest.class, e.getMessage());
+            }
         }
     }
 
@@ -666,7 +710,7 @@ public class PermissionAPITest extends TestBase {
             FileUtils.copyFile(fdata, fcdata);
             APILocator.getFileAPI().saveFile(fc, fcdata, c, sysuser, false);
 
-            String FileAssetStInode=StructureCache.getStructureByVelocityVarName(
+            String FileAssetStInode=CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
             Contentlet ca=new Contentlet();
@@ -779,7 +823,7 @@ public class PermissionAPITest extends TestBase {
             s.setOwner(sysuser.getUserId());
             s.setVelocityVarName("issue560"+System.currentTimeMillis());
             StructureFactory.saveStructure(s);
-            StructureCache.addStructure(s);
+            CacheLocator.getContentTypeCache().add(s);
 
             Field field = new Field("testtext", Field.FieldType.TEXT, Field.DataType.TEXT, s,
                     true, true, true, 3, "", "", "", true, false, true);
@@ -908,8 +952,15 @@ public class PermissionAPITest extends TestBase {
              assertTrue(perm.findParentPermissionable(t).equals(hh));
          }
          finally {
-             APILocator.getHostAPI().archive(hh, sysuser, false);
-             APILocator.getHostAPI().delete(hh, sysuser, false);
+             try{
+             	HibernateUtil.startTransaction();
+                 APILocator.getHostAPI().archive(hh, sysuser, false);
+                 APILocator.getHostAPI().delete(hh, sysuser, false);
+             	HibernateUtil.commitTransaction();
+             }catch(Exception e){
+             	HibernateUtil.rollbackTransaction();
+             	Logger.error(PermissionAPITest.class, e.getMessage());
+             }
          }
 
     }

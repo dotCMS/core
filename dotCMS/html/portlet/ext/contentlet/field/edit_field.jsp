@@ -10,6 +10,7 @@
 <%@page import="java.util.HashMap"%>
 <%@page import="com.liferay.util.cal.CalendarUtil"%>
 <%@page import="java.util.Locale"%>
+<%@page import="java.util.Arrays"%>
 <%@page import="java.text.SimpleDateFormat"%>
 <%@page import="com.dotmarketing.portlets.files.model.File"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
@@ -136,7 +137,12 @@
 		}
         boolean isWidget = false;
         ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-        int structureType = contentletForm.getStructure().getStructureType();
+	int structureType = 0;
+	if(UtilMethods.isSet(contentletForm)){
+        	structureType = contentletForm.getStructure().getStructureType();
+	}else{
+		structureType = contentlet.getStructure().getStructureType();
+	}
         if(structureType == 2){
         	 isWidget = true;
         }
@@ -733,15 +739,19 @@
                 if(value instanceof Number){
                     value = String.valueOf(value);
                 }
-                if ((((String) value).contains(pairValue + ",") || ((String) value).contains(pairValue)) && UtilMethods.isSet(pairValue)) {
-                    checked = "CHECKED";
+
+                if(UtilMethods.isSet(pairValue)) {
+                    // Find and checked values saved
+                    if (Arrays.asList(((String)value).split(",")).contains(pairValue)) {
+                        checked = "CHECKED";
+                    }
                 }
             } else {
-                if (UtilMethods.isSet(defaultValue)
-                        && (defaultValue.contains("|" + pairValue)
-                                || defaultValue.contains(pairValue + "|") || defaultValue
-                                .equals(pairValue))) {
-                    checked = "CHECKED";
+                if (UtilMethods.isSet(defaultValue)) {
+                    // Find and checked default values
+                    if (Arrays.asList(defaultValue.split("|")).contains(pairValue)) {
+                        checked = "CHECKED";
+                    }
                 }
             }
  %>
@@ -758,19 +768,14 @@
 
     <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>Checkbox() {
-            var valuesList = "";
-            var checkbox = null;
-        <%
-            for (int j = 0; j < pairs.length; j++) {
-        %>
-            checkbox = $('<%=fieldName + j%>Checkbox');
-            if(checkbox.checked) {
-                valuesList += checkbox.value + ",";
-            }
-        <%
-            }
-        %>
-            $('<%=field.getVelocityVarName()%>').value = valuesList;
+            var valuesList = [];
+            
+            var checkedInputs = dojo.query("input:checkbox[name^='<%=fieldName%>Checkbox']:checked");
+            checkedInputs.forEach(function(checkedInput) {
+                valuesList.push(checkedInput.value);
+            });
+            
+            $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
         }
 
         update<%=field.getVelocityVarName()%>Checkbox();
@@ -907,6 +912,16 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
   else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+
+      %>
+        <script>
+            dojo.ready(function () {
+                setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+                recolorTable('<%=field.getFieldContentlet()%>');
+            });
+        </script>
+      <%
+
 	  java.util.Map<String, Object> keyValueMap = null;
 	  String JSONValue = UtilMethods.isSet(value)? (String)value:"";
 	  //Convert JSON to Table Display {key, value, order}
@@ -967,6 +982,7 @@
     <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
    <%} %>
    </div>
+
 <%}%>
 
 </div>

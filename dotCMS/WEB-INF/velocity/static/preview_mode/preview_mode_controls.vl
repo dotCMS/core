@@ -5,7 +5,7 @@
 		#set($referer =	"$request.getAttribute('com.dotmarketing.clickstream.uri.override')?")
 	#end
 #end
-$import.read("/html/common/messages_inc.jsp") 
+<script type='text/javascript' src='/html/js/messages.js'></script>
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/ContentletAjax.js'></script>
@@ -385,7 +385,6 @@ $import.read("/html/common/messages_inc.jsp")
 	}
 
 	function editPage(){
-	 	document.getElementById('htmlPage').value='$htmlPageInode';
 		form = document.getElementById('submitParent');
 	        form.cmd.value="editHTMLPage";
 	        form.submit();
@@ -395,13 +394,11 @@ $import.read("/html/common/messages_inc.jsp")
 		if(confirm('$languagewebapi.getFromUserLanguage("modes.Are-you-sure-you-would-like-to-publish-this-page")')){
 		form = document.getElementById('submitParent');
 	        form.cmd.value="publishHTMLPage";
-	        form.htmlPage.value='$htmlPageInode';
 	        form.submit();
 		}
 	}
 
 	function editTemplate(){
-		document.getElementById('htmlPage').value='$htmlPageInode';
 		form = document.getElementById('submitParent');
 	        form.cmd.value="editTemplate";
 	        form.submit();
@@ -409,7 +406,6 @@ $import.read("/html/common/messages_inc.jsp")
 	}
 
 	function makeHomePage(){
-	 	document.getElementById('htmlPage').value='$htmlPageInode';
 		form = document.getElementById('submitParent');
 	        form.cmd.value="makeHomePage";
 	        form.submit();
@@ -760,9 +756,38 @@ $import.read("/html/common/messages_inc.jsp")
 	   dojo.setContext(window.frames[1].window, window.frames[1].window.document);
 	   dojo.destroy(dojo.byId(inlineVar));
 
-
-
-
+		// Only modify varHTMLPage or varReferer when returned inode is a 
+		// HTML Page otherwise don't replace it.
+		if(data.isNewContentletInodeHtmlPage === true || data.isNewContentletInodeHtmlPage === "true") {
+			// We need to update the inode of the current page after we call the saveDraft using ajax,
+			// because we are not refreshing or submitting the current page.
+			var iframeMenu = document.getElementById("frameMenu");
+			var documentsToUpdate = [
+				document, 
+				(iframeMenu.contentDocument || iframeMenu.contentWindow.document)
+			];
+			
+			// For each document we need to update fields for all the forms present.
+			// The forms can be in iframes
+			documentsToUpdate.forEach(function(documentEntry) {
+				if(documentEntry) {
+					var varHTMLPage = documentEntry.getElementById("htmlPage");
+					var varReferer = documentEntry.getElementById("referer");
+					if(varReferer && varHTMLPage) {
+						var newReferer = [];
+				   		varReferer.value.split(varHTMLPage.value).forEach(function(entry) {
+			    			newReferer.push(entry);
+						});
+						
+				   		varReferer.value = newReferer.join(data.newContentletInode);
+				   	}
+					
+				   	if(varHTMLPage) {
+				   		varHTMLPage.value = data.newContentletInode;
+				   	}
+				}
+			});
+		}
 
 		// container based edit control
 		var normalEditControls = dojo.byId("edit-"+data.contentletInode);

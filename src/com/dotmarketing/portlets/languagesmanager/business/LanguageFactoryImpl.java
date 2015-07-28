@@ -92,7 +92,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
         try {
             x = Long.parseLong(id);
         } catch (Exception e) {
-            Logger.error(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric.", e);
+            Logger.error(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + id, e);
             throw new DotRuntimeException(e.toString(), e);
         }
 
@@ -187,7 +187,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
                 o.setCountryCode(o.getCountryCode().toUpperCase());
             }
 			HibernateUtil.saveOrUpdate(o);
-			CacheLocator.getLanguageCache().clearCache();
+			CacheLocator.getLanguageCache().clearLanguages();
 		} catch (DotHibernateException e) {
             Logger.error(LanguageFactoryImpl.class, "saveLanguage failed to save the language.", e);
             throw new DotRuntimeException(e.toString(), e);

@@ -348,7 +348,7 @@ public class LoginAction extends Action {
 			String maxAge = rememberMe?"31536000":"0";
 				
 			StringBuilder headerStr = new StringBuilder();
-			headerStr.append(CookieKeys.ID).append("=").append(UserManagerUtil.encryptUserId(userId)).append(";")
+			headerStr.append(CookieKeys.ID).append("=\"").append(UserManagerUtil.encryptUserId(userId)).append("\";")
 				.append(secure).append(";").append(httpOnly).append(";Path=/").append(";Max-Age=").append(maxAge);
 			res.addHeader("SET-COOKIE", headerStr.toString());
 

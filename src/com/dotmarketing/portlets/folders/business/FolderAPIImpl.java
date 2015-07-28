@@ -29,7 +29,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.query.GenericQueryFactory.Query;
 import com.dotmarketing.business.query.QueryUtil;
 import com.dotmarketing.business.query.ValidationException;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -376,7 +375,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				//remove value in the parent folder from the children listing
 				Folder parentFolder = !ident.getParentPath().equals("/") ? APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), faker.getHostId(), user, false) : APILocator.getFolderAPI().findSystemFolder();
 				if(parentFolder != null){
-					CacheLocator.getNavToolCache().getNav(faker.getHostId(), parentFolder.getInode());
+					CacheLocator.getNavToolCache().removeNav(faker.getHostId(), parentFolder.getInode());
 				}
 			}
 
@@ -564,7 +563,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				f.setSortOrder(0);
 				f.setFilesMasks("");
 				f.setHostId(host.getIdentifier());
-				f.setDefaultFileType(StructureCache.getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+				f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
 				Identifier newIdentifier = new Identifier();
 				if(!UtilMethods.isSet(parent)){
 					newIdentifier = APILocator.getIdentifierAPI().createNew(f, host);
@@ -745,12 +744,6 @@ public class FolderAPIImpl implements FolderAPI  {
 	public List findMenuItems(Folder folder, int orderDirection) throws DotDataException{
 		return ffac.getMenuItems(folder, orderDirection);
 	}
-
-
-	public List<Object> buildNavigationTree(List items, int depth,User user)throws DotDataException {
-		return ffac.buildNavigationTree(items, depth,user);
-	}
-
 
 	public List<Inode> findMenuItems(Host host,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 		return ffac.getMenuItems(host);

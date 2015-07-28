@@ -38,7 +38,6 @@ import com.dotmarketing.portlets.links.factories.LinkFactory;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.links.model.Link.LinkType;
 import com.dotmarketing.portlets.links.struts.LinkForm;
-import com.dotmarketing.services.ContentletMapServices;
 import com.dotmarketing.services.ContentletServices;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -664,9 +663,7 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			if (cont.isWorking()) {
 				com.dotmarketing.portlets.contentlet.model.Contentlet newFormatContentlet = 
 					conAPI.convertFatContentletToContentlet(cont);
-				ContentletServices.invalidate(newFormatContentlet, true);
-				//writes the contentlet object to a file
-				ContentletMapServices.invalidate(newFormatContentlet, true);
+				ContentletServices.invalidateWorking(newFormatContentlet);
 			}
 		}
 	}

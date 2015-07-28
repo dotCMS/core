@@ -9,11 +9,11 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.form.business.FormAPI;
@@ -127,7 +127,7 @@ public class StructuresWebAPI implements ViewTool {
 	 * @return
 	 */
 	public Structure findStructure(String inode) {
-		return StructureCache.getStructureByInode(inode);
+		return CacheLocator.getContentTypeCache().getStructureByInode(inode);
 	}
 
 	/**
@@ -138,7 +138,7 @@ public class StructuresWebAPI implements ViewTool {
      * structure name can be changed by the user, use getStructureByVelocityVarName
 	 */
 	public Structure findStructureByName(String structureName) {
-		Structure structure =StructureCache.getStructureByType(structureName);
+		Structure structure =CacheLocator.getContentTypeCache().getStructureByType(structureName);
 		//http://jira.dotmarketing.net/browse/DOTCMS-6282
 		if(!UtilMethods.isSet(structure.getInode())){
 			return findStructureByVelocityVarName(structureName);
@@ -153,7 +153,7 @@ public class StructuresWebAPI implements ViewTool {
 	 * @return
 	 */
 	public Structure findStructureByVelocityVarName(String velocityVarName) {
-		return StructureCache.getStructureByVelocityVarName(velocityVarName);
+		return CacheLocator.getContentTypeCache().getStructureByVelocityVarName(velocityVarName);
 	}
 
 	/**

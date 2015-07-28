@@ -7,19 +7,17 @@ import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.org.junit.Test;
-
 import com.dotcms.TestBase;
-import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.factories.MultiTreeFactory;
@@ -40,10 +38,12 @@ import com.liferay.portal.model.User;
 public class HTMLPageAPITest extends TestBase {
     @Test
     public void saveHTMLPage() throws Exception {
+    	
         User sysuser=APILocator.getUserAPI().getSystemUser();
         Host host=APILocator.getHostAPI().findDefaultHost(sysuser, false);
         String ext="."+Config.getStringProperty("VELOCITY_PAGE_EXTENSION");
-
+        
+        HibernateUtil.startTransaction();
         Template template=new Template();
         template.setTitle("a template "+UUIDGenerator.generateUuid());
         template.setBody("<html><body> I'm mostly empty </body></html>");
@@ -92,6 +92,7 @@ public class HTMLPageAPITest extends TestBase {
         page.setInode(newInode);
         page.setTitle("other title");
         page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
+        HibernateUtil.commitTransaction();
         assertEquals(newInode,page.getInode());
         assertEquals(existingIdentifier,page.getIdentifier());
         assertEquals("other title",page.getTitle());
@@ -110,7 +111,7 @@ public class HTMLPageAPITest extends TestBase {
         container.setMaxContentlets(5);
         container.setPreLoop("preloop code");
         container.setPostLoop("postloop code");
-        Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 
         List<ContainerStructure> csList = new ArrayList<ContainerStructure>();
         ContainerStructure cs = new ContainerStructure();
@@ -152,10 +153,16 @@ public class HTMLPageAPITest extends TestBase {
                      containerInode=container.getInode(), containerIdent=container.getIdentifier();
 
         // let's delete
-
-        APILocator.getHTMLPageAPI().delete(page, sysuser, false);
-        APILocator.getTemplateAPI().delete(template, sysuser, false);
-        APILocator.getContainerAPI().delete(container, sysuser, false);
+        try{
+        	HibernateUtil.startTransaction();
+            APILocator.getHTMLPageAPI().delete(page, sysuser, false);
+            APILocator.getTemplateAPI().delete(template, sysuser, false);
+            APILocator.getContainerAPI().delete(container, sysuser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HTMLPageAPITest.class, e.getMessage());
+        }
 
         // check everything is clean up
 
@@ -186,7 +193,7 @@ public class HTMLPageAPITest extends TestBase {
     		container.setMaxContentlets(5);
     		container.setPreLoop("preloop code");
     		container.setPostLoop("postloop code");
-    		Structure st=StructureCache.getStructureByVelocityVarName("FileAsset");
+    		Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
     		// commented by issue-2093
 
     		List<ContainerStructure> csList = new ArrayList<ContainerStructure>();

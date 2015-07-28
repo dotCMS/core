@@ -6,12 +6,7 @@
 package com.dotmarketing.util;
 
 import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -39,9 +34,14 @@ import java.util.TimeZone;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 
+import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.velocity.VelocityServlet;
+import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -3487,4 +3487,82 @@ public class UtilMethods {
             return false;
         }
     }
+
+    /**
+     * Get the stacktrace as String from an Exception.
+     * @param throwable Exception to get the stacktrace
+     * @return boolean
+     */
+    public static String getStackTrace(final Throwable throwable) {
+        final StringWriter sw = new StringWriter();
+        final PrintWriter pw = new PrintWriter(sw, true);
+        throwable.printStackTrace(pw);
+        return sw.getBuffer().toString();
+    }
+
+    public static void closeDbSilently() {
+        try {
+            HibernateUtil.closeSession();
+        } catch (Exception e) {
+
+        } finally {
+            try {
+
+                DbConnectionFactory.closeConnection();
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
+    public static boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
+        HttpSession session = request.getSession(false);
+
+        // set the preview mode
+        boolean adminMode = false;
+
+        if (session != null) {
+            // struts crappy messages have to be retrived from session
+            if (session.getAttribute(Globals.ERROR_KEY) != null) {
+                request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
+                session.removeAttribute(Globals.ERROR_KEY);
+            }
+            if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
+                request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
+                session.removeAttribute(Globals.MESSAGE_KEY);
+            }
+            // set the preview mode
+            adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+
+            if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
+
+                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
+
+            }
+
+            if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
+
+                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
+                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
+                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
+            }
+
+            if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
+
+                session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+                request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
+                session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+                request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
+                Logger.debug(VelocityServlet.class, "CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
+            }
+        }
+        return adminMode;
+    }
+
 }

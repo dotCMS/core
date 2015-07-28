@@ -571,22 +571,20 @@ var cmsfile=null;
 	}
 	
 	function addFileImageCallback(file) {
-		var ident
-		var ext=file.extension;
-
-		var ident =file.identifier;
-		tinyMCEFilePickerCallback("/contentAsset/raw-data/" + ident + "/fileAsset", {alt: file.description});
+		var assetURI = [file.path, file.name].join("");
+		tinyMCEFilePickerCallback(assetURI, {alt: file.description});
 	}
 	function addFileCallback(file) {
 		var ident
-		var ext=file.extension;
-		var ident =file.identifier;
+		var ext = file.extension;
+		var ident = file.identifier;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>'){
+		if(fileExt == '<%= extension %>' || ext == 'page'){
 			tinyMCEFilePickerCallback(file.pageURI, {});
 		}else {
-			tinyMCEFilePickerCallback("/contentAsset/raw-data/" + ident + "/fileAsset", {});
+			var assetURI = [file.path, file.name].join("");
+			tinyMCEFilePickerCallback(assetURI, {});
 		}
 	}
 

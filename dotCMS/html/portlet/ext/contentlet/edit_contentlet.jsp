@@ -302,7 +302,7 @@ var editButtonRow="editContentletButtonRow";
 			    				tabDividerOpen = true;%>
 									</div>
 								</div>
-								<div id="<%=f.getVelocityVarName()%>" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>" onShow="showEditButtonsRow()">
+							    <div id="<%=f.getVelocityVarName()%>" class="custom-tab" style="padding:0;" dojoType="dijit.layout.ContentPane" title="<%=f.getFieldName()%>" onShow="showEditButtonsRow()">
 									<div class="wrapperRight" style="position:relative;">
 										<div class="fieldWrapper">&nbsp;</div>
 							<%}else if(f.getFieldType().equals(Field.FieldType.CATEGORIES_TAB.toString()) && !categoriesTabFieldExists) {
@@ -517,7 +517,13 @@ var editButtonRow="editContentletButtonRow";
  		dojo.connect(tab, 'selectChild',
  				function (evt) {
  				 	selectedTab = tab.selectedChildWidget;
- 				 	if(selectedTab.id == "properties" || selectedTab.id == "MetadataTab")
+
+					var isCustomTab = false;
+					if (selectedTab.class != undefined && selectedTab.class == "custom-tab") {
+						isCustomTab = true;
+					}
+
+					if(selectedTab.id == "properties" || selectedTab.id == "MetadataTab" || isCustomTab)
  				 		document.getElementById(selectedTab.id).insertBefore(document.getElementById(editButtonRow), document.getElementById(selectedTab.id).firstChild);
  				});
 	});

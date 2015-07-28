@@ -18,10 +18,10 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -312,6 +312,9 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	}
 
+	   /**
+	    * @deprecated Use the {@link SQLResultsViewTool} instead, the {@link SQLResultsViewTool} view tool is mapped to the <strong>sql</strong> key.
+	    */
 	   public ArrayList<HashMap<String, String>> getSQLResults(String dataSource, String sql, int startRow, int maxRow) {
 		   
 		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<HashMap<String, String>>();
@@ -396,7 +399,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * @return structure
 	 */
 	public static Structure getStructureByName(String structureName) {
-		Structure st = StructureCache.getStructureByName(structureName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByName(structureName);
 		return st;
 	}
 
@@ -413,7 +416,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		HashMap<String, Integer> tagsCount = new HashMap<String, Integer>();
 		for (String structure : structures) {
 
-			Structure st = StructureCache.getStructureByName(structure);
+			Structure st = CacheLocator.getContentTypeCache().getStructureByName(structure);
 			if(st == null)
 				continue;
 

@@ -56,8 +56,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 	public String getId() {
 		if (id != null) {
 			if (id.contains("-")) {
-				UUID uuid = UUID.fromString(id);
-				return uuid.toString();
+				return id;
 			}else {
 				if(id.equals(Host.SYSTEM_HOST)){
 					return id;

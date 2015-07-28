@@ -141,7 +141,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 
 	@SuppressWarnings("unchecked")
 	public HTMLPage loadLivePageById(String pageId) throws DotDataException, DotStateException, DotSecurityException {
-		HTMLPage page = htmlPageCache.get(pageId);
+		HTMLPage page = (HTMLPage) htmlPageCache.get(pageId);
 		if(page ==null){
 	    	HibernateUtil hu = new HibernateUtil(HTMLPage.class);
 	    	hu.setSQLQuery("select {htmlpage.*} from htmlpage, inode htmlpage_1_, htmlpage_version_info htmlvi " +
@@ -466,7 +466,11 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 			// gets identifier for this webasset and changes the uri and
 			// persists it
 			identifier.setHostId(APILocator.getHostAPI().findParentHost(newFolder, APILocator.getUserAPI().getSystemUser(), false).getIdentifier());
-			identifier.setURI(page.getURI(newFolder));
+			//identifier.setURI(page.getURI(newFolder));
+			String newURI = page.getURI(newFolder);
+			identifier.setParentPath(newURI.substring(0, newURI.lastIndexOf("/")+1));
+			identifier.setAssetName(newURI.substring(newURI.lastIndexOf("/")+1));
+			identifier.setAssetType("htmlpage");
 			APILocator.getIdentifierAPI().save(identifier);
 		}
 
@@ -484,7 +488,7 @@ public class HTMLPageFactoryImpl implements HTMLPageFactory {
 
 		// republishes the page to reset the VTL_SERVLETURI variable
 		if (page.isLive()) {
-			PageServices.invalidate(page);
+			PageServices.invalidateAll(page);
 		}
 
 		return true;

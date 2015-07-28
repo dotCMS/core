@@ -3,6 +3,7 @@ import static com.dotcms.repackage.org.elasticsearch.node.NodeBuilder.nodeBuilde
 import static com.dotcms.repackage.org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -71,14 +72,13 @@ public class ESClient {
                             ).build().start();
 
                     try {
+
+                        //Build the replicas config settings for the indices client
+                        UpdateSettingsRequest settingsRequest = getReplicasSettings();
+
                         UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
-                                new UpdateSettingsRequest().settings(
-                                        jsonBuilder().startObject()
-                                                .startObject( "index" )
-                                                .field( "auto_expand_replicas", "0-all" )
-                                                .endObject()
-                                                .endObject().string()
-                                ) ).actionGet();
+                                settingsRequest
+                        ).actionGet();
                     } catch ( IndexMissingException e ) {
                         /*
                         Updating settings without Indices will throw this exception but should be only visible on start when the
@@ -107,25 +107,70 @@ public class ESClient {
     }
 
     /**
-     * This method will update the "auto_expand_replicas" setting for the IndicesAdminClient
+     * This method will update the replicas settings for the IndicesAdminClient
      */
     public void setReplicasSettings () {
 
         if ( _nodeInstance != null && !_nodeInstance.isClosed() ) {
 
             try {
+
+                //Build the replicas config settings for the indices client
+                UpdateSettingsRequest settingsRequest = getReplicasSettings();
+
                 UpdateSettingsResponse resp = _nodeInstance.client().admin().indices().updateSettings(
-                        new UpdateSettingsRequest().settings(
-                                jsonBuilder().startObject()
-                                        .startObject( "index" )
-                                        .field( "auto_expand_replicas", "0-all" )
-                                        .endObject()
-                                        .endObject().string()
-                        ) ).actionGet();
+                        settingsRequest
+                ).actionGet();
             } catch ( Exception e ) {
                 Logger.error( ESClient.class, "Unable to set ES property auto_expand_replicas.", e );
             }
         }
+    }
+
+    /**
+     * Returns the settings of the replicas configuration for the indices client, this configuration depends on the
+     * <strong>CLUSTER_AUTOWIRE</strong> and <strong>es.index.auto_expand_replicas</strong> properties.
+     * <br>
+     * <br>
+     *
+     * If <strong>CLUSTER_AUTOWIRE == false and es.index.auto_expand_replicas == false</strong> the <strong>auto_expand_replicas</strong> will be disabled
+     * and the number of replicas will be set (<strong>es.index.number_of_replicas</strong>).
+     *
+     * @return The replicas settings
+     * @throws IOException
+     */
+    private UpdateSettingsRequest getReplicasSettings () throws IOException {
+
+        UpdateSettingsRequest settingsRequest = new UpdateSettingsRequest();
+
+        /*
+         If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
+         */
+        if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+                !Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
+
+            //Getting the number of replicas
+            int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
+
+            settingsRequest = settingsRequest.settings(
+                    jsonBuilder().startObject()
+                            .startObject("index")
+                            .field("auto_expand_replicas", "false")
+                            .field("number_of_replicas", replicas)
+                            .endObject()
+                            .endObject().string()
+            );
+        } else {
+            settingsRequest = settingsRequest.settings(
+                    jsonBuilder().startObject()
+                            .startObject("index")
+                            .field("auto_expand_replicas", "0-all")
+                            .endObject()
+                            .endObject().string()
+            );
+        }
+
+        return settingsRequest;
     }
 
 	private  void loadConfig(){

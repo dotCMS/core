@@ -7,21 +7,20 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotcms.util.exceptions.DuplicateFileException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -223,7 +222,7 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 
 		String selectedStructureInode = ParamUtil.getString(req, "selectedStructure");
 		if(!UtilMethods.isSet(selectedStructureInode))
-			selectedStructureInode = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
+			selectedStructureInode = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode();
 
 		String[] fileNamesArray = fileNamesStr.split(WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR);
 		String customMessage = LanguageUtil.get(user, "message.file_asset.error.filename.filters") + ": ";

@@ -59,22 +59,19 @@ dojo.require("dotcms.dijit.FileBrowserDialog");
 	}
 	
 	function addFileImageCallback(file) {
-		var ident
-		var ext=file.extension;
-		var ident =file.identifier;
-		wysiwyg_win.document.forms[0].elements["src"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
-		wysiwyg_win.ImageDialog.showPreviewImage("/contentAsset/raw-data/" + ident + "/fileAsset");
+		var assetURI = [file.path, file.name].join("");
+		wysiwyg_win.document.forms[0].elements["src"].value = assetURI;
+		wysiwyg_win.ImageDialog.showPreviewImage(assetURI);
 	}
 	function addFileCallback(file) {
-		var ident
-		var ext=file.extension;
-		var ident =file.identifier;
+		var ext = file.extension;
 		var fileExt = getFileExtension(file.name).toString();
 		<% String extension = com.dotmarketing.util.Config.getStringProperty("VELOCITY_PAGE_EXTENSION"); %>
-		if(fileExt == '<%= extension %>'){
+		if(fileExt == '<%= extension %>' || ext == 'page'){
 			wysiwyg_win.document.forms[0].elements["href"].value = file.pageURI;
 		}else{
-			wysiwyg_win.document.forms[0].elements["href"].value = "/contentAsset/raw-data/" + ident + "/fileAsset";
+			var assetURI = [file.path, file.name].join("");
+			wysiwyg_win.document.forms[0].elements["href"].value = assetURI;
 		}
 	}
 		

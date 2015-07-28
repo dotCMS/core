@@ -1520,6 +1520,7 @@ create table cms_role (
 create table container_structures (
    id varchar(36) not null,
    container_id varchar(36) not null,
+   container_inode varchar(36) not null,
    structure_id varchar(36) not null,
    code longtext,
    primary key (id)
@@ -3142,7 +3143,7 @@ create index idx_link_vi_version_ts on link_version_info(version_ts);
 -- container multiple structures
 create index idx_container_id on container_structures(container_id);
 alter table container_structures add constraint FK_cs_container_id foreign key (container_id) references identifier(id);
-
+alter table container_structures add constraint FK_cs_inode foreign key (container_inode) references inode(inode);
 
 -- license repo
 create table sitelic(id varchar(36) primary key, serverid varchar(100), license longtext not null, lastping datetime not null);
@@ -3152,7 +3153,7 @@ create table folders_ir(folder varchar(255), local_inode varchar(36), remote_ino
 create table structures_ir(velocity_name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
 create table schemes_ir(name varchar(255), local_inode varchar(36), remote_inode varchar(36), endpoint_id varchar(36), PRIMARY KEY (local_inode, endpoint_id));
 create table htmlpages_ir(html_page varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
-
+create table fileassets_ir(file_name varchar(255), local_working_inode varchar(36), local_live_inode varchar(36), remote_working_inode varchar(36), remote_live_inode varchar(36),local_identifier varchar(36), remote_identifier varchar(36), endpoint_id varchar(36), language_id bigint, PRIMARY KEY (local_working_inode, language_id, endpoint_id));
 
 ---Server Action
 create table cluster_server_action(

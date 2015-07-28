@@ -11,8 +11,6 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -33,8 +31,6 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.com.sun.jersey.api.client.Client;
 import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
 import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
@@ -44,6 +40,8 @@ import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
 import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.junit.framework.Assert;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -51,9 +49,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -71,6 +69,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
@@ -197,7 +196,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
@@ -337,7 +336,15 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
 		newHtmlPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
 		newHtmlPage.setFolder(folder.getInode());
-		newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	newHtmlPage=APILocator.getContentletAPI().checkin(newHtmlPage, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
+		
         APILocator.getVersionableAPI().setLive(newHtmlPage);
         APILocator.getContentletAPI().publish(newHtmlPage, systemUser, false);
 		Contentlet workinghtmlPageAsset = newHtmlPage;
@@ -374,7 +381,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(structure.getInode());
 		contentlet.setHost(host.getIdentifier());
@@ -536,7 +543,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
@@ -555,12 +562,20 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * deleting folder, pages and content, to create the receiving endpoint environment
 		 */
-		APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
-		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
-		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
-		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
-		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	APILocator.getContentletAPI().delete(contentlet, systemUser, false, true);
+    		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser,false);
+    		APILocator.getContentletAPI().archive(workinghtmlPageAsset,systemUser,false);
+    		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, true);
+    		APILocator.getHTMLPageAPI().delete(workinghtmlPageAsset2, systemUser, true);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
+		
 	
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset.getInode()).size());
 		Assert.assertEquals(0,MultiTreeFactory.getMultiTree(workinghtmlPageAsset2.getInode()).size());
@@ -684,7 +699,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet1
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet1 = new Contentlet();
 		contentlet1.setStructureInode(structure.getInode());
 		contentlet1.setHost(host.getIdentifier());
@@ -859,7 +874,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 			//Verify if it continues in the queue job
 			foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
 			x++;
-		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x < 4 );
+		} while ( (foundBundles != null && !foundBundles.isEmpty()) && x <= 5 );
 		//At this points should not be here anymore
 		publisherAPI.deleteAllElementsFromPublishQueueTable();
 		foundBundles = publisherAPI.getQueueElementsByBundleId( bundleId );
@@ -878,13 +893,20 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * deleting folder, pages and contents, to create the receiving endpoint environment
 		 */
-		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser, false);
-		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
-		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+    		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
+    		APILocator.getContentletAPI().unpublish(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getContentletAPI().archive(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getContentletAPI().delete(workinghtmlPageAsset, systemUser, false);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
 
 		folder = APILocator.getFolderAPI().findFolderByPath(folderPath, host, systemUser, false);
 		assertTrue(!UtilMethods.isSet(folder.getInode()));
@@ -949,10 +971,17 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Cleaning test values
 		 */
-		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
-		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
-		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
-		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        try{
+        	HibernateUtil.startTransaction();
+    		APILocator.getContentletAPI().delete(contentlet1, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet2, systemUser, false, true);
+    		APILocator.getContentletAPI().delete(contentlet3, systemUser, false, true);
+    		//APILocator.getHTMLPageAPI().delete(page, systemUser, true);
+    		APILocator.getFolderAPI().delete(folder, systemUser, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(RemotePublishAjaxActionTest.class, e.getMessage());
+        }
 	}
 }

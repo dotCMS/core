@@ -10,17 +10,19 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -133,12 +135,10 @@ public class ContentletForm extends ValidatorForm {
     public void setStructureInode(String structureInode) {
     	map.put(STRUCTURE_INODE_KEY, structureInode);   
     }
-    
-    public Structure getStructure() {
-    	Structure structure = null;
-    	structure = StructureCache.getStructureByInode(getStructureInode());
-        return structure;
-    }
+
+	public Structure getStructure () {
+		return CacheLocator.getContentTypeCache().getStructureByInode( getStructureInode() );
+	}
 
     public Date getLastReview() {
     	return (Date)map.get(LAST_REVIEW_KEY);
@@ -527,7 +527,7 @@ public class ContentletForm extends ValidatorForm {
 		}
 		catch(Exception ex)
 		{			
-			Logger.debug(this,ex.toString());
+			Logger.debug( this, ex.toString() );
 		}
 		return new Date();
 	}
@@ -542,11 +542,35 @@ public class ContentletForm extends ValidatorForm {
        public Object getFieldValueByVar ( String velocityVariableName ) {
 
            Object value = null;
-           try {
-               value = map.get( velocityVariableName );
-           } catch ( Exception e ) {
-               Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
-           }
+		   try {
+
+			   value = map.get( velocityVariableName );
+
+			   /*
+			    For HTMLPages the URL should be get from the Identifier, it is a mistake to get
+			    the URL of a HTMLPage directly from the contentlet as the pages have multilanguage support,
+			    the same URL should be shared between all the page languages.
+			   */
+			   if ( isHTMLPage() && velocityVariableName.equals( HTMLPageAssetAPI.URL_FIELD ) ) {
+
+				   Object identifierObj = map.get( IDENTIFIER_KEY );
+				   if ( identifierObj != null ) {
+
+					   String identifierId = (String) identifierObj;
+					   try {
+						   Identifier identifier = APILocator.getIdentifierAPI().find( identifierId );
+						   if ( UtilMethods.isSet( identifier ) && UtilMethods.isSet( identifier.getId() ) ) {
+							   value = identifier.getAssetName();
+						   }
+					   } catch ( DotDataException e ) {
+						   Logger.error( this.getClass(), "Unable to get Identifier with id [" + identifierId + "].", e );
+					   }
+				   }
+			   }
+
+		   } catch ( Exception e ) {
+			   Logger.error( this, "An error has ocurred trying to get the value for the field: " + velocityVariableName );
+		   }
 
            if ( InodeUtils.isSet( getInode() ) && Contentlet.isMetadataFieldCached( getStructureInode(), velocityVariableName, value ) ) {
                return Contentlet.lazyMetadataLoad( getInode(), getStructureInode() );
@@ -554,6 +578,16 @@ public class ContentletForm extends ValidatorForm {
 
            return value;
        }
+
+	private Boolean isHTMLPage () {
+
+		Structure structure = getStructure();
+		if ( structure != null ) {
+			return structure.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
+		}
+
+		return false;
+	}
 
 	public String[] getCategories() {
 		return categories;

@@ -528,6 +528,12 @@ public class Inode implements Serializable, Comparable, Permissionable,Versionab
 
 	@Override
 	public int hashCode() {
+		// Uses the inode value as hash value, but some empty objects are created
+		// for reflection purposes so a valid hash is needed, thus date is used on
+		// that case
+		if(inode == null){
+			return iDate.hashCode();
+		}
 		return inode.hashCode();
 	}
 

@@ -15,12 +15,12 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.BaseWebAssetAPI;
-import com.dotmarketing.business.Cachable;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.PermissionedWebAssetUtil;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -73,7 +73,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
        	newContainer.setTitle(source.getTitle() + appendToName);
 
         //Copy the structure relationship
-//        Structure st = StructureCache.getStructureByInode(source.getStructureInode());
+//        Structure st = CacheLocator.getContentTypeCache().getStructureByInode(source.getStructureInode());
 //        newContainer.setStructureInode(st.getInode());
 
         //creates new identifier for this webasset and persists it
@@ -99,6 +99,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			for (ContainerStructure oldCS : sourceCS) {
 				ContainerStructure newCS = new ContainerStructure();
 				newCS.setContainerId(newContainer.getIdentifier());
+                newCS.setContainerInode(newContainer.getInode());
 				newCS.setStructureId(oldCS.getStructureId());
 				newCS.setCode(oldCS.getCode());
 				newContainerCS.add(newCS);
@@ -312,15 +313,20 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 
 				//Get one of the relations to get the container id.
 				String containerIdentifier = containerStructureList.get(0).getContainerId();
+                String containerInode = containerStructureList.get(0).getContainerInode();
 
-				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + containerIdentifier + "'");
+				HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
+                        "where container_id = '" + containerIdentifier + "'" +
+                        "and container_inode = '" + containerInode+ "'");
 
 				for(ContainerStructure containerStructure : containerStructureList){
 					HibernateUtil.save(containerStructure);
 				}
 				
 				//Add the list to the cache.
-				StructureCache.addContainerStructures(containerStructureList, containerIdentifier);
+				//CacheLocator.getContainerCache().clearCache();
+				CacheLocator.getContainerCache().remove(containerIdentifier);
+				CacheLocator.getContentTypeCache().addContainerStructures(containerStructureList, containerIdentifier, containerInode);
 				
 			}catch(DotHibernateException e){
 				if(local){
@@ -351,19 +357,22 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public List<ContainerStructure> getContainerStructures(Container container) throws DotStateException, DotDataException, DotSecurityException  {
 		
 		//Gets the list from cache.
-		List<ContainerStructure> containerStructures = StructureCache.getContainerStructures(container.getIdentifier());
+		List<ContainerStructure> containerStructures = CacheLocator.getContentTypeCache().getContainerStructures(container.getIdentifier(), container.getInode());
 		
 		//If there is not cache data for that container, go to the DB.
 		if(containerStructures == null){
 			
 			//Run query directly to DB.
 			HibernateUtil dh = new HibernateUtil(ContainerStructure.class);
-			dh.setSQLQuery("select {container_structures.*} from container_structures where container_structures.container_id = ?");
+			dh.setSQLQuery("select {container_structures.*} from container_structures " +
+                    "where container_structures.container_id = ? " +
+                    "and container_structures.container_inode = ?");
 			dh.setParam(container.getIdentifier());
+            dh.setParam(container.getInode());
 			containerStructures = dh.list();
 			
 			//Add the list to cache. 
-			StructureCache.addContainerStructures(containerStructures, container.getIdentifier());
+			CacheLocator.getContentTypeCache().addContainerStructures(containerStructures, container.getIdentifier(), container.getInode());
 		}
 		
 		return containerStructures;
@@ -386,7 +395,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		List<Structure> structureList = new ArrayList<Structure>();
 
 		for (ContainerStructure cs : csList) {
-			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 			structureList.add(st);
 		}
 
@@ -443,7 +452,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		}
 
 		for (ContainerStructure cs : containerStructureList) {
-			Structure st = StructureCache.getStructureByInode(cs.getStructureId());
+			Structure st = CacheLocator.getContentTypeCache().getStructureByInode(cs.getStructureId());
 			if((st != null && !existingInode) && !permissionAPI.doesUserHavePermission(st, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)) {
 				throw new DotSecurityException("You don't have permission to use the structure. Structure Name: " + st.getName());
 			}
@@ -473,10 +482,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 			       APILocator.getIdentifierAPI().createNew(container, host);
 			container.setIdentifier(ident.getId());
 		}
-		if(existingInode)
+		if(existingInode){
             save(container, container.getInode());
-        else
+		}
+        else{
             save(container);
+        }
 
 		APILocator.getVersionableAPI().setWorking(container);
 
@@ -495,6 +506,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 		// save the container-structure relationships , issue-2093
 		for (ContainerStructure cs : containerStructureList) {
 			cs.setContainerId(container.getIdentifier());
+            cs.setContainerInode(container.getInode());
 		}
 		saveContainerStructures(containerStructureList);
 
@@ -518,8 +530,15 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	}
 
 	public List<Container> findAllContainers(User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-		List<Container> containers = containerFactory.findAllContainers();
-		return permissionAPI.filterCollection(containers, PermissionAPI.PERMISSION_USE, respectFrontendRoles, user);
+		RoleAPI roleAPI = APILocator.getRoleAPI();
+		if ((user != null)
+				&& roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole())) {
+			return containerFactory.findAllContainers();
+		} else {
+			return PermissionedWebAssetUtil.findContainersForLimitedUser(null,
+					null, true, "title", 0, -1, PermissionAPI.PERMISSION_READ,
+					user, false);
+		}
 	}
 
 	public Host getParentHost(Container cont, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -546,11 +565,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI {
 	public void deleteContainerStructuresByContainer(Container container)
 			throws DotStateException, DotDataException, DotSecurityException {
 
-		if(container != null && UtilMethods.isSet(container.getIdentifier())){
-			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure where container_id = '" + container.getIdentifier() + "'");
+		if(container != null && UtilMethods.isSet(container.getIdentifier()) && UtilMethods.isSet(container.getInode())){
+			HibernateUtil.delete("from container_structures in class com.dotmarketing.beans.ContainerStructure " +
+                    "where container_id = '" + container.getIdentifier() + "'");
 			
 			//Remove the list from cache.
-			StructureCache.removeContainerStructures(container.getIdentifier());
+			CacheLocator.getContentTypeCache().removeContainerStructures(container.getIdentifier(), container.getInode());
 		}
 	}
 

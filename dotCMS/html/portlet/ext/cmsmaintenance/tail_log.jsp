@@ -5,7 +5,11 @@
 	if(!com.dotmarketing.util.UtilMethods.isSet(regex)){
 		regex=".*";
 	}
-	String logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER"));
+    String logPath = com.dotmarketing.util.Config.getStringProperty("TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+	logPath = com.dotmarketing.util.FileUtil.getAbsolutlePath(logPath);
+    if (!logPath.endsWith(java.io.File.separator)) {
+        logPath = logPath + java.io.File.separator;
+    }
 	File[] files = com.liferay.util.FileUtil.listFileHandles(logPath, true);
 	java.util.regex.Pattern pp = java.util.regex.Pattern.compile(regex);
 	java.util.List<File> l = new java.util.ArrayList<File>();
@@ -245,8 +249,7 @@
 		<select name="fileName" dojoType="dijit.form.FilteringSelect" ignoreCase="true" id="fileName" style="width:250px;" onchange="reloadTail();">
 			<option value=""></option>
 			<%for(File f: files){%>
-					<option value="<%= f.getPath().replace(logPath + File.separator, "")%>"><%= f.getPath().replace(logPath + File.separator, "")%></option>
-
+                <option value="<%= f.getPath().replace(logPath, "")%>"><%= f.getPath().replace(logPath, "")%></option>
 			<%} %>
 		</select>
 		&nbsp; &nbsp;

@@ -3,6 +3,7 @@ package com.dotmarketing.util;
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -10,6 +11,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -37,6 +44,7 @@ public class VelocityUtil {
 
 	private static VelocityEngine ve = null;
 	private static String dotResourceLoaderClassName = null;
+	private static boolean DEFAULT_PAGE_TO_DEFAULT_LANGUAGE=Config.getBooleanProperty("DEFAULT_PAGE_TO_DEFAULT_LANGUAGE", true);
 	
 	private synchronized static void init(){
 		if(ve != null)
@@ -210,12 +218,13 @@ public class VelocityUtil {
 
 		// put the list of languages on the page
 		context.put("languages", getLanguages());
-		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)))
-		    context.put("language", (String) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
+		HttpSession session = request.getSession(false);
+		if(!UtilMethods.isSet(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)) && session!=null)
+		    context.put("language", (String) session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE));
 		else
 		    context.put("language", request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 
-		
+		session = request.getSession(false);
 		try {
 			Host host;
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -223,15 +232,17 @@ public class VelocityUtil {
 		} catch (Exception e) {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
-		
+		session = request.getSession(false);
 		context.put("pdfExport", false);
 		com.liferay.portal.model.User user = null;
 
-		try {
-			user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
-			context.put("user", user);
-		} catch (Exception nsue) {
-			Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
+		if(request.getSession(false)!=null){
+			try {
+				user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+				context.put("user", user);
+			} catch (Exception nsue) {
+				Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
+			}
 		}
 		VelocityServlet.velocityCtx.set(context);
 		return context;
@@ -253,7 +264,7 @@ public class VelocityUtil {
 	public static String eval(String velocity, Context ctx) throws ResourceNotFoundException, ParseErrorException, Exception{
 		VelocityEngine ve = VelocityUtil.getEngine();
 		StringWriter sw = new StringWriter();
-		ve.evaluate( ctx, sw, "velocity eval", velocity );
+		ve.evaluate(ctx, sw, "velocity eval", velocity);
 		return sw.toString();
 		
 	}
@@ -432,10 +443,172 @@ public class VelocityUtil {
 
 	}
 
-	
-	
-	
-	
-	
-	
+	/**
+	 * This method tries to build a cache key based on information given in the
+	 * request. Post requests are ignored and will not be cached.
+	 *
+	 * @param request
+	 *            - The {@link HttpServletRequest} object.
+	 * @return The page cache key if the page can be cached. If it can't be
+	 *         cached or caching is not available, returns <code>null</code>.
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 */
+	public static String getPageCacheKey(HttpServletRequest request, HttpServletResponse response) throws DotDataException, DotSecurityException {
+		if (LicenseUtil.getLevel() <= 100) {
+			return null;
+		}
+		// don't cache posts
+		if (!"GET".equalsIgnoreCase(request.getMethod())) {
+			return null;
+		}
+		// nocache passed either as a session var, as a request var or as a
+		// request attribute
+		if ("no".equals(request.getParameter("dotcache"))
+				|| "no".equals(request.getAttribute("dotcache"))
+				|| (request.getSession(false) !=null && "no".equals(request.getSession(true).getAttribute("dotcache")))) {
+			return null;
+		}
+		String idInode = (String) request.getAttribute("idInode");
+		Identifier id;
+
+		try {
+			id=APILocator.getIdentifierAPI().find(idInode);
+		} catch (DotDataException e1) {
+			Logger.warn(VelocityUtil.class, "can't load page identifier",e1);
+			return null;
+		}
+
+		IHTMLPage page = getPage(id, request, false, null);
+		if (page == null || page.getCacheTTL() < 1) {
+			return null;
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append(page.getInode());
+		sb.append("_" + page.getModDate().getTime());
+		return sb.toString();
+	}
+
+	public static long getLanguageId(HttpServletRequest request) {
+		long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+
+		try {
+			if(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE)!=null)
+				languageId = Long.parseLong(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE));
+			else if (request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)!=null)
+				languageId = Long.parseLong((String) request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
+		} catch(NumberFormatException e) {
+			Logger.info(VelocityServlet.class, "Bad languageId passed in");
+		}
+
+		return languageId;
+	}
+
+	/**
+	 * Retrieves the list of languages a given Content Page ({@link Contentlet})
+	 * is available on. This is useful for keeping users from selecting a page
+	 * language that has no associated content at the moment.
+	 *
+	 * @param contentlet
+	 *            - The Content Page.
+	 * @return The {@link List} of languages the content page is available on.
+	 */
+	public static List<DisplayedLanguage> getAvailableContentPageLanguages(
+			Contentlet contentlet) {
+		List<DisplayedLanguage> languages = new ArrayList<DisplayedLanguage>();
+		List<DisplayedLanguage> allDisplayLanguages = new ArrayList<DisplayedLanguage>();
+
+		boolean doesContentHaveDefaultLang = false;
+
+		for (Language language : APILocator.getLanguageAPI().getLanguages()) {
+			if (language.getId() != contentlet.getLanguageId()) {
+				try {
+					APILocator.getContentletAPI()
+							.findContentletByIdentifier(
+									contentlet.getIdentifier(), false,
+									language.getId(),
+									APILocator.getUserAPI().getSystemUser(),
+									false);
+				} catch (Exception e) {
+					Logger.debug(
+							VelocityServlet.class,
+							"The page is not available in language "
+									+ language.getId() + ". Just keep going.");
+
+					if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+						allDisplayLanguages.add(new DisplayedLanguage(language, true));
+					}
+
+					continue;
+				}
+			}
+			if(language.getId()==APILocator.getLanguageAPI().getDefaultLanguage().getId()) {
+				doesContentHaveDefaultLang = true;
+			}
+
+			languages.add(new DisplayedLanguage(language, false));
+
+			if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE) {
+				allDisplayLanguages.add(new DisplayedLanguage(language, false));
+			}
+		}
+
+		if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && doesContentHaveDefaultLang){
+			return allDisplayLanguages;
+		}
+
+		return languages;
+	}
+
+	/**
+	 * This returns the proper ihtml page based on id, state and language
+	 * @param id
+	 * @param request
+	 * @param live
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public static IHTMLPage getPage(Identifier id, HttpServletRequest request, boolean live, Context context) throws DotDataException, DotSecurityException{
+
+		long langId = getLanguageId(request);
+		request.setAttribute("idInode", String.valueOf(id.getInode()));
+
+		IHTMLPage htmlPage;
+		if(id.getAssetType().equals("contentlet")) {
+
+			Contentlet contentlet;
+
+			try{
+				contentlet = APILocator.getContentletAPI()
+								.findContentletByIdentifier(id.getId(),
+										live,
+										langId,
+										APILocator.getUserAPI().getSystemUser(), false);
+				htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+
+			} catch(DotStateException dse){
+				if(DEFAULT_PAGE_TO_DEFAULT_LANGUAGE && langId!= APILocator.getLanguageAPI().getDefaultLanguage().getId()){
+					contentlet = APILocator.getContentletAPI()
+									.findContentletByIdentifier(id.getId(),
+											live,
+											APILocator.getLanguageAPI().getDefaultLanguage().getId(),
+											APILocator.getUserAPI().getSystemUser(), false);
+					htmlPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+				} else{
+					throw new DotDataException("Can't find content. Identifier: " + id.getId() + ", Live: " +live+ ", Lang: " + langId, dse);
+				}
+
+			}
+
+			if(UtilMethods.isSet(context)){
+				context.put("availablePageLangs", getAvailableContentPageLanguages(contentlet));
+			}
+		} else {
+			htmlPage = (IHTMLPage) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
+		}
+
+		return htmlPage;
+	}
+
 }

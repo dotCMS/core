@@ -34,6 +34,12 @@ public class LanguageCacheImpl extends LanguageCache {
     	cache.put(ALL_LANGUAGES_KEY, languages, getPrimaryGroup());
     	
     }
+
+	public void clearLanguages() {
+		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
+	}
+
     public void addLanguage(Language l) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 		long id = l.getId();
@@ -42,8 +48,8 @@ public class LanguageCacheImpl extends LanguageCache {
 		cache.put(getPrimaryGroup() + id, l, getPrimaryGroup());
         cache.put(getPrimaryGroup() + idSt, l, getPrimaryGroup());
         cache.put(getPrimaryGroup() + languageKey, l, getPrimaryGroup());
-        cache.remove(getPrimaryGroup() , ALL_LANGUAGES_KEY);
-        
+		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
+
 	}
     
     public Language getLanguageById(long id){
@@ -123,8 +129,8 @@ public class LanguageCacheImpl extends LanguageCache {
         cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + idSt,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + languageKey,getPrimaryGroup());
-        cache.remove(getPrimaryGroup() , ALL_LANGUAGES_KEY);
-    }
+		cache.remove(ALL_LANGUAGES_KEY, getPrimaryGroup());
+	}
 
     public void clearCache(){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();

@@ -1,5 +1,7 @@
 package com.dotmarketing.factories;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -50,10 +52,12 @@ public class ClickstreamFactory {
 		}
 		request.setAttribute("CLICKSTREAM_RECORDED", true);
 
-		String pointer = request.getRequestURI();
+		String pointer = (String) request.getAttribute("javax.servlet.forward.request_uri");
+		if(pointer ==null)pointer=request.getRequestURI();
 
 		HttpSession session = request.getSession();
-		Clickstream clickstream = (Clickstream) request.getSession().getAttribute("clickstream");
+		
+		Clickstream clickstream = (Clickstream) request.getSession(true).getAttribute("clickstream");
 		if (clickstream == null) {
 			clickstream = new Clickstream();
 			session.setAttribute("clickstream", clickstream);
@@ -64,7 +68,20 @@ public class ClickstreamFactory {
 			associatedIdentifier = (String) request.getAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE);
 		}
 		if (!UtilMethods.isSet(associatedIdentifier)) {
-			associatedIdentifier = APILocator.getIdentifierAPI().find(host, pointer ).getInode();
+			// Maybe is a problem with the URL, so we need to find it
+			// in other place "request.getRequestURI()"
+			String uri = "";
+			try {
+				uri = URLDecoder.decode(request.getRequestURI(),
+						UtilMethods.getCharsetConfiguration());
+			} catch (UnsupportedEncodingException e) {
+				Logger.debug(ClickstreamFactory.class,
+						"Could not retrieve URI from request.");
+			}
+			if (!UtilMethods.isSet(uri)) {
+				uri = pointer;
+			}
+			associatedIdentifier = APILocator.getIdentifierAPI().find(host, uri).getInode();
 		}
 
 		if (UtilMethods.isSet(associatedIdentifier)) {

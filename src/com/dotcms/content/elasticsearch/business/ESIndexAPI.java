@@ -503,6 +503,20 @@ public class ESIndexAPI {
 		Map map = new ObjectMapper().readValue(settings, LinkedHashMap.class);
 		map.put("number_of_shards", shards);
 
+		/*
+		 If CLUSTER_AUTOWIRE AND auto_expand_replicas are false we will specify the number of replicas to use
+		 */
+		if ( !Config.getBooleanProperty("CLUSTER_AUTOWIRE", true) &&
+				!Config.getBooleanProperty("es.index.auto_expand_replicas", false) ) {
+
+			//Getting the number of replicas
+			int replicas = Config.getIntProperty("es.index.number_of_replicas", 0);
+
+			map.put("auto_expand_replicas", "false");
+			map.put("number_of_replicas", replicas);
+		} else {
+			map.put("auto_expand_replicas", "0-all");
+		}
 
         // create actual index
 		CreateIndexRequestBuilder cirb = iac.prepareCreate(indexName).setSettings(map);

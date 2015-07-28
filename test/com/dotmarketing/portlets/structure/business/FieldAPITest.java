@@ -6,17 +6,18 @@ import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
 import java.util.List;
 
 import com.dotcms.repackage.org.junit.Test;
-
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 
@@ -74,8 +75,15 @@ public class FieldAPITest extends TestBase {
         assertEquals(list.get(1).getKey(),fg.getKey());
         assertEquals(list.get(1).getValue(),fg.getValue());
         
-        
-        FieldFactory.deleteField(ff);
-        StructureFactory.deleteStructure(st);
+        try{
+        	HibernateUtil.startTransaction();
+        	FieldFactory.deleteField(ff);
+        	StructureFactory.deleteStructure(st);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(FieldAPITest.class, e.getMessage());
+        }
+       
     }
 }

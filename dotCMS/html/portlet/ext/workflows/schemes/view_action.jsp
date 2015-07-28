@@ -146,27 +146,15 @@
 
 		actionAdmin.refreshWhoCanUse();
 
+	    // Load action classes into array
+        actionClassAdmin.actionClasses = [];
+        <%for(WorkflowActionClass subaction : subActions){ %>
+            actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>"});
+        <%} %>
 
-
-		actionClassAdmin.actionClasses = new Array(),
-		<%for(WorkflowActionClass subaction : subActions){ %>
-			actionClassAdmin.addToActionClassesArray("<%=subaction.getId()%>", "<%=subaction.getName()%>");
-		<%} %>
-
-		actionClassAdmin.refreshActionClasses();
-
-		//actionAdmin.doChange();
-
-
+        // Refresh action classes table
+        actionClassAdmin.refreshActionClasses();
 	});
-
-
-
-
-
-
-
-
 </script>
 
 
@@ -378,9 +366,13 @@
 					<%=LanguageUtil.get(pageContext, "Add-Workflow-SubAction")%>
 					</button>
 				</div>
-				<table id="actionletsTbl" class="listingTable">
-
-				</table>
+                <table id="actionletsTbl" class="listingTable">
+                    <thead>
+                        <tr><th colspan="2"><%= LanguageUtil.get(pageContext, "Workflow-SubActions") %></th></tr>
+                    </thead>
+                    <tbody id="actionletsTblBody">
+                    </tbody>
+                </table>
 			</div>
 		</div>
 	<%} %>

@@ -32,7 +32,10 @@ import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -277,6 +280,7 @@ public class FileUtil {
 	/*
 	 * This will return a path whether the file exists or not
 	 * (Websphere returns a null if the file does not exist, which throws a lot of NPEs)
+	 * NOTE: relativePath has to start with "/"
 	 */
 	public static String getRealPath(String relativePath){
 		
@@ -284,14 +288,28 @@ public class FileUtil {
 			Logger.fatal(FileUtil.class, "Config.CONTEXT not initialized with a servlet context, dying");
 			throw new DotStateException("Config.CONTEXT not initialized with a servlet context, dying");
 		}
+
+		//Fallback for wrong use of the File.separator using the context.getRealPath
+		if (relativePath.contains("\\")) {
+			relativePath = replaceSeparator(relativePath);
+		}
+
+        //Relative path has to start with "/"
+        if(!relativePath.startsWith("/")){
+            relativePath = File.separatorChar + relativePath;
+        }
+
 		String ret = Config.CONTEXT.getRealPath(relativePath);	
-		if(ret !=null) return ret;
-		String base = Config.CONTEXT.getRealPath("/");
-		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ?  base.substring(0, base.lastIndexOf(File.separatorChar)):base;
+		if(ret !=null) {
+            return ret;
+        }
+
+		//String base = Config.CONTEXT.getRealPath("/");
+		String base = Config.CONTEXT_PATH;
+		base = (base.lastIndexOf(File.separatorChar) == base.length()-1) ? base.substring(0, base.lastIndexOf(File.separatorChar)) : base;
 		relativePath = relativePath.replace('/', File.separatorChar);
 		
 		return base + relativePath;
-
 	}
 	
 	
@@ -634,6 +652,33 @@ public class FileUtil {
 		}
 		return finalVal;
 	}
+	
+    /**
+     * Method to do a fast copy from a readable byte channel to a writable byte
+     * channel using java NIO.
+     * 
+     * @param src
+     *            Reading from
+     * @param dest
+     *            Writing to
+     * @throws IOException
+     */
+    public static void fastCopyUsingNio(final ReadableByteChannel src, final WritableByteChannel dest)
+            throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
+
+        while (src.read(buffer) != -1) {
+            buffer.flip();
+            dest.write(buffer);
+            buffer.compact();
+        }
+
+        buffer.flip();
+
+        while (buffer.hasRemaining()) {
+            dest.write(buffer);
+        }
+    }
 
 	/**
 	  * Recursively walk a directory tree and return a List of all

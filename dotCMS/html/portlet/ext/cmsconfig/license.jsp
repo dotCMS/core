@@ -95,8 +95,6 @@
 	    		dojo.byId("licenseCode").value="";
 	    		return;
 	    	}
-
-	    	dijit.byId("codereqButton").disabled=false;
 	    	
 	    	var data = {"licenseLevel":dijit.byId("license_level").getValue(),"licenseType":dijit.byId("license_type").getValue()};
 	   	    dojo.xhrPost({
@@ -446,7 +444,7 @@
     	border: 1px solid #bce8f1;
     	padding: 15px 10px;
     	border-top: 0;
-    	min-height: 200px;
+    	min-height: 230px;
     }
     .btn{
     	display: inline-blcok;
@@ -654,13 +652,6 @@
 													</tr>
 												</table>
 											</div>
-					                		<div style="text-align:center;margin-top: 15px;">
-						                		<button type="button" onclick="licenseAdmin.doCodeRequest()" data-dojo-id="codereqButton" id="codereqButton"
-							                          data-dojo-type="dijit.form.Button" name="codereqButton" disabled="true" iconClass="" value="upload">
-								                  	<%= LanguageUtil.get(pageContext, "request-license-code") %> 
-								                </button>
-								            </div>
-									         
 										  </div>
 								      </div>
 							        

@@ -124,9 +124,14 @@ public class EditLanguageAction extends DotPortletAction {
 		
 	}
    /* here I delete the language from the database*/
-	private void _delete(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId) {
+	private void _delete(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, String languageId){
 		Language language = langAPI.getLanguage(languageId);
-		langAPI.deleteLanguage(language);
-        Logger.debug(this, "deleted");
+		try{
+			langAPI.deleteLanguage(language);
+			SessionMessages.add(req,"message", "message.language.deleted");
+        	Logger.debug(this, "deleted");
+		}catch (Exception e){
+			SessionMessages.add(req,"message", "message.language.content");
+		}
 	}
 }

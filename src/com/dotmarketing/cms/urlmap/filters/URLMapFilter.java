@@ -28,12 +28,13 @@ import javax.servlet.http.HttpSession;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
@@ -95,7 +96,7 @@ public class URLMapFilter implements Filter {
 		
 		
 		HttpServletRequest request = (HttpServletRequest) req;
-		HttpSession session = request.getSession();
+		HttpSession optSession = request.getSession(false);
 		String uri = request.getRequestURI();
 		uri = URLDecoder.decode(uri, "UTF-8");
 
@@ -131,12 +132,12 @@ public class URLMapFilter implements Filter {
 		String mastRegEx = null;
 		StringBuilder query = null;
 		try {
-			mastRegEx = StructureCache.getURLMasterPattern();
+			mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
 		} catch (DotCacheException e2) {
 			Logger.error(URLMapFilter.class, e2.getMessage(), e2);
 		}
 		if (mastRegEx == null) {
-			synchronized (StructureCache.MASTER_STRUCTURE) {
+			synchronized (ContentTypeCacheImpl.MASTER_STRUCTURE) {
 				try {
 					mastRegEx = buildCacheObjects();
 				} catch (DotDataException e) {
@@ -155,8 +156,8 @@ public class URLMapFilter implements Filter {
 			return;
 		}
 		if (RegEX.contains(url, mastRegEx)) {
-			boolean ADMIN_MODE = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-			boolean EDIT_MODE = ((session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
+			boolean ADMIN_MODE = (optSession!=null && optSession.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
+			boolean EDIT_MODE = ((optSession!=null && optSession.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null) && ADMIN_MODE);
 
 			Structure structure = null;
 			User user = null;
@@ -173,7 +174,7 @@ public class URLMapFilter implements Filter {
 					query = new StringBuilder();
 					List<RegExMatch> groups = matches.get(0).getGroups();
 					List<String> fieldMatches = pc.getFieldMatches();
-					structure = StructureCache.getStructureByInode(pc.getStructureInode());
+					structure = CacheLocator.getContentTypeCache().getStructureByInode(pc.getStructureInode());
 					List<Field> fields = FieldsCache.getFieldsByStructureInode(structure.getInode());
 					query.append("+structureName:").append(structure.getVelocityVarName()).append(" +deleted:false ");
 					if (EDIT_MODE || ADMIN_MODE) {
@@ -247,7 +248,9 @@ public class URLMapFilter implements Filter {
 						        idx=1;
 						}
 						ContentletSearch c = cons.get(idx);
-						session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
+						if(optSession !=null){
+							optSession.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,String.valueOf(conAPI.find(c.getInode(), user, true).getLanguageId()));
+						}
 						request.setAttribute(WebKeys.WIKI_CONTENTLET, c.getIdentifier());
 						request.setAttribute(WebKeys.WIKI_CONTENTLET_INODE, c.getInode());
 						request.setAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE, c.getIdentifier());
@@ -304,7 +307,7 @@ public class URLMapFilter implements Filter {
 		whostAPI = WebAPILocator.getHostWebAPI();
 		
 		// persistant on disk cache makes this necessary
-		StructureCache.clearURLMasterPattern();
+		CacheLocator.getContentTypeCache().clearURLMasterPattern();
 		urlFallthrough = Config.getBooleanProperty("URLMAP_FALLTHROUGH", true);
 	}
 
@@ -370,7 +373,7 @@ public class URLMapFilter implements Filter {
 				}
 			}
 		});
-		StructureCache.addURLMasterPattern(masterRegEx.toString());
+		CacheLocator.getContentTypeCache().addURLMasterPattern(masterRegEx.toString());
 		return masterRegEx.toString();
 	}
 

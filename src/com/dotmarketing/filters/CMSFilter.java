@@ -1,27 +1,5 @@
 package com.dotmarketing.filters;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URLDecoder;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.logging.LogFactory;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.owasp.esapi.errors.EncodingException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -29,24 +7,23 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.VirtualLinksCache;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.JBossRulesUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-import com.liferay.portal.model.Company;
-import com.liferay.portal.model.User;
-import com.liferay.util.CookieUtil;
-import com.liferay.util.FileUtil;
 import com.liferay.util.Xss;
+import org.apache.commons.logging.LogFactory;
+
+import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URLDecoder;
+import java.util.Set;
 
 public class CMSFilter implements Filter {
 
@@ -92,7 +69,7 @@ public class CMSFilter implements Filter {
 		
 		LogFactory.getLog(this.getClass()).debug("CMS Filter URI = " + uri);
 		
-		boolean _adminMode = isAdminMode(request, response);
+
 		
 
 		/*
@@ -102,6 +79,7 @@ public class CMSFilter implements Filter {
 		Host host;
 		try {
 			host = hostWebAPI.getCurrentHost(request);
+			request.setAttribute("host", host);
 		} catch (Exception e) {
 			Logger.error(this, "Unable to retrieve current request host for URI " + uri);
 			throw new ServletException(e.getMessage(), e);
@@ -131,28 +109,6 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
-
-		// Checking if host is active
-
-		boolean hostlive;
-		try {
-			hostlive = APILocator.getVersionableAPI().hasLiveVersion(host);
-		} catch (Exception e1) {
-			closeDbSilently();
-			throw new ServletException(e1);
-		}
-		if (!_adminMode && !hostlive) {
-			try {
-				Company company = PublicCompanyFactory.getDefaultCompany();
-				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE,
-						LanguageUtil.get(company.getCompanyId(), company.getLocale(), "server-unavailable-error-message"));
-			} catch (LanguageException e) {
-				Logger.error(CMSFilter.class, e.getMessage(), e);
-				response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
-			}
-			return;
-		}
-		
 		
 		String rewrite = null;
 		String queryString = request.getQueryString();
@@ -230,15 +186,12 @@ public class CMSFilter implements Filter {
 		}
 
 		if (iAm == IAm.PAGE) {
-
-			// JBOSS RULEZ only if a page
-			JBossRulesUtils.checkObjectRulesFromXML(request);
-
 			request.setAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE, rewrite);
+
 			// Serving a page through the velocity servlet
-			
 			StringWriter forward = new StringWriter();
 			forward.append("/servlets/VelocityServlet");
+
 			if(UtilMethods.isSet(queryString)){
 				if(queryString.indexOf(WebKeys.HTMLPAGE_LANGUAGE)==-1) {
 					queryString = queryString + "&" + WebKeys.HTMLPAGE_LANGUAGE + "=" + languageId;
@@ -246,14 +199,13 @@ public class CMSFilter implements Filter {
 				forward.append('?');
 				forward.append(queryString);
 			}
+
 			request.getRequestDispatcher(forward.toString()).forward(request, response);
 			return;
 		}
 
 		// otherwise, pass
 		chain.doFilter(req, res);
-		
-		
 
 	}
 
@@ -305,60 +257,7 @@ public class CMSFilter implements Filter {
 			}
 		}
 	}
-	
-	
-	
-	private boolean isAdminMode(HttpServletRequest request, HttpServletResponse response){
-		HttpSession session = request.getSession(false);
-		
-		// set the preview mode
-		boolean adminMode = false;
 
-		if (session != null) {
-			// struts crappy messages have to be retrived from session
-			if (session.getAttribute(Globals.ERROR_KEY) != null) {
-				request.setAttribute(Globals.ERROR_KEY, session.getAttribute(Globals.ERROR_KEY));
-				session.removeAttribute(Globals.ERROR_KEY);
-			}
-			if (session.getAttribute(Globals.MESSAGE_KEY) != null) {
-				request.setAttribute(Globals.MESSAGE_KEY, session.getAttribute(Globals.MESSAGE_KEY));
-				session.removeAttribute(Globals.MESSAGE_KEY);
-			}
-			// set the preview mode
-			adminMode = (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-
-			if (request.getParameter("livePage") != null && request.getParameter("livePage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION LIVE!!!!");
-
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("1")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, null);
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, "true");
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning EDIT_MODE_SESSION PREVIEW!!!!");
-			}
-
-			if (request.getParameter("previewPage") != null && request.getParameter("previewPage").equals("2")) {
-
-				session.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				request.setAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION, "true");
-				session.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				request.setAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION, null);
-				LogFactory.getLog(this.getClass()).debug("CMS FILTER Cleaning PREVIEW_MODE_SESSION PREVIEW!!!!");
-			}
-		}
-		return adminMode;
-
-	}
-	
 	private String xssCheck(String uri, String queryString) throws ServletException{
 		
 		String rewrite=null;

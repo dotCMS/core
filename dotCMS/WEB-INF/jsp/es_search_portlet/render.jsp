@@ -1,4 +1,3 @@
-
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
@@ -225,7 +224,61 @@ function showEsHelpDialog(){
 	
 		</div>
 	<%} %>
+	
+	<%if(cons!= null && cons.getFacets() !=null){ %>
+		<table class="listingTable" style="width:70%;"">	
+			<tr><th colspan="3">
+				
 
+					<h2>Facets</h2>
+				</th></tr>
+				<tr>
+					<td>
+					<%for(Facet f : cons.getFacets()){ %>
+					<%TermsFacet terms = (TermsFacet) f; %>
+					<%int ii=1; %>
+						<%for (TermsFacet.Entry entry : terms) {%>
+
+							<%=ii++%>. <%=entry.getTerm()%> =
+							<%= entry.getCount()%><br>
+					
+						<% } %>
+					<%} %>
+				</td>
+			</tr>
+		</table>
+		<div style='text-align:center;padding:20px;'>
+	
+		</div>
+	<%} %>
+	<%if(cons != null && cons.getSuggestions() !=null){ %>
+		<table class="listingTable" style="width:70%;"">	
+			<tr>
+				<th colspan="3">
+					<h3>Suggestions</h3>
+				</th>
+			</tr>
+			<tr>
+				<td><%int ii=1; %>
+					<%for(Suggestion s : cons.getSuggestions() ){ %>
+			
+						<%for (Object entry : s.getEntries()) {%>
+							<%=ii++%>. <%=((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> | 
+							<%for(TermSuggestion.Entry.Option opt : ((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
+								<%=opt.getText()%>
+							<%} %>
+							<br>
+						<%} %>
+					<%} %>
+
+	
+				</td>
+			</tr>
+		</table>
+		<div style='text-align:center;padding:20px;'>
+
+		</div>
+	<%} %>
 	<%if(cons!=null && cons.size() >0){ %>
 	
 			<table class="listingTable" style="width:70%;"">	
@@ -275,61 +328,8 @@ function showEsHelpDialog(){
 		
 	<%} %>
 
-	<%if(cons!= null && cons.getFacets() !=null){ %>
-		<table class="listingTable" style="width:70%;"">	
-			<tr><th colspan="3">
-				
-
-					<h2>Facets</h2>
-				</th></tr>
-				<tr>
-					<td>
-					<%for(Facet f : cons.getFacets()){ %>
-					<%TermsFacet terms = (TermsFacet) f; %>
-						<%for (TermsFacet.Entry entry : terms) {%>
-							<%=entry.getTerm()%> =
-							<%= entry.getCount()%><br>
-					
-						<% } %>
-					<%} %>
-				</td>
-			</tr>
-		</table>
-		<div style='text-align:center;padding:20px;'>
-	
-		</div>
-	<%} %>
 
 
-
-		<%if(cons != null && cons.getSuggestions() !=null){ %>
-			<table class="listingTable" style="width:70%;"">	
-				<tr>
-					<th colspan="3">
-						<h3>Suggestions</h3>
-					</th>
-				</tr>
-				<tr>
-					<td>
-						<%for(Suggestion s : cons.getSuggestions() ){ %>
-				
-							<%for (Object entry : s.getEntries()) {%>
-								<%=((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> | 
-								<%for(TermSuggestion.Entry.Option opt : ((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
-									<%=opt.getText()%>
-								<%} %>
-								<br>
-							<%} %>
-						<%} %>
-	
-		
-					</td>
-				</tr>
-			</table>
-			<div style='text-align:center;padding:20px;'>
-	
-			</div>
-		<%} %>
 		<%if(cons != null){ %>
 			<table 	class="listingTable" style="width:70%;">	
 				<tr>

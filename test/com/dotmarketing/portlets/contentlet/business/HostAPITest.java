@@ -12,9 +12,11 @@ import org.quartz.SimpleTrigger;
 import com.dotcms.enterprise.HostAssetsJobProxy;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.SimpleScheduledTask;
 import com.dotmarketing.quartz.job.HostCopyOptions;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 public class HostAPITest {
@@ -33,7 +35,14 @@ public class HostAPITest {
         Host host=new Host();
         host.setHostname("copy"+System.currentTimeMillis()+".demo.dotcms.com");
         host.setDefault(false);
-        host=APILocator.getHostAPI().save(host, user, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	host=APILocator.getHostAPI().save(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
         String hostIdent=host.getIdentifier();
         String hostName=host.getHostname();
         
@@ -54,13 +63,17 @@ public class HostAPITest {
         
         // wait for the copy to be done. 
         //#6084: If the license is not Enterprise it should NOT get stuck.
-        //It will wait for 5 minutes only. 
+        //It will wait for 15 minutes only. 
         int milliseconds = 0;
-        int maxMilliseconds = 600000; //5 Minutes
+        int maxMilliseconds = 900000; //15 Minutes
         
         while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
             Thread.sleep(500);
             milliseconds += 500;
+        }
+        
+        if (QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup()) < 0) {
+        	Assert.fail("testDeleteHost The host copy task did not start");
         }
         
         if(milliseconds >= maxMilliseconds){
@@ -69,10 +82,24 @@ public class HostAPITest {
         
         Thread.sleep(600); // wait a bit for the index
         
-        APILocator.getHostAPI().archive(host, user, false);
-        APILocator.getHostAPI().delete(host, user, false);
-        
+        try{
+        	HibernateUtil.startTransaction();
+        	APILocator.getHostAPI().archive(host, user, false);
+        	APILocator.getHostAPI().delete(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
+
         Thread.sleep(600); // wait a bit for the index
+        
+        host = APILocator.getHostAPI().find(hostIdent, user, false);
+        
+        if(host!=null){
+        	APILocator.getHostAPI().delete(host, user, false);
+        	Thread.sleep(600);
+        }
         
         host = APILocator.getHostAPI().find(hostIdent, user, false);
         
@@ -97,7 +124,14 @@ public class HostAPITest {
     	Host host=new Host();
         host.setHostname("test"+System.currentTimeMillis()+".demo.dotcms.com");
         host.setDefault(false);
-        host=APILocator.getHostAPI().save(host, user, false);
+        try{
+        	HibernateUtil.startTransaction();
+        	host=APILocator.getHostAPI().save(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
         APILocator.getHostAPI().publish(host, user, false);
         APILocator.getHostAPI().makeDefault(host, user, false);
         
@@ -138,8 +172,17 @@ public class HostAPITest {
         /*
          * Delete the new test host
          */
-        APILocator.getHostAPI().delete(host, user, false);
-        
+        Thread.sleep(600); // wait a bit for the index
+        try{
+        	HibernateUtil.startTransaction();
+        	APILocator.getHostAPI().archive(host, user, false);
+        	APILocator.getHostAPI().delete(host, user, false);
+        	HibernateUtil.commitTransaction();
+        }catch(Exception e){
+        	HibernateUtil.rollbackTransaction();
+        	Logger.error(HostAPITest.class, e.getMessage());
+        }
+        Thread.sleep(600); // wait a bit for the index
         /*
          * Validate if the current Original default host is the current default one
          */

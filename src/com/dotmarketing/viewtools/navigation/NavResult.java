@@ -50,14 +50,15 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String folderId;
     private List<String> childrenFolderIds;
     private List<NavResult> children;
-    
+    private NavTool tool;
     private User sysuser=null;
     private boolean checkPermissions;
     
-    public NavResult(String parent, String hostId, String folderId) {
+    public NavResult(String parent, String hostId, String folderId, NavTool tool) {
         this.hostId=hostId;
         this.folderId=folderId;
         this.parent=parent;
+        this.tool = tool;
 
         title=href="";
         order=0;
@@ -70,8 +71,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         
     }
     
-    public NavResult(String parent, String host) {
-        this(parent,host,null);
+    public NavResult(String parent, String host, NavTool tool) {
+        this(parent,host,null, tool);
     }
     
     public String getTitle() throws Exception {
@@ -129,7 +130,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
         if(req!=null)
-            return !isCodeLink() && req.getRequestURI().contains(href);
+            return !isCodeLink() && req.getRequestURI().startsWith(href);
         else
             return false;
     }
@@ -148,7 +149,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             Host host=APILocator.getHostAPI().find(hostId, sysuser, true);
             Folder folder=APILocator.getFolderAPI().find(folderId, sysuser, true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
-            NavResult lazyMe=NavTool.getNav(host, ident.getPath());
+            NavResult lazyMe=tool.getNav(host, ident.getPath());
             children=lazyMe.getChildren();
             childrenFolderIds=lazyMe.getChildrenFolderIds();
         }
@@ -159,7 +160,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     // for folders we avoid returning the same instance
                     // it could be changed elsewhere and we need it to
                     // load its children lazily
-                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId);
+                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId, tool);
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
@@ -209,7 +210,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public NavResult getParent() throws DotDataException, DotSecurityException {
         String path=getParentPath();
         if(path!=null) {
-            return NavTool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path);
+            return tool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path);
         }
         else return null;
     }

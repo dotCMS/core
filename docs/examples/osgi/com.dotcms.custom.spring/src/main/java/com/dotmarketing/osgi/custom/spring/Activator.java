@@ -40,6 +40,8 @@ public class Activator extends GenericBundleActivator {
 
     public void stop ( BundleContext context ) throws Exception {
 
+        CMSFilter.removeExclude( "/app/spring" );
+
         //Unpublish bundle services
         unregisterServices( context );
     }

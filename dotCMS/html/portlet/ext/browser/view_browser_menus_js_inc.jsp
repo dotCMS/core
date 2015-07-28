@@ -11,7 +11,7 @@
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.structure.factories.StructureFactory"%>
-<%@page import="com.dotmarketing.cache.StructureCache"%>
+<%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.Permissionable"%>
 <%@page import="com.dotmarketing.factories.InodeFactory"%>
@@ -43,7 +43,7 @@
 	var sendingEndpoints = <%=UtilMethods.isSet(sendingEndpoints) && !sendingEndpoints.isEmpty()%>;
 
 	<%
-	Structure fileStructure = StructureCache.getStructureByVelocityVarName("FileAsset");
+	Structure fileStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset");
 	WorkflowScheme fileWorkflow = APILocator.getWorkflowAPI().findSchemeForStruct(fileStructure);
 	%>
 
@@ -343,30 +343,32 @@
 	function wfActionsMenu(objId, content) {
 		contentAdmin = new dotcms.dijit.contentlet.ContentAdmin('','',1);
 		var strHTML = "";
-		for (var i = 0; i < content.wfActionMapList.length; i++) {
-            var name = content.wfActionMapList[i].name;
-            var id = content.wfActionMapList[i].id;
-            var assignable = content.wfActionMapList[i].assignable;
-            var hasPushPublishActionlet = content.wfActionMapList[i].hasPushPublishActionlet;
-            var commentable = content.wfActionMapList[i].commentable;
-            console.log(name + ":"+ assignable + ":" + commentable);
-            var icon = content.wfActionMapList[i].icon;
-            var requiresCheckout = content.wfActionMapList[i].requiresCheckout;
-            var wfActionNameStr = content.wfActionMapList[i].wfActionNameStr;
-            var isLocked = content.isLocked;
-            var contentEditable = content.contentEditable;
-            if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
-                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-                strHTML += '<span class=\''+icon+'\'></span>';
-                strHTML += wfActionNameStr;
-                strHTML += '</a>';
-            }else if(!requiresCheckout)  {
-                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
-                strHTML += '<span class=\''+icon+'\'></span>';
-                strHTML += wfActionNameStr;
-                strHTML += '</a>';
-            }
-        }
+		if(content.wfActionMapList){
+			for (var i = 0; i < content.wfActionMapList.length; i++) {
+            	var name = content.wfActionMapList[i].name;
+            	var id = content.wfActionMapList[i].id;
+            	var assignable = content.wfActionMapList[i].assignable;
+            	var hasPushPublishActionlet = content.wfActionMapList[i].hasPushPublishActionlet;
+	            var commentable = content.wfActionMapList[i].commentable;
+	            console.log(name + ":"+ assignable + ":" + commentable);
+	            var icon = content.wfActionMapList[i].icon;
+	            var requiresCheckout = content.wfActionMapList[i].requiresCheckout;
+	            var wfActionNameStr = content.wfActionMapList[i].wfActionNameStr;
+	            var isLocked = content.isLocked;
+	            var contentEditable = content.contentEditable;
+	            if (!objId && requiresCheckout || (isLocked && contentEditable) && requiresCheckout) {
+	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                strHTML += '<span class=\''+icon+'\'></span>';
+	                strHTML += wfActionNameStr;
+	                strHTML += '</a>';
+	            }else if(!requiresCheckout)  {
+	                strHTML += '<a href="javascript: contentAdmin.executeWfAction(\'' + id + '\', ' + assignable +', ' + commentable+', ' +hasPushPublishActionlet +', \'' + objId +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+	                strHTML += '<span class=\''+icon+'\'></span>';
+	                strHTML += wfActionNameStr;
+	                strHTML += '</a>';
+	            }
+	        }
+	       }
 		return strHTML;
 	}
 

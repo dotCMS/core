@@ -26,9 +26,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 
-import com.dotcms.repackage.antlr.Utils;
-import com.dotcms.repackage.bsh.util.Util;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -36,10 +33,8 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.PermissionAsset;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.IdentifierFactory;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -51,13 +46,7 @@ import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.util.ActivityLogger;
-import com.dotmarketing.util.HostUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.*;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -700,6 +689,11 @@ public class DotPortletAction extends PortletAction {
 		} catch (DotHibernateException e1) {
 			Logger.error(this, e.getMessage(), e);
 		}
+        /*if(UtilMethods.getStackTrace(e) != null
+                && UtilMethods.getStackTrace(e).toLowerCase().contains("constraint")
+                && UtilMethods.getStackTrace(e).toLowerCase().contains("violation")){
+            SessionMessages.add(req, "message", "message.language.content");
+        }*/
 		req.setAttribute(PageContext.EXCEPTION, e);
 		
 		//This is a fix for the <%@ page isErrorPage="true" %> directive in Glassfish
