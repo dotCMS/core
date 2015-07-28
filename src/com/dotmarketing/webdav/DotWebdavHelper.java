@@ -9,7 +9,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -29,7 +32,6 @@ import com.dotcms.repackage.com.bradmcevoy.http.LockResult;
 import com.dotcms.repackage.com.bradmcevoy.http.LockTimeout;
 import com.dotcms.repackage.com.bradmcevoy.http.LockToken;
 import com.dotcms.repackage.com.bradmcevoy.http.Resource;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
@@ -48,7 +50,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
@@ -851,148 +852,123 @@ public class DotWebdavHelper {
 				vc.remove(ResourceManager.RESOURCE_TEMPLATE + workingFile.getPath());
 			}
 
-			InputStream is = content;
-			byte[] currentData = IOUtils.toByteArray(is);
+			// If content is empty or null we cannot do anything
+			if(content == null || content.available() == 0) {
+                Logger.warn(this, "The 'content' param is null or empty. We are going to create an empty file.");
+            }
 
 			if(destinationFile==null){
 				Contentlet fileAsset = new Contentlet();
-				Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
+				Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
 				Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
 				fileAsset.setStructureInode(folder.getDefaultFileType());
 				fileAsset.setFolder(folder.getInode());
-				if (currentData != null) {
-					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() +
-							java.io.File.separator + fieldVar.getFieldContentlet());
-					if (!tempUserFolder.exists())
-						tempUserFolder.mkdirs();
 
-					java.io.File fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
-					if(fileData.exists())
-						fileData.delete();
-					// Saving the new working data
-					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
-					writeCurrentChannel.truncate(0);
-					ByteBuffer buffer = ByteBuffer.allocate(currentData.length);
-					buffer.put(currentData);
-					buffer.position(0);
-					writeCurrentChannel.write(buffer);
-					writeCurrentChannel.force(false);
-					writeCurrentChannel.close();
-					fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
-					fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
-					fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
-					fileAsset.setHost(host.getIdentifier());
-					fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
+				// Create user temp folder and create file inside of it
+				java.io.File fileData = createFileInTemporalFolder(fieldVar, user.getUserId(), fileName);
 
-					//Validate if the user have the right permission before
-					if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
-						APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-						throw new DotSecurityException("User does not have permission to publish contentlets");
-			        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
-			        	APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-						APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
-						throw new DotSecurityException("User does not have permission to edit contentlets");
-			        }
-					if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
-					    APILocator.getContentletAPI().publish(fileAsset, user, false);
+				// Saving the new working data
+				final ReadableByteChannel inputChannel = Channels.newChannel(content);
+                final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
 
-					    Date currentDate = new Date();
-					    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
+				fileAsset.setStringProperty(FileAssetAPI.TITLE_FIELD, fileName);
+				fileAsset.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, fileName);
+				fileAsset.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+				fileAsset.setHost(host.getIdentifier());
+				fileAsset=APILocator.getContentletAPI().checkin(fileAsset, user, false);
 
-					}
+				//Validate if the user have the right permission before
+				if(isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user) ){
+					APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					throw new DotSecurityException("User does not have permission to publish contentlets");
+		        }else if(!isAutoPub && !perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_EDIT, user)){
+		        	APILocator.getContentletAPI().archive(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					APILocator.getContentletAPI().delete(fileAsset, APILocator.getUserAPI().getSystemUser(), false);
+					throw new DotSecurityException("User does not have permission to edit contentlets");
+		        }
+				if(isAutoPub && perAPI.doesUserHavePermission(fileAsset, PermissionAPI.PERMISSION_PUBLISH, user)) {
+				    APILocator.getContentletAPI().publish(fileAsset, user, false);
+
+				    Date currentDate = new Date();
+				    fileResourceCache.add(resourceUri + "|" + user.getUserId(), currentDate.getTime());
 				}
-			}else{
+			} else {
+			    java.io.File fileData;
+				if(destinationFile instanceof File){
+					fileData=workingFile;
+				} else {
+					Structure faStructure = CacheLocator.getContentTypeCache().getStructureByInode(folder.getDefaultFileType());
+					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
+
+					// Create user temp folder and create file inside of it
+	                fileData = createFileInTemporalFolder(fieldVar, user.getUserId(), fileName);
+			    }
+
+				// Saving the new working data
+			    final ReadableByteChannel inputChannel = Channels.newChannel(content);
+                final WritableByteChannel outputChannel = Channels.newChannel(new FileOutputStream(fileData));
+                FileUtil.fastCopyUsingNio(inputChannel, outputChannel);
+                Logger.debug(this, "WEBDAV fileName:" + fileName + " : File size:" + fileData.length() + " : " + fileData.getAbsolutePath());
 
 				if(destinationFile instanceof File){
-					// Save the file size
-					File file = fileAPI.getFileByURI(path, host, false, user, false);
-					file.setSize(currentData.length);
-					file.setModDate(modifiedDate);
-					file.setModUser(user.getUserId());
-					try {
-						HibernateUtil.saveOrUpdate(file);
-					} catch (DotHibernateException e1) {
-						Logger.error(this,e1.getMessage(), e1);
-					}
-				}
+				    // Save the file size
+                    File file = fileAPI.getFileByURI(path, host, false, user, false);
+                    file.setSize((int) fileData.length());
+                    file.setModDate(modifiedDate);
+                    file.setModUser(user.getUserId());
+                    try {
+                        HibernateUtil.saveOrUpdate(file);
+                    } catch (DotHibernateException e1) {
+                        Logger.error(this,e1.getMessage(), e1);
+                    }
 
-				if (currentData != null) {
-					// Saving the new working data
-				    java.io.File fileData;
-				    if(destinationFile instanceof File) {
-				        fileData=workingFile;
-				    }
-				    else {
-    					Structure faStructure = StructureCache.getStructureByInode(folder.getDefaultFileType());
-    					Field fieldVar = faStructure.getFieldVar(FileAssetAPI.BINARY_FIELD);
-    					java.io.File tempUserFolder = new java.io.File(APILocator.getFileAPI().getRealAssetPathTmpBinary() + java.io.File.separator + user.getUserId() +
-    							java.io.File.separator + fieldVar.getFieldContentlet());
-    					if (!tempUserFolder.exists())
-    						tempUserFolder.mkdirs();
-
-    					fileData = new java.io.File(tempUserFolder.getAbsolutePath() + java.io.File.separator + fileName);
-    					if(fileData.exists())
-    						fileData.delete();
-				    }
-					// Saving the new working data
-					FileChannel writeCurrentChannel = new FileOutputStream(fileData).getChannel();
-					writeCurrentChannel.truncate(0);
-					ByteBuffer buffer = ByteBuffer.allocate(currentData.length);
-					buffer.put(currentData);
-					buffer.position(0);
-					writeCurrentChannel.write(buffer);
-					writeCurrentChannel.force(false);
-					writeCurrentChannel.close();
-					Logger.debug(this, "WEBDAV fileName:" + fileName + ":" + fileData.getAbsolutePath());
-
-					if(destinationFile instanceof File){
-						// checks if it's an image
-						if (UtilMethods.isImage(fileName) && workingFile != null) {
-							try {
-								// gets image height
-								BufferedImage img = javax.imageio.ImageIO.read(workingFile);
-								if(img != null){
-									int height = img.getHeight();
-									((File)destinationFile).setHeight(height);
-									// gets image width
-									int width = img.getWidth();
-									((File)destinationFile).setWidth(width);
-								}
-							} catch (Exception ioe) {
-								Logger.error(this.getClass(), ioe.getMessage(), ioe);
+					// checks if it's an image
+					if (UtilMethods.isImage(fileName) && workingFile != null) {
+						try {
+							// gets image height
+							BufferedImage img = javax.imageio.ImageIO.read(workingFile);
+							if(img != null){
+								int height = img.getHeight();
+								((File)destinationFile).setHeight(height);
+								// gets image width
+								int width = img.getWidth();
+								((File)destinationFile).setWidth(width);
 							}
-
+						} catch (Exception ioe) {
+							Logger.error(this.getClass(), ioe.getMessage(), ioe);
 						}
 
-					}else{
-						fileAssetCont.setInode(null);
-						fileAssetCont.setFolder(parent.getInode());
-						fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
-						fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
-						if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
-						    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
 					}
+				} else {
+					fileAssetCont.setInode(null);
+					fileAssetCont.setFolder(parent.getInode());
+					fileAssetCont.setBinary(FileAssetAPI.BINARY_FIELD, fileData);
+					fileAssetCont = APILocator.getContentletAPI().checkin(fileAssetCont, user, false);
+					if(isAutoPub && perAPI.doesUserHavePermission(fileAssetCont, PermissionAPI.PERMISSION_PUBLISH, user))
+					    APILocator.getContentletAPI().publish(fileAssetCont, user, false);
+				}
 
-					//Wiping out the thumbnails and resized versions
-					//http://jira.dotmarketing.net/browse/DOTCMS-5911
-					String inode = destinationFile.getInode();
-					if(UtilMethods.isSet(inode)){
-						String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
-						java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
-						if(tumbnailDir!=null){
-							java.io.File[] files = tumbnailDir.listFiles();
-							if(files!=null){
-								for (java.io.File iofile : files) {
-									try {
-										if(iofile.getName().startsWith("dotGenerated_")){
-											iofile.delete();
-										}
-									} catch (SecurityException e) {
-										Logger.error(this,"EditFileAction._saveWorkingFileData(): " + iofile.getName() + " cannot be erased. Please check the file permissions.");
-									} catch (Exception e) {
-										Logger.error(this,"EditFileAction._saveWorkingFileData(): "	+ e.getMessage());
+				//Wiping out the thumbnails and resized versions
+				//http://jira.dotmarketing.net/browse/DOTCMS-5911
+				String inode = destinationFile.getInode();
+				if(UtilMethods.isSet(inode)){
+					String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
+					java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
+					if(tumbnailDir!=null){
+						java.io.File[] files = tumbnailDir.listFiles();
+						if(files!=null){
+							for (java.io.File iofile : files) {
+								try {
+									if(iofile.getName().startsWith("dotGenerated_")){
+										iofile.delete();
 									}
+								} catch (SecurityException e) {
+									Logger.error(this,"EditFileAction._saveWorkingFileData(): " + iofile.getName() + " cannot be erased. Please check the file permissions.");
+								} catch (Exception e) {
+									Logger.error(this,"EditFileAction._saveWorkingFileData(): "	+ e.getMessage());
 								}
 							}
 						}
@@ -1000,6 +976,35 @@ public class DotWebdavHelper {
 				}
 			}
 		}
+	}
+
+    /**
+     * Create temporal user folder and create a file inside of it
+     *
+     * @param fieldVar
+     * @param userId
+     * @param fileName
+     * @return created file
+     */
+	private java.io.File createFileInTemporalFolder(Field fieldVar, final String userId, final String fileName) {
+        final String folderPath = new StringBuilder()
+                .append(APILocator.getFileAPI().getRealAssetPathTmpBinary())
+                .append(java.io.File.separator).append(userId).append(java.io.File.separator)
+                .append(fieldVar.getFieldContentlet()).toString();
+
+        java.io.File tempUserFolder = new java.io.File(folderPath);
+        if (!tempUserFolder.exists())
+            tempUserFolder.mkdirs();
+
+        final String filePath = new StringBuilder()
+        .append(tempUserFolder.getAbsolutePath())
+        .append(java.io.File.separator).append(fileName).toString();
+
+        java.io.File fileData = new java.io.File(filePath);
+        if(fileData.exists())
+            fileData.delete();
+
+        return fileData;
 	}
 
 	public Folder createFolder(String folderUri, User user) throws IOException, DotDataException {
@@ -1182,9 +1187,13 @@ public class DotWebdavHelper {
 				if (getFolderName(fromPath).equals(getFolderName(toPath))) {
 					Logger.debug(this, "Calling Folderfactory to rename " + fromPath + " to " + toPath);
 					try{
-						Folder folder = folderAPI.findFolderByPath(getPath(toPath), host,user,false);
-						removeObject(toPath, user);
-						fc.removeFolder(folder,idapi.find(folder));
+					    // Folder must end with "/", otherwise we get the parent folder
+                        String folderToPath = getPath(toPath);
+                        if(!folderToPath.endsWith("/")) { folderToPath = folderToPath + "/"; }
+
+                        Folder folder = folderAPI.findFolderByPath(folderToPath, host, user, false);
+                        removeObject(toPath, user);
+                        fc.removeFolder(folder, idapi.find(folder));
 					}catch (Exception e) {
 						Logger.debug(this, "Unable to delete toPath " + toPath);
 					}
@@ -1295,20 +1304,20 @@ public class DotWebdavHelper {
 			if(identifier!=null && identifier.getAssetType().equals("contentlet")){
 			    Contentlet fileAssetCont = APILocator.getContentletAPI()
 			    		.findContentletByIdentifier(identifier.getId(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, false);
-			    
-			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length. 
-			    //No need to wait 10 seconds with files with 0 length. 
-			    if(canDelete 
-			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null 
+
+			    //Webdav calls the delete method when is creating a new file. But it creates the file with 0 content length.
+			    //No need to wait 10 seconds with files with 0 length.
+			    if(canDelete
+			    		|| (fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD) != null
 			    			&& fileAssetCont.getBinary(FileAssetAPI.BINARY_FIELD).length() <= 0)){
-			    	
+
 			    	try{
 				        APILocator.getContentletAPI().archive(fileAssetCont, user, false);
 				    }catch (Exception e) {
 				        Logger.error(DotWebdavHelper.class, e.getMessage(), e);
 				        throw new DotDataException(e.getMessage(), e);
 				    }
-			    	
+
 				    WorkingCache.removeAssetFromCache(fileAssetCont);
 				    LiveCache.removeAssetFromCache(fileAssetCont);
 				    fileResourceCache.remove(uri + "|" + user.getUserId());

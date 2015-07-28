@@ -7,14 +7,12 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotcms.sync.Exportable;
 import com.dotcms.sync.Importable;
 import com.dotcms.sync.exception.DotDependencyException;
@@ -28,7 +26,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -190,8 +187,18 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
      */
     public Structure getStructure() {
     	Structure structure = null;
-    	structure = StructureCache.getStructureByInode(getStructureInode());
+    	structure = CacheLocator.getContentTypeCache().getStructureByInode(getStructureInode());
         return structure;
+    }
+
+    public boolean hasAssetNameExtension() {
+        boolean hasExtension = false;
+        if (getStructure() != null
+                && getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET) {
+            hasExtension = true;
+        }
+
+        return hasExtension;
     }
 
     public Date getLastReview() {
@@ -596,7 +603,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 
 
 	public boolean isParentPermissionable() {
-		Structure hostStructure = StructureCache.getStructureByVelocityVarName("Host");
+		Structure hostStructure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		if(this.getStructureInode().equals(hostStructure.getInode()))
 			return true;
 		else
@@ -609,7 +616,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         if ( cachedMetadata == null ) {
             // lazy load from db
             try {
-                Structure st = StructureCache.getStructureByInode( structureInode );
+                Structure st = CacheLocator.getContentTypeCache().getStructureByInode( structureInode );
                 Object fieldVal = APILocator.getContentletAPI().loadField( inode, st.getFieldVar( FileAssetAPI.META_DATA_FIELD ) );
                 if ( fieldVal != null && UtilMethods.isSet( fieldVal.toString() ) ) {
                     String loadedMetadata = fieldVal.toString();
@@ -632,7 +639,7 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     public static boolean isMetadataFieldCached ( String structureInode, String fieldVelVarName, Object value ) {
 
         if ( fieldVelVarName instanceof String && fieldVelVarName.equals( FileAssetAPI.META_DATA_FIELD ) ) {
-            Structure st = StructureCache.getStructureByInode( structureInode );
+            Structure st = CacheLocator.getContentTypeCache().getStructureByInode( structureInode );
             Field f = st.getFieldVar( FileAssetAPI.META_DATA_FIELD );
             return st.getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET && UtilMethods.isSet( f.getInode() )
                     && value != null && value.equals( ContentletCache.CACHED_METADATA );

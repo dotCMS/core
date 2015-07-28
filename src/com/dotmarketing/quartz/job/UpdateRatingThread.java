@@ -12,8 +12,8 @@ import org.quartz.StatefulJob;
 
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -141,7 +141,7 @@ public class UpdateRatingThread implements StatefulJob {
 					}
 					else {
 
-						struct = StructureCache.getStructureByInode(c.getStructureInode());
+						struct = CacheLocator.getContentTypeCache().getStructureByInode(c.getStructureInode());
 						fields = FieldsCache.getFieldsByStructureInode(struct.getInode());
 
 						Field avfield = null;
@@ -179,7 +179,7 @@ public class UpdateRatingThread implements StatefulJob {
 							}
 							FieldFactory.saveField(averageRatingField);
 							FieldsCache.removeFields(struct);
-							StructureCache.removeStructure(struct);
+							CacheLocator.getContentTypeCache().remove(struct);
 							StructureServices.removeStructureFile(struct);
 							StructureFactory.saveStructure(struct);
 						}
@@ -194,7 +194,7 @@ public class UpdateRatingThread implements StatefulJob {
 							FieldFactory.saveField(numberOfVotesField);
 
 							FieldsCache.removeFields(struct);
-							StructureCache.removeStructure(struct);
+							CacheLocator.getContentTypeCache().remove(struct);
 							StructureServices.removeStructureFile(struct);
 							StructureFactory.saveStructure(struct);
 						}

@@ -30,10 +30,10 @@ import com.dotcms.repackage.org.elasticsearch.action.admin.indices.mapping.put.P
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -263,7 +263,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Identifier ident = APILocator.getIdentifierAPI().find(con);
 			ContentletVersionInfo cvi = APILocator.getVersionableAPI().getContentletVersionInfo(ident.getId(), con.getLanguageId());
-			Structure st=StructureCache.getStructureByInode(con.getStructureInode());
+			Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 
 			Folder conFolder=APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), ident.getHostId(), APILocator.getUserAPI().getSystemUser(), false);
 
@@ -348,6 +348,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 }
             }
 
+			//The url is now stored under the identifier for html pages, so we need to index that also.
+			if(con.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+				mlowered.put(con.getStructure().getVelocityVarName().toLowerCase() + ".url", ident.getAssetName());
+			}
+
             return mlowered;
 		} catch (Exception e) {
 			//Logger.error(this.getClass(), e.getMessage(), e);
@@ -364,7 +369,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	protected void loadCategories(Contentlet con, Map<String,String> m) throws DotDataException, DotSecurityException {
 	    // first we check if there is a category field in the structure. We don't hit db if not needed
 	    boolean thereiscategory=false;
-	    Structure st=StructureCache.getStructureByInode(con.getStructureInode());
+	    Structure st=CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 	    List<Field> fields=FieldsCache.getFieldsByStructureInode(con.getStructureInode());
 	    for(Field f : fields)
 	        thereiscategory = thereiscategory ||

@@ -17,16 +17,14 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
-
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,7 +38,6 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletValidationExce
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
-import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -168,7 +165,7 @@ public class AddEvent extends DispatchAction
 			Event event = new Event();
 			Language language = langAPI.getDefaultLanguage();
 			Folder folder = APILocator.getFolderAPI().findFolderByPath(path, host,APILocator.getUserAPI().getSystemUser(),false);
-            Structure structure = StructureCache.getStructureByName("Event");
+            Structure structure = CacheLocator.getContentTypeCache().getStructureByName("Event");
             event.setStructureInode(structure.getInode());
 			if (!InodeUtils.isSet(folder.getInode())){
 				folder = APILocator.getFolderAPI().createFolders(path, host,userAPI.getSystemUser(),false);

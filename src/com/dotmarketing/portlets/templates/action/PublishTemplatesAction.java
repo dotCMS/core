@@ -105,7 +105,7 @@ public class PublishTemplatesAction extends DotPortletAction {
 		//iterates through the children pages
 		while (iterPages.hasNext()) {
 			//writes the page to a file
-			PageServices.invalidate((HTMLPage) iterPages.next());
+			PageServices.invalidateAll((HTMLPage) iterPages.next());
 		}
 		
 		

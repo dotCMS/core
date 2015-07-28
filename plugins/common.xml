@@ -27,7 +27,7 @@
 	<path id="files-classpath">
 
 		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
-		<fileset dir="${target.root.dir}/../../lib" erroronmissingdir="false">
+		<fileset dir="${basedir}/../../${target.root.dir}/../../lib" erroronmissingdir="false">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="${target.root.dir}/../libs/buildlibs" erroronmissingdir="false">
@@ -35,7 +35,10 @@
 		</fileset>
 		<!--TODO: Required to find the servlet API jar, that jar is in the app server libs folder-->
 
-		<fileset dir="${target.root.dir}/WEB-INF/lib">
+		<fileset dir="${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${basedir}/../../${target.root.dir}/WEB-INF/lib" erroronmissingdir="false">
 			<include name="**/*.jar" />
 		</fileset>
 		<fileset dir="lib">
@@ -56,7 +59,7 @@
 		THIS PREVENTS THE javac TASK FROM FAILING
 		-->
 		<mkdir dir="lib" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="modern" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
 		<!-- copying other resource within src folder in the classpath -->

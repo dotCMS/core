@@ -71,6 +71,9 @@ public class ClickstreamFactory {
 			associatedIdentifier = (String) request.getAttribute(WebKeys.CLICKSTREAM_IDENTIFIER_OVERRIDE);
 		}
 		if (!UtilMethods.isSet(associatedIdentifier)) {
+
+			// Maybe is a problem with the URL, so we need to find it
+			// in other place "request.getRequestURI()"
 			String uri = "";
 			try {
 				uri = URLDecoder.decode(request.getRequestURI(),
@@ -82,8 +85,8 @@ public class ClickstreamFactory {
 			if (!UtilMethods.isSet(uri)) {
 				uri = pointer;
 			}
-			associatedIdentifier = APILocator.getIdentifierAPI()
-					.find(host, uri).getInode();
+
+			associatedIdentifier = APILocator.getIdentifierAPI().find(host, uri).getInode();
 		}
 
 		if (UtilMethods.isSet(associatedIdentifier)) {

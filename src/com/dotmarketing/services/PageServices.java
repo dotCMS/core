@@ -49,25 +49,49 @@ import com.dotmarketing.velocity.DotResourceCache;
  */
 public class PageServices {
 
-	public static void invalidate(IHTMLPage htmlPage) throws DotStateException, DotDataException {
+    /**
+     * Invalidates live and working html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateAll(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, false);
+        invalidate(htmlPage, identifier, true);
+    }
 
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		invalidate(htmlPage, identifier, false);
-		invalidate(htmlPage, identifier, true);
+    /**
+     * Invalidates live html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateLive(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, false);
+    }
 
-	}
+    /**
+     * Invalidates working html page
+     * @param htmlPage
+     * @throws DotStateException
+     * @throws DotDataException
+     */
+    public static void invalidateWorking(IHTMLPage htmlPage) throws DotStateException, DotDataException, DotSecurityException {
+        Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
+        invalidate(htmlPage, identifier, true);
+    }
 
-	public static void invalidate(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		invalidate(htmlPage, identifier, EDIT_MODE);
-	}
-
-	public static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
+	private static void invalidate(IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) throws DotDataException, DotSecurityException {
 		removePageFile(htmlPage, identifier, EDIT_MODE);
-		
+
 		if(htmlPage instanceof Contentlet) {
-		    ContentletServices.removeContentletFile((Contentlet)htmlPage, identifier, EDIT_MODE);
+		    if(EDIT_MODE) {
+		        ContentletServices.invalidateWorking((Contentlet) htmlPage, identifier);
+		    } else {
+		        ContentletServices.invalidateLive((Contentlet) htmlPage, identifier);
+		    }
 		}
 	}
 
@@ -302,7 +326,7 @@ public class PageServices {
                 //Merging our template
                 sb.append( "$velutil.mergeTemplate(\"$dotTheme.templatePath\")" );
             } else {
-                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION","html" ) ).append( "')" );
+                sb.append( "$velutil.mergeTemplate('" ).append( folderPath ).append( iden.getInode() ).append( "." ).append( Config.getStringProperty( "VELOCITY_TEMPLATE_EXTENSION","template" ) ).append( "')" );
             }
 		sb.append("#end");
 		
@@ -310,11 +334,11 @@ public class PageServices {
 		try {
 
 			if(Config.getBooleanProperty("SHOW_VELOCITYFILES", false)){
-				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():Long.toString(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+				String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
 				
 			    String realFolderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 	            String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
-	            String filePath = realFolderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
+	            String filePath = realFolderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","dotpage");
 	            if (velocityRootPath.startsWith("/WEB-INF")) {
 	                velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 	            }
@@ -342,18 +366,6 @@ public class PageServices {
 		return result;
 	}
 
-	public static void unpublishPageFile(IHTMLPage htmlPage) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		removePageFile(htmlPage, identifier, false);
-	}
-
-	public static void removePageFile(IHTMLPage htmlPage, boolean EDIT_MODE) throws DotStateException, DotDataException {
-
-		Identifier identifier = APILocator.getIdentifierAPI().find(htmlPage);
-		removePageFile(htmlPage, identifier, EDIT_MODE);
-	}
-
 	public static void removePageFile (IHTMLPage htmlPage, Identifier identifier, boolean EDIT_MODE) {
 		String folderPath = (!EDIT_MODE) ? "live" + java.io.File.separator: "working" + java.io.File.separator;
 		String velocityRootPath = Config.getStringProperty("VELOCITY_ROOT");
@@ -361,7 +373,7 @@ public class PageServices {
 			velocityRootPath = com.liferay.util.FileUtil.getRealPath(velocityRootPath);
 		}
 		String languageStr = htmlPage.isContent() ? "_" + ((Contentlet)htmlPage).getLanguageId():"";
-		String filePath = folderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","html");
+		String filePath = folderPath + identifier.getInode() + languageStr + "." + Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION","dotpage");
 		velocityRootPath += java.io.File.separator;
 		java.io.File f  = new java.io.File(velocityRootPath + filePath);
 		f.delete();

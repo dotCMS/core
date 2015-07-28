@@ -16,15 +16,11 @@
 
 package org.apache.velocity.tools.view.tools;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import javax.servlet.ServletContext;
+import com.dotmarketing.util.Config;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.context.ViewContext;
-import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * General-purpose text-importing view tool for templates.
@@ -71,13 +67,19 @@ public class ImportTool extends ImportSupport implements ViewTool {
         this.application = context.getServletContext();
     }
 
+    public String read(String url) {
+    	return read(url, Config.getIntProperty("URL_CONNECTION_TIMEOUT", 15000));
+    }
+    
+    
+    
     /**
      * Returns the supplied URL rendered as a String.
      *
      * @param url the URL to import
      * @return the URL as a string
      */
-    public String read(String url) {
+    public String read(String url, int timeout) {
         try {
             // check the URL
             if (url == null || url.equals("")) {
@@ -85,7 +87,7 @@ public class ImportTool extends ImportSupport implements ViewTool {
                 return null;
             }
 
-            return acquireString(url);
+            return acquireString(url, timeout);
         }
         catch (Exception ex) {
             LOG.error("Exception while importing URL: " + ex.getMessage());

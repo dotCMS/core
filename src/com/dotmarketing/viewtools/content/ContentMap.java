@@ -9,22 +9,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
-import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
+import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -239,6 +236,16 @@ public class ContentMap {
     				BinaryMap bm = new BinaryMap(content,f);
     				return bm;
 			    }
+			    //if the property being served is URL and the structure is a page show URL using the identifier information
+			}else if(fieldVariableName.equalsIgnoreCase("url") && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
+				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
+				if(InodeUtils.isSet(identifier.getId())){
+					// asset name only keeps the page name and not the full path, the full path is obtained by concatenating the parent path and the asset name
+					return identifier.getParentPath() + identifier.getAssetName();
+				}else{
+					Logger.debug(this, "The URL can't be get from an empty identifier, the page might not exists on the identifier table.");
+				}
+				return null;
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.TAG.toString())){
 				return new TagList((String)conAPI.getFieldValue(content, f));
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())){
@@ -332,7 +339,7 @@ public class ContentMap {
 		title = content.getTitle();
 		return title;
 	}
-	
+
 	public boolean isLive() throws Exception {
 	    return content.isLive();
 	}
@@ -355,7 +362,7 @@ public class ContentMap {
 	 * 
 	 * @return The {@link Contentlet} object.
 	 */
-	public Contentlet getContent() {
+	public Contentlet getContentObject() {
 		return this.content;
 	}
 

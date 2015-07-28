@@ -27,7 +27,6 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Locale;
 
 /**
@@ -78,13 +77,13 @@ public abstract class ImportSupport {
      * @throws IOException
      * @throws java.lang.Exception
      */
-    protected String acquireString(String url) throws IOException, Exception {
+    protected String acquireString(String url, long timeout) throws IOException, Exception {
         // Record whether our URL is absolute or relative
         this.isAbsoluteUrl = isAbsoluteUrl(url);
         if (this.isAbsoluteUrl)
         {
             // for absolute URLs, delegate to our peer
-            BufferedReader r = new BufferedReader(acquireReader(url));
+            BufferedReader r = new BufferedReader(acquireReader(url, timeout));
             StringBuffer sb = new StringBuffer();
             int i;
             // under JIT, testing seems to show this simple loop is as fast
@@ -162,23 +161,36 @@ public abstract class ImportSupport {
      * @throws IOException
      * @throws java.lang.Exception
      */
-    protected Reader acquireReader(String url) throws IOException, Exception
+    protected Reader acquireReader(final String url, final long timeout) throws IOException, Exception
     {
         if (!this.isAbsoluteUrl)
         {
             // for relative URLs, delegate to our peer
-            return new StringReader(acquireString(url));
+            return new StringReader(acquireString(url, timeout));
         }
         else
         {
             // absolute URL
             try
             {
-                // handle absolute URLs ourselves, using java.net.URL
+
                 URL u = new URL(url);
                 //URL u = new URL("http", "proxy.hi.is", 8080, target);
-                URLConnection uc = u.openConnection();
-                uc.setReadTimeout(15000);
+                final HttpURLConnection uc = (HttpURLConnection) u.openConnection();
+                Thread killme = new Thread(new Runnable() {
+                    public void run () {
+                        try {
+                            Thread.sleep(timeout);
+                        } catch ( InterruptedException e ) {
+                            Logger.error(this.getClass(), "urlconnection killer inturupted", e);
+                        }
+                        Logger.warn(this.getClass(), "urlconnection exceeded " + timeout + "ms to " + url);
+                        uc.disconnect();
+
+                    }
+                });
+                killme.start();
+
                 InputStream i = uc.getInputStream();
 
                 // okay, we've got a stream; encode it appropriately
@@ -223,7 +235,7 @@ public abstract class ImportSupport {
             }
             catch (IOException ex)
             {
-            	Logger.error(this, "Problem accessing the absolute URL "+ url + " : " + ex.getMessage(), ex);
+            	Logger.error(this, "Problem accessing the URL "+ url + ", timeout="+ timeout +" : " + ex.getMessage(), ex);
                 throw new Exception("Problem accessing the absolute URL \""
                                     + url + "\". " + ex,ex);
             }

@@ -5,15 +5,14 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.com.octo.captcha.service.CaptchaServiceException;
 import com.dotcms.repackage.nl.captcha.Captcha;
-
 import com.dotcms.repackage.org.apache.struts.action.ActionError;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -24,7 +23,6 @@ import com.dotmarketing.util.CaptchaUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.octo.captcha.service.CaptchaServiceException;
 
 /**
  * This class manage the comments beans
@@ -198,7 +196,7 @@ public class CommentsForm extends ValidatorForm
 		/*	Try to find a title if we don't have one.  */
 		if (!UtilMethods.isSet(commentTitle))
     	{
-			Structure s = StructureCache.getStructureByInode(parentContentlet.getStructureInode());
+			Structure s = CacheLocator.getContentTypeCache().getStructureByInode(parentContentlet.getStructureInode());
 			List<Field> lf = s.getFields();
 			for(Field f : lf){
 				if("text".equals(f.getFieldType()) && f.isIndexed() && f.isListed()){

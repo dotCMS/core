@@ -49,9 +49,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -380,7 +380,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet = new Contentlet();
 		contentlet.setStructureInode(structure.getInode());
 		contentlet.setHost(host.getIdentifier());
@@ -698,7 +698,7 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		/*
 		 * Create test contentlet1
 		 */
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet1 = new Contentlet();
 		contentlet1.setStructureInode(structure.getInode());
 		contentlet1.setHost(host.getIdentifier());

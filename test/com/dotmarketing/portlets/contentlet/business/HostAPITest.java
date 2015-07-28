@@ -63,13 +63,17 @@ public class HostAPITest {
         
         // wait for the copy to be done. 
         //#6084: If the license is not Enterprise it should NOT get stuck.
-        //It will wait for 5 minutes only. 
+        //It will wait for 15 minutes only. 
         int milliseconds = 0;
-        int maxMilliseconds = 600000; //5 Minutes
+        int maxMilliseconds = 900000; //15 Minutes
         
         while(QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup())<100 && milliseconds < maxMilliseconds) {
             Thread.sleep(500);
             milliseconds += 500;
+        }
+        
+        if (QuartzUtils.getTaskProgress(task.getJobName(), task.getJobGroup()) < 0) {
+        	Assert.fail("testDeleteHost The host copy task did not start");
         }
         
         if(milliseconds >= maxMilliseconds){
@@ -168,14 +172,17 @@ public class HostAPITest {
         /*
          * Delete the new test host
          */
+        Thread.sleep(600); // wait a bit for the index
         try{
         	HibernateUtil.startTransaction();
+        	APILocator.getHostAPI().archive(host, user, false);
         	APILocator.getHostAPI().delete(host, user, false);
         	HibernateUtil.commitTransaction();
         }catch(Exception e){
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
+        Thread.sleep(600); // wait a bit for the index
         /*
          * Validate if the current Original default host is the current default one
          */

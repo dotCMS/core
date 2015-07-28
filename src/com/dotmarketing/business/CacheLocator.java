@@ -15,8 +15,10 @@ import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
 import com.dotcms.repackage.org.jgroups.JChannel;
+import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.FolderCacheImpl;
+import com.dotmarketing.cache.ContentTypeCacheImpl;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -266,6 +268,9 @@ public class CacheLocator extends Locator<CacheIndex>{
 	public static SiteVisitCache getSiteVisitCache() {
 		return (SiteVisitCache) getInstance(CacheIndex.SiteVisitCache);
 	}
+    public static ContentTypeCache getContentTypeCache() {
+        return (ContentTypeCache) getInstance(CacheIndex.ContentTypeCache);
+    }
 
 	/**
 	 * The legacy cache administrator will invalidate cache entries within a cluster
@@ -351,9 +356,10 @@ enum CacheIndex
 	PublishingEndPoint("PublishingEndPoint Cache"),
 	PushedAssets("PushedAssets Cache"),
 	CSSCache("Processed CSS Cache"),
-	NewNotification("NewNotification Cache"),
 	RulesCache("Rules Cache"),
-	SiteVisitCache("Rules Engine - Site Visits");
+	SiteVisitCache("Rules Engine - Site Visits"),
+	NewNotification("NewNotification Cache"),
+	ContentTypeCache("Content Type Cache");
 
 	Cachable create() {
 		switch(this) {
@@ -393,6 +399,7 @@ enum CacheIndex
       	case NewNotification: return new NewNotificationCacheImpl();
       	case RulesCache : return new RulesCacheImpl();
       	case SiteVisitCache : return new SiteVisitCacheImpl();
+      	case ContentTypeCache: return new ContentTypeCacheImpl();
 		}
 		throw new AssertionError("Unknown Cache index: " + this);
 	}

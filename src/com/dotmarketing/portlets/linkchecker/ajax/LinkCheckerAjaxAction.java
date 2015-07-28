@@ -22,8 +22,8 @@ import org.quartz.Trigger;
 
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.linkchecker.bean.InvalidLink;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -70,7 +70,7 @@ public class LinkCheckerAjaxAction extends AjaxAction {
                 Contentlet con = APILocator.getContentletAPI().find(link.getInode(), APILocator.getUserAPI().getSystemUser(), false);
                 User modUser=APILocator.getUserAPI().loadUserById(con.getModUser());
                 Field field=FieldsCache.getField(link.getField()); 
-                Structure st=StructureCache.getStructureByInode(field.getStructureInode());
+                Structure st=CacheLocator.getContentTypeCache().getStructureByInode(field.getStructureInode());
                 
                 Map<String,String> mm=new HashMap<String,String>();
                 mm.put("inode", link.getInode());

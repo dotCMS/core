@@ -137,7 +137,12 @@
 		}
         boolean isWidget = false;
         ContentletForm contentletForm = (ContentletForm) request.getAttribute("ContentletForm");
-        int structureType = contentletForm.getStructure().getStructureType();
+	int structureType = 0;
+	if(UtilMethods.isSet(contentletForm)){
+        	structureType = contentletForm.getStructure().getStructureType();
+	}else{
+		structureType = contentlet.getStructure().getStructureType();
+	}
         if(structureType == 2){
         	 isWidget = true;
         }
@@ -907,6 +912,16 @@
 //END of CUSTOM_FIELD
 //KEY_VALUE Field
   else if(field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
+
+      %>
+        <script>
+            dojo.ready(function () {
+                setKVValue('<%=field.getFieldContentlet()%>', '<%=field.getVelocityVarName()%>');
+                recolorTable('<%=field.getFieldContentlet()%>');
+            });
+        </script>
+      <%
+
 	  java.util.Map<String, Object> keyValueMap = null;
 	  String JSONValue = UtilMethods.isSet(value)? (String)value:"";
 	  //Convert JSON to Table Display {key, value, order}
@@ -967,6 +982,7 @@
     <a class="goEnterpriseLink" href="<%=licenseURL%>"><span class="keyIcon"></span><%=licenseMessage%></a>
    <%} %>
    </div>
+
 <%}%>
 
 </div>

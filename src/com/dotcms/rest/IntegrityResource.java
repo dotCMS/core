@@ -12,6 +12,8 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.integritycheckers.IntegrityType;
+import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
@@ -19,9 +21,7 @@ import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.javax.ws.rs.core.*;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -32,6 +32,10 @@ import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -54,52 +58,6 @@ public class IntegrityResource extends WebResource {
 
     public enum ProcessStatus {
         PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELED
-    }
-
-    public enum IntegrityType {
-        FOLDERS("push_publish_integrity_folders_conflicts",
-                "FoldersToCheck.csv",
-                "FoldersToFix.csv"),
-
-        SCHEMES("push_publish_integrity_schemes_conflicts",
-                "SchemesToCheck.csv",
-                "SchemesToFix.csv"),
-
-        STRUCTURES("push_publish_integrity_structures_conflicts",
-                "StructuresToCheck.csv",
-                "StructuresToFix.csv"),
-        
-        HTMLPAGES("push_publish_integrity_html_pages_conflicts",
-                "HtmlPagesToCheck.csv",
-                "HtmlPagesToFix.csv"),
-        
-        CONTENTPAGES("push_publish_integrity_content_pages_conflicts",
-                        "ContentPagesToCheck.csv",
-                        "ContentPagesToFix.csv");
-
-        private String label;
-        private String dataToCheckCSVName;
-        private String dataToFixCSVName;
-
-
-        IntegrityType(String label,String dataToCheckCSVName,String dataToFixCSVName) {
-            this.label = label;
-            this.dataToCheckCSVName = dataToCheckCSVName;
-            this.dataToFixCSVName = dataToFixCSVName;
-        }
-
-        public String getLabel() {
-            return label;
-        }
-
-        public String getDataToCheckCSVName() {
-            return dataToCheckCSVName;
-        }
-
-        public String getDataToFixCSVName() {
-            return dataToFixCSVName;
-        }
-
     }
 
     public static final String INTEGRITY_DATA_TO_CHECK_ZIP_FILE_NAME = "DataToCheck.zip";
@@ -356,33 +314,18 @@ public class IntegrityResource extends WebResource {
 
                                 // set session variable
                                 // call IntegrityChecker
-
-                                Boolean foldersConflicts = false;
-                                Boolean structuresConflicts = false;
-                                Boolean schemesConflicts = false;
-                                Boolean htmlPagesConflicts = false;
+                                boolean conflictPresent = false;
 
                                 IntegrityUtil integrityUtil = new IntegrityUtil();
                                 try {
                                 	HibernateUtil.startTransaction();
-                                	integrityUtil.discardConflicts(endpointId, IntegrityType.FOLDERS);
-                                    integrityUtil.discardConflicts(endpointId, IntegrityType.STRUCTURES);
-                                    integrityUtil.discardConflicts(endpointId, IntegrityType.SCHEMES);
-                                    integrityUtil.discardConflicts(endpointId, IntegrityType.HTMLPAGES);
+                                	integrityUtil.completeDiscardConflicts(endpointId);
                                     HibernateUtil.commitTransaction();
                                     
                                     HibernateUtil.startTransaction();
-
-                                    foldersConflicts = integrityUtil.checkFoldersIntegrity(endpointId);
-                                    structuresConflicts = integrityUtil.checkStructuresIntegrity(endpointId);
-                                    schemesConflicts = integrityUtil.checkWorkflowSchemesIntegrity(endpointId);
-                                    htmlPagesConflicts = integrityUtil.checkHtmlPagesIntegrity(endpointId);
-
+                                    conflictPresent = integrityUtil.completeCheckIntegrity(endpointId);
                                     HibernateUtil.commitTransaction();
-
-
                                 } catch(Exception e) {
-
                                     try {
                                         HibernateUtil.rollbackTransaction();
                                     } catch (DotHibernateException e1) {
@@ -410,7 +353,11 @@ public class IntegrityResource extends WebResource {
                                     }
                                 }
 
-                                if ( !foldersConflicts && !structuresConflicts && !schemesConflicts && !htmlPagesConflicts) {
+//                                if ( !foldersConflicts && !structuresConflicts && !schemesConflicts && !htmlPagesConflicts) {
+                                if(conflictPresent) {
+                                    //Setting the process status
+                                    setStatus( session, endpointId, ProcessStatus.FINISHED, null );
+                                } else {
                                     String noConflictMessage;
                                     try {
                                         noConflictMessage = LanguageUtil.get( loggedUser.getLocale(), "push_publish_integrity_conflicts_not_found" );
@@ -419,12 +366,10 @@ public class IntegrityResource extends WebResource {
                                     }
                                     //Setting the process status
                                     setStatus( session, endpointId, ProcessStatus.NO_CONFLICTS, noConflictMessage );
-                                } else {
-                                    //Setting the process status
-                                    setStatus( session, endpointId, ProcessStatus.FINISHED, null );
                                 }
 
                             } else if ( response.getStatus() == HttpStatus.SC_PROCESSING ) {
+
                                 continue;
                             } else if ( response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
                                 processing = false;
@@ -772,22 +717,10 @@ public class IntegrityResource extends WebResource {
 
                 JSONArray columns = new JSONArray();
 
-                switch (integrityType) {
-                    case STRUCTURES:
-                        columns.add("velocity_name");
-                        break;
-                    case FOLDERS:
-                        columns.add("folder");
-                        break;
-                    case SCHEMES:
-                        columns.add("name");
-                        break;
-                    case HTMLPAGES:
-                        columns.add("html_page");
-                        break;
-                }
+                // Add first display column label
+                columns.add(integrityType.getFirstDisplayColumnLabel());
 
-                if(integrityType==IntegrityType.HTMLPAGES) {
+                if(integrityType==IntegrityType.HTMLPAGES || integrityType==IntegrityType.FILEASSETS) {
                     columns.add("local_working_inode");
                     columns.add("remote_working_inode");
                     columns.add("local_live_inode");
@@ -802,7 +735,7 @@ public class IntegrityResource extends WebResource {
 
                 if(!results.isEmpty()) {
                     // the columns names are the keys in the results
-                    isThereAnyConflict = isThereAnyConflict || true;
+                    isThereAnyConflict = true;
 
                     JSONArray values = new JSONArray();
                     for (Map<String, Object> result : results) {

@@ -308,7 +308,8 @@ public class Folder extends Inode implements Serializable, Permissionable, Treea
 				return false;
 			if(!this.title.equals(((FolderForm) o).getTitle()))
 				return false;
-			if(!this.filesMasks.equals(((FolderForm) o).getFilesMasks()))
+			if((this.filesMasks == null && ((FolderForm) o).getFilesMasks() != null && ((FolderForm)o).getFilesMasks() != "")
+	                    || (this.filesMasks != null && !this.filesMasks.equals(((FolderForm) o).getFilesMasks())))	
 				return false;				
 			if(!this.showOnMenu == ((FolderForm) o).isShowOnMenu())
 				return false;

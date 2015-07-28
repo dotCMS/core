@@ -35,7 +35,7 @@ public class FieldsCache {
 			Logger.debug(FieldsCache.class, "Cache Entry not found", e);
 		}
         if (fields == null) {
-            Structure st = StructureCache.getStructureByInode(inode);
+            Structure st = CacheLocator.getContentTypeCache().getStructureByInode(inode);
             fields = st.getFields();
             if(fields.size()>0)
                 addFields(st, fields);
@@ -79,7 +79,7 @@ public class FieldsCache {
         			Logger.debug(FieldsCache.class,"Cache Entry not found", e);
                 }
         		if(fields ==null){
-		            Structure st = StructureCache.getStructureByVelocityVarName(velocityVarName);
+		            Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(velocityVarName);
 		            fields = FieldFactory.getFieldsByStructure(st.getInode());
 		            if(fields.size()>0)
 		                addFields(st, fields);
@@ -124,13 +124,13 @@ public class FieldsCache {
         cache.remove(getPrimaryGroup() + inode, getPrimaryGroup());
         cache.remove(getPrimaryGroup() + st.getVelocityVarName(), getPrimaryGroup());
         cache.remove(getPrimaryGroup() + st.getVelocityVarName(), getPrimaryGroup());
-        StructureCache.clearURLMasterPattern();
+        CacheLocator.getContentTypeCache().clearURLMasterPattern();
     }
 
 	public static void clearCache(){
 		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
 	    cache.flushGroup(getPrimaryGroup());
-	    StructureCache.clearURLMasterPattern();
+	    CacheLocator.getContentTypeCache().clearURLMasterPattern();
 	}
     
 	public static String[] getGroups() {

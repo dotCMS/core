@@ -32,7 +32,10 @@ import com.dotcms.repackage.org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.*;
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.WritableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -649,6 +652,33 @@ public class FileUtil {
 		}
 		return finalVal;
 	}
+	
+    /**
+     * Method to do a fast copy from a readable byte channel to a writable byte
+     * channel using java NIO.
+     * 
+     * @param src
+     *            Reading from
+     * @param dest
+     *            Writing to
+     * @throws IOException
+     */
+    public static void fastCopyUsingNio(final ReadableByteChannel src, final WritableByteChannel dest)
+            throws IOException {
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(5 * 1024);
+
+        while (src.read(buffer) != -1) {
+            buffer.flip();
+            dest.write(buffer);
+            buffer.compact();
+        }
+
+        buffer.flip();
+
+        while (buffer.hasRemaining()) {
+            dest.write(buffer);
+        }
+    }
 
 	/**
 	  * Recursively walk a directory tree and return a List of all

@@ -9,11 +9,10 @@ import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -71,7 +70,7 @@ public class ContentletAjaxTest {
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
 
-		Structure structure = StructureCache.getStructureByVelocityVarName("webPageContent");
+		Structure structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
 		Contentlet contentlet1 = new Contentlet();
 		contentlet1.setStructureInode(structure.getInode());
 		contentlet1.setHost(host.getIdentifier());
