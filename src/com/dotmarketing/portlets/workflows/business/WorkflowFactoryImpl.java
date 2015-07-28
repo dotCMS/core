@@ -83,7 +83,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		row.put("clazz", row.get("clazz"));
 
-		row.put("myOrder", row.get("my_order"));
+		row.put("order", row.get("my_order"));
 		row.put("actionId", row.get("action_id"));
 		BeanUtils.copyProperties(actionClass, row);
 		return actionClass;

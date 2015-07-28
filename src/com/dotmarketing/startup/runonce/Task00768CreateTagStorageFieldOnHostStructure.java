@@ -3,8 +3,8 @@ package com.dotmarketing.startup.runonce;
 import java.util.List;
 
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -118,7 +118,7 @@ public class Task00768CreateTagStorageFieldOnHostStructure implements StartupTas
 			FieldFactory.saveField(field);
 
 			FieldsCache.removeFields(structure);
-			StructureCache.removeStructure(structure);
+			CacheLocator.getContentTypeCache().remove(structure);
 			StructureServices.removeStructureFile(structure);
 			StructureFactory.saveStructure(structure);
 			

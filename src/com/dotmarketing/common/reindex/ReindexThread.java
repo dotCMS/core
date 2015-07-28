@@ -1,16 +1,16 @@
 package com.dotmarketing.common.reindex;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
+import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.repackage.org.elasticsearch.action.ActionListener;
+import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkItemResponse;
 import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
 import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkResponse;
 import com.dotcms.repackage.org.elasticsearch.client.Client;
@@ -28,6 +28,9 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 
 public class ReindexThread extends Thread {
 
@@ -42,6 +45,8 @@ public class ReindexThread extends Thread {
 	private boolean work = false;
 	private int sleep = 100;
 	private int delay = 7500;
+	private int delayOnError = 500;
+	private int failedAttemptsCount = 0;
 	private boolean reindexSleepDuringIndex = false;
 	private int reindexSleepDuringIndexTime = 0;
 
@@ -54,6 +59,77 @@ public class ReindexThread extends Thread {
 	    synchronized(remoteDelQ) {
 	        remoteDelQ.addAll(records);
 	    }
+	}
+
+	/**
+	 * Counts the failed attempts when indexing and handles error notifications
+	 */
+	private void addIndexingFailedAttempt () {
+
+		synchronized (remoteQ) {
+
+			failedAttemptsCount += 1;
+
+			if ( failedAttemptsCount == 10 ) {//We just want to create one notification error
+
+				try {
+					//System user
+					User systemUser = APILocator.getUserAPI().getSystemUser();
+
+					//Error message
+					String languageKey = "notification.reindexing.error";
+					String errorMessage = LanguageUtil.get(systemUser, languageKey);
+					//If the indexing is running when the system starts for the first time the language resources could be not available
+					if ( errorMessage.equals(languageKey) ) {
+						errorMessage = "An error has occurred during the indexing process, please check your logs and retry later";
+					}
+
+					//Add a notification to the back-end
+					APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());
+				} catch ( DotDataException | LanguageException e ) {
+					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
+				}
+			} else {
+
+				/*
+				Check every TEN failures if we still have records on the dist_reindex_journal as a fall back
+				in case the user wants to finish the re-index process clearing that table or if we have some endless
+				running thread because the server didn't notice the reindex was cancelled.
+				 */
+				if ( failedAttemptsCount % 10 == 0 ) {
+
+					Connection conn = null;
+
+					try {
+
+						conn = DbConnectionFactory.getDataSource().getConnection();
+						conn.setAutoCommit(false);
+						long foundRecords = jAPI.recordsLeftToIndexForServer(conn);
+						if ( foundRecords == 0 ) {
+							stopFullReindexation();
+							stopThread();
+						}
+
+					} catch ( Exception e ) {
+						Logger.error(this, "Error verifying pending records for indexing", e);
+						try {
+							stopFullReindexation();
+							stopThread();
+						} catch ( DotDataException e1 ) {
+							Logger.error(this, "Error forcing the index thread to stop", e);
+						}
+					} finally {
+						if ( conn != null ) {
+							try {
+								conn.close();
+							} catch ( SQLException e ) {
+								Logger.error(this, "Error closing connection", e);
+							}
+						}
+					}
+				}
+			}
+		}
 	}
 	
 	private void startProcessing(int sleep, int delay) {
@@ -105,8 +181,25 @@ public class ReindexThread extends Thread {
                                     Thread.sleep(2000L);
                                     
     					            indexAPI.fullReindexSwitchover(conn);
-    					            
-    					            // wait a bit while elasticsearch flushes it state
+
+									try {
+
+										//Reset the failed attempts count
+										failedAttemptsCount = 0;
+
+										//System user
+										User systemUser = APILocator.getUserAPI().getSystemUser();
+
+										//Success message
+										String successMessage = LanguageUtil.get(systemUser.getLocale(), "notification.reindexing.success");
+
+										//Add a notification to the back-end
+										APILocator.getNotificationAPI().generateNotification(successMessage, NotificationLevel.INFO, systemUser.getUserId());
+									} catch ( DotDataException | LanguageException e ) {
+										Logger.error(this, "Error creating a system notification for a successfully indexing process.", e);
+									}
+
+									// wait a bit while elasticsearch flushes it state
     	                            Thread.sleep(2000L);
     					        }
     					    }
@@ -137,7 +230,10 @@ public class ReindexThread extends Thread {
 				                if(toDelete.size()>=200) {
 				                    toDelete=remoteDelQ.subList(0, 200);
 				                }
-				                jAPI.deleteReindexEntryForServer(toDelete);
+
+								//Delete from the dist_reindex_journal the records that were successfully indexed.
+								jAPI.deleteReindexEntryForServer(toDelete);
+
 				                if(toDelete.size()==remoteDelQ.size()) {
 				                    remoteDelQ.clear();
 				                } else {
@@ -155,35 +251,194 @@ public class ReindexThread extends Thread {
 					    wait=false;
 					    Client client=new ESClient().getClient();
 						BulkRequestBuilder bulk=client.prepareBulk();
-						final ArrayList<IndexJournal<String>> recordsToDelete=new ArrayList<IndexJournal<String>>();
+						final ArrayList<IndexJournal<String>> recordsToDelete= new ArrayList<>();
 						while(!remoteQ.isEmpty()) {
-    					    IndexJournal<String> idx = remoteQ.removeFirst();
-					        writeDocumentToIndex(bulk,idx);
-    				        recordsToDelete.add(idx);
-    				        if(reindexSleepDuringIndex){
-	    				        try {
-	    							Thread.sleep(delay);
-	    						} catch (InterruptedException e) {
-	    							Logger.error(this, e.getMessage(), e);
-	    						}
-    				        }
+
+							IndexJournal<String> idx = remoteQ.removeFirst();
+
+							try {
+								writeDocumentToIndex(bulk, idx);
+							} catch ( Exception e ) {
+
+								Logger.error(this, "Unable to index record with id [" + idx.getIdentToIndex() + "]", e);
+
+								//Counts the failed attempts when indexing and handles error notifications
+								addIndexingFailedAttempt();
+
+								try {
+									/*
+									Reset to null the server id of the failed records in the reindex journal table
+									in order to make them available again for the reindex process.
+									 */
+									List<IndexJournal<String>> failedRecords = new ArrayList<>();
+									failedRecords.add(idx);
+									jAPI.resetServerForReindexEntry(failedRecords);
+								} catch ( DotDataException dataException ) {
+									Logger.error(this, "Error adding back failed records to reindex queue", dataException);
+								}
+
+								try {
+									Thread.sleep(delayOnError);
+								} catch ( InterruptedException ie ) {
+									Logger.error(this, ie.getMessage(), ie);
+								}
+
+								/*
+								This continue will avoid to remove this failed record from the index journal table so
+								can be grab it again in another iteration.
+								 */
+								continue;
+							}
+
+							recordsToDelete.add(idx);
+
+							//If the REINDEX_SLEEP_DURING_INDEX was set
+							if ( reindexSleepDuringIndex ) {
+								try {
+									int sleepTime = getReindexSleepDuringIndexTime();
+									Thread.sleep(sleepTime);
+								} catch ( InterruptedException e ) {
+									Logger.error(this, e.getMessage(), e);
+								}
+							}
+
 						}
+
 						HibernateUtil.closeSession();
 				        if(bulk.numberOfActions()>0) {
 				            bulk.execute(new ActionListener<BulkResponse>() {
-				                void deleteRecords() {
-				                    addRecordsToDelete(recordsToDelete);
-				                }
-                                public void onResponse(BulkResponse resp) {
-                                    deleteRecords();
-                                    if(resp.hasFailures())
-                                        Logger.warn(this, resp.buildFailureMessage());
-                                }
-                                public void onFailure(Throwable ex) {
-                                    Logger.error(ReindexThread.class,"Error indexing records", ex);
-                                    deleteRecords();
-                                }
-                            });
+
+								void handleRecords (List<IndexJournal<String>> failedRecords) {
+
+									//List of records to delete from the reindex journal table
+									addRecordsToDelete(recordsToDelete);
+
+									try {
+										if ( failedRecords != null && !failedRecords.isEmpty() ) {
+											/*
+											Reset to null the server id of the failed records in the reindex journal table
+											in order to make them available again for the reindex process.
+											 */
+											jAPI.resetServerForReindexEntry(failedRecords);
+										}
+									} catch ( DotDataException e ) {
+										Logger.error(this, "Error adding back failed records to reindex queue", e);
+									}
+								}
+
+								public void onResponse ( BulkResponse resp ) {
+
+									//Handle failures on the re-index process if any
+									List<IndexJournal<String>> failedRecords = failureHandler(resp);
+
+									//Handle the processed records
+									handleRecords(failedRecords);
+								}
+
+								public void onFailure ( Throwable ex ) {
+
+									Logger.error(ReindexThread.class, "Indexing process failed", ex);
+
+									//Handle the processed records
+									handleRecords(null);
+
+									//Reset the failed attempts count as the onFailure will finish the indexing process
+									failedAttemptsCount = 0;
+								}
+
+								/**
+								 * Checks if we had failures when indexing, on failure we will retry the indexing process of the records that failed,
+								 * the process WON'T continue with failed records.
+								 *
+								 * @param resp
+								 */
+								private List<IndexJournal<String>> failureHandler ( BulkResponse resp ) {
+
+									//List of records that failed and will be added to the queue for more attempts
+									List<IndexJournal<String>> failedRecords = new ArrayList<>();
+
+									//Verify if we have failures to handle
+									if ( resp.hasFailures() && isWorking() ) {
+
+										Logger.error(this, "Error indexing content [" + resp.buildFailureMessage() + "]");
+
+										//Counts the failed attempts when indexing and handles error notifications
+										addIndexingFailedAttempt();
+
+										//Search for the failed items
+										for ( BulkItemResponse itemResponse : resp.getItems() ) {
+
+											//Check if the indexing process failed for this item
+											if ( itemResponse.isFailed() ) {
+
+												//Get the data of the failed record
+												String initialId = itemResponse.getId();
+												//Remove the language from the id in order to get just the inode/identifier
+												int languageIndex = initialId.lastIndexOf("_");
+												String failedId = initialId;
+												if ( languageIndex != -1 ) {
+													failedId = initialId.substring(0, languageIndex);
+												}
+
+												//Search the failed record into the list of records to delete
+												Iterator<IndexJournal<String>> toDeleteIterator = recordsToDelete.iterator();
+												while ( toDeleteIterator.hasNext() ) {
+
+													IndexJournal<String> indexToDelete = toDeleteIterator.next();
+													if ( indexToDelete.getInodeToIndex().equals(failedId) || indexToDelete.getIdentToIndex().equals(failedId) ) {
+
+														//Add it to the list of records that failed and needs to be added back to the reindex queue
+														if ( !exist(failedRecords, indexToDelete) ) {
+															failedRecords.add(indexToDelete);
+														}
+
+														/*
+														Remove the record from the list of contents to remove from the index journal table
+														as it indexing process failed and we want a re-try with those records.
+														 */
+														toDeleteIterator.remove();
+													}
+												}
+											}
+										}
+
+										if ( !failedRecords.isEmpty() ) {
+
+											Logger.error(this, "Reindex thread will try to re-index [" + String.valueOf(failedRecords.size()) + "] failed records.");
+
+											try {
+												Thread.sleep(delayOnError);
+											} catch ( InterruptedException e ) {
+												Logger.error(this, e.getMessage(), e);
+											}
+										}
+									}
+
+									return failedRecords;
+								}
+
+								/**
+								 * Checks if a given record already exist on a given list
+								 *
+								 * @param toRestore
+								 * @param toCompare
+								 * @return
+								 */
+								private boolean exist ( List<IndexJournal<String>> toRestore, IndexJournal<String> toCompare ) {
+
+									boolean exist = false;
+									for ( IndexJournal<String> current : toRestore ) {
+
+										if ( current.getId() == toCompare.getId() ) {
+											exist = true;
+											break;
+										}
+									}
+
+									return exist;
+								}
+
+							});
 				        }
 				        else if(recordsToDelete.size()>0) {
 				            addRecordsToDelete(recordsToDelete);
@@ -286,14 +541,13 @@ public class ReindexThread extends Thread {
 	/**
 	 * Tells the thread to start processing. Starts the thread
 	 */
-	public synchronized static void startThread(int sleep, int delay) {
-		Logger.info(ReindexThread.class,
-				"ContentIndexationThread ordered to start processing");
+	public synchronized static void startThread ( int sleep, int delay ) {
 
-		if (instance == null) {
-			instance = new ReindexThread();
-			instance.start();
-		}
+		Logger.info(ReindexThread.class, "ContentIndexationThread ordered to start processing");
+
+		//Creates and starts a thread
+		createThread();
+
 		instance.startProcessing(sleep, delay);
 	}
 
@@ -420,7 +674,7 @@ public class ReindexThread extends Thread {
 	public boolean isWorking() {
 		return work;
 	}
-	
+
 	public void stopFullReindexation() throws DotDataException {
 	    HibernateUtil.startTransaction();
 	    pause();

@@ -6,7 +6,6 @@ import java.util.Date;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -16,7 +15,6 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UUIDGenerator;
 
 /**
  * This task creates the new default file type column in the folder table
@@ -108,7 +106,7 @@ public class Task00810FilesAsContentChanges implements StartupTask {
 		upgradeFieldTableWithModDate();
 		
 		APILocator.getFileAssetAPI().createBaseFileAssetFields(fileAsset);
-		StructureCache.addStructure(fileAsset);
+		CacheLocator.getContentTypeCache().add(fileAsset);
 		return fileAsset;
 	}
 	

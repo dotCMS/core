@@ -182,7 +182,7 @@ public interface HTMLPageAssetAPI {
     
     HTMLPageAsset migrateLegacyPage(HTMLPage legacyPage, User user, boolean respectFrontEndPermissions)  throws Exception;
     
-    public void migrateAllLegacyPages(User user, boolean respectFrontEndPermissions) throws Exception;
+    public boolean migrateAllLegacyPages(User user, boolean respectFrontEndPermissions) throws Exception;
         
     String getHostDefaultPageType(Host host);
 

@@ -9,13 +9,12 @@ import java.io.FileWriter;
 import java.math.BigInteger;
 import java.util.List;
 
+import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.data.ObjectList;
 import com.dotcms.repackage.org.junit.Test;
-
-import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.cache.StructureCache;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -59,7 +58,7 @@ public class DotCMSCMISTest extends CMISBaseTest {
         
         // testing if we can query a fresh contentlet
         
-        Structure st=StructureCache.getStructureByVelocityVarName("fileAsset");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset");
         Contentlet cont=new Contentlet();
         cont.setStructureInode(st.getInode());
         cont.setHost(dhost.getIdentifier());

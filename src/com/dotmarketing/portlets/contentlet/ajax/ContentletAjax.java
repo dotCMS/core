@@ -18,9 +18,9 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.enterprise.FormAJAXProxy;
+import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -32,7 +32,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PublishStateException;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -531,8 +530,8 @@ public class ContentletAjax {
 		List<Object> headers = new ArrayList<Object>();
 		Map<String, Field> fieldsMapping = new HashMap<String, Field>();
 		Structure st = null;
-		if(!"_all".equals(structureInode)){
-		    st = StructureCache.getStructureByInode(structureInode);
+		if(!Structure.STRUCTURE_TYPE_ALL.equals(structureInode)){
+		    st = CacheLocator.getContentTypeCache().getStructureByInode(structureInode);
 		    WorkflowScheme wfScheme = APILocator.getWorkflowAPI().findSchemeForStruct(st);
 		    lastSearchMap.put("structure", st);
 		    luceneQuery.append("+contentType:" + st.getVelocityVarName() + " ");
@@ -540,7 +539,7 @@ public class ContentletAjax {
 		else {
 		    for(int i=0;i<fields.size();i++){
 		        String x = fields.get(i);
-		        if("_all".equals(x)){
+		        if(Structure.STRUCTURE_TYPE_ALL.equals(x)){
 		            String next =  fields.get(i+1);
 		            next = next.replaceAll("\\*", "");
 		            while(next.contains("  ")){
@@ -886,6 +885,7 @@ public class ContentletAjax {
 			}
 
 			Map<String, String> searchResult = new HashMap<String, String>();
+			Structure s = CacheLocator.getContentTypeCache().getStructureByInode(con.getStructureInode());
 
 			for (String fieldContentlet : fieldsMapping.keySet()) {
 				String fieldValue = null;
@@ -912,8 +912,13 @@ public class ContentletAjax {
 					if (UtilMethods.isSet(fieldValue))
 						fieldValue = fieldValue.replaceAll("# #",",").replaceAll("#","");
 				}
-                //We need to replace the URL value from the contentlet with the one in the Identifier.
-                if(("url").equals(fieldContentlet) && UtilMethods.isSet(ident) && UtilMethods.isSet(ident.getAssetName())){
+
+                //We need to replace the URL value from the contentlet with the one in the Identifier only for pages.
+                if(("url").equals(fieldContentlet) &&
+                		s != null &&
+                		s.getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE &&
+                		UtilMethods.isSet(ident) &&
+                		UtilMethods.isSet(ident.getAssetName())){
                     fieldValue = ident.getAssetName();
                 }
 
@@ -923,7 +928,7 @@ public class ContentletAjax {
 			searchResult.put("Identifier",con.getIdentifier());
 			searchResult.put("identifier", con.getIdentifier());
 			searchResult.put("__title__", conAPI.getName(con, currentUser, false));
-			Structure s = StructureCache.getStructureByInode(con.getStructureInode());
+			
 			String spanClass = (s.getStructureType() ==1)
 			        ? "contentIcon"
 			                :  (s.getStructureType() ==2)
@@ -2093,7 +2098,7 @@ public class ContentletAjax {
 
 		Contentlet newCont = new Contentlet();
 
-		Structure fileAssetStr = StructureCache.getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
+		Structure fileAssetStr = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FileAssetAPI.DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME);
 
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 

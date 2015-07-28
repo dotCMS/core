@@ -10,21 +10,29 @@ import java.util.List;
 import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 
+import com.dotcms.TestBase;
+import com.dotcms.repackage.com.ibm.icu.util.Calendar;
+import com.dotcms.repackage.com.sun.jersey.api.client.Client;
+import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
+import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
+import com.dotcms.repackage.com.sun.jersey.core.util.Base64;
+import com.dotcms.repackage.com.sun.jersey.multipart.BodyPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.MultiPart;
+import com.dotcms.repackage.com.sun.jersey.multipart.file.StreamDataBodyPart;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
-
-import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -48,17 +56,7 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.UUIDGenerator;
-import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
-import com.dotcms.repackage.com.sun.jersey.core.util.Base64;
-import com.dotcms.repackage.com.sun.jersey.multipart.BodyPart;
-import com.dotcms.repackage.com.sun.jersey.multipart.MultiPart;
-import com.dotcms.repackage.com.sun.jersey.multipart.file.StreamDataBodyPart;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 
 public class ContentResourceTest extends TestBase {
     Client client;
@@ -77,7 +75,7 @@ public class ContentResourceTest extends TestBase {
     
     @Test
     public void singlePUT() throws Exception {
-        Structure st=StructureCache.getStructureByVelocityVarName("webPageContent");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("webPageContent");
         Host demo=APILocator.getHostAPI().findByName("demo.dotcms.com", APILocator.getUserAPI().getSystemUser(), false);
         User sysuser=APILocator.getUserAPI().getSystemUser();
         String demoId=demo.getIdentifier();
@@ -218,7 +216,7 @@ public class ContentResourceTest extends TestBase {
                                                         .put("title", "newfile"+salt+".txt")
                                                         .put("fileName", "newfile"+salt+".txt")
                                                         .put("languageId", "1")
-                                                        .put("stInode", StructureCache.getStructureByVelocityVarName("FileAsset").getInode())
+                                                        .put("stInode", CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset").getInode())
                                                         .toString(), MediaType.APPLICATION_JSON_TYPE))
                                              .bodyPart(new StreamDataBodyPart(
                                                          "newfile"+salt+".txt", 
@@ -240,7 +238,7 @@ public class ContentResourceTest extends TestBase {
     @Test
     public void categoryAndTagFields() throws Exception {
         User sysuser=APILocator.getUserAPI().getSystemUser();
-        Structure st=StructureCache.getStructureByVelocityVarName("Blog");
+        Structure st=CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Blog");
         String salt=Long.toString(System.currentTimeMillis());
         ClientResponse response=contRes.path("/justsave/1").type(MediaType.APPLICATION_JSON_TYPE)
                 .header(authheader, authvalue).put(ClientResponse.class,
@@ -497,7 +495,7 @@ public class ContentResourceTest extends TestBase {
         Contentlet filea=new Contentlet();
         filea.setFolder(ff.getInode());
         filea.setHost(demo.getIdentifier());
-        filea.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        filea.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset").getInode());
         filea.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
         filea.setStringProperty(FileAssetAPI.TITLE_FIELD, "filefile.txt");
         filea.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "filefile.txt");
@@ -508,7 +506,7 @@ public class ContentResourceTest extends TestBase {
         Contentlet imga=new Contentlet();
         imga.setFolder(ff.getInode());
         imga.setHost(demo.getIdentifier());
-        imga.setStructureInode(StructureCache.getStructureByVelocityVarName("fileAsset").getInode());
+        imga.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("fileAsset").getInode());
         imga.setStringProperty(FileAssetAPI.HOST_FOLDER_FIELD, ff.getInode());
         imga.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, "imgimg.jpg");
         imga.setStringProperty(FileAssetAPI.TITLE_FIELD, "imgimg.jpg");

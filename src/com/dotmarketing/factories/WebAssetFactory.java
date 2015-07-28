@@ -75,7 +75,7 @@ public class WebAssetFactory {
 		PREVIOUS,
 		NEXT
 	};
-	
+
 	public enum AssetType {
 		HTMLPAGE("HTMLPAGE"),
 		FILE_ASSET("FILE_ASSET"),
@@ -83,17 +83,17 @@ public class WebAssetFactory {
 		TEMPLATE("TEMPLATE"),
 		LINK("LINK")
 		;
-		
+
 		private String value;
-		
+
 		AssetType (String value) {
 			this.value = value;
 		}
-		
+
 		public String toString () {
 			return value;
 		}
-			
+
 		public static AssetType getObject (String value) {
 			AssetType[] ojs = AssetType.values();
 			for (AssetType oj : ojs) {
@@ -103,15 +103,15 @@ public class WebAssetFactory {
 			return null;
 		}
 	}
-	
-	
+
+
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 	private static HTMLPageAPI htmlPageAPI = APILocator.getHTMLPageAPI();
 	private static FileAPI fileAPI = APILocator.getFileAPI();
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static MenuLinkAPI linksAPI = APILocator.getMenuLinkAPI();
-	
+
 	private static final int ITERATION_LIMIT = 500;
 	private final static int MAX_LIMIT_COUNT = 100;
 
@@ -123,7 +123,7 @@ public class WebAssetFactory {
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
@@ -146,17 +146,17 @@ public class WebAssetFactory {
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Host host) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		// create new identifier, without URI
 		Identifier id = APILocator.getIdentifierAPI().createNew(webasset, host);
 		id.setOwner(userId);
 		APILocator.getIdentifierAPI().save(id);
-		
+
 		webasset.setIdentifier(id.getId());
 		HibernateUtil.saveOrUpdate(webasset);
 
@@ -175,7 +175,7 @@ public class WebAssetFactory {
 
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		APILocator.getVersionableAPI().setWorking(webasset);
 
 		// adds the webasset as child of the folder or parent inode
@@ -188,7 +188,7 @@ public class WebAssetFactory {
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Identifier identifier) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 
@@ -199,7 +199,7 @@ public class WebAssetFactory {
 
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		APILocator.getVersionableAPI().setWorking(webasset);
 		// adds asset to the existing identifier
 		//identifier.addChild(webasset);
@@ -208,7 +208,7 @@ public class WebAssetFactory {
 
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier,
 			boolean working) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
@@ -224,14 +224,14 @@ public class WebAssetFactory {
 		webasset.setIdentifier(identifier.getInode());
 
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		if(working)
 		    APILocator.getVersionableAPI().setWorking(webasset);
 	}
-	
+
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, Identifier identifier,
 			boolean working, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
@@ -247,7 +247,7 @@ public class WebAssetFactory {
 		webasset.setIdentifier(identifier.getInode());
 
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		if(working)
 	        APILocator.getVersionableAPI().setWorking(webasset);
 		if(isLive)
@@ -255,7 +255,7 @@ public class WebAssetFactory {
 	}
 
 	public static void createAsset(WebAsset webasset, String userId, Identifier identifier, boolean working) throws DotDataException, DotStateException, DotSecurityException {
-		
+
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
 		// persists the webasset
@@ -267,12 +267,12 @@ public class WebAssetFactory {
 		webasset.setIdentifier(identifier.getInode());
 
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
 		if(working)
 	        APILocator.getVersionableAPI().setWorking(webasset);
 
 	}
-    
+
 	public static void createAsset(WebAsset webasset, String userId, Inode parent, boolean isLive) throws DotDataException, DotStateException, DotSecurityException {
 		webasset.setModDate(new java.util.Date());
 		webasset.setModUser(userId);
@@ -289,15 +289,15 @@ public class WebAssetFactory {
 		// set the identifier on the inode for future reference.
 		// and for when we get rid of identifiers all together
 		APILocator.getIdentifierAPI().save(id);
-		
+
 		webasset.setIdentifier(id.getId());
 		HibernateUtil.saveOrUpdate(webasset);
-		
+
         APILocator.getVersionableAPI().setWorking(webasset);
         if(isLive)
             APILocator.getVersionableAPI().setLive(webasset);
 	}
-	
+
 	public static WebAsset getParentWebAsset(Inode i) {
 		HibernateUtil dh = new HibernateUtil(WebAsset.class);
 		WebAsset webAsset = null ;
@@ -323,17 +323,17 @@ public class WebAssetFactory {
 	}
 
 	public static boolean editAsset(WebAsset currWebAsset, String userId) throws DotStateException, DotDataException, DotSecurityException {
-	    
+
 		if (!currWebAsset.isLocked()) {
 			// sets lock true
 		    User proxyuser=new User(userId);
 			APILocator.getVersionableAPI().setLocked(currWebAsset, true, proxyuser);
 			return true;
 		}
-		
+
 		// if it is locked then we compare lockedBy with userId from the user that wants to edit the asset
 		String currUserId=APILocator.getVersionableAPI().getLockedBy(currWebAsset);
-		
+
 		return currUserId.equals(userId);
 	}
 
@@ -348,7 +348,7 @@ public class WebAssetFactory {
 		}
 		APILocator.getVersionableAPI().setWorking(versionWebAsset);
 		return versionWebAsset;
-		
+
 	}
 
 	/**
@@ -361,8 +361,8 @@ public class WebAssetFactory {
 	 *            This asset's identifier will be used to find the "working"
 	 *            asset.
 	 * @return This method returns the OLD live asset or null. Wierd.
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
 	 */
 	@SuppressWarnings("unchecked")
 	public static WebAsset publishAsset(WebAsset currWebAsset) throws DotStateException, DotDataException, DotSecurityException {
@@ -376,7 +376,7 @@ public class WebAssetFactory {
 
 		// gets the current working asset
 		workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		if (!InodeUtils.isSet(workingwebasset.getInode())) {
 			workingwebasset = currWebAsset;
 		}
@@ -406,18 +406,18 @@ public class WebAssetFactory {
 		}*/
 		// sets new working to live
         APILocator.getVersionableAPI().setLive(workingwebasset);
-        
+
 		workingwebasset.setModDate(new java.util.Date());
-		
+
 		// persists the webasset
 		HibernateUtil.saveOrUpdate(workingwebasset);
-		
+
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
 
-		
+
 		return livewebasset;
 	}
-	
+
 	/**
 	 * This method is odd. You send it an asset, but that may not be the one
 	 * that get published. The method will get the identifer of the asset you
@@ -427,11 +427,11 @@ public class WebAssetFactory {
 	 * @param currWebAsset
 	 *            This asset's identifier will be used to find the "working"
 	 *            asset.
-	 * @param user           
+	 * @param user
 	 * @return This method returns the OLD live asset or null. Wierd.
-	 * @throws DotSecurityException 
-	 * @throws DotDataException 
-	 * @throws DotStateException 
+	 * @throws DotSecurityException
+	 * @throws DotDataException
+	 * @throws DotStateException
 	 */
 	@SuppressWarnings("unchecked")
 	public static WebAsset publishAsset(WebAsset currWebAsset, User user) throws WebAssetException, DotStateException, DotDataException, DotSecurityException {
@@ -439,8 +439,8 @@ public class WebAssetFactory {
 		return publishAsset(currWebAsset,user,true);
 
 	}
-	
-	
+
+
 	/**
 	 * This method is odd. You send it an asset, but that may not be the one
 	 * that get published. The method will get the identifer of the asset you
@@ -450,12 +450,12 @@ public class WebAssetFactory {
 	 * @param currWebAsset
 	 *            This asset's identifier will be used to find the "working"
 	 *            asset.
-	 * @param user  
-	 * @param isNewVersion - if passed false then the webasset's mod user and mod date will NOT be altered. @see {@link ContentletAPI#checkinWithoutVersioning(Contentlet, java.util.Map, List, List, User, boolean)}checkinWithoutVersioning.                 
+	 * @param user
+	 * @param isNewVersion - if passed false then the webasset's mod user and mod date will NOT be altered. @see {@link ContentletAPI#checkinWithoutVersioning(Contentlet, java.util.Map, List, List, User, boolean)}checkinWithoutVersioning.
 	 * @return This method returns the OLD live asset or null. Wierd.
-	 * @throws DotDataException 
-	 * @throws DotStateException 
-	 * @throws DotSecurityException 
+	 * @throws DotDataException
+	 * @throws DotStateException
+	 * @throws DotSecurityException
 	 */
 	@SuppressWarnings("unchecked")
 	public static WebAsset publishAsset(WebAsset currWebAsset, User user, boolean isNewVersion) throws WebAssetException, DotStateException, DotDataException, DotSecurityException {
@@ -469,7 +469,7 @@ public class WebAssetFactory {
 
 		// gets the current working asset
 		workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		if (!InodeUtils.isSet(workingwebasset.getInode())) {
 			workingwebasset = currWebAsset;
 		}
@@ -481,13 +481,13 @@ public class WebAssetFactory {
 		try {
 			// gets the current working asset
 			livewebasset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		} catch (Exception e) {
 		}
 		if(workingwebasset.isDeleted()){
 			throw new WebAssetException("You may not publish deleted assets!!!");
 		}
-		
+
 		boolean localTransaction = false;
 		try {
 			localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
@@ -497,7 +497,7 @@ public class WebAssetFactory {
 				   workingwebasset.setModDate(new java.util.Date());
 				   workingwebasset.setModUser(user.getUserId());
 				}
-	
+
 				// persists the webasset
 				HibernateUtil.saveOrUpdate(workingwebasset);
 		}catch(Exception e){
@@ -512,7 +512,7 @@ public class WebAssetFactory {
 			}
 		}
 		Logger.debug(WebAssetFactory.class, "HibernateUtil.saveOrUpdate(workingwebasset)");
-		
+
 		return livewebasset;
 	}
 
@@ -527,18 +527,18 @@ public class WebAssetFactory {
 
 		// gets the current working asset
 		livewebasset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		return livewebasset;
 	}
 
 	public static boolean archiveAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 		return archiveAsset(currWebAsset, (String)null);
 	}
-	
+
 	public static boolean archiveAsset(WebAsset currWebAsset, User user) throws DotDataException, DotStateException, DotSecurityException {
 		return archiveAsset(currWebAsset, user.getUserId());
-	}	
-	
+	}
+
 	public static boolean archiveAsset(WebAsset currWebAsset, String userId) throws DotDataException, DotStateException, DotSecurityException {
 
 		// gets the identifier for this asset
@@ -548,10 +548,10 @@ public class WebAssetFactory {
 
 			// gets the current working asset
 			workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 
 		WebAsset live = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		//Delete the HTML Page from the Structure Detail
 		if(currWebAsset instanceof HTMLPage)
 		{
@@ -564,15 +564,15 @@ public class WebAssetFactory {
 					StructureFactory.saveStructure(structure);
 				}
 			}
-		}		
-        
+		}
+
 		else if (currWebAsset instanceof File)
 		{
          RefreshMenus.deleteMenu(currWebAsset);
          Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
          CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		}
-		
+
 		User userMod = null;
 		try{
 			userMod = APILocator.getUserAPI().loadUserById(workingwebasset.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
@@ -588,14 +588,14 @@ public class WebAssetFactory {
 		if(userMod!=null){
 		   workingwebasset.setModUser(userMod.getUserId());
 		}
-		
-		
+
+
 		if (userId == null || !workingwebasset.isLocked() || workingwebasset.getModUser().equals(userId)) {
 
 			if (live!=null && InodeUtils.isSet(live.getInode())) {
 		        APILocator.getVersionableAPI().removeLive(live.getIdentifier());
 			}
-			
+
 			//Reset the mod date
 			workingwebasset.setModDate(new Date ());
 			// sets deleted to true
@@ -619,7 +619,7 @@ public class WebAssetFactory {
 
 	}
 
-	public static void unLockAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {		
+	public static void unLockAsset(WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 		// unlocks current asset
 		APILocator.getVersionableAPI().setLocked(currWebAsset, false, null);
 	}
@@ -636,7 +636,7 @@ public class WebAssetFactory {
 	public static boolean unPublishAsset(WebAsset currWebAsset, String userId, Inode parent) throws DotStateException, DotDataException, DotSecurityException {
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		HostAPI hostAPI = APILocator.getHostAPI();
-		
+
 		// gets the identifier for this asset
 		Identifier identifier = APILocator.getIdentifierAPI().find(currWebAsset);
 
@@ -646,7 +646,7 @@ public class WebAssetFactory {
 		workingwebasset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
 
 		WebAsset livewebasset = null;
-		
+
 		User modUser = null;
 		try{
 			modUser = APILocator.getUserAPI().loadUserById(workingwebasset.getModUser(),APILocator.getUserAPI().getSystemUser(),false);
@@ -656,7 +656,7 @@ public class WebAssetFactory {
 					modUser = APILocator.getUserAPI().getSystemUser();
 				} catch (DotDataException e) {
 					Logger.error(WebAssetFactory.class,e.getMessage(),e);
-				} 
+				}
 			}
 		}
 		if(modUser!=null){
@@ -667,14 +667,14 @@ public class WebAssetFactory {
 			try {
 				// gets the current working asset
 				livewebasset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(identifier, APILocator.getUserAPI().getSystemUser(), false);
-				
+
 		        APILocator.getVersionableAPI().removeLive(identifier.getId());
 				livewebasset.setModDate(new java.util.Date());
 				livewebasset.setModUser(userId);
 				HibernateUtil.saveOrUpdate(livewebasset);
 
 				if ((livewebasset.getInode() != workingwebasset.getInode())) {
-			        APILocator.getVersionableAPI().setLocked(workingwebasset, false, null);				
+			        APILocator.getVersionableAPI().setLocked(workingwebasset, false, null);
 					// removes from folder or parent inode
 					if(parent != null)
 						parent.deleteChild(workingwebasset);
@@ -682,7 +682,7 @@ public class WebAssetFactory {
 
 				if (currWebAsset instanceof HTMLPage) {
 					//remove page from the live directory
-					PageServices.unpublishPageFile((HTMLPage)currWebAsset);
+					PageServices.invalidateLive((HTMLPage)currWebAsset);
 
 					//Refreshing the menues
 					//RefreshMenus.deleteMenus();
@@ -698,7 +698,7 @@ public class WebAssetFactory {
 				} else if( currWebAsset instanceof Link ) {
 					// Removes static menues to provoke all possible dependencies be generated.
 					if( parent instanceof Folder ) {
-						Folder parentFolder = (Folder)parent;			
+						Folder parentFolder = (Folder)parent;
 						Host host = hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), false);
 						RefreshMenus.deleteMenu(host);
 						CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
@@ -707,8 +707,8 @@ public class WebAssetFactory {
 				    RefreshMenus.deleteMenu(currWebAsset);
 				    CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 			    }
-				
-				
+
+
 
 				LiveCache.removeAssetFromCache(currWebAsset);
 
@@ -775,10 +775,10 @@ public class WebAssetFactory {
 			throw new Exception("Web asset Identifier not found!");
 		}
 		WebAsset currWebAsset = null;
-		
+
 		// gets the current working asset
 		currWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(id, APILocator.getUserAPI().getSystemUser(), false);
-		
+
 		//http://jira.dotmarketing.net/browse/DOTCMS-5927
 		if (!InodeUtils.isSet(currWebAsset.getInode())) {
 			currWebAsset = (WebAsset) APILocator.getVersionableAPI().findLiveVersion(id, APILocator.getUserAPI().getSystemUser(), false);
@@ -790,7 +790,7 @@ public class WebAssetFactory {
 		}
 
 		 APILocator.getVersionableAPI().setWorking(newWebAsset);
-		 
+
 		return newWebAsset;
 	}
 
@@ -848,14 +848,14 @@ public class WebAssetFactory {
 			int internalLimit = ITERATION_LIMIT;
 			int internalOffset = 0;
 			boolean done = false;
-			
-			while(!done) { 
+
+			while(!done) {
 				Logger.debug(WebAssetFactory.class, sb.toString());
 				dh.setSQLQuery(sb.toString());
 
 				dh.setFirstResult(internalOffset);
 				dh.setMaxResults(internalLimit);
-				
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				List<WebAsset> list = dh.list();
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
@@ -863,19 +863,19 @@ public class WebAssetFactory {
 					done = true;
 				else if(list.size() < internalLimit)
 					done = true;
-				
+
 				internalOffset += internalLimit;
 			}
 
 			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<WebAsset>(); 
+				toReturn = new ArrayList<WebAsset>();
 			} else if(limit > 0) {
 				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
 				toReturn = toReturn.subList(offset, toIndex);
 			} else if (offset > 0) {
 				toReturn = toReturn.subList(offset, toReturn.size());
 			}
-			
+
 			return toReturn;
 
 		} catch (Exception e) {
@@ -894,7 +894,7 @@ public class WebAssetFactory {
 		try {
 
 			if(offset < 0) offset = 0;
-			
+
 			String tableName = ((Inode) c.newInstance()).getType();
 			String versionTable=UtilMethods.getVersionInfoTableName(tableName);
 
@@ -916,14 +916,14 @@ public class WebAssetFactory {
 			int internalLimit = 500;
 			int internalOffset = 0;
 			boolean done = false;
-			
-			while(!done) { 
+
+			while(!done) {
 				Logger.debug(WebAssetFactory.class, sb.toString());
 				dh.setSQLQuery(sb.toString());
 
 				dh.setFirstResult(internalOffset);
 				dh.setMaxResults(internalLimit);
-				
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				List<WebAsset> list = dh.list();
 				toReturn.addAll(permAPI.filterCollection(list, PermissionAPI.PERMISSION_READ, false, user));
@@ -931,19 +931,19 @@ public class WebAssetFactory {
 					done = true;
 				else if(list.size() < internalLimit)
 					done = true;
-				
+
 				internalOffset += internalLimit;
 			}
 
 			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<WebAsset>(); 
+				toReturn = new ArrayList<WebAsset>();
 			} else if(limit > 0) {
 				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
 				toReturn = toReturn.subList(offset, toIndex);
 			} else if (offset > 0) {
 				toReturn = toReturn.subList(offset, toReturn.size());
 			}
-			
+
 			return toReturn;
 
 		} catch (Exception e) {
@@ -973,7 +973,7 @@ public class WebAssetFactory {
 			}
 			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
 			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue() +" and deleted = " + sqlDel);
-			
+
 			if(UtilMethods.isSet(condition))
 				sb.append(" and (" + condition + ") ");
 
@@ -1000,10 +1000,10 @@ public class WebAssetFactory {
 			int firstResult = 0;
 			dh.setFirstResult(firstResult);
 			dh.setMaxResults(MAX_LIMIT_COUNT);
-			
+
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
 			List<WebAsset> list = dh.list();
-			
+
 			int pos = 0;
 			boolean offsetFound = false;
 			while (UtilMethods.isSet(fromAssetId) && !offsetFound && (list != null) && (0 < list.size())) {
@@ -1016,21 +1016,21 @@ public class WebAssetFactory {
 						++pos;
 					}
 				}
-				
+
 				if (!offsetFound) {
 					firstResult += MAX_LIMIT_COUNT;
 					dh.setFirstResult(firstResult);
 					list = dh.list();
 				}
 			}
-			
+
 			if ((pos == 0) && !offsetFound) {
 				--pos;
 				offsetFound = true;
 			}
-			
+
 			List<WebAsset> result = new ArrayList<WebAsset>(limit);
-			
+
 			WebAsset webAsset;
 			while (offsetFound && (result.size() < limit) && (list != null) && (0 < list.size())) {
 				if (direction.equals(Direction.NEXT)) {
@@ -1042,7 +1042,7 @@ public class WebAssetFactory {
 						}
 						++pos;
 					}
-					
+
 					if (result.size() < limit) {
 						firstResult += MAX_LIMIT_COUNT;
 						dh.setFirstResult(firstResult);
@@ -1058,7 +1058,7 @@ public class WebAssetFactory {
 						}
 						--pos;
 					}
-					
+
 					if (result.size() < limit) {
 						firstResult -= MAX_LIMIT_COUNT;
 						if (-1 < firstResult) {
@@ -1074,12 +1074,12 @@ public class WebAssetFactory {
 					}
 				}
 			}
-			
+
 			if (direction.equals(Direction.PREVIOUS))
 				Collections.reverse(result);
-			
+
 			return result;
-			
+
 		} catch (Exception e) {
 			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
 		}
@@ -1104,10 +1104,10 @@ public class WebAssetFactory {
 			if (InodeUtils.isSet(parent)) {
 				sb.append(", tree tree ");
 			}
-			
+
 			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
 			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue()  +"  and deleted = " + sqlDel);
-			
+
 			if(UtilMethods.isSet(condition)) {
 				sb.append(" and (" + condition + " )");
 			}
@@ -1126,10 +1126,10 @@ public class WebAssetFactory {
 			int firstResult = 0;
 			dh.setFirstResult(firstResult);
 			dh.setMaxResults(MAX_LIMIT_COUNT);
-			
+
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
 			List<WebAsset> list = dh.list();
-			
+
 			int pos = 0;
 			boolean offsetFound = false;
 			while (UtilMethods.isSet(fromAssetId) && !offsetFound && (list != null) && (0 < list.size())) {
@@ -1142,21 +1142,21 @@ public class WebAssetFactory {
 						++pos;
 					}
 				}
-				
+
 				if (!offsetFound) {
 					firstResult += MAX_LIMIT_COUNT;
 					dh.setFirstResult(firstResult);
 					list = dh.list();
 				}
 			}
-			
+
 			if ((pos == 0) && !offsetFound) {
 				--pos;
 				offsetFound = true;
 			}
-			
+
 			List<WebAsset> result = new ArrayList<WebAsset>(limit);
-			
+
 			WebAsset webAsset;
 			while (offsetFound && (result.size() < limit) && (list != null) && (0 < list.size())) {
 				if (direction.equals(Direction.NEXT)) {
@@ -1168,7 +1168,7 @@ public class WebAssetFactory {
 						}
 						++pos;
 					}
-					
+
 					if (result.size() < limit) {
 						firstResult += MAX_LIMIT_COUNT;
 						dh.setFirstResult(firstResult);
@@ -1184,7 +1184,7 @@ public class WebAssetFactory {
 						}
 						--pos;
 					}
-					
+
 					if (result.size() < limit) {
 						firstResult -= MAX_LIMIT_COUNT;
 						if (-1 < firstResult) {
@@ -1200,10 +1200,10 @@ public class WebAssetFactory {
 					}
 				}
 			}
-			
+
 			if (direction.equals(Direction.PREVIOUS))
 				Collections.reverse(result);
-			
+
 			return result;
 		} catch (Exception e) {
 			Logger.warn(WebAssetFactory.class, "getAssetsPerConditionWithPermission failed:" + e, e);
@@ -1226,7 +1226,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1240,7 +1240,7 @@ public class WebAssetFactory {
 					 continue;
 					}
 				}
-			
+
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
@@ -1275,7 +1275,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-		
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1308,7 +1308,7 @@ public class WebAssetFactory {
 		}
 		return entries;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(String hostId, Role[] roles,
 			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
@@ -1323,7 +1323,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1337,7 +1337,7 @@ public class WebAssetFactory {
 					 continue;
 					}
 				}
-			
+
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
@@ -1358,7 +1358,7 @@ public class WebAssetFactory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param hostId
 	 * @param roles
 	 * @param condition
@@ -1369,9 +1369,9 @@ public class WebAssetFactory {
 	 * @param tableName
 	 * @param parent
 	 * @return
-	 * @throws DotDataException 
-	 * @throws DotIdentifierStateException 
-	 * @throws DotSecurityException 
+	 * @throws DotDataException
+	 * @throws DotIdentifierStateException
+	 * @throws DotSecurityException
 	 * @deprecated
 	 */
 	@SuppressWarnings("unchecked")
@@ -1389,7 +1389,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1403,7 +1403,7 @@ public class WebAssetFactory {
 					 continue;
 					}
 				}
-			
+
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
@@ -1439,7 +1439,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1453,7 +1453,7 @@ public class WebAssetFactory {
 					 continue;
 					}
 				}
-			
+
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
@@ -1488,7 +1488,7 @@ public class WebAssetFactory {
 			Folder folderParent = null;
 			if (!WebAssetFactory.isAbstractAsset(asset))
 				folderParent = (Folder) APILocator.getFolderAPI().findParentFolder(asset,user,false);
-			
+
 			Host host=null;
 			try {
 				host = APILocator.getHostAPI().findParentHost(asset, user, false);
@@ -1502,7 +1502,7 @@ public class WebAssetFactory {
 					 continue;
 					}
 				}
-			
+
 			java.util.List<Integer> permissions = new ArrayList<Integer>();
 			try {
 				permissions = permissionAPI.getPermissionIdsFromRoles(asset, roles, user);
@@ -1553,7 +1553,7 @@ public class WebAssetFactory {
 		}
 		Identifier ident=APILocator.getIdentifierAPI().find(asset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
-		
+
 		HibernateUtil.saveOrUpdate(asset);
 	}
 
@@ -1564,7 +1564,7 @@ public class WebAssetFactory {
 	 */
 	public static boolean deleteAsset(WebAsset currWebAsset) throws Exception
 	{
-		return deleteAsset(currWebAsset, null);	
+		return deleteAsset(currWebAsset, null);
 	}
 
 	/**
@@ -1582,7 +1582,7 @@ public class WebAssetFactory {
 		}
 		//Checking permissions
 		int permission = PERMISSION_WRITE;
-		
+
 		if(permissionAPI.doesUserHavePermission(currWebAsset, permission, user))
 		{
 			//### Delete the IDENTIFIER entry from cache ###
@@ -1605,7 +1605,7 @@ public class WebAssetFactory {
 			}
 			else if(currWebAsset instanceof HTMLPage)
 			{
-				PageServices.unpublishPageFile((HTMLPage)currWebAsset);
+				PageServices.invalidateLive((HTMLPage)currWebAsset);
 				RefreshMenus.deleteMenu(currWebAsset);
 				CacheLocator.getNavToolCache().removeNavByPath(identifier.getHostId(), identifier.getParentPath());
 				webAssetList = APILocator.getVersionableAPI().findAllVersions(identifier, APILocator.getUserAPI().getSystemUser(), false);
@@ -1671,7 +1671,7 @@ public class WebAssetFactory {
 		}
 		return returnValue;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static int getAssetsCountPerConditionWithPermissionWithParent(String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
 		DotConnect dc = new DotConnect();
@@ -1688,10 +1688,10 @@ public class WebAssetFactory {
 			if (InodeUtils.isSet(parent)) {
 				sb.append(", tree tree ");
 			}
-			
+
 			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
 			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue()  +"  and deleted = " + sqlDel);
-			
+
 			if(UtilMethods.isSet(condition)) {
 				sb.append(" and (" + condition + " )");
 			}
@@ -1705,33 +1705,33 @@ public class WebAssetFactory {
 			Logger.debug(WebAssetFactory.class, sb.toString());
 
 			dc.setSQL(sb.toString());
-			
+
 			int startRow = offset;
-			
+
 			if (limit != 0) {
 				dc.setStartRow(startRow);
 				dc.setMaxRows(limit);
 			}
-			
+
 			List<Map<String, String>> list = dc.loadResults();
 			List<Permissionable> assetsList = new ArrayList<Permissionable>();
 			WebAsset permissionable;
-			
+
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			
+
 			while ((assetsList.size() < limit) && (list != null) && (0 < list.size())) {
 				for (Map<String, String> map: list) {
 					permissionable = (WebAsset) c.newInstance();
 					permissionable.setIdentifier(map.get("identifier"));
 					permissionable.setInode(map.get("inode"));
-					
+
 					if (permAPI.doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ, user, false)) {
 						assetsList.add(permissionable);
 						if (limit < assetsList.size())
 							break;
 					}
 				}
-				
+
 				if (assetsList.size() < limit) {
 					dc = new DotConnect();
 					dc.setSQL(sb.toString());
@@ -1741,7 +1741,7 @@ public class WebAssetFactory {
 					list = dc.loadResults();
 				}
 			}
-			
+
 			return assetsList.size();
 		} catch (Exception e) {
 			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermissionWithParent failed:" + e, e);
@@ -1749,7 +1749,7 @@ public class WebAssetFactory {
 
 		return 0;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static int getAssetsCountPerConditionWithPermission(String condition, Class c, int limit, int offset, String parent, User user) {
 		DotConnect dc = new DotConnect();
@@ -1758,7 +1758,7 @@ public class WebAssetFactory {
 		try {
 
 			if(offset < 0) offset = 0;
-			
+
 			String tableName = ((Inode) c.newInstance()).getType();
 
 			sb.append("select " + tableName + ".identifier as identifier, " + tableName + "_1_.inode as inode from " + tableName + ", inode " + tableName + "_1_ where "
@@ -1782,44 +1782,44 @@ public class WebAssetFactory {
 			int internalLimit = 500;
 			int internalOffset = 0;
 			boolean done = false;
-			
-			while(!done) { 
+
+			while(!done) {
 				Logger.debug(WebAssetFactory.class, sb.toString());
 				dc.setSQL(sb.toString());
 
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				
+
 				List<Map<String, String>> list = dc.loadResults();
 				List<Permissionable> assetsList = new ArrayList<Permissionable>();
 				WebAsset permissionable;
-				
+
 				for (Map<String, String> map: list) {
 					permissionable = (WebAsset) c.newInstance();
 					permissionable.setIdentifier(map.get("identifier"));
 					permissionable.setInode(map.get("inode"));
 					assetsList.add(permissionable);
 				}
-				
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(assetsList, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
 				else if(assetsList.size() < internalLimit)
 					done = true;
-				
+
 				internalOffset += internalLimit;
 			}
 
 			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<Permissionable>(); 
+				toReturn = new ArrayList<Permissionable>();
 			} else if(limit > 0) {
 				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
 				toReturn = toReturn.subList(offset, toIndex);
 			} else if (offset > 0) {
 				toReturn = toReturn.subList(offset, toReturn.size());
 			}
-			
+
 			return toReturn.size();
 
 		} catch (Exception e) {
@@ -1828,7 +1828,7 @@ public class WebAssetFactory {
 
 		return 0;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static int getAssetsCountPerConditionWithPermissionWithParent(String hostId, String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
 		DotConnect dc = new DotConnect();
@@ -1847,7 +1847,7 @@ public class WebAssetFactory {
 			}
 			String sqlDel = showDeleted ? com.dotmarketing.db.DbConnectionFactory.getDBTrue() : com.dotmarketing.db.DbConnectionFactory.getDBFalse();
 			sb.append(" where working = " +  com.dotmarketing.db.DbConnectionFactory.getDBTrue() +" and deleted = " + sqlDel);
-			
+
 			if(UtilMethods.isSet(condition))
 				sb.append(" and (" + condition + ") ");
 
@@ -1870,33 +1870,33 @@ public class WebAssetFactory {
 			Logger.debug(WebAssetFactory.class, sb.toString());
 
 			dc.setSQL(sb.toString());
-			
+
 			int startRow = offset;
-			
+
 			if (limit != 0) {
 				dc.setStartRow(startRow);
 				dc.setMaxRows(limit);
 			}
-			
+
 			List<Map<String, String>> list = dc.loadResults();
 			List<Permissionable> assetsList = new ArrayList<Permissionable>();
 			WebAsset permissionable;
-			
+
 			PermissionAPI permAPI = APILocator.getPermissionAPI();
-			
+
 			while ((assetsList.size() < limit) && (list != null) && (0 < list.size())) {
 				for (Map<String, String> map: list) {
 					permissionable = (WebAsset) c.newInstance();
 					permissionable.setIdentifier(map.get("identifier"));
 					permissionable.setInode(map.get("inode"));
-					
+
 					if (permAPI.doesUserHavePermission(permissionable, PermissionAPI.PERMISSION_READ, user, false)) {
 						assetsList.add(permissionable);
 						if (limit < assetsList.size())
 							break;
 					}
 				}
-				
+
 				if (assetsList.size() < limit) {
 					dc = new DotConnect();
 					dc.setSQL(sb.toString());
@@ -1906,16 +1906,16 @@ public class WebAssetFactory {
 					list = dc.loadResults();
 				}
 			}
-			
+
 			return assetsList.size();
-			
+
 		} catch (Exception e) {
 			Logger.warn(WebAssetFactory.class, "getAssetsCountPerConditionWithPermissionWithParent failed:" + e, e);
 		}
 
 		return 0;
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public static int getAssetsCountPerConditionWithPermission(String hostId, String condition, Class c, int limit, int offset, String parent, User user) {
 		DotConnect dc = new DotConnect();
@@ -1955,51 +1955,51 @@ public class WebAssetFactory {
 				sb.append(") and " + tableName + ".inode in (select tree.child from identifier, tree where host_inode = '"
 						+ hostId + "' and tree.parent = identifier.id)");
 			}
-			
+
 			Logger.debug(WebAssetFactory.class, sb.toString());
 
 			List<Permissionable> toReturn = new ArrayList<Permissionable>();
 			int internalLimit = ITERATION_LIMIT;
 			int internalOffset = 0;
 			boolean done = false;
-			
-			while(!done) { 
+
+			while(!done) {
 				Logger.debug(WebAssetFactory.class, sb.toString());
 				dc.setSQL(sb.toString());
 
 				dc.setStartRow(internalOffset);
 				dc.setMaxRows(internalLimit);
-				
+
 				List<Map<String, String>> list = dc.loadResults();
 				List<Permissionable> assetsList = new ArrayList<Permissionable>();
 				WebAsset permissionable;
-				
+
 				for (Map<String, String> map: list) {
 					permissionable = (WebAsset) c.newInstance();
 					permissionable.setIdentifier(map.get("identifier"));
 					permissionable.setInode(map.get("inode"));
 					assetsList.add(permissionable);
 				}
-				
+
 				PermissionAPI permAPI = APILocator.getPermissionAPI();
 				toReturn.addAll(permAPI.filterCollection(assetsList, PermissionAPI.PERMISSION_READ, false, user));
 				if(limit > 0 && toReturn.size() >= limit + offset)
 					done = true;
 				else if(assetsList.size() < internalLimit)
 					done = true;
-				
+
 				internalOffset += internalLimit;
 			}
 
 			if(offset > toReturn.size()) {
-				toReturn = new ArrayList<Permissionable>(); 
+				toReturn = new ArrayList<Permissionable>();
 			} else if(limit > 0) {
 				int toIndex = offset + limit > toReturn.size()?toReturn.size():offset + limit;
 				toReturn = toReturn.subList(offset, toIndex);
 			} else if (offset > 0) {
 				toReturn = toReturn.subList(offset, toReturn.size());
 			}
-			
+
 			return toReturn.size();
 
 		} catch (Exception e) {
@@ -2013,21 +2013,21 @@ public class WebAssetFactory {
 			boolean includeArchived, int limit, int offset, String orderBy, String tableName, String parent, String query, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		PaginatedArrayList<PermissionAsset>  paginatedEntries = new PaginatedArrayList<PermissionAsset> ();
 		long totalCount = 0;
-	
+
 		AssetType type = AssetType.getObject(tableName.toUpperCase());
 		java.util.List<? extends Permissionable> elements = null;
 		Map<String,Object> params = new HashMap<String, Object>();
-		if(UtilMethods.isSet(query)){				
+		if(UtilMethods.isSet(query)){
 			params.put("title", query.toLowerCase().replace("\'","\\\'"));
 		}
 		try {
 		if (type.equals(AssetType.HTMLPAGE)){
-			if(UtilMethods.isSet(query)){				
+			if(UtilMethods.isSet(query)){
 				params.put("pageUrl", query.toLowerCase());
 			}
 			elements = htmlPageAPI.findIHtmlPages(user, includeArchived, params, hostId, null, null, parent, offset, limit, orderBy);
 		}else if (type.equals(AssetType.FILE_ASSET)){
-			if(UtilMethods.isSet(query)){				
+			if(UtilMethods.isSet(query)){
 				params.put("fileName", query.toLowerCase().replace("\'","\\\'"));
 			}
 			elements = fileAPI.findFiles(user, includeArchived, params, hostId, null,null, parent, offset, limit, orderBy);
@@ -2049,8 +2049,8 @@ public class WebAssetFactory {
 		} catch (DotDataException e) {
 			Logger.warn(WebAssetFactory.class, "getAssetsAndPermissions failed:" + e, e);
 		}
-		
-		
+
+
 	    totalCount =  elements!=null?((PaginatedArrayList)elements).getTotalResults():0;
 	    java.util.Iterator<? extends Permissionable> elementsIter = elements.iterator();
 
@@ -2130,9 +2130,9 @@ public class WebAssetFactory {
 			permAsset.setPermissions(permissions);
 			paginatedEntries.add(permAsset);
 		}
-		
+
 		paginatedEntries.setTotalResults(totalCount);
-		
+
 		return paginatedEntries;
 	}
 

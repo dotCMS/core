@@ -9,10 +9,10 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -20,7 +20,6 @@ import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.viewtools.StructuresWebAPI;
 import com.liferay.portal.model.User;
 
 /**
@@ -127,7 +126,7 @@ public class SubmitContentWebAPI implements ViewTool{
 	 * @return String
 	 */
 	public String getFieldVariableValue(String structureVarName, String fieldVarName, String fieldVariable){
-		Structure st = StructureCache.getStructureByVelocityVarName(structureVarName);
+		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(structureVarName);
 		Field field = findFieldByVarName(st, fieldVarName);				
 		return getFieldVariableValue(field,fieldVariable);
 	}

@@ -3,7 +3,11 @@ package com.dotmarketing.beans;
 import java.util.HashMap;
 import java.util.List;
 
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONException;
+import com.dotmarketing.util.json.JSONObject;
 
 public class GoogleMiniSearch {
 	private String searchTime;
@@ -124,5 +128,36 @@ public class GoogleMiniSearch {
 
 	public void setContextTitle(String contextTitle) {
 		this.contextTitle = contextTitle;
+	}
+	
+	public String getPreviousResultPageRelativeURL(){
+		return previousResultPageRelativeURL;
+	}
+	
+	public String getNextResultPageRelativeURL(){
+		return nextResultPageRelativeURL;
+	}
+	
+	public JSONArray toJSON() {
+		
+        JSONObject googleCSEResults = new JSONObject();
+        JSONArray json = new JSONArray();
+        
+		try {
+			googleCSEResults.put("searchTime", searchTime);
+			googleCSEResults.put("query", query);
+			googleCSEResults.put("fromIndex", fromIndex);
+			googleCSEResults.put("toIndex", toIndex);
+			googleCSEResults.put("estimatedTotal", estimatedTotal);
+			googleCSEResults.put("previousResultPageRelativeURL", previousResultPageRelativeURL);
+			googleCSEResults.put("nextResultPageRelativeURL", nextResultPageRelativeURL);
+		} catch (JSONException e){
+			Logger.error(this.getClass(), "unable to create JSONObject");
+			Logger.debug(this.getClass(), "unable to create JSONObject", e);
+		}
+		
+		json.put(googleCSEResults);
+
+		return json;
 	}
 }

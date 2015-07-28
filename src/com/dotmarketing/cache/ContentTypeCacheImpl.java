@@ -14,30 +14,43 @@ import com.dotmarketing.util.UtilMethods;
 /**
  * @author David
  */
-public class StructureCache {
+public class ContentTypeCacheImpl extends ContentTypeCache {
 
 	public static final String MASTER_STRUCTURE = "dotMaster_Structure";
 	
-    public static void addStructure(Structure st){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    private DotCacheAdministrator cache;
+    private final String primaryGroup = "StructureCache";
+    private final String containerStructureGroup = "ContainerStructureCache";
+    // region's name for the cache
+    private final String[] groups = { primaryGroup, containerStructureGroup };
+
+    public ContentTypeCacheImpl() {
+        cache = CacheLocator.getCacheAdministrator();
+    }
+
+    public String getContainerStructureGroup() {
+        return containerStructureGroup;
+    }
+	
+    public void add(Structure st){
 		// we use the identifier uri for our mappings.
 		String inode = st.getInode();
         String structureName = st.getName();
         String velocityVarName = st.getVelocityVarName();
-		cache.put(getPrimaryGroup() + inode, st, getPrimaryGroup());
-        cache.put(getPrimaryGroup() + structureName, st, getPrimaryGroup());
-        cache.put(getPrimaryGroup() + velocityVarName, st, getPrimaryGroup());
+		cache.put(primaryGroup + inode, st, primaryGroup);
+        cache.put(primaryGroup + structureName, st, primaryGroup);
+        cache.put(primaryGroup + velocityVarName, st, primaryGroup);
         if (UtilMethods.isSet(velocityVarName))
-        	cache.put(getPrimaryGroup() + velocityVarName.toLowerCase(), st, getPrimaryGroup());
+        	cache.put(primaryGroup + velocityVarName.toLowerCase(), st, primaryGroup);
 	}
     
     /*public static Structure getStructureByInode(long inode){
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
     	Structure st = null;
     	try{
-    		st = (Structure) cache.get(getPrimaryGroup() + inode,getPrimaryGroup());
+    		st = (Structure) cache.get(primaryGroup + inode,primaryGroup);
     	}catch (DotCacheException e) {
-			Logger.debug(StructureCache.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByInode(inode);
@@ -46,18 +59,17 @@ public class StructureCache {
         return st;
 	}*/
 
-    public static Structure getStructureByInode(String inode) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    public Structure getStructureByInode(String inode) {
     	Structure st = null;
     	try{
-    		st = (Structure) cache.get(getPrimaryGroup() + inode,getPrimaryGroup());
+    		st = (Structure) cache.get(primaryGroup + inode,primaryGroup);
     	}catch (DotCacheException e) {
-			Logger.debug(StructureCache.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByInode(inode);
             if(st != null && UtilMethods.isSet(st.getInode()))
-            	addStructure(st);
+            	add(st);
             else
             	return null;
         }
@@ -81,17 +93,16 @@ public class StructureCache {
      * @deprecated getting the structure by its name might not be safe, since the 
      * structure name can be changed by the user, use getStructureByVelocityVarName
      */
-    public static Structure getStructureByName(String name) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+     public Structure getStructureByName(String name) {
         Structure st = null;
         try{
-        	st = (Structure) cache.get(getPrimaryGroup() + name,getPrimaryGroup());
+        	st = (Structure) cache.get(primaryGroup + name,primaryGroup);
         }catch (DotCacheException e) {
-			Logger.debug(StructureCache.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByType(name);
-            addStructure(st);
+            add(st);
         }
         return st;
     }
@@ -108,17 +119,16 @@ public class StructureCache {
      * @return The structure from cache
      * 
      */
-    public static Structure getStructureByVelocityVarName(String variableName) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    public Structure getStructureByVelocityVarName(String variableName) {
         Structure st = null;
         try{
-        	st = (Structure) cache.get(getPrimaryGroup() + variableName,getPrimaryGroup());
+        	st = (Structure) cache.get(primaryGroup + variableName,primaryGroup);
         }catch (DotCacheException e) {
-			Logger.debug(StructureCache.class,"Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class,"Cache Entry not found", e);
     	}
         if (st == null) {
             st = StructureFactory.getStructureByVelocityVarName(variableName);
-            addStructure(st);
+            add(st);
         }
         return st;
     }
@@ -131,7 +141,7 @@ public class StructureCache {
      * @deprecated getting the structure by its name might not be safe, since the 
      * structure name can be changed by the user, use getStructureByVelocityVarName
      */
-    public static Structure getStructureByType(String type){
+    public Structure getStructureByType(String type){
         return getStructureByName(type);
     }
 
@@ -163,72 +173,59 @@ public class StructureCache {
         return getStructureByInode(inode) != null;
     }*/
     
-    public static void removeStructure(Structure st) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    public void remove(Structure st) {
         String inode = st.getInode();
         String structureName = st.getName();
-        cache.remove(getPrimaryGroup() + inode,getPrimaryGroup());
-        cache.remove(getPrimaryGroup() + structureName,getPrimaryGroup());
+        cache.remove(primaryGroup + inode,primaryGroup);
+        cache.remove(primaryGroup + structureName,primaryGroup);
         clearURLMasterPattern();
     }
 
-    public static String getURLMasterPattern() throws DotCacheException {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-		return (String)cache.get(getPrimaryGroup() + MASTER_STRUCTURE,getPrimaryGroup());
+    public String getURLMasterPattern() throws DotCacheException {
+		return (String)cache.get(primaryGroup + MASTER_STRUCTURE,primaryGroup);
     }
     
-    public static void clearURLMasterPattern(){
-    	synchronized (StructureCache.MASTER_STRUCTURE) {
-    		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        	cache.remove(getPrimaryGroup() + MASTER_STRUCTURE,getPrimaryGroup());	
+    public void clearURLMasterPattern(){
+    	synchronized (ContentTypeCacheImpl.MASTER_STRUCTURE) {
+        	cache.remove(primaryGroup + MASTER_STRUCTURE,primaryGroup);	
 		}
     }
     
-    public static void addURLMasterPattern(String pattern){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(getPrimaryGroup() + MASTER_STRUCTURE, pattern, getPrimaryGroup());
+    public void addURLMasterPattern(String pattern){
+        cache.put(primaryGroup + MASTER_STRUCTURE, pattern, primaryGroup);
 	}
     
-    public static void addContainerStructures(List<ContainerStructure> containerStructures, String containerIdentifier, String containerInode){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.put(getContainerStructureGroup() + containerIdentifier + containerInode, containerStructures, getContainerStructureGroup());
+    public void addContainerStructures(List<ContainerStructure> containerStructures, String containerIdentifier, String containerInode){
+        cache.put(containerStructureGroup + containerIdentifier + containerInode, containerStructures, containerStructureGroup);
 	}
     
     @SuppressWarnings("unchecked")
-	public static List<ContainerStructure> getContainerStructures(String containerIdentifier, String containerInode){
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+	public List<ContainerStructure> getContainerStructures(String containerIdentifier, String containerInode){
     	List<ContainerStructure> containerStructures = null;
     	
 		try{
-			containerStructures = (List<ContainerStructure>) cache.get(getContainerStructureGroup() + containerIdentifier + containerInode, getContainerStructureGroup());
+			containerStructures = (List<ContainerStructure>) cache.get(containerStructureGroup + containerIdentifier + containerInode, containerStructureGroup);
 			return containerStructures;
 			
 		} catch (DotCacheException e) {
-			Logger.debug(StructureCache.class, "Cache Entry not found", e);
+			Logger.debug(ContentTypeCacheImpl.class, "Cache Entry not found", e);
 			return null;
     	}
 	}
     
-    public static void removeContainerStructures(String containerIdentifier, String containerInode) {
-    	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
-        cache.remove(getContainerStructureGroup() + containerIdentifier + containerInode, getContainerStructureGroup());
+    public void removeContainerStructures(String containerIdentifier, String containerInode) {
+        cache.remove(containerStructureGroup + containerIdentifier + containerInode, containerStructureGroup);
     }
     
-    public static void clearCache(){
-		DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
+    public void clearCache(){
 	    //clear the cache
-	    cache.flushGroup(getPrimaryGroup());
+	    cache.flushGroup(primaryGroup);
 	}
-	public static String[] getGroups() {
-    	String[] groups = {getPrimaryGroup(), getContainerStructureGroup()};
+	public String[] getGroups() {
     	return groups;
     }
     
-    public static String getPrimaryGroup() {
-    	return "StructureCache";
-    }
-    
-    public static String getContainerStructureGroup() {
-    	return "ContainerStructureCache";
+    public String getPrimaryGroup() {
+    	return primaryGroup;
     }
 }

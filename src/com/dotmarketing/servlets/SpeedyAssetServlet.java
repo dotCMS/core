@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.org.apache.struts.Globals;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -24,8 +24,6 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -40,14 +38,13 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.commons.logging.LogFactory;
 
 public class SpeedyAssetServlet extends HttpServlet {
 
 	private static final long serialVersionUID = 1L;
 	private static String realPath = null;
 	private static String assetPath = "/assets";
-	
+
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
     public void init(ServletConfig config) throws ServletException {
@@ -222,10 +219,14 @@ public class SpeedyAssetServlet extends HttpServlet {
 						}else{
 							f = new File(realPath + uri);
 						}
-						if(uri == null || !f.exists() || !f.canRead()) {
-							if(uri == null){
-								Logger.warn(SpeedyAssetServlet.class, "URI is null");
-							}
+
+						if(StringUtils.isBlank(uri)) {
+						    Logger.warn(SpeedyAssetServlet.class, "URI is null");
+						    response.sendError(404);
+                            return;
+						}
+
+						if(!f.exists() || !f.canRead()) {
 							if( !f.exists()){
 								Logger.warn(SpeedyAssetServlet.class, "f does not exist : Config.CONTEXT=" +Config.CONTEXT);
 								Logger.warn(SpeedyAssetServlet.class, "f does not exist : " + f.getAbsolutePath());

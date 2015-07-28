@@ -17,7 +17,6 @@ import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 
-import com.dotcms.repackage.com.caucho.quercus.lib.db.Oracle;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;

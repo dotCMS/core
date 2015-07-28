@@ -3,7 +3,6 @@ package com.dotmarketing.business;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.cache.StructureCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
 
@@ -22,7 +21,7 @@ public class IdentifierAPITest {
         String fakeId=UUIDGenerator.generateUuid();
         Contentlet fakeCont=new Contentlet();
         fakeCont.setInode(UUIDGenerator.generateUuid());
-        fakeCont.setStructureInode(StructureCache.getStructureByVelocityVarName("Host").getInode());
+        fakeCont.setStructureInode(CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host").getInode());
         
         // if we find a fake id it should end up in 404 cache
         api.find(fakeId);
