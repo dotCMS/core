@@ -15,7 +15,7 @@ import com.dotmarketing.startup.AbstractJDBCStartupTask;
  * @since 06-10-2015
  * 
  */
-public class Task03135AddFileAssetsIntegrityResultTable extends AbstractJDBCStartupTask {
+public class Task03140AddFileAssetsIntegrityResultTable extends AbstractJDBCStartupTask {
     private final String LANGUAGE_ID_COLUMN = DbConnectionFactory.isH2()
             || DbConnectionFactory.isMySql() ? " language_id bigint " : DbConnectionFactory
             .isPostgres() ? " language_id int8 "
