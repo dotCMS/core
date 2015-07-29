@@ -39,7 +39,6 @@ class RuleEngineComponent {
     this.filterText = ""
     this.readSnapshots(this.rulesRef).catch((e) => console.log(e));
     this.rulesRef.on('child_added', (snap) => {
-      console.log("hello: ", snap)
       this.rules = this.rules.concat(snap)
     })
     this.rulesRef.on('child_removed', (snap) => {
@@ -81,7 +80,7 @@ class RuleEngineComponent {
   }
 
 
-  onChange(a, b, c) {
+  onChange(a) {
     console.log('onChange', arguments)
   }
 
@@ -95,11 +94,8 @@ class RuleEngineComponent {
     testRule.shortCircuit = false
     testRule.conditionGroups = {}
     testRule.actions = {}
-    this.rulesRef.push(testRule).then((ruleSnap) => {
-      console.log('Created rule: ', ruleSnap)
-      this.rules.push(ruleSnap)
-    }).catch((e)=> {
-      console.log("Error adding rule: ", e)
+    this.rulesRef.push(testRule).catch((e)=> {
+      console.log("Error pushing new rule: ", e)
       throw e
     })
   }
@@ -118,7 +114,7 @@ export function main() {
   initConditionlets()
   initActionlets()
   return bootstrap(RuleEngineComponent, null, [function (ex, stack) {
-    console.log('Eh!?', ex)
+    console.log("Error bootstrapping app: ", ex, stack)
   }]).catch((e) => {
     console.log("Error bootstrapping app: ", e)
     throw e;

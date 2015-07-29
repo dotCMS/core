@@ -172,7 +172,6 @@ export class EntityMeta {
           let snap = new EntitySnapshot(result.path, data)
           let childMeta = new EntityMeta(result.path);
           childMeta.latestSnapshot = snap
-          Dispatcher.notify(result.path, 'added', snap)
           return snap
         }).catch((e) => {
           log('Error creating snapshot', e)
