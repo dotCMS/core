@@ -10,11 +10,28 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from '
 import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 import {SingleValueInput, ComparisonInput} from './conditionlets/single-value-input'
-import {UsersCountryConditionlet} from './conditionlets/users-country'
-import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits'
-
 import conditionTemplate from './templates/rule-condition-component.tpl.html!text'
-
+import {UsersVisitedUrlConditionlet} from './conditionlets/users-visited-url-conditionlet'
+import {UsersIpAddressConditionlet} from './conditionlets/users-ip-address-conditionlet'
+import {UsersCityConditionlet} from './conditionlets/users-city-conditionlet'
+import {UsersTimeConditionlet} from './conditionlets/users-time-conditionlet'
+import {UsersLandingPageUrlConditionlet} from './conditionlets/users-landing-page-url-conditionlet'
+import {UsersBrowserHeaderConditionlet} from './conditionlets/users-browser-header-conditionlet'
+import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditionlet'
+import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
+import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
+import {UsersCountryConditionlet} from './conditionlets/users-country-conditionlet'
+import {MockTrueConditionlet} from './conditionlets/mock-true-conditionlet'
+import {UsersUrlParameterConditionlet} from './conditionlets/users-url-parameter-conditionlet'
+import {UsersReferringUrlConditionlet} from './conditionlets/users-referring-url-conditionlet'
+import {UsersCurrentUrlConditionlet} from './conditionlets/users-current-url-conditionlet'
+import {UsersHostConditionlet} from './conditionlets/users-host-conditionlet'
+import {UsersStateConditionlet} from './conditionlets/users-state-conditionlet'
+import {UsersSiteVisitsConditionlet} from './conditionlets/users-site-visits-conditionlet'
+import {UsersDateTimeConditionlet} from './conditionlets/users-date-time-conditionlet'
+import {UsersOperatingSystemConditionlet} from './conditionlets/users-operating-system-conditionlet'
+import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
+import {UsersBrowserConditionlet} from './conditionlets/users-browser-conditionlet'
 
 var conditionletsAry = []
 var conditionletsMap = new Map()
@@ -26,11 +43,17 @@ let initConditionlets = function () {
   conditionletsPromise = new Promise((resolve, reject) => {
     conditionletsRef.once('value', (snap) => {
       let conditionlets = snap['val']()
+      let str = [];
       let results = (Object.keys(conditionlets).map((key) => {
         conditionletsMap.set(key, conditionlets[key])
+        let dashKey = key.replace(/([A-Z])/g, function ($1) {
+          return '-' + $1.toLowerCase();
+        });
+        dashKey = dashKey.substring(1)
+        str.push("import {" + key +  "} from './conditionlets/" + dashKey + "'")
         return conditionlets[key]
       }))
-
+      console.log(str.join('\n'))
       Array.prototype.push.apply(conditionletsAry, results);
       resolve(snap);
     })
@@ -38,13 +61,41 @@ let initConditionlets = function () {
 }
 
 
+/*
+ ,
+ */
+
 @Component({
   selector: 'rule-condition',
   properties: ["conditionMeta", "index"]
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor, ConditionletDirective, SingleValueInput, ComparisonInput, UsersCountryConditionlet, UsersPageVisitsConditionlet ]
+  directives: [NgIf, NgFor, ConditionletDirective, SingleValueInput, ComparisonInput,
+    UsersCountryConditionlet,
+    UsersPageVisitsConditionlet,
+    UsersVisitedUrlConditionlet,
+    UsersIpAddressConditionlet,
+    UsersCityConditionlet,
+    UsersTimeConditionlet,
+    UsersLandingPageUrlConditionlet,
+    UsersBrowserHeaderConditionlet,
+    UsersPlatformConditionlet,
+    UsersLanguageConditionlet,
+    UsersPageVisitsConditionlet,
+    UsersCountryConditionlet,
+    MockTrueConditionlet,
+    UsersUrlParameterConditionlet,
+    UsersReferringUrlConditionlet,
+    UsersCurrentUrlConditionlet,
+    UsersHostConditionlet,
+    UsersStateConditionlet,
+    UsersSiteVisitsConditionlet,
+    UsersDateTimeConditionlet,
+    UsersOperatingSystemConditionlet,
+    UsersLogInConditionlet,
+    UsersBrowserConditionlet
+  ]
 })
 class ConditionComponent {
   index:number;

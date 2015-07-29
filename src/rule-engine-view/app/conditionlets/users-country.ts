@@ -5,7 +5,7 @@ import {Directive, LifecycleEvent, Attribute, Ancestor, ObservableWrapper, Event
 import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
 
 @Component({
-  selector: 'conditionlet users-country'
+  selector: 'conditionlet users-country-conditionlet'
 })
 @View({
   directives: [NgFor],
