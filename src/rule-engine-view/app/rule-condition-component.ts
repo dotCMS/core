@@ -7,6 +7,8 @@
 
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
 
+import {ConditionletDirective} from './conditionlets/conditionlet-component';
+
 import {SingleValueInput, ComparisonInput} from './conditionlets/single-value-input'
 import {UsersCountryConditionlet} from './conditionlets/users-country'
 import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits'
@@ -42,20 +44,18 @@ let initConditionlets = function () {
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor, SingleValueInput, ComparisonInput, UsersCountryConditionlet,UsersPageVisitsConditionlet ]
+  directives: [NgIf, NgFor, ConditionletDirective, SingleValueInput, ComparisonInput, UsersCountryConditionlet, UsersPageVisitsConditionlet ]
 })
 class ConditionComponent {
   index:number;
   _conditionMeta:any;
   condition:any;
   conditionValue:string;
-  conditionType:string;
   conditionlet:any;
   conditionlets:Array<any>;
 
   constructor() {
     console.log('Creating ConditionComponent')
-    this.conditionType = 'text'
     this.conditionlets = []
     conditionletsPromise.then(()=> {
       this.conditionlets = conditionletsAry
@@ -70,7 +70,6 @@ class ConditionComponent {
     console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
-    this.conditionType = this.getConditionletDataType(this.conditionlet.id)
     this.conditionValue = this.getComparisonValue()
   }
 
@@ -103,19 +102,17 @@ class ConditionComponent {
 
   }
 
-  setConditionlet(condtitionletId) {
-    console.log('Setting conditionlet id to: ', condtitionletId)
-    let dataType = this.getConditionletDataType(condtitionletId)
-    if (dataType != this.conditionType) {
-      console.log('Condition Type changed, resetting value.')
+  setConditionlet(conditionletId) {
+    console.log('Setting conditionlet id to: ', conditionletId)
+    let dataType = this.getConditionletDataType(conditionletId)
+    if (dataType != this.getConditionletDataType(this.conditionlet.id)) {
+      console.log('Condition data type changed, resetting condition value.')
       let newVal = ''
       let key = this.getComparisonValueKey() || 'aFakeId'
       this.condition.values[key] = {id: key, priority: 10, value: newVal}
       this.conditionValue = newVal
-
-      this.conditionType = dataType
     }
-    this.condition.conditionlet = condtitionletId
+    this.condition.conditionlet = conditionletId
     this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
 
     this.updateCondition()
@@ -158,6 +155,10 @@ class ConditionComponent {
   toggleOperator() {
     this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
     this.updateCondition()
+  }
+
+  onConditionletChange(event){
+    debugger;
   }
 
   updateCondition() {
