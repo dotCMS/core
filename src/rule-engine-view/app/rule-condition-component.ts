@@ -9,6 +9,7 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from '
 
 import {SingleValueInput, ComparisonInput} from './conditionlets/single-value-input'
 import {UsersCountryConditionlet} from './conditionlets/users-country'
+import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits'
 
 import conditionTemplate from './templates/rule-condition-component.tpl.html!text'
 
@@ -41,7 +42,7 @@ let initConditionlets = function () {
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor, SingleValueInput, ComparisonInput, UsersCountryConditionlet]
+  directives: [NgIf, NgFor, SingleValueInput, ComparisonInput, UsersCountryConditionlet,UsersPageVisitsConditionlet ]
 })
 class ConditionComponent {
   index:number;

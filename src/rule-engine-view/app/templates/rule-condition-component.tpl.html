@@ -17,11 +17,8 @@
             <h4 class="separator"></h4>
           </div>
           <conditionlet class="row col-sm-7">
-            <users-country *ng-if="conditionlet.id == 'UsersCountryConditionlet'"
-                           [condition]="condition"
-                           [conditionlet]="conditionlet"
-                           [value]="conditionValue"
-                           (change)="setComparisonValue($event)"></users-country>
+            <users-country *ng-if="conditionlet.id == 'UsersCountryConditionlet'" [condition]="condition" [conditionlet]="conditionlet" [value]="conditionValue" (change)="setComparisonValue($event)"></users-country>
+            <users-page-visits *ng-if="conditionlet.id == 'UsersPageVisitsConditionlet'" [condition]="condition" [conditionlet]="conditionlet" [value]="conditionValue" (change)="setComparisonValue($event)"></users-page-visits>
 
           </conditionlet>
 
