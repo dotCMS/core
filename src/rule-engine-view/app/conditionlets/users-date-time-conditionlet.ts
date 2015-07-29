@@ -11,7 +11,7 @@
    directives: [NgFor],
    template: `
     <div class="col-sm-5">
-      <select class="form-control clause-selector" [value]="conditionletDir.condition.comparison" (change)="setComparison()">
+      <select class="form-control clause-selector" [value]="conditionletDir.condition.comparison" (change)="setComparison($event)">
         <option value="{{x.id}}" *ng-for="var x of conditionletDir.conditionlet.comparisons">{{x.label}}</option>
       </select>
     </div>
@@ -19,14 +19,14 @@
       <h4 class="separator"></h4>
     </div>
     <div class="col-sm-5">
-      <input type="text" class="form-control condition-value" [value]="conditionletDir.value" (input)="setValue()"/>
+      <input type="datetime-local" class="form-control condition-value" [value]="conditionletDir.value" (input)="setValue($event)"/>
     </div>
   `
  })
  export class UsersDateTimeConditionlet extends BaseConditionletComponent{
- 
+
    constructor(@Ancestor() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
      super(conditionletDir, id)
    }
- 
+
  }
