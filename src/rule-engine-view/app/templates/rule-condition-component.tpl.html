@@ -16,7 +16,10 @@
           <div class="col-sm-1">
             <h4 class="separator"></h4>
           </div>
-          <conditionlet class="row col-sm-7" [condition]="condition" [conditionlet]="conditionlet" [value]="conditionValue" (valueChange)="onConditionletChange($event)">
+          <conditionlet class="row col-sm-7" [condition]="condition" [conditionlet]="conditionlet"
+                        [value]="conditionValue"
+                        (value-change)="setComparisonValue($event.isNow)"
+                        (comparison-change)="setComparison($event.isNow)">
             <users-country *ng-if="conditionlet.id == 'UsersCountryConditionlet'"></users-country>
             <users-page-visits *ng-if="conditionlet.id == 'UsersPageVisitsConditionlet'" ></users-page-visits>
 

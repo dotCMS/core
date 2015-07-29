@@ -2,9 +2,7 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
 
 import {Directive, LifecycleEvent, Attribute, Ancestor, ObservableWrapper, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
-import { ObservableWrapper } from 'angular2/src/facade/async';
-
-import {ConditionletDirective} from './conditionlet-component';
+import {ConditionletDirective} from './conditionlet-base';
 
 @Component({
   selector: 'conditionlet users-page-visits'
@@ -21,39 +19,23 @@ import {ConditionletDirective} from './conditionlet-component';
       <h4 class="separator"></h4>
     </div>
     <div class="col-sm-5">
-      <input type="number" class="form-control condition-value" [value]="conditionletDir.value" (input)="updateValue($event)" (focus)="setHasFocus(true)" (blur)="setHasFocus(false)"/>
+      <input type="number" class="form-control condition-value" [value]="conditionletDir.value" (input)="setValue($event)"/>
     </div>
   `
 })
 export class UsersPageVisitsConditionlet {
   conditionletDir:ConditionletDirective;
-  inputHasValue:boolean;
-  inputHasFocus:boolean;
-  valueChange: EventEmitter;
-  comparisonChange:EventEmitter;
-
 
   constructor(@Ancestor() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
     this.conditionletDir = conditionletDir
-    this.inputHasValue = false;
-    this.inputHasFocus = false;
-    this.valueChange = new EventEmitter();
-    this.comparisonChange = new EventEmitter();
-
-    this.conditionletDir.register(this)
   }
 
-  setComparison(value:string){
-    ObservableWrapper.callNext(this.comparisonChange, {was: this.conditionletDir.condition.comparison,  isNow: event.target.value})
+  setComparison(value){
+    this.conditionletDir.onComparisonChange(event)
   }
 
-  updateValue(event) {
-    ObservableWrapper.callNext(this.valueChange, {was: this.conditionletDir.value,  isNow: event.target.value})
-  }
-
-
-  setHasFocus(hasFocus:boolean) {
-    this.inputHasFocus = hasFocus
+  setValue(event) {
+    this.conditionletDir.onValueChange(event)
   }
 
 

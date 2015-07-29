@@ -7,7 +7,7 @@
 
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
 
-import {ConditionletDirective} from './conditionlets/conditionlet-component';
+import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 import {SingleValueInput, ComparisonInput} from './conditionlets/single-value-input'
 import {UsersCountryConditionlet} from './conditionlets/users-country'
@@ -157,8 +157,12 @@ class ConditionComponent {
     this.updateCondition()
   }
 
+  onFoo(event){
+    alert('wow')
+  }
+
   onConditionletChange(event){
-    debugger;
+    console.log('onConditionletChange', event)
   }
 
   updateCondition() {

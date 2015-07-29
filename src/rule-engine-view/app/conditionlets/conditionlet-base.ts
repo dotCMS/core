@@ -2,7 +2,6 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
 
 import {Directive, LifecycleEvent, Attribute, Ancestor, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
-import { ObservableWrapper } from 'angular2/src/facade/async';
 
 @Directive({
   selector: 'conditionlet',
@@ -14,7 +13,7 @@ export class ConditionletDirective {
   condition:any;
   conditionlet:any;
   child:any;
-  valueChange: EventEmitter;
+  valueChange:EventEmitter;
   comparisonChange:EventEmitter;
 
 
@@ -26,19 +25,32 @@ export class ConditionletDirective {
     this.comparisonChange = new EventEmitter();
   }
 
-  /** Forward events from the child conditionlet. */
-  register(child) {
-    this.child = child;
-    ObservableWrapper.subscribe(child.valueChange, (event) => {
-          debugger;
-          this.valueChange.next(event)
-        }
-    );
-
-    ObservableWrapper.subscribe(child.comparisonChange, (event) => {
-      this.comparisonChange.next(event)
-    });
+  onValueChange(event) {
+    console.log('conditionlet-component:onValueChanged', event)
+    this.valueChange.next(Object.assign({was: this.value,  isNow: event.target.value}, event))
   }
 
+  onComparisonChange(event) {
+    console.log('conditionlet-component:onComparisonChange', event)
+    this.comparisonChange.next(Object.assign({was: this.condition.comparison,  isNow: event.target.value}, event))
+  }
+}
+
+
+export class BaseConditionletComponent {
+  conditionletDir:ConditionletDirective;
+
+  constructor(@Ancestor() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
+    this.conditionletDir = conditionletDir
+  }
+
+
+  setComparison(value){
+    this.conditionletDir.onComparisonChange(event)
+  }
+
+  setValue(event) {
+    this.conditionletDir.onValueChange(event)
+  }
 
 }
