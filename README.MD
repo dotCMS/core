@@ -22,7 +22,7 @@ Otherwise the demo will default to using LocalStorage for persistence.
   * Run a server
   
 ```Shell
-git clone git@github.com/dotCMS/core-web.git
+git clone git@github.com:dotCMS/core-web.git
 npm install
 jspm install
 gulp play --open=true
