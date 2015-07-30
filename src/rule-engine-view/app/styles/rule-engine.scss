@@ -1,0 +1,136 @@
+@import "theme-light";
+
+.action-item {
+  h4.separator {
+    line-height: 34px;
+    margin: 0;
+    text-align: center;
+  }
+}
+
+.clause {
+  border: none;
+  margin: 0;
+
+  h4.separator {
+    text-align: center;
+  }
+
+  .clause-option {
+    width: 410px;
+  }
+
+  &:nth-child(2n-2) {
+    background-color: $primary-100;
+    border-radius: 0;
+  }
+
+  &:nth-child(2n-2) {
+    .clause-selector {
+      background-color: $primary-100;
+    }
+  }
+}
+
+.clause-group {
+
+  .panel-title {
+    line-height: 34px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px;
+  }
+
+  & > .panel-body {
+    padding: 0;
+  }
+
+}
+
+.clause-group-separator {
+  margin-bottom: 20px;
+}
+
+.clause-selector {
+  -moz-border-radius: 0;
+  -webkit-appearance: none;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  border: none;
+  border-bottom: solid 1px $primary-500;
+  cursor: pointer;
+  box-shadow: none;
+  display: inline-block;
+  font-size: 18px;
+  margin: 0 10px 0 0;
+  padding: 0 5px;
+}
+
+.operations {
+  text-align: right;
+}
+
+.page-title-search {
+  margin-top: 40px;
+
+  h1 {
+    margin: 0;
+  }
+
+  .form-group {
+    margin-bottom: 0;
+  }
+}
+
+.rule-operations {
+
+  label {
+    margin-right: 5px;
+  }
+
+  .separator {
+    display: inline-block;
+    width: 1px;
+    border-right: solid 1px $primary-500;
+    height: 34px;
+    vertical-align: top;
+    margin: 0 10px;
+  }
+}
+
+.rule-title {
+  font-size: 18px;
+  font-weight: bold;
+  border-color: rgba(0, 0, 0, .1);
+  box-shadow: none;
+  background-color: transparent;
+
+  &:hover {
+    background-color: $primary-100;
+  }
+
+  &:focus {
+    background-color: $primary-50;
+  }
+}
+
+.section-separator {
+  position: relative;
+  text-align: center;
+
+  h2 {
+    background-color: $primary-50;
+    display: inline-block;
+    margin-top: 0;
+    padding: 0 20px;
+    position: relative;
+    text-align: center;
+    z-index: 2;
+  }
+
+  hr {
+    margin: 0;
+    position: relative;
+    top: -27px;
+  }
+}
