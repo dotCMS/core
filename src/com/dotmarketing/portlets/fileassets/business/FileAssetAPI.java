@@ -262,4 +262,30 @@ public interface FileAssetAPI {
 	 */
 	String getContentMetadataAsString(File metadataFile) throws Exception;
 
+    /**
+     * Cleans up thumbnails folder from a contentlet file asset, it uses the
+     * identifier to remove the generated folder.
+     * 
+     * <p>
+     * Note: the thumbnails are generated once, so when the image is updated
+     * then we need to clean the old thumbnails; that way it will generate a new
+     * one.
+     * </p>
+     * 
+     * @param contentlet
+     */
+    public void cleanThumbnailsFromContentlet(Contentlet contentlet);
+
+    /**
+     * This method cleans thumbnails folder.
+     * 
+     * <p>
+     * Note: the thumbnails are generated once, so when the image is updated
+     * then we need to clean the old thumbnail; that way it will generate a new
+     * one.
+     * </p>
+     * 
+     * @param fileAsset
+     */
+    public void cleanThumbnailsFromFileAsset(IFileAsset fileAsset);
 }
