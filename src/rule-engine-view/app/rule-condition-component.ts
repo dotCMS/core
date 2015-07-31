@@ -125,10 +125,10 @@ class ConditionComponent {
   }
 
 
-  set conditionMeta(conditionMeta) {
-    console.log("Setting conditionMeta: ", conditionMeta.key())
-    this._conditionMeta = conditionMeta
-    conditionMeta.once('value', this.onSetConditionMeta.bind(this))
+  set conditionMeta(conditionRef) {
+    console.log("Setting conditionMeta: ", conditionRef.key())
+    this._conditionMeta = conditionRef
+    conditionRef.once('value', this.onSetConditionMeta.bind(this))
   }
 
   get conditionMeta() {

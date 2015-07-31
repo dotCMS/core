@@ -30,19 +30,36 @@ export class ConditionGroupComponent {
   rule:any;
   groupCollapsed:boolean;
   conditions:Array<any>;
+  conditionsRef:any;
 
   constructor() {
     console.log('Creating ConditionGroupComponent')
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
+    this.conditionsRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
+    this.conditionsRef.on('child_added', (conditionSnap) => {
+      if(conditionSnap.val().owningGroup == this.groupSnap.key()) {
+        this.conditions.push(conditionSnap.ref())
+      }
+    })
+    this.conditionsRef.on('child_removed', (conditionSnap) => {
+      if(conditionSnap.val().owningGroup == this.groupSnap.key()){
+        this.conditions = this.conditions.filter((existingSnap) =>{
+          return existingSnap.key() != conditionSnap.key()
+        })
+        if(this.conditions.length === 0){
+          this._groupSnap.ref().remove()
+        }
+      }
+    })
   }
 
   set groupSnap(groupSnap) {
     console.log('Setting ConditionGroup snapshot: ', groupSnap.key())
     this._groupSnap = groupSnap
     this.group = groupSnap.val()
-    this.conditions = this.getConditions()
+    this.getConditions()
   }
 
   get groupSnap() {
@@ -50,13 +67,13 @@ export class ConditionGroupComponent {
   }
 
   getConditions() {
-    let referenceSnaps = []
     let conditionMetas = []
     this.groupSnap.child('conditions').forEach((childSnap) => {
       let key = childSnap.key()
-      let childMeta = childSnap['entityMeta']
-      referenceSnaps.push(key) // the snap value is 'true', as this is a reference.
-      conditionMetas.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions/' + key))
+      var ref = this.conditionsRef.child(key);
+      conditionMetas.push(ref)
+      ref.once('value', (snap)=> {
+      });
     })
     return conditionMetas
   }
@@ -97,7 +114,6 @@ export class ConditionGroupComponent {
   updateGroup() {
     console.log('Updating ConditionsGroup')
     this.groupSnap.ref().set(this.group)
-    this.conditions = this.getConditions()
   }
 
 }

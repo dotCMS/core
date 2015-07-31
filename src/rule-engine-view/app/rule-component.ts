@@ -48,6 +48,11 @@ class RuleComponent {
     this.groupsSnap.ref().on('child_added', (childSnap)=>{
       this.ruleGroups.push(childSnap)
     })
+    this.groupsSnap.ref().on('child_removed', (childGroupSnap)=>{
+      this.ruleGroups = this.ruleGroups.filter((group) => {
+        return group.key() != childGroupSnap.key()
+      })
+    })
 
     this.ruleActions = this.getRuleActions()
   }
@@ -82,14 +87,43 @@ class RuleComponent {
   addGroup() {
     let group = {
       priority: 10,
-      operator: 'OR'
+      operator: 'AND'
     }
 
     this.ruleSnap.ref().child('conditionGroups').push(group).then((snapshot) => {
       let group = snapshot['val']()
       this.rule.conditionGroups[snapshot.key()] = group
       group.conditions = group.conditions || {}
-      this.updateRule()
+      this.updateRule().then(()=> this.addCondition(snapshot) )
+    }).catch((e) => {
+      console.log(e)
+    })
+  }
+
+  addCondition(groupSnap) {
+    console.log('Adding condition to new condition group')
+    let group = groupSnap.val()
+    let condition = {
+      priority: 10,
+      name: "Condition. " + new Date().toISOString(),
+      owningGroup: groupSnap.key(),
+      conditionlet: 'UsersCountryConditionlet',
+      comparison: 'Is',
+      operator: 'AND',
+      values: {
+        a: {
+          id: 'a',
+          value: 'US',
+          priority: 10
+        }
+      }
+    }
+    let condRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
+
+    condRoot.push(condition).then((result) => {
+      group.conditions = group.conditions || {}
+      group.conditions[result.key()] = true
+      groupSnap.ref().set(group)
     }).catch((e) => {
       console.log(e)
     })
@@ -121,8 +155,7 @@ class RuleComponent {
 
   updateRule() {
     console.log('Updating Rule')
-    this.ruleSnap.ref().set(this.rule)
-    this.ruleActions = this.getRuleActions()
+    return this.ruleSnap.ref().set(this.rule)
   }
 
 }
