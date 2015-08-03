@@ -22,6 +22,7 @@ var config = {
   proxyHostname: 'localhost',
   proxyPort: 8080,
   depBundles: './build',
+  buildTarget: 'dev',
   nonStandardBundles: {
     'angular2/angular2': 'angular2',
     'rtts_assert/rtts_assert': 'rtts_assert'
@@ -230,12 +231,27 @@ gulp.task('start-server', function (done) {
 
   done()
 })
+
+gulp.task('compile-styles', function () {
+  var sass = require('gulp-sass')
+  var sourcemaps = require('gulp-sourcemaps');
+  gulp.src('./src/**/*.scss')
+      .pipe(sourcemaps.init())
+      .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
+      .pipe(sourcemaps.write('./build'))
+      .pipe(gulp.dest('./build/'));
+});
+
 gulp.task('copyBootstrap', function(){
   return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
 })
+
+
 gulp.task('copyMain', function(){
   return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
+
+
 gulp.task('copyAll', ['bundle-all', 'copyMain', 'copyBootstrap'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
@@ -395,12 +411,17 @@ gulp.task('compile-ts', function() {
   ]);
 });
 
-gulp.task('watch', ['compile-ts'], function() {
-  return gulp.watch('./src/**/*.ts', ['compile-ts']);
+gulp.task('prod-watch', ['compile-ts', 'compile-styles'], function() {
+  gulp.watch('./src/**/*.ts', ['compile-ts']);
+  return gulp.watch('./src/**/*.scss', ['compile-styles']);
+});
+
+gulp.task('dev-watch', ['compile-styles'], function() {
+  return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
 //noinspection JSUnusedLocalSymbols
-gulp.task('play', ['start-server'], function (done) {
+gulp.task('play', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 

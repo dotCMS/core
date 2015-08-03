@@ -15,7 +15,7 @@ System.config({
   "paths": {
     "src/*": "src/*.js",
     "src/*.js": "src/*.js",
-    "*.css": "*.css",
+    "styles/*.css": "build/*.css",
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*",

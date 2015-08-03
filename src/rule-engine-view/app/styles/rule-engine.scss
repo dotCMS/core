@@ -17,7 +17,7 @@
   }
 
   .clause-option {
-    width: 410px;
+    width: 30em;
   }
 
   &:nth-child(2n-2) {
@@ -116,7 +116,7 @@
 
 .section-separator {
   position: relative;
-  text-align: center;
+  text-align: left;
 
   h2 {
     background-color: $primary-50;
@@ -124,7 +124,7 @@
     margin-top: 0;
     padding: 0 20px;
     position: relative;
-    text-align: center;
+    text-align: left;
     z-index: 2;
   }
 
