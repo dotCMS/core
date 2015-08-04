@@ -94,24 +94,30 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	private Dimension fileDimension = new Dimension();
 	public int getHeight() {
-		int height = 0;
-		try {
-			height = ImageUtil.getInstance().getDimension(getFileAsset()).height;
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return height;
-	}
+        try {
+            if (fileDimension.height == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
 
-	public int getWidth() {
-		int width = 0;
-		try {
-			width = ImageUtil.getInstance().getDimension(getFileAsset()).width;
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return width;
-	}
+        return fileDimension.height;
+    }
+
+    public int getWidth() {
+        try {
+            if (fileDimension.width == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        return fileDimension.width;
+    }
 
 	public void setFileName(String name) {
 	    File ff=getFileAsset();

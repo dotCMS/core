@@ -163,24 +163,30 @@ public class BinaryMap {
 		return file;
 	}
 
-	public int getHeight() {
-		int height = 0;
-		try {
-			height = ImageUtil.getInstance().getDimension(getFile()).height;
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return height;
-	}
+    public int getHeight() {
+        try {
+            if (fileDimension.height == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFile());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
 
-	public int getWidth() {
-		int width = 0;
-		try {
-			width = ImageUtil.getInstance().getDimension(getFile()).width;
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return width;
-	}
+        return fileDimension.height;
+    }
+
+    public int getWidth() {
+        try {
+            if (fileDimension.width == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFile());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        return fileDimension.width;
+    }
 
 }
