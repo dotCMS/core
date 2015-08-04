@@ -113,9 +113,9 @@ export function main() {
   ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()
-  return bootstrap(RuleEngineComponent, null, [function (ex, stack) {
+  return bootstrap(RuleEngineComponent, null, function (ex, stack) {
     console.log("Error bootstrapping app: ", ex, stack)
-  }]).catch((e) => {
+  }).catch((e) => {
     console.log("Error bootstrapping app: ", e)
     throw e;
   });
