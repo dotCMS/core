@@ -2,11 +2,12 @@ package com.dotmarketing.viewtools.content;
 
 import java.io.File;
 import java.io.IOException;
+import java.awt.Dimension;
 
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
-
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Field;
+import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.FileUtil;
@@ -27,6 +28,7 @@ public class BinaryMap {
 	private Contentlet content;
 	private Field field;
 	private File file;
+	private Dimension fileDimension = new Dimension();
 	
 	public BinaryMap(Contentlet content, Field field) {
 		this.content = content;
@@ -159,5 +161,31 @@ public class BinaryMap {
 	public File getFile() {
 		return file;
 	}
-	
+
+    public int getHeight() {
+        try {
+            if (fileDimension.height == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFile());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        return fileDimension.height;
+    }
+
+    public int getWidth() {
+        try {
+            if (fileDimension.width == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFile());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        return fileDimension.width;
+    }
+
 }
