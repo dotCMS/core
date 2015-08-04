@@ -4,8 +4,10 @@ import 'zone.js'
 import 'reflect-metadata';
 import 'es6-shim';
 
-import {Core, Rule, RuleGroup, ConnectionManager, EntityMeta, RestDataStore} from './src/index.js'
-import * as RuleEngineView from './src/rule-engine-view/index.js';
+import {Core} from 'coreweb-util/index.js'
+import {ConnectionManager, EntityMeta, RestDataStore} from 'entity-forge/index.js'
+import {Rule, RuleGroup} from 'rule-engine-api/index.js'
+import * as RuleEngineView from 'rule-engine-view/index.js';
 
 Object.assign(window, {
   Core,
