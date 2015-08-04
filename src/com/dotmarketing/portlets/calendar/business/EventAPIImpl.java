@@ -279,7 +279,7 @@ public class EventAPIImpl implements EventAPI {
 				result.append("DTSTART:" + dateformat.format(endDate) + "T\n");
 			}
 			try {
-				result.append("DTEND:" + dateformat.format(startDate) + "T" + endTime + "\n");
+				result.append("DTEND:" + dateformat.format(endDate) + "T" + endTime + "\n");
 			} catch(NullPointerException ex) {
 				result.append("DTEND:" + dateformat.format(endDate) + "T\n");
 			}
