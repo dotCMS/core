@@ -73,6 +73,8 @@ import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
+import com.dotmarketing.portlets.personas.business.PersonaAPIImpl;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPIImpl;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -333,6 +335,10 @@ public class APILocator extends Locator<APIIndex>{
 	public static HTMLPageAssetAPI getHTMLPageAssetAPI() {
         return (HTMLPageAssetAPI)getInstance(APIIndex.HTMLPAGE_ASSET_API);
     }
+	
+	public static PersonaAPI getPersonaAPI() {
+        return (PersonaAPI)getInstance(APIIndex.PERSONA_API);
+    }
 
 	public static ServerActionAPI getServerActionAPI() {
 	    return (ServerActionAPI)getInstance(APIIndex.SERVER_ACTION_API);
@@ -434,7 +440,8 @@ enum APIIndex
 	NOTIFICATION_API,
 
 	HTMLPAGE_ASSET_API,
-
+	PERSONA_API,
+	
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
     RULES_API;
@@ -494,6 +501,7 @@ enum APIIndex
 		case NOTIFICATION_API: return new NotificationAPIImpl();
 
 		case HTMLPAGE_ASSET_API: return new HTMLPageAssetAPIImpl();
+		case PERSONA_API: return new PersonaAPIImpl();
 
 		
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
