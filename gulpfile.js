@@ -54,7 +54,38 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-gulp.task('bundleDeps', ['unbundle'], function (done) {
+
+gulp.task('karma', [], function (done) {
+  imports.karma.start({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: false,
+    usePolling: false
+  }, done);
+})
+
+gulp.task('i-test', function (done) {
+
+  imports.karma.start({
+    configFile: __dirname + '/karma.conf.js',
+    singleRun: false,
+    usePolling: false,
+    proxies: {
+      '/api': config.proxyHost + '/api'
+    },
+    jspm: {
+      useBundles: true,
+      loadFiles: ['src/**/*.it.es6'],
+      serveFiles: ['src/**/*.ts', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
+        'build/**/*.js',
+        'thirdparty/**/*.{es6,ts}']
+    }
+  }, done)
+
+
+})
+
+
+gulp.task('bundle-deps', ['unbundle'], function (done) {
   var deps = pConfig.jspm.dependencies || {}
   var promises = []
   var jspm = require('jspm')
@@ -88,6 +119,9 @@ gulp.task('bundleDeps', ['unbundle'], function (done) {
   }
   Promise.all(promises).then(function (results) {
     done()
+  }).catch(function(e){
+    console.log("Error while bundling dependencies: ", e)
+    throw e
   })
 })
 
@@ -101,35 +135,6 @@ gulp.task('unbundle', ['default'], function (done) {
     }
     done();
   })
-})
-
-gulp.task('karma', [], function (done) {
-  imports.karma.start({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false,
-    usePolling: false
-  }, done);
-})
-
-gulp.task('i-test', function (done) {
-
-  imports.karma.start({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false,
-    usePolling: false,
-    proxies: {
-      '/api': config.proxyHost + '/api'
-    },
-    jspm: {
-      useBundles: true,
-      loadFiles: ['src/**/*.it.es6'],
-      serveFiles: ['src/**/*.ts', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
-        'build/**/*.js',
-        'thirdparty/**/*.{es6,ts}']
-    }
-  }, done)
-
-
 })
 
 
@@ -187,25 +192,12 @@ gulp.task('start-server', function (done) {
   done()
 })
 
-gulp.task('copyBootstrap', function () {
-  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
-})
-
-
-gulp.task('copyMain', function () {
-  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
-})
-
-
-gulp.task('copyAll', ['copyMain', 'copyBootstrap'], function () {
-  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
-})
 
 
 /**
  *  Deploy Tasks
  */
-gulp.task('packageRelease', ['copyAll'], function (done) {
+gulp.task('packageRelease', ['copy-dist-all'], function (done) {
   var outDir = __dirname + '/dist'
   var outPath = outDir + '/core-web.zip'
   if (!fs.existsSync(outDir)) {
@@ -339,6 +331,19 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
   gitAdd(options)
 })
 
+gulp.task('copy-dist-bootstrap', function () {
+  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
+})
+
+
+gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], function () {
+  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
+})
+
+
+gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap'], function () {
+  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
+})
 
 var typescriptProject = ts.createProject({
   outDir: './build',
@@ -348,38 +353,38 @@ var typescriptProject = ts.createProject({
   typescript: require('typescript')
 });
 
-gulp.task('compile-ts', function () {
+gulp.task('compile-ts', function (done) {
   var tsResult = gulp.src('./src/**/*.ts')
       .pipe(ts(typescriptProject));
 
-  return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
+  merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
     tsResult.dts.pipe(gulp.dest('build/definitions')),
     tsResult.js.pipe(gulp.dest('build'))
-  ]);
+  ]).on('queueDrain', done);
 });
 
 
-gulp.task('compile-styles', function () {
+gulp.task('compile-styles', function (done) {
   var sass = require('gulp-sass')
   var sourcemaps = require('gulp-sourcemaps');
-  return gulp.src('./src/**/*.scss')
+  gulp.src('./src/**/*.scss')
       .pipe(sourcemaps.init())
       .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
       .pipe(sourcemaps.write())
-      .pipe(gulp.dest('./build/'));
+      .pipe(gulp.dest('./build/')).on('finish',  done);
 });
 
-gulp.task('compile-js', [], function () {
-  gulp.src('./src/**/*.js').pipe(gulp.dest('./build'))
+gulp.task('compile-js', [], function (done) {
+  gulp.src('./src/**/*.js').pipe(gulp.dest('./build')).on('finish',  done);
 })
 
 
-gulp.task('compile-templates', [], function () {
-  gulp.src('./src/**/*.html').pipe(gulp.dest('./build'))
+gulp.task('compile-templates', [], function (done) {
+  gulp.src('./src/**/*.html').pipe(gulp.dest('./build')).on('finish',  done);
 })
 
 
-gulp.task('bundle-dist', ['unbundle', 'build-all'], function (done) {
+gulp.task('bundle-dist', ['build-all'], function (done) {
   var sfxPath = config.depBundles + '/core-web.sfx.js'
   console.info("Bundling self-executing build to " + sfxPath)
   var jspm = require('jspm')
@@ -390,19 +395,18 @@ gulp.task('bundle-dist', ['unbundle', 'build-all'], function (done) {
         minify: false,
         sourceMaps: false
       }).then(function () {
-        gulp.src(sfxPath).pipe(gulp.dest('./dist/'), done)
+        gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish',  done);
       }).catch(function (e) {
         console.log("Error creating bundle with JSPM: ", e)
         throw e
       })
-
 })
 
 /**
  * Compile typescript and styles into build, then bundle the built files using JSPM.
  *
  */
-gulp.task('bundle-minified', ['unbundle', 'build-all'], function (done) {
+gulp.task('bundle-minified', ['build-all'], function (done) {
   var minifiedPath = config.depBundles + '/core-web.min.js'
   console.info("Bundling minified build to " + minifiedPath)
   var jspm = require('jspm')
@@ -414,7 +418,7 @@ gulp.task('bundle-minified', ['unbundle', 'build-all'], function (done) {
           minify: true,
           sourceMaps: false
         }).then(function () {
-          gulp.src(minifiedPath).pipe(gulp.dest('./dist/'), done)
+          gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish',  done);
 
         }).catch(function (e) {
           console.log("Error creating bundle with JSPM: ", e);
@@ -424,7 +428,7 @@ gulp.task('bundle-minified', ['unbundle', 'build-all'], function (done) {
 })
 
 
-gulp.task('bundle-dev', ['unbundle'], function (done) {
+gulp.task('bundle-dev', ['build-all'], function (done) {
   var devPath = config.depBundles + '/core-web.js'
   console.info("Bundling unminified build to " + devPath)
   var jspm = require('jspm')
@@ -433,7 +437,7 @@ gulp.task('bundle-dev', ['unbundle'], function (done) {
       {
         inject: false,
         minify: false,
-        sourceMaps: true
+        sourceMaps: false // Bugged :~(
       }).then(done).catch(function (e) {
         console.log("Error creating bundle with JSPM: ", e);
         throw e;
@@ -442,7 +446,7 @@ gulp.task('bundle-dev', ['unbundle'], function (done) {
 
 
 gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-sfx'], function (done) {
-  return done();
+   done();
 })
 
 
@@ -460,13 +464,12 @@ gulp.task('play', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
-gulp.task('build-all', ['compile-js', 'compile-ts', 'compile-styles', 'compile-templates'], function () {
-
-  return;
+gulp.task('build-all', ['compile-js', 'compile-ts', 'compile-styles', 'compile-templates'], function (done) {
+  done()
 })
 
-gulp.task('build', ['build-all'], function () {
-  return;
+gulp.task('build', ['build-all'], function (done) {
+  done()
 })
 
 gulp.task('clean', ['unbundle'], function (done) {
