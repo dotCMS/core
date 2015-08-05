@@ -3,7 +3,6 @@ var fs = require('fs')
 var gulp = require('gulp')
 var del = require('del')
 var minimist = require('minimist')
-var jspm = require('jspm')
 var pConfig = require('./package.json')
 var replace = require('gulp-replace')
 var ts = require('gulp-typescript');
@@ -55,54 +54,11 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-gulp.task('bundle-sfx', ['unbundle'], function(done){
-    var sfxPath = config.depBundles + '/core-web.sfx.js'
-    console.info("Bundling self-executing build to " + sfxPath)
-
-    jspm.bundleSFX('./index',
-        sfxPath,
-        {
-          inject: false,
-          minify: false,
-          sourceMaps: true
-        }).then(done).catch(function(e){
-          console.log("eh?", e)
-          throw e
-        })
-})
-
-gulp.task('bundle-dev', ['unbundle'], function(done){
-  var devPath = config.depBundles + '/core-web.js'
-  console.info("Bundling unminified build to " + devPath)
-  jspm.bundle('./index',
-      devPath,
-      {
-        inject: false,
-        minify: false,
-        sourceMaps: true
-      }).then(done)
-})
-
-gulp.task('bundle-dist', ['unbundle'], function(done){
-  var minifiedPath = config.depBundles + '/core-web.min.js'
-  console.info("Bundling minified build to " + minifiedPath)
-  jspm.bundle('./index',
-      minifiedPath,
-      {
-        inject: false,
-        minify: true,
-        sourceMaps: false
-      }).then(done)
-})
-
-
-gulp.task('bundle-all', ['bundle-dev', 'bundle-dist', 'bundle-sfx'], function (done) {
-  return done();
-})
-
 gulp.task('bundleDeps', ['unbundle'], function (done) {
   var deps = pConfig.jspm.dependencies || {}
   var promises = []
+  var jspm = require('jspm')
+
   for (var nm in deps) {
     if (config.noBundle.indexOf(nm) < 0) {
       promises.push(jspm.bundle(nm,
@@ -177,7 +133,6 @@ gulp.task('i-test', function (done) {
 })
 
 
-
 gulp.task('start-server', function (done) {
 
   var http = require('http');
@@ -232,27 +187,17 @@ gulp.task('start-server', function (done) {
   done()
 })
 
-gulp.task('compile-styles', function () {
-  var sass = require('gulp-sass')
-  var sourcemaps = require('gulp-sourcemaps');
-  gulp.src('./src/**/*.scss')
-      .pipe(sourcemaps.init())
-      .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
-      .pipe(sourcemaps.write('./build'))
-      .pipe(gulp.dest('./build/'));
-});
-
-gulp.task('copyBootstrap', function(){
+gulp.task('copyBootstrap', function () {
   return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
 })
 
 
-gulp.task('copyMain', function(){
+gulp.task('copyMain', function () {
   return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
 
 
-gulp.task('copyAll', ['bundle-all', 'copyMain', 'copyBootstrap'], function () {
+gulp.task('copyAll', ['copyMain', 'copyBootstrap'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
 })
 
@@ -316,11 +261,13 @@ gulp.task('publishSnapshot', ['packageRelease'], function (done) {
             return deployName
           }
         }))
-        .on('error', function(err){throw err})
+        .on('error', function (err) {
+          throw err
+        })
   })
 });
 
-gulp.task('ghPages-clone', ['packageRelease'], function(done){
+gulp.task('ghPages-clone', ['packageRelease'], function (done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -337,7 +284,7 @@ gulp.task('ghPages-clone', ['packageRelease'], function(done){
       throw err;
     }
     del.sync(['./gh_pages/*.js', './gh_pages/*.map', './gh_pages/*.html', './gh_pages/*.zip'])
-    gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function(){
+    gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function () {
       done()
     })
   })
@@ -353,7 +300,7 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
     timeout: 60000
   }
 
-  var gitAdd = function(opts){
+  var gitAdd = function (opts) {
     console.log('adding files to git.')
     exec('git add .', opts, function (err, stdout, stderr) {
       console.log(stdout);
@@ -367,7 +314,7 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
     })
   }
 
-  var gitCommit = function(opts){
+  var gitCommit = function (opts) {
     exec('git commit -m "Autobuild gh-pages..."', opts, function (err, stdout, stderr) {
       console.log(stdout);
       if (err) {
@@ -379,7 +326,7 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
     })
   }
 
-  var gitPush = function(opts){
+  var gitPush = function (opts) {
     exec('git push -u  origin gh-pages', opts, function (err, stdout, stderr) {
       if (err) {
         console.log(stderr);
@@ -393,17 +340,17 @@ gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
 })
 
 
-var tsProject = ts.createProject({
+var typescriptProject = ts.createProject({
   outDir: './build',
   module: 'commonjs',
-  target :'es5',
+  target: 'es5',
   emitDecoratorMetadata: true,
   typescript: require('typescript')
 });
 
-gulp.task('compile-ts', function() {
+gulp.task('compile-ts', function () {
   var tsResult = gulp.src('./src/**/*.ts')
-      .pipe(ts(tsProject));
+      .pipe(ts(typescriptProject));
 
   return merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
     tsResult.dts.pipe(gulp.dest('build/definitions')),
@@ -411,12 +358,100 @@ gulp.task('compile-ts', function() {
   ]);
 });
 
-gulp.task('prod-watch', ['compile-ts', 'compile-styles'], function() {
+
+gulp.task('compile-styles', function () {
+  var sass = require('gulp-sass')
+  var sourcemaps = require('gulp-sourcemaps');
+  return gulp.src('./src/**/*.scss')
+      .pipe(sourcemaps.init())
+      .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
+      .pipe(sourcemaps.write())
+      .pipe(gulp.dest('./build/'));
+});
+
+gulp.task('compile-js', [], function () {
+  gulp.src('./src/**/*.js').pipe(gulp.dest('./build'))
+})
+
+
+gulp.task('compile-templates', [], function () {
+  gulp.src('./src/**/*.html').pipe(gulp.dest('./build'))
+})
+
+
+gulp.task('bundle-dist', ['unbundle', 'build-all'], function (done) {
+  var sfxPath = config.depBundles + '/core-web.sfx.js'
+  console.info("Bundling self-executing build to " + sfxPath)
+  var jspm = require('jspm')
+  jspm.bundleSFX('./index',
+      sfxPath,
+      {
+        inject: false,
+        minify: false,
+        sourceMaps: false
+      }).then(function () {
+        gulp.src(sfxPath).pipe(gulp.dest('./dist/'), done)
+      }).catch(function (e) {
+        console.log("Error creating bundle with JSPM: ", e)
+        throw e
+      })
+
+})
+
+/**
+ * Compile typescript and styles into build, then bundle the built files using JSPM.
+ *
+ */
+gulp.task('bundle-minified', ['unbundle', 'build-all'], function (done) {
+  var minifiedPath = config.depBundles + '/core-web.min.js'
+  console.info("Bundling minified build to " + minifiedPath)
+  var jspm = require('jspm')
+  gulp.src('./index.js').pipe(replace("'src/", "'build/")).pipe(gulp.dest('./build')).on('finish', function () {
+    jspm.bundle('./index',
+        minifiedPath,
+        {
+          inject: false,
+          minify: true,
+          sourceMaps: false
+        }).then(function () {
+          gulp.src(minifiedPath).pipe(gulp.dest('./dist/'), done)
+
+        }).catch(function (e) {
+          console.log("Error creating bundle with JSPM: ", e);
+          throw e;
+        })
+  })
+})
+
+
+gulp.task('bundle-dev', ['unbundle'], function (done) {
+  var devPath = config.depBundles + '/core-web.js'
+  console.info("Bundling unminified build to " + devPath)
+  var jspm = require('jspm')
+  jspm.bundle('./index',
+      devPath,
+      {
+        inject: false,
+        minify: false,
+        sourceMaps: true
+      }).then(done).catch(function (e) {
+        console.log("Error creating bundle with JSPM: ", e);
+        throw e;
+      })
+})
+
+
+gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-sfx'], function (done) {
+  return done();
+})
+
+
+gulp.task('prod-watch', ['compile-ts', 'compile-styles'], function () {
   gulp.watch('./src/**/*.ts', ['compile-ts']);
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
-gulp.task('dev-watch', ['compile-styles'], function() {
+gulp.task('dev-watch', ['compile-styles'], function () {
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
@@ -425,8 +460,12 @@ gulp.task('play', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
+gulp.task('build-all', ['compile-js', 'compile-ts', 'compile-styles', 'compile-templates'], function () {
 
-gulp.task('build', ['copyAll'], function () {
+  return;
+})
+
+gulp.task('build', ['build-all'], function () {
   return;
 })
 
