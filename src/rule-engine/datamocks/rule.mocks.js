@@ -1,4 +1,4 @@
-import XDebug from 'debug';
+import {XDebug} from 'debug';
 let log = XDebug('RuleEngine.mocks.js');
 
 var clauses = {
