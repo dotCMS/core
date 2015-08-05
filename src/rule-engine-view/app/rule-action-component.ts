@@ -4,8 +4,8 @@
 /// <reference path="../../../typings/entity-forge/entity-forge.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
-import ruleActionTemplate from './templates/rule-action-component.tpl.html!text'
 
+import {ruleActionTemplate} from './templatesHack'
 
 
 var actionletsAry = []

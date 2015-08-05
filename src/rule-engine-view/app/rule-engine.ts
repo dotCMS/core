@@ -15,7 +15,7 @@ import {initActionlets} from './rule-action-component';
 import {initConditionlets} from './rule-condition-component';
 import {RuleComponent} from './rule-component';
 
-import ruleEngineTemplate from './templates/rule-engine.tpl.html!text'
+import {ruleEngineTemplate} from './templatesHack'
 
 
 @Component({

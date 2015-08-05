@@ -1,7 +1,7 @@
 System.config({
   "baseURL": "/",
   "defaultJSExtensions": true,
-  "transpiler": "typescript",
+  "transpiler": "babel",
   "babelOptions": {
     "optional": [
       "runtime"
@@ -13,22 +13,14 @@ System.config({
     "emitDecoratorMetadata": true
   },
   "paths": {
-    "coreweb-util/*": "src/coreweb/*",
-    "entity-forge/*": "src/entity-forge/*",
-    "rule-engine-api/*": "src/rule-engine/*",
-    "rule-engine-view/*": "src/rule-engine-view/*",
-    "app": "src",
-    "src/*": "src/*.js",
-    "styles/*.css": "build/*.css",
+    "coreweb-util/*": "build/coreweb/*",
+    "entity-forge/*": "build/entity-forge/*",
+    "rule-engine-api/*": "build/rule-engine/*",
+    "rule-engine-view/*": "build/rule-engine-view/*",
+    "src/*": "build/*.js",
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
-  },
-  "packages": {
-    "app": {
-      "main": "main",
-      "defaultExtension": "ts"
-    }
   }
 });
 

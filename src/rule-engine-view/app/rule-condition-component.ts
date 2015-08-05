@@ -9,7 +9,9 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from '
 
 import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
-import conditionTemplate from './templates/rule-condition-component.tpl.html!text'
+
+import {conditionTemplate} from './templatesHack'
+
 import {UsersVisitedUrlConditionlet} from './conditionlets/users-visited-url-conditionlet'
 import {UsersIpAddressConditionlet} from './conditionlets/users-ip-address-conditionlet'
 import {UsersCityConditionlet} from './conditionlets/users-city-conditionlet'
