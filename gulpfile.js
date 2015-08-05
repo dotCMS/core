@@ -221,6 +221,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
       //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
+      .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
       .finalize()
 
 });
@@ -330,18 +331,22 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
   gitAdd(options)
 })
 
-gulp.task('copy-dist-bootstrap', function () {
-  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest('./dist/jspm_packages/github/twbs/'))
+gulp.task('copy-dist-images', function () {
+  return gulp.src(['*.ico']).pipe(gulp.dest(config.distDir))
 })
 
+
+gulp.task('copy-dist-bootstrap', function () {
+  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest(config.distDir + '/jspm_packages/github/twbs/'))
+})
 
 gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], function () {
-  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
+  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
 
-gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap'], function () {
-  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest('./dist/'))
+gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap', 'copy-dist-images'], function () {
+  return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
 var typescriptProject = ts.createProject({
