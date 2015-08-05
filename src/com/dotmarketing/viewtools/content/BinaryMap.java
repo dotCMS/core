@@ -20,11 +20,8 @@ import com.liferay.util.FileUtil;
  */
 public class BinaryMap {
 
-	private String name;
-	private String size;
 	private String rawUri;
 	private String resizeUri;
-	private String thumbnailUri;
 	private Contentlet content;
 	private Field field;
 	private File file;
