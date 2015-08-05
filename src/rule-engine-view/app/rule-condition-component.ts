@@ -10,7 +10,7 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from '
 import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 
-import {conditionTemplate} from './templatesHack'
+import {conditionTemplate} from './templates/index'
 
 import {UsersVisitedUrlConditionlet} from './conditionlets/users-visited-url-conditionlet'
 import {UsersIpAddressConditionlet} from './conditionlets/users-ip-address-conditionlet'

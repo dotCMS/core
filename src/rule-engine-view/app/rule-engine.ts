@@ -15,7 +15,7 @@ import {initActionlets} from './rule-action-component';
 import {initConditionlets} from './rule-condition-component';
 import {RuleComponent} from './rule-component';
 
-import {ruleEngineTemplate} from './templatesHack'
+import {ruleEngineTemplate} from './templates/index'
 
 
 @Component({
@@ -79,13 +79,7 @@ class RuleEngineComponent {
     })
   }
 
-
-  onChange(a) {
-    console.log('onChange', arguments)
-  }
-
   addRule() {
-    console.log("Adding Rule, yo")
     let testRule = new RuleEngine.Rule();
     testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
     testRule.enabled = true
@@ -109,7 +103,6 @@ class RuleEngineComponent {
 
 
 export function main() {
-  console.log("Bootstrapping rules engine")
   ConnectionManager.persistenceHandler = RestDataStore
   initConditionlets()
   initActionlets()

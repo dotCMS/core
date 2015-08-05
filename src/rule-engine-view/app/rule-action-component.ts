@@ -5,7 +5,7 @@
 
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
-import {ruleActionTemplate} from './templatesHack'
+import {ruleActionTemplate} from './templates/index'
 
 
 var actionletsAry = []

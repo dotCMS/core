@@ -8,7 +8,7 @@
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 import {ConditionComponent} from './rule-condition-component';
 
-import {conditionGroupTemplate} from './templatesHack'
+import {conditionGroupTemplate} from './templates/index'
 
 @Component({
   selector: 'condition-group',

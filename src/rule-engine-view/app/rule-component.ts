@@ -9,7 +9,7 @@ import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
-import {ruleTemplate} from './templatesHack'
+import {ruleTemplate} from './templates/index'
 
 @Component({
   selector: 'rule',
