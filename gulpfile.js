@@ -195,8 +195,8 @@ gulp.task('start-server', function (done) {
 /**
  *  Deploy Tasks
  */
-gulp.task('packageRelease', ['copy-dist-all'], function (done) {
-  var outDir = __dirname + '/dist'
+gulp.task('package-release', ['copy-dist-all'], function (done) {
+  var outDir = config.distDir
   var outPath = outDir + '/core-web.zip'
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir)
@@ -211,20 +211,21 @@ gulp.task('packageRelease', ['copy-dist-all'], function (done) {
   });
 
   archive.on('error', function (err) {
-    throw err;
+    done(err)
   });
 
   archive.pipe(output);
 
   archive.append(fs.createReadStream('./dist/core-web.min.js'), {name: 'core-web.min.js'})
       .append(fs.createReadStream('./dist/core-web.js'), {name: 'core-web.js'})
-      .append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})
+      //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
+      .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .finalize()
 
 });
 
-gulp.task('publishSnapshot', ['packageRelease'], function (done) {
+gulp.task('publish-snapshot', ['package-release'], function (done) {
   var getRev = require('git-rev')
   var config = require('./deploy-config.js').artifactory.snapshot
   var version = require('./package.json').version
@@ -257,7 +258,7 @@ gulp.task('publishSnapshot', ['packageRelease'], function (done) {
   })
 });
 
-gulp.task('ghPages-clone', ['packageRelease'], function (done) {
+gulp.task('ghPages-clone', ['package-release'], function (done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -282,7 +283,7 @@ gulp.task('ghPages-clone', ['packageRelease'], function (done) {
 
 })
 
-gulp.task('publishGithubPages', ['ghPages-clone'], function (done) {
+gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
   var exec = require('child_process').exec;
 
   var options = {
