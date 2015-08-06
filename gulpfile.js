@@ -474,6 +474,10 @@ gulp.task('dev-watch', ['compile-styles'], function () {
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
+gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function(done){
+  done()
+})
+
 //noinspection JSUnusedLocalSymbols
 gulp.task('play', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
