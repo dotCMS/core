@@ -4,11 +4,16 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnorePropertie
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotcms.repackage.javax.validation.constraints.Digits;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.repackage.javax.validation.constraints.Pattern;
+import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.validation.constraints.FireOn;
 import com.dotmarketing.portlets.rules.model.Rule;
 import java.util.Map;
 
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 /**
  * Note: Pretend this class exists in a separate module from the core data types, and cannot have any knowledge of those types. Because it should.
@@ -16,13 +21,22 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
  * @author Geoff M. Granum
  */
 @JsonDeserialize(builder = RestRule.Builder.class)
-public final class RestRule {
+public final class RestRule extends Validated  {
 
+    @Length(min = 1, max = 36)
     public final String key;
+
+    @NotNull
+    @Length(min = 1, max = 100)
     public final String name;
+
+    @FireOn
     public final String fireOn;
+
     public final Boolean shortCircuit;
+
     public final Integer priority;
+
     public final Boolean enabled;
     public final Map<String, RestConditionGroup> conditionGroups;
     public final Map<String, Boolean> ruleActions;
@@ -36,6 +50,7 @@ public final class RestRule {
         enabled = builder.enabled;
         conditionGroups = builder.conditionGroups;
         ruleActions = builder.ruleActions;
+//        checkValid();
     }
 
     @JsonIgnoreProperties({"groups", "actions"})
@@ -124,13 +139,12 @@ public final class RestRule {
         }
 
         public RestRule build() {
-            this.validate();
             return new RestRule(this);
         }
 
-        public void validate() {
-            checkNotEmpty(name, BadRequestException.class, "rule.name is required.");
-        }
+//        public void validate() {
+//            checkNotEmpty(name, BadRequestException.class, "rule.name is required.");
+//        }
     }
 }
  

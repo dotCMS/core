@@ -40,11 +40,12 @@
 
 package com.dotcms.rest.servlet;
 
+import com.dotcms.repackage.com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
 import com.dotcms.repackage.javax.ws.rs.core.Application;
-import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
 import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
 import com.dotcms.rest.api.CorsFilter;
+import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
@@ -143,6 +144,9 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
     }
 
     private static ResourceConfig configureResourceConfig(ResourceConfig config) {
-        return config.register(CorsFilter.class).register(JacksonFeature.class);
+        return config
+                .register(CorsFilter.class)
+                .register(MyObjectMapperProvider.class)
+                .register(JacksonJaxbJsonProvider.class);
     }
 }

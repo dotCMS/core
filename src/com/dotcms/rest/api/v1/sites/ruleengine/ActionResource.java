@@ -35,23 +35,23 @@ import javax.servlet.http.HttpServletRequest;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @Path("/v1")
-public class ActionsResource {
+public class ActionResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
     private final RuleActionTransform actionTransform = new RuleActionTransform();
     private HostAPI hostAPI;
 
-    public ActionsResource() {
+    public ActionResource() {
         this(new ApiProvider());
     }
 
-    private ActionsResource(ApiProvider apiProvider) {
+    private ActionResource(ApiProvider apiProvider) {
         this(apiProvider, new AuthenticationProvider(apiProvider));
     }
 
     @VisibleForTesting
-    protected ActionsResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ActionResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;

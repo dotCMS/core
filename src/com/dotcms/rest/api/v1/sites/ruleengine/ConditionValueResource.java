@@ -8,7 +8,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.api.v1.sites.rules.ConditionValueTransform;
-import com.dotcms.rest.api.v1.sites.rules.RestConditionGroup;
 import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
@@ -37,23 +36,23 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1")
-public class ConditionValuesResource {
+public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
     private final ConditionValueTransform conditionValueTransform;
     private HostAPI hostAPI;
 
-    public ConditionValuesResource() {
+    public ConditionValueResource() {
         this(new ApiProvider());
     }
 
-    private ConditionValuesResource(ApiProvider apiProvider) {
+    private ConditionValueResource(ApiProvider apiProvider) {
         this(apiProvider, new AuthenticationProvider(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionValuesResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionValueResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;

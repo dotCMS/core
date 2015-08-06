@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.javax.validation.Valid;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @Path("/v1")
-public class RulesResource {
+public class RuleResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
@@ -43,16 +44,16 @@ public class RulesResource {
     private HostAPI hostAPI;
 
     @SuppressWarnings("unused")
-    public RulesResource() {
+    public RuleResource() {
         this(new ApiProvider());
     }
 
-    private RulesResource(ApiProvider apiProvider) {
+    private RuleResource(ApiProvider apiProvider) {
         this(apiProvider, new AuthenticationProvider(apiProvider));
     }
 
     @VisibleForTesting
-    protected RulesResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected RuleResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;
@@ -108,7 +109,7 @@ public class RulesResource {
     @Path("/sites/{id}/rules")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @PathParam("id") String siteId, RestRule restRule) {
+    public Response add(@Context HttpServletRequest request, @PathParam("id") String siteId, @Valid RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);
@@ -167,7 +168,7 @@ public class RulesResource {
             try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
-                Logger.error(RulesResource.class, "Error while rolling back transaction", e);
+                Logger.error(RuleResource.class, "Error while rolling back transaction", e);
             }
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }

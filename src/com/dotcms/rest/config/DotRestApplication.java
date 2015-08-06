@@ -1,13 +1,14 @@
 package com.dotcms.rest.config;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionValuesResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionsResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.ActionsResource;
-import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsResource;
-import com.dotcms.rest.api.v1.sites.rules.RulesResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionValueResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ActionResource;
+import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResource;
+import com.dotcms.rest.api.v1.sites.rules.RuleResource;
 import com.dotcms.rest.api.v1.system.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ConditionletsResource;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,12 +44,12 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.WorkflowResource.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
-					REST_CLASSES.add(RulesResource.class);
-					REST_CLASSES.add(ConditionGroupsResource.class);
-					REST_CLASSES.add(ConditionsResource.class);
-					REST_CLASSES.add(ConditionValuesResource.class);
+					REST_CLASSES.add(RuleResource.class);
+					REST_CLASSES.add(ConditionGroupResource.class);
+					REST_CLASSES.add(ConditionResource.class);
+					REST_CLASSES.add(ConditionValueResource.class);
 					REST_CLASSES.add(ConditionletsResource.class);
-					REST_CLASSES.add(ActionsResource.class);
+					REST_CLASSES.add(ActionResource.class);
 					REST_CLASSES.add(ActionletsResource.class);
 
 				}
