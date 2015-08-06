@@ -129,7 +129,6 @@ public class TaskLocatorUtil {
 		ret.add(Task03065AddHtmlPageIR.class);
         ret.add(Task03100HTMLPageAsContentChanges.class);
         ret.add(Task03105HTMLPageGenericPermissions.class);
-        ret.add(Task03500RulesEngineDataModel.class);
         ret.add(Task03120AddInodeToContainerStructure.class);
 		ret.add(Task03130ActionletsFromPlugin.class);
 		ret.add(Task03135FixStructurePageDetail.class);
