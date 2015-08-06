@@ -77,7 +77,7 @@
 	</head>
 	<body style="border:0;margin:0;padding:0;">
 		<div id="controlsdiv" style="position:absolute; top:0; left:0; padding:0; margin:0; border:0; width:0;height: 0;z-index: 0;"></div>
-		<table style="border:0;padding:0;width:100%" width="100%" cellspacing="0" cellpadding="0" border="0">
+		<table style="border:0;padding:0;width:100%;overflow:hidden;" width="100%" cellspacing="0" cellpadding="0" border="0">
 			<tr>
 				<td>
 					<iframe id="frameMenu" name="frameMenu" style="width:220px;border:0;margin:0;" width="220" marginheight="0" marginwidth="0" frameborder="0" scrolling="no" src="${_baseURI}?leftMenu=true&livePage=$livePage&com.dotmarketing.htmlpage.language=$language&language=$language&host_id=${host.identifier}"></iframe>
