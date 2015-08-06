@@ -14,7 +14,7 @@ import java.util.List;
  * @since 03-04-2015
  *
  */
-public class Task03115RulesEngineDataModel extends AbstractJDBCStartupTask {
+public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
 
 
     private final StringBuilder MYSQL = new StringBuilder()
