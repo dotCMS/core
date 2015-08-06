@@ -32,7 +32,6 @@ class RuleEngineComponent {
   filterText:string;
 
   constructor() {
-    console.log('Creating RuleEngine component.')
     this.rules = []
     this.baseUrl = ConnectionManager.baseUrl;
     this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
@@ -50,15 +49,15 @@ class RuleEngineComponent {
 
   updateBaseUrl(value) {
     let oldUrl = ConnectionManager.baseUrl
-    ConnectionManager.baseUrl = value;
-    this.baseUrl = value;
-    this.testBaseUrl(value).catch((e => {
+    try {
+      ConnectionManager.setBaseUrl(value)
+      window.location = window.location.protocol + '//' + window.location.host + window.location.pathname + '?baseUrl=' + value;
+    } catch (e) {
       alert("Error using provided Base Url. Check the development console.");
       console.log("Error using provided Base Url: ", e)
       this.baseUrl = oldUrl;
       ConnectionManager.baseUrl = oldUrl
-      throw e
-    }))
+    }
   }
 
   readSnapshots(rulesRef:EntityMeta) {
@@ -91,12 +90,6 @@ class RuleEngineComponent {
     this.rulesRef.push(testRule).catch((e)=> {
       console.log("Error pushing new rule: ", e)
       throw e
-    })
-  }
-
-  testBaseUrl(baseUrl) {
-    return new Promise((resolve, reject) => {
-      // get rules.
     })
   }
 }

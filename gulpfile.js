@@ -468,6 +468,8 @@ gulp.task('prod-watch', ['compile-ts', 'compile-styles'], function () {
 });
 
 gulp.task('dev-watch', ['compile-styles'], function () {
+  gulp.watch('./src/**/*.html', ['compile-templates']);
+  gulp.watch('./src/**/*.js', ['compile-js']);
   gulp.watch('./src/**/*.ts', ['compile-ts']);
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
