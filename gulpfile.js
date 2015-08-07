@@ -303,7 +303,9 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
 
 });
 
-gulp.task('ghPages-clone', ['package-release'], function (done) {
+
+
+gulp.task('ghPages-clone', function (done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -316,10 +318,10 @@ gulp.task('ghPages-clone', ['package-release'], function (done) {
   exec('git clone -b gh-pages git@github.com:dotCMS/core-web.git gh_pages', options, function (err, stdout, stderr) {
     console.log(stdout);
     if (err) {
-      console.log(stderr);
-      throw err;
+      done(err)
+      return;
     }
-    del.sync(['./gh_pages/*.js', './gh_pages/*.map', './gh_pages/*.html', './gh_pages/*.zip'])
+    del.sync(['./gh_pages/**/*', '!./gh_pages/.git'])
     gulp.src('./dist/**/*').pipe(gulp.dest('./gh_pages')).on('finish', function () {
       done()
     })
