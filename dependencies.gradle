@@ -250,5 +250,5 @@ dependencies {
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.16'
 
 
-    compile(group: 'com.dotcms', name: 'core-web', version: '20150806Reb76583-SNAPSHOT', ext: 'zip')
+    compile(group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip')
 }
