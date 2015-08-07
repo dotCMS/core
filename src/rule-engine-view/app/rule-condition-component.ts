@@ -44,17 +44,10 @@ let initConditionlets = function () {
   conditionletsPromise = new Promise((resolve, reject) => {
     conditionletsRef.once('value', (snap) => {
       let conditionlets = snap['val']()
-      let str = [];
       let results = (Object.keys(conditionlets).map((key) => {
         conditionletsMap.set(key, conditionlets[key])
-        let dashKey = key.replace(/([A-Z])/g, function ($1) {
-          return '-' + $1.toLowerCase();
-        });
-        dashKey = dashKey.substring(1)
-        str.push("import {" + key +  "} from './conditionlets/" + dashKey + "'")
         return conditionlets[key]
       }))
-      console.log(str.join('\n'))
       Array.prototype.push.apply(conditionletsAry, results);
       resolve(snap);
     })
