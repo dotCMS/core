@@ -106,7 +106,7 @@ gulp.task('bundle-deps', ['unbundle'], function (done) {
   }
   deps = config.nonStandardBundles || {}
   for (nm in deps) {
-    var nonStdBundlePath =  config.buildDir + '/' + deps[nm] + '.bundle.js'
+    var nonStdBundlePath = config.buildDir + '/' + deps[nm] + '.bundle.js'
     promises.push(jspm.bundle(nm,
         nonStdBundlePath,
         {
@@ -117,7 +117,7 @@ gulp.task('bundle-deps', ['unbundle'], function (done) {
   }
   Promise.all(promises).then(function (results) {
     done()
-  }).catch(function(e){
+  }).catch(function (e) {
     console.log("Error while bundling dependencies: ", e)
     throw e
   })
@@ -191,7 +191,6 @@ gulp.task('start-server', function (done) {
 })
 
 
-
 /**
  *  Deploy Tasks
  */
@@ -218,13 +217,41 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
 
   archive.append(fs.createReadStream('./dist/core-web.min.js'), {name: 'core-web.min.js'})
       .append(fs.createReadStream('./dist/core-web.js'), {name: 'core-web.js'})
-      //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
+    //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
       .finalize()
 
 });
+
+var generatePom = function (baseDeployName, groupId, artifactId, version, packaging, callback) {
+  var pom = [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"',
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"> <modelVersion>4.0.0</modelVersion>',
+    '<groupId>' + groupId + '</groupId>',
+    '<artifactId>' + artifactId + '</artifactId>',
+    '<version>' + version + '</version>',
+    '<packaging>' + packaging + '</packaging>',
+    '</project>']
+
+  var outDir = config.distDir
+  var outPath = outDir + '/' + baseDeployName + '.pom'
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir)
+  }
+
+  fs.writeFile(outPath, pom.join('\n'), function (err) {
+    if (err) {
+      callback(null, err)
+      return
+    }
+    console.log('Wrote pom to ', outPath);
+    callback(outPath)
+  });
+
+}
 
 gulp.task('publish-snapshot', ['package-release'], function (done) {
   var getRev = require('git-rev')
@@ -235,7 +262,8 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
   getRev.short(function (rev) {
     var dateStr = new Date().toISOString().replace(/T.+/, '').replace(/-/g, '')
     var versionStr = dateStr + 'R' + rev + '-SNAPSHOT';
-    var deployName = 'core-web-' + versionStr + ".zip"
+    var baseDeployName = 'core-web-' + versionStr
+    var deployName = baseDeployName + ".zip"
     config.url = config.url + '/com/dotcms/core-web/' + versionStr
 
     console.log("Deploying artifact: PUT ", config.url + '/' + deployName)
@@ -244,19 +272,35 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
     console.log("Rev: ", rev)
     console.log("Version: ", versionStr)
 
-    return gulp.src('./dist/core-web.zip')
-        .pipe(artifactoryUpload({
-          url: config.url,
-          username: config.username,
-          password: config.password,
-          rename: function (filename) {
-            return deployName
-          }
-        }))
-        .on('error', function (err) {
-          throw err
-        })
+    var pomPath;
+
+    generatePom(baseDeployName, 'com.dotcms', 'core-web', versionStr, 'zip', function (path, err) {
+      if (err) {
+        done(err)
+        return;
+      }
+      console.log('setting pomPath to: ', path)
+      pomPath = path
+      gulp.src(['./dist/core-web.zip', pomPath])
+          .pipe(artifactoryUpload({
+            url: config.url,
+            username: config.username,
+            password: config.password,
+            rename: function (filename) {
+              if (filename.endsWith('zip')) {
+                return deployName
+              }
+              return filename
+            }
+          }))
+          .on('error', function (err) {
+            throw err
+          }).on('end', function () {
+            console.log("All done.")
+          })
+    })
   })
+
 });
 
 gulp.task('ghPages-clone', ['package-release'], function (done) {
@@ -375,15 +419,15 @@ gulp.task('compile-styles', function (done) {
       .pipe(sourcemaps.init())
       .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
       .pipe(sourcemaps.write())
-      .pipe(gulp.dest(config.buildDir)).on('finish',  done);
+      .pipe(gulp.dest(config.buildDir)).on('finish', done);
 });
 
 gulp.task('compile-js', [], function (done) {
-  gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish',  done);
+  gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', done);
 })
 
 gulp.task('compile-templates', [], function (done) {
-  gulp.src('./src/**/*.html').pipe(gulp.dest(config.buildDir)).on('finish',  done);
+  gulp.src('./src/**/*.html').pipe(gulp.dest(config.buildDir)).on('finish', done);
 })
 
 
@@ -398,7 +442,7 @@ gulp.task('bundle-dist', ['compile-all'], function (done) {
         minify: false,
         sourceMaps: false
       }).then(function () {
-        gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish',  done);
+        gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', done);
       }).catch(function (e) {
         console.log("Error creating bundle with JSPM: ", e)
         throw e
@@ -422,21 +466,22 @@ gulp.task('bundle-minified', ['compile-all'], function (done) {
         "runtime"
       ],
       "stage": 1
-    }})
+    }
+  })
 
-    jspm.bundle('./index',
-        minifiedPath,
-        {
-          inject: false,
-          minify: true,
-          sourceMaps: false
-        }).then(function () {
-          gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish',  done);
+  jspm.bundle('./index',
+      minifiedPath,
+      {
+        inject: false,
+        minify: true,
+        sourceMaps: false
+      }).then(function () {
+        gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish', done);
 
-        }).catch(function (e) {
-          console.log("Error creating bundle with JSPM: ", e);
-          throw e;
-        })
+      }).catch(function (e) {
+        console.log("Error creating bundle with JSPM: ", e);
+        throw e;
+      })
 })
 
 
@@ -458,7 +503,7 @@ gulp.task('bundle-dev', ['compile-all'], function (done) {
 
 
 gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-sfx'], function (done) {
-   done();
+  done();
 })
 
 
@@ -474,7 +519,7 @@ gulp.task('dev-watch', ['compile-styles'], function () {
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
-gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function(done){
+gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function (done) {
   done()
 })
 
