@@ -177,7 +177,20 @@
     </target>
 
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac debug="true"
+               encoding="UTF-8"
+               debuglevel="lines,vars,source"
+               fork="true"
+               srcdir="${src.dir}"
+               destdir="${build.classes}"
+               source="1.8"
+               target="1.8"
+               compiler="javac1.8"
+               nowarn="true"
+               optimize="true"
+               memoryinitialsize="256m"
+               memorymaximumsize="512m"
+               includeantruntime="false">
             <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
