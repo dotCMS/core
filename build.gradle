@@ -73,8 +73,8 @@ configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL())
 //Move the dependencies to the WEB-INF/lib folder
 
 //ant.importBuild 'build.xml'
-ant.importBuild 'build.xml'
-//apply from: "${rootDir}/core.gradle"
+ant.importBuild 'build-gradle-migration.xml'
+apply from: "${rootDir}/core.gradle"
 tasks.compile.dependsOn copyToLib
 
 defaultTasks 'help', 'tasks'
