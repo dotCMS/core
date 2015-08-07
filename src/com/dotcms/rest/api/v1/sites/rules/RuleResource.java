@@ -109,7 +109,7 @@ public class RuleResource {
     @Path("/sites/{id}/rules")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @PathParam("id") String siteId, @Valid RestRule restRule) {
+    public Response add(@Context HttpServletRequest request, @PathParam("id") String siteId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);

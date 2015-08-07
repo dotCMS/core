@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
 
 import java.util.Map;
@@ -9,13 +11,21 @@ import java.util.Map;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @JsonDeserialize(builder = RestRuleAction.Builder.class)
-public class RestRuleAction {
+public class RestRuleAction extends Validated {
 
     public final String id;
+
+    @NotNull
     public final String name;
+
+    @NotNull
     public final String owningRule;
+
     public final int priority;
+
+    @NotNull
     public final String actionlet;
+
     public final Map<String, RestRuleActionParameter> parameters;
 
     private RestRuleAction(Builder builder) {
@@ -25,6 +35,7 @@ public class RestRuleAction {
         priority = builder.priority;
         actionlet = builder.actionlet;
         parameters = builder.parameters;
+        checkValid();
     }
 
     public static final class Builder {
@@ -65,14 +76,7 @@ public class RestRuleAction {
             return this;
         }
 
-        public void validate(){
-            checkNotNull(name, BadRequestException.class, "ruleAction.name is required.");
-            checkNotNull(actionlet, BadRequestException.class, "ruleAction.actionlet is required.");
-            checkNotNull(owningRule, BadRequestException.class, "ruleAction.owningRule is required.");
-        }
-
         public RestRuleAction build() {
-            this.validate();
             return new RestRuleAction(this);
         }
     }
