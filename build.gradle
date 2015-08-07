@@ -1,51 +1,68 @@
-configurations {
-    compile
-    antLibs
-    ext.dotcmsFolder = "dotCMS"
-    ext.libsFolder = "dotCMS/WEB-INF/lib"
-    ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.5'
 }
-//Import and apply the dependencies from the dependencies scripts
-apply from: "$rootDir/dependencies.gradle"
 
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-task copyToLib {
+configurations {
+    compile
+    antLibs
+    provided
+    provided.extendsFrom(compile)
+}
 
-    sync {
-        from configurations.compile
-        into configurations.felixFolder
+configurations.all {
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
+}
 
-        include '**/dot.org.apache.felix.bundlerepository*.jar'
-        include '**/dot.org.apache.felix.fileinstall*.jar'
-        include '**/dot.org.apache.felix.gogo.*.jar'
-        include '**/dot.org.apache.felix.http.bundle*.jar'
-    }
+def felixFolder = "dotCMS/WEB-INF/felix/bundle"
+def libsFolder = "dotCMS/WEB-INF/lib"
+def dotCmsFolder = "dotCMS"
 
-    sync {
-        from configurations.compile
-        into configurations.libsFolder
 
-        exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-        exclude '**/dot.org.apache.felix.fileinstall*.jar'
-        exclude '**/dot.org.apache.felix.gogo.*.jar'
-        exclude '**/*.zip'
-    }
+//Import and apply the dependencies from the dependencies scripts
+apply from: "$rootDir/dependencies.gradle"
 
-    copy {
-        from configurations.compile
-        into configurations.dotcmsFolder
+task copyToFelix(type: Sync) {
+    from configurations.compile
+    into felixFolder
+    include '**/dot.org.apache.felix.bundlerepository*.jar'
+    include '**/dot.org.apache.felix.fileinstall*.jar'
+    include '**/dot.org.apache.felix.gogo.*.jar'
+    include '**/dot.org.apache.felix.http.bundle*.jar'
+}
 
-        include '**/starter*.zip'
-        rename ( /starter(.+)\.zip/, "starter.zip" )
+task copyToLibDir(type: Sync) {
+    from configurations.compile
+    into libsFolder
+    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
+    exclude '**/dot.org.apache.felix.fileinstall*.jar'
+    exclude '**/dot.org.apache.felix.gogo.*.jar'
+    exclude '**/*.zip'
+}
+
+
+task copyStarterProject(type: Copy) {
+    from configurations.compile
+    into dotCmsFolder
+    include '**/starter*.zip'
+    rename(/starter(.+)\.zip/, "starter.zip")
+}
+
+task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
+    doLast {
+        println "Copied libs"
     }
 }
 copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
 
-dependencies { 
+dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
 }
@@ -54,12 +71,11 @@ ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
 configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
 
 //Move the dependencies to the WEB-INF/lib folder
-tasks.copyToLib.execute()
 
+//ant.importBuild 'build.xml'
 ant.importBuild 'build.xml'
-
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
-}
+//apply from: "${rootDir}/core.gradle"
+tasks.compile.dependsOn copyToLib
 
 defaultTasks 'help', 'tasks'
+
