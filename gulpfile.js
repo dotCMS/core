@@ -303,9 +303,7 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
 
 });
 
-
-
-gulp.task('ghPages-clone', function (done) {
+gulp.task('ghPages-clone', ['package-release'], function (done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -326,8 +324,6 @@ gulp.task('ghPages-clone', function (done) {
       done()
     })
   })
-
-
 })
 
 gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
