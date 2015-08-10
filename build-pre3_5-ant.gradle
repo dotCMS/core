@@ -1,0 +1,60 @@
+
+configurations {
+    compile
+    antLibs
+    provided
+    provided.extendsFrom(compile)
+}
+
+def felixFolder = "dotCMS/WEB-INF/felix/bundle"
+def libsFolder = "dotCMS/WEB-INF/lib"
+def dotCmsFolder = "dotCMS"
+
+task copyToFelix(type: Sync) {
+    from configurations.compile
+    into felixFolder
+    include '**/dot.org.apache.felix.bundlerepository*.jar'
+    include '**/dot.org.apache.felix.fileinstall*.jar'
+    include '**/dot.org.apache.felix.gogo.*.jar'
+    include '**/dot.org.apache.felix.http.bundle*.jar'
+}
+
+task copyToLibDir(type: Sync) {
+    from configurations.compile
+    into libsFolder
+    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
+    exclude '**/dot.org.apache.felix.fileinstall*.jar'
+    exclude '**/dot.org.apache.felix.gogo.*.jar'
+    exclude '**/*.zip'
+}
+
+
+task copyStarterProject(type: Copy) {
+    from configurations.compile
+    into dotCmsFolder
+    include '**/starter*.zip'
+    rename(/starter(.+)\.zip/, "starter.zip")
+}
+
+task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
+    description 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
+    doLast {
+        println "Copied libs"
+    }
+}
+
+
+dependencies {
+    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
+    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+}
+
+ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
+configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
+apply from: "$rootDir/dependencies.gradle"
+ant.importBuild 'build.xml'
+
+
+tasks.compile.dependsOn copyToLib
+
+

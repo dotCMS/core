@@ -7,13 +7,6 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-configurations {
-    compile
-    antLibs
-    provided
-    provided.extendsFrom(compile)
-}
-
 configurations.all {
     // dynamic: e.g. 'version: 2.0+'
     resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
@@ -21,71 +14,24 @@ configurations.all {
     resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
 }
 
-def felixFolder = "dotCMS/WEB-INF/felix/bundle"
-def libsFolder = "dotCMS/WEB-INF/lib"
-def dotCmsFolder = "dotCMS"
-
-task copyToFelix(type: Sync) {
-    from configurations.compile
-    into felixFolder
-    include '**/dot.org.apache.felix.bundlerepository*.jar'
-    include '**/dot.org.apache.felix.fileinstall*.jar'
-    include '**/dot.org.apache.felix.gogo.*.jar'
-    include '**/dot.org.apache.felix.http.bundle*.jar'
-}
-
-task copyToLibDir(type: Sync) {
-    from configurations.compile
-    into libsFolder
-    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-    exclude '**/dot.org.apache.felix.fileinstall*.jar'
-    exclude '**/dot.org.apache.felix.gogo.*.jar'
-    exclude '**/*.zip'
-}
-
-
-task copyStarterProject(type: Copy) {
-    from configurations.compile
-    into dotCmsFolder
-    include '**/starter*.zip'
-    rename(/starter(.+)\.zip/, "starter.zip")
-}
-
-task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
-    description 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
-    doLast {
-        println "Copied libs"
-    }
-}
-
-
-dependencies {
-    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
-    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
-}
-
-ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
 
 def usePre3_5Build(){
-
+    logger.info("Building with pre3.5 Ant build system.")
     //Import and apply the dependencies from the dependencies scripts
-    apply from: "$rootDir/dependencies.gradle"
-    ant.importBuild 'build.xml'
+    apply from: "$rootDir/build-pre3_5-ant.gradle"
 }
 
 def usePureGradleBuild(){
+    logger.info("Building with Gradle")
     ant.importBuild 'build-gradle-migration.xml'
     apply from: "${rootDir}/core.gradle"
 }
-
-if(project.'com.dotcms.build.use-pre-3_5-build' == true){
+logger.info("Build flag: ${project.'com.dotcms.build.use-pre-3_5-build'}")
+if(project.'com.dotcms.build.use-pre-3_5-build' == 'true'){
     usePre3_5Build()
 } else {
     usePureGradleBuild()
 }
-
-tasks.compileJava.dependsOn copyToLib
 
 defaultTasks 'help', 'tasks'
 

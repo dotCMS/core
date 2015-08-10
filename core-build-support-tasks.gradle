@@ -191,7 +191,7 @@ task deployWarTomcat(dependsOn: [loadAntProps, pullTomcat, war]) {
 
 
 task "deploy-war-tomcat-dev" {
-    println "Tomcat home: ${ant.properties.'tomcat.home'}"
+    logger.info( "Tomcat home: ${ant.properties.'tomcat.home'}")
     description = "Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)"
     doLast {
         tasks."generate-move-clean-projects-tomcat".execute()
