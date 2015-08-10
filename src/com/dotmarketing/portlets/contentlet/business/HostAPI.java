@@ -118,6 +118,17 @@ public interface HostAPI {
 	public Host save(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Updates default host information on the current host list, if the current host is marked as default and there is
+	 * any other host marked as well, only the host sent as parameter will remain as default host.
+	 * @param host
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves all host the user has the required permission on
 	 * @param permissionType
 	 * @param includeArchived
@@ -256,8 +267,8 @@ public interface HostAPI {
 	 * @param host
 	 */
 	public List<Host> retrieveHostsPerTagStorage (String tagStorageId, User user);
-	
-	
+
+
 	/**
 	 * This method takes a server name (from a web request) and maps it to a host.
 	 * It is designed to do a lightweight cache lookup to get the mapping from server name -> host
