@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="dotcms.org" default="compile" basedir=".">
+<project name="dotcms.org" default="compileJava" basedir=".">
     <!-- property name="build.compiler" value="jikes" / -->
 
     <!-- Load version props -->
@@ -161,7 +161,7 @@
         <delete dir="${osgi.velocity.dir}" />
     </target>
 
-    <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
+    <target name="deprecated-task-compile" depends="check-src-build,prepare" description="Compiles all source code.">
         <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8"
                compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m" includeantruntime="false">
             <classpath refid="autoupdater-classpath"/>
@@ -184,7 +184,7 @@
     </target>
 
 
-    <target name="jar" depends="git.revision, compile" description="Generates dotcms.jar in the 'lib' directory.">
+    <target name="deprecated-task-jar" depends="git.revision, compileJava" description="Generates dotcms.jar in the 'lib' directory.">
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
@@ -195,7 +195,7 @@
         <jar jarfile="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" basedir="${build.classes}" />
     </target>
 
-    <target name="jar-with-tests" depends="compile, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
+    <target name="jar-with-tests" depends="compileJava, compile-tests" description="Generates dotcms.jar in the 'lib' directory includind tests classes.">
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSId.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSId.hbm.xml" />
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq_NOSQLGEN.hbm.xml" />
@@ -263,7 +263,7 @@
         <!--<antcall target="deploy-plugins" />-->
     <!--</target>-->
 
-    <target name="jsp" depends="compile">
+    <target name="jsp" depends="compileJava">
 
         <taskdef classname="com.dotmarketing.util.jasper.DotJasperTask" name="jasper2" >
             <classpath id="jspc.classpath" refid="files-classpath">
@@ -423,7 +423,7 @@
     </target>
 
 
-    <target name="javadoc" description="creates javadoc for dotCMS">
+    <target name="deprecated-task-javadoc" description="creates javadoc for dotCMS">
         <javadoc maxmemory="1024m" packagenames="com.dotmarketing.*,com.dotcms.*" classpath="lib.app" sourcepath="${src.dir}" excludepackagenames="com.dummy.test.doc-files.*" defaultexcludes="yes" destdir="dotCMS/api" author="true" version="true" use="true" windowtitle="dotCMS API">
             <classpath refid="files-classpath" />
             <doctitle>
@@ -438,7 +438,7 @@
 
     </target>
 
-    <target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
+    <target name="compile-tests" depends="prepare,compileJava,deploy-config" description="Compiles all test source code.">
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
@@ -450,7 +450,7 @@
 
     </target>
 
-    <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
+    <target name="create-jar-tests" depends="prepare,compileJava" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.7" target="1.7" compiler="javac1.7" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />

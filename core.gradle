@@ -1,284 +1,364 @@
 import org.ajoberstar.grgit.*
 
+
+apply plugin: 'java'
+apply plugin: 'war'
+apply from: "${rootDir}/core-build-support-tasks.gradle"
+
+
+configurations {
+    provided
+    plugins
+
+}
+
 buildscript {
     repositories {
         mavenCentral()
     }
+    //noinspection GroovyAssignabilityCheck
     dependencies {
         classpath 'org.ajoberstar:gradle-git:1.1.0'
     }
 }
 
 
+//noinspection GroovyAssignabilityCheck
+dependencies {
 
-/**
- * Load the properties found at the provided path into the root project, making them accessible via "rootProject.getProperty('foo')".
- * Also adds the properties to the global 'ant' object.
- * @param path
- * @return
- */
-def loadProps(String path) {
-    File f = file(path);
-    if(!f.exists()) {
-        throw new Exception("Could not load properties from ${path}, as it does not exist")
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '9fe9bc3-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
+    compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
+
+
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-json', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-main', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-i18n', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-parser', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-server', version: '0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.antlr', version: '3.1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.apache-solr-core', version: '1.4.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.apache-solr-solrj', version: '1.4.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.asm', version: '3.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.axiom-api', version: '1.2.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.axiom-impl', version: '1.2.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.backport-util-concurrent', version: '3.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.bsf', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.bsh', version: '2.0b4_2'
+    compile group: 'com.dotcms.lib', name: 'dot.cactus.integration.ant', version: '1.8.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.cargo-ant', version: '0.9_1'
+    compile group: 'com.dotcms.lib', name: 'dot.cargo-core-uberjar', version: '0.9_1'
+    compile group: 'com.dotcms.lib', name: 'dot.castor', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.cglib-nodep', version: '2.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-commons', version: '0.5-SNAPSHOT_3'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-commons-api', version: '0.8.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-commons-impl', version: '0.8.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-server-bindings', version: '0.8.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-server-support', version: '0.8.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.chemistry-opencmis-test-util', version: '0.8.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-api', version: '2.2.7_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-core', version: '2.2.7_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxb-impl', version: '2.2.7_2'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxws-api', version: '2.2.9_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version: '2.2.8_1'
+    compile group: 'com.dotcms.lib', name: 'dot.stax2-api', version: '3.1.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.woodstox-core-lgpl', version: '4.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.com.dotmarketing.jhlabs.images.filters', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-beanutils', version: '1.6.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-cli', version: '1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-collections', version: '3.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-configuration', version: '1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-dbcp', version: '1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-digester', version: '1.7_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-fileupload', version: '1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-httpclient', version: '3.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-io', version: '2.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-jci-core', version: '1.0.406301_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-jci-eclipse', version: '3.2.0.666_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-lang', version: '2.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-net', version: '3.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-pool', version: '1.5.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.commons-validator', version: '1.1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.compression-filter', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.concurrent', version: '1.3.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.core-renderer-modified', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.cos', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.counter-ejb', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.daisydiff', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.dnsjava', version: '2.0.8_1'
+    compile group: 'com.dotcms.lib', name: 'dot.drools-compiler', version: '3.0.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.drools-core', version: '3.0.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.drools-decisiontables', version: '3.0.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.drools-jsr94', version: '3.0.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.dwr', version: '3rc2modified_1'
+    compile group: 'com.dotcms.lib', name: 'dot.ehcache', version: '1.6.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version: '1.4.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.esapi', version: '2.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.felix', version: '4.2.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.fop', version: '0.20.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.gif89', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.google', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.groovy-all', version: '2.3.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.guava', version: '11.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-tools', version: '0.20.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hadoop-dev-core', version: '0.20.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hibernate', version: '2.1.7_1'
+    compile group: 'com.dotcms.lib', name: 'dot.httpbridge', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.httpclient', version: '4.2.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.httpcore', version: '4.2.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.icu4j', version: '4.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.iText', version: '2.1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jamm', version: '0.2.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jasperreports', version: '3.5.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.javacsv', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jaxen', version: '1.1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jboss-common-core', version: '2.2.3.GA_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jboss-logging-spi', version: '2.0.5.GA_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jbosscache-core', version: '3.2.5.GA_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jcaptcha-mod', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jempbox', version: '1.6.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jep', version: '2.4.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jettison', version: '1.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jfreechart', version: '1.0.13_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jgroups', version: '3.6.1.Final_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jid3lib', version: '0.5.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.JLinkPointTxn', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.json-jspellchecker-dep', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.json', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jsoup', version: '1.6.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jstl', version: '1.0.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jta', version: '1.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.junit', version: '4.8.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jxl', version: '2.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jython', version: '2.2.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.ldap', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lesscss', version: '1.5.1-SNAPSHOT_2'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version: '1.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-join', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-memory', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queries', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queryparser', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version: '4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.mail-ejb', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.milton-api', version: '1.8.1.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.milton-servlet', version: '1.8.1.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.mime-util', version: '2.1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.mimepull', version: '1.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.mockito-all', version: '1.9.5_1'
+    compile group: 'com.dotcms.lib', name: 'dot.msnm', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.myspell', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.nekohtml', version: '1.9.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.odmg', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version: '2.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.mediawiki.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.textile.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.tracwiki.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.twiki.core', version: '1.8.0.I20120918-1109_1'
+    compile group: 'com.dotcms.lib', name: 'dot.oro', version: '2.0.8_1'
+    compile group: 'com.dotcms.lib', name: 'dot.platform', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.portlet', version: '1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.quartz-all', version: '1.8.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.rhino', version: '1.7R4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.secure-filter', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.simplecaptcha', version: '1.2.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version: '1.6.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version: '1.6.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.snappy-java', version: '1.0.4.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.sslext', version: '1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.struts', version: '1.2.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.stxx', version: '1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.tagsoup', version: '1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.Tidy', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version: '1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.trove', version: '1.0.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.twitter4j-core', version: '3.0.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.urlrewritefilter', version: '4.0.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.util-taglib', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.Verisign', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.wbmp', version: 'ukv_1'
+    compile group: 'com.dotcms.lib', name: 'dot.werken-xpath', version: '0.9.4_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xalan', version: '2.7.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version: '1.1.3.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version: '1.1.4c_1'
+    compile group: 'com.dotcms.lib', name: 'dot.xstream', version: '1.4.8_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version: '1.6.6_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version: '3.1.10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version: '0.12.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version: '0.10.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version: '0.10.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version: '2.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-core', version: '2.4.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-annotations', version: '2.4.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-databind', version: '2.4.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version: '1.0.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.geoip2', version: '2.1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.useragentutils', version: '1.15_1'
+    compile group: 'com.dotcms.lib', name: 'dot.aopalliance-repackaged', version: '2.4.0-b10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-api', version: '2.4.0-b10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-locator', version: '2.4.0-b10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.hk2-utils', version: '2.4.0-b10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.javassist', version: '3.18.1-GA_1'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.annotation-api', version: '1.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.inject', version: '2.4.0-b10_1'
+    compile group: 'com.dotcms.lib', name: 'dot.javax.ws.rs-api', version: '2.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-client', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-common', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet-core', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-container-servlet', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-guava', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-jaxb', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-multipart', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-media-json-jackson', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-server', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.osgi.core', version: '4.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version: '1.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version: '1.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.validation-api', version: '1.1.0.Final_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version: '2.6.0-rc1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version: '2.6.0-rc1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jersey-entity-filtering', version: '2.17_1'
+    compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version: '2.6.0-rc2_1'
+
+
+
+    compile group: 'org.springframework', name: 'spring-asm', version: '3.1.0.RELEASE'
+    compile(group: 'org.springframework', name: 'spring-beans', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
     }
-    Properties props = new Properties()
-    props.load(new FileInputStream(f))
-    logger.info("Loading Properties from ${path} into 'rootProject[*]' and 'ant[*]'.")
-    props.each { k, v ->
-        logger.info("\t${k}: ${v}");
-        rootProject.ext.set(k, v)
-        ant.properties[k] = v
+    compile(group: 'org.springframework', name: 'spring-context', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+        exclude(module: 'aopalliance')
+        exclude(module: 'spring-aop')
+        exclude(module: 'spring-context-support')
+    }
+    compile(group: 'org.springframework', name: 'spring-core', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+    }
+    compile(group: 'org.springframework', name: 'spring-expression', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+    }
+    compile(group: 'org.springframework', name: 'spring-jdbc', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+        exclude(module: 'aopalliance')
+        exclude(module: 'spring-aop')
+    }
+    compile(group: 'org.springframework', name: 'spring-tx', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+        exclude(module: 'aopalliance')
+        exclude(module: 'spring-aop')
+    }
+    compile(group: 'org.springframework', name: 'spring-web', version: '3.1.0.RELEASE') {
+        exclude(module: 'commons-logging')
+        exclude(module: 'aopalliance')
+        exclude(module: 'spring-aop')
+    }
+    compile(group: 'org.springframework', name: 'spring-webmvc', version: '3.1.0.RELEASE') {
+        exclude(module: 'spring-aop')
+        exclude(module: 'aopalliance')
+        exclude(module: 'commons-logging')
+        exclude(module: 'spring-context-support')
+    }
+    compile group: 'com.dotcms.lib', name: 'compass-gems', version: '1.0.3_1'
+    compile group: 'org.jruby', name: 'jruby-complete', version: '1.7.19'
+    compile group: 'com.h2database', name: 'h2', version: '1.3.176'
+    compile group: 'eu.bitwalker', name: 'UserAgentUtils', version: '1.16'
+
+
+    /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
+    compile fileTree("${project.projectDir}/bin/autoupdater/libs").include('**/*.jar')
+    compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
+
+
+    provided group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
+    provided(group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip')
+    provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
+
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'src'
+        }
+        resources {
+            srcDirs 'src', 'src-conf'
+        }
+    }
+    test {
+        java {
+            srcDir 'test'
+        }
+        resources {
+            srcDir 'test'
+        }
     }
 }
 
-/**
- * Load props from the build.properties file in source control.
- */
-loadProps("${rootProject.projectDir}/src/com/liferay/portal/util/build.properties")
+sourceSets {
+    main.compileClasspath += configurations.provided;
+    test.compileClasspath += configurations.provided;
+    test.runtimeClasspath += configurations.provided;
+}
 
+test {
+    // enable TestNG support (default is JUnit)
+    useTestNG()
+    workingDir "${rootProject.rootDir}"
+}
 
-task loadAntProps() {
-    logger.info("Loading properties defined in ant onto gradle's 'rootProject':")
-    ant.properties.each { k, v ->
-        logger.info("\t${k}: ${v}");
-        rootProject.ext.set(k, v)
+javadoc.classpath = sourceSets.main.compileClasspath;
+javadoc.options({
+    addStringOption('tag', 'todo')
+})
+
+jar {
+    baseName = "dotcms"
+}
+
+task _copyTomcatContextXml(type: Copy) {
+    from "${project.rootDir}/extra/tomcat"
+    into "${sourceSets.main.output.resourcesDir}/META-INF"
+    include '**/*.*'
+}
+
+task _copyPluginsXml(type: Copy) {
+    from "${project.rootDir}/plugins"
+    into "${sourceSets.main.output.resourcesDir}/"
+    include 'plugins.xml'
+}
+
+processResources.dependsOn _copyTomcatContextXml, _copyPluginsXml
+
+war {
+    webAppDirName = 'dotCMS'
+//    from 'src/rootContent' // adds a file-set to the root of the archive
+//    webInf { from 'src/additionalWebInf' } // adds a file-set to the WEB-INF dir.
+    metaInf {
+        from "${project.rootDir}/extra/tomcat"
+        include '**/*.*'
     }
 }
 
-/**
- * Clone the tomcat repo into $tomcat.home if the directory does not exist.
- */
-task cloneTomcat() {
-    onlyIf {
-        return !file("${project.'tomcat.home'}/").exists()
-    }
+clean.dependsOn loadAntProps, 'clean-core', 'clean-tinymce-gz'
+clean.description "Cleans plugins and core code and also undeploys plugins"
 
-    doLast {
-        Grgit.clone(uri: 'https://github.com/dotCMS/tomcat.git', refToCheckout: "${project.'tomcat.version'}", dir: "${project.'tomcat.home'}")
-    }
+task explodedWar(type: Copy) {
+    into "$buildDir/exploded"
+    with war
 }
 
-/**
- * Update the tomcat git clone found at $tomcat.home
- */
-task pullTomcat(dependsOn: cloneTomcat) {
-    doLast {
-        def grgit = Grgit.open(dir: "${project.'tomcat.home'}")
-        grgit.pull()
-        logger.info("Pulled tomcat: version '${project.'tomcat.version'}'")
-    }
+task deployToCustomTomcat(type:Sync){
+    into "${rootProject.projectDir}/../tomcat8/webapps/ROOT"
+    with war
 }
-
-/**
- * Clone the JBoss repo into $tomcat.home if the directory does not exist.
- */
-task cloneJboss7() {
-    onlyIf {
-        return !file("${project.'jboss7.home'}/").exists()
-    }
-
-    doLast {
-        Grgit.clone(uri: 'https://github.com/dotCMS/jboss7.git', refToCheckout: "${project.'jboss7.version'}", dir: "${project.'jboss7.home'}")
-    }
-}
-
-/**
- * Update the tomcat git clone found at $tomcat.home
- */
-task pullJboss7(dependsOn: cloneJboss7) {
-    doLast {
-        def grgit = Grgit.open(dir: "${project.'jboss7.home'}")
-        grgit.pull()
-        logger.info("Pulled jboss: version '${project.'jboss7.version'}'")
-    }
-}
-
-
-task "setup-deploy-location"(dependsOn: ["use-file"]) {
-    description "sets up the locations where to deploy"
-    project.ext.'plugin.root.dir' = project.hasProperty('target.root') ? "${projectDir}/../../${project.'target.root'}" : "${project.'plugin.root.dir.default'}"
-    project.ext.'plugin.jar.deploy.dir' = project.hasProperty('target.root') ? "${project.'target.root'}/WEB-INF/lib" : "${project.'plugin.root.dir.default'}/WEB-INF/lib"
-    ant.properties.'plugin.root.dir' = project.ext.'plugin.root.dir'
-    ant.properties.'plugin.jar.deploy.dir' = project.ext.'plugin.jar.deploy.dir'
-    logger.info("Deploying plugins to: ${project.'plugin.root.dir'} | ${project.'plugin.jar.deploy.dir'}")
-}
-
-task "use-file"() {
-    loadProps("${rootProject.projectDir}/build.properties")
-}
-
-task clean(dependsOn: [loadAntProps, 'clean-core', 'clean-tinymce-gz']) {
-    description "Cleans plugins and core code and also undeploys plugins"
-}
-
-task undeployWarTomcat(type: Delete) {
-    delete "${ant.properties.'tomcat.home'}/webapps/ROOT"
-}
-
-
-task copyBuildToDeployDir(type: Copy) {
-    from("${project.'build.lib'}/")
-    into("${project.'deploy.dir'}/")
-    include "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
-}
-
-task deployConfigCustomTarget(type: Copy){
-    onlyIf {
-        return project.hasProperty('target.root')
-    }
-    from "${project.'plugin.root.dir'}/WEB-INF/classes"
-    into "${project.'basedir'}/../../bin/system/${project.'src.conf.dir'}"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-task deployConfigDefaultTarget(type: Copy){
-    onlyIf {
-        return !project.hasProperty('target.root')
-    }
-    from "${project.'src.conf.dir'}"
-    into "${project.'classes.app'}"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-
-
-task deployConfig(dependsOn: [deployConfigDefaultTarget, deployConfigCustomTarget]){
-    description "Verify if there is specified a custom location for the dotcms installation. When the war structure is use the 'target.root' property will be set in order to specify where the war folder is located, if not present the normal dotcms git structure is assumed."
-}
-
-task deploy(dependsOn: ['jar', deployConfig, copyBuildToDeployDir]) {
-    description "will compile, jar and copy to server lib and update the about page of the site"
-}
-
-task _warFileCopyStatic(type: Copy) {
-    from "${project.projectDir}/dotCMS/"
-    into "${project.projectDir}/${project.'build.war'}/${project.'war.name'}.war"
-    exclude "assets/"
-    exclude "WEB-INF/backup/"
-    exclude "WEB-INF/dotlucene/"
-    exclude "WEB-INF/classes/"
-    exclude "dot_secure/"
-    exclude "dotsecure/"
-}
-
-// <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true" includeemptydirs="false">
-//            <fileset dir="dotCMS/WEB-INF/classes">
-//                <exclude name="**/.svn" />
-//                <exclude name="**/.git" />
-//            </fileset>
-//        </copy>
-task _warFileCopyClasses(type: Copy) {
-    logger.info("Copying from ${project.projectDir}/${project.'src.conf.dir'}")
-    from "${project.projectDir}/${project.'src.conf.dir'}"
-    into "${project.projectDir}/${project.'build.war'}/${project.'war.name'}.war/WEB-INF/classes"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-task _warCopyAssets(dependsOn: [_warFileCopyStatic, _warFileCopyClasses]) {
-
-}
-task warFile(dependsOn: [_warCopyAssets, 'create-war-file']) {}
-tasks.'create-war-file'.mustRunAfter _warCopyAssets
-
-
-task _warDeployCoreWeb(){
-
-}
-task war(dependsOn: [deploy, _warDeployCoreWeb , 'deploy-plugins', warFile]) {
-    description "builds dotCMS as a war without the jsps precompiled"
-}
-tasks.'_warDeployCoreWeb'.mustRunAfter deploy
-tasks.'deploy-plugins'.mustRunAfter deploy
-tasks.war.mustRunAfter 'deploy-plugins'
-tasks.war.mustRunAfter _warDeployCoreWeb
-
-
-task deployWarTomcat(dependsOn: [loadAntProps, pullTomcat, war]) {
-    description 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
-    doLast {
-        tasks."move-war-tomcat".execute()
-    }
-}
-
-
-task "deploy-war-tomcat-dev" {
-    println "Tomcat home: ${ant.properties.'tomcat.home'}"
-    description = "Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)"
-    doLast {
-        tasks."generate-move-clean-projects-tomcat".execute()
-        tasks."deploy-war-tomcat".execute()
-    }
-}
-
-//<!--
-//        Same as the deploy-war-tomcat except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-//        This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
-//    -->
-task "deploy-war-tomcat-backup"(dependsOn: ["clone-pull-tomcat", 'backup-war-tomcat-data', war]) {
-    description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
-    doLast {
-        tasks."move-war-tomcat".execute()
-        tasks."restore-backup-war-tomcat-data".execute()
-    }
-
-}
-
-//    <!--
-//        Same as the deploy-war-tomcat-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-//        This is useful in cases when you need to make a deploy-war-tomcat-tests but keeping your current data.
-//    -->
-task "deploy-war-tomcat-tests-backup"(dependsOn: ['pullTomcat', 'backup-war-tomcat-data', 'war-tests']) {
-    description "Same as 'deploy-war-tomcat-backup' but also includes the junit tests."
-    doLast {
-        tasks."move-war-tomcat".execute()
-        tasks."restore-backup-war-tomcat-data".execute()
-    }
-}
-
-
-task warTests(dependsOn: ["deploy-tests"]) {
-    description "builds dotCMS as a war without the jsps precompiled"
-    doLast {
-        tasks.warFile.execute()
-    }
-}
-
-task deployWarTomcatTests(dependsOn: [pullTomcat, warTests]) {
-    description "Same as 'deploy-war-tomcat' but also includes the junit tests."
-    doLast {
-        tasks."move-war-tomcat".execute()
-    }
-}
-
-task cleanTinyMCE(type: Delete){
-    description "Removes all generated .gz pre-compressed files by tinymce_gzip.jsp"
-    delete fileTree('dotCMS/html/js/tinymce/js/tinymce/').include('**/*.gz')
-}
-//
-// <target name="clean-jsp" description="Removes all compiled jsp files from the tomcat instance.">
-//        <delete dir="${tomcat.home}/work/Catalina" />
-//    </target>
-
-task tomcatCleanCompiledJsp(type: Delete){
-    description "Removes all compiled jsp files from the tomcat instance."
-    delete files("${project.'tomcat.home'}/work/Catalina")
-}
-
-
-
-/****  Ant Target replacement Mappings  ****/
-task 'war-file'(dependsOn: warFile) {}
-task 'clone-pull-jboss7'(dependsOn: pullJboss7)
-task 'clone-pull-tomcat'(dependsOn: pullTomcat) {}
-task "deploy-config"(dependsOn: deployConfig) {}
-task "deploy-war-tomcat"(dependsOn: deployWarTomcat) {
-    description 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
-}
-task "deploy-war-tomcat-tests"(dependsOn: deployWarTomcatTests) {}
-task 'war-tests'(dependsOn: warTests) {}
-task 'clean-tinymce-gz'(dependsOn: cleanTinyMCE) {}
-task 'clean-jsp'(dependsOn: tomcatCleanCompiledJsp) {}

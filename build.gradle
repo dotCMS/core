@@ -25,10 +25,6 @@ def felixFolder = "dotCMS/WEB-INF/felix/bundle"
 def libsFolder = "dotCMS/WEB-INF/lib"
 def dotCmsFolder = "dotCMS"
 
-
-//Import and apply the dependencies from the dependencies scripts
-apply from: "$rootDir/dependencies.gradle"
-
 task copyToFelix(type: Sync) {
     from configurations.compile
     into felixFolder
@@ -56,11 +52,12 @@ task copyStarterProject(type: Copy) {
 }
 
 task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
+    description 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
     doLast {
         println "Copied libs"
     }
 }
-copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
+
 
 dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
@@ -70,12 +67,25 @@ dependencies {
 ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
 configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
 
-//Move the dependencies to the WEB-INF/lib folder
+def usePre3_5Build(){
 
-//ant.importBuild 'build.xml'
-ant.importBuild 'build-gradle-migration.xml'
-apply from: "${rootDir}/core.gradle"
-tasks.compile.dependsOn copyToLib
+    //Import and apply the dependencies from the dependencies scripts
+    apply from: "$rootDir/dependencies.gradle"
+    ant.importBuild 'build.xml'
+}
+
+def usePureGradleBuild(){
+    ant.importBuild 'build-gradle-migration.xml'
+    apply from: "${rootDir}/core.gradle"
+}
+
+if(project.'com.dotcms.build.use-pre-3_5-build' == true){
+    usePre3_5Build()
+} else {
+    usePureGradleBuild()
+}
+
+tasks.compileJava.dependsOn copyToLib
 
 defaultTasks 'help', 'tasks'
 
