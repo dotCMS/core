@@ -129,30 +129,30 @@ public class HostAPIImpl implements HostAPI {
 
 	public Host resolveHostName(String serverName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 		Host host = hostCache.getHostByAlias(serverName);
-
+		
 		if(host == null){
 			User systemUser = APILocator.getUserAPI().getSystemUser();
-
+			
 			try {
 				host = findByNameNotDefault(serverName, systemUser, respectFrontendRoles);
 			} catch (Exception e) {
 				return findDefaultHost(systemUser, respectFrontendRoles);
 			}
-
+			
 			if(host == null){
 				host = findByAlias(serverName, systemUser, respectFrontendRoles);
 			}
-
+			
 			//If no host matches then we set the default host.
 			if(host == null){
 				host = findDefaultHost(systemUser, respectFrontendRoles);
 			}
-
+			
 			if(host != null){
 				hostCache.addHostAlias(serverName, host);
 			}
 		}
-
+		
 		if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 			return host;
 		} else {
@@ -172,21 +172,21 @@ public class HostAPIImpl implements HostAPI {
 	 * @throws DotDataException
 	 */
 	public Host findByName(String hostName, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-
+		
 		try {
 			return findByNameNotDefault(hostName, user, respectFrontendRoles);
 		} catch (Exception e) {
-
+			
 			try {
 				User systemUser = APILocator.getUserAPI().getSystemUser();
 				return findDefaultHost(systemUser, respectFrontendRoles);
-
+				
 			} catch(Exception ex){
 				throw new DotRuntimeException(e.getMessage(), e);
 			}
 		}
 	}
-
+	
 	/**
 	 *
 	 * @param hostName
@@ -198,16 +198,16 @@ public class HostAPIImpl implements HostAPI {
 	 */
 	private Host findByNameNotDefault(String hostName, User user, boolean respectFrontendRoles) {
 		Host host = null;
-
+		
 		try{
 			host  = hostCache.get(hostName);
-
+			
 			if(host != null){
 				if(APILocator.getPermissionAPI().doesUserHavePermission(host, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles)){
 					return host;
 				}
 			}
-
+			
 		} catch(Exception e){
 			Logger.debug(HostAPIImpl.class, e.getMessage(), e);
 		}
@@ -218,25 +218,25 @@ public class HostAPIImpl implements HostAPI {
 					" +working:true +Host.hostName:" + hostName;
 
 			List<Contentlet> list = APILocator.getContentletAPI().search(query, 0, 0, null, user, respectFrontendRoles);
-
+			
 			if(list.size() > 1) {
 				Logger.fatal(this, "More of one host has the same name or alias = " + hostName + "!!");
 				int i=0;
-
+				
 				for(Contentlet c : list){
 					Logger.fatal(this, "\tdupe Host " + (i+1) + ": " + list.get(i).getTitle() );
 					i++;
 				}
-
+				
 			}else if (list.size() == 0){
 				return null;
 			}
-
+			
 			host = new Host(list.get(0));
 			hostCache.add(host);
 
 			return host;
-
+			
 		}  catch (Exception e) {
 			throw new DotRuntimeException(e.getMessage(), e);
 		}
@@ -588,7 +588,7 @@ public class HostAPIImpl implements HostAPI {
 				}
 
 				// Remove Contentlet
-				ContentletAPI contentAPI = APILocator.getContentletAPI();
+				ContentletAPI contentAPI = APILocator.getContentletAPI();								
 				List<Contentlet> contentlets = contentAPI.findContentletsByHost(host, user, respectFrontendRoles);
 				contentAPI.delete(contentlets, user, respectFrontendRoles);
 
@@ -797,7 +797,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 		return systemHost;
 	}
-
+	
 	private List<Host> convertToHostList(List<Contentlet> list) {
 		List<Host> hosts = new ArrayList<Host>();
 		for(Contentlet c : list) {
