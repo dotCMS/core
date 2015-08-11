@@ -1,16 +1,28 @@
 import org.ajoberstar.grgit.*
 
-
+apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'war'
 apply from: "${rootDir}/core-build-support-tasks.gradle"
 
 
 configurations {
+    antLibs
     provided
     plugins
-
+    felix
+    starterContent
+    coreWeb
 }
+
+dependencies {
+    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
+    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+}
+
+ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
+configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
+ant.importBuild 'build-gradle-migration.xml'
 
 buildscript {
     repositories {
@@ -97,7 +109,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.ehcache', version: '1.6.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version: '1.4.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.esapi', version: '2.0.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.felix', version: '4.2.1_1'
+
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version: 'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version: '0.20.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.gif89', version: 'ukv_1'
@@ -158,7 +170,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.myspell', version: 'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.nekohtml', version: '1.9.17_1'
     compile group: 'com.dotcms.lib', name: 'dot.odmg', version: 'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version: '2.2.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.confluence.core', version: '1.8.0.I20120918-1109_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.core', version: '1.8.0.I20120918-1109_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.eclipse.mylyn.wikitext.mediawiki.core', version: '1.8.0.I20120918-1109_1'
@@ -192,12 +203,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version: '1.1.3.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version: '1.1.4c_1'
     compile group: 'com.dotcms.lib', name: 'dot.xstream', version: '1.4.8_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version: '1.6.6_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version: '3.1.10_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version: '0.12.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version: '0.10.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version: '0.10.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version: '2.2.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-core', version: '2.4.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-annotations', version: '2.4.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-databind', version: '2.4.3_1'
@@ -221,16 +226,12 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jersey-media-multipart', version: '2.17_1'
     compile group: 'com.dotcms.lib', name: 'dot.jersey-media-json-jackson', version: '2.17_1'
     compile group: 'com.dotcms.lib', name: 'dot.jersey-server', version: '2.17_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.osgi.core', version: '4.2.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version: '1.0.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.persistence-api', version: '1.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.validation-api', version: '1.1.0.Final_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-json-provider', version: '2.6.0-rc1_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-jaxrs-base', version: '2.6.0-rc1_1'
     compile group: 'com.dotcms.lib', name: 'dot.jersey-entity-filtering', version: '2.17_1'
     compile group: 'com.dotcms.lib', name: 'dot.jackson-module-jaxb-annotations', version: '2.6.0-rc2_1'
-
-
 
     compile group: 'org.springframework', name: 'spring-asm', version: '3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version: '3.1.0.RELEASE') {
@@ -274,14 +275,30 @@ dependencies {
     compile group: 'com.h2database', name: 'h2', version: '1.3.176'
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version: '1.16'
 
+    /**
+     * Order matters here: OSGI-Core must come after felix.
+     */
+    compile group: 'com.dotcms.lib', name: 'dot.felix', version: '4.2.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.osgi.core', version: '4.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version: '1.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version: '2.2.0_1'
+
+    /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version: '1.6.6_1'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version: '3.1.10_1'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version: '0.12.0_1'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version: '0.10.0_1'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version: '0.10.0_1'
+    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version: '2.2.0_1'
+
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("${project.projectDir}/bin/autoupdater/libs").include('**/*.jar')
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
 
-    provided group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
-    provided(group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip')
+    starterContent group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
+    coreWeb group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
 
 }
@@ -289,7 +306,7 @@ dependencies {
 sourceSets {
     main {
         java {
-            srcDirs 'src'
+            srcDir 'src'
         }
         resources {
             srcDirs 'src', 'src-conf'
@@ -306,9 +323,16 @@ sourceSets {
 }
 
 sourceSets {
-    main.compileClasspath += configurations.provided;
-    test.compileClasspath += configurations.provided;
-    test.runtimeClasspath += configurations.provided;
+    main.compileClasspath += configurations.felix + configurations.provided;
+
+    test.compileClasspath += configurations.felix + configurations.provided;
+    test.runtimeClasspath += configurations.felix + configurations.provided;
+}
+
+idea {
+    module {
+        scopes.PROVIDED.plus += [configurations.provided, configurations.felix]
+    }
 }
 
 test {
@@ -342,7 +366,11 @@ processResources.dependsOn _copyTomcatContextXml, _copyPluginsXml
 
 war {
     webAppDirName = 'dotCMS'
-//    from 'src/rootContent' // adds a file-set to the root of the archive
+    from configurations.starterContent
+    rename 'starter-(.+).zip', 'starter.zip'
+    into('WEB-INF/felix/bundle') {
+        from configurations.felix
+    }
 //    webInf { from 'src/additionalWebInf' } // adds a file-set to the WEB-INF dir.
     metaInf {
         from "${project.rootDir}/extra/tomcat"
@@ -350,7 +378,19 @@ war {
     }
 }
 
-clean.dependsOn loadAntProps, 'clean-core', 'clean-tinymce-gz'
+
+task cleanPre3_5_Files(type: Delete){
+    delete "${project.projectDir}/dotCMS/WEB-INF/lib",
+            "${project.projectDir}/dotCMS/WEB-INF/classes",
+            "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
+            "${project.projectDir}/dotCMS/starter.zip"
+}
+
+task distClean(type: Delete){
+    delete fileTree("${rootProject.projectDir}/../tomcat8/webapps/ROOT").include('**/*.*')
+}
+
+clean.dependsOn cleanPre3_5_Files
 clean.description "Cleans plugins and core code and also undeploys plugins"
 
 task explodedWar(type: Copy) {
