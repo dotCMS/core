@@ -1,21 +1,18 @@
 package com.dotmarketing.listeners;
 
-import java.io.File;
-
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-
-import com.dotcms.repackage.org.apache.log4j.BasicConfigurator;
-import com.dotcms.repackage.org.apache.log4j.xml.DOMConfigurator;
-
 import com.dotcms.enterprise.ClusterThreadProxy;
 import com.dotcms.util.AsciiArt;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.reindex.ReindexThread;
+import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.io.File;
 
 /**
  *
@@ -77,8 +74,9 @@ public class ContextLifecycleListener implements ServletContextListener {
 			Logger.error(this,e.getMessage(),e);
 		}
 
-    	BasicConfigurator.resetConfiguration();
-    	DOMConfigurator.configure(path);
+		//Initialises/reconfigures log4j based on a given log4j configuration file
+		Log4jUtil.initializeFromPath(path);
+
     	Logger.clearLoggers();
     	AsciiArt.doArt();
 	}

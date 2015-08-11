@@ -2,10 +2,13 @@ dependencies {
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: '9fe9bc3-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
-    compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
+
+    compile fileTree(dir: '/Users/jonathan/Dropbox/Projects/dotCMS/repository/git/ant-tooling/build/libs', include: '*.jar')
+//    compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
+
     compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
 
-    compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_1'
+    /*compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-json', version:'0.4.0-incubating_1'
@@ -122,7 +125,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_2'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.2_1'
@@ -156,15 +158,12 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.rhino', version:'1.7R4_1'
     compile group: 'com.dotcms.lib', name: 'dot.secure-filter', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.simplecaptcha', version:'1.2.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.6.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.6.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.snappy-java', version:'1.0.4.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.sslext', version:'1.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.struts', version:'1.2.4_1'
     compile group: 'com.dotcms.lib', name: 'dot.stxx', version:'1.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.tagsoup', version:'1.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.Tidy', version:'ukv_1'
-    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.trove', version:'1.0.2_1'
     compile group: 'com.dotcms.lib', name: 'dot.twitter4j-core', version:'3.0.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.urlrewritefilter', version:'4.0.3_1'
@@ -181,7 +180,13 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'*/
+
+    compile fileTree(dir: '/Users/jonathan/Dropbox/Projects/dotCMS/repository/git/dotcms-libs/build', include: '*.jar')
+//    compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.6.0_1'
+//    compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.6.0_1'
+//    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0.1_1'
+//    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_1'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {

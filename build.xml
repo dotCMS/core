@@ -93,7 +93,10 @@
         <fileset dir="../../${target.root}/WEB-INF/lib">
             <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
-            <include name="dot.tika-app-1.3_*.jar" />
+            <include name="dot.tika-app*.jar" />
+            <include name="dot.log4j-api*.jar" />
+            <include name="dot.log4j-core*.jar" />
+            <include name="dot.log4j-web*.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -103,7 +106,10 @@
         <fileset dir="${lib.app}">
             <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
-            <include name="dot.tika-app-1.3_*.jar" />
+            <include name="dot.tika-app*.jar" />
+            <include name="dot.log4j-api*.jar" />
+            <include name="dot.log4j-core*.jar" />
+            <include name="dot.log4j-web*.jar" />
         </fileset>
     </path>
 

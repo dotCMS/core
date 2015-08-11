@@ -22,23 +22,14 @@
 
 package com.liferay.portal.events;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Locale;
-import java.util.Set;
-import java.util.TimeZone;
-
-import com.dotcms.repackage.org.apache.log4j.Level;
-import com.dotcms.repackage.org.apache.log4j.LogManager;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotcms.repackage.org.apache.log4j.helpers.NullEnumeration;
-import com.dotcms.repackage.org.apache.log4j.xml.DOMConfigurator;
+import com.dotcms.repackage.org.apache.logging.log4j.Level;
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import com.dotcms.repackage.org.apache.logging.log4j.core.Appender;
+import com.dotcms.repackage.org.apache.logging.log4j.core.Logger;
 import com.dotcms.repackage.org.dom4j.Document;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.SAXReader;
-
+import com.dotmarketing.loggers.Log4jUtil;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.struts.SimpleAction;
 import com.liferay.portal.util.PropsUtil;
@@ -46,6 +37,9 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.ServerDetector;
 import com.liferay.util.SystemProperties;
 import com.liferay.util.Validator;
+
+import java.net.URL;
+import java.util.*;
 
 /**
  * <a href="InitAction.java.html"><b><i>View Source</i></b></a>
@@ -81,20 +75,23 @@ public class InitAction extends SimpleAction {
 			URL portalLog4jUrl = getClass().getClassLoader().getResource(
 				"META-INF/portal-log4j.xml");
 
-			if (Logger.getRootLogger().getAllAppenders() instanceof
-					NullEnumeration) {
-
-				DOMConfigurator.configure(portalLog4jUrl);
+			com.dotcms.repackage.org.apache.logging.log4j.Logger logger = LogManager.getRootLogger();
+			//Getting all the appenders for this logger
+			Map<String, Appender> appenderMap = ((Logger) logger).getAppenders();
+			if ( appenderMap.isEmpty() && portalLog4jUrl != null) {
+				//Initialises/reconfigures log4j based on a given log4j configuration file
+				Log4jUtil.initializeFromPath(portalLog4jUrl.toString());
 			}
 			else {
 				Set currentLoggerNames = new HashSet();
 
-				Enumeration enu = LogManager.getCurrentLoggers();
+				//Getting all the registered loggers
+				Collection<Logger> loggers = Log4jUtil.getLoggers();
 
-				while (enu.hasMoreElements()) {
-					Logger logger = (Logger)enu.nextElement();
-
-					currentLoggerNames.add(logger.getName());
+				Iterator<Logger> loggerIterator = loggers.iterator();
+				while ( loggerIterator.hasNext() ) {
+					Logger currentLogger = loggerIterator.next();
+					currentLoggerNames.add(currentLogger.getName());
 				}
 
 				try {
@@ -114,9 +111,9 @@ public class InitAction extends SimpleAction {
 							category.element(
 								"priority").attributeValue("value");
 
-						Logger logger = Logger.getLogger(name);
-
-						logger.setLevel(Level.toLevel(priority));
+						//Search for the logger and change the priority
+						Logger currentLogger = (Logger) LogManager.getLogger(name);
+						Log4jUtil.setLevel(currentLogger, Level.toLevel(priority));
 					}
 				}
 				catch (Exception e) {

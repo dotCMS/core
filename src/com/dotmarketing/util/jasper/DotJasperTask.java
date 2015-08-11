@@ -1,23 +1,20 @@
 package com.dotmarketing.util.jasper;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import com.dotmarketing.loggers.Log4jUtil;
 import org.apache.jasper.JasperException;
 import org.apache.jasper.JspC;
-import com.dotcms.repackage.org.apache.log4j.ConsoleAppender;
-import com.dotcms.repackage.org.apache.log4j.Logger;
-import com.dotcms.repackage.org.apache.log4j.PatternLayout;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public class DotJasperTask extends JspC {
 
 	@Override
 	protected void processFile(String arg0) throws JasperException {
-		//Init log4j to see the messages in ant's output
-		Logger logRoot = Logger.getRootLogger();
-		if (!logRoot.getAllAppenders().hasMoreElements()) {
-			logRoot.addAppender(new ConsoleAppender(   new PatternLayout("%m%n")));
-		}
+
+		//Create and add a new ConsoleAppender to the log4j configuration
+		Log4jUtil.createAndAddConsoleAppender();
+
 		if ( ((!arg0.endsWith("_inc.jsp")) && (!arg0.startsWith("/html/plugins/"))) || includeJSP(arg0)) {
 			super.processFile(arg0);
 		} else {
