@@ -544,7 +544,9 @@ function disableFormFields(){
 								<%= LanguageUtil.get(pageContext, "File") %>
 							<%}else if(form.getStructureType() ==5){%>
                                 <%= LanguageUtil.get(pageContext, "HTMLPage") %>
-                            <%} %> &gt;
+                            <%}else if(form.getStructureType() ==6){%>
+                            	<%= LanguageUtil.get(pageContext, "Persona") %>
+                        	<%} %> &gt;
 						</span>
 						<%=structure.getName() %>
 					</h2>
@@ -684,7 +686,9 @@ function disableFormFields(){
 									<%= LanguageUtil.get(pageContext, "File") %>
 								<%}else if(form.getStructureType() ==5){%>
                                     <%= LanguageUtil.get(pageContext, "HTMLPage") %>
-                                <%} %>
+                                <%} else if(form.getStructureType() ==6){%>
+                                	<%= LanguageUtil.get(pageContext, "Persona") %>
+                            	<%}%>
 							<%}else{ %>
 								<select onchange="changeStructureType()" dojoType="dijit.form.FilteringSelect" name="structureType" id="structureType" style="width:150px" value="<%= form.getStructureType()  %>" >
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_CONTENT) %>"><%= LanguageUtil.get(pageContext, "Content") %></option>

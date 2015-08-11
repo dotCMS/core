@@ -57,7 +57,9 @@
     }
     structureTypes.add(STRUCTURE_TYPE_FILEASSET);
     structureTypes.add(STRUCTURE_TYPE_HTMLPAGE);
-    structureTypes.add(STRUCTURE_TYPE_PERSONA);// Add license level
+    if(LicenseUtil.getLevel() > 200){
+    	structureTypes.add(STRUCTURE_TYPE_PERSONA);
+    }
     int structureType = 0;
     try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE) != null)

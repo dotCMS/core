@@ -479,7 +479,7 @@ public class EditStructureAction extends DotPortletAction {
 			    APILocator.getHTMLPageAssetAPI().createHTMLPageAssetBaseFields(structure);
 			}
 			
-			// if the structure is a page we need to add the base fields.
+			// if the structure is a persona we need to add the base fields.
 			if(newStructure && structureForm.getStructureType() == Structure.STRUCTURE_TYPE_PERSONA) {
 			    APILocator.getPersonaAPI().createPersonaBaseFields(structure);
 			}
