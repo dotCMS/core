@@ -3,9 +3,9 @@ import org.ajoberstar.grgit.*
 apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'war'
-apply from: "${rootDir}/core-build-support-tasks.gradle"
+apply from: "${project.projectDir}/core-build-support-tasks.gradle"
 
-
+//noinspection GroovyAssignabilityCheck
 configurations {
     antLibs
     provided
@@ -15,6 +15,7 @@ configurations {
     coreWeb
 }
 
+//noinspection GroovyAssignabilityCheck
 dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
@@ -33,7 +34,6 @@ buildscript {
         classpath 'org.ajoberstar:gradle-git:1.1.0'
     }
 }
-
 
 //noinspection GroovyAssignabilityCheck
 dependencies {
@@ -291,7 +291,6 @@ dependencies {
     felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version: '0.10.0_1'
     felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version: '2.2.0_1'
 
-
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("${project.projectDir}/bin/autoupdater/libs").include('**/*.jar')
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
@@ -303,7 +302,9 @@ dependencies {
 
 }
 
+//noinspection GroovyAssignabilityCheck
 sourceSets {
+    //noinspection GroovyAssignabilityCheck
     main {
         java {
             srcDir 'src'
@@ -322,6 +323,7 @@ sourceSets {
     }
 }
 
+//noinspection GroovyAssignabilityCheck
 sourceSets {
     main.compileClasspath += configurations.felix + configurations.provided;
 
@@ -335,6 +337,20 @@ idea {
     }
 }
 
+compileJava.options.debugOptions.debugLevel = "source,lines,vars"
+[compileJava, compileTestJava, javadoc]*.options.collect { options ->
+    options.encoding = 'UTF-8'
+
+}
+
+[compileJava, compileTestJava]*.options.collect { options ->
+    options.debug = true
+    options.incremental = true
+    options.warnings = true
+    options.deprecation = true
+}
+
+//noinspection GroovyAssignabilityCheck
 test {
     // enable TestNG support (default is JUnit)
     useTestNG()
@@ -346,9 +362,51 @@ javadoc.options({
     addStringOption('tag', 'todo')
 })
 
+//noinspection GroovyAssignabilityCheck
 jar {
+    archiveName = "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
     baseName = "dotcms"
+    version = "${project.'dotcms.release.version'}"
+    exclude 'xhtml'
+    exclude 'diff'
+    include '**/*.class'
+    include '**/Seq*.sql'
+    include '**/*.hbm.xml'
+
+    from("src") {
+        include 'org/apache/velocity/runtime/defaults/*.properties'
+    }
+    into('/')
+
+    from("src/com/liferay/portal/util") {
+        include 'build.properties'
+        filter { String line ->
+            def outLine = line
+            if(line.startsWith('#')){
+                outLine = '#' + new Date().format('EEE, dd MMM yyyy HH:mm:ss Z')
+            }
+            else if(line.startsWith('dotcms.release.build=')){
+                outLine = 'dotcms.release.build=' + project.'dotcms.release.build'
+            } else if(line.startsWith('dotcms.release.date=')){
+                outLine = 'dotcms.release.date=' + project.'dotcms.release.date'
+            }
+            println line + "/" + outLine
+            return outLine;
+        }
+        eachFile { details ->
+            if(details.name == 'build.properties')
+            println 'Copied build props'
+        }
+        into('com/liferay/portal/util')
+    }
+    manifest {
+        attributes(
+                'Implementation-Version': "${project.'dotcms.release.version'}_${project.'dotcms.release.build'}",
+                'Created-By': "${project.'java.runtime.version'} (${project.'java.specification.vendor'})"
+        )
+    }
 }
+
 
 task _copyTomcatContextXml(type: Copy) {
     from "${project.rootDir}/extra/tomcat"
@@ -364,8 +422,11 @@ task _copyPluginsXml(type: Copy) {
 
 processResources.dependsOn _copyTomcatContextXml, _copyPluginsXml
 
+//noinspection GroovyAssignabilityCheck
 war {
     webAppDirName = 'dotCMS'
+    baseName = 'dotcms'
+    version = "${project.'dotcms.release.version'}"
     from configurations.starterContent
     rename 'starter-(.+).zip', 'starter.zip'
     into('WEB-INF/felix/bundle') {
@@ -379,15 +440,15 @@ war {
 }
 
 
-task cleanPre3_5_Files(type: Delete){
+task cleanPre3_5_Files(type: Delete) {
     delete "${project.projectDir}/dotCMS/WEB-INF/lib",
             "${project.projectDir}/dotCMS/WEB-INF/classes",
             "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
             "${project.projectDir}/dotCMS/starter.zip"
 }
 
-task distClean(type: Delete){
-    delete fileTree("${rootProject.projectDir}/../tomcat8/webapps/ROOT").include('**/*.*')
+task distClean(type: Delete) {
+    delete fileTree("${rootProject.'tomcat.home'}/webapps/ROOT").include('**/*.*')
 }
 
 clean.dependsOn cleanPre3_5_Files
@@ -398,7 +459,9 @@ task explodedWar(type: Copy) {
     with war
 }
 
-task deployToCustomTomcat(type:Sync){
-    into "${rootProject.projectDir}/../tomcat8/webapps/ROOT"
+task deployToCustomTomcat(type: Sync) {
+    into "${rootProject.'tomcat.home'}/webapps/ROOT"
     with war
 }
+
+apply from: "${project.projectDir}/core-build-task-mappings.gradle"

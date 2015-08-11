@@ -26,7 +26,6 @@ def usePureGradleBuild(){
     ant.importBuild 'build-gradle-migration.xml'
     apply from: "${rootDir}/core.gradle"
 }
-logger.info("Build flag: ${project.'com.dotcms.build.use-pre-3_5-build'}")
 if(project.'com.dotcms.build.use-pre-3_5-build' == 'true'){
     usePre3_5Build()
 } else {

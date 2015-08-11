@@ -1,0 +1,25 @@
+/****  Ant Target replacement Mappings  ****/
+
+
+task 'war-file'(dependsOn: war) { description = 'See documentation for "war" task.'}
+task 'clean-jsp'(dependsOn: distCleanJsp) { description = 'See documentation for "distCleanJsp" task.'}
+
+task 'clone-pull-tomcat'(dependsOn: pullTomcat) {
+    description = 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
+}
+task 'clone-pull-jboss7'(dependsOn: pullJboss7) {  }
+
+deployToCustomTomcat.mustRunAfter pullTomcat
+deployToCustomTomcat.mustRunAfter distClean
+distClean.mustRunAfter backupCustomTomcatData
+restoreCustomTomcatData.mustRunAfter deployToCustomTomcat
+
+task "deploy-war-tomcat"(dependsOn: [pullTomcat, distClean, deployToCustomTomcat]) {
+    description 'Same as executing "./gradlew pullTomcat distClean deployToCustomTomcat". Will checkout the tomcat app server if missing, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
+}
+
+task "deploy-war-tomcat-backup"(dependsOn: [pullTomcat, backupCustomTomcatData, distClean, deployToCustomTomcat, restoreCustomTomcatData]) {
+    description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
+}
+
+

@@ -1,3 +1,5 @@
+import org.ajoberstar.grgit.*
+
 /**
  * Load the properties found at the provided path into the root project, making them accessible via "rootProject.getProperty('foo')".
  * Also adds the properties to the global 'ant' object.
@@ -23,6 +25,7 @@ def loadProps(String path) {
  * Load props from the build.properties file in source control.
  */
 loadProps("${rootProject.projectDir}/src/com/liferay/portal/util/build.properties")
+loadProps("${rootProject.projectDir}/build.properties")
 
 task loadAntProps() {
     logger.info("Loading properties defined in ant onto gradle's 'rootProject':")
@@ -32,6 +35,10 @@ task loadAntProps() {
     }
 }
 
+def status = Grgit.open(rootProject.projectDir).log(maxCommits: 1)[0]
+rootProject.ext.set("dotcms.release.build", status.abbreviatedId )
+rootProject.ext.set("dotcms.release.date", new Date((long)(status.time*1000L)).format('MMM dd, yyyy'))
+
 /**
  * Clone the tomcat repo into $tomcat.home if the directory does not exist.
  */
@@ -39,7 +46,6 @@ task cloneTomcat() {
     onlyIf {
         return !file("${project.'tomcat.home'}/").exists()
     }
-
     doLast {
         Grgit.clone(uri: 'https://github.com/dotCMS/tomcat.git', refToCheckout: "${project.'tomcat.version'}", dir: "${project.'tomcat.home'}")
     }
@@ -81,7 +87,7 @@ task pullJboss7(dependsOn: cloneJboss7) {
 }
 
 
-task "setup-deploy-location"(dependsOn: ["use-file"]) {
+task "setup-deploy-location"() {
     description "sets up the locations where to deploy"
     project.ext.'plugin.root.dir' = project.hasProperty('target.root') ? "${projectDir}/../../${project.'target.root'}" : "${project.'plugin.root.dir.default'}"
     project.ext.'plugin.jar.deploy.dir' = project.hasProperty('target.root') ? "${project.'target.root'}/WEB-INF/lib" : "${project.'plugin.root.dir.default'}/WEB-INF/lib"
@@ -90,180 +96,35 @@ task "setup-deploy-location"(dependsOn: ["use-file"]) {
     logger.info("Deploying plugins to: ${project.'plugin.root.dir'} | ${project.'plugin.jar.deploy.dir'}")
 }
 
-task "use-file"() {
-    loadProps("${rootProject.projectDir}/build.properties")
+task distCleanBackup(type: Delete) {
+    delete "${project.'tomcat.home'}/temp"
 }
 
-
-
-task undeployWarTomcat(type: Delete) {
-    delete "${ant.properties.'tomcat.home'}/webapps/ROOT"
-}
-
-
-task copyBuildToDeployDir(type: Copy) {
-    from("${project.'build.lib'}/")
-    into("${project.'deploy.dir'}/")
-    include "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
-}
-
-task deployConfigCustomTarget(type: Copy){
-    onlyIf {
-        return project.hasProperty('target.root')
+task backupCustomTomcatData(type: Copy, dependsOn: distCleanBackup) {
+    into "${project.'tomcat.home'}/temp"
+    into("assets") {
+        from "${project.'tomcat.home'}/webapps/ROOT/assets"
     }
-    from "${project.'plugin.root.dir'}/WEB-INF/classes"
-    into "${project.'basedir'}/../../bin/system/${project.'src.conf.dir'}"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-task deployConfigDefaultTarget(type: Copy){
-    onlyIf {
-        return !project.hasProperty('target.root')
+    into("dotsecure") {
+        from "${project.'tomcat.home'}/webapps/ROOT/dotsecure"
     }
-    from "${project.'src.conf.dir'}"
-    into "${project.'classes.app'}"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-
-
-task deployConfig(dependsOn: [deployConfigDefaultTarget, deployConfigCustomTarget]){
-    description "Verify if there is specified a custom location for the dotcms installation. When the war structure is use the 'target.root' property will be set in order to specify where the war folder is located, if not present the normal dotcms git structure is assumed."
-}
-
-task deploy(dependsOn: ['jar', deployConfig, copyBuildToDeployDir]) {
-    description "will compile, jar and copy to server lib and update the about page of the site"
-}
-
-task _warFileCopyStatic(type: Copy) {
-    from "${project.projectDir}/dotCMS/"
-    into "${project.projectDir}/${project.'build.war'}/${project.'war.name'}.war"
-    exclude "assets/"
-    exclude "WEB-INF/backup/"
-    exclude "WEB-INF/dotlucene/"
-    exclude "WEB-INF/classes/"
-    exclude "dot_secure/"
-    exclude "dotsecure/"
-}
-
-// <copy todir="${build.war}/${war.name}.war/WEB-INF/classes" overwrite="true" includeemptydirs="false">
-//            <fileset dir="dotCMS/WEB-INF/classes">
-//                <exclude name="**/.svn" />
-//                <exclude name="**/.git" />
-//            </fileset>
-//        </copy>
-task _warFileCopyClasses(type: Copy) {
-    logger.info("Copying from ${project.projectDir}/${project.'src.conf.dir'}")
-    from "${project.projectDir}/${project.'src.conf.dir'}"
-    into "${project.projectDir}/${project.'build.war'}/${project.'war.name'}.war/WEB-INF/classes"
-    exclude '**/.git'
-    exclude '**/.svn'
-}
-
-task _warCopyAssets(dependsOn: [_warFileCopyStatic, _warFileCopyClasses]) {
-
-}
-task warFile(dependsOn: [_warCopyAssets, 'create-war-file']) {}
-tasks.'create-war-file'.mustRunAfter _warCopyAssets
-
-
-task _warDeployCoreWeb(){
-
-}
-//task war(dependsOn: [deploy, _warDeployCoreWeb , 'deploy-plugins', warFile]) {
-//    description "builds dotCMS as a war without the jsps precompiled"
-//}
-//tasks.war.dependsOn deploy, _warDeployCoreWeb, 'deploy-plugins', warFile
-tasks.'_warDeployCoreWeb'.mustRunAfter deploy
-tasks.'deploy-plugins'.mustRunAfter deploy
-tasks.war.mustRunAfter 'deploy-plugins'
-tasks.war.mustRunAfter _warDeployCoreWeb
-
-
-task deployWarTomcat(dependsOn: [loadAntProps, pullTomcat, war]) {
-    description 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
-    doLast {
-        tasks."move-war-tomcat".execute()
+    into("META-INF") {
+        from "${project.'tomcat.home'}/webapps/ROOT/META-INF"
+    }
+    into("WEB-INF/H2_DATABASE") {
+        from "${project.'tomcat.home'}/webapps/ROOT/WEB-INF/H2_DATABASE"
+        include '**/*.db'
     }
 }
 
-
-task "deploy-war-tomcat-dev" {
-    logger.info( "Tomcat home: ${ant.properties.'tomcat.home'}")
-    description = "Same as deploy-war-tomcat but will use the no obfuscated version of the license and enterprise jars. (Useful for development)"
-    doLast {
-        tasks."generate-move-clean-projects-tomcat".execute()
-        tasks."deploy-war-tomcat".execute()
-    }
-}
-
-//<!--
-//        Same as the deploy-war-tomcat except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-//        This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
-//    -->
-task "deploy-war-tomcat-backup"(dependsOn: ["clone-pull-tomcat", 'backup-war-tomcat-data', war]) {
-    description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
-    doLast {
-        tasks."move-war-tomcat".execute()
-        tasks."restore-backup-war-tomcat-data".execute()
-    }
-
-}
-
-//    <!--
-//        Same as the deploy-war-tomcat-tests except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
-//        This is useful in cases when you need to make a deploy-war-tomcat-tests but keeping your current data.
-//    -->
-task "deploy-war-tomcat-tests-backup"(dependsOn: ['pullTomcat', 'backup-war-tomcat-data', 'war-tests']) {
-    description "Same as 'deploy-war-tomcat-backup' but also includes the junit tests."
-    doLast {
-        tasks."move-war-tomcat".execute()
-        tasks."restore-backup-war-tomcat-data".execute()
-    }
+task restoreCustomTomcatData(type: Copy) {
+    from "${project.'tomcat.home'}/temp"
+    into "${project.'tomcat.home'}/webapps/ROOT"
 }
 
 
-task warTests(dependsOn: ["deploy-tests"]) {
-    description "builds dotCMS as a war without the jsps precompiled"
-    doLast {
-        tasks.warFile.execute()
-    }
-}
-
-task deployWarTomcatTests(dependsOn: [pullTomcat, warTests]) {
-    description "Same as 'deploy-war-tomcat' but also includes the junit tests."
-    doLast {
-        tasks."move-war-tomcat".execute()
-    }
-}
-
-task cleanTinyMCE(type: Delete){
-    description "Removes all generated .gz pre-compressed files by tinymce_gzip.jsp"
-    delete fileTree('dotCMS/html/js/tinymce/js/tinymce/').include('**/*.gz')
-}
-//
-// <target name="clean-jsp" description="Removes all compiled jsp files from the tomcat instance.">
-//        <delete dir="${tomcat.home}/work/Catalina" />
-//    </target>
-
-task tomcatCleanCompiledJsp(type: Delete){
+task distCleanJsp(type: Delete) {
     description "Removes all compiled jsp files from the tomcat instance."
     delete files("${project.'tomcat.home'}/work/Catalina")
 }
 
-
-
-/****  Ant Target replacement Mappings  ****/
-task 'war-file'(dependsOn: warFile) {}
-task 'clone-pull-jboss7'(dependsOn: pullJboss7)
-task 'clone-pull-tomcat'(dependsOn: pullTomcat) {}
-task "deploy-config"(dependsOn: deployConfig) {}
-task "deploy-war-tomcat"(dependsOn: deployWarTomcat) {
-    description 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
-}
-task "deploy-war-tomcat-tests"(dependsOn: deployWarTomcatTests) {}
-task 'war-tests'(dependsOn: warTests) {}
-task 'clean-tinymce-gz'(dependsOn: cleanTinyMCE) {}
-task 'clean-jsp'(dependsOn: tomcatCleanCompiledJsp) {}
