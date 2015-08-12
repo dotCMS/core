@@ -1,6 +1,6 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '9fe9bc3-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'ad4c93a-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
 
     compile fileTree(dir: '/Users/jonathan/Dropbox/Projects/dotCMS/repository/git/ant-tooling/build/libs', include: '*.jar')
