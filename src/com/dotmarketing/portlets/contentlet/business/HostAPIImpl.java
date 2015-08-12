@@ -373,7 +373,6 @@ public class HostAPIImpl implements HostAPI {
 			hostCache.remove(host);
 		}
 		Contentlet c;
-		ContentletAPI conAPI = APILocator.getContentletAPI();
 		try {
 			c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
 		} catch (DotContentletStateException e) {
@@ -384,13 +383,22 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().copyProperties(c, host.getMap());;
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
-		
+
 		if(host.isWorking() || host.isLive()){
 			APILocator.getVersionableAPI().setLive(c);
 		}
 		Host savedHost =  new Host(c);
 
-		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
+		updateDefaultHost(host, user, respectFrontendRoles);
+		hostCache.clearAliasCache();
+		return savedHost;
+
+	}
+
+	public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+		// If host is marked as default make sure that no other host is already set to be the default
+		if(host.isDefault()) {
+			ContentletAPI conAPI = APILocator.getContentletAPI();
 			List<Host> hosts= findAllFromDB(user, respectFrontendRoles);
 			Host otherHost;
 			Contentlet otherHostContentlet;
@@ -398,6 +406,7 @@ public class HostAPIImpl implements HostAPI {
 				if(h.getIdentifier().equals(host.getIdentifier())){
 					continue;
 				}
+				// if this host is the default as well then ours should become the only one
 				if(h.isDefault()){
 					boolean isHostRunning = h.isLive();
 					otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
@@ -414,14 +423,9 @@ public class HostAPIImpl implements HostAPI {
 						otherHost = new Host(cont);
 						publish(otherHost, user, respectFrontendRoles);
 					}
-					
 				}
 			}
 		}
-
-		hostCache.clearAliasCache();
-		return savedHost;
-
 	}
 
 	public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
