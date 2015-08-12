@@ -27,7 +27,7 @@ NodeStats[] nsArray=ns.getNodes();
       <td> <%= nsArray[i].getNode().name() %> <%=nsArray[i].getNode().isMasterNode() ? "(master)" : ""  %> </td>
    </tr>
    <tr>
-      <td> Host Name </td>
+      <td> Site Name </td>
       <td> <%= nsArray[i].getHostname() %> </td>
    </tr>
    <tr>

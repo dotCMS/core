@@ -295,19 +295,23 @@ public class BinaryExporterServlet extends HttpServlet {
 					} else {
 						/*
 						If the property DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE is false OR the language in session
-						is equals to the default language, continue with the default behaviour.
+						is equals to the default language, continue with the default behavior.
 						 */
 						content = contentAPI.findContentletByIdentifier(assetIdentifier, live, lang, user, respectFrontendRoles);
 					}
 					assetInode = content.getInode();
 				}
 
-				// Check if content is live or not. If content is NOT live then throw an error 404
-				if(respectFrontendRoles && content.isLive() == false) {
-				    Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: " + content.getInode());
-                    resp.sendError(404);
-                    return;
-				}
+                // If the user is NOT logged in the backend then we cannot show content that is NOT live.
+                // Temporal files should be allowed any time
+                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                    if (!content.isLive() && respectFrontendRoles) {
+                        Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
+                                + content.getInode());
+                        resp.sendError(404);
+                        return;
+                    }
+                }
 
 				Field field = content.getStructure().getFieldVar(fieldVarName);
 				if(field == null){
