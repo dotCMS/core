@@ -57,7 +57,7 @@
     }
     structureTypes.add(STRUCTURE_TYPE_FILEASSET);
     structureTypes.add(STRUCTURE_TYPE_HTMLPAGE);
-    if(LicenseUtil.getLevel() > 200){
+    if(LicenseUtil.getLevel() > 199){
     	structureTypes.add(STRUCTURE_TYPE_PERSONA);
     }
     int structureType = 0;

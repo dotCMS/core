@@ -695,7 +695,9 @@ function disableFormFields(){
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_WIDGET) %>"><%= LanguageUtil.get(pageContext, "Widget") %></option>
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_FILEASSET) %>"><%= LanguageUtil.get(pageContext, "File") %></option>
 									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_HTMLPAGE) %>"><%= LanguageUtil.get(pageContext, "HTMLPage") %></option>
-									<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
+									<%if(LicenseUtil.getLevel() > 199) {%>
+										<option value="<%= String.valueOf(Structure.STRUCTURE_TYPE_PERSONA) %>"><%= LanguageUtil.get(pageContext, "Persona") %></option>
+									<% } %>
 								</select>
 							<%} %>
 						<html:hidden property="system" styleId="system" />
