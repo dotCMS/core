@@ -5,6 +5,7 @@ package com.dotmarketing.viewtools.content;
 
 import java.io.StringWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -13,7 +14,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
 
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -25,8 +25,6 @@ import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAsset;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
@@ -63,6 +61,7 @@ public class ContentMap {
 	private PermissionAPI perAPI;
 	private List<Field> fields;
 	private Map<String,Field> fieldMap;
+	private Map<String, Object> fieldValueMap;
 	private User user;
 	private boolean EDIT_OR_PREVIEW_MODE;
 	private Host host;
@@ -175,12 +174,17 @@ public class ContentMap {
 			if(f != null && f.getFieldType().equals(Field.FieldType.CATEGORY.toString())){
 				return perAPI.filterCollection(new ArrayList<Category>((Set<Category>)conAPI.getFieldValue(content, f)), PermissionAPI.PERMISSION_USE, true, user);
 			}else if(f != null && (f.getFieldType().equals(Field.FieldType.FILE.toString()) || f.getFieldType().equals(Field.FieldType.IMAGE.toString()))){
-				String fid = (String)conAPI.getFieldValue(content, f);
+                // Check if image or file is in fieldValueMap hashmap
+                Object fieldvalue = retriveFieldValue(f);
+                if (fieldvalue != null) {
+                    return fieldvalue;
+                }
+			    
+			    final String fid = (String)conAPI.getFieldValue(content, f);
 				if(!UtilMethods.isSet(fid)){
 					return null;
 				}
 				Identifier i = APILocator.getIdentifierAPI().find(fid);
-				FileMap fm = new FileMap();
 				IFileAsset file = null;
 				if (EDIT_OR_PREVIEW_MODE){
 					String p = WorkingCache.getPathFromCache(i.getURI(), InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
@@ -188,55 +192,64 @@ public class ContentMap {
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-						    FileAssetMap fam=new FileAssetMap();
-                            FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(fileAsset);
-                            fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-                            BeanUtils.copyProperties(fam, fa);
+	                        FileAssetMap fam = FileAssetMap.of(fileAsset);
+                            // Store file asset map into fieldValueMap
+                            addFieldValue(f, fam);
+
                             return fam;
-						    //return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
 						}
 					}else{
 						file = fileAPI.find(p,user,true);
 					}
-//					file = (File)APILocator.getVersionableAPI().findWorkingVersion(i, File.class);
 				}else{
 					String p = LiveCache.getPathFromCache(i.getURI(),InodeUtils.isSet(i.getHostId())?i.getHostId():host.getIdentifier());
 					p = p.substring(5, p.lastIndexOf("."));
 					if(i!=null && InodeUtils.isSet(i.getId()) && i.getAssetType().equals("contentlet")){
 						Contentlet fileAsset  = APILocator.getContentletAPI().find(p.substring(0, p.indexOf(java.io.File.separator)), user!=null?user:APILocator.getUserAPI().getAnonymousUser(), true);
 						if(fileAsset != null && UtilMethods.isSet(fileAsset.getInode())){
-							FileAssetMap fam=new FileAssetMap();
-							FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(fileAsset);
-							fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-							BeanUtils.copyProperties(fam, fa);
-							return fam;
-						    //return new ContentMap(fileAsset, user, EDIT_OR_PREVIEW_MODE,host,context);
+						    FileAssetMap fam = FileAssetMap.of(fileAsset);
+						    // Store file asset map into fieldValueMap
+						    addFieldValue(f, fam);
+
+						    return fam;
 						}
 					}else{
 						file = fileAPI.find(p,user,true);
 					}
-//					file = (File) APILocator.getVersionableAPI().findLiveVersion(i, File.class);
 				}
 				if(file != null && UtilMethods.isSet(file.getInode())){
-					BeanUtils.copyProperties(fm, file);
-					return fm;
+				    FileMap fm = FileMap.of(file);
+				    // Store file map into fieldValueMap
+                    addFieldValue(f, fm);
+
+                    return FileMap.of(file);
 				}else{
 					return null;
 				}
 			}else if(f != null && f.getFieldType().equals(Field.FieldType.BINARY.toString())){
-			    if(content.getStructure().getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET && f.getVelocityVarName().equalsIgnoreCase("fileasset")) {
-			        // http://jira.dotmarketing.net/browse/DOTCMS-7406
-			        FileAssetMap fam=new FileAssetMap();
-			        FileAsset fa=APILocator.getFileAssetAPI().fromContentlet(content);
-			        fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
-                    BeanUtils.copyProperties(fam, fa);
+                // Check if fileAsset or binaryMap is in fieldValueMap hashmap
+                Object fieldvalue = retriveFieldValue(f);
+                if (fieldvalue != null) {
+                    return fieldvalue;
+                }
+
+                // Field value is not present in fieldValueMap hashmap
+                if (content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_FILEASSET
+                        && f.getVelocityVarName().equalsIgnoreCase("fileasset")) {
+                    // http://jira.dotmarketing.net/browse/DOTCMS-7406
+                    FileAssetMap fam = FileAssetMap.of(content);
+
+                    // Store file asset into fieldValueMap
+                    addFieldValue(f, fam);
                     return fam;
-			    }
-			    else {
-    				BinaryMap bm = new BinaryMap(content,f);
-    				return bm;
-			    }
-			    //if the property being served is URL and the structure is a page show URL using the identifier information
+                } else {
+                    BinaryMap bm = new BinaryMap(content, f);
+
+                    // Store file asset into fieldValueMap
+                    addFieldValue(f, bm);
+                    return bm;
+                }
+			//if the property being served is URL and the structure is a page show URL using the identifier information
 			}else if(fieldVariableName.equalsIgnoreCase("url") && content.getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE){
 				Identifier identifier = APILocator.getIdentifierAPI().find(content.getIdentifier());
 				if(InodeUtils.isSet(identifier.getId())){
@@ -329,6 +342,34 @@ public class ContentMap {
 		}
 		return fieldMap.get(fieldVariableName);
 	}
+
+    /**
+     * Returns the value object using the velocity var name stored in the Field
+     * object
+     * 
+     * @param field
+     * @returns field value object (FileMap, FileAssetMap or BinaryMap)
+     */
+    private Object retriveFieldValue(Field field) {
+        if (fieldValueMap == null) {
+            // Lazy init
+            fieldValueMap = new HashMap<String, Object>();
+        }
+        return fieldValueMap.get(field.getVelocityVarName());
+    }
+
+    /**
+     * Add field value object to the map
+     * @param field
+     * @param value
+     */
+    private void addFieldValue(Field field, Object value) {
+        if (fieldValueMap == null) {
+            // Lazy init
+            fieldValueMap = new HashMap<String, Object>();
+        }
+        fieldValueMap.put(field.getVelocityVarName(), value);
+    }
 
 	public Structure getStructure() {
 		structure = content.getStructure();
