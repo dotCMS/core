@@ -38,7 +38,7 @@ function showDotCMSSystemMessage(message, isError) {
     var hideFn = dojo.partial(hideDotCMSSystemMessage, messagesCount);
     var fadeOutFn = dojo.fadeOut({node: "systemMessages" + messagesCount, delay: 10, duration: 0, onEnd: hideFn}).play;
 
-    var fadeIn = dojo.fadeIn({node: "systemMessages" + messagesCount, duration: 2000, onEnd: fadeOutFn});
+    var fadeIn = dojo.fadeIn({node: "systemMessages" + messagesCount, duration: 5000, onEnd: fadeOutFn});
     fadeIn.play();
 
     var ttl = message.split(" ").length;
