@@ -221,6 +221,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
+      .directory('./dist/jspm_packages', 'jspm_packages')
       .finalize()
 
 });
