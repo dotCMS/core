@@ -10,7 +10,13 @@ def felixFolder = "dotCMS/WEB-INF/felix/bundle"
 def libsFolder = "dotCMS/WEB-INF/lib"
 def dotCmsFolder = "dotCMS"
 
+apply from: "$rootDir/dependencies.gradle"
+
+
 task copyToFelix(type: Copy) {
+    onlyIf {
+        return true
+    }
     from configurations.compile
     into felixFolder
     include '**/dot.org.apache.felix.bundlerepository*.jar'
@@ -20,6 +26,10 @@ task copyToFelix(type: Copy) {
 }
 
 task copyToLibDir(type: Copy) {
+    onlyIf {
+        return true
+    }
+
     from configurations.compile
     into libsFolder
     exclude '**/dot.org.apache.felix.bundlerepository*.jar'
@@ -47,14 +57,57 @@ task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
 dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+    antLibs group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
 }
 
+/**
+ * Load the properties found at the provided path into the root project, making them accessible via "rootProject.getProperty('foo')".
+ * Also adds the properties to the global 'ant' object.
+ * @param path
+ * @return
+ */
+def loadProps(String path) {
+    File f = file(path);
+    if(!f.exists()) {
+        throw new Exception("Could not load properties from ${path}, as it does not exist")
+    }
+    Properties props = new Properties()
+    props.load(new FileInputStream(f))
+    logger.info("Loading Properties from ${path} into 'rootProject[*]' and 'ant[*]'.")
+    props.each { k, v ->
+        logger.info("\t${k}: ${v}");
+        rootProject.ext.set(k, v)
+        ant.properties[k] = v
+    }
+}
+
+/**
+ * Load props from the build.properties file in source control.
+ */
+loadProps("${rootProject.projectDir}/src/com/liferay/portal/util/build.properties")
+loadProps("${rootProject.projectDir}/build.properties")
+
+task loadAntProps() {
+    logger.info("Loading properties defined in ant onto gradle's 'rootProject':")
+    ant.properties.each { k, v ->
+        logger.info("\t${k}: ${v}");
+        rootProject.ext.set(k, v)
+    }
+}
+
+def _prepare(){
+    file("${project.projectDir}/dotCMS/WEB-INF/lib").mkdirs()
+}
+
+_prepare()
+
 ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
-apply from: "$rootDir/dependencies.gradle"
+configurations.antLibs.each { File f ->
+    logger.info("Adding to ant classpath: ${f.toURI().toURL()}")
+    antClassLoader.addURL(f.toURI().toURL())
+}
 ant.importBuild 'build.xml'
 
 
 tasks.compile.dependsOn copyToLib
-
 

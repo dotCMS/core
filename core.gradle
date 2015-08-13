@@ -7,7 +7,6 @@ apply from: "${project.projectDir}/core-build-support-tasks.gradle"
 
 //noinspection GroovyAssignabilityCheck
 configurations {
-    antLibs
     provided
     plugins
     felix
@@ -15,15 +14,6 @@ configurations {
     coreWeb
 }
 
-//noinspection GroovyAssignabilityCheck
-dependencies {
-    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
-    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
-}
-
-ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
-ant.importBuild 'build-gradle-migration.xml'
 
 buildscript {
     repositories {
@@ -345,7 +335,6 @@ compileJava.options.debugOptions.debugLevel = "source,lines,vars"
 
 [compileJava, compileTestJava]*.options.collect { options ->
     options.debug = true
-    options.incremental = true
     options.warnings = true
     options.deprecation = true
 }
@@ -382,12 +371,11 @@ jar {
         include 'build.properties'
         filter { String line ->
             def outLine = line
-            if(line.startsWith('#')){
+            if(line.startsWith('#')) {
                 outLine = '#' + new Date().format('EEE, dd MMM yyyy HH:mm:ss Z')
-            }
-            else if(line.startsWith('dotcms.release.build=')){
+            } else if(line.startsWith('dotcms.release.build=')) {
                 outLine = 'dotcms.release.build=' + project.'dotcms.release.build'
-            } else if(line.startsWith('dotcms.release.date=')){
+            } else if(line.startsWith('dotcms.release.date=')) {
                 outLine = 'dotcms.release.date=' + project.'dotcms.release.date'
             }
             println line + "/" + outLine
@@ -395,7 +383,7 @@ jar {
         }
         eachFile { details ->
             if(details.name == 'build.properties')
-            println 'Copied build props'
+                println 'Copied build props'
         }
         into('com/liferay/portal/util')
     }
@@ -437,15 +425,12 @@ war {
         from "${project.rootDir}/extra/tomcat"
         include '**/*.*'
     }
+    from (zipTree(configurations.coreWeb.files[0])) {
+        into 'html/js/_rulesengine'
+    }
 }
 
 
-task cleanPre3_5_Files(type: Delete) {
-    delete "${project.projectDir}/dotCMS/WEB-INF/lib",
-            "${project.projectDir}/dotCMS/WEB-INF/classes",
-            "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
-            "${project.projectDir}/dotCMS/starter.zip"
-}
 
 task distClean(type: Delete) {
     delete fileTree("${rootProject.'tomcat.home'}/webapps/ROOT").include('**/*.*')

@@ -17,7 +17,6 @@ def loadProps(String path) {
     props.each { k, v ->
         logger.info("\t${k}: ${v}");
         rootProject.ext.set(k, v)
-        ant.properties[k] = v
     }
 }
 
@@ -27,17 +26,22 @@ def loadProps(String path) {
 loadProps("${rootProject.projectDir}/src/com/liferay/portal/util/build.properties")
 loadProps("${rootProject.projectDir}/build.properties")
 
-task loadAntProps() {
-    logger.info("Loading properties defined in ant onto gradle's 'rootProject':")
-    ant.properties.each { k, v ->
-        logger.info("\t${k}: ${v}");
-        rootProject.ext.set(k, v)
-    }
+
+def initProps() {
+    def status = Grgit.open(rootProject.projectDir).log(maxCommits: 1)[0]
+    rootProject.ext.set('dotcms.release.build', status.abbreviatedId)
+    rootProject.ext.set('dotcms.release.date', new Date((long) (status.time * 1000L)).format('MMM dd, yyyy'))
+
+    rootProject.ext.set('plugin.root.dir.default', "${rootProject.projectDir}/dotCMS")
+    rootProject.ext.set('java.version', System.getProperty('java.version'))
+    rootProject.ext.set('java.runtime.version', System.getProperty('java.runtime.version'))
+    rootProject.ext.set('java.specification.vendor', System.getProperty('java.specification.vendor'))
+
+//    System.properties.each { k,v -> println k + ': ' + v }
+
 }
 
-def status = Grgit.open(rootProject.projectDir).log(maxCommits: 1)[0]
-rootProject.ext.set("dotcms.release.build", status.abbreviatedId )
-rootProject.ext.set("dotcms.release.date", new Date((long)(status.time*1000L)).format('MMM dd, yyyy'))
+initProps()
 
 /**
  * Clone the tomcat repo into $tomcat.home if the directory does not exist.

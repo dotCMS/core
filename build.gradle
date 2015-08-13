@@ -2,16 +2,24 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.5'
 }
 
-repositories {
-    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
-    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
-}
 
 configurations.all {
     // dynamic: e.g. 'version: 2.0+'
     resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
     // changing: e.g. 'version 2.0.0-SNAPSHOT'
     resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
+}
+
+repositories {
+    maven { url "http://repo.dotcms.com/artifactory/libs-release" }
+    maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
+}
+
+task cleanPre3_5_Files(type: Delete) {
+    delete "${project.projectDir}/dotCMS/WEB-INF/lib",
+            "${project.projectDir}/dotCMS/WEB-INF/classes",
+            "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
+            "${project.projectDir}/dotCMS/starter.zip"
 }
 
 
@@ -22,15 +30,16 @@ def usePre3_5Build(){
 }
 
 def usePureGradleBuild(){
-    logger.info("Building with Gradle")
-    ant.importBuild 'build-gradle-migration.xml'
+    logger.info("Building with incubating Gradle build: ")
     apply from: "${rootDir}/core.gradle"
 }
+
 if(project.'com.dotcms.build.use-pre-3_5-build' == 'true'){
     usePre3_5Build()
 } else {
     usePureGradleBuild()
 }
 
+clean.dependsOn cleanPre3_5_Files
 defaultTasks 'help', 'tasks'
 
