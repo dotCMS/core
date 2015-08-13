@@ -1,3 +1,4 @@
+
 let ConnectionManager = {
   baseUrl: "http://localhost:8080/",
   username: 'admin@dotcms.com',
@@ -5,13 +6,21 @@ let ConnectionManager = {
   persistenceHandler: {},
   locationQuery: window.location.search.substring(1),
   setBaseUrl(url){
-    if(url && (url.startsWith('http://' || url.startsWith('https://')))){
-      this.baseUrl = url.endsWith('/') ? url : url + '/' ;
+    if(url === null){
+      // set to same as current request
+      let loc = document.location
+      ConnectionManager.baseUrl =  loc.protocol + '//' + loc.host
+    }
+    else  if(url && (url.startsWith('http://' || url.startsWith('https://')))){
+      ConnectionManager.baseUrl = url.endsWith('/') ? url : url + '/' ;
     } else {
       throw new Error("Invalid proxy server base url: '" + url + "'")
     }
   }
 }
+
+ConnectionManager.setBaseUrl(null);
+
 
 if (ConnectionManager.locationQuery && ConnectionManager.locationQuery.length) {
   let q = ConnectionManager.locationQuery
