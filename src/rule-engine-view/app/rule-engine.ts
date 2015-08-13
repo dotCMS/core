@@ -51,7 +51,7 @@ class RuleEngineComponent {
     let oldUrl = ConnectionManager.baseUrl
     try {
       ConnectionManager.setBaseUrl(value)
-      window.location = window.location.protocol + '//' + window.location.host + window.location.pathname + '?baseUrl=' + value;
+      window.location.assign( window.location.protocol + '//' + window.location.host + window.location.pathname + '?baseUrl=' + value )
     } catch (e) {
       alert("Error using provided Base Url. Check the development console.");
       console.log("Error using provided Base Url: ", e)
