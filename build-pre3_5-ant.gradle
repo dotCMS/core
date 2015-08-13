@@ -12,30 +12,36 @@ def dotCmsFolder = "dotCMS"
 apply from: "$rootDir/dependencies.gradle"
 
 
-task copyToFelix(type: Copy) {
-    from configurations.compile
-    into felixFolder
-    include '**/dot.org.apache.felix.bundlerepository*.jar'
-    include '**/dot.org.apache.felix.fileinstall*.jar'
-    include '**/dot.org.apache.felix.gogo.*.jar'
-    include '**/dot.org.apache.felix.http.bundle*.jar'
+task copyToFelix {
+    copy {
+        from configurations.compile
+        into felixFolder
+        include '**/dot.org.apache.felix.bundlerepository*.jar'
+        include '**/dot.org.apache.felix.fileinstall*.jar'
+        include '**/dot.org.apache.felix.gogo.*.jar'
+        include '**/dot.org.apache.felix.http.bundle*.jar'
+    }
 }
 
-task copyToLibDir(type: Copy) {
-    from configurations.compile
-    into libsFolder
-    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-    exclude '**/dot.org.apache.felix.fileinstall*.jar'
-    exclude '**/dot.org.apache.felix.gogo.*.jar'
-    exclude '**/*.zip'
+task copyToLibDir() {
+    copy {
+        from configurations.compile
+        into libsFolder
+        exclude '**/dot.org.apache.felix.bundlerepository*.jar'
+        exclude '**/dot.org.apache.felix.fileinstall*.jar'
+        exclude '**/dot.org.apache.felix.gogo.*.jar'
+        exclude '**/*.zip'
+    }
 }
 
 
-task copyStarterProject(type: Copy) {
-    from configurations.compile
-    into dotCmsFolder
-    include '**/starter*.zip'
-    rename(/starter(.+)\.zip/, "starter.zip")
+task copyStarterProject() {
+    copy {
+        from configurations.compile
+        into dotCmsFolder
+        include '**/starter*.zip'
+        rename(/starter(.+)\.zip/, "starter.zip")
+    }
 }
 
 task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
