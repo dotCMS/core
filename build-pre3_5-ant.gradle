@@ -1,4 +1,3 @@
-
 configurations {
     compile
     antLibs
@@ -14,9 +13,6 @@ apply from: "$rootDir/dependencies.gradle"
 
 
 task copyToFelix(type: Copy) {
-    onlyIf {
-        return true
-    }
     from configurations.compile
     into felixFolder
     include '**/dot.org.apache.felix.bundlerepository*.jar'
@@ -26,10 +22,6 @@ task copyToFelix(type: Copy) {
 }
 
 task copyToLibDir(type: Copy) {
-    onlyIf {
-        return true
-    }
-
     from configurations.compile
     into libsFolder
     exclude '**/dot.org.apache.felix.bundlerepository*.jar'
@@ -57,7 +49,6 @@ task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
 dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
-    antLibs group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
 }
 
 /**
@@ -95,7 +86,7 @@ task loadAntProps() {
     }
 }
 
-def _prepare(){
+def _prepare() {
     file("${project.projectDir}/dotCMS/WEB-INF/lib").mkdirs()
 }
 
@@ -106,8 +97,11 @@ configurations.antLibs.each { File f ->
     logger.info("Adding to ant classpath: ${f.toURI().toURL()}")
     antClassLoader.addURL(f.toURI().toURL())
 }
+
+copyToLib.execute()
+
 ant.importBuild 'build.xml'
 
 
-tasks.compile.dependsOn copyToLib
+
 

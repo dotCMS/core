@@ -31,6 +31,7 @@ def usePre3_5Build(){
 
 def usePureGradleBuild(){
     logger.info("Building with incubating Gradle build: ")
+    clean.dependsOn cleanPre3_5_Files
     apply from: "${rootDir}/core.gradle"
 }
 
@@ -40,6 +41,6 @@ if(project.'com.dotcms.build.use-pre-3_5-build' == 'true'){
     usePureGradleBuild()
 }
 
-clean.dependsOn cleanPre3_5_Files
+
 defaultTasks 'help', 'tasks'
 
