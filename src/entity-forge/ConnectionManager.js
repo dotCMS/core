@@ -9,7 +9,7 @@ let ConnectionManager = {
     if(url === null){
       // set to same as current request
       let loc = document.location
-      ConnectionManager.baseUrl =  loc.protocol + '//' + loc.host
+      ConnectionManager.baseUrl =  loc.protocol + '//' + loc.host + '/'
     }
     else  if(url && (url.startsWith('http://' || url.startsWith('https://')))){
       ConnectionManager.baseUrl = url.endsWith('/') ? url : url + '/' ;
