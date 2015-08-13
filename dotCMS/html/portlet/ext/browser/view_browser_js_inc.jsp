@@ -1991,21 +1991,24 @@ dojo.require("dotcms.dojo.push.PushHandler");
 	{
 		if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Are-you-sure-you-want-to-delete-this-html-page-this-cannot-be-undone")) %>"))
 		{
-			BrowserAjax.deleteAsset(objId, deleteHTMLPageCallback);
+            BrowserAjax.deleteHTMLPageAsset(objId, deleteHTMLPageCallback);
 		}
 	}
 
-	function deleteHTMLPageCallback (response)
-	{
-		if (!response) {
-			reloadContent ();
-			showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Failed-to-delete-check-you-have-the-required-permissions")) %>');
-		} else {
-			reloadContent ();
-			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "HTML-Page-deleted")) %>');
-		}
-	}
-	
+    function deleteHTMLPageCallback(response)
+    {
+        // deleteHTMLPageCallback
+        if (response.status == "success") {
+            setTimeout("reloadContent()", 1000);
+            showDotCMSSystemMessage(response.message);
+            return;
+        }
+
+        // An error happened
+        reloadContent();
+        showDotCMSErrorMessage(response.message);
+    }
+
 	function deleteHTMLPagePreCheck(objId, referer)
 	{
 		var dataFromBrowser = {"objId":objId,"referer":referer};
@@ -2023,7 +2026,7 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		if (!response) {
 			if(confirm("<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.htmlpage.with.other.live.versions.delete")) %>"))
 			{
-				BrowserAjax.deleteAsset(dataFromBrowser.objId, deleteHTMLPageCallback);
+				BrowserAjax.deleteHTMLPageAsset(dataFromBrowser.objId, deleteHTMLPageCallback);
 			}
 		} else {
 			deleteHTMLPage(dataFromBrowser.objId, dataFromBrowser.referer);
