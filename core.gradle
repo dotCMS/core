@@ -5,6 +5,16 @@ apply plugin: 'java'
 apply plugin: 'war'
 apply from: "${project.projectDir}/core-build-support-tasks.gradle"
 
+/**
+ * Primary build tasks:
+ * clean - clean all build files, but not installations etc.
+ * uninstall - remove all deployed files ( e.g. tomcat /ROOT directory )
+ * install - Build the project and install it to the configured target application container.
+ * cleanJsp - Delete compiled JSP files from the configured target application container.
+ *
+ *
+ */
+
 //noinspection GroovyAssignabilityCheck
 configurations {
     provided
@@ -351,6 +361,9 @@ javadoc.options({
     addStringOption('tag', 'todo')
 })
 
+/**
+ * The Jar task has been 'destandardized' in order to produce the same artifact structure as the pre-3.5 builds.
+ */
 //noinspection GroovyAssignabilityCheck
 jar {
     archiveName = "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
@@ -396,6 +409,33 @@ jar {
 }
 
 
+task _assembleToStandardWebLayout(type: Copy) {
+    description = 'Copy this project into a standard webapp directory layout in the build directory.'
+    into "${rootProject.buildDir}/standard_layout"
+    from(fileTree('src').include('**/*.java')) {
+        into 'src/main/java'
+    }
+    from(fileTree('src').exclude('**/*.java')) {
+        into 'src/main/resources'
+    }
+    from(fileTree('src-conf')) {
+        into 'src/main/resources'
+    }
+    from(fileTree('dotCMS')) {
+        into 'src/main/webapp/'
+    }
+    from(fileTree('extra/tomcat')) {
+        into 'src/main/webapp/META-INF'
+    }
+    from(fileTree('test').include('**/*.java')) {
+        into 'src/test/java'
+    }
+    from(fileTree('test').exclude('**/*.java')) {
+        into 'src/test/resources'
+    }
+}
+
+
 task _copyTomcatContextXml(type: Copy) {
     from "${project.rootDir}/extra/tomcat"
     into "${sourceSets.main.output.resourcesDir}/META-INF"
@@ -430,23 +470,32 @@ war {
     }
 }
 
-
-
-task distClean(type: Delete) {
-    delete fileTree("${rootProject.'tomcat.home'}/webapps/ROOT").include('**/*.*')
-}
-
-clean.dependsOn cleanPre3_5_Files
-clean.description "Cleans plugins and core code and also undeploys plugins"
+clean.description = "Cleans plugins and core code and also undeploys plugins"
 
 task explodedWar(type: Copy) {
     into "$buildDir/exploded"
     with war
 }
 
-task deployToCustomTomcat(type: Sync) {
+task install(type: Sync) {
     into "${rootProject.'tomcat.home'}/webapps/ROOT"
     with war
 }
+
+task uninstall(type: Delete) {
+    delete fileTree("${rootProject.'tomcat.home'}/webapps/ROOT").include('**/*.*')
+}
+install.mustRunAfter uninstall
+
+
+task cleanJsp(type: Delete) {
+    description "Removes all compiled jsp files from the target instance."
+    delete files("${project.'tomcat.home'}/work/Catalina")
+}
+
+task cleanInstall(dependsOn: [uninstall, install]) {
+    description = 'Perform a clean installation, deleting existing files from your install target and reinstalling.'
+}
+
 
 apply from: "${project.projectDir}/core-build-task-mappings.gradle"

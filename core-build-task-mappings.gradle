@@ -1,25 +1,39 @@
-/****  Ant Target replacement Mappings  ****/
+/**
+ * Ant Target replacement task mappings
+ * Emulate pre-3.5 Ant tasks for backwards compatability.
+ */
 
 
-task 'war-file'(dependsOn: war) { description = 'See documentation for "war" task.'}
-task 'clean-jsp'(dependsOn: distCleanJsp) { description = 'See documentation for "distCleanJsp" task.'}
+task 'war-file'(dependsOn: war) { description = 'See documentation for "war" task.' }
+task 'clean-jsp'(dependsOn: cleanJsp) { description = 'See documentation for "distCleanJsp" task.' }
 
 task 'clone-pull-tomcat'(dependsOn: pullTomcat) {
     description = 'Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
 }
-task 'clone-pull-jboss7'(dependsOn: pullJboss7) {  }
+task 'clone-pull-jboss7'(dependsOn: pullJboss7) {}
 
-deployToCustomTomcat.mustRunAfter pullTomcat
-deployToCustomTomcat.mustRunAfter distClean
-distClean.mustRunAfter backupCustomTomcatData
-restoreCustomTomcatData.mustRunAfter deployToCustomTomcat
+install.mustRunAfter pullTomcat
+uninstall.mustRunAfter backupCustomTomcatData
+restoreCustomTomcatData.mustRunAfter install
 
-task "deploy-war-tomcat"(dependsOn: [pullTomcat, distClean, deployToCustomTomcat]) {
+task "deploy-war-tomcat"(dependsOn: [pullTomcat, cleanInstall]) {
     description 'Same as executing "./gradlew pullTomcat distClean deployToCustomTomcat". Will checkout the tomcat app server if missing, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
 }
 
-task "deploy-war-tomcat-backup"(dependsOn: [pullTomcat, backupCustomTomcatData, distClean, deployToCustomTomcat, restoreCustomTomcatData]) {
+task "deploy-war-tomcat-backup"(dependsOn: [pullTomcat, backupCustomTomcatData, cleanInstall, restoreCustomTomcatData]) {
     description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
+}
+
+
+
+
+task "setup-deploy-location"() {
+    description "Sets up the locations where to deploy"
+    project.ext.'plugin.root.dir' = project.hasProperty('target.root') ? "${projectDir}/../../${project.'target.root'}" : "${project.'plugin.root.dir.default'}"
+    project.ext.'plugin.jar.deploy.dir' = project.hasProperty('target.root') ? "${project.'target.root'}/WEB-INF/lib" : "${project.'plugin.root.dir.default'}/WEB-INF/lib"
+    ant.properties.'plugin.root.dir' = project.ext.'plugin.root.dir'
+    ant.properties.'plugin.jar.deploy.dir' = project.ext.'plugin.jar.deploy.dir'
+    logger.info("Deploying plugins to: ${project.'plugin.root.dir'} | ${project.'plugin.jar.deploy.dir'}")
 }
 
 

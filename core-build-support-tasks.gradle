@@ -91,14 +91,6 @@ task pullJboss7(dependsOn: cloneJboss7) {
 }
 
 
-task "setup-deploy-location"() {
-    description "sets up the locations where to deploy"
-    project.ext.'plugin.root.dir' = project.hasProperty('target.root') ? "${projectDir}/../../${project.'target.root'}" : "${project.'plugin.root.dir.default'}"
-    project.ext.'plugin.jar.deploy.dir' = project.hasProperty('target.root') ? "${project.'target.root'}/WEB-INF/lib" : "${project.'plugin.root.dir.default'}/WEB-INF/lib"
-    ant.properties.'plugin.root.dir' = project.ext.'plugin.root.dir'
-    ant.properties.'plugin.jar.deploy.dir' = project.ext.'plugin.jar.deploy.dir'
-    logger.info("Deploying plugins to: ${project.'plugin.root.dir'} | ${project.'plugin.jar.deploy.dir'}")
-}
 
 task distCleanBackup(type: Delete) {
     delete "${project.'tomcat.home'}/temp"
@@ -127,8 +119,4 @@ task restoreCustomTomcatData(type: Copy) {
 }
 
 
-task distCleanJsp(type: Delete) {
-    description "Removes all compiled jsp files from the tomcat instance."
-    delete files("${project.'tomcat.home'}/work/Catalina")
-}
 
