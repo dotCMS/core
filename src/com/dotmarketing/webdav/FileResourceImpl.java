@@ -188,8 +188,9 @@ public class FileResourceImpl implements FileResource, LockableResource {
 	public void moveTo(CollectionResource collRes, String name) throws RuntimeException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(!name.contains(".")){
-			Logger.warn(this, "You cannot rename a file without an extension");
-			return;
+			// so far there are no indications of problems moving files without extension
+			// the validation remains for possible problems to help out debugging.
+			Logger.info(this, "You are moving a file without extesion");
 		}
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.fileassets.business;
 
+import java.awt.Dimension;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,6 +19,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.ImageUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -84,25 +86,32 @@ public class FileAsset extends Contentlet implements IFileAsset {
 			return 0;
 	}
 
+	private Dimension fileDimension = new Dimension();
 	public int getHeight() {
-		int height = 0;
-		try {
-			height = javax.imageio.ImageIO.read(getFileAsset()).getHeight();
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return height;
-	}
+        try {
+            if (fileDimension.height == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
 
-	public int getWidth() {
-		int width = 0;
-		try {
-			width = javax.imageio.ImageIO.read(getFileAsset()).getWidth();
-		} catch(Exception e) {
-			Logger.error(this, e.getMessage());
-		}
-		return width;
-	}
+        return fileDimension.height;
+    }
+
+    public int getWidth() {
+        try {
+            if (fileDimension.width == 0) {
+                // File dimension is not loaded and we need to load it
+                fileDimension = ImageUtil.getInstance().getDimension(getFileAsset());
+            }
+        } catch (Exception e) {
+            Logger.error(this, e.getMessage());
+        }
+
+        return fileDimension.width;
+    }
 
 	public void setFileName(String name) {
 	    File ff=getFileAsset();
@@ -220,6 +229,9 @@ public class FileAsset extends Contentlet implements IFileAsset {
 
 	 }
 
+
+	 
+	 
 	 public Map<String, Object> getMap() throws DotRuntimeException {
 		Map<String,Object> map = super.getMap();
 		boolean live =  false;
