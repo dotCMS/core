@@ -1,7 +1,7 @@
  /// <reference path="../../../../typings/es6/lib.es6.d.ts" />
  /// <reference path="../../../../typings/angular2/angular2.d.ts" />
  
- import {Directive, LifecycleEvent, Attribute, Ancestor, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
+ import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
  import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
  
  @Component({
@@ -25,7 +25,7 @@
  })
  export class UsersBrowserHeaderConditionlet extends BaseConditionletComponent{
  
-   constructor(@Ancestor() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
+   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
      super(conditionletDir, id)
    }
  

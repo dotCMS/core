@@ -498,17 +498,17 @@ gulp.task('bundle-dev', ['compile-all'], function (done) {
 })
 
 
-gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-sfx'], function (done) {
+gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-dist'], function (done) {
   done();
 })
 
 
-gulp.task('prod-watch', ['compile-ts', 'compile-styles'], function () {
+gulp.task('prod-watch', ['compile-all'], function () {
   gulp.watch('./src/**/*.ts', ['compile-ts']);
   return gulp.watch('./src/**/*.scss', ['compile-styles']);
 });
 
-gulp.task('dev-watch', ['compile-styles'], function () {
+gulp.task('dev-watch', ['compile-all'], function () {
   gulp.watch('./src/**/*.html', ['compile-templates']);
   gulp.watch('./src/**/*.js', ['compile-js']);
   gulp.watch('./src/**/*.ts', ['compile-ts']);
@@ -528,7 +528,7 @@ gulp.task('compile-all', ['compile-js', 'compile-ts', 'compile-styles', 'compile
   done()
 })
 
-gulp.task('build', ['compile-all'], function (done) {
+gulp.task('build', ['bundle-all'], function (done) {
   done()
 })
 
