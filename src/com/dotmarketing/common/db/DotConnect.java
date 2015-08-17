@@ -299,6 +299,10 @@ public class DotConnect {
         }
 
         try {
+            if(results == null || results.isEmpty()) {
+                return null;
+            }
+
             return (String) ((HashMap) results.get(cursor)).get(x);
         } catch (Exception e) {
             throw new DotRuntimeException(e.toString());
