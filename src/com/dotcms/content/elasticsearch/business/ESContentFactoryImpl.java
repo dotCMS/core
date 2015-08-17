@@ -327,11 +327,22 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	            con.setDateProperty(st.getPublishDateVar(), identifier.getSysPublishDate());
 	        if(UtilMethods.isSet(st.getExpireDateVar()))
 	            con.setDateProperty(st.getExpireDateVar(), identifier.getSysExpireDate());
-		}
-	     else{
-	         con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
-	         con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
-	     }
+		} else {
+	        if(!UtilMethods.isSet(con.getStructureInode())) {
+	            throw new DotDataException("Contentlet must have a structure type.");
+	        }
+
+            if (con.isSystemHost()) {
+                // When we are saving a systemHost we cannot call
+                // APILocator.getHostAPI().findSystemHost() method, because this
+                // method will create a system host if not exist which cause 
+                // a infinite loop.
+                con.setHost(Host.SYSTEM_HOST);
+            } else {
+                con.setHost(APILocator.getHostAPI().findSystemHost().getIdentifier());
+            }
+            con.setFolder(APILocator.getFolderAPI().findSystemFolder().getInode());
+        }
         String wysiwyg = fatty.getDisabledWysiwyg();
         if( UtilMethods.isSet(wysiwyg) ) {
             List<String> wysiwygFields = new ArrayList<String>();

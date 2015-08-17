@@ -462,16 +462,17 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-			String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		    String systemHostSql = "select id from identifier where id = ?";
 			DotConnect db  = new DotConnect();
 			db.setSQL(systemHostSql);
 			db.addParam(Host.SYSTEM_HOST);
 			List<Map<String, Object>> rs = db.loadObjectResults();
-			if(rs.size() == 0) {
+			if(rs.isEmpty()) {
+			    // TODO: Be aware that this line may cause an infinite loop.
 				createSystemHost();
 			} else {
-				String hostWorkingInode = (String) rs.get(0).get("working_inode");
-				systemHost = new Host(conFac.find(hostWorkingInode));
+			    final String systemHostId = (String) rs.get(0).get("id");
+			    this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, user, respectFrontendRoles);
 			}
 			if(rs.size() > 1){
 				Logger.fatal(this, "There is more than one working version of the system host!!");
@@ -770,17 +771,18 @@ public class HostAPIImpl implements HostAPI {
 	DotSecurityException {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		String systemHostSql = "select id from identifier where id = ?";
 		DotConnect db  = new DotConnect();
 		db.setSQL(systemHostSql);
 		db.addParam(Host.SYSTEM_HOST);
 		List<Map<String, Object>> rs = db.loadObjectResults();
-		if(rs.size() == 0) {
+		if(rs.isEmpty()) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
 			systemHost.setHostname("system");
 			systemHost.setSystemHost(true);
 			systemHost.setHost(null);
+			systemHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 			systemHost = new Host(conFac.save(systemHost));
 			systemHost.setIdentifier(Host.SYSTEM_HOST);
 			systemHost.setModDate(new Date());
@@ -792,8 +794,8 @@ public class HostAPIImpl implements HostAPI {
 			APILocator.getVersionableAPI().setWorking(systemHost);
 			this.systemHost = systemHost;
 		} else {
-			String hostWorkingInode = (String) rs.get(0).get("working_inode");
-			this.systemHost = new Host(conFac.find(hostWorkingInode));
+		    final String systemHostId = (String) rs.get(0).get("id");
+            this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
 		}
 		return systemHost;
 	}
