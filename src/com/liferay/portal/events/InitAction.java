@@ -68,7 +68,7 @@ public class InitAction extends SimpleAction {
 
 		// Log4J
 
-		if (GetterUtil.get(PropsUtil.get(
+		/*if (GetterUtil.get(PropsUtil.get(
 				PropsUtil.LOG_CONFIGURE_LOG4J), true) &&
 			!ServerDetector.isSun()) {
 
@@ -120,7 +120,7 @@ public class InitAction extends SimpleAction {
 					com.dotmarketing.util.Logger.error(this,e.getMessage(),e);
 				}
 			}
-		}
+		}*/
 	}
 
 }

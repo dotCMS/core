@@ -9,6 +9,7 @@ import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
 import com.dotcms.repackage.org.apache.logging.log4j.core.appender.ConsoleAppender;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configuration;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.ConfigurationSource;
+import com.dotcms.repackage.org.apache.logging.log4j.core.config.Configurator;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.LoggerConfig;
 import com.dotcms.repackage.org.apache.logging.log4j.core.config.xml.XmlConfiguration;
 import com.dotcms.repackage.org.apache.logging.log4j.core.layout.PatternLayout;
@@ -102,17 +103,18 @@ public class Log4jUtil {
 
                 LoggerContext loggerContext = (LoggerContext) LogManager.getContext();
 
-                if ( loggerContext.isInitialized() || loggerContext.isStopped() ) {
+                if ( !loggerContext.isInitialized() || loggerContext.isStopped() ) {
 
-                    ConfigurationSource source = new ConfigurationSource(new FileInputStream(log4jConfigFilePath));
+                    /*ConfigurationSource source = new ConfigurationSource(new FileInputStream(log4jConfigFilePath));
                     XmlConfiguration xmlConfig = new XmlConfiguration(source);
 
-                    loggerContext.start(xmlConfig);
+                    loggerContext.start(xmlConfig);*/
+                	Configurator.initialize(null, log4jConfigFilePath);
                 } else {
                     loggerContext.setConfigLocation(URI.create(log4jConfigFilePath));
                     loggerContext.reconfigure();
                 }
-            } catch ( IOException e ) {
+            } catch ( Exception e ) {
                 LogManager.getLogger().error("Error initializing log for " + log4jConfigFilePath + " configuration file.", e);
             }
 

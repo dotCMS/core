@@ -22,7 +22,7 @@ import java.io.File;
 public class ContextLifecycleListener implements ServletContextListener {
 
 	public ContextLifecycleListener() {
-//		Config.initializeConfig();
+		//Config.initializeConfig();
 //		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
 
 	}
@@ -69,7 +69,7 @@ public class ContextLifecycleListener implements ServletContextListener {
             if ( !contextPath.endsWith( File.separator ) ) {
                 contextPath += File.separator;
             }
-            path = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
+            path = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml";
         } catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
