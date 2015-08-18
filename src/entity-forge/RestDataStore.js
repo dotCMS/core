@@ -3,11 +3,8 @@ let log = XDebug('EntityForge.RestDataStore');
 
 import  {Check} from './Check.js'
 import  {ConnectionManager} from './ConnectionManager.js'
-import rest from 'rest';
-import basicAuth from 'rest/interceptor/basicAuth';
 import 'whatwg-fetch';
 
-let client = rest.wrap(basicAuth);
 
 let transformValidResponse = function (response) {
   let result = {
