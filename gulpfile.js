@@ -394,6 +394,7 @@ var typescriptProject = ts.createProject({
   module: 'commonjs',
   target: 'es5',
   emitDecoratorMetadata: true,
+  experimentalDecorators: true,
   typescript: require('typescript')
 });
 

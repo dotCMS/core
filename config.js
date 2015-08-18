@@ -1,18 +1,18 @@
 System.config({
-  "baseURL": "/",
-  "defaultJSExtensions": true,
-  "transpiler": "babel",
-  "babelOptions": {
+  baseURL: "/",
+  defaultJSExtensions: true,
+  transpiler: "babel",
+  babelOptions: {
     "optional": [
       "runtime"
     ],
     "stage": 1
   },
-  "typescriptOptions": {
+  typescriptOptions: {
     "module": "commonjs",
     "emitDecoratorMetadata": true
   },
-  "paths": {
+  paths: {
     "coreweb-util/*": "build/coreweb/*",
     "entity-forge/*": "build/entity-forge/*",
     "rule-engine-api/*": "build/rule-engine/*",
@@ -21,25 +21,21 @@ System.config({
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
-  }
-});
+  },
 
-System.config({
-  "meta": {
+  meta: {
     "npm:zone.js@0.4.1/zone": {
       "format": "global"
     }
-  }
-});
+  },
 
-System.config({
-  "map": {
+  map: {
     "angular2": "npm:angular2@2.0.0-alpha.34",
     "babel": "npm:babel-core@5.8.22",
     "babel-runtime": "npm:babel-runtime@5.8.20",
     "bootstrap": "github:twbs/bootstrap@3.3.5",
     "clean-css": "npm:clean-css@3.3.9",
-    "core-js": "npm:core-js@0.9.18",
+    "core-js": "npm:core-js@1.1.0",
     "css": "github:systemjs/plugin-css@0.1.13",
     "debug": "npm:debug@2.2.0",
     "es6-promise": "npm:es6-promise@2.3.0",
@@ -219,7 +215,7 @@ System.config({
     "npm:constants-browserify@0.0.1": {
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
-    "npm:core-js@0.9.18": {
+    "npm:core-js@1.1.0": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "process": "github:jspm/nodelibs-process@0.1.1",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
@@ -424,4 +420,3 @@ System.config({
     }
   }
 });
-
