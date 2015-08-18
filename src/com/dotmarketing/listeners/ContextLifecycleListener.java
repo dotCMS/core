@@ -65,6 +65,8 @@ public class ContextLifecycleListener implements ServletContextListener {
 
 		Config.setMyApp(arg0.getServletContext());
 		System.setProperty("DOTCMS_LOGGING_HOME", ConfigUtils.getDynamicContentPath() + File.separator + "logs");
+		
+		
 	    String path = null;
 		try {
 
@@ -72,7 +74,9 @@ public class ContextLifecycleListener implements ServletContextListener {
             if ( !contextPath.endsWith( File.separator ) ) {
                 contextPath += File.separator;
             }
-            path = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
+            String defaultPath = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j.xml";
+            path = Config.getStringProperty("DOTCMS_LOG4J_XML_PATH", defaultPath);
+            
         } catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}
