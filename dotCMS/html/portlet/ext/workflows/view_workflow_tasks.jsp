@@ -508,7 +508,7 @@ bottom="/html/common/box_bottom.jsp">
 
 <!-- START Left Column -->
 	<div dojoType="dijit.layout.ContentPane" splitter="false" region="leading" style="width: 370px; overflow-x: scroll; overflow-y: hidden; white-space: nowrap;" class="lineRight">
-		<div style="margin-top:48px;">
+		<div style="margin-top: 56px;">
 			<div  id="filterTasksFrm">
 				<input type="hidden" name="cmd" value="filterTasks">
 				<input type="hidden" name="orderBy" id="orderBy" value="mod_date desc">
@@ -577,7 +577,7 @@ bottom="/html/common/box_bottom.jsp">
 
 
 <!-- START Right Column -->
-	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="margin-top:37px;">
+	<div dojoType="dijit.layout.ContentPane" splitter="true" region="center" style="margin-top: 56px;">
 		<div id="hangTaskListHere">
 
 

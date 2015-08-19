@@ -37,12 +37,13 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-		@import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/dmundra.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
-		@import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
-	</style>
+        @import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
+        @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
+        @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
+        /*@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
+        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";*/
+    </style>
 
 	<!--[if IE]>
 		<link rel="stylesheet" type="text/css" href="/html/css/iehacks.css" />
@@ -158,9 +159,9 @@ THIS FILE AND ITS INCLUDES
 </head>
 
 <%if(UtilMethods.isSet(request.getParameter("popup")) || UtilMethods.isSet(request.getAttribute("popup")) || UtilMethods.isSet(request.getParameter("in_frame"))){ %>
-	<body class="dmundra" style="background:white url()">
+	<body class="dotcms" style="background:white url()">
 <%}else{ %>
-	<body class="dmundra" style="visibility:hidden">
+	<body class="dotcms" style="visibility:hidden">
 		<div class="imageBG"></div>
 		<div class="bannerBG"></div>
 <%} %>
