@@ -12,20 +12,22 @@ import {CwIpAddressInputContainer, CwIpAddressInput} from './ip-address/ip-addre
   directives: [CwIpAddressInput, CwCidrInput ],
   template: `
     <div class="row">
-      <div class="col-sm-6">
+      <div class="col-sm-3">
         <span>CIDR Input:</span>
       </div>
-      <div class="col-sm-6">
+      <div class="col-sm-3">
         <cw-cidr-input></cw-cidr-input>
       </div>
+      <div class="col-sm-6"></div>
     </div>
     <div class="row">
-    <div class="col-sm-6">
+      <div class="col-sm-3">
         <span>IP Address Input:</span>
       </div>
-      <div class="col-sm-6">
+      <div class="col-sm-3">
         <cw-ip-address-input></cw-ip-address-input>
       </div>
+      <div class="col-sm-6"></div>
     </div>
   `
 })

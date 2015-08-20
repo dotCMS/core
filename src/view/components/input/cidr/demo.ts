@@ -11,9 +11,13 @@ import {CwCidrInput} from './cidr';
   directives: [CwCidrInput],
   template: `
     <div class="row">
-      <div class="col-sm-6">
-        <cw-cidr-input ></cw-cidr-input>
+      <div class="col-sm-3">
+        <span>CIDR Input:</span>
       </div>
+      <div class="col-sm-3">
+        <cw-cidr-input></cw-cidr-input>
+      </div>
+      <div class="col-sm-6"></div>
     </div>
   `
 })

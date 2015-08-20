@@ -11,9 +11,13 @@ import {CwIpAddressInput} from './ip-address';
   directives: [CwIpAddressInput],
   template: `
     <div class="row">
-      <div class="col-sm-6">
-        <cw-ip-address-input ></cw-ip-address-input>
+      <div class="col-sm-3">
+        <span>IP Address Input:</span>
       </div>
+      <div class="col-sm-3">
+        <cw-ip-address-input></cw-ip-address-input>
+      </div>
+      <div class="col-sm-6"></div>
     </div>
   `
 })
