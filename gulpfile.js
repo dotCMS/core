@@ -399,13 +399,14 @@ var typescriptProject = ts.createProject({
 });
 
 gulp.task('compile-ts', function (done) {
-  var tsResult = gulp.src('./src/**/*.ts')
-      .pipe(ts(typescriptProject));
+  var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
 
-  merge([ // Merge the two output streams, so this task is finished when the IO of both operations are done.
-    tsResult.dts.pipe(gulp.dest('build/definitions')),
-    tsResult.js.pipe(gulp.dest('build'))
-  ]).on('queueDrain', done);
+  var x = tsResult.js.pipe(gulp.dest('build'))
+  var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
+
+  // ignoring typscript definitions for now.
+  x.on('finish', done)
+  x.on('error', done)
 });
 
 
@@ -419,7 +420,7 @@ gulp.task('compile-styles', function (done) {
       .pipe(gulp.dest(config.buildDir)).on('finish', done);
 });
 
-gulp.task('compile-js', [], function (done) {
+gulp.task('compile-js', ['compile-ts'], function (done) {
   gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', done);
 })
 
