@@ -30,7 +30,7 @@ public class VirtualLinkFactory {
         try {
 			dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where type='virtual_link' and uri = ? and active = "
 			        + com.dotmarketing.db.DbConnectionFactory.getDBTrue());
-			dh.setParam(uri);
+			dh.setParam(uri.toLowerCase());
 			result = dh.list();
 		} catch (DotHibernateException e) {
 			Logger.error(VirtualLinkFactory.class, "getIncomingVirtualLinks failed:" + e, e);
@@ -41,7 +41,7 @@ public class VirtualLinkFactory {
     public static VirtualLink getVirtualLinkByURL(String url) throws DotHibernateException {
         HibernateUtil dh = new HibernateUtil(VirtualLink.class);
         dh.setQuery("from inode in class com.dotmarketing.portlets.virtuallinks.model.VirtualLink where url = ?");
-        dh.setParam(url);
+        dh.setParam(url.toLowerCase());
         return (VirtualLink) dh.load();
     }
 
