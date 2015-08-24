@@ -10,14 +10,18 @@ import {CwIpAddressInput} from './ip-address';
 @View({
   directives: [CwIpAddressInput],
   template: `
-    <div class="row">
-      <div class="col-sm-3">
-        <span>IP Address Input:</span>
-      </div>
-      <div class="col-sm-3">
+    <div class="panel panel-default">
+      <div class="panel-heading">Empty</div>
+      <div class="panel-body">
         <cw-ip-address-input></cw-ip-address-input>
       </div>
-      <div class="col-sm-6"></div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">With initial value</div>
+      <div class="panel-body">
+          <!-- Using string concatenation to show that value is evaluated.  -->
+          <cw-ip-address-input [value]="'192' + '.168.1.0'"></cw-ip-address-input>
+      </div>
     </div>
   `
 })

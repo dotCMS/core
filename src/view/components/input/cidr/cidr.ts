@@ -6,6 +6,9 @@ import {Component, View, Attribute} from 'angular2/angular2';
 
 @Component({
   selector: 'cw-cidr-input',
+  properties: [
+    'value: value'
+  ],
   host: {
     '[class.cw-input-has-value]': 'inputHasValue',
     '[class.cw-input-has-focus]': 'inputHasFocus',

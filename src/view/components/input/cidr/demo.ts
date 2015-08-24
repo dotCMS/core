@@ -10,28 +10,43 @@ import {CwCidrInput} from './cidr';
 @View({
   directives: [CwCidrInput],
   template: `
-    <div class="row">
-      <div class="col-sm-3">
-        <span>CIDR Input:</span>
-      </div>
-      <div class="col-sm-3">
+    <style>
+      .demo-input {
+        color: green;
+      }
+
+      .demo-input:invalid {
+        color: red;
+      }
+    </style>
+    <div class="panel panel-default">
+      <div class="panel-heading">Empty</div>
+      <div class="panel-body">
         <cw-cidr-input></cw-cidr-input>
       </div>
-      <div class="col-sm-6"></div>
+    </div>
+    <div class="panel panel-default">
+      <div class="panel-heading">With initial value</div>
+      <div class="panel-body">
+          <!-- Using string concatenation to show that value is evaluated.  -->
+          <cw-cidr-input [value]="'192' + '.168.1.0/24'"></cw-cidr-input>
+      </div>
+      <div class="row">
+        <div class="col-sm-2"> <input class="demo-input" type="url"/> </div>
+      </div>
     </div>
   `
 })
-class App  {
+class App {
 
-  constructor( @Attribute('id') id:string) {
+  constructor(@Attribute('id') id:string) {
   }
 }
 
 
-
 export function main() {
   let app = bootstrap(App)
-  app.then( (appRef) => {
+  app.then((appRef) => {
     console.log("Bootstrapped App: ", appRef)
   }).catch((e) => {
     console.log("Error bootstrapping app: ", e)

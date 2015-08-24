@@ -3,7 +3,7 @@
 
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2';
 import {CwCidrInput} from './cidr/cidr';
-import {CwIpAddressInputContainer, CwIpAddressInput} from './ip-address/ip-address';
+import {CwIpAddressInput} from './ip-address/ip-address';
 
 @Component({
   selector: 'demo'
