@@ -1,5 +1,6 @@
 package com.dotmarketing.factories;
 
+import java.sql.SQLException;
 import java.util.Date;
 
 import com.dotmarketing.beans.Identifier;
@@ -14,9 +15,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
@@ -54,6 +55,98 @@ public class MultiTreeFactory {
 
 	}
 
+    /**
+     * Just invoking deleteMultiTreeByParent1 with null language.
+     * 
+     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
+     *      languageId)
+     */
+    public static void deleteMultiTreeByParent1(Contentlet contentlet) throws DotDataException {
+        Identifier identifier = new Identifier();
+        identifier.setId(contentlet.getIdentifier());
+
+        deleteMultiTreeByParent1(identifier, null);
+    }
+
+    /**
+     * Just invoking deleteMultiTreeByParent1 with null language.
+     * 
+     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
+     *      languageId)
+     */
+    public static void deleteMultiTreeByParent1(Identifier parent) throws DotDataException {
+        deleteMultiTreeByParent1(parent, null);
+    }
+
+    /**
+     * Just invoking deleteMultiTreeByParent1 and create an identifier method
+     * with the contentlet identifier id
+     * 
+     * @see MultiTreeFactory#deleteMultiTreeByParent1(Identifier parent, Long
+     *      languageId)
+     */
+    public static void deleteMultiTreeByParent1(Contentlet contentlet, Long languageId)
+            throws DotDataException {
+        Identifier identifier = new Identifier();
+        identifier.setId(contentlet.getIdentifier());
+
+        deleteMultiTreeByParent1(identifier, languageId);
+    }
+
+    /**
+     * Deletes multi-tree relationships by identifier and language.
+     * <p>
+     * This method it will remove all rows where parent1 equals to identifier
+     * parameter where the identifier has same language as languageId parameter.
+     * </p>
+     * <p>
+     * NOTE: This delete assumes that we are only using identifiers in
+     * multi-tree table
+     * </p>
+     * 
+     * @param parent
+     *            identifier
+     * @param languageId
+     *            (optional parameter) if null it will delete all rows where
+     *            parent1 equals identifier same as
+     *            {@link #deleteMultiTreeFromContentletPage(String)}; otherwise
+     *            it will search for those identifiers that match with the
+     *            language and delete them from multi-tree table
+     * @throws DotDataException
+     */
+    public static void deleteMultiTreeByParent1(Identifier parent, Long languageId)
+            throws DotDataException {
+        DotConnect db = new DotConnect();
+
+        try {
+            if (languageId == null) {
+                db.executeStatement("DELETE FROM multi_tree WHERE parent1 = '" + parent.getId()
+                        + "';");
+                return;
+            }
+
+            // -- Query example --
+            // DELETE FROM multi_tree m
+            // WHERE m.parent1 = '6c2a7d84-a16d-4c12-8830-9d203c3dcc4c' AND
+            // m.child IN (SELECT c.identifier FROM multi_tree AS m1
+            // INNER JOIN contentlet_version_info AS c
+            // ON m1.child = c.identifier
+            // WHERE m1.parent1 = '6c2a7d84-a16d-4c12-8830-9d203c3dcc4c' AND
+            // c.lang = 2);
+            // -- End of query example --
+            StringBuilder query = new StringBuilder("DELETE FROM multi_tree m WHERE ")
+                    .append("m.parent1 = '").append(parent.getId()).append("' ")
+                    .append("AND m.child IN (SELECT c.identifier FROM multi_tree AS m1 ")
+                    .append("INNER JOIN contentlet_version_info AS c ON m1.child = c.identifier ")
+                    .append("WHERE m1.parent1 = '").append(parent.getId()).append("' ")
+                    .append("AND c.lang = ").append(languageId).append(");");
+
+            db.executeStatement(query.toString());
+        } catch (SQLException e) {
+            throw new DotDataException("Error deleting tree and multi-tree dependencies.", e);
+        }
+    }
+
 	public static boolean existsMultiTree(Object o1, Object o2, Object o3) {
 		Inode inode1 = (Inode) o1;
 		Inode inode2 = (Inode) o2;
@@ -85,21 +178,6 @@ public class MultiTreeFactory {
 		}
 	}
 
-	public static MultiTree getMultiTree(Inode parent1, Inode parent2, Inode child) {
-		try {
-			HibernateUtil dh = new HibernateUtil(MultiTree.class);
-			dh.setQuery("from multi_tree in class com.dotmarketing.beans.MultiTree where parent1 = ? and parent2 = ? and child = ?");
-			dh.setParam(parent1.getInode());
-			dh.setParam(parent2.getInode());
-			dh.setParam(child.getInode());
-
-			return (MultiTree) dh.load();
-		} catch (Exception e) {
-            Logger.warn(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
-		}
-		return new MultiTree();
-	}
-	
 	public static MultiTree getMultiTree(Identifier parent1, Identifier parent2, Identifier child) {
 		try {
 			HibernateUtil dh = new HibernateUtil(MultiTree.class);
@@ -129,7 +207,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 	
 	public static java.util.List<MultiTree> getMultiTree(Identifier parent) {
@@ -145,7 +222,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 
 	@SuppressWarnings("unchecked")
@@ -162,7 +238,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTree(IHTMLPage htmlPage, Container container) {
@@ -178,7 +253,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 	/**
 	 * Get the multi_tree by both parents given a containerId
@@ -202,7 +276,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getContainerMultiTree failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 	@SuppressWarnings("unchecked")
 	public static java.util.List<MultiTree> getMultiTreeByChild(String contentIdentifier) {
@@ -217,7 +290,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getMultiTreeByChild failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-		//return new java.util.ArrayList();
 	}
 
 	/**
@@ -305,8 +377,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 	
 	public static java.util.List getChildrenClass(Identifier p1, Identifier p2, Class c) {
@@ -368,8 +438,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getChildrenClass failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 
 	public static java.util.List getChildrenClassByCondition(Inode p1, Inode p2, Class c, String condition) {
@@ -416,8 +484,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getChildrenClassByCondition failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 
 	public static java.util.List getChildrenClassByConditionAndOrderBy(Inode p1, Inode p2, Class c, String condition, String orderby) {
@@ -466,8 +532,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getChildrenClassByConditionAndOrderBy failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 
 	public static java.util.List getChildrenClassByOrder(Inode p1, Inode p2, Class c, String order) {
@@ -492,8 +556,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getChildrenClassByOrder failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 	
 
@@ -515,8 +577,6 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getParentsOfClassByCondition failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}
 	
 	public static java.util.List getParentsOfClass(Inode p, Class c) {
@@ -535,7 +595,5 @@ public class MultiTreeFactory {
             Logger.error(MultiTreeFactory.class, "getParentsOfClass failed:" + e, e);
 			throw new DotRuntimeException(e.toString());
 		}
-
-		//return new java.util.ArrayList();
 	}	
 }

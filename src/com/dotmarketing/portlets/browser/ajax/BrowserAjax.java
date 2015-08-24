@@ -1609,9 +1609,7 @@ public class BrowserAjax {
 
     	if(id!=null && id.getAssetType().equals("contentlet")){
     		Contentlet cont  = APILocator.getContentletAPI().find(inode, user, false);
-    		cont.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
-    		APILocator.getContentletAPI().delete(cont, user, false);
-    		return true;
+    		return APILocator.getContentletAPI().delete(cont, user, false);
     	}
 
 
@@ -1625,10 +1623,44 @@ public class BrowserAjax {
         return true;
     }
 
+    /**
+     * Delete HTML page asset by inode
+     * @param inode
+     * @return map with status and message
+     * @throws Exception
+     */
+    public Map<String, Object> deleteHTMLPageAsset(String inode) throws Exception {
+        Map<String, Object> result = new HashMap<String, Object>();
+        HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
+        User user = getUser(req);
 
+        Identifier id = APILocator.getIdentifierAPI().findFromInode(inode);
+        if (!permissionAPI.doesUserHavePermission(id, PERMISSION_PUBLISH, user)) {
+            result.put("status", "error");
+            result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
+                    "Failed-to-delete-check-you-have-the-required-permissions")));
+            return result;
+        }
+
+        if (id != null && id.getAssetType().equals("contentlet")) {
+            Contentlet cont = APILocator.getContentletAPI().find(inode, user, false);
+
+            // If delete has errors send a message
+            if (!APILocator.getContentletAPI().delete(cont, user, false)) {
+                result.put("status", "error");
+                result.put("message", UtilMethods.escapeSingleQuotes(LanguageUtil.get(user,
+                        "HTML-Page-deleted-error")));
+                return result;
+            }
+        }
+
+        result.put("status", "success");
+        result.put("message",
+                UtilMethods.escapeSingleQuotes(LanguageUtil.get(user, "HTML-Page-deleted")));
+        return result;
+    }
 
     public Map<String, Object> changeAssetMenuOrder (String inode, int newValue) throws ActionException, DotDataException {
-
     	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {

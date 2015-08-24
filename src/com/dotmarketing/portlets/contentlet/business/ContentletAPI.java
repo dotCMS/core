@@ -460,17 +460,16 @@ public interface ContentletAPI {
 	 */
 	public void archive(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 
-	
-
 	/**
 	 * This method completely deletes the given contentlet from the system
 	 * @param contentlet
 	 * @param user
 	 * @param respectFrontendRoles
+	 * @returns true when no errors occurs otherwise false
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
 	
 	
 	/**
@@ -579,12 +578,29 @@ public interface ContentletAPI {
 	 * @param contentlets
 	 * @param user
 	 * @param respectFrontendRoles
+	 * @returns true when no errors occurs otherwise false
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
-	
-	
+	public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException;
+
+    /**
+     * This method completely deletes all contentlets from the system for a the
+     * given host.
+     * <p>
+     * It gathers all the contentlets from the host and then proceed with the
+     * delete of each one
+     * </p>
+     * 
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     * @returns true when no errors occurs otherwise false
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
 	 * http://jira.dotmarketing.net/browse/DOTCMS-2059

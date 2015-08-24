@@ -2,6 +2,7 @@ package com.dotcms.content.elasticsearch.business;
 
 import java.io.Serializable;
 import java.io.StringWriter;
+import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -13,6 +14,7 @@ import java.util.StringTokenizer;
 
 import com.dotcms.repackage.org.elasticsearch.index.query.functionscore.FunctionScoreQueryBuilder;
 import com.dotcms.repackage.org.elasticsearch.index.query.functionscore.random.RandomScoreFunctionBuilder;
+
 import org.springframework.util.NumberUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -539,40 +541,25 @@ public class ESContentFactoryImpl extends ContentletFactory {
 
 	@Override
 	protected void delete(List<Contentlet> contentlets) throws DotDataException {
-
         /*
          First thing to do is to clean up the trees for the given Contentles
          */
-        StringBuffer buffy = new StringBuffer();
-        StringBuffer idsbuffy = new StringBuffer();
+        final int maxRecords = 500;
+        List<String> inodes = new ArrayList<String>();
 
-        int maxRecords = 500;
-        int current = 0;
         for ( Contentlet contentlet : contentlets ) {
+            inodes.add("'" + contentlet.getInode() + "'");
 
-            if ( buffy.length() > 0 ) {
-                buffy.append( ",'" + contentlet.getInode() + "'" );
-                idsbuffy.append( ",'" + contentlet.getIdentifier() + "'" );
-            } else {
-                buffy.append( "'" + contentlet.getInode() + "'" );
-                idsbuffy.append( "'" + contentlet.getIdentifier() + "'" );
-            }
-
-            current++;
             //Another group of 500 contentles ids is ready...
-            if ( current >= maxRecords ) {
-
-                deleteTreesForInodes( buffy );
-
-                buffy = new StringBuffer();
-                //idsbuffy = new StringBuffer();
-                current = 0;
+            if ( inodes.size() >= maxRecords ) {
+                deleteTreesForInodes( inodes );
+                inodes = new ArrayList<String>();
             }
         }
 
         //And if is something left..
-        if ( buffy.length() > 0 ) {
-            deleteTreesForInodes( buffy );
+        if ( inodes.size() > 0 ) {
+            deleteTreesForInodes( inodes );
         }
 
         //Now workflows, and versions
@@ -618,13 +605,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
         }
         for (Contentlet c : contentlets) {
             if(InodeUtils.isSet(c.getInode())){
-                //Identifier ident = (Identifier)InodeFactory.getInode(c.getIdentifier(), Identifier.class);
-                //Identifier ident = InodeFactory.getInodeOfClassByCondition(Identifier.class,"inode= '"+c.getIdentifier()+"'");
                 Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
                 String si = ident.getInode();
                 if(!identsDeleted.contains(si) && si!=null && si!="" ){
                     APILocator.getIdentifierAPI().delete(ident);
-                    //DotHibernate.delete(ident);
                     identsDeleted.add(si);
                 }
             }
@@ -632,22 +616,29 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
     /**
-     * Deletes from the tree and multi_tree tables Contentles given in a comma separated String list
+     * Deletes from the tree and multi_tree tables Contentles given a list of
+     * inodes.
      *
-     * @param buffy List of contentles inodes
+     * @param inodes
+     *            List of contentles inodes
      */
-    private void deleteTreesForInodes ( StringBuffer buffy ) {
-
-        // workaround for dbs where we can't have more than one constraint
-        // or triggers
+    private void deleteTreesForInodes(List<String> inodes) throws DotDataException {
         DotConnect db = new DotConnect();
-        db.setSQL( "delete from tree where child in (" + buffy.toString() + ") or parent in (" + buffy.toString() + ")" );
-        db.getResult();
+        try {
+            final String sInodeIds = StringUtils.join(inodes, ",");
 
-        // workaround for dbs where we can't have more than one constraint
-        // or triggers
-        db.setSQL( "delete from multi_tree where child in (" + buffy.toString() + ") or parent1 in (" + buffy.toString() + ") or parent2 in (" + buffy.toString() + ")" );
-        db.getResult();
+            // workaround for dbs where we can't have more than one constraint
+            // or triggers
+            db.executeStatement("delete from tree where child in (" + sInodeIds
+                    + ") or parent in (" + sInodeIds + ")");
+
+            // workaround for dbs where we can't have more than one constraint
+            // or triggers
+            db.executeStatement("delete from multi_tree where child in (" + sInodeIds
+                    + ") or parent1 in (" + sInodeIds + ") or parent2 in (" + sInodeIds + ")");
+        } catch (SQLException e) {
+            throw new DotDataException("Error deleting tree and multi-tree.", e);
+        }
     }
 
 	@Override
