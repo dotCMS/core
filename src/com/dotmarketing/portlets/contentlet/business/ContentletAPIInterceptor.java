@@ -458,7 +458,7 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(com.dotmarketing.portlets.contentlet.model.Contentlet, com.liferay.portal.model.User, boolean)
 	 */
-	public void delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
+	public boolean delete(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotDataException,	DotSecurityException, DotContentletStateException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.delete(contentlet, user, respectFrontendRoles);
 			if(!preResult){
@@ -466,10 +466,12 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
 			}
 		}
-		conAPI.delete(contentlet, user, respectFrontendRoles);
+		boolean noErrors = conAPI.delete(contentlet, user, respectFrontendRoles);
 		for(ContentletAPIPostHook post : postHooks){
 			post.delete(contentlet, user, respectFrontendRoles);
 		}
+
+		return noErrors;
 	}
 
 	/* (non-Javadoc)
@@ -489,22 +491,49 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * com.dotmarketing.portlets.contentlet.business.ContentletAPI#deleteByHost
+     * (com.dotmarketing.beans.Host, com.liferay.portal.model.User, boolean)
+     */
+    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException, DotContentletStateException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.deleteByHost(host, user, respectFrontendRoles);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed "
+                        + pre.getClass().getName());
+            }
+        }
+        boolean noErrors = conAPI.deleteByHost(host, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.deleteByHost(host, user, respectFrontendRoles);
+        }
+
+        return noErrors;
+    }
+
 	/* (non-Javadoc)
-	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean)
-	 */
-	public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
-		for(ContentletAPIPreHook pre : preHooks){
-			boolean preResult = pre.delete(contentlets, user, respectFrontendRoles);
-			if(!preResult){
-				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
-				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
-			}
-		}
-		conAPI.delete(contentlets, user, respectFrontendRoles);
-		for(ContentletAPIPostHook post : postHooks){
-			post.delete(contentlets, user, respectFrontendRoles);
-		}
-	}
+     * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean)
+     */
+    public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
+        for(ContentletAPIPreHook pre : preHooks){
+            boolean preResult = pre.delete(contentlets, user, respectFrontendRoles);
+            if(!preResult){
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+            }
+        }
+        boolean noErrors = conAPI.delete(contentlets, user, respectFrontendRoles);
+        for(ContentletAPIPostHook post : postHooks){
+            post.delete(contentlets, user, respectFrontendRoles);
+        }
+
+        return noErrors;
+    }
 
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#delete(java.util.List, com.liferay.portal.model.User, boolean, boolean)

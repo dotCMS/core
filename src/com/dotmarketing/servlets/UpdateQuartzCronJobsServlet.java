@@ -43,32 +43,34 @@ public class UpdateQuartzCronJobsServlet extends HttpServlet {
 			
 			db.setSQL(query.toString());
 			db.addParam(new Date().getTime());
-			List<HashMap<String, String>> result = db.getResults();
+			List<HashMap<String, String>> result = db.loadResults();
 			
-			CronTrigger cronTrigger = new CronTrigger();
-			
-			query = new StringBuilder(512);
-			query.ensureCapacity(128);
-			query.append("update qrtz_triggers ");
-			query.append("set start_time=?, ");
-			query.append("    next_fire_time=? ");
-			query.append("where trigger_name=? and ");
-			query.append("      trigger_group=?");
-			
-			for (HashMap<String, String> trigger: result) {
-				cronTrigger.setCronExpression(trigger.get("cron_expression"));
-				
-				db.setSQL(query.toString());
-				long nextFireTime = cronTrigger.getFireTimeAfter(new Date()).getTime();
-				db.addParam(nextFireTime);
-				db.addParam(nextFireTime);
-				db.addParam(trigger.get("trigger_name"));
-				db.addParam(trigger.get("trigger_group"));
-				
-				db.getResult();
+			if(result != null && !result.isEmpty()) {
+    			CronTrigger cronTrigger = new CronTrigger();
+    			
+    			query = new StringBuilder(512);
+    			query.ensureCapacity(128);
+    			query.append("update qrtz_triggers ");
+    			query.append("set start_time=?, ");
+    			query.append("    next_fire_time=? ");
+    			query.append("where trigger_name=? and ");
+    			query.append("      trigger_group=?");
+    			
+    			for (HashMap<String, String> trigger: result) {
+    				cronTrigger.setCronExpression(trigger.get("cron_expression"));
+    				
+    				db.setSQL(query.toString());
+    				long nextFireTime = cronTrigger.getFireTimeAfter(new Date()).getTime();
+    				db.addParam(nextFireTime);
+    				db.addParam(nextFireTime);
+    				db.addParam(trigger.get("trigger_name"));
+    				db.addParam(trigger.get("trigger_group"));
+    				
+    				db.getResult();
+    			}
 			}
 		} catch (Exception e) {
-			Logger.info(UpdateQuartzCronJobsServlet.class, e.getMessage());
+			Logger.error(UpdateQuartzCronJobsServlet.class, e.getMessage(), e);
 		}
 	}
 	

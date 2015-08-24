@@ -689,6 +689,19 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
         return getStructure().getStructureType() == Structure.STRUCTURE_TYPE_HTMLPAGE;
     }
 
+    public boolean isHost() {
+        Structure hostStructure = 
+                CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
+
+        return getStructure().getInode().equals(hostStructure.getInode());
+    }
+
+    public boolean isSystemHost() {
+        Boolean isSystemHost = (Boolean) getMap().get(Host.SYSTEM_HOST_KEY);
+
+        return isSystemHost == null ? false : isSystemHost;
+    }
+
 	private class ContentletHashMap extends ConcurrentHashMap<String, Object> {
 		 /**
 		 *
