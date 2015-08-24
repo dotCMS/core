@@ -766,7 +766,12 @@ public class InodeFactory {
 			dc.addParam(x);
 			try {
 				if(dc.loadResults().size()>0){
-					c = InodeUtils.getClassByDBType(dc.getString("type"));
+				    final String type = dc.getString("type");
+				    if(type == null) {
+				        return new Inode();
+				    }
+
+					c = InodeUtils.getClassByDBType(type);
 				}
 				else{
 					Logger.debug(InodeFactory.class,  x + " is not an Inode " );
