@@ -26,14 +26,13 @@ import com.liferay.portlet.RenderRequestImpl;
 import com.liferay.portlet.RenderResponseImpl;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
@@ -94,13 +93,16 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 		String path = "/WEB-INF/jsp/" + portletId.toLowerCase() + "/" + jspName + ".jsp";
 
 		HttpServletResponseWrapper responseWrapper = new ResponseWrapper( responseProxy );
+
 		Logger.debug(this.getClass(), "trying: " + path);
 
 		try {
 
 			try {
-				request.getRequestDispatcher( path ).include( request, response );
-			} catch ( Exception e ) {//Fallback if the normal flow does not work, posible on app servers like weblogic
+				request.getRequestDispatcher( path ).include( request, responseWrapper );
+
+			} catch ( ClassCastException e ) {//Fallback if the normal flow does not work, posible on app servers like weblogic
+				Logger.debug(this.getClass(), "ClassCastException: ", e);
 
 				//Read the request proxy sent to jersey and look for its handler to get the object behind that proxy
 				ThreadLocalInvoker localInvoker = (ThreadLocalInvoker) Proxy.getInvocationHandler( request );
@@ -108,15 +110,16 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 
 				if ( proxiedObject instanceof ServletRequestWrapper ) {
 					ServletRequestWrapper servletRequestWrapper = (ServletRequestWrapper) proxiedObject;
-					request.getRequestDispatcher( path ).include( servletRequestWrapper, response );
+					request.getRequestDispatcher( path ).include( servletRequestWrapper, responseWrapper );
 				} else if ( proxiedObject instanceof ServletRequest ) {
 					ServletRequest servletRequest = (ServletRequest) proxiedObject;
-					request.getRequestDispatcher( path ).include( servletRequest, response );
+					request.getRequestDispatcher( path ).include( servletRequest, responseWrapper );
 				}
-
 			}
 
-			return ((ResponseWrapper) responseWrapper).getResponseString();
+			String responseString = ((ResponseWrapper) responseWrapper).getResponseString();
+			return responseString;
+
 		} catch (Exception e) {
 			Logger.debug(this.getClass(), "unable to parse: " + path);
 			Logger.error( this.getClass(), e.toString(), e );
@@ -184,24 +187,74 @@ public abstract class BaseRestPortlet extends WebResource implements Portlet, Cl
 
 	}
 
-	private class ResponseWrapper extends HttpServletResponseWrapper {
-
-		private StringWriter writer = new StringWriter();
+	public class ResponseWrapper extends HttpServletResponseWrapper{
+		private ByteArrayOutputStream output;
+		private StringWriter writer;
+		private int contentLength;
+		private String contentType;
 
 		public ResponseWrapper(HttpServletResponse response) {
 			super(response);
+			output = new ByteArrayOutputStream();
+			writer = new StringWriter();
+		}
+
+		public ServletOutputStream getOutputStream() {
+			return new FilterServletOutputStream(output);
+		}
+
+		public byte[] getData() {
+			return output.toByteArray();
 		}
 
 		public String getResponseString() {
-			return writer.toString();
+			return UtilMethods.isSet(writer.toString()) ? writer.toString() : output.toString();
 		}
 
-		@Override
 		public PrintWriter getWriter() throws IOException {
 			PrintWriter pw = new PrintWriter(writer);
 			return pw;
 		}
 
+		public void setContentType(String type) {
+			this.contentType = type;
+			super.setContentType(type);
+		}
+
+		public String getContentType() {
+			return this.contentType;
+		}
+
+		public int getContentLength() {
+			return contentLength;
+		}
+
+		public void setContentLength(int length) {
+			this.contentLength=length;
+			super.setContentLength(length);
+		}
+	}
+
+	// This class is used by the wrapper for getOutputStream() method
+	// to return a ServletOutputStream object.
+	public class FilterServletOutputStream extends ServletOutputStream {
+		private DataOutputStream stream;
+
+		public FilterServletOutputStream(OutputStream output) {
+			stream = new DataOutputStream(output);
+		}
+
+		public void write(int b) throws IOException {
+			stream.write(b);
+		}
+
+		public void write(byte[] b) throws IOException {
+			stream.write(b);
+		}
+
+		public void write(byte[] b, int off, int len) throws IOException {
+			stream.write(b, off, len);
+		}
 	}
 
 }
