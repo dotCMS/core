@@ -435,8 +435,15 @@ public interface ContentletAPIPreHook {
 	 * @param respectFrontendRoles
 	 */
 	public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles);
-	
-	
+
+    /**
+     * This method completely deletes contentlets from a given host
+     * @param host
+     * @param user
+     * @param respectFrontendRoles
+     */
+    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles);
+
 	/**
 	 * This method completely deletes the given contentlet from the system. It was added for the jira issue
 	 * http://jira.dotmarketing.net/browse/DOTCMS-2059
@@ -1219,5 +1226,4 @@ public interface ContentletAPIPreHook {
 	public boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException;
 
 	public boolean addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
-
 }

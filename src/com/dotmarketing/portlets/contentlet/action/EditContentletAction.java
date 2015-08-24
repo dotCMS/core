@@ -356,8 +356,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				Logger.debug(this,"Calling Full Delete Method");
 				Contentlet contentlet = (Contentlet) req.getAttribute(WebKeys.CONTENTLET_EDIT);
 				try{
-					conAPI.delete(contentlet, user, false);
-					SessionMessages.add(httpReq, "message", "message.contentlet.full_delete");
+                    if (conAPI.delete(contentlet, user, false)) {
+                        SessionMessages.add(httpReq, "message", "message.contentlet.full_delete");
+                    } else {
+                        SessionMessages.add(httpReq, "error",
+                                "message.contentlet.delete.archived.error");
+                    }
 				}catch (Exception e) {
 					SessionMessages.add(httpReq, "error", "message.contentlet.full_delete.error");
 				}
