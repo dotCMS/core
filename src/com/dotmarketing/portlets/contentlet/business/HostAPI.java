@@ -118,6 +118,17 @@ public interface HostAPI {
 	public Host save(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Updates default host information on the current host list, if the current host is marked as default and there is
+	 * any other host marked as well, only the host sent as parameter will remain as default host.
+	 * @param host
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Retrieves all host the user has the required permission on
 	 * @param permissionType
 	 * @param includeArchived

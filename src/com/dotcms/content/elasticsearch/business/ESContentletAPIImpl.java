@@ -1121,11 +1121,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void delete(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
+    public boolean delete(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException {
         List<Contentlet> contentlets = new ArrayList<Contentlet>();
         contentlets.add(contentlet);
         try {
-        	delete(contentlets, user, respectFrontendRoles);
+            return delete(contentlets, user, respectFrontendRoles);
         } catch(DotDataException | DotSecurityException e) {
         	logContentletActivity(contentlets, "Error Deleting Content", user);
         	throw e;
@@ -1145,10 +1145,29 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @Override
-    public void delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(contentlets == null || contentlets.size() == 0){
+    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        List<Contentlet> contentletsToDelete = findContentletsByHost(host, user,
+                respectFrontendRoles);
+
+        return deleteContentlets(contentletsToDelete, user, respectFrontendRoles, true);
+    }
+
+    @Override
+    public boolean delete(List<Contentlet> contentlets, User user, boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        return deleteContentlets(contentlets, user, respectFrontendRoles, false);
+    }
+
+    private boolean deleteContentlets(List<Contentlet> contentlets, User user,
+            boolean respectFrontendRoles, boolean isDeletingAHost) throws DotDataException,
+            DotSecurityException {
+        boolean noErrors = true;
+
+       if(contentlets == null || contentlets.size() == 0){
             Logger.info(this, "No contents passed to delete so returning");
-            return;
+            noErrors = false;
+            return noErrors;
         }
         logContentletActivity(contentlets, "Deleting Content", user);
         for (Contentlet contentlet : contentlets){
@@ -1167,43 +1186,59 @@ public class ESContentletAPIImpl implements ContentletAPI {
             		+" does not have permission to delete some or all of the contentlets");
         }
 
-        List<String> l = new ArrayList<String>();
-
+        // Log contentlet identifiers that we are going to delete 
+        HashSet<String> l = new HashSet<String>();
         for (Contentlet contentlet : contentlets) {
-            if(!l.contains(contentlet)){
-                l.add(contentlet.getIdentifier());
-            }
+            l.add(contentlet.getIdentifier());
         }
-
         AdminLogger.log(this.getClass(), "delete", "User trying to delete the following contents" + l.toString(), user);
 
+        Iterator<Contentlet> itr = perCons.iterator();
+        while(itr.hasNext()) {
+            Contentlet con = itr.next();
 
-        for (Contentlet con : perCons) {
-            List<Contentlet> otherLanguageCons;
-            otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
             boolean cannotDelete = false;
-            
-            for (Contentlet contentlet : otherLanguageCons) {
-                if(contentlet.getInode() != con.getInode() && contentlet.getLanguageId() != con.getLanguageId()){
-                    if(perCons.contains(contentlet)){
-                    	indexAPI.removeContentFromIndex(contentlet);
-                    } else {
-                    	cannotDelete = true;
+
+            // Find all multi-language working contentlets
+            List<Contentlet> otherLanguageCons = conFac.getContentletsByIdentifier(con.getIdentifier());
+
+            if (isDeletingAHost) {
+                // When we are deleting a host, we need to delete
+                // live, working or archived contentlets
+                for (Contentlet contentlet : otherLanguageCons) {
+                    if (contentlet.getInode() != con.getInode()
+                            && contentlet.getLanguageId() != con.getLanguageId()) {
+                        if (perCons.contains(contentlet)) {
+                            indexAPI.removeContentFromIndex(contentlet);
+                        } else {
+                            cannotDelete = true;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // When we are NOT deleting a host and at least one multi-language
+                // contentlet is NOT archived we cannot delete.
+                for (Contentlet contentlet : otherLanguageCons) {
+                    if(!contentlet.isArchived()) {
+                        cannotDelete = true;
                         break;
                     }
                 }
             }
+
             if(cannotDelete && con.getMap().get(Contentlet.DONT_VALIDATE_ME) == null){
             	logContentletActivity(con, "Error Deleting Content", user);
                 Logger.warn(this, "Cannot delete content that has a working copy in another language");
                 
-                String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
+                final String notificationMessage = "Cannot delete content with inode: "+ con.getInode() +" that has a working copy in another language";
             	APILocator.getNotificationAPI().generateNotification(notificationMessage, NotificationLevel.INFO, user.getUserId());
             	
-                perCons.remove(con);
-                break;
+            	itr.remove();
+            	noErrors = false;
+                continue;
             }
-            
+
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
             catAPI.removeParents(con, APILocator.getUserAPI().getSystemUser(), true);
             List<Relationship> rels = RelationshipFactory.getAllRelationshipsByStructure(con.getStructure());
@@ -1231,11 +1266,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // jira.dotmarketing.net/browse/DOTCMS-1073
         if (perCons.size() > 0) {
             XStream _xstream = new XStream(new DomDriver());
-            Date date = new Date();
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy_HH-mm-ss");
-            String lastmoddate = sdf.format(date);
-            java.io.File _writing = null;
-            java.io.File _writingwbin = null;
 
             java.io.File backupFolder = new java.io.File(backupPath);
             if (!backupFolder.exists()) {
@@ -1270,38 +1300,40 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     }
                 }
 
-                _writing = new java.io.File(backupPath + java.io.File.separator + cont.getIdentifier().toString() + ".xml");
-                _writingwbin = new java.io.File(backupPath + java.io.File.separator + cont.getIdentifier().toString() + "_bin" + ".xml");
-                BufferedOutputStream _bout = null;
+                if (!arebinfiles) {
+                    java.io.File _writing = new java.io.File(backupPath + java.io.File.separator
+                            + cont.getIdentifier().toString() + ".xml");
 
-                if(!arebinfiles){
-                    try {
-                        _bout = new BufferedOutputStream(new FileOutputStream(_writing));
-                    } catch (FileNotFoundException e) {
+                    try (BufferedOutputStream _bout = new BufferedOutputStream(
+                            new FileOutputStream(_writing))) {
+                        _xstream.toXML(cont, _bout);
+                    } catch (IOException e) {
+                        Logger.error(this, "Error processing the file.", e);
                     }
-                    _xstream.toXML(cont, _bout);
-                }
-                else{
-                    try {
-                        _bout = new BufferedOutputStream(new FileOutputStream(_writingwbin));
-                    } catch (FileNotFoundException e) {
+                } else {
+                    java.io.File _writingwbin = new java.io.File(backupPath
+                            + java.io.File.separator + cont.getIdentifier().toString() + "_bin"
+                            + ".xml");
 
+                    try (BufferedOutputStream _bout = new BufferedOutputStream(
+                            new FileOutputStream(_writingwbin))) {
+                        contentwbin.setBinaryFilesList(filelist);
+                        _xstream.toXML(contentwbin, _bout);
+                        arebinfiles = false;
+                    } catch (IOException e) {
+                        Logger.error(this, "Error processing the file.", e);
                     }
-                    contentwbin.setBinaryFilesList(filelist);
-                    _xstream.toXML(contentwbin, _bout);
-                    arebinfiles=false;
                 }
             }
-
         }
+
         conFac.delete(contentletsVersion);
 
         for (Contentlet contentlet : perCons) {
             indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
-        
-        
+
         for (Contentlet contentlet : contentletsVersion) {
             indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
@@ -1319,6 +1351,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 			}
 		}
 
+        return noErrors;
     }
 
     public void deleteAllVersionsandBackup(List<Contentlet> contentlets, User user, boolean respectFrontendRoles) throws DotDataException,DotSecurityException {

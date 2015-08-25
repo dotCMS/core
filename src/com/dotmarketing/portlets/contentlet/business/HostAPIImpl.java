@@ -373,7 +373,6 @@ public class HostAPIImpl implements HostAPI {
 			hostCache.remove(host);
 		}
 		Contentlet c;
-		ContentletAPI conAPI = APILocator.getContentletAPI();
 		try {
 			c = APILocator.getContentletAPI().checkout(host.getInode(), user, respectFrontendRoles);
 		} catch (DotContentletStateException e) {
@@ -384,13 +383,22 @@ public class HostAPIImpl implements HostAPI {
 		APILocator.getContentletAPI().copyProperties(c, host.getMap());;
 		c.setInode("");
 		c = APILocator.getContentletAPI().checkin(c, user, respectFrontendRoles);
-		
+
 		if(host.isWorking() || host.isLive()){
 			APILocator.getVersionableAPI().setLive(c);
 		}
 		Host savedHost =  new Host(c);
 
-		if(host.isDefault()) {  // If host is marked as default make sure that no other host is already set to be the default
+		updateDefaultHost(host, user, respectFrontendRoles);
+		hostCache.clearAliasCache();
+		return savedHost;
+
+	}
+
+	public void updateDefaultHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException{
+		// If host is marked as default make sure that no other host is already set to be the default
+		if(host.isDefault()) {
+			ContentletAPI conAPI = APILocator.getContentletAPI();
 			List<Host> hosts= findAllFromDB(user, respectFrontendRoles);
 			Host otherHost;
 			Contentlet otherHostContentlet;
@@ -398,6 +406,7 @@ public class HostAPIImpl implements HostAPI {
 				if(h.getIdentifier().equals(host.getIdentifier())){
 					continue;
 				}
+				// if this host is the default as well then ours should become the only one
 				if(h.isDefault()){
 					boolean isHostRunning = h.isLive();
 					otherHostContentlet = APILocator.getContentletAPI().checkout(h.getInode(), user, respectFrontendRoles);
@@ -414,14 +423,9 @@ public class HostAPIImpl implements HostAPI {
 						otherHost = new Host(cont);
 						publish(otherHost, user, respectFrontendRoles);
 					}
-					
 				}
 			}
 		}
-
-		hostCache.clearAliasCache();
-		return savedHost;
-
 	}
 
 	public List<Host> getHostsWithPermission(int permissionType, boolean includeArchived, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -458,16 +462,17 @@ public class HostAPIImpl implements HostAPI {
 		}
 
 		try {
-			String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		    String systemHostSql = "select id from identifier where id = ?";
 			DotConnect db  = new DotConnect();
 			db.setSQL(systemHostSql);
 			db.addParam(Host.SYSTEM_HOST);
 			List<Map<String, Object>> rs = db.loadObjectResults();
-			if(rs.size() == 0) {
+			if(rs.isEmpty()) {
+			    // TODO: Be aware that this line may cause an infinite loop.
 				createSystemHost();
 			} else {
-				String hostWorkingInode = (String) rs.get(0).get("working_inode");
-				systemHost = new Host(conFac.find(hostWorkingInode));
+			    final String systemHostId = (String) rs.get(0).get("id");
+			    this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, user, respectFrontendRoles);
 			}
 			if(rs.size() > 1){
 				Logger.fatal(this, "There is more than one working version of the system host!!");
@@ -584,9 +589,8 @@ public class HostAPIImpl implements HostAPI {
 				}
 
 				// Remove Contentlet
-				ContentletAPI contentAPI = APILocator.getContentletAPI();								
-				List<Contentlet> contentlets = contentAPI.findContentletsByHost(host, user, respectFrontendRoles);
-				contentAPI.delete(contentlets, user, respectFrontendRoles);
+				ContentletAPI contentAPI = APILocator.getContentletAPI();
+				contentAPI.deleteByHost(host, user, respectFrontendRoles);
 
 				// Remove Folders
 				FolderAPI folderAPI = APILocator.getFolderAPI();
@@ -766,17 +770,18 @@ public class HostAPIImpl implements HostAPI {
 	DotSecurityException {
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
-		String systemHostSql="select working_inode from contentlet_version_info where identifier like ?";
+		String systemHostSql = "select id from identifier where id = ?";
 		DotConnect db  = new DotConnect();
 		db.setSQL(systemHostSql);
 		db.addParam(Host.SYSTEM_HOST);
 		List<Map<String, Object>> rs = db.loadObjectResults();
-		if(rs.size() == 0) {
+		if(rs.isEmpty()) {
 			Host systemHost = new Host();
 			systemHost.setDefault(false);
 			systemHost.setHostname("system");
 			systemHost.setSystemHost(true);
 			systemHost.setHost(null);
+			systemHost.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 			systemHost = new Host(conFac.save(systemHost));
 			systemHost.setIdentifier(Host.SYSTEM_HOST);
 			systemHost.setModDate(new Date());
@@ -788,8 +793,8 @@ public class HostAPIImpl implements HostAPI {
 			APILocator.getVersionableAPI().setWorking(systemHost);
 			this.systemHost = systemHost;
 		} else {
-			String hostWorkingInode = (String) rs.get(0).get("working_inode");
-			this.systemHost = new Host(conFac.find(hostWorkingInode));
+		    final String systemHostId = (String) rs.get(0).get("id");
+            this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, systemUser, false);
 		}
 		return systemHost;
 	}

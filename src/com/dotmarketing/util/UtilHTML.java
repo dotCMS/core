@@ -35,34 +35,31 @@ public class UtilHTML {
 	private static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	private static HostAPI hostAPI = APILocator.getHostAPI();
 
-	public static String convertContentsToHTML(ArrayList<Contentlet> contents){
-		StringBuffer buffy = new StringBuffer();
-		for (Contentlet contentlet : contents) {
-//			contentlet.get
-		}
-		return buffy.toString();
-	}
-	
 	public static String getStatusIcons(Versionable v) throws DotStateException, DotDataException, DotSecurityException{
 		StringBuffer buf = new StringBuffer();
-		if(!v.isLive() && v.isWorking() && (!v.isArchived() && v.isWorking())){
-			buf.append("<span class='workingIcon'></span>");
-		}else{
-			buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+
+		if(v.isWorking() && !v.isArchived()) {
+		    buf.append("<span class='workingIcon'></span>");
 		}
+
 		if(v.isArchived()){
-			buf.append("<span class='archivedIcon'></span>");
-		}else if(APILocator.getVersionableAPI().hasLiveVersion(v)){
-			buf.append("<span class='liveIcon'></span>");
-		}else{
-			buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+		    buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+		    buf.append("<span class='archivedIcon'></span>");
+		} else {
+		    if(v.isLive() && !v.isWorking()) {
+		        buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+		        buf.append("<span class='liveIcon'></span>");
+		    } else if(v.isLive()) {
+		        buf.append("<span class='liveIcon'></span>");
+		    } else {
+		        buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
+		    }
 		}
-	
+
 		if(v.isLocked()){
 			buf.append("<span class='lockIcon'></span>");
 		}
 		return buf.toString();
-		
 	}
 	
 	public static String getVersionStatusIcons(Versionable v) throws DotStateException, DotDataException, DotSecurityException{
@@ -73,10 +70,11 @@ public class UtilHTML {
 		if(v.isLive()){
 			buf.append("<span class='liveIcon'></span>");
 		}
+		if(v.isArchived()){
+            buf.append("<span class='archivedIcon'></span>");
+        }
 
 		return buf.toString();
-		
-		
 	}
 	
 

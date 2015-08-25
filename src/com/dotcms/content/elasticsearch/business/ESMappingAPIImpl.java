@@ -330,7 +330,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
             for(Entry<String,String> entry : m.entrySet()){
                 final String lcasek=entry.getKey().toLowerCase();
-                final String lcasev=entry.getValue()!=null ? entry.getValue().toLowerCase() : "";
+				final String lcasev = UtilMethods.isSet(entry.getValue()) ? entry.getValue().toLowerCase() : null;
                 mlowered.put(lcasek, lcasev);
                 mlowered.put(lcasek + "_dotraw", lcasev);
             }

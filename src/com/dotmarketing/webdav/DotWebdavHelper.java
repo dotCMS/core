@@ -953,27 +953,7 @@ public class DotWebdavHelper {
 
 				//Wiping out the thumbnails and resized versions
 				//http://jira.dotmarketing.net/browse/DOTCMS-5911
-				String inode = destinationFile.getInode();
-				if(UtilMethods.isSet(inode)){
-					String realAssetPath = APILocator.getFileAPI().getRealAssetPath();
-					java.io.File tumbnailDir = new java.io.File(realAssetPath + java.io.File.separator + "dotGenerated" + java.io.File.separator + inode.charAt(0) + java.io.File.separator + inode.charAt(1));
-					if(tumbnailDir!=null){
-						java.io.File[] files = tumbnailDir.listFiles();
-						if(files!=null){
-							for (java.io.File iofile : files) {
-								try {
-									if(iofile.getName().startsWith("dotGenerated_")){
-										iofile.delete();
-									}
-								} catch (SecurityException e) {
-									Logger.error(this,"EditFileAction._saveWorkingFileData(): " + iofile.getName() + " cannot be erased. Please check the file permissions.");
-								} catch (Exception e) {
-									Logger.error(this,"EditFileAction._saveWorkingFileData(): "	+ e.getMessage());
-								}
-							}
-						}
-					}
-				}
+				APILocator.getFileAssetAPI().cleanThumbnailsFromFileAsset(destinationFile);
 			}
 		}
 	}

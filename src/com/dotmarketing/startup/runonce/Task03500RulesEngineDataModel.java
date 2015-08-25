@@ -34,7 +34,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
 
                     // unique constraint rule table
-            .append("alter table rule add constraint rule_name_host unique (name, host);")
+            .append("alter table dot_rule add constraint rule_name_host unique (name, host);")
 
                     // create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
@@ -80,7 +80,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar(36) primary key,")
             .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("key varchar(255) not null,")
+            .append("`key` varchar(255) not null,")
             .append("value text")
             .append(");")
     		
