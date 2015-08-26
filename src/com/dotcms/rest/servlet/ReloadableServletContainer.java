@@ -47,6 +47,7 @@ import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
 import com.dotcms.rest.api.CorsFilter;
 import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
+import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
@@ -147,6 +148,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
         return config
                 .register(CorsFilter.class)
                 .register(MyObjectMapperProvider.class)
-                .register(JacksonJaxbJsonProvider.class);
+                .register(JacksonJaxbJsonProvider.class)
+                .register(InvalidFormatExceptionMapper.class);
     }
 }

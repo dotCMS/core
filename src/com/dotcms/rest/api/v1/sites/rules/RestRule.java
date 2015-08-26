@@ -67,21 +67,6 @@ public final class RestRule extends Validated  {
         @JsonProperty private Map<String, RestConditionGroup> conditionGroups = ImmutableMap.of();
         @JsonProperty private Map<String, Boolean> ruleActions = ImmutableMap.of();
 
-
-        /*
-            RestRule restRule = new RestRule.Builder()
-            .key( input.getId() )
-            .name( input.getName() )
-            .fireOn( input.getFireOn() )
-            .shortCircuit( input.getShortCircuit() )
-            .site( input.getsite() )
-            .folder( input.getFolder() )
-            .priority( input.getPriority() )
-            .enabled( input.getEnabled() )
-            .modDate( input.getModDate() )
-            .build();
-        */
-
         public Builder() {
         }
 
