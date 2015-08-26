@@ -3,19 +3,6 @@
  */
 package com.dotmarketing.business;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
@@ -25,27 +12,22 @@ import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
 import com.dotcms.repackage.com.google.common.cache.RemovalListener;
 import com.dotcms.repackage.com.google.common.cache.RemovalNotification;
 import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.jboss.cache.Fqn;
-import com.dotcms.repackage.org.jgroups.Address;
-import com.dotcms.repackage.org.jgroups.Event;
-import com.dotcms.repackage.org.jgroups.JChannel;
-import com.dotcms.repackage.org.jgroups.Message;
-import com.dotcms.repackage.org.jgroups.PhysicalAddress;
-import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
-import com.dotcms.repackage.org.jgroups.View;
+import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.CacheTransportException;
 import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.DotResourceCache;
-import com.liferay.portal.struts.MultiMessageResources;
+
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The Guava cache administrator uses Google's Guave code
@@ -56,29 +38,28 @@ import com.liferay.portal.struts.MultiMessageResources;
  * @version 1.6.5
  *
  */
-public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
+public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
+
+	CacheTransport cacheTransport;
 
 	private DistributedJournalAPI journalAPI;
-	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<String, Cache<String, Object>>();
-	private JChannel channel;
-	private boolean useJgroups = false;
-	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<String, Boolean>();
-	private final HashSet<String> availableCaches = new HashSet<String>();
+	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<>();
+	private boolean useTransportChannel = false;
+	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<>();
+	private final HashSet<String> availableCaches = new HashSet<>();
 	private H2CacheLoader diskCache = null;
 
 	static final String LIVE_CACHE_PREFIX = "livecache";
 	static final String WORKING_CACHE_PREFIX = "workingcache";
 	static final String DEFAULT_CACHE = "default";
 	public static final String TEST_MESSAGE = "HELLO CLUSTER!";
-	static final String VALIDATE_CACHE = "validateCacheInCluster-";
-	static final String VALIDATE_CACHE_RESPONSE = "validateCacheInCluster-response-";
-	static final String VALIDATE_SEPARATOR = "_";
-	static final String DUMMY_TEXT_TO_SEND = "DUMMY MSG TO TEST SEND";
+	public static final String TEST_MESSAGE_NODE = "TESTNODE";
+	public static final String VALIDATE_CACHE = "validateCacheInCluster-";
+	public static final String VALIDATE_CACHE_RESPONSE = "validateCacheInCluster-response-";
+	public static final String VALIDATE_SEPARATOR = "_";
+	public static final String DUMMY_TEXT_TO_SEND = "DUMMY MSG TO TEST SEND";
 	
 	private NullCallable nullCallable = new NullCallable();
-	
-	//Map<DateInMillis, Map<ServerID, True>>
-	private Map<String, Map<String, Boolean>> cacheStatus;
 
 	private boolean isDiskCache(String group){
 		if(group ==null || diskCache==null){
@@ -115,13 +96,33 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-	public DotGuavaCacheAdministratorImpl() {
+	public CacheTransport getTransport () {
+		return cacheTransport;
+	}
+
+	public void setTransport ( CacheTransport transport ) {
+
+		if ( getTransport() != null ) {
+			getTransport().shutdown();
+		}
+
+		this.cacheTransport = transport;
+	}
+
+	public DotGuavaCacheAdministratorImpl () {
+		this(null);
+	}
+
+	public DotGuavaCacheAdministratorImpl ( CacheTransport transport ) {
+
+		if ( transport != null ) {
+			useTransportChannel = true;
+			this.cacheTransport = transport;
+		} else {
+			useTransportChannel = false;
+		}
+
 		journalAPI = APILocator.getDistributedJournalAPI();
-
-
-
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-
 
 		boolean initDiskCache = false;
 		Iterator<String> it = Config.getKeys();
@@ -157,8 +158,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				cacheToDisk.clear();
 			}
 		}
-		
-		cacheStatus = new LRUMap(100);
 	}
 
 	public void setCluster(Server localServer) throws Exception {
@@ -166,15 +165,15 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 	}
 
 	public void setCluster(Map<String, String> cacheProperties, Server localServer) throws Exception {
+
 			Logger.info(this, "***\t Starting JGroups Cluster Setup");
 
 			journalAPI = APILocator.getDistributedJournalAPI();
 
 			if(cacheProperties==null) {
-				cacheProperties = new HashMap<String, String>();
+				cacheProperties = new HashMap<>();
 			}
 			
-			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
 			ServerAPI serverAPI = APILocator.getServerAPI();
 			
 			String cacheProtocol, bindAddr, bindPort, cacheTCPInitialHosts, mCastAddr, mCastPort, preferIPv4;
@@ -249,10 +248,6 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 			    preferIPv4 = Config.getStringProperty("CACHE_FORCE_IPV4", "true");
 			}
 
-			String cacheFile = "cache-jgroups-" + cacheProtocol + ".xml";
-
-			Logger.info(this, "***\t Going to load JGroups with this Classpath file " + cacheFile);
-
 			if (UtilMethods.isSet(bindAddr)) {
 			    Logger.info(this, "***\t Using " + bindAddr + " as the bindaddress");
 				System.setProperty("jgroups.bind_addr", bindAddr);
@@ -282,32 +277,13 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 			Logger.info(this, "***\t Prefer IPv4: "+(preferIPv4.equals("true") ? "enabled" : "disabled"));
 			System.setProperty("java.net.preferIPv4Stack", preferIPv4);
-			
-			
-			Logger.info(this, "***\t Setting up JChannel");
 
-			if(channel!=null) {
-			    channel.disconnect();
-			}
-			
-			channel = new JChannel(classLoader.getResource(cacheFile));
-			channel.setReceiver(this);
-			
-			channel.connect(Config.getStringProperty("CACHE_JGROUPS_GROUP_NAME","dotCMSCluster"));
-            channel.setDiscardOwnMessages( true );
-            useJgroups = true;
-			channel.send(new Message(null, null, TEST_MESSAGE));
-			Address channelAddress = channel.getAddress();
-			PhysicalAddress physicalAddr = (PhysicalAddress)channel.down(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
-			String[] addrParts = physicalAddr.toString().split(":");
-			String usedPort = addrParts[addrParts.length-1];
-
-			localServer.setCachePort(Integer.parseInt(usedPort));
-			serverAPI.updateServer(localServer);
-
-			Logger.info(this, "***\t " + channel.toString(true));
-			Logger.info(this, "***\t Ending JGroups Cluster Setup");
-
+		if ( getTransport() != null ) {
+			getTransport().init(localServer, cacheProperties);
+			useTransportChannel = true;
+		} else {
+			throw new CacheTransportException("No Cache transport implementation is defined");
+		}
 	}
 
 	/*
@@ -320,13 +296,18 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		try {
 			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 				journalAPI.addCacheEntry("0", ROOT_GOUP);
-			} else if (useJgroups) {
-				Message msg = new Message(null, null, "0:" + ROOT_GOUP);
-				try {
-					channel.send(msg);
-				} catch (Exception e) {
-					Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+			} else if ( useTransportChannel ) {
+
+				if ( getTransport() != null ) {
+					try {
+						getTransport().send("0:" + ROOT_GOUP);
+					} catch ( Exception e ) {
+						Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+					}
+				} else {
+					throw new CacheTransportException("No Cache transport implementation is defined");
 				}
+
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, "Unable to add journal entry for cluster", e);
@@ -355,13 +336,14 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 		try {
 			if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 				journalAPI.addCacheEntry("0", group);
-			} else if (useJgroups) {
-				Message msg = new Message(null, null, "0:" + group);
+			} else if ( useTransportChannel ) {
+
 				try {
-					channel.send(msg);
+					cacheTransport.send("0:" + group);
 				} catch (Exception e) {
 					Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 				}
+
 			}
 		} catch (DotDataException e) {
 			Logger.error(this, "Unable to add journal entry for cluster", e);
@@ -535,13 +517,18 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 				try {
 					if (Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)) {
 						journalAPI.addCacheEntry(k, g);
-					} else if (useJgroups) {
-						Message msg = new Message(null, null, k + ":" + g);
-						try {
-							channel.send(msg);
-						} catch (Exception e) {
-							Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+					} else if ( useTransportChannel ) {
+
+						if ( getTransport() != null ) {
+							try {
+								getTransport().send(k + ":" + g);
+							} catch ( Exception e ) {
+								Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+							}
+						} else {
+							throw new CacheTransportException("No Cache transport implementation is defined");
 						}
+
 					}
 				} catch (DotDataException e) {
 					Logger.error(this, "Unable to add journal entry for cluster", e);
@@ -721,249 +708,89 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
 
 	}
 
-
-
-
-
-	public String getCacheStats() {
-
-		return null;
-	}
-
 	public void shutdown() {
 		if(diskCache != null){
 			diskCache.destroy();
 		}
 	}
 
+	public void shutdownChannel () {
 
+		if ( getTransport() != null ) {
+			getTransport().shutdown();
+			useTransportChannel = false;
+		} else {
+			throw new CacheTransportException("No Cache transport implementation is defined");
+		}
 
-	public JChannel getJGroupsChannel() {
-		return channel;
 	}
 
 	public boolean isClusteringEnabled() {
-		return useJgroups;
+		return useTransportChannel;
 	}
 
-	/**
-	 * @param msg
-	 * @return True if the message was sent without any problem, false otherwise.
-	 */
-	public boolean send(String msg) {
-		boolean success = false;
-		Message message = new Message(null, null, msg);
-		try {
-			channel.send(message);
-			success = true;
-		} catch (Exception e) {
-			Logger.warn(DotGuavaCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
-			success = false;
-		}
-		return success;
-	}
-	
-	
-	
-	/**
-	 * @param dateInMillis String use as Key on out Map of results.
-	 * @param numberServers Number of servers to wait for a response.
-	 * @param maxWaitSeconds seconds to wait for a response.
-	 * @return Map with DateInMillis, ServerInfo for each cache/live server in Cluster. 
-	 */
-	public Map<String, Boolean> validateCacheInCluster(String dateInMillis, int numberServers, int maxWaitSeconds){
-		
-		cacheStatus = new HashMap<String, Map<String,Boolean>>();
-		
-		//If we are already in Cluster. 
-		if(numberServers > 0 && send(DUMMY_TEXT_TO_SEND)){
-			//Sends the message to the other servers.
-			send(VALIDATE_CACHE + dateInMillis);
-			
-			//Waits for 2 seconds in order all the servers respond.
-			int maxWaitTime = maxWaitSeconds * 1000;
-			int passedWaitTime = 0;
-			
-			//Trying to NOT wait whole 2 seconds for returning the info.
-			while (passedWaitTime <= maxWaitTime){
-				try {
-				    Thread.sleep(10);
-				    passedWaitTime += 10;
-				    
-				    Map<String, Boolean> ourMap = (Map<String, Boolean>)cacheStatus.get(dateInMillis);
-				    
-				    //No need to wait if we have all server results. 
-				    if(ourMap != null && ourMap.size() == numberServers){
-				    	passedWaitTime = maxWaitTime + 1;
-				    }
-				    
-				} catch(InterruptedException ex) {
-				    Thread.currentThread().interrupt();
-				    passedWaitTime = maxWaitTime + 1;
-				}
-			}
-		}
-		
-		//Returns the Map with all the info stored by receive() method.
-		Map<String, Boolean> mapToReturn = new HashMap<String, Boolean>();
-		
-		if((Map<String, Boolean>)cacheStatus.get(dateInMillis) != null){
-			mapToReturn = (Map<String, Boolean>)cacheStatus.get(dateInMillis);
-		}
-		
-		return mapToReturn;
-	}
+	public void send ( String msg ) {
 
-	@Override
-	public void receive(Message msg) {
-		if (msg == null) {
-			return;
-		}
-		
-		Object v = msg.getObject();
-		if (v == null) {
-			return;
-		}
+		if ( getTransport() != null ) {
 
-		if (v.toString().equals(TEST_MESSAGE)) {
-			Logger.info(this, "Received Message Ping " + new Date());
 			try {
-				channel.send(null, "ACK");
-			} catch (Exception e) {
+				getTransport().send(msg);
+			} catch ( Exception e ) {
+				Logger.warn(DotGuavaCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
+			}
+
+		} else {
+			throw new CacheTransportException("No Cache transport implementation is defined");
+		}
+
+	}
+
+	/**
+	 * Tests the transport channel of a cluster sending and receiving messages for a given number of servers
+	 *
+	 * @param dateInMillis   String use as Key on out Map of results.
+	 * @param numberServers  Number of servers to wait for a response.
+	 * @param maxWaitSeconds seconds to wait for a response.
+	 * @return Map with DateInMillis, ServerInfo for each cache/live server in Cluster.
+	 */
+	public Map<String, Boolean> validateCacheInCluster ( String dateInMillis, int numberServers, int maxWaitSeconds ) throws DotCacheException {
+
+		if ( getTransport() != null ) {
+
+			try {
+				return getTransport().validateCacheInCluster(dateInMillis, numberServers, maxWaitSeconds);
+			} catch ( CacheTransportException e ) {
+				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+				throw new DotCacheException(e);
+			}
+
+		} else {
+			throw new CacheTransportException("No Cache transport implementation is defined");
+		}
+	}
+
+	public void testCluster () {
+
+		if ( getTransport() != null ) {
+
+			try {
+				getTransport().testCluster();
+			} catch ( Exception e ) {
 				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
 			}
-		
-		//Handle when other server is responding to ping.	
-		} else if (v.toString().startsWith(VALIDATE_CACHE_RESPONSE)) {
-			String message = v.toString();
-			//Deletes the first part of the message, no longer needed.
-			message = message.replace(VALIDATE_CACHE_RESPONSE, "");
-			
-			//Gets the part of the message that has the Data in Milli.
-			String dateInMillis = message.substring(0, message.indexOf(VALIDATE_SEPARATOR));
-			//Gets the last part of the message that has the Server ID. 
-			String serverID = message.substring(message.lastIndexOf(VALIDATE_SEPARATOR) + 1);
-			
-			synchronized(this){
-				//Creates or updates the Map inside the Map.
-				Map<String, Boolean> localMap = cacheStatus.get(dateInMillis);
-				
-				if(localMap == null){
-					localMap = new HashMap<String, Boolean>();
-				}	
-				
-				localMap.put(serverID, Boolean.TRUE);
-				
-				//Add the Info with the Date in Millis and the Map with Server Info.
-				cacheStatus.put(dateInMillis, localMap);
-		    }
-			
-			Logger.debug(this, VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
-					
-		//Handle when other server is trying to ping local server.
-		} else if (v.toString().startsWith(VALIDATE_CACHE)) {
-			String message = v.toString();
-			//Deletes the first part of the message, no longer needed.
-			message = message.replace(VALIDATE_CACHE, "");
-			
-			//Gets the part of the message that has the Data in Milli.
-			String dateInMillis = message;
-			//Sends the message back in order to alert the server we are alive.
-			send(VALIDATE_CACHE_RESPONSE + dateInMillis + VALIDATE_SEPARATOR + APILocator.getServerAPI().readServerId());
-			
-			Logger.debug(this, VALIDATE_CACHE + " DATE_MILLIS: " + dateInMillis);
-			
-		} else if (v.toString().equals("ACK")) {
-			Logger.info(this, "ACK Received " + new Date());
-		} else if(v.toString().equals("MultiMessageResources.reload")) {
-			MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute( Globals.MESSAGES_KEY );
-            messages.reload();
-		} else if (v.toString().equals(DUMMY_TEXT_TO_SEND)) {
-			//Don't do anything is we are only checking sending.
+
 		} else {
-			invalidateCacheFromCluster(v.toString());
+			throw new CacheTransportException("No Cache transport implementation is defined");
 		}
-	}
 
-	public void viewAccepted(View new_view) {
-		super.viewAccepted(new_view);
-		Logger.info(this, "Method view: Cluster View is : " + new_view);
-		Logger.info(DotGuavaCacheAdministratorImpl.class, "viewAccepted + Cluster View is : " + new_view);
-	}
-
-	@Override
-	public void suspect(Address mbr) {
-		super.suspect(mbr);
-		Logger.info(this, "Method suspect: There is a suspected member : " + mbr);
-		Logger.info(DotGuavaCacheAdministratorImpl.class, "suspect + There is a suspected member : " + mbr);
-	}
-
-	public void testCluster() {
-		Message msg = new Message(null, null, TEST_MESSAGE);
-		try {
-			channel.send(msg);
-			Logger.info(this, "Sending Ping to Cluster " + new Date());
-		} catch (Exception e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
-		}
-	}
-
-	public void testNode(Address nodeAdr) {
-		try {
-			channel.send(nodeAdr, "TESTNODE");
-		} catch (Exception e) {
-		}
-	}
-
-	private void invalidateCacheFromCluster(String k) {
-		boolean flushMenus = false;
-		DotResourceCache vc = CacheLocator.getVeloctyResourceCache();
-		String menuGroup = vc.getMenuGroup();
-
-		int i = k.lastIndexOf(":");
-		if (i > 0) {
-			String key = k.substring(0, i);
-			String group = k.substring(i + 1, k.length());
-
-			key = key.toLowerCase();
-			group = group.toLowerCase();
-			if (groups != null) {
-
-				if (groups.containsKey(group)) {
-					Logger.debug(this, "Cluster Eviction of Key : " + key + " With Group : " + group + " from cache");
-				}
-			}
-			if (key.contains("dynamic")) {
-				if (group.equals(menuGroup)) {
-					flushMenus = true;
-				}
-			}
-			if (!flushMenus) {
-				if (key.equals("0")) {
-					if (group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP)) {
-						CacheLocator.getCacheAdministrator().flushAlLocalOnlyl();
-					} else if (group.equalsIgnoreCase(menuGroup)) {
-						flushMenus = true;
-					} else {
-						CacheLocator.getCacheAdministrator().flushGroupLocalOnly(group);
-					}
-				} else {
-					CacheLocator.getCacheAdministrator().removeLocalOnly(key, group);
-				}
-			}
-		} else {
-			Logger.error(this, "The cache to locally remove key is invalid. The value was " + k);
-		}
-		if (flushMenus) {
-			RefreshMenus.deleteMenusOnFileSystemOnly();
-			CacheLocator.getCacheAdministrator().flushGroupLocalOnly(menuGroup);
-		}
 	}
 
 	private Cache<String, Object> getCache(String cacheName) {
+
 		if (cacheName == null) {
 			throw new DotStateException("Null cache region passed in");
 		}
+
 		cacheName = cacheName.toLowerCase();
 		Cache<String, Object> cache = groups.get(cacheName);
 
@@ -1055,32 +882,9 @@ public class DotGuavaCacheAdministratorImpl extends ReceiverAdapter implements D
         return DotGuavaCacheAdministratorImpl.class;
     }
 
-
-
     @Override
     public DotCacheAdministrator getImplementationObject() {
         return this;
     }
 
-    public View getView() {
-    	if(channel!=null)
-    		return channel.getView();
-    	else
-    		return null;
-    }
-
-    public JChannel getChannel() {
-    	return channel;
-    }
-    
-    public void shutdownJGroups() {
-        synchronized(this) {
-            useJgroups=false;
-            if(channel!=null) {
-                channel.disconnect();
-                channel.close();
-                channel=null;
-            }
-        }
-    }
 }

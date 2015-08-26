@@ -11,7 +11,6 @@
 <%@page import="java.lang.management.ManagementFactory"%>
 <%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
 <%@page import="com.dotmarketing.cache.H2CacheLoader"%>
-<%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="java.util.Calendar"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
