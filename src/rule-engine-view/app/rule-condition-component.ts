@@ -12,12 +12,13 @@ import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 import {conditionTemplate} from './templates/index'
 
+import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
+import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
 import {UsersVisitedUrlConditionlet} from './conditionlets/users-visited-url-conditionlet'
 import {UsersIpAddressConditionlet} from './conditionlets/users-ip-address-conditionlet'
 import {UsersCityConditionlet} from './conditionlets/users-city-conditionlet'
 import {UsersTimeConditionlet} from './conditionlets/users-time-conditionlet'
 import {UsersLandingPageUrlConditionlet} from './conditionlets/users-landing-page-url-conditionlet'
-import {UsersBrowserHeaderConditionlet} from './conditionlets/users-browser-header-conditionlet'
 import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditionlet'
 import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
 import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
@@ -32,7 +33,6 @@ import {UsersSiteVisitsConditionlet} from './conditionlets/users-site-visits-con
 import {UsersDateTimeConditionlet} from './conditionlets/users-date-time-conditionlet'
 import {UsersOperatingSystemConditionlet} from './conditionlets/users-operating-system-conditionlet'
 import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
-import {UsersBrowserConditionlet} from './conditionlets/users-browser-conditionlet'
 
 var conditionletsAry = []
 var conditionletsMap = new Map()
@@ -73,7 +73,7 @@ let initConditionlets = function () {
     UsersCityConditionlet,
     UsersTimeConditionlet,
     UsersLandingPageUrlConditionlet,
-    UsersBrowserHeaderConditionlet,
+    RequestHeaderConditionlet,
     UsersPlatformConditionlet,
     UsersLanguageConditionlet,
     UsersPageVisitsConditionlet,
@@ -88,7 +88,7 @@ let initConditionlets = function () {
     UsersDateTimeConditionlet,
     UsersOperatingSystemConditionlet,
     UsersLogInConditionlet,
-    UsersBrowserConditionlet
+    BrowserConditionlet
   ]
 })
 class ConditionComponent {

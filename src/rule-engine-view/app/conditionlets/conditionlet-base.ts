@@ -4,7 +4,7 @@
 import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
 
 @Directive({
-  selector: 'conditionlet',
+  selector: 'cw-conditionlet',
   properties: ["value", "condition", "conditionlet"],
   events: ['valueChange', 'comparisonChange']
 })
@@ -46,11 +46,15 @@ export class BaseConditionletComponent {
 
 
   setComparison(value){
-    this.conditionletDir.onComparisonChange(event)
+    if(this.conditionletDir) {
+      this.conditionletDir.onComparisonChange(event)
+    }
   }
 
   setValue(event) {
-    this.conditionletDir.onValueChange(event)
+    if(this.conditionletDir) {
+      this.conditionletDir.onValueChange(event)
+    }
   }
 
 }
