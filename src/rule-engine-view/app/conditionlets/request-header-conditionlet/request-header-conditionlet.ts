@@ -94,14 +94,30 @@ let commonRequestHeaders = [
   "Warning"
 ]
 
+
+export class RequestHeaderConditionletModel {
+  headerKeyValue:string;
+  comparatorValue:string;
+  comparisonValues:Array<string>;
+
+  constructor(headerKeyValue = null, comparatorValue = null, comparisonValues = []) {
+    this.headerKeyValue = headerKeyValue
+    this.comparatorValue = comparatorValue
+    this.comparisonValues = comparisonValues || []
+  }
+
+  clone():RequestHeaderConditionletModel {
+    return new RequestHeaderConditionletModel(this.headerKeyValue, this.comparatorValue, [].concat(this.comparisonValues))
+  }
+}
+
 @Component({
   selector: 'cw-request-header-conditionlet',
   properties: [
-    "headerKeyValue", "comparatorValue", "comparisonValues"],
+    "headerKeyValue", "comparatorValue", "comparisonValues"
+  ],
   events: [
-      "headerKeyChange",
-      "comparatorChange",
-      "comparisonValuesChange"
+    "change"
   ]
 })
 @View({
@@ -110,19 +126,19 @@ let commonRequestHeaders = [
     <div class="row">
       <div class="col-sm-4">
         <span class="cw-label">Header: </span>
-        <select class="form-control header-key" [value]="headerKeyValue" (change)="updateHeaderKey($event)">
-          <option [selected]="hkOpt === headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
+        <select class="form-control header-key" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
+          <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
         </select>
       </div>
       <div class="col-sm-3">
         <span class="cw-label">&nbsp;</span>
-        <select class="form-control comparator" [value]="comparatorValue" (change)="updateComparator($event)">
-          <option [selected]="cOpt === comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
+        <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
+          <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
       </div>
       <div class="col-sm-4">
         <span class="cw-label">Values: </span>
-        <input type="text" class="form-control condition-value" [value]="comparisonValues.join(', ')" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
+        <input type="text" class="form-control condition-value" [value]="value.comparisonValues.join(', ')" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
       </div>
       <div class="col-sm-1">
         <div class="cw-label">&nbsp;</div>
@@ -138,46 +154,52 @@ export class RequestHeaderConditionlet {
   comparisonOptions:Array<string> = ["exists", "is", "startsWith", "endsWith", "contains", "regex"];
   predefinedHeaderKeyOptions:Array<string> = commonRequestHeaders;
 
-  headerKeyValue:string;
-  comparatorValue:string;
-  comparisonValues:Array<string>;
+  value:RequestHeaderConditionletModel;
 
-  // @todo roll these all into one 'change' event.
-  headerKeyChange:EventEmitter;
-  comparatorChange:EventEmitter;
-  comparisonValuesChange:EventEmitter;
+  change:EventEmitter;
 
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('comparisonValues') comparisonValues:Array<string>) {
-
-    this.headerKeyValue = headerKeyValue || ''
-    this.comparatorValue = comparatorValue || ''
-    this.comparisonValues = comparisonValues || []
-
-    this.headerKeyChange = new EventEmitter();
-    this.comparatorChange = new EventEmitter();
-    this.comparisonValuesChange = new EventEmitter();
+    this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue, comparisonValues)
+    this.change = new EventEmitter();
   }
 
-  updateHeaderKey(event:Event){
+  _modifyEventForForwarding(event:Event, field, oldState:RequestHeaderConditionletModel):Event {
+    Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field })
+    return event
+  }
+
+  set headerKeyValue(value:string){
+    this.value.headerKeyValue = value
+  }
+
+  set comparatorValue(value:string){
+    this.value.comparatorValue = value
+  }
+
+  set comparisonValues(value:Array<string>){
+    this.value.comparisonValues = value || []
+  }
+
+  updateHeaderKey(event:Event) {
     let value = event.target.value
-    let e = Object.assign(event, {ngTarget:this, was: this.headerKeyValue,  isNow: value})
-    this.headerKeyValue = value
-    this.headerKeyChange.next(e)
+    let e = this._modifyEventForForwarding(event, 'headerKeyValue', this.value.clone())
+    this.value.headerKeyValue = value
+    this.change.next(e)
   }
 
-  updateComparator(event:Event){
+  updateComparator(event:Event) {
     let value = event.target.value
-    let e = Object.assign(event, {ngTarget:this, was: this.comparatorValue,  isNow: value, event: event})
-    this.comparatorValue = value
-    this.comparatorChange.next(e)
+    let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
+    this.value.comparatorValue = value
+    this.change.next(e)
   }
 
-  updateComparisonValues(event:Event){
-    this.comparisonValues.push('Todo: Implement input-select element.')
-    let e = Object.assign(event, {ngTarget:this, was: this.comparisonValues,  isNow: [].concat(this.comparisonValues)})
-    this.comparisonValuesChange.next(e)
+  updateComparisonValues(event:Event) {
+    let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
+    this.value.comparisonValues.push('Todo: Implement input-select element.')
+    this.change.next(e)
   }
 
 }

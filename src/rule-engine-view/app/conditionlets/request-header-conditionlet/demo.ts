@@ -27,15 +27,13 @@ import {RequestHeaderConditionlet} from './request-header-conditionlet';
       <div class="panel-body">
         <div class="row">
           <cw-request-header-conditionlet class="col-sm-12" 
-          [header-key-value]="demo3HeaderKey" 
-          [comparator-value]="demo3Comparator"
-          (header-key-change)="updateHeaderKey('demo3', $event)"
-          (comparator-change)="updateComparator('demo3', $event)"
-          (comparison-values-change)="updateComparisonValues('demo3', $event)"
+          [header-key-value]="demo['3'].headerKeyValue"
+          [comparator-value]="demo['3'].comparatorValue"
+          (change)="updateConditionlet(3, $event)"
           ></cw-request-header-conditionlet>
         </div>
         <div class="row">
-          <div class="col-sm-4">{{demo3HeaderKey}}</div><div class="col-sm-3">{{demo3Comparator}}</div><div class="col-sm-4">{{demo3ComparisonValues}}</div>
+          <div class="col-sm-4">{{demo['3'].headerKeyValue}}</div><div class="col-sm-3">{{demo['3'].comparatorValue}}</div><div class="col-sm-4">{{demo['3'].comparisonValues}}</div>
         </div>
       </div>
     </div>
@@ -44,17 +42,14 @@ import {RequestHeaderConditionlet} from './request-header-conditionlet';
         <div class="panel-body">
         <div class="row">
           <cw-request-header-conditionlet class="col-sm-12" 
-          [header-key-value]="demo4HeaderKey" 
-          [comparator-value]="demo4Comparator"
-          [comparison-values]="demo4ComparisonValues"
-          (change)="logModelChange(demo4, $event)"
-          (header-key-change)="updateHeaderKey('demo4', $event)"
-          (comparator-change)="updateComparator('demo4', $event)"
-          (comparison-values-change)="updateComparisonValues('demo4', $event)"
+          [header-key-value]="demo['4'].headerKeyValue"
+          [comparator-value]="demo['4'].comparatorValue"
+          [comparison-values]="demo['4'].comparisonValues"
+          (change)="updateConditionlet(4, $event)"
           ></cw-request-header-conditionlet>
         </div>
         <div class="row">
-          <div class="col-sm-4">{{demo4HeaderKey}}</div><div class="col-sm-3">{{demo4Comparator}}</div><div class="col-sm-4">{{demo4ComparisonValues}}</div>
+          <div class="col-sm-4">{{demo['4'].headerKeyValue}}</div><div class="col-sm-3">{{demo['4'].comparatorValue}}</div><div class="col-sm-4">{{demo['4'].comparisonValues}}</div>
         </div>
       </div>
     </div>
@@ -62,31 +57,33 @@ import {RequestHeaderConditionlet} from './request-header-conditionlet';
   `
 })
 class App {
-  demo3HeaderKey:string = 'Content-Type';
-  demo3Comparator:string = 'startsWith';
-  demo3ComparisonValues:string;
-  demo4HeaderKey:string = 'Accept-Language';
-  demo4Comparator:string = 'endsWith';
-  demo4ComparisonValues:Array<string> = ['en', 'enUS'];
+  demo:any;
 
   constructor(@Attribute('id') id:string) {
+
+    this.demo = {
+      '1': {},
+      '2': {},
+      '3': {
+        headerKeyValue: 'Content-Type',
+        comparatorValue: 'startsWith',
+        comparisonValues: []
+      },
+      '4': {
+        headerKeyValue: 'Accept-Language',
+        comparatorValue: 'contains',
+        comparisonValues: ['en', 'enUS']
+      }
+
+    };
   }
 
-  logModelChange(demoId:string, event:Event){
+
+  updateConditionlet(demoId:string, event:any){
     console.log("Updated: ", demoId, event)
+    this.demo[demoId][event.valueField] = event.value[event.valueField];
   }
 
-  updateHeaderKey(demoId:string, event:any){
-    this[demoId + 'HeaderKey'] = event.isNow
-  }
-
-  updateComparator(demoId:string, event:any){
-    this[demoId + 'Comparator'] = event.isNow
-  }
-
-  updateComparisonValues(demoId:string, event:any){
-    this[demoId + 'ComparisonValues'] = event.isNow
-  }
 }
 
 
