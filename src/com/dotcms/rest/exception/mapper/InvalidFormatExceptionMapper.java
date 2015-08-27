@@ -17,31 +17,22 @@ import com.dotmarketing.util.json.JSONObject;
  * alert the user they are sending incorrect data and should fix it before try again.
  */
 @Provider
-public class InvalidFormatExceptionMapper implements ExceptionMapper<InvalidFormatException> {
+public class InvalidFormatExceptionMapper extends DotExceptionMapper implements ExceptionMapper<InvalidFormatException> {
 
     @Override
     public Response toResponse(InvalidFormatException exception)
     {
         //Log into our logs first.
         Logger.warn(this.getClass(), exception.getMessage(), exception);
-        String msg = "Can not construct instance from value '" + exception.getValue()
+
+        //Create the message.
+        String message = "Can not construct instance from value '" + exception.getValue()
                         + "': not a valid " + exception.getTargetType() + " value";
 
         //Creating the message in JSON format.
-        String entity;
-        try {
-            JSONObject json = new JSONObject();
-            json.put("error", msg);
-            entity = json.toString();
-        } catch (JSONException e) {
-            entity = "{ \"error\": \"" + msg.replace("\"", "\\\"") + "\" }";
-        }
+        String entity = getJsonErrorAsString(message);
 
         //Return 4xx message to the client.
-        return Response
-                .status(Response.Status.BAD_REQUEST)
-                .entity(entity)
-                .type(MediaType.APPLICATION_JSON)
-                .build();
+        return createResponse(entity);
     }
 }
