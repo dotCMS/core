@@ -6,6 +6,7 @@ package com.dotmarketing.business.cache;
  */
 public class CacheTransportException extends RuntimeException {
 
+    private static final long serialVersionUID = -8906239702050272454L;
     private String message;
 
     public CacheTransportException ( String message ) {
