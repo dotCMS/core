@@ -22,9 +22,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotcms.repackage.javax.portlet.WindowState" %>
 <%@ include file="/html/common/init.jsp" %>
-<portlet:defineObjects />
 
 <%if( LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
@@ -85,8 +83,9 @@
 
     function getSelectedPersona() {
 		var selected = dijit.byId('defaultPersonaType');
-		top.location="<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'><portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' /><portlet:param name='cmd' value='new' /><portlet:param name='selectedStructure' value=" + selected + "/></portlet:actionURL>";
+		window.location = "/c/portal/layout?p_l_id=71b8a1ca-37b6-4b6e-a43b-c7482f28db6c&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=new&selectedStructure=" + selected + "&_EXT_11_referer=%23%2Fapi%2Fportlet%2FPERSONAS_PORTLET%2F%3Fr%3D57220346";
 	}
+
 </script>
 
 <div class="portlet-wrapper">
