@@ -19,6 +19,7 @@ import com.dotmarketing.fixtask.tasks.FixTask00040CheckFileAssetsMimeType;
 import com.dotmarketing.fixtask.tasks.FixTask00050FixInodesWithoutContentlets;
 import com.dotmarketing.fixtask.tasks.FixTask00060FixAssetType;
 import com.dotmarketing.fixtask.tasks.FixTask00070FixVersionInfo;
+import com.dotmarketing.fixtask.tasks.FixTask00080DeleteOrphanedContentTypeFields;
 import com.dotmarketing.startup.runalways.Task00001LoadSchema;
 import com.dotmarketing.startup.runalways.Task00009ClusterInitialize;
 import com.dotmarketing.startup.runalways.Task00010CheckAnonymousUser;
@@ -50,6 +51,7 @@ public class TaskLocatorUtil {
 		ret.add(FixTask00050FixInodesWithoutContentlets.class);
 		ret.add(FixTask00060FixAssetType.class);
 		ret.add(FixTask00070FixVersionInfo.class);
+		ret.add(FixTask00080DeleteOrphanedContentTypeFields.class);
 		return ret;
 	}
 
