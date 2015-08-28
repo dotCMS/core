@@ -3,11 +3,11 @@
  */
 package com.dotmarketing.business;
 
+import com.dotmarketing.business.cache.CacheTransport;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.dotcms.repackage.org.jgroups.JChannel;
 
 
 /**
@@ -63,7 +63,7 @@ public interface DotCacheAdministrator  {
 	 * @param groups
 	 */
 	public void put(String key, Object content, String group);
-	
+
 	/**
 	 * Remove an object from the cache.  
 	 * This will create journal entries for other servers in a clustered environment. 
@@ -81,11 +81,14 @@ public interface DotCacheAdministrator  {
 	 * Should be called on shutdown of the dotcms
 	 */
 	public void shutdown();
-	
-	public JChannel getJGroupsChannel();
-	
+
 	public List<Map<String, Object>> getCacheStatsList();
 	
 	public Class getImplementationClass();
 	public DotCacheAdministrator getImplementationObject();
+
+	public CacheTransport getTransport ();
+
+	public void setTransport ( CacheTransport transport );
+
 }
