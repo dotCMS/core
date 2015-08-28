@@ -37,14 +37,11 @@
           </div>
           <div class="col-xs-2">
             <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
-              <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>
-            </button>
-            <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
-              <span class="glyphicon glyphicon-flash" aria-hidden="true"></span>
+              <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addGroup()"></span>
             </button>
             <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
                     (click)="removeRule()">
-              <span class="glyphicon glyphicon-trash"></span>
+              <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
             </button>
           </div>
         </div>

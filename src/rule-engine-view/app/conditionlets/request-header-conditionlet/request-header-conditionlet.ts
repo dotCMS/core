@@ -10,7 +10,6 @@
  * @see https://tools.ietf.org/html/rfc7231#section-5
  * @see http://www.iana.org/assignments/message-headers/message-headers.xml#perm-headers
  *
- * #
  *
  * ## POSIX Utility Argument Syntax (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
  * ```
