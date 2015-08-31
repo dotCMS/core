@@ -1,3 +1,11 @@
+/**
+ *
+ * Set 'use-pre-3_5-build' to true in gradle.properties to enable this build path.
+ *
+ * Note that the 'copyTo*' tasks within this .gradle file intentionally avoid using a task type of copy ( `task copyToFelix(type='Copy') {... }` ). This is
+ * to avoid gradle caching of state, which breaks the build due to the 'pre-compile' nature of these four initial copy steps.
+ */
+
 configurations {
     compile
     antLibs
@@ -10,7 +18,6 @@ def libsFolder = "dotCMS/WEB-INF/lib"
 def dotCmsFolder = "dotCMS"
 
 apply from: "$rootDir/dependencies.gradle"
-
 
 task copyToFelix {
     copy {
@@ -63,7 +70,7 @@ dependencies {
  * @param path
  * @return
  */
-def loadProps(String path) {
+public void loadProps(String path) {
     File f = file(path);
     if(!f.exists()) {
         throw new Exception("Could not load properties from ${path}, as it does not exist")
