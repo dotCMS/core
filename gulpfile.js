@@ -433,7 +433,8 @@ gulp.task('bundle-dist', ['compile-all'], function (done) {
   var sfxPath = config.buildDir + '/core-web.sfx.js'
   console.info("Bundling self-executing build to " + sfxPath)
   var jspm = require('jspm')
-  jspm.bundleSFX('index',
+  var jspmBuilder = new jspm.Builder()
+  jspmBuilder.buildSFX('index',
       sfxPath,
       {
         inject: false,
@@ -455,8 +456,9 @@ gulp.task('bundle-minified', ['compile-all'], function (done) {
   var minifiedPath = config.buildDir + '/core-web.min.js'
   console.info("Bundling minified build to " + minifiedPath)
   var jspm = require('jspm')
-  jspm.configureLoader({
-    "baseURL": "./build",
+  var jspmBuilder = new jspm.Builder()
+
+  jspmBuilder.config({
     "defaultJSExtensions": true,
     "transpiler": "babel",
     "babelOptions": {
@@ -467,7 +469,7 @@ gulp.task('bundle-minified', ['compile-all'], function (done) {
     }
   })
 
-  jspm.bundle('./index',
+  jspmBuilder.build('./index',
       minifiedPath,
       {
         inject: false,
@@ -475,7 +477,6 @@ gulp.task('bundle-minified', ['compile-all'], function (done) {
         sourceMaps: false
       }).then(function () {
         gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish', done);
-
       }).catch(function (e) {
         console.log("Error creating bundle with JSPM: ", e);
         throw e;
@@ -500,7 +501,7 @@ gulp.task('bundle-dev', ['compile-all'], function (done) {
 })
 
 
-gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-dist'], function (done) {
+gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-dist', 'compile-all'], function (done) {
   done();
 })
 
@@ -522,7 +523,11 @@ gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function (don
 })
 
 //noinspection JSUnusedLocalSymbols
-gulp.task('play', ['start-server', 'dev-watch'], function (done) {
+gulp.task('play', ['serve'], function (done) {
+  console.log("This task will be removed in the next iteration, use 'gulp serve' instead.")
+})
+
+gulp.task('serve', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
