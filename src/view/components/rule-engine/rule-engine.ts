@@ -1,6 +1,5 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../typings/dotcms/dotcms-core-web.d.ts" />
-/// <reference path="../../../../typings/entity-forge/entity-forge.d.ts" />
+/// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 /// <reference path="./rule-action-component.ts" />
 /// <reference path="./rule-condition-component.ts" />

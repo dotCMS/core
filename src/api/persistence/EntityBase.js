@@ -1,8 +1,5 @@
-import XDebug from 'debug';
-let log = XDebug('EntityForge.EntityBase');
-
-import  {Check} from './Check.js'
 import  {ConnectionManager} from './ConnectionManager.js'
+import  {Check} from '../validation/Check.js'
 
 
 let emptyFn = function () {
@@ -168,13 +165,13 @@ export class EntityMeta {
   push(data, onComplete = emptyFn) {
     return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
         .then((result) => {
-          log("Push succeeded, creating snapshot")
+          console.log("Push succeeded, creating snapshot")
           let snap = new EntitySnapshot(result.path, data)
           let childMeta = new EntityMeta(result.path);
           childMeta.latestSnapshot = snap
           return snap
         }).catch((e) => {
-          log('Error creating snapshot', e)
+          console.log('Error creating snapshot', e)
           throw e
         })
   }
@@ -186,7 +183,7 @@ export class EntityMeta {
       Dispatcher.notify(this.path, 'changed', snap)
       return snap
     }).catch((e) => {
-      log(e)
+      console.log(e)
       throw e
     })
   }
@@ -233,7 +230,7 @@ export class EntityMeta {
       default:
       {
         let e = new Error("Invalid event name: '" + eventType + "'.")
-        log(e)
+        console.log(e)
         throw e
       }
 
@@ -275,7 +272,7 @@ export class EntityMeta {
         switch (eventType) {
           case 'added':
           case 'changed':
-            log('added/changed: ', this.path)
+            console.log('added/changed: ', this.path)
             this.latestSnapshot = payload
             this.watches.value.forEach((cb) => {
               cb(payload)
@@ -289,25 +286,25 @@ export class EntityMeta {
         if (isChild) {
           switch (eventType) {
             case 'changed':
-              log('child changed', path)
+              console.log('child changed', path)
               this.watches.child_changed.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'added':
-              log('child added', path, payload)
+              console.log('child added', path, payload)
               this.watches.child_added.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'removed':
-              log('child removed', path, payload)
+              console.log('child removed', path, payload)
               this.watches.child_removed.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'moved':
-              log('moved')
+              console.log('moved')
               break;
 
           }
@@ -315,7 +312,7 @@ export class EntityMeta {
       }
     }
     catch (e) {
-      log("Notification error: ", e)
+      console.log("Notification error: ", e)
     }
   }
 }

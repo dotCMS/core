@@ -1,4 +1,4 @@
-//entity-forge.d.ts
+//coreweb-api.d.ts
 declare var ConnectionManager: any;
 
 declare class EntityMeta {

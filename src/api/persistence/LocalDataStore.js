@@ -1,7 +1,4 @@
-import XDebug from 'debug';
-let log = XDebug('EntityForge.LocalDataStore');
-
-import  {Check} from './Check.js'
+import  {Check} from '../validation/Check.js'
 
 let LocalDataStore = {
   get length() {

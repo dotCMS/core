@@ -13,10 +13,8 @@ System.config({
     "emitDecoratorMetadata": true
   },
   paths: {
-    "coreweb-util/*": "build/coreweb/*",
-    "entity-forge/*": "build/entity-forge/*",
-    "rule-engine-api/*": "build/rule-engine/*",
-    "rule-engine-view/*": "build/rule-engine-view/*",
+    "coreweb/api/*": "build/api/*",
+    "rule-engine/*": "build/view/components/rule-engine/*",
     "src/*": "build/*.js",
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*",

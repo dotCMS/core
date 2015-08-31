@@ -1,8 +1,5 @@
-import XDebug from 'debug';
-let log = XDebug('EntityForge.RestDataStore');
-
-import  {Check} from './Check.js'
 import  {ConnectionManager} from './ConnectionManager.js'
+import  {Check} from '../validation/Check.js'
 import 'whatwg-fetch';
 
 
@@ -61,7 +58,7 @@ let getAuthHeader = function () {
 
 let remoteSet = function (path, entity, create = false) {
   let url = pathToUrl(path)
-  log("Saving entity to: ", url)
+  console.log("Saving entity to: ", url)
 
   return fetch(url, {
     method: create ? "post" : "put",
@@ -79,14 +76,14 @@ let remoteSet = function (path, entity, create = false) {
         return result
       })
       .catch((e)=> {
-        log("Save operation resulted in an error: ", e)
+        console.log("Save operation resulted in an error: ", e)
         throw e
       })
 }
 
 let remoteGet = function (path) {
   let url = pathToUrl(path)
-  log("Getting entity from: ", url)
+  console.log("Getting entity from: ", url)
   return fetch(url, {
     credentials: 'same-origin',
     headers: {
@@ -100,7 +97,7 @@ let remoteGet = function (path) {
 
 let remoteDelete = function (path) {
   let url = pathToUrl(path)
-  log("Deleting entity at: ", url)
+  console.log("Deleting entity at: ", url)
   return fetch(url, {
     method: "delete",
     credentials: 'same-origin',
@@ -110,7 +107,7 @@ let remoteDelete = function (path) {
       'Authorization': getAuthHeader()
     }
   }).then(checkStatus).then(transformValidResponse).catch((e)=> {
-    log("Delete operation resulted in an error: ", e)
+    console.log("Delete operation resulted in an error: ", e)
     reject(e)
   })
 }

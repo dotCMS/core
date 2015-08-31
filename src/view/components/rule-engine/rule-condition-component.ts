@@ -1,36 +1,35 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../typings/dotcms/dotcms-core-web.d.ts" />
-/// <reference path="../../../../typings/entity-forge/entity-forge.d.ts" />
+/// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
 
-import {ConditionletDirective} from 'conditionlets/conditionlet-base';
+import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 
 import {conditionTemplate} from './templates/index'
 
-import {BrowserConditionlet} from 'conditionlets/browser-conditionlet/browser-conditionlet'
-import {RequestHeaderConditionlet} from 'conditionlets/request-header-conditionlet/request-header-conditionlet'
-import {UsersVisitedUrlConditionlet} from 'conditionlets/users-visited-url-conditionlet'
-import {UsersIpAddressConditionlet} from 'conditionlets/users-ip-address-conditionlet'
-import {UsersCityConditionlet} from 'conditionlets/users-city-conditionlet'
-import {UsersTimeConditionlet} from 'conditionlets/users-time-conditionlet'
-import {UsersLandingPageUrlConditionlet} from 'conditionlets/users-landing-page-url-conditionlet'
-import {UsersPlatformConditionlet} from 'conditionlets/users-platform-conditionlet'
-import {UsersLanguageConditionlet} from 'conditionlets/users-language-conditionlet'
-import {UsersPageVisitsConditionlet} from 'conditionlets/users-page-visits-conditionlet'
-import {UsersCountryConditionlet} from 'conditionlets/users-country-conditionlet'
-import {MockTrueConditionlet} from 'conditionlets/mock-true-conditionlet'
-import {UsersUrlParameterConditionlet} from 'conditionlets/users-url-parameter-conditionlet'
-import {UsersReferringUrlConditionlet} from 'conditionlets/users-referring-url-conditionlet'
-import {UsersCurrentUrlConditionlet} from 'conditionlets/users-current-url-conditionlet'
-import {UsersHostConditionlet} from 'conditionlets/users-host-conditionlet'
-import {UsersStateConditionlet} from 'conditionlets/users-state-conditionlet'
-import {UsersSiteVisitsConditionlet} from 'conditionlets/users-site-visits-conditionlet'
-import {UsersDateTimeConditionlet} from 'conditionlets/users-date-time-conditionlet'
-import {UsersOperatingSystemConditionlet} from 'conditionlets/users-operating-system-conditionlet'
-import {UsersLogInConditionlet} from 'conditionlets/users-log-in-conditionlet'
+import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
+import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
+import {UsersVisitedUrlConditionlet} from './conditionlets/users-visited-url-conditionlet'
+import {UsersIpAddressConditionlet} from './conditionlets/users-ip-address-conditionlet'
+import {UsersCityConditionlet} from './conditionlets/users-city-conditionlet'
+import {UsersTimeConditionlet} from './conditionlets/users-time-conditionlet'
+import {UsersLandingPageUrlConditionlet} from './conditionlets/users-landing-page-url-conditionlet'
+import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditionlet'
+import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
+import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
+import {UsersCountryConditionlet} from './conditionlets/users-country-conditionlet'
+import {MockTrueConditionlet} from './conditionlets/mock-true-conditionlet'
+import {UsersUrlParameterConditionlet} from './conditionlets/users-url-parameter-conditionlet'
+import {UsersReferringUrlConditionlet} from './conditionlets/users-referring-url-conditionlet'
+import {UsersCurrentUrlConditionlet} from './conditionlets/users-current-url-conditionlet'
+import {UsersHostConditionlet} from './conditionlets/users-host-conditionlet'
+import {UsersStateConditionlet} from './conditionlets/users-state-conditionlet'
+import {UsersSiteVisitsConditionlet} from './conditionlets/users-site-visits-conditionlet'
+import {UsersDateTimeConditionlet} from './conditionlets/users-date-time-conditionlet'
+import {UsersOperatingSystemConditionlet} from './conditionlets/users-operating-system-conditionlet'
+import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
 
 var conditionletsAry = []
 var conditionletsMap = new Map()

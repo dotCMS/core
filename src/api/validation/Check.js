@@ -1,6 +1,3 @@
-import XDebug from 'debug';
-let log = XDebug('EntityForge.Check');
-
 import {Verify} from './Verify.js'
 
 
