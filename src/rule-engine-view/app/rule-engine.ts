@@ -79,14 +79,15 @@ class RuleEngineComponent {
   }
 
   addRule() {
-    let testRule = new RuleEngine.Rule();
-    testRule.name = "CoreWeb created this rule. " + new Date().toISOString()
-    testRule.enabled = true
-    testRule.priority = 10
-    testRule.fireOn = "EVERY_PAGE"
-    testRule.shortCircuit = false
-    testRule.conditionGroups = {}
-    testRule.actions = {}
+    let testRule = {
+      name: "CoreWeb created this rule. " + new Date().toISOString(),
+      enabled: true,
+      priority: 10,
+      fireOn: "EVERY_PAGE",
+      shortCircuit: false,
+      conditionGroups: {},
+      actions: {}
+    }
     this.rulesRef.push(testRule).catch((e)=> {
       console.log("Error pushing new rule: ", e)
       throw e
