@@ -288,7 +288,7 @@
 
 #macro(addContentlet $STRUCTURE_INODE $CONTENT_NAME)
 	#if($EDIT_MODE)
-	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/portal/images/icons/page.gif" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
+	    <a href="javascript:parent.addContentletChapter('$STRUCTURE_INODE'); "><img src="/html/images/icons/page.png" alt="" width="15" height="15" border="0">$!{CONTENT_NAME}</a>
 	#end
 #end
 
