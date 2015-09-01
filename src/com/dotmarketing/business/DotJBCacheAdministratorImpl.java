@@ -30,6 +30,7 @@ import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 
+import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.repackage.org.jboss.cache.Cache;
 import com.dotcms.repackage.org.jboss.cache.CacheFactory;
 import com.dotcms.repackage.org.jboss.cache.DefaultCacheFactory;
@@ -45,6 +46,7 @@ import com.dotcms.repackage.org.jgroups.Message;
 import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
 import com.dotcms.repackage.org.jgroups.View;
 
+import com.dotmarketing.business.cache.CacheTransport;
 import com.dotmarketing.business.mbeans.CacheInfo;
 import com.dotmarketing.business.mbeans.CacheInfoMBean;
 import com.dotmarketing.cache.H2CacheLoader;
@@ -65,7 +67,7 @@ import com.liferay.util.FileUtil;
  * on a put where the non legacy one will not.  
  * @author Jason Tesser
  * @version 1.6.5
- *
+ * @deprecated
  */
 public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 	
@@ -477,7 +479,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 	public JChannel getJGroupsChannel() {
 		return channel;
 	}
-	
+
 	@Override
 	public void receive(Message msg) {
 		if(msg == null){
@@ -601,5 +603,15 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
     public DotCacheAdministrator getImplementationObject() {
         return this;
     }
-	
+
+	@Override
+	public CacheTransport getTransport () {
+		throw new NotImplementedException("Method no implemented in deprecated class.");
+	}
+
+	@Override
+	public void setTransport ( CacheTransport transport ) {
+		throw new NotImplementedException("Method no implemented in deprecated class.");
+	}
+
 }

@@ -7,6 +7,9 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotJBCacheAdministratorImpl;
 import com.dotmarketing.util.Logger;
 
+/**
+ * @deprecated
+ */
 public class CacheInfo implements CacheInfoMBean {
 	private DotJBCacheAdministratorImpl cache;
 

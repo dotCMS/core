@@ -8,7 +8,6 @@
 <%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>
 <%@page import="java.util.Map"%>
 <%@ include file="/html/common/init.jsp"%>
 <%@page import="java.util.List"%>

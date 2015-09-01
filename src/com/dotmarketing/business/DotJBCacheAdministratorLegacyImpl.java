@@ -3,16 +3,16 @@
  */
 package com.dotmarketing.business;
 
+import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.dotcms.repackage.org.jgroups.JChannel;
-
-import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
 
 /**
  * The legacy cache administrator will invalidate cache entries within a cluster
@@ -20,6 +20,7 @@ import com.dotmarketing.util.Logger;
  * @author Jason Tesser
  * @version 1.6.5
  *
+ * @deprecated
  */
 public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 
@@ -91,11 +92,6 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 		cache.shutdown();		
 	}
 
-	public JChannel getJGroupsChannel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
     @Override
     public List<Map<String, Object>> getCacheStatsList() {
         return new ArrayList<Map<String, Object>>();
@@ -110,4 +106,15 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
     public DotCacheAdministrator getImplementationObject() {
         return this;
     }
+
+	@Override
+	public CacheTransport getTransport () {
+		throw new NotImplementedException("Method no implemented in deprecated class.");
+	}
+
+	@Override
+	public void setTransport ( CacheTransport transport ) {
+		throw new NotImplementedException("Method no implemented in deprecated class.");
+	}
+
 }
