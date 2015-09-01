@@ -2,18 +2,24 @@ package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 
 @JsonDeserialize(builder = RestActionlet.Builder.class)
-public final class RestActionlet {
+public final class RestActionlet extends Validated {
 
     public final String id;
+
+    @NotNull
     public final String name;
+
     public final String i18nKey;
 
     private RestActionlet(Builder builder) {
         id = builder.id;
         name = builder.name;
         i18nKey = builder.i18nKey;
+        checkValid();
     }
 
     public static final class Builder {

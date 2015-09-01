@@ -40,7 +40,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1")
-public class ConditionGroupsResource extends WebResource {
+public class ConditionGroupResource extends WebResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
@@ -48,16 +48,16 @@ public class ConditionGroupsResource extends WebResource {
     private HostAPI hostAPI;
 
     @SuppressWarnings("unused")
-    public ConditionGroupsResource() {
+    public ConditionGroupResource() {
         this(new ApiProvider());
     }
 
-    private ConditionGroupsResource(ApiProvider apiProvider) {
+    private ConditionGroupResource(ApiProvider apiProvider) {
         this(apiProvider, new AuthenticationProvider(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionGroupsResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionGroupResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;

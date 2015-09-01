@@ -221,21 +221,28 @@ public class Rule implements Permissionable {
 
     }
 
+    @Override
     public boolean equals(Object o) {
-        if(!UtilMethods.isSet(o)) return false;
-
+        if(o == this) return true;
         if(!(o instanceof Rule)) return false;
+        String id = ((Rule) o).getId();
+        return id!=null && id.equals(this.id);
+    }
 
-        return id.equals(((Rule)o).getId());
+    @Override
+    public int hashCode() {
+        int result = 17;
+        result = 31 * result + id.hashCode();
+        return result;
     }
 
     @JSONIgnore
-	@Override
-	public String toString() {
-		return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
-				+ ", shortCircuit=" + shortCircuit + ", host=" + host
-				+ ", folder=" + folder + ", priority=" + priority
-				+ ", enabled=" + enabled + ", modDate=" + modDate + "]";
-	}
+    @Override
+    public String toString() {
+        return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
+                + ", shortCircuit=" + shortCircuit + ", host=" + host
+                + ", folder=" + folder + ", priority=" + priority
+                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
+    }
  
 }
