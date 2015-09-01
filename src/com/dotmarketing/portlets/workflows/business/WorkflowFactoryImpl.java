@@ -1153,23 +1153,27 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 
 		for (Map<String, Object> row : results) {
 			WorkflowTask wt = new WorkflowTask();
-			wt.setId(row.get("id").toString());
+			wt.setId(getStringValue(row, "id"));
 			wt.setCreationDate((Date)row.get("creation_date"));
 			wt.setModDate((Date)row.get("mod_date"));
 			wt.setDueDate((Date)row.get("due_date"));
-			wt.setCreatedBy(row.get("created_by").toString());
-			wt.setAssignedTo(row.get("assigned_to").toString());
-			wt.setBelongsTo(row.get("belongs_to")!=null?row.get("belongs_to").toString():"");
-			wt.setTitle(row.get("title").toString());
-			wt.setDescription(row.get("description")!=null?row.get("description").toString():"");
-			wt.setStatus(row.get("status").toString());
-			wt.setWebasset(row.get("webasset").toString());
+			wt.setCreatedBy(getStringValue(row, "created_by"));
+			wt.setAssignedTo(getStringValue(row, "assigned_to"));
+			wt.setBelongsTo(getStringValue(row, "belongs_to"));
+			wt.setTitle(getStringValue(row, "title"));
+			wt.setDescription(getStringValue(row, "description"));
+			wt.setStatus(getStringValue(row, "status"));
+			wt.setWebasset(getStringValue(row, "webasset"));
 			wfTasks.add(wt);
 		}
 
 		return wfTasks;
 	}
 
+	private String getStringValue(Map<String, Object> row, String key) {
+		Object value = row.get(key);
+		return (value == null) ? "" : value.toString();
+	}
 	// christian escalation
 	public List<WorkflowTask> searchAllTasks(WorkflowSearcher searcher) throws DotDataException {
 
