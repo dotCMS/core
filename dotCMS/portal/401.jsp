@@ -129,26 +129,19 @@
 
 	<style type="text/css">
 		body{
-			font-family: verdana, helvetica, san-serif;
+			font-family: helvetica, san-serif;
 			padding:20px;
+			margin-top:0px;
 		}
 		#main {
 			width: 400px;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
-			margin-left:auto;
-			margin-right:auto;
 		}
 		#footer {
 			text-align:center;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
 		}
 		h1 {
-			font-family: verdana, helvetica, san-serif;
 			font-size: 20px;
-			text-decoration: none;
-			font-weight: normal;
+
 		}
 		#logo{
 			float: left;
@@ -171,12 +164,10 @@
 		<h1><%= LanguageUtil.get(pageContext,"401-title") %></h1>
 		
 		<p><%= LanguageUtil.get(pageContext,"401-body1") %></p>
-		<p><%= LanguageUtil.get(pageContext,"401-body2") %></p>
+
 	</div>
 </div>
 <br clear="all"/>&nbsp;<br clear="all"/>
-<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"401-copywright") %></a></div>
-
 
 </body>
 </html>
