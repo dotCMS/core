@@ -108,10 +108,8 @@ public class HTMLPDFServlet extends VelocityServlet {
 
 		String queryString = req.getQueryString();
 
-		queryString = UtilMethods.decodeURL(queryString);
-		
 		//Validate the query string
-		if(!Xss.ParamsHaveXSS(queryString)) {
+		if(Xss.ParamsHaveXSS(queryString)) {
 			resp.sendError(403);
 			AdminLogger.log(HTMLPDFServlet.class, "service", "Someone tried to use the HTMLPDFServlet for XSS");
 			return;
