@@ -7,7 +7,7 @@ dependencies {
 
     compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
 
-    /*compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_1'
+    compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-html', version:'0.4.0-incubating_1'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-extensions-json', version:'0.4.0-incubating_1'
@@ -178,7 +178,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'*/
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'
 
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-1.2-api', version:'2.3'
 	compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'2.3'
