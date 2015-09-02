@@ -14,7 +14,7 @@ var actionletsPromise;
 export let initActionlets = function () {
   let actionletsRef:EntityMeta = new EntityMeta('/api/v1/system/ruleengine/actionlets')
   actionletsPromise = new Promise((resolve, reject) => {
-    actionletsRef.once('value').then((snap) => {
+    actionletsRef.once('value', (snap) => {
       let actionlets = snap['val']()
       let results = (Object.keys(actionlets).map((key) => {
         actionletsMap.set(key, actionlets[key])

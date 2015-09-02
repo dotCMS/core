@@ -25,7 +25,7 @@ Otherwise the demo will default to using LocalStorage for persistence.
 git clone git@github.com:dotCMS/core-web.git
 npm install
 jspm install
-gulp play --open=true
+gulp serve --open=true
 ```
 
 You can also run karma tests in the background as you develop:
@@ -34,7 +34,7 @@ You can also run karma tests in the background as you develop:
 ./node_modules/karma/bin/karma start
 ```
 
-Navigate to one the index file of your choice; either index-dev.html (unbundled, slow) or index.html (bundled via JSPM, fast). Make sure to open the browsers console
+Navigate to one the index file of your choice; either index-dev.html (unbundled, slow) or index.html (bundled via JSPM, fast-ish). Make sure to open the browsers console
 in order to view log messages.
 
 ## To Develop
@@ -46,16 +46,30 @@ For the most part, these files only change when there are legitimate updates to 
 'JavaScript -> Libraries' that requires changes (the addition of new libraries) made by one dev to be made manually by other devs.
 
 For faster load times in the browser (at the cost of needing to remember not to commit the changes this makes to config.js!), 
-run the './bundle-dependencies.sh' script. It pre-compiles a handful of the larger dependencies. Run 'jspm unbundle' before committing, or move config.js 
-to a change list you won't commit. ALWAYS run 'jspm unbundle' before a pull, or you'll run the risk of annoying everyone with a painful accidental merge-commit. 
+run the `gulp bundle-deps` task. It uses the JSPM API to bundle ('pre-compile and concatenate') a handful of the larger dependencies into a single script file, drastically reducing the number of requests being made. Run 'gulp unbundle' or just revert the config.js file before committing. 
+
+
  
 ### Some useful links
 
 #### Angular2
   * [Angular](https://angular.io/)
+  * [Github Page](https://github.com/angular/angular)
+  * [Is angular 2 ready?](http://splintercode.github.io/is-angular-2-ready/)
+  * [Gitter Page](https://gitter.im/angular/angular)
+  * [AngularU - June 2015 conference](https://angularu.com/ng/videos)
   * [Requisite John Lindquist intro video](https://egghead.io/lessons/angularjs-angular-2-template-syntax)
   * [Angular 2 + Flux](http://victorsavkin.com/post/99998937651/building-angular-apps-using-flux-architecture)
   * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
+  
+
+  
+#### JSPM
+  * [Javascript Package Manager - Home Page](http://jspm.io/)
+  * [Github page](https://github.com/jspm/jspm-cli/)
+  * [About bundling](https://github.com/jspm/jspm-cli/blob/master/docs/production-workflows.md)
+  * [Gitter Page- irc,kinda](https://gitter.im/jspm/jspm)
+  
   
   
 #### General

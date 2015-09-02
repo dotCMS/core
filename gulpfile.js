@@ -24,10 +24,6 @@ var config = {
   distDir: './dist',
   srcDir: './src',
   buildTarget: 'dev',
-  nonStandardBundles: {
-    'angular2/angular2': 'angular2',
-    'rtts_assert/rtts_assert': 'rtts_assert'
-  },
   noBundle: ['css', 'text'],
   /**
    *  WARNING! These directories are deleted by the 'reset-workspace' task.
@@ -104,17 +100,7 @@ gulp.task('bundle-deps', ['unbundle'], function (done) {
           }))
     }
   }
-  deps = config.nonStandardBundles || {}
-  for (nm in deps) {
-    var nonStdBundlePath = config.buildDir + '/' + deps[nm] + '.bundle.js'
-    promises.push(jspm.bundle(nm,
-        nonStdBundlePath,
-        {
-          inject: true,
-          minify: true,
-          sourceMaps: false
-        }))
-  }
+
   Promise.all(promises).then(function (results) {
     done()
   }).catch(function (e) {
