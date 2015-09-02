@@ -1,6 +1,7 @@
+import 'babel/polyfill'
+import 'es6-shim'
 import 'zone.js'
-import 'reflect-metadata';
-import 'es6-shim';
+import 'reflect-metadata'
 
 import {ConnectionManager, EntityMeta, RestDataStore} from 'coreweb/api/index'
 import * as RuleEngineView from 'rule-engine/index';
