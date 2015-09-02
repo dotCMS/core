@@ -21,7 +21,6 @@
 	String IMAGE_PATH = (String) application.getAttribute(WebKeys.IMAGE_PATH);
 	String defaultImage =  IMAGE_PATH+"/company_logo?img_id="+company.getCompanyId()+"&key="+ImageKey.get(company.getCompanyId());
 	
-	
 	String ep_originatingHost = host.getHostname();
 	String ep_errorCode = "401";
     String ep_error_uri = (String)request.getAttribute("javax.servlet.forward.request_uri");
