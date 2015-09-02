@@ -1,10 +1,9 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'ad4c93a-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'e783c5f-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
 
-    compile fileTree(dir: '/Users/mrizo/Develop/workspace/dotcms/ant-tooling/build/libs', include: '*.jar')
-//    compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
+    compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
 
     compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
 
@@ -73,7 +72,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_1'
     compile group: 'com.dotcms.lib', name: 'dot.ehcache', version:'1.6.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.4.2_1'
-    compile group: 'com.dotcms.lib', name: 'dot.esapi', version:'2.0.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.felix', version:'4.2.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_1'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_1'
@@ -182,11 +180,12 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_1'*/
 
-    compile fileTree(dir: '/Users/mrizo/Develop/workspace/dotcms/dotcms-libs/build', include: '*.jar')
-//    compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.6.0_1'
-//    compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.6.0_1'
-//    compile group: 'com.dotcms.lib', name: 'dot.log4j-appenders', version:'1.0.1_1'
-//    compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.slf4j-1.2-api', version:'2.3'
+	compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'2.3'
+	compile group: 'com.dotcms.lib', name: 'dot.slf4j-core', version:'2.3'
+	compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'2.3'
+	compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3'
+	compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_1'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
