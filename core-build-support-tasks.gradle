@@ -13,9 +13,9 @@ def loadProps(String path) {
     }
     Properties props = new Properties()
     props.load(new FileInputStream(f))
-    logger.info("Loading Properties from ${path} into 'rootProject[*]' and 'ant[*]'.")
+    logger.debug("Loading Properties from ${path} into 'rootProject[*]' and 'ant[*]'.")
     props.each { k, v ->
-        logger.info("\t${k}: ${v}");
+        logger.debug("\t${k}: ${v}");
         rootProject.ext.set(k, v)
     }
 }
@@ -25,7 +25,6 @@ def loadProps(String path) {
  */
 loadProps("${rootProject.projectDir}/src/com/liferay/portal/util/build.properties")
 loadProps("${rootProject.projectDir}/build.properties")
-
 
 def initProps() {
     def status = Grgit.open(rootProject.projectDir).log(maxCommits: 1)[0]
@@ -37,10 +36,83 @@ def initProps() {
     rootProject.ext.set('java.runtime.version', System.getProperty('java.runtime.version'))
     rootProject.ext.set('java.specification.vendor', System.getProperty('java.specification.vendor'))
 
-//    System.properties.each { k,v -> println k + ': ' + v }
+    project.ext.properties.each { k, v ->
+        int doom = 100
+        String result = v;
+        while(result.indexOf('${') != -1) {
+            try {
+                result = result.replaceAll('\\$\\{([^}]*)\\}', '\\${project[\'$1\']}')
+                String expression = "\"$result\""
+                result = Eval.me('project', project, expression).toString()
+                project.ext.set(k, result)
 
+                if(doom-- == 0) {
+                    throw new Exception('Too many attempts. Do you have a circular reference?')
+                }
+            } catch(e) {
+                logger.error("Error expanding dollar-sign var in property $k=$v")
+                throw e
+            }
+            if(doom != 100) {
+                logger.info("Expanded property:\n\t$k=$v\n\t\t =====> $k=$result ")
+            }
+
+        }
+    }
 }
 
+/**
+ * Examines the list of tasks passed on the command line and determines if this is a distribution build or a dev ('normal') build
+ * Whichever it is, project property keys (project.ext.'foo') are examined for build target prefixes and copied into the project.ext namespace,
+ * minus the build target prefix.
+ *
+ * For example:  `dist.foo.bar="something"` becomes `foo.bar="something"
+ *
+ * Property expansion occurs after this step, so it is permissible to have the following in the gradle.properties file:
+ *
+ * ```
+ * dist.build.name=Distribution
+ * dev.build.name=Developer
+ *
+ * build.title=This is a ${build.name} build.
+ * ```
+ * @todo ggranum: The detection of build target is unreliable. Consider `./gradlew createDistribution` followed by `./gradlew uninstall`. The later task
+ * execution is unaware that a developer install was never performed. Build target should be set by a property.
+ */
+def initTaskSpecificProps() {
+    def startParam = gradle.getStartParameter()
+    def taskNames = startParam.taskNames
+    def isDistBuild = false
+    taskNames.each({ name ->
+        if(name.toLowerCase().indexOf('dist') != -1) {
+            isDistBuild = true
+        }
+    })
+    println '====================================================================='
+    if(isDistBuild) {
+        println('Executing distribution build task, updating property values accordingly.')
+        initPropsForBuildTarget('dist')
+    } else {
+        println('Executing dev build task, updating property values accordingly.')
+        initPropsForBuildTarget('dev')
+    }
+    println '====================================================================='
+}
+
+def initPropsForBuildTarget(String target) {
+    int tLen = target.length() + 1
+
+    project.ext.properties.each { k, v ->
+        if(k.startsWith("${target}.")) {
+            String newK = k.substring(tLen)
+            println "\t>$newK=$v"
+            project.ext.set(newK, v)
+        }
+
+    }
+}
+
+initTaskSpecificProps()
 initProps()
 
 /**
@@ -48,10 +120,10 @@ initProps()
  */
 task cloneTomcat() {
     onlyIf {
-        return !file("${project.'tomcat.home'}/").exists()
+        return !file("${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}").exists()
     }
     doLast {
-        Grgit.clone(uri: 'https://github.com/dotCMS/tomcat.git', refToCheckout: "${project.'tomcat.version'}", dir: "${project.'tomcat.home'}")
+        Grgit.clone(uri: 'https://github.com/dotCMS/tomcat.git', refToCheckout: "${project.'tomcat.version'}", dir: "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}")
     }
 }
 
@@ -60,14 +132,14 @@ task cloneTomcat() {
  */
 task pullTomcat(dependsOn: cloneTomcat) {
     doLast {
-        def grgit = Grgit.open(dir: "${project.'tomcat.home'}")
+        def grgit = Grgit.open(dir: "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}")
         grgit.pull()
         logger.info("Pulled tomcat: version '${project.'tomcat.version'}'")
     }
 }
 
 /**
- * Clone the JBoss repo into $tomcat.home if the directory does not exist.
+ * Clone the JBoss repo into $jboss7.home if the directory does not exist.
  */
 task cloneJboss7() {
     onlyIf {
@@ -80,7 +152,7 @@ task cloneJboss7() {
 }
 
 /**
- * Update the tomcat git clone found at $tomcat.home
+ * Update the JBoss git clone found at $jboss.home
  */
 task pullJboss7(dependsOn: cloneJboss7) {
     doLast {
@@ -90,13 +162,11 @@ task pullJboss7(dependsOn: cloneJboss7) {
     }
 }
 
-
-
-task distCleanBackup(type: Delete) {
+task cleanBackup(type: Delete) {
     delete "${project.'tomcat.home'}/temp"
 }
 
-task backupCustomTomcatData(type: Copy, dependsOn: distCleanBackup) {
+task backupCustomTomcatData(type: Copy, dependsOn: cleanBackup) {
     into "${project.'tomcat.home'}/temp"
     into("assets") {
         from "${project.'tomcat.home'}/webapps/ROOT/assets"
@@ -114,9 +184,69 @@ task backupCustomTomcatData(type: Copy, dependsOn: distCleanBackup) {
 }
 
 task restoreCustomTomcatData(type: Copy) {
-    from "${project.'tomcat.home'}/temp"
     into "${project.'tomcat.home'}/webapps/ROOT"
+    from "${project.'tomcat.home'}/temp"
 }
+
+task assembleDistBinaries(type: Sync) {
+    Map<String, String> unixReplaceTokens = ['#SERVER_FOLDER' : 'SERVER_FOLDER',
+                                             '{server.folder}': "dotserver/tomcat-${project.'tomcat.version'}",
+                                             '#HOME_FOLDER'   : 'HOME_FOLDER',
+                                             '{home.folder}'  : "\$SERVER_FOLDER/webapps/ROOT",
+                                             '#target.root'   : 'target.root',
+                                             '{dotcms.home}'  : "dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT"]
+    Map<String, String> windowsReplaceTokens = ['bob'            : 'sue',
+                                                'rem set'        : 'set',
+                                                '{server.folder}': "dotserver\\tomcat-${project.'tomcat.version'}",
+                                                '{home.folder}'  : "dotserver\\tomcat-${project.'tomcat.version'}\\webapps\\ROOT",
+                                                '{dotcms.home}'  : "dotserver\\tomcat-${project.'tomcat.version'}\\webapps\\ROOT"]
+    into "${project.'assembleDir'}/dist/bin"
+    from(fileTree("${rootProject.projectDir}/bin").exclude('autoupdater')) {}
+    from(fileTree("${rootProject.projectDir}").include('build.xml')) {
+        into 'ant'
+    }
+    from(fileTree("${rootProject.projectDir}/bin").include('build.conf')) {
+        filter({ line ->
+            unixReplaceTokens.each({ k, v ->
+                line = line.replace(k, v)
+            })
+            return line
+        })
+    }
+    from(fileTree("${rootProject.projectDir}/bin").include('build.conf.bat')) {
+        filter({ line ->
+            windowsReplaceTokens.each({ k, v ->
+                line = line.replace(k, v)
+            })
+            return line
+        })
+    }
+    from(fileTree("${rootProject.projectDir}/src-conf")) {
+        into "system/src-conf"
+        include '**/*'
+    }
+}
+
+task assembleAutoUpdater(type: Copy) {
+    from "${rootProject.projectDir}/bin/autoupdater"
+    into "${project.'assembleDir'}/dist/autoupdater"
+    exclude 'build/**'
+}
+
+task assemblePlugins(type: Sync) {
+    from "${rootProject.projectDir}/plugins"
+    into "${project.'assembleDir'}/dist/plugins"
+    exclude '**/.git'
+}
+
+task assembleDocs(type: Sync) {
+    from "${rootProject.projectDir}/docs"
+    into "${project.'assembleDir'}/dist/docs"
+}
+
+
+
+
 
 
 

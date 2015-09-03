@@ -12,23 +12,16 @@ task 'clone-pull-tomcat'(dependsOn: pullTomcat) {
 }
 task 'clone-pull-jboss7'(dependsOn: pullJboss7) {}
 
-install.mustRunAfter pullTomcat
-uninstall.mustRunAfter backupCustomTomcatData
-restoreCustomTomcatData.mustRunAfter install
-
-task "deploy-war-tomcat"(dependsOn: [pullTomcat, cleanInstall]) {
-    description 'Same as executing "./gradlew pullTomcat distClean deployToCustomTomcat". Will checkout the tomcat app server if missing, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
+task "deploy-war-tomcat"(dependsOn: [installTomcat, cleanDeploy]) {
+    description = 'Same as executing "./gradlew pullTomcat distClean deployToCustomTomcat". Will checkout the tomcat app server if missing, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
 }
 
-task "deploy-war-tomcat-backup"(dependsOn: [pullTomcat, backupCustomTomcatData, cleanInstall, restoreCustomTomcatData]) {
+task "deploy-war-tomcat-backup"(dependsOn: [installTomcat, backupCustomTomcatData, cleanDeploy, restoreCustomTomcatData]) {
     description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
 }
 
-
-
-
 task "setup-deploy-location"() {
-    description "Sets up the locations where to deploy"
+    description = 'Sets up the locations where to deploy'
     project.ext.'plugin.root.dir' = project.hasProperty('target.root') ? "${projectDir}/../../${project.'target.root'}" : "${project.'plugin.root.dir.default'}"
     project.ext.'plugin.jar.deploy.dir' = project.hasProperty('target.root') ? "${project.'target.root'}/WEB-INF/lib" : "${project.'plugin.root.dir.default'}/WEB-INF/lib"
     ant.properties.'plugin.root.dir' = project.ext.'plugin.root.dir'
@@ -36,4 +29,21 @@ task "setup-deploy-location"() {
     logger.info("Deploying plugins to: ${project.'plugin.root.dir'} | ${project.'plugin.jar.deploy.dir'}")
 }
 
+
+task "create-dist"(dependsOn: [createDistribution]) {
+    description = "Creates the final distribution files for dotCMS."
+}
+
+task "create-update-dist"(dependsOn: [createUpdateDistribution]) {
+    description = "Creates an update distribution zip file."
+}
+
+task cleanDistribution(type: Delete) {
+    description = 'Cleans the distribution output files. Note that this is NOT the same as clean build.'
+    File dist = file(project.'distribution.output')
+    if(!dist.parentFile.absolutePath.startsWith(file(rootProject.rootDir.parentFile).absolutePath)) {
+        throw new Exception("Deleting files outside of the project space using unconstrained wildcards is unsafe: Attempted command: rm -rf ${dist.absolutePath.replace(' ', '\\ ')}")
+    }
+    delete files(dist)
+}
 

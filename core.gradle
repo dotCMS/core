@@ -22,6 +22,7 @@ configurations {
     felix
     starterContent
     coreWeb
+    tomcatLibs
 }
 
 
@@ -38,7 +39,7 @@ buildscript {
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '9fe9bc3-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'ad4c93a-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.1'
 
@@ -292,13 +293,14 @@ dependencies {
     felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version: '2.2.0_1'
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
-    compile fileTree("${project.projectDir}/bin/autoupdater/libs").include('**/*.jar')
+    provided fileTree("${project.projectDir}/bin/autoupdater/libs").include('**/*.jar')
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
 
     starterContent group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
+    tomcatLibs fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 
 }
 
@@ -337,10 +339,14 @@ idea {
     }
 }
 
+task cleanIntelliJOutputDir(type: Delete) {
+    delete "${rootProject.rootDir}/out"
+}
+clean.dependsOn cleanIntelliJOutputDir
+
 compileJava.options.debugOptions.debugLevel = "source,lines,vars"
 [compileJava, compileTestJava, javadoc]*.options.collect { options ->
     options.encoding = 'UTF-8'
-
 }
 
 [compileJava, compileTestJava]*.options.collect { options ->
@@ -369,6 +375,7 @@ jar {
     archiveName = "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
     baseName = "dotcms"
     version = "${project.'dotcms.release.version'}"
+    includeEmptyDirs = false
     exclude 'xhtml'
     exclude 'diff'
     include '**/*.class'
@@ -391,12 +398,8 @@ jar {
             } else if(line.startsWith('dotcms.release.date=')) {
                 outLine = 'dotcms.release.date=' + project.'dotcms.release.date'
             }
-            println line + "/" + outLine
+            logger.debug("build.properties ==> $outLine")
             return outLine;
-        }
-        eachFile { details ->
-            if(details.name == 'build.properties')
-                println 'Copied build props'
         }
         into('com/liferay/portal/util')
     }
@@ -408,10 +411,9 @@ jar {
     }
 }
 
-
-task _assembleToStandardWebLayout(type: Copy) {
-    description = 'Copy this project into a standard webapp directory layout in the build directory.'
-    into "${rootProject.buildDir}/standard_layout"
+task transformToStandardWebLayout(type: Copy) {
+    description = 'Copy this project into a standard webapp directory layout in the build directory. For entertainment purposes only.'
+    into "${rootProject.'assembleDir'}/mvn-layout"
     from(fileTree('src').include('**/*.java')) {
         into 'src/main/java'
     }
@@ -433,6 +435,9 @@ task _assembleToStandardWebLayout(type: Copy) {
     from(fileTree('test').exclude('**/*.java')) {
         into 'src/test/resources'
     }
+    from(fileTree('plugins').include('plugins.xml')) {
+        into 'src/main/webapp/META-INF'
+    }
 }
 
 
@@ -448,53 +453,165 @@ task _copyPluginsXml(type: Copy) {
     include 'plugins.xml'
 }
 
-processResources.dependsOn _copyTomcatContextXml, _copyPluginsXml
+processResources.dependsOn _copyPluginsXml
+
+task assembleStarterContent(type: Copy) {
+    from configurations.starterContent
+    into("${project.'assembleDir'}/war")
+    rename 'starter-(.+).zip', 'starter.zip'
+}
+
+task assembleFelixLibs(type: Sync) {
+    from configurations.felix
+    into("${project.'assembleDir'}/war/WEB-INF/felix/bundle")
+}
+task assembleCoreWeb(type: Sync) {
+    into "${project.'assembleDir'}/war/html/js/_rulesengine"
+    from(zipTree(configurations.coreWeb.files[0]))
+}
 
 //noinspection GroovyAssignabilityCheck
 war {
     webAppDirName = 'dotCMS'
     baseName = 'dotcms'
     version = "${project.'dotcms.release.version'}"
-    from configurations.starterContent
-    rename 'starter-(.+).zip', 'starter.zip'
-    into('WEB-INF/felix/bundle') {
-        from configurations.felix
-    }
-//    webInf { from 'src/additionalWebInf' } // adds a file-set to the WEB-INF dir.
+    from "${project.'assembleDir'}/war"
     metaInf {
         from "${project.rootDir}/extra/tomcat"
         include '**/*.*'
     }
-    from (zipTree(configurations.coreWeb.files[0])) {
-        into 'html/js/_rulesengine'
+
+}
+war.dependsOn assembleFelixLibs, assembleCoreWeb
+war.mustRunAfter assembleStarterContent
+
+task warWithStarterContent(dependsOn: [war, assembleStarterContent])
+
+/**
+ * The ant build puts the Jar build into the libs directory, not the class files themselves.
+ */
+task distWar(type: War, dependsOn: [assembleFelixLibs, assembleCoreWeb, jar]) {
+    webAppDirName = 'dotCMS'
+    baseName = 'dotcms'
+    version = "${project.'dotcms.release.version'}"
+    from "${project.'assembleDir'}/war"
+    classpath = project.configurations.runtime - project.configurations.providedRuntime + project.files("src-conf")
+    webInf {
+        from jar
+        into 'lib'
+
+    } // adds a file-set to the WEB-INF dir.
+    webInf {
+        from project.files("plugins/plugins.xml")
+        into 'classes'
+    }
+
+    metaInf {
+        from "${project.rootDir}/extra/tomcat"
+        include '**/*.*'
     }
 }
 
-clean.description = "Cleans plugins and core code and also undeploys plugins"
+task distWarWithStarter(dependsOn: [assembleStarterContent, distWar])
+distWar.mustRunAfter assembleStarterContent
 
-task explodedWar(type: Copy) {
-    into "$buildDir/exploded"
-    with war
+task assembleTomcatConfig(type: Copy) {
+    from configurations.tomcatLibs
+    into "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}/lib"
+}
+assembleTomcatConfig.mustRunAfter pullTomcat
+
+
+task assembleDist(dependsOn: [assembleDistBinaries,
+                              assembleAutoUpdater,
+                              assemblePlugins,
+                              assembleDocs,
+                              pullTomcat,
+                              assembleTomcatConfig]) {}
+
+
+task distZip(type: Zip, dependsOn: [assembleDist, distWar]) {
+    archiveName = "dotcms_${project.'dotcms.release.version'}.zip"
+    destinationDir = file("${project.distsDir}")
+    from "${project.'assembleDir'}/dist"
+    exclude "**/.git"
+    into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
+        with distWar
+    })
 }
 
-task install(type: Sync) {
-    into "${rootProject.'tomcat.home'}/webapps/ROOT"
-    with war
+task distTar(type: Tar, dependsOn: [assembleDist, assembleStarterContent, distWar]) {
+    archiveName = "dotcms_${project.'dotcms.release.version'}.tar.gz"
+    compression = 'gzip'
+    destinationDir = file("${project.distsDir}")
+    from("${project.'assembleDir'}/dist")
+    include "**/**"
+    exclude "**/.git"
+    from(fileTree("${project.'assembleDir'}/dist").include('**/*.sh')) {
+        fileMode 0755
+    }
+    into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
+        with distWar
+    })
 }
 
-task uninstall(type: Delete) {
-    delete fileTree("${rootProject.'tomcat.home'}/webapps/ROOT").include('**/*.*')
-}
-install.mustRunAfter uninstall
+task createUpdateDistribution(dependsOn: [distZip]) {}
 
+/**
+ * Full distribution is just an update distribution plus the starter content and a tar bundle.
+ */
+task createDistribution(dependsOn: [createUpdateDistribution, distTar]) {}
+
+
+task copyTomcat(type:Sync){
+    onlyIf {
+        !file("${project.'tomcat.home'}").exists()
+    }
+    from "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}"
+    into "${project.'tomcat.home'}"
+}
+copyTomcat.mustRunAfter pullTomcat
+
+
+task configureTomcat(type: Sync) {
+    description 'Configures the tomcat installation located at ${tomcat.home}'
+    from configurations.tomcatLibs
+    into "${project.'tomcat.home'}/lib"
+}
+configureTomcat.mustRunAfter copyTomcat
+
+task installTomcat(dependsOn:[pullTomcat, copyTomcat, configureTomcat]){
+    onlyIf {
+        !file("${project.'tomcat.home'}").exists()
+    }
+}
+task explodeWar(type:Sync, dependsOn:[assembleDist, distWar]){
+    into "${project.buildDir}/exploded"
+    with distWar
+}
+
+task deploy(type: Sync, dependsOn: [assembleDist, distWar]) {
+    into "${project.'webapp.appDir'}"
+    with distWar
+}
+deploy.mustRunAfter installTomcat
+
+
+task deployWithStarter(dependsOn: [deploy, assembleStarterContent]) {}
 
 task cleanJsp(type: Delete) {
     description "Removes all compiled jsp files from the target instance."
-    delete files("${project.'tomcat.home'}/work/Catalina")
+    delete files("${project.'webapp.jspDir'}")
 }
 
-task cleanInstall(dependsOn: [uninstall, install]) {
-    description = 'Perform a clean installation, deleting existing files from your install target and reinstalling.'
+task undeploy(type: Delete) {
+    delete fileTree("${project.'webapp.appDir'}").include('**/*.*')
+}
+deploy.mustRunAfter clean, undeploy, cleanJsp
+
+
+task cleanDeploy(dependsOn: [undeploy, clean, cleanJsp, deployWithStarter]) {
+    description = 'Perform a clean deploy, deleting existing files from your webapp.appDir and webapp.jspDir and then redeploying.'
 }
 
 

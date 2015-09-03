@@ -21,6 +21,13 @@ task cleanPre3_5_Files(type: Delete) {
             "${project.projectDir}/dotCMS/starter.zip"
 }
 
+task listProperties() {
+    description = 'Write out all the project properties at info log level.'
+    doLast {
+        logger.info("Project properties for ':${project.name}'")
+        project.ext.properties.sort().each { k, v -> logger.info "\t$k\n\t\t$v" }
+    }
+}
 
 def usePre3_5Build(){
     logger.info("Building with pre3.5 Ant build system.")

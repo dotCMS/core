@@ -354,6 +354,7 @@
         </replaceregexp>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="create-dist" description="Creates the final distribution files for dotCMS.">
 
         <var name="tomcat.home" value="${distribution.dotserver.output}/tomcat-${tomcat.version}"/>
@@ -371,6 +372,7 @@
 
         <!--bin folder (./bin)-->
         <copy todir="${distribution.bin.output}">
+            <!-- This first fileset does nothing? The script files are in the ./bin dir, not ./bin/autoupdater. -->
             <fileset dir="bin/autoupdater">
                 <include name="autoUpdater.sh"/>
                 <include name="autoUpdater.bat"/>
@@ -468,7 +470,7 @@
             </then>
         </if>
 
-        <delete dir="${distribution.output}" />
+        <!--<delete dir="${distribution.output}" />-->
     </target>
 
     <target name="create-update-dist" description="Creates an update distribution zip file.">
@@ -509,7 +511,18 @@
 
     <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8"
+               debug="true"
+               debuglevel="lines,vars,source"
+               fork="true" srcdir="${src.tests.dir}"
+               destdir="${build.dir}/testbuild"
+               source="1.8"
+               target="1.8"
+               compiler="javac1.8"
+               nowarn="true"
+               optimize="true"
+               memoryinitialsize="256m"
+               memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
         <copy todir="${build.dir}/testbuild">
@@ -897,6 +910,7 @@
         <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="deploy-war-tomcat" depends="clone-pull-tomcat, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-tomcat"/>
     </target>
@@ -1109,6 +1123,7 @@
 
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="clone-pull-tomcat">
         <git-clone-pull repository="https://github.com/dotCMS/tomcat.git" version="${tomcat.version}" dest="${tomcat.home}"/>
     </target>
