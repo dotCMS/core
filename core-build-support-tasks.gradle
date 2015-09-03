@@ -36,9 +36,10 @@ def initProps() {
     rootProject.ext.set('java.runtime.version', System.getProperty('java.runtime.version'))
     rootProject.ext.set('java.specification.vendor', System.getProperty('java.specification.vendor'))
 
-    project.ext.properties.each { k, v ->
+    logger.info('Expanding project properties:')
+    project.ext.properties.sort().each { k, v ->
         int doom = 100
-        String result = v;
+        String result = String.valueOf(v);
         while(result.indexOf('${') != -1) {
             try {
                 result = result.replaceAll('\\$\\{([^}]*)\\}', '\\${project[\'$1\']}')
@@ -53,11 +54,11 @@ def initProps() {
                 logger.error("Error expanding dollar-sign var in property $k=$v")
                 throw e
             }
-            if(doom != 100) {
-                logger.info("Expanded property:\n\t$k=$v\n\t\t =====> $k=$result ")
-            }
-
         }
+        if(doom != 100) {
+            logger.info("\t$k=$v\n\t\t =====> $k=$result ")
+        }
+
     }
 }
 
@@ -243,10 +244,4 @@ task assembleDocs(type: Sync) {
     from "${rootProject.projectDir}/docs"
     into "${project.'assembleDir'}/dist/docs"
 }
-
-
-
-
-
-
 

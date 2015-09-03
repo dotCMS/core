@@ -32,10 +32,25 @@ task "setup-deploy-location"() {
 
 task "create-dist"(dependsOn: [createDistribution]) {
     description = "Creates the final distribution files for dotCMS."
+    doLast {
+        copy {
+            from "${project.distsDir}"
+            include '**/dotcms_*.*'
+            into "${project.'distribution.file.output'}"
+        }
+    }
+
 }
 
 task "create-update-dist"(dependsOn: [createUpdateDistribution]) {
     description = "Creates an update distribution zip file."
+    doLast {
+        copy {
+            from "${project.distsDir}"
+            include '**/dotcms_*.zip'
+            into "${project.'distribution.file.output'}"
+        }
+    }
 }
 
 task cleanDistribution(type: Delete) {

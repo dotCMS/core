@@ -476,25 +476,6 @@ war {
     baseName = 'dotcms'
     version = "${project.'dotcms.release.version'}"
     from "${project.'assembleDir'}/war"
-    metaInf {
-        from "${project.rootDir}/extra/tomcat"
-        include '**/*.*'
-    }
-
-}
-war.dependsOn assembleFelixLibs, assembleCoreWeb
-war.mustRunAfter assembleStarterContent
-
-task warWithStarterContent(dependsOn: [war, assembleStarterContent])
-
-/**
- * The ant build puts the Jar build into the libs directory, not the class files themselves.
- */
-task distWar(type: War, dependsOn: [assembleFelixLibs, assembleCoreWeb, jar]) {
-    webAppDirName = 'dotCMS'
-    baseName = 'dotcms'
-    version = "${project.'dotcms.release.version'}"
-    from "${project.'assembleDir'}/war"
     classpath = project.configurations.runtime - project.configurations.providedRuntime + project.files("src-conf")
     webInf {
         from jar
@@ -510,10 +491,13 @@ task distWar(type: War, dependsOn: [assembleFelixLibs, assembleCoreWeb, jar]) {
         from "${project.rootDir}/extra/tomcat"
         include '**/*.*'
     }
-}
 
-task distWarWithStarter(dependsOn: [assembleStarterContent, distWar])
-distWar.mustRunAfter assembleStarterContent
+}
+war.dependsOn assembleFelixLibs, assembleCoreWeb, jar
+war.mustRunAfter assembleStarterContent
+
+task warWithStarterContent(dependsOn: [assembleStarterContent, war])
+
 
 task assembleTomcatConfig(type: Copy) {
     from configurations.tomcatLibs
@@ -530,17 +514,17 @@ task assembleDist(dependsOn: [assembleDistBinaries,
                               assembleTomcatConfig]) {}
 
 
-task distZip(type: Zip, dependsOn: [assembleDist, distWar]) {
+task distZip(type: Zip, dependsOn: [assembleDist, war]) {
     archiveName = "dotcms_${project.'dotcms.release.version'}.zip"
     destinationDir = file("${project.distsDir}")
     from "${project.'assembleDir'}/dist"
     exclude "**/.git"
     into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
-        with distWar
+        with war
     })
 }
 
-task distTar(type: Tar, dependsOn: [assembleDist, assembleStarterContent, distWar]) {
+task distTar(type: Tar, dependsOn: [assembleDist, assembleStarterContent, war]) {
     archiveName = "dotcms_${project.'dotcms.release.version'}.tar.gz"
     compression = 'gzip'
     destinationDir = file("${project.distsDir}")
@@ -551,7 +535,7 @@ task distTar(type: Tar, dependsOn: [assembleDist, assembleStarterContent, distWa
         fileMode 0755
     }
     into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
-        with distWar
+        with war
     })
 }
 
@@ -563,56 +547,64 @@ task createUpdateDistribution(dependsOn: [distZip]) {}
 task createDistribution(dependsOn: [createUpdateDistribution, distTar]) {}
 
 
-task copyTomcat(type:Sync){
+task _copyTomcat(type:Sync){
+    description "Internal task: Copy the cloned tomcat repo to tomcat.home ('${project.'tomcat.home'}')"
     onlyIf {
         !file("${project.'tomcat.home'}").exists()
     }
     from "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}"
     into "${project.'tomcat.home'}"
 }
-copyTomcat.mustRunAfter pullTomcat
+_copyTomcat.mustRunAfter pullTomcat
 
 
-task configureTomcat(type: Sync) {
-    description 'Configures the tomcat installation located at ${tomcat.home}'
+task configureTomcat(type: Copy) {
+    description 'Configures the tomcat installation located at ${tomcat.home} for use with DotCMS'
     from configurations.tomcatLibs
     into "${project.'tomcat.home'}/lib"
 }
-configureTomcat.mustRunAfter copyTomcat
+configureTomcat.mustRunAfter _copyTomcat
 
-task installTomcat(dependsOn:[pullTomcat, copyTomcat, configureTomcat]){
+task installTomcat(dependsOn:[pullTomcat, _copyTomcat, configureTomcat]){
     onlyIf {
         !file("${project.'tomcat.home'}").exists()
     }
 }
-task explodeWar(type:Sync, dependsOn:[assembleDist, distWar]){
+task explodeWar(type:Sync, dependsOn:[assembleDist, war]){
     into "${project.buildDir}/exploded"
-    with distWar
+    with war
 }
 
-task deploy(type: Sync, dependsOn: [assembleDist, distWar]) {
+task deploy(type: Copy, dependsOn: [assembleDist, war]) {
+    description "Build war and deploy it to the configured webapp. This will overwrite files in the webap.appDir, but it will not delete any existing files."
     into "${project.'webapp.appDir'}"
-    with distWar
+    with war
 }
 deploy.mustRunAfter installTomcat
 
-
-task deployWithStarter(dependsOn: [deploy, assembleStarterContent]) {}
+task deployWithStarter(dependsOn: [deploy, assembleStarterContent]) {
+    description = "Build war with starter content and deploy it to the configured webapp."
+}
 
 task cleanJsp(type: Delete) {
     description "Removes all compiled jsp files from the target instance."
-    delete files("${project.'webapp.jspDir'}")
+    file("${project.'webapp.jspDir'}").listFiles().each({ f ->
+        delete f
+    })
 }
 
 task undeploy(type: Delete) {
-    delete fileTree("${project.'webapp.appDir'}").include('**/*.*')
+    description "Removes all content from the 'webapp.appDir' folder (${project.'webapp.appDir'}"
+    file("${project.'webapp.appDir'}").listFiles().each({f ->
+        delete f
+    })
 }
 deploy.mustRunAfter clean, undeploy, cleanJsp
 
 
-task cleanDeploy(dependsOn: [undeploy, clean, cleanJsp, deployWithStarter]) {
-    description = 'Perform a clean deploy, deleting existing files from your webapp.appDir and webapp.jspDir and then redeploying.'
+task cleanDeploy(dependsOn: [undeploy, cleanJsp, deployWithStarter]) {
+    description = 'Perform a clean deploy, deleting existing files from your webapp.appDir and webapp.jspDir and then redeploying. ' +
+            'Note that this task does not clean build files, only output files. Use \'./gradlew clean cleanDeploy\' for clean build and clean deploy.'
 }
-
 
 apply from: "${project.projectDir}/core-build-task-mappings.gradle"
