@@ -51,7 +51,7 @@ public class VirtualLinkForm extends ValidatorForm {
         
         	ActionErrors errors = super.validate(mapping, request);
         	
-            if(UtilMethods.isSet(url) && (url.trim().equals("/") || !RegEX.contains( url, VANITY_REGEXP_PATTERN ) || url.length()> 2000 ))
+            if(!UtilMethods.isSet(url) || url.trim().equals("/") || !RegEX.contains( url, VANITY_REGEXP_PATTERN ) || url.length() > 2000 )
             	errors.add("url", new ActionMessage("message.virtuallink.invalid.URL"));
             
             return errors;

@@ -202,7 +202,7 @@ public class RoleAPIImpl implements RoleAPI {
 				throw new DotStateException("Cannot save locked or system role");
 			}
 		}
-		if(!UtilMethods.isSet(role.getName())  && !RegEX.contains( role.getName(), ROLENAME_REGEXP_PATTERN ) || role.getName().length()>100) {
+		if(!UtilMethods.isSet(role.getName())  || !RegEX.contains( role.getName(), ROLENAME_REGEXP_PATTERN ) || role.getName().length()>100) {
 			throw new RoleNameException();
 		}
 		
