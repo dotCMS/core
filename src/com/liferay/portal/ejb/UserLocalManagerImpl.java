@@ -626,7 +626,6 @@ public class UserLocalManagerImpl implements UserLocalManager {
 			String userId, String firstName, String lastName,
 			String emailAddress, String smsId)
 		throws PortalException, SystemException {
-		try {
 		if (Validator.isNull(firstName) || !RegEX.contains( firstName, USERNAME_REGEXP_PATTERN ) || firstName.length()>50) {
 			throw new UserFirstNameException();
 		    
@@ -663,10 +662,7 @@ public class UserLocalManagerImpl implements UserLocalManager {
 
 		if (Validator.isNotNull(smsId) && !Validator.isEmailAddress(smsId)) {
 			throw new UserSmsException();
-		}
-	}catch(Exception e){
-		Logger.error(this, e.getMessage(),e);
-	}
+		}	
 	}
 
 
