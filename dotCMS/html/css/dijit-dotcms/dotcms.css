@@ -19,8 +19,8 @@ html {
  * -------------------------- */
 @font-face {
   font-family: 'FontAwesome';
-  src: url("../../fonts/fontawesome-webfont.eot?v=4.3.0");
-  src: url("../../fonts/fontawesome-webfont.eot?#iefix&v=4.3.0") format("embedded-opentype"), url("../../fonts/fontawesome-webfont.woff2?v=4.3.0") format("woff2"), url("../../fonts/fontawesome-webfont.woff?v=4.3.0") format("woff"), url("../../fonts/fontawesome-webfont.ttf?v=4.3.0") format("truetype"), url("../../fonts/fontawesome-webfont.svg?v=4.3.0#fontawesomeregular") format("svg");
+  src: url("fonts/fontawesome-webfont.eot?v=4.4.0");
+  src: url("fonts/fontawesome-webfont.eot?#iefix&v=4.4.0") format("embedded-opentype"), url("fonts/fontawesome-webfont.woff2?v=4.4.0") format("woff2"), url("fonts/fontawesome-webfont.woff?v=4.4.0") format("woff"), url("fonts/fontawesome-webfont.ttf?v=4.4.0") format("truetype"), url("fonts/fontawesome-webfont.svg?v=4.4.0#fontawesomeregular") format("svg");
   font-weight: normal;
   font-style: normal;
 }
@@ -144,7 +144,6 @@ html {
 .scrollPaneIcon,
 .searchIcon,
 .selectIcon,
-.shimIcon,
 .shrinkIcon,
 .spellIcon,
 .splitterIcon,
@@ -170,11 +169,159 @@ html {
 .workStreamIcon,
 .wysiwygIcon,
 .dijitIcon {
-  font: normal normal normal 16px/1 FontAwesome;
+  font: normal normal normal 14px/1 FontAwesome;
   text-rendering: auto;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transform: translate(0, 0);
+}
+
+.addIcon,
+.androidIcon,
+.appleIcon,
+.appMonitorIcon,
+.archiveIcon,
+.archivedIcon,
+.arrowLeftIcon,
+.arrowRightIcon,
+.assignWorkflowIcon,
+.backupIcon,
+.bgIcon,
+.browseIcon,
+.bugIcon,
+.bundleIcon,
+.calClockIcon,
+.calDayIcon,
+.calListIcon,
+.calMonthIcon,
+.calWeekIcon,
+.cancelIcon,
+.cancelWorkflowIcon,
+.cartIcon,
+.checkBoxIcon,
+.chevronIcon,
+.chevronExpandIcon,
+.closeIcon,
+.colorIcon,
+.copyIcon,
+.cutIcon,
+.deleteIcon,
+.deleteWorkflowIcon,
+.detailViewIcon,
+.docConvertIcon,
+.docCopyIcon,
+.docNumIcon,
+.docTextIcon,
+.documentIcon,
+.downloadIcon,
+.dropIcon,
+.editIcon,
+.editScriptIcon,
+.encryptIcon,
+.exclamationIcon,
+.exclamation-redIcon,
+.femaleIcon,
+.fileIcon,
+.fileMultiIcon,
+.fileNewIcon,
+.fixIcon,
+.folderIcon,
+.folderAddIcon,
+.folderCopyIcon,
+.folderDeleteIcon,
+.folderEditIcon,
+.folderFilesIcon,
+.folderGlobeIcon,
+.folderOpenIcon,
+.folderSelectedIcon,
+.formIcon,
+.formNewIcon,
+.gearIcon,
+.gearMinusIcon,
+.gearPencilIcon,
+.gearPlusIcon,
+.greyDotIcon,
+.helpIcon,
+.hideIcon,
+.hintIcon,
+.hostIcon,
+.hostArchivedIcon,
+.hostDefaultIcon,
+.hostStoppedIcon,
+.hourGlassIcon,
+.imageNewIcon,
+.infoIcon,
+.keyIcon,
+.keyvalueIcon,
+.linkIcon,
+.linkAddIcon,
+.listViewIcon,
+.liveIcon,
+.lockIcon,
+.loginIcon,
+.loginAsIcon,
+.mailListIcon,
+.mapPinIcon,
+.minusIcon,
+.mobileIcon,
+.movePageIcon,
+.multiSelectIcon,
+.newPageIcon,
+.newTaskIcon,
+.newWorkflowIcon,
+.nextIcon,
+.pageIcon,
+.pagePropIcon,
+.pasteIcon,
+.plusIcon,
+.previewIcon,
+.previousIcon,
+.propertyIcon,
+.publishIcon,
+.queryIcon,
+.radioIcon,
+.reindexIcon,
+.rememberIcon,
+.reopenWorkflowIcon,
+.reorderIcon,
+.repeatIcon,
+.republishIcon,
+.requiredIcon,
+.resetIcon,
+.resolveIcon,
+.resolveWorkflowIcon,
+.rServerIcon,
+.saveIcon,
+.saveAssignIcon,
+.scrollPaneIcon,
+.searchIcon,
+.selectIcon,
+.shrinkIcon,
+.spellIcon,
+.splitterIcon,
+.sServerIcon,
+.statisticsIcon,
+.stopIcon,
+.tabIcon,
+.tagIcon,
+.textFieldIcon,
+.thumbnailViewIcon,
+.toggleCloseIcon,
+.toggleOpenIcon,
+.trashIcon,
+.uknIcon,
+.unarchiveIcon,
+.unlockIcon,
+.unpublishIcon,
+.uploadIcon,
+.userIcon,
+.windowsIcon,
+.workflowIcon,
+.workingIcon,
+.workStreamIcon,
+.wysiwygIcon,
+.dijitIcon {
+  background: none;
 }
 
 .addIcon:before {
@@ -402,11 +549,11 @@ html {
 }
 
 .folderOpenIcon:before {
-  content: "";
+  content: "";
 }
 
 .folderSelectedIcon:before {
-  content: "";
+  content: "";
 }
 
 .formIcon:before {
@@ -657,10 +804,6 @@ html {
   content: "";
 }
 
-.shimIcon:before {
-  content: "";
-}
-
 .shrinkIcon:before {
   content: "";
 }
@@ -702,11 +845,11 @@ html {
 }
 
 .toggleCloseIcon:before {
-  content: "";
+  content: "";
 }
 
 .toggleOpenIcon:before {
-  content: "";
+  content: "";
 }
 
 .trashIcon:before {
@@ -2737,10 +2880,11 @@ body {
 }
 .dotcms #bd {
   margin-bottom: 20px;
-  -moz-box-shadow: 0px 0px 0px #fff;
-  -webkit-box-shadow: 0px 0px 0px #fff;
-  border: 0px;
+  -moz-box-shadow: 0 0 0 #fff;
+  -webkit-box-shadow: 0 0 0 #fff;
+  border: 0;
   padding: 0;
+  clear: both;
 }
 .dotcms pre {
   width: 100%;
