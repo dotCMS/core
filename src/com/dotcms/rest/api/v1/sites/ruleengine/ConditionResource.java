@@ -36,23 +36,23 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1")
-public class ConditionsResource {
+public class ConditionResource {
 
     private final RulesAPI rulesAPI;
     private final AuthenticationProvider authProxy;
     private final ConditionTransform conditionTransform;
     private HostAPI hostAPI;
 
-    public ConditionsResource() {
+    public ConditionResource() {
         this(new ApiProvider());
     }
 
-    private ConditionsResource(ApiProvider apiProvider) {
+    private ConditionResource(ApiProvider apiProvider) {
         this(apiProvider, new AuthenticationProvider(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionsResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.authProxy = authProxy;

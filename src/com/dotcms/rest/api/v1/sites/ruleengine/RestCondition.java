@@ -2,23 +2,39 @@ package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.validation.constraints.Operator;
 import com.dotmarketing.portlets.rules.model.Condition;
 import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @JsonDeserialize(builder = RestCondition.Builder.class)
-public final class RestCondition {
+public final class RestCondition extends Validated {
 
     public final String id;
+
+    @NotNull
     public final String name;
+
+    @NotNull
     public final String owningGroup;
+
+    @NotNull
     public final String conditionlet;
+
+    @NotNull
     public final String comparison;
+
     public final Map<String, RestConditionValue> values;
+
+    @NotNull
+    @Operator
     public final String operator;
+
     public final int priority;
 
     private RestCondition(Builder builder) {
@@ -30,6 +46,7 @@ public final class RestCondition {
         values = builder.values;
         operator = builder.operator;
         priority = builder.priority;
+        checkValid();
     }
 
     public static final class Builder {
@@ -82,22 +99,7 @@ public final class RestCondition {
             return this;
         }
 
-        public void validate(){
-            checkNotEmpty(name, BadRequestException.class, "condition.name is required.");
-            checkNotEmpty(owningGroup, BadRequestException.class, "condition.owningGroup is required.");
-            checkNotEmpty(conditionlet, BadRequestException.class, "condition.conditionlet is required.");
-            checkNotEmpty(comparison, BadRequestException.class, "condition.comparison is required.");
-            checkNotEmpty(operator, BadRequestException.class, "condition.operator is required.");
-
-            try {
-                Condition.Operator.valueOf(operator);
-            } catch(IllegalArgumentException iae) {
-                throw new BadRequestException(iae, "conditionGroup.operator is invalid.");
-            }
-        }
-
         public RestCondition build() {
-            this.validate();
             return new RestCondition(this);
         }
     }
