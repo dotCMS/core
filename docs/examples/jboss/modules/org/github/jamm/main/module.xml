@@ -29,7 +29,7 @@
     </properties>
 
     <resources>
-        <resource-root path="dot.jamm-0.2.5_1.jar"/>
+        <resource-root path="dot.jamm-0.2.5_2.jar"/>
         <!-- Insert resources here -->
     </resources>
     <dependencies>
