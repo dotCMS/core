@@ -14,6 +14,7 @@ import java.util.Map;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -21,8 +22,10 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
+import com.liferay.portal.model.User;
 
 /**
  * Structure integrity checker implementation.
@@ -168,34 +171,36 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(serverId);
             List<Map<String, Object>> results = dc.loadObjectResults();
-
+            User systemUser = APILocator.getUserAPI().getSystemUser();
+            
             for (Map<String, Object> result : results) {
-                String oldStructureInode = (String) result.get("local_inode");
-                String newStructureInode = (String) result.get("remote_inode");
+                final String oldStructureInode = (String) result.get("local_inode");
+                final String newStructureInode = (String) result.get("remote_inode");
 
                 Structure st = CacheLocator.getContentTypeCache().getStructureByInode(oldStructureInode);
 
                 List<Contentlet> contents = APILocator.getContentletAPI().findByStructure(st,
-                        APILocator.getUserAPI().getSystemUser(), false, 0, 0);
+                		systemUser, false, 0, 0);
                 for (Contentlet contentlet : contents) {
                     CacheLocator.getContentletCache().remove(contentlet.getInode());
                 }
 
                 CacheLocator.getContentTypeCache().remove(st);
-
-                // THIS IS THE NEW CODE
-
+                
+                // Inconsistency fix process
+                final String TEMP_INODE = "TEMP_INODE_" + System.currentTimeMillis();
+                
                 // 1.1) Insert dummy temp row on INODE table
                 if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('TEMP_INODE', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') ");
+                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_TYPE') " );
                 } else {
-                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('TEMP_INODE', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ");
+                    dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
                 }
 
                 // 1.2) Insert dummy temp row on STRUCTURE table
 
                 if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into structure values ('" + TEMP_INODE +"', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '', '', '', 1, '"
                             + DbConnectionFactory.getDBTrue()
@@ -208,7 +213,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                             + st.getFolder()
                             + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
                 } else if (DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', "
+                    dc.executeStatement("insert into structure values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
                             + DbConnectionFactory.getDBFalse()
                             + ", '', '', '', 1, "
                             + DbConnectionFactory.getDBTrue()
@@ -221,7 +226,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                             + st.getFolder()
                             + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
                 } else {
-                    dc.executeStatement("insert into structure values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into structure values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '', '', '', 1, '"
                             + DbConnectionFactory.getDBTrue()
@@ -238,22 +243,42 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 // 2) Update references to the new dummies temps
 
                 // update foreign tables references to TEMP
-                dc.executeStatement("update container_structures set structure_id = 'TEMP_INODE' where structure_id = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update contentlet set structure_inode = 'TEMP_INODE' where structure_inode = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update field set structure_inode = 'TEMP_INODE' where structure_inode = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update relationship set parent_structure_inode = 'TEMP_INODE' where parent_structure_inode = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update relationship set child_structure_inode = 'TEMP_INODE' where child_structure_inode = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update workflow_scheme_x_structure set structure_id = 'TEMP_INODE' where structure_id = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update permission set inode_id = 'TEMP_INODE' where inode_id = '"
-                        + oldStructureInode + "'");
-                dc.executeStatement("update permission_reference set asset_id = 'TEMP_INODE' where asset_id = '"
-                        + oldStructureInode + "'");
+                dc.executeStatement("update container_structures set structure_id = '" + TEMP_INODE + "' where structure_id = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update contentlet set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update field set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update relationship set parent_structure_inode = '" + TEMP_INODE + "' where parent_structure_inode = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update relationship set child_structure_inode = '" + TEMP_INODE + "' where child_structure_inode = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update workflow_scheme_x_structure set structure_id = '" + TEMP_INODE + "' where structure_id = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update permission set inode_id = '" + TEMP_INODE + "' where inode_id = '"
+                        + oldStructureInode + "'" );
+                dc.executeStatement("update permission_reference set asset_id = '" + TEMP_INODE + "' where asset_id = '"
+                        + oldStructureInode + "'" );
+				// Update references in Folder regarding default file type and
+				// remove folders from cache
+				dc.setSQL("SELECT inode FROM folder WHERE default_file_type = '"
+						+ oldStructureInode + "'");
+				List<Map<String, Object>> referencedFolders = dc
+						.loadObjectResults();
+				if (!referencedFolders.isEmpty()) {
+					for (Map<String, Object> row : referencedFolders) {
+						Folder folder = APILocator.getFolderAPI()
+								.find(row.get("inode").toString(), systemUser,
+										false);
+						Identifier identifier = APILocator.getIdentifierAPI().find(
+								folder.getIdentifier());
+						CacheLocator.getFolderCache().removeFolder(folder,
+								identifier);
+					}
+					dc.executeStatement("UPDATE folder SET default_file_type = '"
+							+ TEMP_INODE + "' WHERE default_file_type = '"
+							+ oldStructureInode + "'");
+				}
 
                 // 3.1) delete old STRUCTURE row
                 // lets save old structure columns values first
@@ -329,25 +354,30 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
                 // 5) update foreign tables references to the new real row
                 dc.executeStatement("update container_structures set structure_id = '"
-                        + newStructureInode + "' where structure_id = 'TEMP_INODE'");
+                        + newStructureInode + "' where structure_id = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update contentlet set structure_inode = '" + newStructureInode
-                        + "' where structure_inode = 'TEMP_INODE'");
+                        + "' where structure_inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update field set structure_inode = '" + newStructureInode
-                        + "' where structure_inode = 'TEMP_INODE'");
+                        + "' where structure_inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update relationship set parent_structure_inode = '"
-                        + newStructureInode + "' where parent_structure_inode = 'TEMP_INODE'");
+                        + newStructureInode + "' where parent_structure_inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update relationship set child_structure_inode = '"
-                        + newStructureInode + "' where child_structure_inode = 'TEMP_INODE'");
+                        + newStructureInode + "' where child_structure_inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update workflow_scheme_x_structure set structure_id = '"
-                        + newStructureInode + "' where structure_id = 'TEMP_INODE'");
+                        + newStructureInode + "' where structure_id = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update permission set inode_id = '" + newStructureInode
-                        + "' where inode_id = 'TEMP_INODE'");
+                        + "' where inode_id = '" + TEMP_INODE + "'" );
                 dc.executeStatement("update permission_reference set asset_id = '"
-                        + newStructureInode + "' where asset_id = 'TEMP_INODE'");
+                        + newStructureInode + "' where asset_id = '" + TEMP_INODE + "'" );
+                if (!referencedFolders.isEmpty()) {
+					dc.executeStatement("UPDATE folder SET default_file_type = '"
+							+ newStructureInode + "' WHERE default_file_type = '"
+							+ TEMP_INODE + "'");
+                }
 
                 // 6) delete dummy temp
-                dc.executeStatement("delete from structure where inode = 'TEMP_INODE'");
-                dc.executeStatement("delete from inode where inode = 'TEMP_INODE'");
+                dc.executeStatement("delete from structure where inode = '" + TEMP_INODE + "'" );
+                dc.executeStatement("delete from inode where inode = '" + TEMP_INODE + "'" );
             }
 
             discardConflicts(serverId);
@@ -356,4 +386,5 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             throw new DotDataException(e.getMessage(), e);
         }
     }
+
 }
