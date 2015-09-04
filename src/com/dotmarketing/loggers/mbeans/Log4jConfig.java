@@ -1,8 +1,9 @@
 package com.dotmarketing.loggers.mbeans;
 
-import com.dotcms.repackage.org.apache.log4j.Level;
-
-import com.dotmarketing.util.Logger;
+import com.dotcms.repackage.org.apache.logging.log4j.Level;
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import com.dotcms.repackage.org.apache.logging.log4j.core.Logger;
+import com.dotmarketing.loggers.Log4jUtil;
 
 public class Log4jConfig implements Log4jConfigMBean  {
 
@@ -12,8 +13,9 @@ public class Log4jConfig implements Log4jConfigMBean  {
 	public void enableInfo(String target) {
 		try {
 			Class c = Class.forName(target);
-			if (c != null) {
-				Logger.getLogger(c).setLevel(Level.INFO);
+			if ( c != null ) {
+				//Changing the logger level
+				Log4jUtil.setLevel((Logger) LogManager.getLogger(c), Level.INFO);
 			}
 		} catch (ClassNotFoundException e) {
 			
@@ -26,8 +28,9 @@ public class Log4jConfig implements Log4jConfigMBean  {
 	public void enableWarn(String target) {
 		try {
 			Class c = Class.forName(target);
-			if (c != null) {
-				Logger.getLogger(c).setLevel(Level.WARN);
+			if ( c != null ) {
+				//Changing the logger level
+				Log4jUtil.setLevel((Logger) LogManager.getLogger(c), Level.WARN);
 			}
 		} catch (ClassNotFoundException e) {
 		}
@@ -39,8 +42,9 @@ public class Log4jConfig implements Log4jConfigMBean  {
 	public void enableError(String target) {
 		try {
 			Class c = Class.forName(target);
-			if (c != null) {
-				Logger.getLogger(c).setLevel(Level.ERROR);
+			if ( c != null ) {
+				//Changing the logger level
+				Log4jUtil.setLevel((Logger) LogManager.getLogger(c), Level.ERROR);
 			}
 		} catch (ClassNotFoundException e) {
 		}
@@ -53,8 +57,9 @@ public class Log4jConfig implements Log4jConfigMBean  {
 	public void enableDebug(String target) {
 		try {
 			Class c = Class.forName(target);
-			if (c != null) {
-				Logger.getLogger(c).setLevel(Level.DEBUG);
+			if ( c != null ) {
+				//Changing the logger level
+				Log4jUtil.setLevel((Logger) LogManager.getLogger(c), Level.DEBUG);
 			}
 		} catch (ClassNotFoundException e) {
 		}
