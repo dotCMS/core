@@ -1,54 +1,30 @@
 package com.dotmarketing.cache;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.StreamCorruptedException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
+import com.dotcms.repackage.org.jboss.cache.*;
+import com.dotcms.repackage.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
+import com.dotcms.repackage.org.jboss.cache.loader.CacheLoader;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.business.cache.util.CacheUtil;
+import com.dotmarketing.util.*;
+import com.dotmarketing.velocity.ResourceWrapper;
+import org.h2.jdbcx.JdbcConnectionPool;
+
+import java.io.*;
+import java.sql.*;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
-import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-import org.h2.jdbcx.JdbcConnectionPool;
-import com.dotcms.repackage.org.jboss.cache.CacheException;
-import com.dotcms.repackage.org.jboss.cache.CacheSPI;
-import com.dotcms.repackage.org.jboss.cache.Fqn;
-import com.dotcms.repackage.org.jboss.cache.Modification;
-import com.dotcms.repackage.org.jboss.cache.RegionManager;
-import com.dotcms.repackage.org.jboss.cache.config.CacheLoaderConfig.IndividualCacheLoaderConfig;
-import com.dotcms.repackage.org.jboss.cache.loader.CacheLoader;
+public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.velocity.ResourceWrapper;
-import com.liferay.util.FileUtil;
+	static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
+	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
+	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
 
-public class H2CacheLoader implements CacheLoader{
-
-	private static H2CacheLoader instance;
+	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<>();
 	private static Map cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
 	private int numberOfSpaces = 9;
 	private int dbsPerSpace = Config.getIntProperty("DBS_PER_SPACE", 1);
@@ -69,22 +45,196 @@ public class H2CacheLoader implements CacheLoader{
 		return false;
 	}
 
-	
-	public static H2CacheLoader getInstance() throws Exception{
-		if(instance ==null){
-			synchronized (H2CacheLoader.class.getCanonicalName()) {
-				if(instance== null){
-					if (Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false) && Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE", false)) 
-						new H2CacheLoader().moveh2dbDir();
-										
-					new H2CacheLoader().create();
+	@Override
+	public String getName () {
+		return "H2 Cache Provider";
+	}
+
+	@Override
+	public String getKey () {
+		return "H2CacheProvider";
+	}
+
+	@Override
+	public void init () throws Exception {
+
+		Iterator<String> it = Config.getKeys();
+		while ( it.hasNext() ) {
+
+			String key = it.next();
+			if ( key == null ) {
+				continue;
+			}
+
+			if ( key.startsWith("cache.") ) {
+
+				String cacheName = key.split("\\.")[1];
+				if ( key.endsWith(".disk") ) {
+					boolean useDisk = Config.getBooleanProperty(key, false);
+					if ( useDisk ) {
+						Logger.info(this.getClass(), "***\t Cache Config Disk   : " + cacheName + ": true");
+					}
 				}
+
 			}
 		}
-		return instance;
-		
+
+		if ( Config.getBooleanProperty("DIST_INDEXATION_ENABLED", false) && Config.getBooleanProperty("CACHE_DISK_SHOULD_DELETE", false) ) {
+			CacheUtil.Moveh2dbDir();
+		}
+
+		create();
 	}
-	
+
+	@Override
+	public void put ( String group, String key, Object content ) {
+
+		if ( isDiskCache(group) ) {
+			try {
+				//Add the given content to the group and for a given key
+				put(new Fqn(group, key), key, content);
+			} catch ( Exception e ) {
+				Logger.debug(this, e.getMessage(), e);
+			}
+		}
+	}
+
+	@Override
+	public Object get ( String group, String key ) {
+
+		Object foundObject = null;
+
+		if ( isDiskCache(group) ) {
+			try {
+				//Get the content from the group and for a given key
+				Map m = get(new Fqn(group, key));
+				if ( m != null ) {
+					foundObject = m.get(key);
+				}
+			} catch ( Exception e ) {
+				Logger.debug(this, e.getMessage(), e);
+			}
+		}
+		return foundObject;
+	}
+
+	@Override
+	public void remove ( String group ) {
+
+		if ( isDiskCache(group) ) {
+			try {
+				//Invalidates the Cache for the given group
+				remove(new Fqn(group));
+			} catch ( Exception e ) {
+				Logger.debug(this, e.getMessage(), e);
+			}
+		}
+	}
+
+	@Override
+	public void remove ( String group, String key ) {
+
+		if ( isDiskCache(group) ) {
+			try {
+				if ( !UtilMethods.isSet(key) ) {
+					Logger.error(this, "Empty key passed in, clearing group " + group + " by mistake");
+				}
+				//Invalidates from Cache a key from a given group
+				remove(new Fqn(group, key), key.toLowerCase());
+			} catch ( Exception e ) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+	}
+
+	@Override
+	public void removeAll () {
+
+		Set<String> currentGroups = new HashSet<>();
+		currentGroups.addAll(getGroups());
+
+		for ( String group : currentGroups ) {
+			remove(group);
+		}
+
+		resetCannotCacheCache();
+
+		cacheToDisk.clear();
+	}
+
+	@Override
+	public Set<String> getGroups () {
+
+		try {
+			return _getGroups();
+		} catch ( SQLException e ) {
+			Logger.error(this, "Error getting list of groups.", e);
+		}
+
+		return null;
+	}
+
+	@Override
+	public Set<String> getKeys ( String group ) {
+
+		Set<String> keys = new HashSet<>();
+
+		if ( isDiskCache(group) ) {
+			try {
+				keys = getGroupKeys(group);
+			} catch ( Exception ex ) {
+				Logger.error(this, "can't get h2 cache keys on group " + group, ex);
+			}
+		}
+
+		return keys;
+	}
+
+	@Override
+	public List<Map<String, Object>> getStats () {
+
+		List<Map<String, Object>> list = new ArrayList<>();
+
+		Set<String> currentGroups = new HashSet<>();
+		currentGroups.addAll(getGroups());
+
+		for ( String group : currentGroups ) {
+
+			Map<String, Object> stats = new HashMap<>();
+			stats.put("name", getName());
+			stats.put("key", getKey());
+			stats.put("region", group);
+			stats.put("toDisk", isDiskCache(group));
+
+			boolean isDefault = false;
+			stats.put("isDefault", isDefault);
+			stats.put("memory", -1);
+			stats.put("disk", -1);
+			if ( isDiskCache(group) ) {
+				stats.put("disk", getGroupCount(group));
+			}
+
+			int configured = isDefault
+					? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
+					: (Config.getIntProperty("cache." + group + ".size", -1) != -1)
+					? Config.getIntProperty("cache." + group + ".size")
+					: (group.startsWith(WORKING_CACHE_PREFIX) && Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size", -1) != -1)
+					? Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size")
+					: (group.startsWith(LIVE_CACHE_PREFIX) && Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size", -1) != -1)
+					? Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size")
+					: Config.getIntProperty("cache." + DEFAULT_CACHE + ".size");
+			stats.put("configuredSize", configured);
+
+			list.add(stats);
+		}
+
+		return list;
+	}
+
+	@Override
+	public void shutdown () {
+		destroy();
+	}
 	
 	public void resetCannotCacheCache(){
 		cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));	
@@ -208,16 +358,7 @@ public class H2CacheLoader implements CacheLoader{
 			addDbsInited();
 		}
 	}
-	
-	private class deleteTrashDir extends Thread {	
-		
-		@Override
-		public void run() {
-			File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash");
-			FileUtil.deltree(trashDir, false);
-		}
-	}
-	
+
 	private synchronized void addConPoolToPoolMap(int dbNumber,JdbcConnectionPool cp){
 		conPool.put(dbNumber, cp);
 	}
@@ -225,36 +366,23 @@ public class H2CacheLoader implements CacheLoader{
 	private synchronized void addDbsInited(){
 		dbsInitialized++;
 	}
-	
-	public void create() throws Exception {
+
+	public void create () throws Exception {
+
 		Logger.info(this, "Starting Disk Cache");
-		instance = this;
 		int x = 1;
-		while(x<=numberOfSpaces*dbsPerSpace){
+		while ( x <= numberOfSpaces * dbsPerSpace ) {
 			new dbInitThread(x).start();
 			x++;
 		}
-		while(dbsInitialized < numberOfSpaces*dbsPerSpace){
-			try{
+		while ( dbsInitialized < numberOfSpaces * dbsPerSpace ) {
+			try {
 				Thread.sleep(100);
-			}catch (Exception e) {
+			} catch ( Exception e ) {
 				Logger.debug(this, "Cannot sleep : ", e);
 			}
 		}
 		Logger.info(this, "Disk Cache Started");
-	}
-	
-	public void moveh2dbDir() throws Exception {
-		File h2dbDir=new File(ConfigUtils.getDynamicContentPath() + File.separator + "h2db");
-		File trashDir = new File(ConfigUtils.getDynamicContentPath() + File.separator + "trash" + File.separator + "h2db"+APILocator.getContentletIndexAPI().timestampFormatter.format(new Date()));
-		
-		//move the dotsecure/h2db dir to dotsecure/trash/h2db{timestamp} 
-		//FileUtil.move(h2dbDir, trashDir);
-		FileUtil.copyDirectory(h2dbDir, trashDir);
-		FileUtil.deltree(h2dbDir, false);
-	
-		//fire a separate thread that deletes the contents of the dotsecure/trash directory. 
-		new deleteTrashDir().start();
 	}
 
 	public void destroy() {
@@ -798,8 +926,9 @@ public class H2CacheLoader implements CacheLoader{
 	private int getDBNumber(Fqn fqn){
 		return (((Math.abs(fqn.hashCode()) % dbsPerSpace)) + 1) + (dbsPerSpace * getSpace(fqn));
 	}
-	
-	public Set<String> getKeys(String group) throws Exception {
+
+	private Set<String> getGroupKeys ( String group ) throws Exception {
+
 	    Set<String> keys=new HashSet<String>();
 	    Connection conn = null;
 	    PreparedStatement smt = null;
@@ -828,8 +957,8 @@ public class H2CacheLoader implements CacheLoader{
 	    return keys;
 	}
 
-	public static String getGroupCount(String group){
-		return instance._getGroupCount(group);
+	public String getGroupCount ( String group ) {
+		return _getGroupCount(group);
 	}
 	
 	public Set<String> _getGroups() throws SQLException{
@@ -860,13 +989,8 @@ public class H2CacheLoader implements CacheLoader{
 		return groups;
 	}
 	
-	public static Set<String> getGroups() throws SQLException{
-		//USE THIS FOR JBCACHELOADER TO SETUP REGION MAP 
-		//AND FOR CACHE TABLE STATS
-		return instance._getGroups();
-	}
-	
 	private String _getGroupCount(String group){
+
 		long ret = 0;
 		Fqn fqn = Fqn.fromElements(new String[]{group});
 		Connection conn = null;
@@ -945,6 +1069,40 @@ public class H2CacheLoader implements CacheLoader{
 			}
 		}
 		return true;
+	}
+
+	private boolean isDiskCache ( String group ) {
+
+		if ( group == null ) {
+			return false;
+		}
+		group = group.toLowerCase();
+		Boolean ret = cacheToDisk.get(group);
+		if ( ret == null ) {
+
+			if ( Config.containsProperty("cache." + group + ".disk") ) {
+				ret = Config.getBooleanProperty("cache." + group + ".disk", false);
+			} else if ( group.startsWith(LIVE_CACHE_PREFIX) && Config.containsProperty("cache." + LIVE_CACHE_PREFIX + ".disk") ) {
+				ret = Config.getBooleanProperty("cache." + LIVE_CACHE_PREFIX + ".disk", false);
+			} else if ( group.startsWith(WORKING_CACHE_PREFIX) && Config.containsProperty("cache." + WORKING_CACHE_PREFIX + ".disk") ) {
+				ret = Config.getBooleanProperty("cache." + WORKING_CACHE_PREFIX + ".disk", false);
+			}
+			/*
+			else if (group.startsWith("velocitymenucache")) {
+				ret = false;
+			}
+
+			else if (group.startsWith("velocitycache")) {
+				 ret = false;
+			}
+			*/
+			else {
+				ret = Config.getBooleanProperty("cache.default.disk", false);
+			}
+			cacheToDisk.put(group, ret);
+		}
+
+		return ret;
 	}
 		
 }

@@ -8,9 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -18,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,7 +34,6 @@ import com.dotcms.repackage.org.jboss.cache.DefaultCacheFactory;
 import com.dotcms.repackage.org.jboss.cache.Fqn;
 import com.dotcms.repackage.org.jboss.cache.Node;
 import com.dotcms.repackage.org.jboss.cache.NodeSPI;
-import com.dotcms.repackage.org.jboss.cache.Region;
 import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapper;
 import com.dotcms.repackage.org.jboss.cache.jmx.CacheJmxWrapperMBean;
 import com.dotcms.repackage.org.jgroups.Address;
@@ -46,12 +42,10 @@ import com.dotcms.repackage.org.jgroups.Message;
 import com.dotcms.repackage.org.jgroups.ReceiverAdapter;
 import com.dotcms.repackage.org.jgroups.View;
 
-import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.mbeans.CacheInfo;
 import com.dotmarketing.business.mbeans.CacheInfoMBean;
-import com.dotmarketing.cache.H2CacheLoader;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.AdminLogger;
@@ -59,7 +53,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import com.dotmarketing.viewtools.navigation.NavToolCache;
 import com.liferay.util.FileUtil;
 
 /**
@@ -67,7 +60,7 @@ import com.liferay.util.FileUtil;
  * on a put where the non legacy one will not.  
  * @author Jason Tesser
  * @version 1.6.5
- * @deprecated
+ * @deprecated Use {@link com.dotmarketing.business.DotGuavaCacheAdministratorImpl} instead
  */
 public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 	
@@ -135,11 +128,12 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 		cache.getRoot().setResident(true);
 		cache.getRoot().getChildren();
 		try {
-			Set<String> groups = H2CacheLoader.getGroups();
+			//Set<String> groups = H2CacheLoader.getGroups();
+			Set<String> groups = new HashSet<>();//TODO: The H2CacheLoader.getGroups is not longer a static method
 			for (String group : groups) {
 				setUpGroup(group);
 			}
-		} catch (SQLException e1) {
+		} catch (Exception e1) {
 			Logger.fatal(DotJBCacheAdministratorImpl.class,"Unable to load Groups from H2Cache Loader : " + e1.getMessage(),e1);
 		}
 		
@@ -219,7 +213,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 	 * @see com.dotmarketing.business.DotCacheAdministrator#flushAll()
 	 */
 	public void flushAll() {
-		flushAlLocalOnlyl();
+		flushAlLocalOnly();
 		try{
 			if(Config.getBooleanProperty("CACHE_CLUSTER_THROUGH_DB", false)){
 				journalAPI.addCacheEntry("0", ROOT_GOUP);
@@ -265,7 +259,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.business.DotCacheAdministrator#flushAll()
 	 */
-	public void flushAlLocalOnlyl() {
+	public void flushAlLocalOnly() {
 		Set<Node<String,Object>> c = cache.getRoot().getChildren();
 		for (Node<String, Object> node : c) {
 			cache.removeNode(node.getFqn());
@@ -358,6 +352,11 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 		cache.remove(fqn, key);
 	}
 
+	@Override
+	public void initProviders () {
+
+	}
+
 	public Set<String> getKeys(String group) {
 		group = group.toUpperCase();
 		Node n= cache.getNode(Fqn.fromString(group));
@@ -398,11 +397,15 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 		for (Object o : s1) {
 			s2.add(o.toString());
 		}
-		try {
+
+		//TODO: The H2CacheLoader.getGroups is not longer a static method
+		/*try {
 			s2.addAll(H2CacheLoader.getGroups());
 		} catch (SQLException e) {
 			Logger.error(DotJBCacheAdministratorImpl.class,e.getMessage(),e);
-		}
+		}*/
+		//TODO: The H2CacheLoader.getGroups is not longer a static method
+
 //		for(CacheIndex c :CacheLocator.getCacheIndexes()){
 //			s2.add(c.toString());
 //		}
@@ -434,7 +437,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 				m.put("evictionAlgorithm", "");
 				m.put("evictionQueueSize", -1);
 			}
-			m.put("disk", H2CacheLoader.getGroupCount(group.toString()));
+			//m.put("disk", H2CacheLoader.getGroupCount(group.toString()));//TODO: The H2CacheLoader.getGroupCount is not longer a static method
 			list.add(m);
 		}
 		return list;
@@ -547,7 +550,7 @@ public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotC
 			if(!flushMenus){
 				if(key.equals("0")){
 					if(group.equals(DotCacheAdministrator.ROOT_GOUP)){
-						CacheLocator.getCacheAdministrator().flushAlLocalOnlyl();
+						CacheLocator.getCacheAdministrator().flushAlLocalOnly();
 					}else if(group.equalsIgnoreCase(menuGroup)){
 						flushMenus = true;
 					}else{

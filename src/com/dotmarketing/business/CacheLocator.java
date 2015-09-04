@@ -14,7 +14,7 @@ import com.dotcms.publisher.assets.business.PushedAssetsCache;
 import com.dotcms.publisher.assets.business.PushedAssetsCacheImpl;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCache;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointCacheImpl;
-import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.cache.ContentTypeCache;
 import com.dotmarketing.cache.FolderCache;
@@ -77,10 +77,13 @@ public class CacheLocator extends Locator<CacheIndex>{
 
         DotCacheAdministrator dotcache;
         public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
-        public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
-        public void flushAll() { dotcache.flushAll(); }
+
+		public void initProviders () {dotcache.initProviders();}
+		public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
+		public Set<String> getGroups () {return dotcache.getGroups();}
+		public void flushAll() { dotcache.flushAll(); }
         public void flushGroup(String group) { dotcache.flushGroup(group); }
-        public void flushAlLocalOnlyl() { dotcache.flushAlLocalOnlyl(); }
+        public void flushAlLocalOnly() { dotcache.flushAlLocalOnly(); }
         public void flushGroupLocalOnly(String group) { dotcache.flushGroupLocalOnly(group); }
         public Object get(String key, String group) throws DotCacheException { return dotcache.get(key, group); }
         public void remove(String key, String group) { dotcache.remove(key,group); }
@@ -131,6 +134,15 @@ public class CacheLocator extends Locator<CacheIndex>{
 		}
 
 		instance = new CacheLocator();
+
+		/*
+		Initializing the Cache Providers:
+
+		 It needs to be initialized in a different call as the providers depend on the
+		 license level, and the license level needs an already created instance of the CacheLocator
+		 to work.
+		 */
+		adminCache.initProviders();
 	}
 
 	public static PermissionCache getPermissionCache() {
