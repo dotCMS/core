@@ -60,7 +60,7 @@ import com.liferay.util.FileUtil;
  * on a put where the non legacy one will not.  
  * @author Jason Tesser
  * @version 1.6.5
- * @deprecated
+ * @deprecated Use {@link com.dotmarketing.business.DotGuavaCacheAdministratorImpl} instead
  */
 public class DotJBCacheAdministratorImpl extends ReceiverAdapter implements DotCacheAdministrator {
 	

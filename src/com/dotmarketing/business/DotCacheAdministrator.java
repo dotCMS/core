@@ -19,7 +19,10 @@ public interface DotCacheAdministrator  {
 
 	public static final String ROOT_GOUP = "root";
 
-	void initProviders();
+	/**
+	 * Initializes the CacheProviders
+	 */
+	void initProviders ();
 	
 	/**
 	 * Returns all keys within the group
@@ -97,8 +100,19 @@ public interface DotCacheAdministrator  {
 
 	DotCacheAdministrator getImplementationObject ();
 
+	/**
+	 * Returns the CacheTransport in use if any
+	 *
+	 * @return
+	 */
 	CacheTransport getTransport ();
 
+	/**
+	 * Sets a new CacheTransport implementation to be use, if there was already
+	 * one in use the shutdown method will be executed in that implementation.
+	 *
+	 * @param transport
+	 */
 	void setTransport ( CacheTransport transport );
 
 }

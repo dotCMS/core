@@ -20,7 +20,7 @@ import java.util.Set;
  * @author Jason Tesser
  * @version 1.6.5
  *
- * @deprecated
+ * @deprecated Use {@link com.dotmarketing.business.DotGuavaCacheAdministratorImpl} instead
  */
 public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 
