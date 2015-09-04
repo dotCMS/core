@@ -2,12 +2,23 @@ task wrapper(type: Wrapper) {
     gradleVersion = '2.6'
 }
 
-configurations.all {
+//noinspection GroovyAssignabilityCheck
+configurations {
+    compile
+    provided
+    plugins
+    felix
+    starterContent
+    coreWeb
+    tomcatLibs
+}
+
+configurations.all({
     // dynamic: e.g. 'version: 2.0+'
     resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
     // changing: e.g. 'version 2.0.0-SNAPSHOT'
     resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
-}
+})
 
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
@@ -18,7 +29,8 @@ task cleanPre3_5_Files(type: Delete) {
     delete "${project.projectDir}/dotCMS/WEB-INF/lib",
             "${project.projectDir}/dotCMS/WEB-INF/classes",
             "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
-            "${project.projectDir}/dotCMS/starter.zip"
+            "${project.projectDir}/dotCMS/starter.zip",
+            "${project.projectDir}/dotCMS/html/js/_rulesengine"
 }
 
 task listProperties() {
@@ -46,7 +58,6 @@ if(!project.hasProperty('useNewBuild') && project.'use-pre-3_5-build' == 'true')
 } else {
     usePureGradleBuild()
 }
-
 
 defaultTasks 'help', 'tasks'
 

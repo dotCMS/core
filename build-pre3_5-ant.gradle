@@ -9,8 +9,6 @@
 configurations {
     compile
     antLibs
-    provided
-    provided.extendsFrom(compile)
 }
 
 def felixFolder = "dotCMS/WEB-INF/felix/bundle"
@@ -21,7 +19,7 @@ apply from: "$rootDir/dependencies.gradle"
 
 task copyToFelix {
     copy {
-        from configurations.compile
+        from configurations.felix
         into felixFolder
         include '**/dot.org.apache.felix.bundlerepository*.jar'
         include '**/dot.org.apache.felix.fileinstall*.jar'
@@ -32,7 +30,7 @@ task copyToFelix {
 
 task copyToLibDir() {
     copy {
-        from configurations.compile
+        from configurations.compile + configurations.provided + configurations.tomcatLibs
         into libsFolder
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
@@ -44,15 +42,22 @@ task copyToLibDir() {
 
 task copyStarterProject() {
     copy {
-        from configurations.compile
+        from configurations.starterContent
         into dotCmsFolder
         include '**/starter*.zip'
         rename(/starter(.+)\.zip/, "starter.zip")
     }
 }
 
-task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject]) {
-    description 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
+task copyCoreWebContent() {
+    copy {
+        from(zipTree(configurations.coreWeb.files[0]))
+        into "${dotCmsFolder}/html/js/_rules_engine"
+    }
+}
+
+task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject, copyCoreWebContent]) {
+    description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
     doLast {
         println "Copied libs"
     }

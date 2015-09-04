@@ -1,5 +1,16 @@
 import org.ajoberstar.grgit.*
 
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    //noinspection GroovyAssignabilityCheck
+    dependencies {
+        classpath 'org.ajoberstar:gradle-git:1.1.0'
+    }
+}
+
 /**
  * Load the properties found at the provided path into the root project, making them accessible via "rootProject.getProperty('foo')".
  * Also adds the properties to the global 'ant' object.

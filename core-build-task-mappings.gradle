@@ -16,6 +16,8 @@ task "deploy-war-tomcat"(dependsOn: [installTomcat, cleanDeploy]) {
     description = 'Same as executing "./gradlew pullTomcat distClean deployToCustomTomcat". Will checkout the tomcat app server if missing, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.'
 }
 
+task "undeploy-war-tomcat"(dependsOn: [undeploy]) {}
+
 task "deploy-war-tomcat-backup"(dependsOn: [installTomcat, backupCustomTomcatData, cleanDeploy, restoreCustomTomcatData]) {
     description = "Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)"
 }
@@ -39,7 +41,6 @@ task "create-dist"(dependsOn: [createDistribution]) {
             into "${project.'distribution.file.output'}"
         }
     }
-
 }
 
 task "create-update-dist"(dependsOn: [createUpdateDistribution]) {
@@ -54,7 +55,7 @@ task "create-update-dist"(dependsOn: [createUpdateDistribution]) {
 }
 
 task cleanDistribution(type: Delete) {
-    description = 'Cleans the distribution output files. Note that this is NOT the same as clean build.'
+    description = 'Cleans the distribution output files. Note that this does NOT clean build files.'
     File dist = file(project.'distribution.output')
     if(!dist.parentFile.absolutePath.startsWith(file(rootProject.rootDir.parentFile).absolutePath)) {
         throw new Exception("Deleting files outside of the project space using unconstrained wildcards is unsafe: Attempted command: rm -rf ${dist.absolutePath.replace(' ', '\\ ')}")
