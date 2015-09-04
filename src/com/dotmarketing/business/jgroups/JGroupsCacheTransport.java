@@ -6,8 +6,8 @@ import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.jgroups.*;
 import com.dotmarketing.business.*;
-import com.dotmarketing.business.cache.CacheTransport;
-import com.dotmarketing.business.cache.CacheTransportException;
+import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.util.Config;
@@ -237,7 +237,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                 if ( key.equals("0") ) {
 
                     if ( group.equalsIgnoreCase(DotCacheAdministrator.ROOT_GOUP) ) {
-                        CacheLocator.getCacheAdministrator().flushAlLocalOnlyl();
+                        CacheLocator.getCacheAdministrator().flushAlLocalOnly();
                     } else if ( group.equalsIgnoreCase(menuGroup) ) {
                         flushMenus = true;
                     } else {

@@ -3,7 +3,7 @@
  */
 package com.dotmarketing.business;
 
-import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransport;
 
 import java.util.List;
 import java.util.Map;
@@ -18,42 +18,51 @@ import java.util.Set;
 public interface DotCacheAdministrator  {
 
 	public static final String ROOT_GOUP = "root";
+
+	void initProviders();
 	
 	/**
 	 * Returns all keys within the group
 	 * @param group
 	 * @return
 	 */
-	public Set<String> getKeys(String group); 
+	Set<String> getKeys ( String group );
+
+	/**
+	 * Returns all groups in the cache
+	 *
+	 * @return
+	 */
+	Set<String> getGroups ();
 	
 	/**
 	 * Flush the entire cache immediately.
 	 */
-	public void flushAll();
+	void flushAll ();
 
 	/**
 	 * Flushes all items that belong to the specified group.
 	 * @param group
 	 */
-	public void flushGroup(String group);
+	void flushGroup ( String group );
 	
 	/**
 	 * Flushes all cache locally
 	 */
-	public void flushAlLocalOnlyl();
+	void flushAlLocalOnly ();
 	
 	/**
 	 * Flushes all items that belong to the specified group on the local server only
 	 * @param group
 	 */
-	public void flushGroupLocalOnly(String group);
+	void flushGroupLocalOnly ( String group );
 	
 	/**
 	 * Get an object from the cache
 	 * @param key
 	 * @return
 	 */
-	public Object get(String key, String group)throws DotCacheException;
+	Object get ( String key, String group ) throws DotCacheException;
 	
 	/**
 	 * Puts an object in a cache
@@ -62,33 +71,34 @@ public interface DotCacheAdministrator  {
 	 * @param content
 	 * @param groups
 	 */
-	public void put(String key, Object content, String group);
+	void put ( String key, Object content, String group );
 
 	/**
 	 * Remove an object from the cache.  
 	 * This will create journal entries for other servers in a clustered environment. 
 	 * @param key
 	 */
-	public void remove(String key, String group);
+	void remove ( String key, String group );
 	
 	/**
 	 * Remove an object from the cache on the local server only
 	 * @param key
 	 */
-	public void removeLocalOnly(String key, String group);
+	void removeLocalOnly ( String key, String group );
 	
 	/**
 	 * Should be called on shutdown of the dotcms
 	 */
-	public void shutdown();
+	void shutdown ();
 
-	public List<Map<String, Object>> getCacheStatsList();
-	
-	public Class getImplementationClass();
-	public DotCacheAdministrator getImplementationObject();
+	List<Map<String, Object>> getCacheStatsList ();
 
-	public CacheTransport getTransport ();
+	Class getImplementationClass ();
 
-	public void setTransport ( CacheTransport transport );
+	DotCacheAdministrator getImplementationObject ();
+
+	CacheTransport getTransport ();
+
+	void setTransport ( CacheTransport transport );
 
 }

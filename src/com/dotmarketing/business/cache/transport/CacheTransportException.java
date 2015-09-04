@@ -1,4 +1,4 @@
-package com.dotmarketing.business.cache;
+package com.dotmarketing.business.cache.transport;
 
 /**
  * @author Jonathan Gamba

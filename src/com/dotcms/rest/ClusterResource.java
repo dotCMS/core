@@ -26,7 +26,7 @@ import com.dotcms.repackage.org.jgroups.View;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
-import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
