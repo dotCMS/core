@@ -92,6 +92,21 @@ public class RoleFactoryImpl extends RoleFactory {
 		return r;
 	}
 
+	//Recursively goes from bottom to top in the role hierarchy and collects all user roles
+	//This includes the user itself, the parent role (if any), the grandfather role (if any) and up to the root
+	private List<Role> getAllParentRoles(final String roleId) throws DotDataException {
+	    final List<Role> roles = new ArrayList<Role>();
+	    final Role r = getRoleById(roleId);
+	    if(r != null){
+	        roles.add(r);
+	        //for some reason the root role has itself as parent, instead of a null. If not checked, this method keeps recursing until exception
+	        if(r.getParent() != null && !roleId.equals(r.getParent())) {
+	            roles.addAll(getAllParentRoles(r.getParent()));
+	        }
+	    }
+	    return roles;
+	 }
+
 	@Override
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
@@ -100,10 +115,7 @@ public class RoleFactoryImpl extends RoleFactory {
 			if(helpers != null){
 				for (UserRoleCacheHelper h : helpers) {
 					if(includeImplicitRoles || !h.isInherited()){
-						Role r = getRoleById(h.getRoleId());
-						if(r != null){
-							roles.add(r);
-						}
+						roles.addAll(getAllParentRoles(h.getRoleId()));
 					}
 				}
 			}else{
