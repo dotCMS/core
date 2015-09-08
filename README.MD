@@ -17,6 +17,7 @@ yet working, so we're pre-compiling the Typescript into commonjs using the npm:t
 ## To Run:
 
   * Checkout this repo
+  * Update Node to at least v0.12.x and NPM to 2.14.x
   * Install global NPM hooks
   * Run NPM Install
   * Run JSPM Install
@@ -61,7 +62,12 @@ run the `gulp bundle-deps` task. It uses the JSPM API to bundle ('pre-compile an
 
 Component first development! See request-header-conditionlet.ts and the associated demo.ts for the current high bar in best practices within this project.  
  
+### Troubleshooting
+
+When all else fails, try running `gulp clean` and deleting the jspm_packages and node_modules directories, and then re-run `npm install` and `jspm install`. 
+
 ### Some useful links
+
 
 #### Angular2
   * [Angular](https://angular.io/)
