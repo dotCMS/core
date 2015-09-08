@@ -2055,6 +2055,38 @@ body {
   background-color: #fff;
   border: solid 1px #BABEC1;
 }
+.dotcms .dijitDialogCloseIcon {
+  width: 17px;
+  height: 18px;
+  background-color: #45545B;
+  position: absolute;
+  right: 0;
+  top: 0;
+  margin-left: 0;
+}
+.dotcms .dijitDialogCloseIcon:before, .dotcms .dijitDialogCloseIcon:after {
+  background-color: #fff;
+  display: block;
+  content: "";
+  width: 1px;
+  height: 10px;
+  font-size: 0;
+  position: absolute;
+  left: 8px;
+  top: 4px;
+}
+.dotcms .dijitDialogCloseIcon:before {
+  -moz-transform: rotate(45deg);
+  -ms-transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+  transform: rotate(45deg);
+}
+.dotcms .dijitDialogCloseIcon:after {
+  -moz-transform: rotate(-45deg);
+  -ms-transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+  transform: rotate(-45deg);
+}
 .dotcms .dijitDialogPaneActionBar, .dotcms .dijitDialogPaneContent {
   padding: 10px;
 }
@@ -2068,6 +2100,7 @@ body {
   height: 29px;
   line-height: 29px;
   padding: 0 10px;
+  position: relative;
 }
 .dotcms .dijitTab {
   height: 29px;
