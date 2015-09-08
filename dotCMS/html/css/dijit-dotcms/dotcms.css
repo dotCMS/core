@@ -51,6 +51,7 @@ html {
 .chevronExpandIcon,
 .closeIcon,
 .colorIcon,
+.contentIcon,
 .copyIcon,
 .cutIcon,
 .deleteIcon,
@@ -176,154 +177,6 @@ html {
   transform: translate(0, 0);
 }
 
-.addIcon,
-.androidIcon,
-.appleIcon,
-.appMonitorIcon,
-.archiveIcon,
-.archivedIcon,
-.arrowLeftIcon,
-.arrowRightIcon,
-.assignWorkflowIcon,
-.backupIcon,
-.bgIcon,
-.browseIcon,
-.bugIcon,
-.bundleIcon,
-.calClockIcon,
-.calDayIcon,
-.calListIcon,
-.calMonthIcon,
-.calWeekIcon,
-.cancelIcon,
-.cancelWorkflowIcon,
-.cartIcon,
-.checkBoxIcon,
-.chevronIcon,
-.chevronExpandIcon,
-.closeIcon,
-.colorIcon,
-.copyIcon,
-.cutIcon,
-.deleteIcon,
-.deleteWorkflowIcon,
-.detailViewIcon,
-.docConvertIcon,
-.docCopyIcon,
-.docNumIcon,
-.docTextIcon,
-.documentIcon,
-.downloadIcon,
-.dropIcon,
-.editIcon,
-.editScriptIcon,
-.encryptIcon,
-.exclamationIcon,
-.exclamation-redIcon,
-.femaleIcon,
-.fileIcon,
-.fileMultiIcon,
-.fileNewIcon,
-.fixIcon,
-.folderIcon,
-.folderAddIcon,
-.folderCopyIcon,
-.folderDeleteIcon,
-.folderEditIcon,
-.folderFilesIcon,
-.folderGlobeIcon,
-.folderOpenIcon,
-.folderSelectedIcon,
-.formIcon,
-.formNewIcon,
-.gearIcon,
-.gearMinusIcon,
-.gearPencilIcon,
-.gearPlusIcon,
-.greyDotIcon,
-.helpIcon,
-.hideIcon,
-.hintIcon,
-.hostIcon,
-.hostArchivedIcon,
-.hostDefaultIcon,
-.hostStoppedIcon,
-.hourGlassIcon,
-.imageNewIcon,
-.infoIcon,
-.keyIcon,
-.keyvalueIcon,
-.linkIcon,
-.linkAddIcon,
-.listViewIcon,
-.liveIcon,
-.lockIcon,
-.loginIcon,
-.loginAsIcon,
-.mailListIcon,
-.mapPinIcon,
-.minusIcon,
-.mobileIcon,
-.movePageIcon,
-.multiSelectIcon,
-.newPageIcon,
-.newTaskIcon,
-.newWorkflowIcon,
-.nextIcon,
-.pageIcon,
-.pagePropIcon,
-.pasteIcon,
-.plusIcon,
-.previewIcon,
-.previousIcon,
-.propertyIcon,
-.publishIcon,
-.queryIcon,
-.radioIcon,
-.reindexIcon,
-.rememberIcon,
-.reopenWorkflowIcon,
-.reorderIcon,
-.repeatIcon,
-.republishIcon,
-.requiredIcon,
-.resetIcon,
-.resolveIcon,
-.resolveWorkflowIcon,
-.rServerIcon,
-.saveIcon,
-.saveAssignIcon,
-.scrollPaneIcon,
-.searchIcon,
-.selectIcon,
-.shrinkIcon,
-.spellIcon,
-.splitterIcon,
-.sServerIcon,
-.statisticsIcon,
-.stopIcon,
-.tabIcon,
-.tagIcon,
-.textFieldIcon,
-.thumbnailViewIcon,
-.toggleCloseIcon,
-.toggleOpenIcon,
-.trashIcon,
-.uknIcon,
-.unarchiveIcon,
-.unlockIcon,
-.unpublishIcon,
-.uploadIcon,
-.userIcon,
-.windowsIcon,
-.workflowIcon,
-.workingIcon,
-.workStreamIcon,
-.wysiwygIcon,
-.dijitIcon {
-  background: none;
-}
-
 .addIcon:before {
   content: "";
 }
@@ -349,11 +202,11 @@ html {
 }
 
 .arrowLeftIcon:before {
-  content: "";
+  content: "";
 }
 
 .arrowRightIcon:before {
-  content: "";
+  content: "";
 }
 
 .assignWorkflowIcon:before {
@@ -421,7 +274,7 @@ html {
 }
 
 .chevronExpandIcon:before {
-  content: "";
+  content: "";
 }
 
 .closeIcon:before {
@@ -429,6 +282,10 @@ html {
 }
 
 .colorIcon:before {
+  content: "";
+}
+
+.contentIcon:before {
   content: "";
 }
 
@@ -653,7 +510,7 @@ html {
 }
 
 .loginIcon:before {
-  content: "";
+  content: "";
 }
 
 .loginAsIcon:before {
@@ -995,6 +852,9 @@ body {
   }
   
   */
+  /* ----------------------------------- */
+  /* -------------- ICONS -------------- */
+  /* ----------------------------------- */
 }
 .dotcms .dijitButton,
 .dotcms .dijitComboButton,
@@ -2908,6 +2768,167 @@ body {
   height: 1px;
   margin: 20px 0;
   width: 100%;
+}
+.dotcms .addIcon,
+.dotcms .androidIcon,
+.dotcms .appleIcon,
+.dotcms .appMonitorIcon,
+.dotcms .archiveIcon,
+.dotcms .archivedIcon,
+.dotcms .arrowLeftIcon,
+.dotcms .arrowRightIcon,
+.dotcms .assignWorkflowIcon,
+.dotcms .backupIcon,
+.dotcms .bgIcon,
+.dotcms .browseIcon,
+.dotcms .bugIcon,
+.dotcms .bundleIcon,
+.dotcms .calClockIcon,
+.dotcms .calDayIcon,
+.dotcms .calListIcon,
+.dotcms .calMonthIcon,
+.dotcms .calWeekIcon,
+.dotcms .cancelIcon,
+.dotcms .cancelWorkflowIcon,
+.dotcms .cartIcon,
+.dotcms .checkBoxIcon,
+.dotcms .chevronIcon,
+.dotcms .chevronExpandIcon,
+.dotcms .closeIcon,
+.dotcms .colorIcon,
+.dotcms .contentIcon,
+.dotcms .copyIcon,
+.dotcms .cutIcon,
+.dotcms .deleteIcon,
+.dotcms .deleteWorkflowIcon,
+.dotcms .detailViewIcon,
+.dotcms .docConvertIcon,
+.dotcms .docCopyIcon,
+.dotcms .docNumIcon,
+.dotcms .docTextIcon,
+.dotcms .documentIcon,
+.dotcms .downloadIcon,
+.dotcms .dropIcon,
+.dotcms .editIcon,
+.dotcms .editScriptIcon,
+.dotcms .encryptIcon,
+.dotcms .exclamationIcon,
+.dotcms .exclamation-redIcon,
+.dotcms .femaleIcon,
+.dotcms .fileIcon,
+.dotcms .fileMultiIcon,
+.dotcms .fileNewIcon,
+.dotcms .fixIcon,
+.dotcms .folderIcon,
+.dotcms .folderAddIcon,
+.dotcms .folderCopyIcon,
+.dotcms .folderDeleteIcon,
+.dotcms .folderEditIcon,
+.dotcms .folderFilesIcon,
+.dotcms .folderGlobeIcon,
+.dotcms .folderOpenIcon,
+.dotcms .folderSelectedIcon,
+.dotcms .formIcon,
+.dotcms .formNewIcon,
+.dotcms .gearIcon,
+.dotcms .gearMinusIcon,
+.dotcms .gearPencilIcon,
+.dotcms .gearPlusIcon,
+.dotcms .greyDotIcon,
+.dotcms .helpIcon,
+.dotcms .hideIcon,
+.dotcms .hintIcon,
+.dotcms .hostIcon,
+.dotcms .hostArchivedIcon,
+.dotcms .hostDefaultIcon,
+.dotcms .hostStoppedIcon,
+.dotcms .hourGlassIcon,
+.dotcms .imageNewIcon,
+.dotcms .infoIcon,
+.dotcms .keyIcon,
+.dotcms .keyvalueIcon,
+.dotcms .linkIcon,
+.dotcms .linkAddIcon,
+.dotcms .listViewIcon,
+.dotcms .liveIcon,
+.dotcms .lockIcon,
+.dotcms .loginIcon,
+.dotcms .loginAsIcon,
+.dotcms .mailListIcon,
+.dotcms .mapPinIcon,
+.dotcms .minusIcon,
+.dotcms .mobileIcon,
+.dotcms .movePageIcon,
+.dotcms .multiSelectIcon,
+.dotcms .newPageIcon,
+.dotcms .newTaskIcon,
+.dotcms .newWorkflowIcon,
+.dotcms .nextIcon,
+.dotcms .pageIcon,
+.dotcms .pagePropIcon,
+.dotcms .pasteIcon,
+.dotcms .plusIcon,
+.dotcms .previewIcon,
+.dotcms .previousIcon,
+.dotcms .propertyIcon,
+.dotcms .publishIcon,
+.dotcms .queryIcon,
+.dotcms .radioIcon,
+.dotcms .reindexIcon,
+.dotcms .rememberIcon,
+.dotcms .reopenWorkflowIcon,
+.dotcms .reorderIcon,
+.dotcms .repeatIcon,
+.dotcms .republishIcon,
+.dotcms .requiredIcon,
+.dotcms .resetIcon,
+.dotcms .resolveIcon,
+.dotcms .resolveWorkflowIcon,
+.dotcms .rServerIcon,
+.dotcms .saveIcon,
+.dotcms .saveAssignIcon,
+.dotcms .scrollPaneIcon,
+.dotcms .searchIcon,
+.dotcms .selectIcon,
+.dotcms .shrinkIcon,
+.dotcms .spellIcon,
+.dotcms .splitterIcon,
+.dotcms .sServerIcon,
+.dotcms .statisticsIcon,
+.dotcms .stopIcon,
+.dotcms .tabIcon,
+.dotcms .tagIcon,
+.dotcms .textFieldIcon,
+.dotcms .thumbnailViewIcon,
+.dotcms .toggleCloseIcon,
+.dotcms .toggleOpenIcon,
+.dotcms .trashIcon,
+.dotcms .uknIcon,
+.dotcms .unarchiveIcon,
+.dotcms .unlockIcon,
+.dotcms .unpublishIcon,
+.dotcms .uploadIcon,
+.dotcms .userIcon,
+.dotcms .windowsIcon,
+.dotcms .workflowIcon,
+.dotcms .workingIcon,
+.dotcms .workStreamIcon,
+.dotcms .wysiwygIcon,
+.dotcms .dijitIcon {
+  background: none;
+  display: none;
+}
+.dotcms .arrowLeftIcon,
+.dotcms .arrowRightIcon,
+.dotcms .chevronExpandIcon,
+.dotcms .deleteIcon,
+.dotcms .editIcon,
+.dotcms .folderIcon,
+.dotcms .folderOpenIcon,
+.dotcms .folderSelectedIcon,
+.dotcms .toggleCloseIcon,
+.dotcms .toggleOpenIcon {
+  display: inline;
 }
 
 /*# sourceMappingURL=dotcms.css.map */
