@@ -7,7 +7,6 @@
  */
 
 configurations {
-    compile
     antLibs
 }
 
@@ -16,6 +15,8 @@ def libsFolder = "dotCMS/WEB-INF/lib"
 def dotCmsFolder = "dotCMS"
 
 apply from: "$rootDir/dependencies.gradle"
+
+configurations.compile.extendsFrom(configurations.felix)
 
 task copyToFelix {
     copy {
@@ -52,7 +53,7 @@ task copyStarterProject() {
 task copyCoreWebContent() {
     copy {
         from(zipTree(configurations.coreWeb.files[0]))
-        into "${dotCmsFolder}/html/js/_rules_engine"
+        into "${dotCmsFolder}/html/js/_rulesengine"
     }
 }
 
