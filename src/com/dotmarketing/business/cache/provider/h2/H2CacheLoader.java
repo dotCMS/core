@@ -1,4 +1,4 @@
-package com.dotmarketing.cache;
+package com.dotmarketing.business.cache.provider.h2;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
@@ -7,6 +7,7 @@ import com.dotcms.repackage.org.jboss.cache.config.CacheLoaderConfig.IndividualC
 import com.dotcms.repackage.org.jboss.cache.loader.CacheLoader;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.util.CacheUtil;
+import com.dotmarketing.cache.RegionLock;
 import com.dotmarketing.util.*;
 import com.dotmarketing.velocity.ResourceWrapper;
 import org.h2.jdbcx.JdbcConnectionPool;
@@ -52,7 +53,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
 	@Override
 	public String getKey () {
-		return "H2CacheProvider";
+		return "LocalH2Disk";
 	}
 
 	@Override

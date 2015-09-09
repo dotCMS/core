@@ -29,7 +29,7 @@
                 }
         %>
         <tr>
-                <td><%= s.get("region") %></td>
+                <td><%= ((String)s.get("region")).toLowerCase() %></td>
                 <td><%= s.get("memory") %></td>
                 <td><%= s.get("disk") %></td>
                 <td><%= s.get("evictionAlgorithm") %></td>
