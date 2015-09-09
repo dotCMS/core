@@ -29,6 +29,8 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -279,6 +281,10 @@ public class APILocator extends Locator<APIIndex>{
 		return (WorkflowAPI) getInstance(APIIndex.WORKFLOW_API);
 	}
 
+	public static CacheProviderAPI getCacheProviderPI () {
+		return (CacheProviderAPI) getInstance(APIIndex.CACHE_PROVIDER_API);
+	}
+
 	public static TagAPI getTagAPI(){
 		return (TagAPI) getInstance(APIIndex.TAG_API);
 	}
@@ -411,6 +417,7 @@ enum APIIndex
 	VERSIONABLE_API,
 	FILEASSET_API,
 	WORKFLOW_API,
+	CACHE_PROVIDER_API,
 	TAG_API,
 	INDICIES_API,
 	CONTENLET_INDEX_API,
@@ -470,6 +477,7 @@ enum APIIndex
 		case FILEASSET_API: return new FileAssetAPIImpl();
 		case VERSIONABLE_API: return new VersionableAPIImpl();
 		case WORKFLOW_API : return new WorkflowAPIImpl();
+		case CACHE_PROVIDER_API : return new CacheProviderAPIImpl();
 		case TAG_API: return new TagAPIImpl();
 		case INDICIES_API: return new IndiciesAPIImpl();
 		case CONTENLET_INDEX_API: return new ESContentletIndexAPI();

@@ -2,10 +2,8 @@
 <%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.dotcms.repackage.com.google.common.cache.Cache"%>
 <%@page import="com.dotcms.repackage.org.github.jamm.MemoryMeter"%>
-<%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotcms.repackage.com.google.common.cache.CacheStats"%>
-<%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@page import="java.util.Map"%>
@@ -60,7 +58,8 @@ MemoryMeter meter = new MemoryMeter();
 <table class="listingTable ">
         <thead>
                 <th><%= LanguageUtil.get(pageContext,"Cache-Region") %></th>
-                <th><%= LanguageUtil.get(pageContext,"Configured") %></th>
+				<th><%= LanguageUtil.get(pageContext,"Cache-Provider-Name") %></th>
+				<th><%= LanguageUtil.get(pageContext,"Configured") %></th>
                 <th><%= LanguageUtil.get(pageContext,"In-Memory") %></th>
                 <th><%= LanguageUtil.get(pageContext,"On-Disk") %></th>
                 <th><%= LanguageUtil.get(pageContext,"Load") %></th>
@@ -72,108 +71,115 @@ MemoryMeter meter = new MemoryMeter();
                 	<th><%= LanguageUtil.get(pageContext,"Size") %> / <%= LanguageUtil.get(pageContext,"Avg") %></th>
                 <%} %>
         </thead>
-        <% List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
-        
-        List<Map<String, Object>> liveWorking = new ArrayList<Map<String, Object>>();
+        <%
 
+			List<Map<String, Object>> stats = CacheLocator.getCacheAdministrator().getCacheStatsList();
 
-        int totalMem = 0;
-        int totalConfMem = 0;
-        int totalDisk = 0;
+			int totalMem = 0;
+			int totalConfMem = 0;
+			int totalDisk = 0;
 
-        CacheStats metaStats = new CacheStats(0,0,0,0,0,0);
-        NumberFormat nf = DecimalFormat.getInstance();
-        for(Map<String, Object> s:stats){
+			CacheStats metaStats = new CacheStats(0, 0, 0, 0, 0, 0);
+			NumberFormat nf = DecimalFormat.getInstance();
 
-        	CacheStats cacheStats = (CacheStats) s.get("CacheStats");
-			Cache cache =(Cache) s.get("cache");
-        	boolean isDefault =(Boolean) s.get("isDefault");
-        	
-        	String region = (String) s.get("region");
-        	
-        	
-        	
-			int configuredSize =(Integer) s.get("configuredSize");
+			for ( Map<String, Object> s : stats ) {
 
-        	
-        	
-        	boolean hasLoad = (cacheStats.loadCount() > 0);
-        	
-        	long memoryUsed =0;
-        	String myMemoryUsed = "-";
-        	String avgMemoryUsed = "-";
-        	String sizeHighlightColor = "#aaaaaa";
-			if(!isDefault){
-				
-				totalConfMem +=configuredSize;
-				
-	        	if(cacheStats !=null){
-	        		metaStats = metaStats.plus(cacheStats);
-	        	}
-	        	
-				try{
-	    			int i = new Integer(s.get("memory").toString());
-	            	totalMem +=i;
+				Boolean toDisk = false;
+				if ( s.get("toDisk") != null ) {
+					toDisk = (Boolean) s.get("toDisk");
 				}
-				catch(Exception e){}
-				
-				try{
-					int i = new Integer(s.get("disk").toString());
-					if(i>0)totalDisk +=i;
+
+				boolean hasLoad = false;
+				CacheStats cacheStats = null;
+				if ( s.get("CacheStats") != null ) {
+					cacheStats = (CacheStats) s.get("CacheStats");
+					hasLoad = (cacheStats.loadCount() > 0);
 				}
-				catch(Exception e){}
-				
-				if(showSize){
-					try{
-						memoryUsed=meter.measureDeep(cache);
-						myMemoryUsed =UtilMethods.prettyMemory( memoryUsed);
-						avgMemoryUsed = myMemoryUsed;
-						try{
-							avgMemoryUsed=UtilMethods.prettyMemory( memoryUsed / new Integer(s.get("memory").toString()));
-						}
-						catch(Exception e){
-							
-						}
-						if(myMemoryUsed.endsWith("G")){
-							sizeHighlightColor="black";
-						}
-						else if(myMemoryUsed.endsWith("M")){
-							
-							sizeHighlightColor="#666666";
+				Cache cache = null;
+				if ( s.get("cache") != null ) {
+					cache = (Cache) s.get("cache");
+				}
+
+				String name = (String) s.get("name");
+				String key = (String) s.get("key");
+				boolean isDefault = (Boolean) s.get("isDefault");
+				String region = (String) s.get("region");
+				int configuredSize = (Integer) s.get("configuredSize");
+
+				String memory = "-";
+				if ( s.get("memory") != null && !toDisk ) {
+					memory = s.get("memory").toString();
+				}
+
+				String disk = "-";
+				if ( s.get("disk") != null && toDisk ) {
+					disk = s.get("disk").toString();
+				}
+
+				long memoryUsed;
+				String myMemoryUsed = "-";
+				String avgMemoryUsed = "-";
+				String sizeHighlightColor = "#aaaaaa";
+				if ( !isDefault ) {
+
+					totalConfMem += configuredSize;
+
+					if ( cacheStats != null ) {
+						metaStats = metaStats.plus(cacheStats);
+					}
+
+					try {
+						int i = new Integer(s.get("memory").toString());
+						totalMem += i;
+					} catch ( Exception e ) {
+					}
+
+					try {
+						int i = new Integer(s.get("disk").toString());
+						if ( i > 0 ) totalDisk += i;
+					} catch ( Exception e ) {
+					}
+
+					if ( showSize ) {
+						try {
+							memoryUsed = meter.measureDeep(cache);
+							myMemoryUsed = UtilMethods.prettyMemory(memoryUsed);
+							avgMemoryUsed = myMemoryUsed;
+							try {
+								avgMemoryUsed = UtilMethods.prettyMemory(memoryUsed / new Integer(s.get("memory").toString()));
+							} catch ( Exception e ) {
+
+							}
+							if ( myMemoryUsed.endsWith("G") ) {
+								sizeHighlightColor = "black";
+							} else if ( myMemoryUsed.endsWith("M") ) {
+
+								sizeHighlightColor = "#666666";
+							}
+						} catch ( Exception e ) {
+							sizeHighlightColor = "silver";
+							myMemoryUsed = "Jamm not set as -javaagent";
+
 						}
 					}
-					catch(Exception e){
-						sizeHighlightColor="silver";
-						myMemoryUsed="Jamm not set as -javaagent";
-						
-					}
 				}
 
-				
-			}
-
-			
-			
-			
-			
-			
         	%>
-        	
 
-        	
 		        <tr>
 		                <td align="left">
-		                	<%=!isDefault ? "<b>":"" %>
-		                		<%= region %>
-	                		<%=!isDefault ? "</b>":"" %> 
-		                	<%=isDefault ? "(default)":"" %></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSize %> </td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%= s.get("memory") %></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=((Boolean) s.get("toDisk")) ?  s.get("disk") : "-" %></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%= nf.format(cacheStats.loadCount()) %></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.hitRate() * 100) %>%<%}else{%>-<%} %>  </td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.averageLoadPenalty()/1000000) %> ms<%}else{%>-<%} %></td>
-		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= cacheStats.evictionCount() %><%}else{%>-<%} %></td>
+						<%=!isDefault ? "<b>":"" %>
+						<%= region %>
+						<%=!isDefault ? "</b>":"" %>
+						<%=isDefault ? "(default)":"" %></td>
+						<td <%=isDefault ? "style='color:silver;'":"" %>><%=name%></td>
+						<td <%=isDefault ? "style='color:silver;'":"" %>><%=configuredSize%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=memory%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%=disk%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.loadCount()) %><%}else{%>-<%}%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.hitRate() * 100) %>%<%}else{%>-<%}%>  </td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= nf.format(cacheStats.averageLoadPenalty()/1000000) %> ms<%}else{%>-<%}%></td>
+		                <td <%=isDefault ? "style='color:silver;'":"" %>><%if(hasLoad){%><%= cacheStats.evictionCount() %><%}else{%>-<%}%></td>
 		                <%if(showSize){ %>
 		                	<td style="color:<%=sizeHighlightColor%>">
 		                		<%= myMemoryUsed %>  / <%=avgMemoryUsed %>
@@ -187,7 +193,8 @@ MemoryMeter meter = new MemoryMeter();
 
         <tr>
         	<td style="border:1px solid white"><b><%= LanguageUtil.get(pageContext,"Total") %></b></td>
-            <td style="border:1px solid white"><%=totalConfMem %></td>
+            <td style="border:1px solid white"></td>
+            <td style="border:1px solid white"><%= totalConfMem %></td>
             <td style="border:1px solid white"><%= totalMem %></td>
             <td style="border:1px solid white"><%= totalDisk %></td>
             <td style="border:1px solid white"><%= nf.format(metaStats.loadCount()) %> </td>
@@ -201,7 +208,7 @@ MemoryMeter meter = new MemoryMeter();
 	          				<%= UtilMethods.prettyMemory( meter.measureDeep(stats)) %> 
 	         
 	                	<%}catch(Exception e){ %>
-	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm-0.2.5_1.jar
+	                		Set Jamm at statup, e.g. -javaagent:./dotCMS/WEB-INF/lib/dot.jamm-0.2.5_2.jar
 	                	<%} %>
                 	 </td>
                 <%} %>       

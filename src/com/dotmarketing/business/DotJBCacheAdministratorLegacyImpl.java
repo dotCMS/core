@@ -4,7 +4,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotmarketing.business.cache.CacheTransport;
+import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -20,7 +20,7 @@ import java.util.Set;
  * @author Jason Tesser
  * @version 1.6.5
  *
- * @deprecated
+ * @deprecated Use {@link com.dotmarketing.business.DotGuavaCacheAdministratorImpl} instead
  */
 public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 
@@ -44,6 +44,11 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 	 */
 	public void flushGroup(String group) {
 		cache.flushGroup(group);
+	}
+
+	@Override
+	public void flushAlLocalOnly () {
+
 	}
 
 	public void flushGroupLocalOnly(String group) {
@@ -81,13 +86,23 @@ public class DotJBCacheAdministratorLegacyImpl implements DotCacheAdministrator{
 	}
 
 	public void flushAlLocalOnlyl() {
-		cache.flushAlLocalOnlyl();
+		cache.flushAlLocalOnly();
 	}
-	
+
+	@Override
+	public void initProviders () {
+
+	}
+
 	public Set<String> getKeys(String group) {
 		return cache.getKeys(group);
 	}
-	
+
+	@Override
+	public Set<String> getGroups () {
+		return cache.getGroups();
+	}
+
 	public void shutdown() {
 		cache.shutdown();		
 	}

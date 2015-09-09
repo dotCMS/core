@@ -58,9 +58,9 @@
 <%@ page import="com.liferay.portlet.admin.action.UpdateUserConfigAction" %>
 <%@ page import="com.liferay.portlet.myaccount.action.UploadPortraitAction" %>
 
-<%@ page import="com.dotcms.repackage.org.apache.log4j.Level" %>
-<%@ page import="com.dotcms.repackage.org.apache.log4j.Logger" %>
-<%@ page import="com.dotcms.repackage.org.apache.log4j.LogManager" %>
+<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.Level" %>
+<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.core.Logger" %>
+<%@ page import="com.dotcms.repackage.org.apache.logging.log4j.LogManager" %>
 
 <portlet:defineObjects />
 
