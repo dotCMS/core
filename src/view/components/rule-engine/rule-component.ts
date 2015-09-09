@@ -144,10 +144,12 @@ class RuleComponent {
 
 
   removeRule() {
-    this.ruleSnap.ref().remove().catch((e) => {
-      console.log("Error removing rule", e)
-      throw e
-    })
+    if (confirm('Are you sure you want delete this rule?')) {
+      this.ruleSnap.ref().remove().catch((e) => {
+        console.log("Error removing rule", e)
+        throw e
+      })
+    }
   }
 
   updateRule() {
