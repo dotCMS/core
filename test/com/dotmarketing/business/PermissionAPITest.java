@@ -41,6 +41,14 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 
+/**
+ * This class tests the creation, copy, update, verification and setting of
+ * permissions in dotCMS.
+ * 
+ * @author Jorge Urdaneta
+ * @since May 14, 2012
+ *
+ */
 public class PermissionAPITest extends TestBase {
 
     private static PermissionAPI perm;
@@ -71,31 +79,6 @@ public class PermissionAPITest extends TestBase {
         tt.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(tt, host, sysuser, false);
 
-        /*for(int w=1;w<=5;w++)
-         for(int x=1;x<=5;x++)
-          for(int y=1;y<=5;y++)
-           for(int z=1;z<=5;z++) {
-               String path="/f"+w+"/f"+x+"/f"+y+"/f"+z;
-               Folder folder=APILocator.getFolderAPI().createFolders(path, host, sysuser, false);
-          */
-               // a page under the folder
-               /*HTMLPage page=new HTMLPage();
-               page.setPageUrl("testpage.html");
-               page.setFriendlyName("testpage");
-               page.setTitle("testpage");
-               APILocator.getHTMLPageAPI().saveHTMLPage(page, tt, folder, sysuser, false);*/
-
-               // a file under the folder
-               /*File file=new File();
-               file.setTitle("testfile.txt");
-               file.setFileName("testfile.txt");
-               java.io.File fdata=java.io.File.createTempFile("tmpfile", "data.txt");
-               FileWriter fw=new FileWriter(fdata);
-               fw.write("test file in path "+path);
-               fw.close();
-               APILocator.getFileAPI().saveFile(file, fdata, folder, sysuser, false);*/
-
-    //       }
     }
 
     @AfterClass
@@ -779,7 +762,14 @@ public class PermissionAPITest extends TestBase {
         }
     }
 
-    @Test
+	/**
+	 * Verifies that content inheriting from folder is displaying new roles
+	 * added to folder (see <a
+	 * href="https://github.com/dotCMS/core/issues/560">issue 560</a>).
+	 * 
+	 * @throws Exception
+	 */
+	@Test
     public void issue560() throws Exception {
         Host hh = new Host();
         hh.setHostname("issue560_"+System.currentTimeMillis()+".demo.dotcms.com");
@@ -863,9 +853,9 @@ public class PermissionAPITest extends TestBase {
         finally {
             if(cont1!=null)
                 APILocator.getContentletAPI().delete(cont1, sysuser, false);
-            if(s!=null)
-                StructureFactory.deleteStructure(s);
-
+            if (s != null) {
+            	APILocator.getStructureAPI().delete(s, sysuser);
+            }
             APILocator.getHostAPI().archive(hh, sysuser, false);
         }
     }
@@ -964,90 +954,5 @@ public class PermissionAPITest extends TestBase {
          }
 
     }
-
-    /**
-     * Testing problems with permissions cache when Templates are created.
-     * <br/>Focusing on methods: {@link com.dotmarketing.portlets.templates.business.TemplateAPIImpl#saveTemplate(com.dotmarketing.portlets.templates.model.Template, com.dotmarketing.beans.Host, com.liferay.portal.model.User, boolean)}
-     * and {@link com.dotmarketing.portlets.templates.business.TemplateAPIImpl#findTemplatesUserCanUse(com.liferay.portal.model.User, String, String, boolean, int, int)}
-     *
-     * @throws Exception
-     * @see <a href="https://github.com/dotCMS/dotCMS/issues/3117">github#3117</a>
-     * @see PermissionAPI
-     */
-    /*
-    @Test
-    public void issue3117 () throws Exception {
-
-        String time = String.valueOf( new Date().getTime() );
-
-        //Get the admin user
-        User adminUser = APILocator.getUserAPI().loadByUserByEmail( "admin@dotcms.com", sysuser, false );
-        //Validations
-        assertNotNull( adminUser );
-
-        //Create a new host
-        Host host = new Host();
-        host.setHostname( "test_" + time + ".dotcms.com" );
-        host = APILocator.getHostAPI().save( host, adminUser, false );
-
-        //Create a new folder
-        APILocator.getFolderAPI().createFolders( "/IssueFolder/", host, adminUser, false );
-        Folder folder = APILocator.getFolderAPI().findFolderByPath( "/IssueFolder/", host, adminUser, false );
-        //Validations
-        assertNotNull( folder );
-
-        //Creating test roles
-        Role role = new Role();
-        role.setName( "Test Root Role_" + time );
-        role.setRoleKey( "testRootRole_" + time );
-        role.setEditUsers( true );
-        role.setEditPermissions( true );
-        role.setEditLayouts( true );
-        role.setDescription( "Test Role" );
-        APILocator.getRoleAPI().save( role );
-
-        Map<String, String> mm = new HashMap<String, String>();
-        mm.put( "individual", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN ) );
-        mm.put( "structures", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH ) );
-        mm.put( "content", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH ) );
-        mm.put( "pages", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH ) );
-        mm.put( "folders", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN ) );
-        mm.put( "templates", Integer.toString( PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN ) );
-        new RoleAjax().saveRolePermission( role.getId(), host.getIdentifier(), mm, false );
-
-        //Creating a new test user
-        User newUser = APILocator.getUserAPI().createUser( time + "@test.com", time + "@test.com" );
-        newUser.setFirstName( "New" );
-        newUser.setLastName( "User" );
-        APILocator.getUserAPI().save( newUser, sysuser, false );
-        //Associate to the role
-        APILocator.getRoleAPI().addRoleToUser( role, newUser );
-
-        //Validations
-        assertNotNull( folder );
-        assertTrue( perm.doesRoleHavePermission( folder, PermissionAPI.PERMISSION_READ, role ) );
-        assertTrue( perm.doesRoleHavePermission( folder, PermissionAPI.PERMISSION_WRITE, role ) );
-
-        //Add a template
-        Template template = new Template();
-        template.setTitle( "Test Template_" + time );
-        template.setBody( "<html><head></head><body>en empty template just for test</body></html>" );
-        template = APILocator.getTemplateAPI().saveTemplate( template, host, adminUser, false );
-        //Validations
-        assertNotNull( template );
-
-        //Get the list of available templates for this test user
-        List<Template> templates = APILocator.getTemplateAPI().findTemplatesUserCanUse( newUser, host.getHostname(), "", true, 0, 100 );
-
-        //Validations
-        assertNotNull( templates );
-        assertTrue( templates.size() > 0 );
-        assertTrue( perm.doesRoleHavePermission( template, PermissionAPI.PERMISSION_READ, role ) );
-        assertTrue( perm.doesRoleHavePermission( template, PermissionAPI.PERMISSION_WRITE, role ) );
-        assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_READ, adminUser ) );
-        assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_WRITE, adminUser ) );
-        assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_READ, newUser ) );
-        assertTrue( perm.doesUserHavePermission( template, PermissionAPI.PERMISSION_WRITE, newUser ) );
-    }*/
 
 }

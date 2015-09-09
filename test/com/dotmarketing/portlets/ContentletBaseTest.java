@@ -223,7 +223,7 @@ public class ContentletBaseTest extends TestBase {
             for ( Contentlet contentlet : structContent ) {
                 contentletAPI.delete( contentlet, user, false );
             }
-            StructureFactory.deleteStructure( structure );
+            APILocator.getStructureAPI().delete(structure, user);
         }
 
         //Delete the identifiers
