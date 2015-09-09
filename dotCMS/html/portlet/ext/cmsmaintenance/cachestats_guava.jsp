@@ -100,10 +100,10 @@ MemoryMeter meter = new MemoryMeter();
 					cache = (Cache) s.get("cache");
 				}
 
-				String name = (String) s.get("name");
+				String name = ((String) s.get("name")).toLowerCase();
 				String key = (String) s.get("key");
 				boolean isDefault = (Boolean) s.get("isDefault");
-				String region = (String) s.get("region");
+				String region = ((String) s.get("region")).toLowerCase();
 				int configuredSize = (Integer) s.get("configuredSize");
 
 				String memory = "-";

@@ -35,7 +35,7 @@ public class GuavaCache extends CacheProvider {
 
     @Override
     public String getKey () {
-        return "memCache";
+        return "LocalGuavaMem";
     }
 
     @Override

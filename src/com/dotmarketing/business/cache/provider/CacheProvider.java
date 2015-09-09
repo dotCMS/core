@@ -11,7 +11,7 @@ import java.util.Set;
  * <br/>
  * In order add and use a custom CacheProvider in the Cache Providers execution chain is required an Enterprise
  * License, without it only the default CacheProviders will be use ({@link com.dotmarketing.business.cache.provider.guava.GuavaCache},
- * {@link com.dotmarketing.cache.H2CacheLoader}).
+ * {@link com.dotmarketing.business.cache.provider.h2.H2CacheLoader}).
  * <br/>
  * <br/>
  * With a valid Enterprise License the CacheProviders to use can be specified using the property <strong>cache.adminconfigpool.chain</strong>
@@ -20,8 +20,8 @@ import java.util.Set;
  * <p/>
  * <strong>Examples:</strong>
  * <ul>
- * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.cache.H2CacheLoader</li>
- * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.TestCacheProvider,com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.cache.H2CacheLoader</li>
+ * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
+ * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.TestCacheProvider,com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
  * </ul>
  *
  * @author Jonathan Gamba
