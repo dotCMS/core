@@ -243,8 +243,7 @@ dependencies {
      * Order matters here: OSGI-Core must come after felix.
      */
     compile group: 'com.dotcms.lib', name: 'dot.felix', version:'4.2.1_1'
-    compile group: 'com.dotcms.lib', name: 'dot.org.osgi.core', version:'4.2.0_1'
-	compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version:'1.0.1_1'
+    compile group: 'com.dotcms.lib', name: 'dot.osgi-resource-locator', version:'1.0.1_1'
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version:'2.2.0_1'
 
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
