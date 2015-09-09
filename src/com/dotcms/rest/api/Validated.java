@@ -1,13 +1,12 @@
 package com.dotcms.rest.api;
 
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.javax.validation.ConstraintViolation;
-import com.dotcms.repackage.javax.validation.ConstraintViolationException;
 import com.dotcms.repackage.javax.validation.Validation;
 import com.dotcms.repackage.javax.validation.Validator;
 import com.dotcms.rest.exception.ValidationException;
 
-import java.util.HashSet;
 import java.util.Set;
 
 public abstract class Validated {
@@ -18,6 +17,7 @@ public abstract class Validated {
         return violations.size() != 0;
     }
 
+    @JsonIgnore
     public boolean isValid(){
         return this.isValid(validator.validate(this));
     }

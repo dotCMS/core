@@ -5,7 +5,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 public class TestActionlet extends RuleActionlet {
-    public TestActionlet(String name) {
+    public TestActionlet() {
         super("TestActionlet");
     }
 
