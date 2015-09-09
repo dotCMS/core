@@ -8,15 +8,6 @@ import java.util.Set;
 
 public class ConditionletInput {
 
-    /* we might use this one in the near? future
-    public enum ResponseType {
-        RAW_DATA,
-        VELOCITY,
-        HTML, // ??
-        JAVASCRIPT // ??
-    }
-    */
-
     private String id;
     private Set<EntryOption> data;
     private boolean userInputAllowed;

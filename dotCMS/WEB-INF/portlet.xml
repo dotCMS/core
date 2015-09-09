@@ -3499,6 +3499,11 @@
 		<display-name>ES Query Tool</display-name>
 		<portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
 	</portlet>
+	<portlet>
+		<portlet-name>RULES_ENGINE_PORTLET</portlet-name>
+		<display-name>Rules Editor</display-name>
+		<portlet-class>com.dotcms.rest.RulesEnginePortlet</portlet-class>
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>

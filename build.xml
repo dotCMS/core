@@ -171,13 +171,27 @@
         <delete dir="${osgi.velocity.dir}" />
     </target>
 
-
+    <!-- #MigratedToGradle -->
     <target name="clean-jsp" description="Removes all compiled jsp files from the tomcat instance.">
         <delete dir="${tomcat.home}/work/Catalina" />
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="compile" depends="check-src-build,prepare" description="Compiles all source code.">
-        <javac debug="true" encoding="UTF-8" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac debug="true"
+               encoding="UTF-8"
+               debuglevel="lines,vars,source"
+               fork="true"
+               srcdir="${src.dir}"
+               destdir="${build.classes}"
+               source="1.8"
+               target="1.8"
+               compiler="javac1.8"
+               nowarn="true"
+               optimize="true"
+               memoryinitialsize="256m"
+               memorymaximumsize="512m"
+               includeantruntime="false">
             <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
@@ -341,6 +355,7 @@
         </replaceregexp>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="create-dist" description="Creates the final distribution files for dotCMS.">
 
         <var name="tomcat.home" value="${distribution.dotserver.output}/tomcat-${tomcat.version}"/>
@@ -358,6 +373,7 @@
 
         <!--bin folder (./bin)-->
         <copy todir="${distribution.bin.output}">
+            <!-- This first fileset does nothing? The script files are in the ./bin dir, not ./bin/autoupdater. -->
             <fileset dir="bin/autoupdater">
                 <include name="autoUpdater.sh"/>
                 <include name="autoUpdater.bat"/>
@@ -496,7 +512,18 @@
 
     <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+        <javac encoding="UTF-8"
+               debug="true"
+               debuglevel="lines,vars,source"
+               fork="true" srcdir="${src.tests.dir}"
+               destdir="${build.dir}/testbuild"
+               source="1.8"
+               target="1.8"
+               compiler="javac1.8"
+               nowarn="true"
+               optimize="true"
+               memoryinitialsize="256m"
+               memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
         <copy todir="${build.dir}/testbuild">
@@ -816,6 +843,7 @@
         </jar>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="war" depends="deploy" description="builds dotCMS as a war without the jsps precompiled">
         <antcall target="war-file"/><!--This depends on depends="war-file"-->
     </target>
@@ -823,6 +851,7 @@
         <antcall target="war-file"/>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="war-file" description="Builds dotCMS as a war">
 
         <!--Clean-up-->
@@ -876,14 +905,18 @@
         </war>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="undeploy-war-tomcat">
         <delete dir="${tomcat.home}/webapps/ROOT"/>
     </target>
+
+
     <target name="undeploy-war-jboss7">
         <delete file="${jboss7.home}/standalone/deployments/${war.name}.war.dodeploy"/>
         <delete dir="${jboss7.home}/standalone/deployments/${war.name}.war"/>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="deploy-war-tomcat" depends="clone-pull-tomcat, war" description="Will checkout the tomcat app server, generate a war structure and copy it to the just checked out tomcat. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-tomcat"/>
     </target>
@@ -950,6 +983,7 @@
         Same as the deploy-war-tomcat except that it will backup the assets and dotsecure folders in order to restore them after the deploy.
         This is useful in cases when you need to make a deploy-war-tomcat but keeping your current data.
     -->
+    <!-- #MigratedToGradle -->
     <target name="deploy-war-tomcat-backup" depends="clone-pull-tomcat, backup-war-tomcat-data, war" description="Same as 'deploy-war-tomcat' but will also backup and restore the assets, dotsecure, META-INF and h2 database folders. (Useful for development)">
         <antcall target="move-war-tomcat"/>
         <antcall target="restore-backup-war-tomcat-data"/>
@@ -965,13 +999,16 @@
     <target name="deploy-war-tomcat-tests" depends="clone-pull-tomcat, war-tests" description="Same as 'deploy-war-tomcat' but also includes the junit tests.">
         <antcall target="move-war-tomcat"/>
     </target>
+
     <target name="deploy-war-jboss7" depends="clone-pull-jboss7, war" description="Will checkout the jboss app server, generate a war structure and copy it to the just checked out jboss. If the app server exist instead of a checkout a git pull will be use.">
         <antcall target="move-war-jboss7"/>
     </target>
+
     <target name="deploy-jsp-tomcat" description="Moves the jsp files from a git checkout to the tomcat (Useful for development).">
         <var name="exploded.war.location" value="${tomcat.home}/webapps/ROOT"/>
         <antcall target="deploy-jsp-app-server"/>
     </target>
+
     <target name="deploy-jsp-jboss7" description="Moves the jsp files from a git checkout to the jboss (Useful for development).">
         <var name="exploded.war.location" value="${jboss7.home}/standalone/deployments/${war.name}.war"/>
         <antcall target="deploy-jsp-app-server"/>
@@ -996,6 +1033,7 @@
         </copy>
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="move-war-tomcat" depends="undeploy-war-tomcat" description="Moves the generated war under the build folder to the tomcat webapps folder.">
         <copy todir="${tomcat.home}/lib/">
             <fileset dir="libs/buildlibs/">
@@ -1096,9 +1134,12 @@
 
     </target>
 
+    <!-- #MigratedToGradle -->
     <target name="clone-pull-tomcat">
         <git-clone-pull repository="https://github.com/dotCMS/tomcat.git" version="${tomcat.version}" dest="${tomcat.home}"/>
     </target>
+
+    <!-- #MigratedToGradle -->
     <target name="clone-pull-jboss7">
         <git-clone-pull repository="https://github.com/dotCMS/jboss7.git" version="${jboss7.version}" dest="${jboss7.home}"/>
     </target>
