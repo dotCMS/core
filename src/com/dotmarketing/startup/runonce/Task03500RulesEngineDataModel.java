@@ -80,7 +80,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar(36) primary key,")
             .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("`key` varchar(255) not null,")
+            .append("param_key varchar(255) not null,")
             .append("value text")
             .append(");")
     		
@@ -161,7 +161,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar(36) primary key,")
             .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("key varchar(255) not null,")
+            .append("param_key varchar(255) not null,")
             .append("value text")
             .append(");")
             
@@ -240,7 +240,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar2(36) primary key,")
             .append("rule_action_id varchar2(36) references rule_action(id),")
-            .append("key varchar2(255) not null,")
+            .append("param_key varchar2(255) not null,")
             .append("value nclob")
             .append(");")
     
@@ -317,7 +317,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar(36) primary key,")
             .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("key varchar(255) not null,")
+            .append("param_key varchar(255) not null,")
             .append("value text")
             .append(");")
     
@@ -395,7 +395,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("create table rule_action_pars(")
             .append("id varchar(36) primary key,")
             .append("rule_action_id varchar(36) references rule_action(id),")
-            .append("key varchar(255) not null,")
+            .append("param_key varchar(255) not null,")
             .append("value text")
             .append(");")
     
