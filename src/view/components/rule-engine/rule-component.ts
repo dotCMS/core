@@ -76,6 +76,11 @@ class RuleComponent {
     this.updateRule()
   }
 
+  toggleEnabled() {
+    this.rule.enabled = !this.rule.enabled
+    this.updateRule()
+  }
+
   setRuleName(name:string) {
     this.rule.name = name
     this.updateRule()
