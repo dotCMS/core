@@ -104,7 +104,7 @@ public class LanguageUtil {
 		}
 	
 		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
+			Logger.debug(LanguageUtil.class, key);
 			value = key;
 		}
 	
@@ -131,7 +131,7 @@ public class LanguageUtil {
 		}
 
 		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
+			Logger.debug(LanguageUtil.class, key);
 			value = key;
 		}
 
@@ -154,7 +154,7 @@ public class LanguageUtil {
 		}
 
 		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
+			Logger.debug(LanguageUtil.class, key);
 			value = key;
 		}
 
