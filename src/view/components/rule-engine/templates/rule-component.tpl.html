@@ -44,8 +44,8 @@
               <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
             </button>
             <button type="button" class="btn btn-default btn-md" [class.btn-danger]="rule.enabled" aria-label="Enable/Disable Rule"
-                    (click)="setEnable(!rule.enabled)">
-              <span class="glyphicon glyphicon-off" (click)="setEnable(!rule.enabled)"></span>
+                    (click)="toggleEnabled()">
+              <span class="glyphicon glyphicon-off" (click)="toggleEnabled()"></span>
             </button>
           </div>
         </div>

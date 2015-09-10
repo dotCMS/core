@@ -76,8 +76,8 @@ class RuleComponent {
     this.updateRule()
   }
 
-  setEnable(value:boolean) {
-    this.rule.enabled = value
+  toggleEnabled() {
+    this.rule.enabled = !this.rule.enabled
     this.updateRule()
   }
 
