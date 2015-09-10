@@ -21,6 +21,9 @@ import com.dotcms.repackage.org.junit.runners.Suite;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsRestAPITest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionsRestAPITest;
+import com.dotcms.rest.api.v1.sites.rules.RulesRestAPITest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -96,6 +99,9 @@ import com.dotmarketing.webdav.WebDavTest;
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
     RulesAPITest.class,
+    RulesRestAPITest.class,
+    ConditionGroupsRestAPITest.class,
+    ConditionsRestAPITest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ConditionletTest.class
 })
