@@ -134,64 +134,64 @@
         <Root level="INFO">
             <AppenderRef ref="generic"/>
         </Root>
-        <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn">
+        <Logger name="com.dotcms.repackage.org.directwebremoting" level="warn" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread" level="debug">
+        <Logger name="com.dotmarketing.portlets.contentlet.business.ReindexThread" level="debug" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.com.bradmcevoy.http" level="info">
+        <Logger name="com.dotcms.repackage.com.bradmcevoy.http" level="info" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="org.apache.tomcat.util.http.Parameters" level="fatal">
+        <Logger name="org.apache.tomcat.util.http.Parameters" level="fatal" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.com.sun.jersey.spi.container.servlet.WebComponent" level="error">
+        <Logger name="com.dotcms.repackage.com.sun.jersey.spi.container.servlet.WebComponent" level="error" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.org.directwebremoting.impl.DefaultConverterManager" level="fatal">
+        <Logger name="com.dotcms.repackage.org.directwebremoting.impl.DefaultConverterManager" level="fatal" additivity="false">
             <AppenderRef ref="generic"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LoginAction" level="info">
+        <Logger name="com.liferay.portal.action.LoginAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LogoutAction" level="info">
+        <Logger name="com.liferay.portal.action.LogoutAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LoginAsAction" level="info">
+        <Logger name="com.liferay.portal.action.LoginAsAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.liferay.portal.action.LogoutAsAction" level="info">
+        <Logger name="com.liferay.portal.action.LogoutAsAction" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.SecurityLogger" level="info">
+        <Logger name="com.dotmarketing.util.SecurityLogger" level="info" additivity="false">
             <AppenderRef ref="security"/>
         </Logger>
-        <Logger name="org.apache.nutch" level="info">
+        <Logger name="org.apache.nutch" level="info" additivity="false">
             <AppenderRef ref="sitesearch"/>
         </Logger>
-        <Logger name="com.dotcms.repackage.org.apache.hadoop" level="info">
+        <Logger name="com.dotcms.repackage.org.apache.hadoop" level="info" additivity="false">
             <AppenderRef ref="sitesearch"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.AdminLogger" level="info">
+        <Logger name="com.dotmarketing.util.AdminLogger" level="info" additivity="false">
             <AppenderRef ref="adminaudit"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.ActivityLogger" level="info">
+        <Logger name="com.dotmarketing.util.ActivityLogger" level="info" additivity="false">
             <AppenderRef ref="useractivity"/>
         </Logger>
-        <Logger name="com.dotmarketing.util.PushPublishLogger" level="info">
+        <Logger name="com.dotmarketing.util.PushPublishLogger" level="info" additivity="false">
             <AppenderRef ref="pushpublish"/>
         </Logger>
-        <Logger name="com.dotmarketing.servlets.test.ServletTestRunner" level="info">
+        <Logger name="com.dotmarketing.servlets.test.ServletTestRunner" level="info" additivity="false">
             <AppenderRef ref="test"/>
         </Logger>
-        <Logger name="com.dotmarketing.velocity.VelocityServlet" level="info">
+        <Logger name="com.dotmarketing.velocity.VelocityServlet" level="info" additivity="false">
             <AppenderRef ref="velocity"/>
         </Logger>
-        <Logger name="com.dotmarketing.viewtools" level="info">
+        <Logger name="com.dotmarketing.viewtools" level="info" additivity="false">
             <AppenderRef ref="velocity"/>
         </Logger>
-        <Logger name="org.apache.velocity" level="warn">
+        <Logger name="org.apache.velocity" level="warn" additivity="false">
             <AppenderRef ref="velocity"/>
         </Logger>
     </Loggers>
