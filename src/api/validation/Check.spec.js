@@ -1,22 +1,63 @@
-import {Check} from './Check.js';
+import {Check} from './Check';
+var errorMessage = 'The message'
+var errorRegex
 
 describe('Check.notEmpty', function () {
+
+  var validCases = [
+    {args: ' ', description: 'a single space.'},
+    {args: 'some text', description: 'a couple of words'},
+    {args: 'null', description: 'the literal string `null`'},
+    {args: 'undefined', description: 'The literal string `undefined`'},
+    {args: '1', description: 'The quoted number 1'},
+    {args: '0', description: 'The quoted number zero'},
+    {args: new String(' '), description: 'a single space as an instance of String.'}
+
+  ]
+
+  var invalidCases = [
+    {args: '', description: 'an empty string literal'},
+    {args: 1, description: 'the number value 1'},
+    {args: 0, description: 'the number value zero'},
+    {args: null, description: 'a literal null'},
+    {args: undefined, description: 'a literal undefined'},
+    {args: /foo/, description: 'a regex'}
+  ]
+
+
   beforeEach(function () {
+    errorRegex = RegExp(errorMessage, 'ig')
   });
 
-  it('returns error result when provided null value.', function () {
-    expect(() => {
-        Check.notEmpty(null, "The message")
-      }
-    ).toThrowError(/.*The message.*/)
+  validCases.forEach((testCase) => {
+    it('to pass when provided ' + testCase.description + '.', function () {
+      expect(Check.notEmpty(testCase.args, errorMessage)).toEqual(testCase.args)
 
-  });
+    });
+  })
 
-  it('returns error result when provided a number value.', function () {
-    expect(() => {
-        Check.notEmpty(1, "The message")
+  invalidCases.forEach((testCase) => {
+    it('to throw an error when provided ' + testCase.description + '.', function () {
+      expect(() => {
+            Check.notEmpty(testCase.args, errorMessage)
+          }
+      ).toThrowError(errorRegex)
+
+    });
+  })
+
+  it('to return error result when provided a custom type.', function () {
+    class Foo {
+      afield
+
+      constructor() {
+        this.afield = "something"
       }
-    ).toThrowError(/.*The message.*/)
+    }
+    expect(() => {
+          Check.notEmpty(new Foo(), errorMessage)
+        }
+    ).toThrowError(errorRegex)
 
   });
 
@@ -24,21 +65,106 @@ describe('Check.notEmpty', function () {
 
 
 describe('Check.Exists', function () {
+  var validCases = [
+    {args: ' ', description: 'a single space.'},
+    {args: '', description: 'an empty string'},
+    {args: 1, description: 'a number'},
+    {args: 'null', description: 'the literal string `null`'},
+    {args: 'undefined', description: 'The literal string `undefined`'},
+    {args: '1', description: 'The quoted number 1'},
+    {args: '0', description: 'The quoted number zero'},
+    {args: new String(' '), description: 'a single space as an instance of String.'},
+    {args: /bob/, description: 'A regex.'},
+    {args: {}, description: 'An object literal (`{}`)'}
+
+  ]
+
+  var invalidCases = [
+    {args: null, description: 'a literal null'},
+    {args: undefined, description: 'a literal undefined'}
+  ]
+
   beforeEach(function () {
+    errorRegex = RegExp(errorMessage, 'ig')
   });
 
-  it('returns error result when provided null value.', function () {
+  validCases.forEach((testCase) => {
+    it('to pass when provided ' + testCase.description + '.', function () {
+      expect(Check.exists(testCase.args, errorMessage)).toEqual(testCase.args)
+
+    });
+  })
+
+  invalidCases.forEach((testCase) => {
+    it('to throw an error when provided ' + testCase.description + '.', function () {
+      expect(() => {
+            Check.exists(testCase.args, errorMessage)
+          }
+      ).toThrowError(errorRegex)
+
+    });
+  })
+
+});
+
+
+describe('Check.isString', function () {
+
+  var validCases = [
+    {args: '', description: 'an empty string literal'},
+    {args: ' ', description: 'a single space.'},
+    {args: 'some text', description: 'a couple of words'},
+    {args: 'null', description: 'the literal string `null`'},
+    {args: 'undefined', description: 'The literal string `undefined`'},
+    {args: '1', description: 'The quoted number 1'},
+    {args: '0', description: 'The quoted number zero'},
+    {args: new String(' '), description: 'a single space as an instance of String.'}
+
+  ]
+
+  var invalidCases = [
+    {args: 1, description: 'the number value 1'},
+    {args: 0, description: 'the number value zero'},
+    {args: null, description: 'a literal null'},
+    {args: undefined, description: 'a literal undefined'},
+    {args: /foo/, description: 'a regex'}
+  ]
+
+
+  beforeEach(function () {
+    errorRegex = RegExp(errorMessage, 'ig')
+  });
+
+  validCases.forEach((testCase) => {
+    it('to pass when provided ' + testCase.description + '.', function () {
+      expect(Check.isString(testCase.args, errorMessage)).toEqual(testCase.args)
+
+    });
+  })
+
+  invalidCases.forEach((testCase) => {
+    it('to throw an error when provided ' + testCase.description + '.', function () {
+      expect(() => {
+            Check.isString(testCase.args, errorMessage)
+          }
+      ).toThrowError(errorRegex)
+
+    });
+  })
+
+  it('to return error result when provided a custom type.', function () {
+    class Foo {
+      afield
+
+      constructor() {
+        this.afield = "something"
+      }
+    }
     expect(() => {
-        Check.exists(null, "The message") }
-    ).toThrowError(/.*The message.*/)
+          Check.isString(new Foo(), errorMessage)
+        }
+    ).toThrowError(errorRegex)
 
   });
-
-  it('does not throw error provided empty string.', function () {
-    expect(() => {
-        Check.exists("", "The message") }
-    ).not.toThrow(/.*The message.*/)
-  });
-
 
 });

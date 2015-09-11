@@ -128,7 +128,7 @@ class LazyVerify {
 class Verify extends LazyVerify {
 
   static isString(value, allowEmpty = false) {
-    return LazyVerify.empty(value) ? allowEmpty === true : LazyVerify.isString(value);
+    return (!LazyVerify.exists(value)) ? allowEmpty === true : LazyVerify.isString(value);
   }
 
   static maxLength(value, max) {

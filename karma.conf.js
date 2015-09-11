@@ -1,48 +1,36 @@
 module.exports = function(config) {
   config.set({
 
-    // base path that will be used to resolve all patterns (eg. files, exclude)
-    basePath: '',
-
+    // web server port
+    port: 9876,
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['jspm', 'jasmine'],
 
 
-    // list of files / patterns to load in the browser
-    files: [
-
-    ],
-
-
-    // list of files to exclude
-    exclude: [],
-
     jspm: {
-      useBundles: true,
-      loadFiles: ['src/**/*.spec.es6'],
-      serveFiles: ['src/*/{*.ts,!(spec)/**/*.ts}', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
-                   'jspm_bundles/**/*.js',
-                   'thirdparty/**/*.{es6,ts}']
+      loadFiles: ['src/**/*.spec.js'],
+      serveFiles: ['src/*/{*.ts,!(spec)/**/*.ts}',
+        'src/*/{*.js,!(it|spec)/**/*.js}'],
+      paths: {
+        "coreweb/api/*": "src/api/*",
+        "rule-engine/*": "src/view/components/rule-engine/*",
+        "src/*": "src/*.js"
+      }
     },
-
-
-    // preprocess matching files before serving them to the browser
-    // available preprocessors: https://npmjs.org/browse/keyword/karma-preprocessor
-    preprocessors: {
-    },
-
 
     // test results reporter to use
     // possible values: 'dots', 'progress'
     // available reporters: https://npmjs.org/browse/keyword/karma-reporter
-    reporters: ['progress'],
+    reporters: ['progress', 'junit'],
 
-
-    // web server port
-    port: 9876,
-
+    // Configure the output for the junit reporter.
+    junitReporter: {
+      outputDir: 'build/karma', // results will be saved as $outputDir/$browserName.xml
+      outputFile: undefined, // if included, results will be saved as $outputDir/$browserName/$outputFile
+      suite: '' // suite will become the package name attribute in xml testsuite element
+    },
 
     // enable / disable colors in the output (reporters and logs)
     colors: true,
