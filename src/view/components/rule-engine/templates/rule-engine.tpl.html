@@ -1,39 +1,28 @@
 <div class="container">
-    <div class="row">
-        <div class="col-sm-3"><h4>API Base URL:</h4></div>
-        <div class="col-sm-9">
-            <input type="text" class="form-control" placeholder="Enter base url for JSONP requests..."
-                   [value]="baseUrl"
-                   (change)="updateBaseUrl($event.target.value)">
-
+  <div class="row">
+    <div class="col-sm-12">
+      <div class="row page-title-search">
+        <div class="col-sm-8">
+          <h1>DotCMS Rules Engine</h1>
         </div>
-    </div>
-    <div class="row">
-        <div class="col-sm-12">
-            <div class="row page-title-search">
-                <div class="col-sm-8">
-                    <h1>DotCMS Rules Engine</h1>
-                </div>
-                <div class="col-sm-4">
-                    <form class="form-horizontal">
-                        <div class="form-group has-feedback">
-                            <div class="col-sm-12">
-                                <input type="text" class="form-control" placeholder="Start typing to filter rules..." [value]="filterText">
-                                <span class="glyphicon glyphicon-search form-control-feedback"></span>
-                            </div>
-                        </div>
-                    </form>
-                </div>
+        <div class="col-sm-4">
+          <form class="form-horizontal">
+            <div class="form-group has-feedback">
+              <div class="col-sm-12">
+                <input type="text" class="form-control" placeholder="Start typing to filter rules..." [value]="filterText" (keyup)="filterText = $event.target.value">
+                <span class="glyphicon glyphicon-search form-control-feedback"></span>
+              </div>
             </div>
-
-            <hr/>
-
-            <rule class="row" *ng-for="var r of rules" [rule-snap]="r"></rule>
-            <!--<div class="row" *ng-for="var r of vals">{{r}}</div>-->
-            <button type="button" class="btn btn-default btn-md" aria-label="Create a new Rule" (click)="addRule()">
-                <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Rule
-            </button>
-
+          </form>
         </div>
+      </div>
+      <hr/>
+      <div *ng-for="var r of rules">
+        <rule class="row" [rule-snap]="r" *ng-if="filterText == '' || r.val().name.toLowerCase().includes(filterText.toLowerCase())"></rule>
+      </div>
+      <button type="button" class="btn btn-default btn-md" aria-label="Create a new Rule" (click)="addRule()">
+        <span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add Rule
+      </button>
     </div>
+  </div>
 </div>

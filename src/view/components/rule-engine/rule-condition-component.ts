@@ -6,7 +6,6 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from '
 
 import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
-
 import {conditionTemplate} from './templates/index'
 
 import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
