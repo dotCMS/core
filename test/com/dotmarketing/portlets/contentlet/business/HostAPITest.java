@@ -34,7 +34,6 @@ public class HostAPITest {
         LicenseTestUtil.getLicense();
     }
     
-	@Ignore("Temporarily ignoring this method until the Quartz job error is solved.")
     @Test
     public void testDeleteHost() throws Exception {
         User user=APILocator.getUserAPI().getSystemUser();
@@ -52,6 +51,8 @@ public class HostAPITest {
         	HibernateUtil.rollbackTransaction();
         	Logger.error(HostAPITest.class, e.getMessage());
         }
+        APILocator.getContentletAPI().isInodeIndexed(host.getInode());
+        Thread.sleep(5000);
         String hostIdent=host.getIdentifier();
         String hostName=host.getHostname();
         
@@ -107,7 +108,7 @@ public class HostAPITest {
         
         if(host!=null){
         	APILocator.getHostAPI().delete(host, user, false);
-        	Thread.sleep(600);
+        	Thread.sleep(10000);
         }
         
         host = APILocator.getHostAPI().find(hostIdent, user, false);

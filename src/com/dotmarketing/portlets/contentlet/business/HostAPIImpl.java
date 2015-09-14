@@ -560,6 +560,15 @@ public class HostAPIImpl implements HostAPI {
 					throw new DotRuntimeException(e.getMessage(), e);
 				}
 			}
+			
+			/**
+			 * Gradually deletes a whole site (host) by removing each piece of
+			 * content in it (e.g., removes old files, HTML and Content pages,
+			 * links, contentlets, and so on).
+			 * 
+			 * @throws Exception
+			 *             An error occurred when executing a delete method.
+			 */
 			public void deleteHost() throws Exception {
 				if(host != null){
 					hostCache.remove(host);
@@ -652,6 +661,15 @@ public class HostAPIImpl implements HostAPI {
 	                }
 				}
 
+				// Double-check that ALL contentlets are effectively removed  
+				// before using dotConnect to kill bad identifiers
+				List<Contentlet> remainingContenlets = contentAPI
+						.findContentletsByHost(host, user, respectFrontendRoles);
+				if (remainingContenlets != null
+						&& remainingContenlets.size() > 0) {
+					contentAPI.deleteByHost(host, user, respectFrontendRoles);
+				}
+				
                 // kill bad identifiers pointing to the host
                 dc.setSQL("delete from identifier where host_inode=?");
                 dc.addParam(host.getIdentifier());
