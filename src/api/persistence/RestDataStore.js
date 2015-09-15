@@ -32,9 +32,22 @@ let transformValidResponse = function (response) {
 }
 
 function checkStatus(response) {
-  if (!(response.status >= 200 && response.status < 300)) {
-    var error = new Error(response.statusText)
+  let error;
+  if(response instanceof TypeError){
+    let message = response.message;
+    if (response.message == "Failed to fetch") {
+      message = response.message + ' (is the host available?)'
+    }
+    error = new Error(message)
+    error.response = {
+      status: -1
+    }
+  }
+  else if (!(response.status >= 200 && response.status < 300)) {
+    error = new Error(response.statusText)
     error.response = response
+  }
+  if(error){
     console.log("Status error: ", error)
     throw error
   }
@@ -43,13 +56,16 @@ function checkStatus(response) {
 
 
 let pathToUrl = function (path) {
-  if (path.startsWith('/')) {
-    path = path.substring(1)
+  if (!path.startsWith('http')) {
+    if (path.startsWith('/')) {
+      path = path.substring(1)
+    }
+    path = ConnectionManager.baseUrl + path
   }
   if (path.endsWith('/')) {
     path = path.substring(0, path.length - 1)
   }
-  return ConnectionManager.baseUrl + path
+  return path
 }
 
 let getAuthHeader = function () {
@@ -91,7 +107,7 @@ let remoteGet = function (path) {
       'Content-Type': 'application/json',
       'Authorization': getAuthHeader()
     }
-  }).then(checkStatus).then(transformValidResponse)
+  }).catch(checkStatus).then(checkStatus).then(transformValidResponse)
 }
 
 
