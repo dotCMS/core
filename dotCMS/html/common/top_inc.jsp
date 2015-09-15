@@ -37,12 +37,9 @@ THIS FILE AND ITS INCLUDES
 	<title>dotCMS : <%= LanguageUtil.get(pageContext, "Enterprise-Web-Content-Management") %></title>
 
 	<style type="text/css">
-        @import "/html/common/css.jsp?b=<%= ReleaseInfo.getVersion() %>";
         @import "http://demos.dojotoolkit.org/dijit/themes/dijit.css";
         @import "/html/css/dijit-dotcms/dotcms.css?b=<%= ReleaseInfo.getVersion() %>";
-        /*@import "<%=dojoPath%>/dijit/themes/dmundra/Grid.css?b=<%= ReleaseInfo.getVersion() %>";
-        @import "<%=dojoPath%>/dojox/widget/Calendar/Calendar.css?b=<%= ReleaseInfo.getVersion() %>";
-        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";*/
+        @import "/html/js/dotcms/dijit/image/image_tools.css?b=<%= ReleaseInfo.getVersion() %>";
     </style>
 
 	<!--[if IE]>
