@@ -696,64 +696,6 @@ table {
   font-family: Verdana, Geneva, Arial, sans-serif;
 }
 
-dl {
-  margin: 0;
-}
-
-dt {
-  float: left;
-  clear: left;
-  margin: 0 0 10px 0;
-  font-size: 12px;
-  padding-top: 8px;
-  width: 30%;
-  text-align: right;
-}
-dt.wide {
-  width: 100%;
-  clear: both;
-}
-
-dd {
-  clear: right;
-  font-size: 12px;
-  padding-top: 8px;
-  padding-left: 10px;
-  margin: 0 0 10px 30%;
-  text-align: left;
-}
-dd.wide {
-  width: 100%;
-  clear: both;
-}
-dd.inputCaption {
-  margin-top: -10px;
-}
-dd.buttonCaption {
-  margin-top: -10px;
-}
-
-button {
-  font-family: Verdana, Geneva, Arial, sans-serif;
-}
-
-select {
-  font-family: Verdana, Geneva, Arial, sans-serif;
-  font-size: 93%;
-  padding: 2px;
-  color: #555;
-}
-
-input {
-  font-family: Verdana, Geneva, Arial, sans-serif;
-  color: #555555;
-  padding: 2px 5px 0;
-}
-
-label {
-  font-family: Verdana, Geneva, Arial, sans-serif;
-}
-
 .inputCaption {
   font-size: 85%;
   color: #888;
@@ -860,7 +802,7 @@ hr {
   height: 20px;
   width: 80px;
   text-indent: -9999px;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -300px;
+  background: url("/html/images/skin/skin-sprite.png") no-repeat 0 -300px;
 }
 
 #admin-site-tools-div {
@@ -887,7 +829,7 @@ hr {
 }
 
 #admin-site-tools-div a.trigger-off {
-  background: url("http://localhost:8080/html/images/icons/chevron-menu.png") right -28px no-repeat;
+  background: url("/html/images/icons/chevron-menu.png") right -28px no-repeat;
   padding: 5px 28px 0 10px;
   display: inline-block;
   height: 30px;
@@ -913,7 +855,7 @@ hr {
   height: 30px;
   z-index: 9999;
   color: #3366CC;
-  background: #fff url("http://localhost:8080/html/images/icons/chevron-menu.png") right -66px no-repeat;
+  background: #fff url("/html/images/icons/chevron-menu.png") right -66px no-repeat;
   -webkit-border-top-left-radius: 4px;
   -khtml-border-radius-topleft: 14px;
   -moz-border-radius-topleft: 4px;
@@ -938,7 +880,7 @@ hr {
 }
 
 .bannerBG {
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x 0 0;
+  background: url("/html/images/skin/skin-sprite.png") repeat-x 0 0;
   height: 130px;
   overflow: hidden;
   position: absolute;
@@ -1116,7 +1058,7 @@ hr {
 }
 
 #menu ul.horizontal li.level1 a {
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat left -140px;
+  background: url("/html/images/skin/skin-sprite.png") repeat left -140px;
 }
 
 #menu ul.horizontal li.level1 a:hover,
@@ -1125,7 +1067,7 @@ hr {
 }
 
 #menu ul.horizontal li.level1 .tabLeft {
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -240px;
+  background: url("/html/images/skin/skin-sprite.png") no-repeat 0 -240px;
   padding: 8px 10px 5px 10px;
 }
 
@@ -1158,7 +1100,7 @@ li.level1 .navMenu-subtitle {
 
 li.level1 .navMenu-arrow {
   display: none;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat -250px -300px;
+  background: url("/html/images/skin/skin-sprite.png") no-repeat -250px -300px;
   width: 13px;
   height: 13px;
   margin: 4px auto 2px auto;
@@ -1232,7 +1174,7 @@ li.smallify .navMenu-arrow {
   margin: -9px -10px 10px -10px;
   overflow: hidden;
   border-bottom: 1px solid #ddd;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x 0 -330px;
+  background: url("/html/images/skin/skin-sprite.png") repeat-x 0 -330px;
 }
 
 .subNavCrumbTrail ul {
@@ -1248,11 +1190,11 @@ li.smallify .navMenu-arrow {
   float: left;
   padding: 3px 10px 5px 25px;
   line-height: 16px;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -391px;
+  background: url("/html/images/skin/skin-sprite.png") no-repeat 0 -391px;
 }
 
 .subNavCrumbTrail .lastCrumb {
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") no-repeat 0 -361px;
+  background: url("/html/images/skin/skin-sprite.png") no-repeat 0 -361px;
 }
 
 .subNavCrumbTrail a {
@@ -1284,7 +1226,7 @@ li.smallify .navMenu-arrow {
 
 #selectHostDiv {
   cursor: pointer;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x 0 -421px;
+  background: url("/html/images/skin/skin-sprite.png") repeat-x 0 -421px;
   padding: 3px 10px 5px 15px;
 }
 
@@ -1343,12 +1285,6 @@ li.smallify .navMenu-arrow {
   padding: 5px 15px 15px 15px;
 }
 
-.buttonRow {
-  text-align: center;
-  padding: 10px 8px 10px 8px;
-  line-height: 12px;
-}
-
 .formRow {
   text-align: center;
   padding: 10px 8px;
@@ -1380,12 +1316,12 @@ li.smallify .navMenu-arrow {
   border: 1px solid #ccc;
   -moz-box-shadow: 0px 0px 5px #ccc;
   -webkit-box-shadow: 0px 0px 5px #ccc;
-  background: transparent url("http://localhost:8080/html/images/skin/portalTab_bg.gif") repeat-x 0 0;
+  background: transparent url("/html/images/skin/portalTab_bg.gif") repeat-x 0 0;
 }
 
 .headerBox {
   padding: 0;
-  background: transparent url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x 0 -558px;
+  background: transparent url("/html/images/skin/skin-sprite.png") repeat-x 0 -558px;
 }
 
 .lineRight {
@@ -1393,7 +1329,7 @@ li.smallify .navMenu-arrow {
 }
 
 .lineCenter {
-  background: url("http://localhost:8080/html/images/skin/yuiBackgroundLine.gif") repeat-y center top;
+  background: url("/html/images/skin/yuiBackgroundLine.gif") repeat-y center top;
 }
 
 .roundBox {
@@ -2009,7 +1945,7 @@ table.workflowInfo td {
   font-size: 12px;
   font-weight: bold;
   color: #555;
-  background: url("http://localhost:8080/html/images/skin/skin-sprite.png") repeat-x scroll 0 -325px transparent;
+  background: url("/html/images/skin/skin-sprite.png") repeat-x scroll 0 -325px transparent;
   border-bottom: 1px solid #b3b3b3;
 }
 
@@ -2061,14 +1997,6 @@ ul.withBullets li {
   list-style: circle;
 }
 
-.dotcms .dijitButton,
-.dotcms .dijitTextBox,
-.dotcms .dijitComboBox,
-.dotcms .dijitComboButton {
-  margin: 0 .2em;
-  vertical-align: middle;
-}
-
 /* STRUCTURE MANAGER STYLES 2.0 */
 .selectBoxImage {
   padding-right: 3px;
@@ -2094,7 +2022,7 @@ tr.pop_divider {
 
 /* FAKE BUTTON STYLE 2.0 */
 a.fakeDojoButton {
-  background: #FFFFFF url("http://localhost:8080/images/buttonEnabled.png") repeat-x scroll left bottom;
+  background: #FFFFFF url("/images/buttonEnabled.png") repeat-x scroll left bottom;
   border-color: #C0C0C0 #C0C0C0 #9B9B9B;
   border-style: solid;
   border-width: 1px;
@@ -2108,7 +2036,7 @@ a.fakeDojoButton {
 }
 
 a.fakeDojoButton:hover {
-  background: #FFFFFF url("http://localhost:8080/images/buttonHover.png") repeat-x scroll left bottom;
+  background: #FFFFFF url("/images/buttonHover.png") repeat-x scroll left bottom;
 }
 
 a.fakeDojoButton img {
@@ -2118,40 +2046,40 @@ a.fakeDojoButton img {
 
 /* NAV MENU ICONS 2.0 */
 #menu ul.dropdown li.dotCMS_EXT_SITESEARCH a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -60px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -60px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_16 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -180px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -180px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_LICENSE_MANAGER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -300px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -300px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_HOSTADMIN a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -320px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -320px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_15 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -400px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -400px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_USER_ADMIN a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -440px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -440px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_ROLE_ADMIN a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -460px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -460px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_21 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -500px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -500px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_SCHEDULER a span,
 .clockIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -620px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -620px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2159,20 +2087,20 @@ a.fakeDojoButton img {
 }
 
 #menu ul.dropdown li.dotCMS_EXT_18 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -660px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -660px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_3 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -840px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -840px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_PRODUCT a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1000px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1000px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_6 a span,
 .nodeAllIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1000px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1000px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2181,7 +2109,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_4 a span,
 .nodeInsertIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1020px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1020px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2189,31 +2117,31 @@ a.fakeDojoButton img {
 }
 
 #menu ul.dropdown li.dotCMS_EXT_CMS_MAINTENANCE a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1060px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1060px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_LANG a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1160px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1160px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_CALENDAR a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1120px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1120px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_LUCENE_TOOL a span {
-  background: url("http://localhost:8080/html/images/icons/lucene.png") no-repeat;
+  background: url("/html/images/icons/lucene.png") no-repeat;
 }
 
 #menu ul.dropdown li.dotCMS_25 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1180px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1180px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_ECO_ORDER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1200px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1200px;
 }
 
 #menu ul.dropdown li.dotCMS_9 a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -200px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -200px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2222,7 +2150,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_12 a span,
 .container {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1220px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1220px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2231,7 +2159,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_13 a span,
 .templateIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1220px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1220px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2240,7 +2168,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_19 a span,
 .targetIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1240px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1240px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2248,16 +2176,16 @@ a.fakeDojoButton img {
 }
 
 #menu ul.dropdown li.dotCMS_EXT_COMMUNICATIONS_MANAGER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1240px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1240px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_REPORTMANAGER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1260px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1260px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_VIRTUAL_LINKS a span,
 .vlinksIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1260px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1260px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2266,7 +2194,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_BROWSER a span,
 .bowserIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1280px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1280px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2275,7 +2203,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_11 a span,
 .contentIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1280px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1280px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2283,16 +2211,16 @@ a.fakeDojoButton img {
 }
 
 #menu ul.dropdown li.dotCMS_EXT_DISCOUNTCODE a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_DASHBOARD a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1300px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1300px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_STRUCTURE a span,
 .structureIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1320px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1320px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2301,7 +2229,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_FORM_HANDLER a span,
 .formIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1320px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1320px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2309,15 +2237,15 @@ a.fakeDojoButton img {
 }
 
 #menu ul.dropdown li.dotCMS_EXT_CONTENTRATINGS a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1340px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1340px;
 }
 
 #menu ul.dropdown li.dotCMS_WORKFLOW_SCHEMES a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -520px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -520px;
 }
 
 #menu ul.dropdown li.dotCMS_EXT_TAG_MANAGER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1300px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2326,7 +2254,7 @@ a.fakeDojoButton img {
 
 /*#menu ul.dropdown li.dotCMS_OSGI_MANAGER a span{background: url(/html/images/icons/osgi.png) no-repeat;width:18px;height:18px;display:inline-block;vertical-align:top;}*/
 #menu ul.dropdown li.dotCMS_OSGI_MANAGER a span {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1860px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1860px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2335,7 +2263,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_TIMEMACHINE a span,
 .clockIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1760px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1760px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2344,7 +2272,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_EXT_BROKEN_LINKS a span,
 .linkCheckIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1760px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1760px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2353,7 +2281,7 @@ a.fakeDojoButton img {
 
 #menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span,
 .elasticsearchIcon {
-  background: url("http://localhost:8080/html/images/icons/elasticsearch.png") no-repeat;
+  background: url("/html/images/icons/elasticsearch.png") no-repeat;
   width: 18px;
   height: 18px;
   -o-object-fit: contain;
@@ -2364,7 +2292,7 @@ a.fakeDojoButton img {
 #menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span,
 .sServerIcon,
 .pushIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1880px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1880px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2478,7 +2406,7 @@ a.fakeDojoButton img {
 .jpegIcon,
 .bmpIcon,
 .pctIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1540px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1540px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2489,7 +2417,7 @@ a.fakeDojoButton img {
 .giffIcon,
 .pngIcon,
 .pctIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1540px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1540px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2499,7 +2427,7 @@ a.fakeDojoButton img {
 .flaIcon,
 .swfIcon,
 .flvIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1560px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1560px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2511,7 +2439,7 @@ a.fakeDojoButton img {
 .pxrIcon,
 .tifIcon,
 .tiffIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1560px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1560px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2520,7 +2448,7 @@ a.fakeDojoButton img {
 
 .pdfIcon,
 .airIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1580px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1580px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2534,7 +2462,7 @@ a.fakeDojoButton img {
 .svgIcon,
 .graffleIcon,
 .vdxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1580px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1580px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2543,7 +2471,7 @@ a.fakeDojoButton img {
 
 .docIcon,
 .docxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1600px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1600px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2559,7 +2487,7 @@ a.fakeDojoButton img {
 .pifIcon,
 .vbIcon,
 .wsfIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1600px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1600px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2571,7 +2499,7 @@ a.fakeDojoButton img {
 .wksIcon,
 .csvIcon,
 .numbersIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1620px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1620px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2583,7 +2511,7 @@ a.fakeDojoButton img {
 .mdbIcon,
 .pdbIcon,
 .sqlIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1620px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1620px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2593,7 +2521,7 @@ a.fakeDojoButton img {
 .pptIcon,
 .pptxIcon,
 .keynote {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1640px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1640px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2602,7 +2530,7 @@ a.fakeDojoButton img {
 
 .wmvIcon,
 .asxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1640px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1640px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2618,7 +2546,7 @@ a.fakeDojoButton img {
 .rmIcon,
 .vobIcon,
 .ogvIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1660px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1660px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2635,7 +2563,7 @@ a.fakeDojoButton img {
 .raIcon,
 .wavIcon,
 .wmaIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1660px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1660px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2643,7 +2571,7 @@ a.fakeDojoButton img {
 }
 
 .cssIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1680px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1680px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2651,7 +2579,7 @@ a.fakeDojoButton img {
 }
 
 .vtlIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1680px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1680px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2667,7 +2595,7 @@ a.fakeDojoButton img {
 .pyIcon,
 .rbIcon,
 .jsonIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1700px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1700px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2677,7 +2605,7 @@ a.fakeDojoButton img {
 .htmIcon,
 .htmlIcon,
 .rssIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1700px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1700px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2689,7 +2617,7 @@ a.fakeDojoButton img {
 .txtIcon,
 .rtfIcon,
 .pagesIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -1px -1720px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -1px -1720px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2704,7 +2632,7 @@ a.fakeDojoButton img {
 .sitIcon,
 .sitxIcon,
 .zipxIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1720px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1720px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2715,7 +2643,7 @@ a.fakeDojoButton img {
 .woffIcon,
 .eotIcon,
 .svgIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1840px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1840px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2723,7 +2651,7 @@ a.fakeDojoButton img {
 }
 
 .twitterIcon {
-  background: url("http://localhost:8080/html/images/icons/twitter.png") no-repeat;
+  background: url("/html/images/icons/twitter.png") no-repeat;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2731,7 +2659,7 @@ a.fakeDojoButton img {
 }
 
 .icoIcon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -1920px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -1920px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2742,7 +2670,7 @@ a.fakeDojoButton img {
 .ibooksIcon,
 .azwIcon,
 .kf8Icon {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat -21px -100px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -21px -100px;
   width: 18px;
   height: 18px;
   display: inline-block;
@@ -2750,7 +2678,7 @@ a.fakeDojoButton img {
 }
 
 .worldOn {
-  background: url("http://localhost:8080/html/images/icons/dotcms-sprite.png") no-repeat 0px -1940px;
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat 0px -1940px;
   width: 22px;
   height: 22px;
   margin: 0 1px 0 7px;
@@ -2927,7 +2855,7 @@ table.sTypeTable.sTypeItem {
 }
 
 .loadingIcon {
-  background: url("http://localhost:8080/html/images/icons/ajax-loader.gif") no-repeat left center;
+  background: url("/html/images/icons/ajax-loader.gif") no-repeat left center;
   padding: 0 5px 0 3px;
   height: 20px;
   vertical-align: middle;
@@ -3025,7 +2953,7 @@ table.sTypeTable.sTypeItem {
   z-index: 1000;
   position: absolute;
   visibility: hidden;
-  background: url("http://localhost:8080/html/js/dotcms-utils/overlay.png");
+  background: url("/html/js/dotcms-utils/overlay.png");
 }
 
 /* permission hacks */
@@ -3063,14 +2991,14 @@ table.sTypeTable.sTypeItem {
   -moz-background-clip: border;
   -moz-background-inline-policy: continuous;
   -moz-background-origin: padding;
-  background: transparent url("http://localhost:8080/html/images/icons/globe-green.png") no-repeat scroll 0 0;
+  background: transparent url("/html/images/icons/globe-green.png") no-repeat scroll 0 0;
 }
 
 .dotcms .dijitHostOpened {
   -moz-background-clip: border;
   -moz-background-inline-policy: continuous;
   -moz-background-origin: padding;
-  background: transparent url("http://localhost:8080/html/images/icons/globe-green.png") no-repeat scroll 0 0;
+  background: transparent url("/html/images/icons/globe-green.png") no-repeat scroll 0 0;
 }
 
 /* Role selector */
@@ -3211,7 +3139,7 @@ table.dojoxLegendNode td {
 }
 
 .noChart {
-  background: #959595 url("http://localhost:8080/html/images/skin/lineChartBg.png") repeat-x left bottom;
+  background: #959595 url("/html/images/skin/lineChartBg.png") repeat-x left bottom;
   width: 100%;
   height: 130px;
   padding: 50px 20px 20px 20px;
@@ -3232,7 +3160,7 @@ table.dojoxLegendNode td {
 }
 
 .noPie {
-  background: url("http://localhost:8080/html/images/skin/pieBg.png") no-repeat center top;
+  background: url("/html/images/skin/pieBg.png") no-repeat center top;
   width: 180px;
   height: 180px;
   margin: 0 auto 30px auto;
@@ -3481,10 +3409,17 @@ div#_dotHelpMenu {
   padding-left: 15px;
 }
 
-/* BUTTON ICONS 2.0 */
 /* ----------------------------------- */
 /* -------------- ICONS -------------- */
 /* ----------------------------------- */
+.required {
+  background: url("/html/images/icons/dotcms-sprite.png") no-repeat -4px -1161px;
+  width: 10px;
+  height: 18px;
+  display: inline-block;
+  vertical-align: top;
+}
+
 .addIcon,
 .androidIcon,
 .appleIcon,
@@ -3646,6 +3581,87 @@ div#_dotHelpMenu {
 .toggleCloseIcon,
 .toggleOpenIcon {
   display: inline;
+}
+
+/* BUTTON ICONS 2.0 */
+/*
+------------ FORMS ------------
+- Extract from: base.css
+- Handle vertical and horizontal forms
+*/
+dl {
+  margin: 0;
+}
+dl#indexed dd, dl#listed dd, dl#required dd, dl#unique dd, dl#userSearchable dd {
+  min-height: auto;
+  line-height: normal;
+}
+dl#indexed dd .dijitCheckBox, dl#listed dd .dijitCheckBox, dl#required dd .dijitCheckBox, dl#unique dd .dijitCheckBox, dl#userSearchable dd .dijitCheckBox {
+  margin: 0;
+}
+
+dd.wide,
+dt.wide {
+  clear: both;
+  width: auto;
+}
+
+dt {
+  clear: left;
+  float: left;
+  margin-right: 10px;
+  padding: 6px 0px 7px;
+  text-align: right;
+  width: 30%;
+}
+
+dd {
+  margin: 0 0 10px 30%;
+  min-height: 29px;
+}
+#advancedSearch dd {
+  margin: 0 0 10px 30%;
+}
+dd .inputCaption,
+dd .buttonCaption {
+  padding-left: 10px !important;
+}
+dd .dijitCheckBox,
+dd .dijitRadio {
+  margin: 6px 0;
+}
+
+input,
+select {
+  color: #45545B;
+  font-family: "Open Sans", sans-serif;
+  font-size: 12px;
+  height: 29px;
+  line-height: 29px;
+  margin: 0;
+  padding: 0;
+}
+
+input[type="text"] {
+  -moz-border-radius: 2px;
+  -webkit-border-radius: 2px;
+  border-radius: 2px;
+  background-color: #fff;
+  border: solid 1px #CACED0;
+  padding: 0 10px;
+}
+input[type="text"].dijitReset {
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.buttonRow {
+  margin-left: 30%;
+  padding: 10px 10px 0;
+}
+#advancedSearch + .buttonRow {
+  padding: 0 10px 10px;
 }
 
 /* The main calendar widget.  DIV containing a table. */
@@ -6012,6 +6028,9 @@ body {
   padding: 0 10px;
   position: relative;
   top: 0;
+}
+.dotcms .dijitTabPaneWrapper {
+  padding: 10px;
 }
 .dotcms .dijitTab.dijitClosable {
   padding-right: 20px;

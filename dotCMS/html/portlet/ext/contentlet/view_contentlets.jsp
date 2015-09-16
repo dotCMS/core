@@ -408,7 +408,7 @@
 	                                <!-- Language search fields  --->
 	                                <dt><%= LanguageUtil.get(pageContext, "Language") %>:</dt>
                                     <dd>
-                                        <div id="combo_zone2" style="width:215px; height:20px;">
+                                        <div id="combo_zone2">
                                             <input id="language_id"/>
                                         </div>
 
@@ -467,7 +467,7 @@
 
 
 
-                        <div class="buttonRow" style='margin-top:10px;'>
+                        <div class="buttonRow">
                                 <span id="searchButton"></span>
 
                                 <button dojoType="dijit.form.ComboButton" id="searchButton" optionsTitle='createOptions' onClick="doSearch();return false;" iconClass="searchIcon" title="<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "search")) %>">
