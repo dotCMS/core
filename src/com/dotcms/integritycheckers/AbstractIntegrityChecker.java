@@ -13,6 +13,7 @@ import java.util.Map;
 
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -197,29 +198,48 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId);
 
-        final String INSERT_TEMP_TABLE = "INSERT INTO " + tempTableName + " VALUES(?,?,?,?,?,?,?)";
-        while (contentFile.readRecord()) {
-            String workingInode = contentFile.get(0);
-            String liveInode = contentFile.get(1);
-
-            String contentIdentifier = contentFile.get(2);
-            String contentParentPath = contentFile.get(3);
-            String contentName = contentFile.get(4);
-            String contentHostIdentifier = contentFile.get(5);
-            String contentLanguage = contentFile.get(6);
-            dc.setSQL(INSERT_TEMP_TABLE);
-
-            dc.addParam(workingInode);
-            dc.addParam(liveInode);
-            dc.addParam(contentIdentifier);
-            dc.addParam(contentParentPath);
-            dc.addParam(contentName);
-            dc.addParam(contentHostIdentifier);
-            dc.addParam(new Long(contentLanguage));
-
-            dc.loadResult();
+		final String INSERT_TEMP_TABLE = "INSERT INTO " + tempTableName + " (working_inode, live_inode, identifier, parent_path, asset_name, host_identifier, language_id) VALUES(?,?,?,?,?,?,?)";
+		boolean hasResultsToCheck = false;
+		while (contentFile.readRecord()) {
+			hasResultsToCheck = true;
+			String contentIdentifier = null;
+			try {
+				contentIdentifier = getStringIfNotBlank("identifier",
+						contentFile.get(2));
+				final String workingInode = getStringIfNotBlank(
+						"working_inode", contentFile.get(0));
+				final String liveInode = getStringIfNotBlank("live_inode",
+						contentFile.get(1));
+				final String contentParentPath = getStringIfNotBlank(
+						"parent_path", contentFile.get(3));
+				final String contentName = getStringIfNotBlank("asset_name",
+						contentFile.get(4));
+				final String contentHostIdentifier = getStringIfNotBlank(
+						"host_identifier", contentFile.get(5));
+				final String contentLanguage = getStringIfNotBlank(
+						"language_id", contentFile.get(6));
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(workingInode);
+				dc.addParam(liveInode);
+				dc.addParam(contentIdentifier);
+				dc.addParam(contentParentPath);
+				dc.addParam(contentName);
+				dc.addParam(contentHostIdentifier);
+				dc.addParam(new Long(contentLanguage));
+				dc.loadResult();
+			} catch (DotDataException e) {
+				contentFile.close();
+				final String assetId = UtilMethods.isSet(contentIdentifier) ? contentIdentifier
+						: "";
+				throw new DotDataException(
+						"An error occured when generating temp table for asset: "
+								+ assetId, e);
+			}
         }
         contentFile.close();
+        if (!hasResultsToCheck) {
+        	return;
+        }
 
         // Compare the data from the CSV to the local database data and see if
         // we have conflicts.
@@ -258,6 +278,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
             String insertSQL = new StringBuilder("INSERT INTO ")
                     .append(getIntegrityType().getResultsTableName())
+                    .append(" (" + getIntegrityType().getFirstDisplayColumnLabel() + ", local_working_inode, local_live_inode, remote_working_inode, remote_live_inode, ") 
+                    .append("local_identifier, remote_identifier, endpoint_id, language_id)")
                     .append(" select DISTINCT ")
                     .append(fullContentlet)
                     .append(" as ")
@@ -376,4 +398,32 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
         }
         return keyword;
     }
+
+	/**
+	 * A simple utility method that throws an exception if the {@code value}
+	 * parameter is either null or an empty String. This alerts the user when
+	 * the data to be checked has an incorrect value.
+	 * <p>
+	 * This is useful when columns of a DB table DO NOT allow null/empty values.
+	 * Only Oracle considers that a null or an empty String are the same,
+	 * whereas the other DBs don't. Therefore, a column value with an empty
+	 * String can be saved, even if it's not valid.
+	 * 
+	 * @param columnName
+	 *            - The name of the DB column that forbids null/empty values.
+	 * @param value
+	 *            - The value that is supposed to be saved into the DB column.
+	 * @return The value itself if it's not null or empty.
+	 * @throws DotDataException
+	 *             If the value of the column is null or empty.
+	 */
+	public static String getStringIfNotBlank(String columnName, String value)
+			throws DotDataException {
+		if (StringUtils.isBlank(value)) {
+			throw new DotDataException("The value of the column '" + columnName
+					+ "' cannot be null/empty");
+		}
+		return value;
+	}
+
 }
