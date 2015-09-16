@@ -292,7 +292,7 @@ gulp.task('ghPages-clone', ['package-release'], function (done) {
 
   var options = {
     cwd: __dirname,
-    timeout: 60000
+    timeout: 300000
   }
   if (fs.existsSync(__dirname + '/gh_pages')) {
     del.sync('./gh_pages')
@@ -315,7 +315,7 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
 
   var options = {
     cwd: __dirname + '/gh_pages',
-    timeout: 60000
+    timeout: 300000
   }
 
   var gitAdd = function (opts) {
