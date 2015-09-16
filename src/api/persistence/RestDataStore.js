@@ -15,10 +15,11 @@ let transformValidResponse = function (response) {
   let path = response.url
   result.path = path.substring(path.indexOf('/', 8)) // http://foo.com/thisIsThePathWeMean
   result.key = path.substring(path.lastIndexOf('/') + 1);
-  if (response.body) {
-    return response.text().then((text) => {
-      if (text) {
-        result.entity = JSON.parse(text)
+  let contentType =response.headers.get('Content-Type')
+  if (contentType && contentType.toLowerCase().includes('json')) {
+    return response.json().then((json) => {
+      if (json) {
+        result.entity = json
       }
       return result
     }).catch((e) => {
@@ -146,6 +147,7 @@ export let RestDataStore = {
     })
   },
   getItem(path) {
+
     return new Promise((resolve, reject) => {
       remoteGet(path).then((response) => {
         resolve(response.entity)
