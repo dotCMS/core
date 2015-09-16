@@ -7,9 +7,9 @@ var pConfig = require('./package.json')
 var replace = require('gulp-replace')
 var ts = require('gulp-typescript');
 var merge = require('merge2');
+var karmaServer = require('karma').Server
 var imports = {
   exec: require('child_process').exec,
-  karma: require('karma').server,
   webServer: require('gulp-webserver')
 }
 
@@ -52,34 +52,96 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
+var project = {
+  server: null,
+  /**
+   * Configure the proxy and start the webserver.
+   */
+  startServer: function () {
+    var http = require('http');
+    var proxy = require('proxy-middleware');
+    var connect = require('connect');
+    var serveStatic = require('serve-static');
+    var serveIndex = require('serve-index');
+    var open = require('open');
+    var url = require('url');
 
-gulp.task('karma', [], function (done) {
-  imports.karma.start({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false,
-    usePolling: false
-  }, done);
+    var proxyBasePaths = [
+      'admin',
+      'html',
+      'api',
+      'c',
+      'dwr',
+      'DotAjaxDirector'
+    ]
+
+    var app = connect();
+
+    // proxy API requests to the node server
+    proxyBasePaths.forEach(function (pathSegment) {
+      var target = config.proxyHost + '/' + pathSegment;
+      var proxyOptions = url.parse(target)
+      proxyOptions.route = '/' + pathSegment
+      proxyOptions.preserveHost = true
+      app.use(function (req, res, next) {
+        if (req.url.indexOf('/' + pathSegment + '/') === 0) {
+          console.log("Forwarding request: ", req.url)
+          proxy(proxyOptions)(req, res, next)
+        } else {
+          next()
+        }
+      })
+    })
+    app.use(serveStatic('./'))
+    app.use(serveIndex('./'))
+
+    project.server = http.createServer(app)
+        .listen(config.appPort)
+        .on('listening', function () {
+          console.log('Started connect web server on ' + config.appHost)
+          if (config.args.open) {
+            open(config.appHost + '/index-dev.html')
+          }
+          else {
+            console.log("add the '-o' flag to automatically open the default browser")
+          }
+        })
+  },
+
+  stopServer: function (callback) {
+    project.server.close(callback)
+  },
+
+  runTests: function (singleRun, intTests, callback) {
+    var configFile = __dirname + (intTests === true ? '/karma-it.conf.js' : '/karma.conf.js')
+    new karmaServer({
+      configFile: configFile,
+      singleRun: singleRun
+    }, callback).start()
+  }
+}
+
+gulp.task('test', [], function (done) {
+  project.runTests(true, false, done)
 })
 
-gulp.task('i-test', function (done) {
-
-  imports.karma.start({
-    configFile: __dirname + '/karma.conf.js',
-    singleRun: false,
-    usePolling: false,
-    proxies: {
-      '/api': config.proxyHost + '/api'
-    },
-    jspm: {
-      useBundles: true,
-      loadFiles: ['src/**/*.it.es6'],
-      serveFiles: ['src/**/*.ts', 'src/*/{*.es6,!(it|spec)/**/*.es6}',
-        'build/**/*.js',
-        'thirdparty/**/*.{es6,ts}']
-    }
-  }, done)
+gulp.task('itest', function (done) {
+  project.startServer()
+  project.runTests(true, true, function(){
+    project.stopServer(done)
+  })
+})
 
 
+gulp.task('tdd', [], function (done) {
+  project.runTests(false, false, done)
+})
+
+gulp.task('itdd', ['dev-watch'], function (done) {
+  project.startServer()
+  project.runTests(false, true, function(){
+    project.stopServer(done)
+  })
 })
 
 
@@ -123,56 +185,7 @@ gulp.task('unbundle', ['default'], function (done) {
 
 
 gulp.task('start-server', function (done) {
-
-  var http = require('http');
-  var proxy = require('proxy-middleware');
-  var connect = require('connect');
-  var serveStatic = require('serve-static');
-  var serveIndex = require('serve-index');
-  var open = require('open');
-  var url = require('url');
-
-  var proxyBasePaths = [
-    'admin',
-    'html',
-    'api',
-    'c',
-    'dwr',
-    'DotAjaxDirector'
-  ]
-
-  var app = connect();
-
-  // proxy API requests to the node server
-  proxyBasePaths.forEach(function (pathSegment) {
-    var target = config.proxyHost + '/' + pathSegment;
-    var proxyOptions = url.parse(target)
-    proxyOptions.route = '/' + pathSegment
-    proxyOptions.preserveHost = true
-    app.use(function (req, res, next) {
-      if (req.url.indexOf('/' + pathSegment + '/') === 0) {
-        console.log("Forwarding request: ", req.url)
-        proxy(proxyOptions)(req, res, next)
-      } else {
-        next()
-      }
-    })
-  })
-  app.use(serveStatic('./'))
-  app.use(serveIndex('./'))
-
-  http.createServer(app)
-      .listen(config.appPort)
-      .on('listening', function () {
-        console.log('Started connect web server on ' + config.appHost)
-        if (config.args.open) {
-          open(config.appHost + '/index-dev.html')
-        }
-        else {
-          console.log("add the '-o' flag to automatically open the default browser")
-        }
-      })
-
+  project.startServer()
   done()
 })
 
@@ -203,7 +216,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
 
   archive.append(fs.createReadStream('./dist/core-web.min.js'), {name: 'core-web.min.js'})
       .append(fs.createReadStream('./dist/core-web.js'), {name: 'core-web.js'})
-    //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
+      //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
@@ -280,8 +293,8 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
           .on('error', function (err) {
             throw err
           }).on('end', function () {
-            console.log("All done.")
-          })
+        console.log("All done.")
+      })
     })
   })
 
@@ -427,11 +440,11 @@ gulp.task('bundle-dist', ['compile-all'], function (done) {
         minify: false,
         sourceMaps: false
       }).then(function () {
-        gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', done);
-      }).catch(function (e) {
-        console.log("Error creating bundle with JSPM: ", e)
-        throw e
-      })
+    gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', done);
+  }).catch(function (e) {
+    console.log("Error creating bundle with JSPM: ", e)
+    throw e
+  })
 })
 
 /**
@@ -462,11 +475,11 @@ gulp.task('bundle-minified', ['compile-all'], function (done) {
         minify: true,
         sourceMaps: false
       }).then(function () {
-        gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish', done);
-      }).catch(function (e) {
-        console.log("Error creating bundle with JSPM: ", e);
-        throw e;
-      })
+    gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish', done);
+  }).catch(function (e) {
+    console.log("Error creating bundle with JSPM: ", e);
+    throw e;
+  })
 })
 
 
@@ -481,9 +494,9 @@ gulp.task('bundle-dev', ['compile-all'], function (done) {
         minify: false,
         sourceMaps: false // Bugged :~(
       }).then(done).catch(function (e) {
-        console.log("Error creating bundle with JSPM: ", e);
-        throw e;
-      })
+    console.log("Error creating bundle with JSPM: ", e);
+    throw e;
+  })
 })
 
 
