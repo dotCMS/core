@@ -275,28 +275,39 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 			FileAsset fa = fromContentlet(fileAssetCont);
 			String ext = fa.getExtension();
 			if(!fileNameExists(host, folder, newName+ "." +ext, id.getId())){			    
-			    if(fa.isLive())
-					isfileAssetContLive = true;				
-				File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
+			    if(fa.isLive()) {
+					isfileAssetContLive = true;
+			    }
+			    File oldFile = fileAssetCont.getBinary(BINARY_FIELD);
 				File newFile = new File(oldFile.getPath().substring(0,oldFile.getPath().indexOf(oldFile.getName()))+newName+"."+ext);
-				FileUtils.moveFile(oldFile, newFile);
-				fileAssetCont.setInode(null);
-				fileAssetCont.setFolder(folder.getInode());
-				fileAssetCont.setBinary(BINARY_FIELD, newFile);
-				final String newFileName=newName+"."+ext;
-				fileAssetCont.setStringProperty(FileAssetAPI.TITLE_FIELD, newFileName);
-				fileAssetCont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
-				fileAssetCont= APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
-				if(isfileAssetContLive)
-					 APILocator.getVersionableAPI().setLive(fileAssetCont);
-
-				LiveCache.removeAssetFromCache(fileAssetCont);
-		    	LiveCache.addToLiveAssetToCache(fileAssetCont);
-		    	WorkingCache.removeAssetFromCache(fileAssetCont);
-		   		WorkingCache.addToWorkingAssetToCache(fileAssetCont);
-		   		RefreshMenus.deleteMenu(folder);
-		   		CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
-		   		CacheLocator.getIdentifierCache().removeFromCacheByVersionable(fileAssetCont);
+				try {
+					FileUtils.copyFile(oldFile, newFile);
+					fileAssetCont.setInode(null);
+					fileAssetCont.setFolder(folder.getInode());
+					fileAssetCont.setBinary(BINARY_FIELD, newFile);
+					final String newFileName=newName+"."+ext;
+					fileAssetCont.setStringProperty(FileAssetAPI.TITLE_FIELD, newFileName);
+					fileAssetCont.setStringProperty(FileAssetAPI.FILE_NAME_FIELD, newFileName);
+					fileAssetCont= APILocator.getContentletAPI().checkin(fileAssetCont, user, respectFrontendRoles);
+					if(isfileAssetContLive) {
+						 APILocator.getVersionableAPI().setLive(fileAssetCont);
+					}
+					LiveCache.removeAssetFromCache(fileAssetCont);
+					LiveCache.addToLiveAssetToCache(fileAssetCont);
+					WorkingCache.removeAssetFromCache(fileAssetCont);
+					WorkingCache.addToWorkingAssetToCache(fileAssetCont);
+					RefreshMenus.deleteMenu(folder);
+					CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
+					CacheLocator.getIdentifierCache().removeFromCacheByVersionable(fileAssetCont);
+				} catch (Exception e) {
+					Logger.error(this, "Unable to rename file asset to "
+							+ newName + " for asset " + id.getId(), e);
+					throw e;
+				} finally {
+					if (newFile != null) {
+						FileUtils.deleteQuietly(newFile);
+					}
+				}
 				return true;
 			}
 		}

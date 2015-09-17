@@ -106,45 +106,26 @@
 <html>
     <head>
     <link rel="shortcut icon" href="http://<%=defaultHost.getHostname()%>/home/favicon.ico"" type="image/x-icon">
-    <script>
-        function showError(){
-        
-        }
-        
-        
-    </script>
+
     
         <title><%= LanguageUtil.get(pageContext,"500-page-title") %></title>
 
 	<style type="text/css">
 		body{
-			font-family: verdana, helvetica, san-serif;
+			font-family: helvetica, san-serif;
 			padding:20px;
+			margin-top:0px;
 		}
 		#main {
 			width: 400px;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
-			margin-left:auto;
-			margin-right:auto;
 		}
 		#footer {
 			text-align:center;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
 		}
-        h1 {
-	        font-family: verdana, helvetica, san-serif;
-	        font-size: 20px;
-	        text-decoration: none;
-	        font-weight: normal;
-        }
-        h2{
-	        font-family: verdana, helvetica, san-serif;
-	        font-size: 18px;
-	        text-decoration: none;
-	        font-weight: normal;
-        }
+		h1 {
+			font-size: 20px;
+
+		}
 		#logo{
 			float: left;
 		}
@@ -156,21 +137,17 @@
     </head>
     <body>
         <div id="main">
-			<div id="logo">
-				<a href="http://<%=portalUrl%>/"><img src="<%=defaultImage%>" width="140"  hspace="10" border="0" alt="<%=LanguageUtil.get(pageContext,"500-image-title")%>" title="<%=LanguageUtil.get(pageContext,"500-image-title")%>"  /></a>
-			</div>
+
             <div id="text">
 	
                 <h1><%= LanguageUtil.get(pageContext,"500-title") %></h1>
 		
-                <p><%= LanguageUtil.get(pageContext,"500-body1") %></p>
+
                 <p><%= LanguageUtil.get(pageContext,"500-body2") %></p>
                 
             </div>
         </div>
-        <br clear="all"/>&nbsp;<br clear="all"/>
-		<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"500-copywright") %></a></div>
-        <br clear="all"/>&nbsp;<br clear="all"/>
+
 
 		
 		</div>

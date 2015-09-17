@@ -7,15 +7,11 @@
     
     <taskdef resource="cactus.tasks">
         <classpath>
-            <!--<pathelement location="${lib.app}/cactus.core.framework.uberjar.javaEE.14-1.8.0.jar"/>-->
-            <!--<pathelement location="${lib.app}/cactus.integration.shared.api-1.8.0.jar"/>-->
-            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cactus.integration.ant-1.8.0_1.jar"/>
-            <pathelement location="$${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cargo-ant-0.9_1.jar"/>
-            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cargo-core-uberjar-0.9_1.jar"/>
-            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.commons-httpclient-3.1_1.jar"/>
-            <!--<pathelement location="${lib.app}/lib/commons-logging-1.1.1.jar"/>-->
-            <!--<pathelement location="${lib.app}/lib/aspectjrt-1.5.3.jar"/>-->
-            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.tika-app-1.3_1.jar"/>
+            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cactus.integration.ant-1.8.0_2.jar"/>
+            <pathelement location="$${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cargo-ant-0.9_2.jar"/>
+            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.cargo-core-uberjar-0.9_2.jar"/>
+            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.commons-httpclient-3.1_2.jar"/>
+            <pathelement location="${tomcat.dir}/webapps/ROOT/WEB-INF/lib/dot.tika-app-1.3_3.jar"/>
         </classpath>
     </taskdef>
     

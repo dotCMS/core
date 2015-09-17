@@ -1,7 +1,19 @@
 package com.dotmarketing.filters;
 
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URLDecoder;
+import java.util.Set;
 
-import com.dotcms.repackage.org.owasp.esapi.errors.EncodingException;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.logging.LogFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -18,15 +30,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Xss;
-import org.apache.commons.logging.LogFactory;
-
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URLDecoder;
-import java.util.Set;
 
 public class CMSFilter implements Filter {
 
@@ -274,7 +277,7 @@ public class CMSFilter implements Filter {
 			Logger.warn(this, "XSS Found in request URI: " +uri );
 			try {
 				rewrite = Xss.encodeForURL(uri);
-			} catch (EncodingException e) {
+			} catch (Exception e) {
 				Logger.error(this, "Encoding failure. Unable to encode URI " + uri);
 				throw new ServletException(e.getMessage(), e);
 			}

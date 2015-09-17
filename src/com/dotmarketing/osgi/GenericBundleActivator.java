@@ -9,6 +9,9 @@ import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
+import com.dotmarketing.business.cache.CacheOSGIService;
+import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -60,8 +63,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
+    private CacheOSGIService cacheOSGIService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
+    private Collection<Class<CacheProvider>> cacheProviders;
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
@@ -91,6 +96,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         forceToolBoxLoading( context );
         //Forcing the loading of the WorkflowService
         forceWorkflowServiceLoading( context );
+        //Forcing the loading of the CacheOSGIService
+        forceCacheProviderServiceLoading(context);
     }
 
     /**
@@ -199,6 +206,31 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 if ( serviceRefSelected == null ) {
                     //Forcing the registration of our required services
                     workflowAPI.registerBundleService();
+                }
+            }
+        }
+    }
+
+    /**
+     * Is possible on certain scenarios to have our CacheProviderAPI without initialization, or most probably a CacheProviderAPI without
+     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
+     *
+     * @param context
+     */
+    private void forceCacheProviderServiceLoading ( BundleContext context ) {
+
+        //Getting the service to register our CacheProvider
+        ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
+        if ( serviceRefSelected == null ) {
+
+            //Forcing the loading of the CacheOSGIService
+            CacheProviderAPI cacheProviderAPI = APILocator.getCacheProviderPI();
+            if ( cacheProviderAPI != null ) {
+
+                serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
+                if ( serviceRefSelected == null ) {
+                    //Forcing the registration of our required services
+                    cacheProviderAPI.registerBundleService();
                 }
             }
         }
@@ -532,6 +564,34 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Register a given CacheProvider implementation
+     *
+     * @param context
+     * @param provider
+     * @throws InstantiationException
+     * @throws IllegalAccessException
+     */
+    @SuppressWarnings ( "unchecked" )
+    protected void registerCacheProvider ( BundleContext context, Class<CacheProvider> provider ) throws Exception {
+
+        //Getting the service to register our Cache provider implementation
+        ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
+        if ( serviceRefSelected == null ) {
+            return;
+        }
+
+        if ( cacheProviders == null ) {
+            cacheProviders = new ArrayList<>();
+        }
+
+        this.cacheOSGIService = (CacheOSGIService) context.getService(serviceRefSelected);
+        this.cacheOSGIService.addCacheProvider(provider);
+        cacheProviders.add(provider);
+
+        Logger.info(this, "Added Cache Provider: " + provider.getName());
+    }
+
+    /**
      * Register a ViewTool service using a ToolInfo object
      *
      * @param context
@@ -610,6 +670,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unregisterServices ( BundleContext context ) throws Exception {
 
         unregisterActionlets();
+        unregisterCacheProviders();
         unregisterViewToolServices();
         unregisterPreHooks();
         unregisterPostHooks();
@@ -672,7 +733,21 @@ public abstract class GenericBundleActivator implements BundleActivator {
             for ( WorkFlowActionlet actionlet : actionlets ) {
 
                 this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
-                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName() );
+                Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName());
+            }
+        }
+    }
+
+    /**
+     * Unregister the registered CacheProviders services
+     */
+    protected void unregisterCacheProviders () {
+
+        if ( this.cacheOSGIService != null && cacheProviders != null ) {
+            for ( Class<CacheProvider> provider : cacheProviders ) {
+
+                this.cacheOSGIService.removeCacheProvider(provider);
+                Logger.info(this, "Removed Cache Provider: " + provider.getCanonicalName());
             }
         }
     }
