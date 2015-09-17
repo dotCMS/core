@@ -195,7 +195,6 @@
                memoryinitialsize="256m"
                memorymaximumsize="512m"
                includeantruntime="false">
-            <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
