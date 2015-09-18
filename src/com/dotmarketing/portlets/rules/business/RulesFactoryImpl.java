@@ -809,7 +809,7 @@ public class RulesFactoryImpl implements RulesFactory {
         RuleActionParameter r = new RuleActionParameter();
         r.setId(row.get("id").toString());
         r.setRuleActionId(row.get("rule_action_id").toString());
-        r.setKey(row.get("key").toString());
+        r.setKey(row.get("paramkey").toString());
         r.setValue(row.get("value").toString());
         return r;
     }
