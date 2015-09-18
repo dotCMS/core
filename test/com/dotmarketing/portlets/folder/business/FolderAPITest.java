@@ -73,7 +73,7 @@ public class FolderAPITest {
 		long langId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
 		
 		//create folders and assets
-		Folder ftest = APILocator.getFolderAPI().createFolders("/folderSourceTest"+System.currentTimeMillis(), demo, user, false);
+		Folder ftest = APILocator.getFolderAPI().createFolders("/folderMoveSourceTest"+System.currentTimeMillis(), demo, user, false);
 		Folder ftest1 = APILocator.getFolderAPI().createFolders(ftest.getPath()+"/ff1", demo, user, false);
 
 		//adding page
@@ -98,7 +98,30 @@ public class FolderAPITest {
 		contentAsset.setFolder(ftest1.getInode());
 		contentAsset=APILocator.getContentletAPI().checkin(contentAsset, user, false);
 		APILocator.getContentletAPI().publish(contentAsset, user, false);
+		
+		/*adding menu link*/
+		String linkStr="link";
+  		Link link = new Link();
+		link.setTitle(linkStr);
+		link.setFriendlyName(linkStr);
+		link.setParent(ftest1.getInode());
+		link.setTarget("_blank");
+		link.setModUser(user.getUserId());
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath("/about-us/locations/index", demo, langId, true);
 
+  		Identifier internalLinkIdentifier = APILocator.getIdentifierAPI().findFromInode(page.getIdentifier());
+		link.setLinkType(Link.LinkType.INTERNAL.toString());
+		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+		link.setProtocal("http://");
+
+		StringBuffer myURL = new StringBuffer();
+		if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
+			myURL.append(demo.getHostname());
+		}
+		myURL.append(internalLinkIdentifier.getURI());
+		link.setUrl(myURL.toString());
+		WebAssetFactory.createAsset(link, user.getUserId(), ftest1);
+		APILocator.getVersionableAPI().setLive(link);
 
 		Folder ftest2 = APILocator.getFolderAPI().createFolders(ftest.getPath()+"/ff1/ff2", demo, user, false);
 
@@ -118,30 +141,57 @@ public class FolderAPITest {
 		APILocator.getContentletAPI().publish(contentAsset, user, false);
 
 		/*Adding menu link*/
-		String linkStr="link";
-  		Link link = new Link();
-		link.setTitle(linkStr);
-		link.setFriendlyName(linkStr);
-		link.setParent(ftest2.getInode());
-		link.setTarget("_blank");
-		link.setModUser(user.getUserId());
-		IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath("/about-us/locations/index", demo, langId, true);
+		String linkStr2="link2";
+  		Link link2 = new Link();
+		link2.setTitle(linkStr2);
+		link2.setFriendlyName(linkStr2);
+		link2.setParent(ftest2.getInode());
+		link2.setTarget("_blank");
+		link2.setModUser(user.getUserId());
+		page = APILocator.getHTMLPageAssetAPI().getPageByPath("/about-us/locations/index", demo, langId, true);
 
-  		Identifier internalLinkIdentifier = APILocator.getIdentifierAPI().findFromInode(page.getIdentifier());
-		link.setLinkType(Link.LinkType.INTERNAL.toString());
-		link.setInternalLinkIdentifier(internalLinkIdentifier.getId());
-		link.setProtocal("http://");
+  		internalLinkIdentifier = APILocator.getIdentifierAPI().findFromInode(page.getIdentifier());
+		link2.setLinkType(Link.LinkType.INTERNAL.toString());
+		link2.setInternalLinkIdentifier(internalLinkIdentifier.getId());
+		link2.setProtocal("http://");
 
-		StringBuffer myURL = new StringBuffer();
+		myURL = new StringBuffer();
 		if(InodeUtils.isSet(internalLinkIdentifier.getHostId())) {
 			myURL.append(demo.getHostname());
 		}
 		myURL.append(internalLinkIdentifier.getURI());
-		link.setUrl(myURL.toString());
-		WebAssetFactory.createAsset(link, user.getUserId(), ftest2);
-		//APILocator.getMenuLinkAPI().save(link2,ftest3, user, false);
-		APILocator.getVersionableAPI().setLive(link);
+		link2.setUrl(myURL.toString());
+		WebAssetFactory.createAsset(link2, user.getUserId(), ftest2);
+		APILocator.getVersionableAPI().setLive(link2);
 		
+		/*Adding file asset to folder */
+		String fileTitle="logo.gif";
+		String portal=APILocator.getFileAssetAPI().getRealAssetsRootPath().substring(0, APILocator.getFileAssetAPI().getRealAssetsRootPath().indexOf("assets"))+"portal/images/logo.gif";
+		File file = new File(portal);
+		File destFile = new File(APILocator.getFileAssetAPI().getRealAssetsRootPath()+"/tmp_upload/"+fileTitle);
+		FileChannel inputChannel = null;
+		FileChannel outputChannel = null;
+		try {
+			inputChannel = new FileInputStream(file).getChannel();
+			outputChannel = new FileOutputStream(destFile).getChannel();
+			outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
+		} finally {
+			inputChannel.close();
+			outputChannel.close();
+		}
+
+		Contentlet contentAsset3=new Contentlet();
+		Structure st = StructureFactory.getStructureByVelocityVarName("FileAsset");
+		contentAsset3.setStructureInode(st.getInode());
+		contentAsset3.setHost(demo.getIdentifier());
+		contentAsset3.setProperty(FileAssetAPI.FILE_NAME_FIELD, fileTitle);
+		contentAsset3.setProperty(FileAssetAPI.BINARY_FIELD, destFile);
+		contentAsset3.setLanguageId(langId);
+		contentAsset3.setProperty(FileAssetAPI.TITLE_FIELD, fileTitle);
+		contentAsset3.setFolder(ftest2.getInode());
+		contentAsset3=APILocator.getContentletAPI().checkin(contentAsset3, user, false);
+		APILocator.getContentletAPI().publish(contentAsset3, user, false);
+				
 		//adding folder
 		Folder ftest3 = APILocator.getFolderAPI().createFolders(ftest.getPath()+"/ff1/ff3", demo, user, false);
 
@@ -159,29 +209,69 @@ public class FolderAPITest {
 		contentAsset.setFolder(ftest3.getInode());
 		contentAsset=APILocator.getContentletAPI().checkin(contentAsset, user, false);
 		APILocator.getContentletAPI().publish(contentAsset, user, false);
+		
+		/*adding page content*/
+		String title="movetest2";
+		Contentlet contentAsset2=new Contentlet();
+		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
+		contentAsset2.setStructureInode(st.getInode());
+		contentAsset2.setHost(demo.getIdentifier());
+		contentAsset2.setProperty("title", title);
+		contentAsset2.setLanguageId(langId);
+		contentAsset2.setProperty("body", title);
+		contentAsset2.setFolder(ftest1.getInode());
+		contentAsset2=APILocator.getContentletAPI().checkin(contentAsset2, user, false);
+		APILocator.getContentletAPI().publish(contentAsset2, user, false);
+		Container container =null;
+		List<Container> containers = APILocator.getContainerAPI().findContainersForStructure(st.getInode());
+		for(Container c : containers){
+			if(c.getTitle().equals("Large Column (lg-1)")){
+				container=c;
+				break;
+			}
+		}
+		/*Relate content to page*/
+		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
+		MultiTreeFactory.saveMultiTree(m);
+		
 
-		Folder destinationftest = APILocator.getFolderAPI().createFolders("/folderDestinationTest"+System.currentTimeMillis(), demo, user, false);
+		Folder destinationftest = APILocator.getFolderAPI().createFolders("/folderMoveDestinationTest"+System.currentTimeMillis(), demo, user, false);
 
 		//moving folder and assets
+		Thread.sleep(2000);
 		APILocator.getFolderAPI().move(ftest1, destinationftest, user, false);
-		Thread.sleep(3000);
+				
 		//validate that the folder and assets were moved
 		Folder  newftest1 = APILocator.getFolderAPI().findFolderByPath(destinationftest.getPath()+ftest1.getName(), demo, user, false);
 		Assert.assertTrue("Folder ("+ftest1.getName()+") wasn't moved", newftest1 != null);
 
+		List<Link> links = APILocator.getMenuLinkAPI().findFolderMenuLinks(newftest1);
+		Assert.assertTrue(links.size()==1 && links.get(0).getTitle().equals(linkStr));
+		
+		List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(newftest1,user, false);
+		Assert.assertTrue(pages.size() == 1 && pages.get(0).getTitle().equals(page0Str));
+		
 		Folder  newftest2 = APILocator.getFolderAPI().findFolderByPath(newftest1.getPath()+ftest2.getName(), demo, user, false);
 		Assert.assertNotNull(newftest2);
-		Thread.sleep(3000);
-		List<IHTMLPage> pages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(newftest2, user, false);
+		
+		pages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(newftest2, user, false);
 		Assert.assertTrue(pages.size() == 1 && pages.get(0).getTitle().equals(page1Str));
 		
-		List<Link> links = APILocator.getMenuLinkAPI().findFolderMenuLinks(newftest2);
-		Assert.assertTrue(links.size()==1 && links.get(0).getTitle().equals(linkStr));
+		links = APILocator.getMenuLinkAPI().findFolderMenuLinks(newftest2);
+		Assert.assertTrue(links.size()==1 && links.get(0).getTitle().equals(linkStr2));
 
+		List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(newftest2, user, false);
+		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(fileTitle));
+				
 		Folder  newftest3 = APILocator.getFolderAPI().findFolderByPath(newftest1.getPath()+ftest3.getName(), demo, user, false);
 		Assert.assertNotNull(newftest3);
+		
 		pages = APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(newftest3,user, false);
 		Assert.assertTrue(pages.size() == 1 && pages.get(0).getTitle().equals(page2Str));		
+		
+		List<MultiTree> mt= MultiTreeFactory.getMultiTree(pages.get(0).getIdentifier());
+		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
+		
 	}
 
 	/**
@@ -199,7 +289,7 @@ public class FolderAPITest {
 		 * Test 1:
 		 * copy a page in the same folder
 		 */
-		Folder ftest = APILocator.getFolderAPI().createFolders("/foldercopySourceTest"+System.currentTimeMillis(), demo, user, false);
+		Folder ftest = APILocator.getFolderAPI().createFolders("/folderCopySourceTest"+System.currentTimeMillis(), demo, user, false);
 		//adding page
 		String pageStr ="mypage";
 		List<Template> templates = APILocator.getTemplateAPI().findTemplatesAssignedTo(demo);
@@ -225,7 +315,7 @@ public class FolderAPITest {
 
 		//copy page in same folder
 		APILocator.getContentletAPI().copyContentlet(contentAsset, ftest, user, false);
-		Thread.sleep(3000);
+		
 		IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(ftest.getPath()+pageStr, demo, APILocator.getLanguageAPI().getDefaultLanguage().getId(), false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr));
 		page = APILocator.getHTMLPageAssetAPI().getPageByPath(ftest.getPath()+pageStr+"_COPY", demo, langId, false);
@@ -327,7 +417,6 @@ public class FolderAPITest {
 		myURL.append(internalLinkIdentifier.getURI());
 		link.setUrl(myURL.toString());
 		WebAssetFactory.createAsset(link, user.getUserId(), ftest1);
-		//APILocator.getMenuLinkAPI().save(link,ftest1, user, false);
 		APILocator.getVersionableAPI().setLive(link);
 		 
 		/*Adding page and file asset to folder fcopy2*/
@@ -391,7 +480,6 @@ public class FolderAPITest {
 		myURL.append(internalLinkIdentifier.getURI());
 		link2.setUrl(myURL.toString());
 		WebAssetFactory.createAsset(link2, user.getUserId(), ftest3);
-		//APILocator.getMenuLinkAPI().save(link2,ftest3, user, false);
 		APILocator.getVersionableAPI().setLive(link2);
 
 		String pageStr3="page3";
@@ -408,11 +496,27 @@ public class FolderAPITest {
 		contentAsset6=APILocator.getContentletAPI().checkin(contentAsset6, user, false);
 		APILocator.getContentletAPI().publish(contentAsset6, user, false);
 		
+		String title3="test3";
+		Contentlet contentAsset7=new Contentlet();
+		st = StructureFactory.getStructureByVelocityVarName("webPageContent");
+		contentAsset7.setStructureInode(st.getInode());
+		contentAsset7.setHost(demo.getIdentifier());
+		contentAsset7.setProperty("title", title3);
+		contentAsset7.setLanguageId(langId);
+		contentAsset7.setProperty("body", title3);
+		contentAsset7.setFolder(ftest1.getInode());
+		contentAsset7=APILocator.getContentletAPI().checkin(contentAsset7, user, false);
+		APILocator.getContentletAPI().publish(contentAsset7, user, false);
+		
+		/*Relate content to page*/
+		MultiTree m2 = new MultiTree(contentAsset6.getIdentifier(), container.getIdentifier(), contentAsset7.getIdentifier());
+		MultiTreeFactory.saveMultiTree(m2);
+		
 		/*Copy folder*/
+		Thread.sleep(2000);
 		Folder fcopydest = APILocator.getFolderAPI().createFolders("/folderCopyDestinationTest"+System.currentTimeMillis(), demo, user, false);
 		APILocator.getFolderAPI().copy(ftest1, fcopydest, user, false);
-		Thread.sleep(3000);
-
+		
 		/*validate that the folderfcopy1 exist*/
 		Folder  newftest1 = APILocator.getFolderAPI().findFolderByPath(fcopydest.getPath()+ftest1.getName(), demo, user, false);
 		Assert.assertTrue("Folder ("+ftest1.getName()+") wasn't moved", newftest1 != null);
@@ -423,7 +527,7 @@ public class FolderAPITest {
 
 		List<MultiTree> mt= MultiTreeFactory.getMultiTree(page.getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
-
+		Thread.sleep(3000);
 		List<FileAsset> files = APILocator.getFileAssetAPI().findFileAssetsByFolder(newftest1, user, false);
 		Assert.assertTrue(files.size()==1 && files.get(0).getTitle().equals(fileTitle));
 		
@@ -449,6 +553,10 @@ public class FolderAPITest {
 		
 		page = APILocator.getHTMLPageAssetAPI().getPageByPath(newftest3.getPath()+pageStr3, demo, langId, false);
 		Assert.assertTrue(page != null && page.getTitle().contains(pageStr3));
+		
+		mt= MultiTreeFactory.getMultiTree(page.getIdentifier());
+		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset7.getIdentifier()) );
+		
 	}
 
 

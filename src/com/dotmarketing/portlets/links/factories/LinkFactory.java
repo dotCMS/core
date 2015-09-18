@@ -437,7 +437,12 @@ public class LinkFactory {
         WebAsset workingWebAsset = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion( identifier, APILocator.getUserAPI().getSystemUser(), false );
 
         // gets old parent
-        Folder oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
+        Folder oldParent = null;
+        try{
+        	oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
+        }catch(Exception e){
+        	Logger.debug(LinkFactory.class,"link old parent folder reference not found");
+        }
         /*oldParent.deleteChild(workingWebAsset);
           if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
               oldParent.deleteChild(liveWebAsset);
@@ -480,13 +485,18 @@ public class LinkFactory {
 
         //Refresh the menus
         if ( parent != null ) {
-            RefreshMenus.deleteMenu( oldParent, parent );
+        	if(oldParent != null){
+        		RefreshMenus.deleteMenu( oldParent, parent );
+        	}else{
+        		RefreshMenus.deleteMenu(parent);
+        	}
             CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
         } else {
             RefreshMenus.deleteMenu( oldParent );
         }
-        CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
-
+        if(oldParent != null){
+        	CacheLocator.getNavToolCache().removeNav(oldParent.getHostId(), oldParent.getInode());
+        }
         return true;
     }
 
