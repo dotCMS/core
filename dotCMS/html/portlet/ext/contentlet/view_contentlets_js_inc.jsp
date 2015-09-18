@@ -1663,6 +1663,12 @@
                 }
         }
 
+        /* Displays the Push Publish dialog. If the content is archived, allow 
+        users to ONLY do a "Remove", not a "Push" or "Push & Remove". */
+        function remotePublish(objId, referrer, isArchived) {
+            pushHandler.showDialog(objId, false, isArchived);
+        }
+
         function fillResultsTable (headers, data) {
                 headerLength = headers.length;
                 var table = document.getElementById("results_table");
@@ -1880,7 +1886,7 @@
 
 
 						if(enterprise && sendingEndpoints && workflowMandatory=="false") {
-								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
+								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"sServerIcon\" onClick=\"remotePublish('" + cellData.inode + "','<%= referer %>', " + deleted + ");\"><%=LanguageUtil.get(pageContext, "Remote-Publish") %></div>";
 
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
