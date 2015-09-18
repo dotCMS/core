@@ -441,7 +441,7 @@ public class LinkFactory {
         try{
         	oldParent = APILocator.getFolderAPI().findParentFolder( workingWebAsset, APILocator.getUserAPI().getSystemUser(), false );
         }catch(Exception e){
-        	Logger.debug(LinkFactory.class,"link old parent folder reference not found");
+        	Logger.debug(LinkFactory.class,"link reference to old parent folder not found");
         }
         /*oldParent.deleteChild(workingWebAsset);
           if ((liveWebAsset != null) && (InodeUtils.isSet(liveWebAsset.getInode()))) {
@@ -474,9 +474,8 @@ public class LinkFactory {
             identifier.setHostId( host.getIdentifier() );
             identifier.setURI( '/' + currentLink.getInode() );
         }
-        //HibernateUtil.saveOrUpdate(identifier);
+        
         APILocator.getIdentifierAPI().updateIdentifierURI(currentLink, parent);
-        //APILocator.getIdentifierAPI().save( identifier );
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
         
         if(APILocator.getPermissionAPI().isInheritingPermissions(currentLink)) {
