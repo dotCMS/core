@@ -469,9 +469,9 @@ public class LinkFactory {
             identifier.setHostId( host.getIdentifier() );
             identifier.setURI( '/' + currentLink.getInode() );
         }
-
         //HibernateUtil.saveOrUpdate(identifier);
-        APILocator.getIdentifierAPI().save( identifier );
+        APILocator.getIdentifierAPI().updateIdentifierURI(currentLink, parent);
+        //APILocator.getIdentifierAPI().save( identifier );
         CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier.getId());
         
         if(APILocator.getPermissionAPI().isInheritingPermissions(currentLink)) {
