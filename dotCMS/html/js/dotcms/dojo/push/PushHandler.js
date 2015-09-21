@@ -48,7 +48,7 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
     	this.user = data;
     },
 
-    showDialog: function (assetId, displayDateFilter) {
+    showDialog: function (assetId, displayDateFilter, displayRemoveOnly) {
     	if(this.environmentStore==null) {
     		this.environmentStore = new dojox.data.JsonRestStore({ target: "/api/environment/loadenvironments/roleId/"+this.user.roleId, labelAttribute:"name", urlPreventCache: true});
 
@@ -60,11 +60,16 @@ dojo.declare("dotcms.dojo.push.PushHandler", null, {
         if (displayDateFilter != undefined && displayDateFilter != null) {
             dateFilter = displayDateFilter;
         }
+        var removeOnly = false;
+        if (displayRemoveOnly != undefined && displayRemoveOnly != null) {
+        	removeOnly = displayRemoveOnly;
+        }
 
         this.assetIdentifier = assetId;
         dialog = new dotcms.dijit.RemotePublisherDialog();
         dialog.title = this.title;
         dialog.dateFilter = dateFilter;
+        dialog.removeOnly = removeOnly;
         dialog.container = this;
         dialog.show();
 
