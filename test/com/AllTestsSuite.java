@@ -1,6 +1,7 @@
 package com;
 
 
+import com.dotcms.rest.api.v1.system.i18n.I8NResourceFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPITest;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
@@ -103,6 +104,7 @@ import com.dotmarketing.webdav.WebDavTest;
     ConditionGroupsRestAPITest.class,
     ConditionsRestAPITest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
+    I8NResourceFTest.class,
     ConditionletTest.class
 })
 public class AllTestsSuite {
