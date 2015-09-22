@@ -52,11 +52,11 @@ def usePureGradleBuild(){
     apply from: "${rootDir}/core.gradle"
     clean.dependsOn cleanPre3_5_Files
 }
-
-if(!project.hasProperty('useNewBuild') && project.'use-pre-3_5-build' == 'true'){
-    usePre3_5Build()
-} else {
+def useNewHotness = project.hasProperty('useNewBuild') ? project['useNewBuild'] != 'false' : project['use-pre-3_5-build'] == 'false'
+if(useNewHotness){
     usePureGradleBuild()
+} else {
+    usePre3_5Build()
 }
 
 defaultTasks 'help', 'tasks'
