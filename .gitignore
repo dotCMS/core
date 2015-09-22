@@ -15,7 +15,7 @@ tomcat/logs
 tomcat/temp
 
 #Temporary Build Migration Ignores
-dotCMS/html/js/_rules_engine
+dotCMS/html/js/_rulesengine
 
 
 
