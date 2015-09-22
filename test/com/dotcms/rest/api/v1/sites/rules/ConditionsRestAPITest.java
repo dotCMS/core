@@ -11,6 +11,7 @@ import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthe
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.rest.api.v1.sites.ruleengine.RestCondition;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -224,5 +225,61 @@ public class ConditionsRestAPITest extends TestBase {
  		 		
  		deleteConditionGroup(group, rule);		
  		deleteRule(rule);
-    } 
+    }
+
+	@Test
+	public void testUsersCountryConditionlet() throws JSONException{
+
+		// setup
+		final String RULE_NAME = "testUsersCountryRule";
+		final String CONDITION_NAME = "testUsersCountryCondition";
+		final String ruleId = createRule(RULE_NAME);
+		final String groupId = createConditionGroup(ruleId);
+
+		// valid condition
+		RestConditionValue value = new RestConditionValue.Builder().value("VE").priority(0).build();
+		Map<String, RestConditionValue> values = new HashMap<>();
+		values.put("value", value);
+
+		RestCondition restCondition = new RestCondition.Builder()
+				.name(CONDITION_NAME)
+				.conditionlet(UsersCountryConditionlet.class.getSimpleName())
+				.comparison("is")
+				.operator(Condition.Operator.AND.name())
+				.owningGroup(groupId)
+				.values(values)
+				.build();
+
+
+//		JSONObject valueJSON = new JSONObject();
+//		valueJSON.put("value", "FR");
+//		valueJSON.put("priority", 0);
+//
+//		JSONObject valuesJSON = new JSONObject();
+//		valuesJSON.put("123", valueJSON);
+//
+//		conditionJSON.put("values", valuesJSON);
+
+		WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/v1");
+		Response response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions").request(MediaType.APPLICATION_JSON_TYPE).post(Entity.json(restCondition));
+
+		String responseStr = response.readEntity(String.class);
+		JSONObject responseJSON = new JSONObject(responseStr);
+		String conditionId = (String) responseJSON.get("id");
+
+		response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).get();
+
+		assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+		RestCondition returnedCondition = response.readEntity(RestCondition.class);
+		assertTrue(returnedCondition.name.equals(CONDITION_NAME));
+
+		// delete
+		response = target.path("/sites/" + defaultHost.getIdentifier() + "/ruleengine/conditions/" + conditionId).request(MediaType.APPLICATION_JSON_TYPE).delete();
+
+		assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+		deleteConditionGroup(groupId, ruleId);
+		deleteRule(ruleId);
+	}
 }
