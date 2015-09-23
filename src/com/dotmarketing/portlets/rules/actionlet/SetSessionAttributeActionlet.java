@@ -1,12 +1,15 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
  * Actionlet to add Key/Value to the Session.
+ * The exact names that had to be set in params are: sessionKey and sessionValue.
  *
  * @author Oscar Arrieta
  * @version 1.0
@@ -25,6 +28,11 @@ public class SetSessionAttributeActionlet extends RuleActionlet{
         String sessionKeyParam = params.get("sessionKey").getValue();
         String sessionValueParam = params.get("sessionValue").getValue();
 
-        request.getSession().setAttribute(sessionKeyParam, sessionValueParam);
+        if(UtilMethods.isSet(sessionKeyParam) && UtilMethods.isSet(sessionValueParam)){
+            request.getSession().setAttribute(sessionKeyParam, sessionValueParam);
+        } else {
+            Logger.error(this.getClass(),
+                    "Error trying to execute SetSessionAttributeActionlet, sessionKey or sessionValue are not set");
+        }
     }
 }
