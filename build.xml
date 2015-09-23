@@ -28,8 +28,6 @@
     <property name="ant.build.javac.target" value="1.8"/>
     <property name="war.name" value="dotcms"/>
     <property name="endorsed_libs" value="${basedir}/dotCMS/WEB-INF/endorsed_libs" />
-    <property name="build.autoupdater" value="${basedir}/bin/autoupdater/build" />
-    <property name="dist.autoupdater" value="${basedir}/bin/autoupdater" />
     <property name="agent.version" value="31"/>
 
     <property name="plugin.root.dir.default" value="${basedir}/dotCMS"/>
@@ -40,7 +38,6 @@
     <property name="distribution.file.output" value="${distribution.output}/.." />
     <property name="distribution.bin.output" value="${distribution.output}/bin" />
     <property name="distribution.dotserver.output" value="${distribution.output}/dotserver" />
-    <property name="distribution.autoupdater.output" value="${distribution.output}/autoupdater" />
     <property name="distribution.plugins.output" value="${distribution.output}/plugins" />
     <property name="distribution.docs.output" value="${distribution.output}/docs" />
 
@@ -93,7 +90,10 @@
         <fileset dir="../../${target.root}/WEB-INF/lib">
             <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
-            <include name="dot.tika-app-1.3_*.jar" />
+            <include name="dot.tika-app*.jar" />
+            <include name="dot.log4j-api*.jar" />
+            <include name="dot.log4j-core*.jar" />
+            <include name="dot.log4j-web*.jar" />
         </fileset>
     </path>
     <path id="ant-files-classpath">
@@ -103,7 +103,10 @@
         <fileset dir="${lib.app}">
             <include name="ant-tooling-*.jar" />
             <include name="dot.commons-lang-2.4_*.jar" />
-            <include name="dot.tika-app-1.3_*.jar" />
+            <include name="dot.tika-app*.jar" />
+            <include name="dot.log4j-api*.jar" />
+            <include name="dot.log4j-core*.jar" />
+            <include name="dot.log4j-web*.jar" />
         </fileset>
     </path>
 
@@ -192,7 +195,6 @@
                memoryinitialsize="256m"
                memorymaximumsize="512m"
                includeantruntime="false">
-            <classpath refid="autoupdater-classpath" />
             <classpath refid="files-classpath" />
         </javac>
         <copy file="${src.dir}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" tofile="${build.classes}/com/dotmarketing/beans/DotCMSSeq.hbm.xml" />
@@ -373,13 +375,7 @@
 
         <!--bin folder (./bin)-->
         <copy todir="${distribution.bin.output}">
-            <!-- This first fileset does nothing? The script files are in the ./bin dir, not ./bin/autoupdater. -->
-            <fileset dir="bin/autoupdater">
-                <include name="autoUpdater.sh"/>
-                <include name="autoUpdater.bat"/>
-            </fileset>
             <fileset dir="bin">
-                <exclude name="autoupdater/**"/>
                 <exclude name="com/**"/>
                 <exclude name="net/**"/>
                 <exclude name="org/**"/>
@@ -391,15 +387,6 @@
         <copy todir="${distribution.bin.output}/system/src-conf">
             <fileset dir="src-conf">
                 <include name="**/*"/>
-            </fileset>
-        </copy>
-
-        <!--autoupdater code (./autoupdater)-->
-        <copy todir="${distribution.autoupdater.output}">
-            <fileset dir="bin/autoupdater">
-                <exclude name="autoUpdater.sh"/>
-                <exclude name="autoUpdater.bat"/>
-                <exclude name="build/**"/>
             </fileset>
         </copy>
 
@@ -794,53 +781,9 @@
         </delete>
     </target>
 
-    <target name="check-src-build" description="Checks to see if a build-core is possible. Fails if the src directory is missing or if the autoupdater is present. This prevents sourceless installs from running a clean" >
+    <target name="check-src-build" description="Checks to see if a build-core is possible. Fails if the src directory is missing. This prevents sourceless installs from running a clean" >
         <available file="${src.dir}/com/dotmarketing" type="dir" property="src.dir.present" />
         <fail message="Source directory not present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" unless="src.dir.present" />
-        <available file="bin/autoUpdater.jar" type="file" property="autoupdater.present" />
-        <fail message="Autoupdater present. If trying to deploy plugins, please use bin/deploy-plugins.sh or bin/deploy-plugins.bat instead" if="autoupdater.present" />
-    </target>
-
-    <!--AUTO UPDATER -->
-
-    <path id="autoupdater-classpath">
-        <fileset dir="${basedir}/bin/autoupdater/libs">
-            <include name="**/*.jar" />
-        </fileset>
-    </path>
-
-    <target name="build-autoupdater-classpath">
-        <manifestclasspath property="autoupdater-jar-cp" jarfile="${dist.autoupdater}/autoUpdater.jar">
-            <classpath refid="autoupdater-classpath" />
-        </manifestclasspath>
-    </target>
-
-    <target name="clean-autoupdater">
-        <delete file="${dist.autoupdater}/autoUpdater.jar" failonerror="false" />
-        <delete dir="${build.autoupdater}" failonerror="false"/>
-    </target>
-
-    <target name="compile-autoupdater" depends="prepare" description="Compiles autoupdater source.">
-        <mkdir dir="${build.autoupdater}" />
-        <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.autoupdater}"
-               source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true"
-               memoryinitialsize="256m" memorymaximumsize="512m" >
-            <classpath refid="autoupdater-classpath" />
-            <include name="com/dotcms/autoupdater/**"/>
-        </javac>
-        <copy file="${src.dir}/com/dotcms/autoupdater/update.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/update.properties" />
-        <copy file="${src.dir}/com/dotcms/autoupdater/messages.properties" tofile="${build.autoupdater}/com/dotcms/autoupdater/messages.properties" />
-    </target>
-
-    <target name="jar-autoupdater" depends="clean-autoupdater,compile-autoupdater,build-autoupdater-classpath" description="Generates autoUpdater.jar in the 'autoupdater/dist' directory.">
-        <jar jarfile="${dist.autoupdater}/autoUpdater.jar" basedir="${build.autoupdater}">
-            <manifest>
-                <attribute name="Main-Class" value="com.dotcms.autoupdater.UpdateAgent"/>
-                <attribute name="Agent-Version" value="${agent.version}"/>
-                <attribute name="Release-Version" value="${dotcms.release.version}"/>
-                <attribute name="Class-Path" value="${autoupdater-jar-cp}"/>
-            </manifest>
-        </jar>
     </target>
 
     <!-- #MigratedToGradle -->

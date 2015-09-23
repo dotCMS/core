@@ -9,6 +9,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -104,10 +105,13 @@ public class Host extends Contentlet implements Permissionable {
 	public boolean isSystemHost() {
 		Object isSystemHost = map.get(SYSTEM_HOST_KEY);
 		if(isSystemHost!=null) {
-			return (Boolean) isSystemHost;
-		} else {
-			return false;
+			if (isSystemHost instanceof Boolean) {
+				return (Boolean) isSystemHost;
+			}
+			return Integer.parseInt(isSystemHost.toString()) == 1 ? true
+					: false;
 		}
+		return false;
 	}
 
 	public void setSystemHost(boolean isSystemHost) {

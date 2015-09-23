@@ -1,7 +1,6 @@
 <%@page import="com.dotcms.repackage.org.jboss.cache.Cache"%>
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
 
@@ -30,7 +29,7 @@
                 }
         %>
         <tr>
-                <td><%= s.get("region") %></td>
+                <td><%= ((String)s.get("region")).toLowerCase() %></td>
                 <td><%= s.get("memory") %></td>
                 <td><%= s.get("disk") %></td>
                 <td><%= s.get("evictionAlgorithm") %></td>

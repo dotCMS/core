@@ -11,20 +11,27 @@ import com.dotcms.TestBase;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.AssetUtil;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -273,5 +280,83 @@ public class HTMLPageAPITest extends TestBase {
     	}
 
     }
+
+	/**
+	 * Tries to remove a single language version of a page, which must fail
+	 * because it's not possible to delete only 1 language of a page. The page
+	 * MUST be completely removed.
+	 */
+	@Test
+	public void removeOneLanguageOfHtmlAsset() throws DotDataException,
+			DotSecurityException {
+		User systemUser = APILocator.getUserAPI().getSystemUser();
+		Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+		IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
+		FolderAPI folderAPI = APILocator.getFolderAPI();
+		try {
+			HibernateUtil.startTransaction();
+			// Creating testing folder
+			String folderPath = "/testfolder" + UUIDGenerator.generateUuid();
+			Folder folder = folderAPI.createFolders(folderPath, host,
+					systemUser, true);
+
+			// Creating test page in English
+			Template template = APILocator.getTemplateAPI().findLiveTemplate(
+					"9396ac6a-d32c-4539-966e-c776e7562cfb", systemUser, false);
+			Contentlet englishPage = new Contentlet();
+			englishPage
+					.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+			englishPage.setHost(host.getIdentifier());
+			englishPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
+					"page english");
+			englishPage
+					.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, "test-page");
+			englishPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
+					"page english");
+			englishPage.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+			englishPage.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD,
+					template.getIdentifier());
+			englishPage.setFolder(folder.getInode());
+			englishPage = contentletAPI.checkin(englishPage, systemUser, false);
+
+			// Creating test page in Spanish
+			Contentlet spanishPage = APILocator.getContentletAPI().checkout(
+					englishPage.getInode(), systemUser, false);
+			spanishPage.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD,
+					"page spanish");
+			spanishPage.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD,
+					"page spanish");
+			spanishPage.setLanguageId(2);
+			spanishPage = contentletAPI.checkin(spanishPage, systemUser, false);
+
+			// Archive and delete the first page. Cannot delete pages that have
+			// versions in other languages, which is expected and correct. The
+			// call to the delete method MUST return false
+			contentletAPI.archive(englishPage, systemUser, false);
+			boolean deleteSuccessful = false;
+			try {
+				deleteSuccessful = contentletAPI.delete(englishPage,
+						systemUser, false);
+			} catch (Exception e) {
+				// Ignore
+			}
+			assertTrue("ERROR: Another page in another language still exists.",
+					!deleteSuccessful);
+
+			// Now, archive and delete the second page. Now that both pages are
+			// archived and deleted, the page can be successfully removed.
+			contentletAPI.archive(spanishPage, systemUser, false);
+			contentletAPI.delete(spanishPage, systemUser, false);
+			Identifier id = identifierAPI.find(englishPage.getIdentifier());
+			assertTrue("ERROR: The page is still present",
+					!UtilMethods.isSet(id.getId()));
+			folderAPI.delete(folder, systemUser, false);
+			HibernateUtil.commitTransaction();
+		} catch (Exception e) {
+			HibernateUtil.rollbackTransaction();
+			Logger.error(HTMLPageAPITest.class, e.getMessage());
+		}
+	}
 
 }

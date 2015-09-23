@@ -1,16 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.bean.ServerPort;
 import com.dotcms.cluster.business.ServerAPI;
@@ -21,12 +10,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.javax.ws.rs.Consumes;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.POST;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -41,8 +25,9 @@ import com.dotcms.repackage.org.jgroups.JChannel;
 import com.dotcms.repackage.org.jgroups.View;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.cache.transport.CacheTransport;
+import com.dotmarketing.business.jgroups.JGroupsCacheTransport;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -53,6 +38,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+
+import javax.servlet.http.HttpServletRequest;
+import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.*;
 
 
 @Path("/cluster")
@@ -76,9 +67,18 @@ public class ClusterResource extends WebResource {
 
         InitDataObject initData = init( params, true, request, false, "9" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
-        View view = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getView();
-        JChannel channel = ((DotGuavaCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject()).getChannel();
-        JSONObject jsonClusterStatusObject = new JSONObject();
+
+		// JGroups Cache
+		CacheTransport cacheTransport = CacheLocator.getCacheAdministrator().getImplementationObject().getTransport();
+		View view = null;
+		JChannel channel = null;
+		if ( cacheTransport != null ) {
+			JGroupsCacheTransport cacheTransportImplementation = (JGroupsCacheTransport) cacheTransport;
+			view = cacheTransportImplementation.getView();
+			channel = cacheTransportImplementation.getChannel();
+		}
+
+       	JSONObject jsonClusterStatusObject = new JSONObject();
 
         if(view!=null) {
         	List<Address> members = view.getMembers();

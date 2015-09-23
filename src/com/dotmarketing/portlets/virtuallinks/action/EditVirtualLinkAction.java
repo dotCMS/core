@@ -180,7 +180,7 @@ public class EditVirtualLinkAction extends DotPortletAction {
 		} else {
 		    completeUrl = url;
 		}
-		
+				
 		if (completeUrl.trim().endsWith("/")) {
 		    completeUrl = completeUrl.trim().substring(0, completeUrl.trim().length() - 1);
 		}
@@ -222,7 +222,7 @@ public class EditVirtualLinkAction extends DotPortletAction {
 	
 			BeanUtils.copyProperties(ml,form);
 				
-			ml.setUrl(completeUrl);
+			ml.setUrl(completeUrl.toLowerCase());
 
 			String htmlPageInode = mlForm.getHtmlInode();
 			if (InodeUtils.isSet(htmlPageInode)) {

@@ -764,7 +764,13 @@ public class ContentletAPITest extends ContentletBaseTest {
         List<Contentlet> contentletList = contentletAPI.findByStructure( structure, user, false, 0, 0 );
 
         //Retrieve all the references for this Contentlet.
-        List<Map<String, Object>> references = contentletAPI.getContentletReferences( contentletList.iterator().next(), user, false );
+        List<Map<String, Object>> references = null;
+        for (Contentlet c : contentletList) {
+        	references = contentletAPI.getContentletReferences( c, user, false );
+        	if (references != null && references.size() > 0) {
+        		break;
+        	}
+        }
 
         //Validations
         assertNotNull( references );
@@ -1202,6 +1208,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newContentlet = createContentlet( testStructure, null, false );
 
         //Now we need to delete it
+        contentletAPI.archive(newContentlet, user, false);
         contentletAPI.delete( newContentlet, user, false );
 
         //Try to find the deleted Contentlet
@@ -1233,6 +1240,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newContentlet = createContentlet( testStructure, null, false );
 
         //Now we need to delete it
+        contentletAPI.archive(newContentlet, user, false);
         contentletAPI.delete( newContentlet, user, false, true );
 
         //Try to find the deleted Contentlet
@@ -1490,6 +1498,7 @@ public class ContentletAPITest extends ContentletBaseTest {
         Contentlet newContentlet = createContentlet( testStructure, null, false );
 
         //Now test this delete
+        contentletAPI.archive(newContentlet, user, false);
         List<Contentlet> testContentlets = new ArrayList<Contentlet>();
         testContentlets.add( newContentlet );
         contentletAPI.delete( testContentlets, user, false );
@@ -1969,7 +1978,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         contentletAPI.delete(list, user, false);
         FieldFactory.deleteField(field);
-        StructureFactory.deleteStructure(testStructure);
+        APILocator.getStructureAPI().delete(testStructure, user);
     }
 
     @Test

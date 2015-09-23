@@ -240,8 +240,8 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             liveInode = htmlpages.get(1);
 
             String htmlPageIdentifier = htmlpages.get(2);
-            String htmlPageParentPath = htmlpages.get(3);
-            String htmlPageAssetName = htmlpages.get(4);
+            String htmlPageParentPath = htmlpages.get(3).toLowerCase();
+            String htmlPageAssetName = htmlpages.get(4).toLowerCase();
             String htmlPageHostIdentifier = htmlpages.get(5);
             String htmlPageLanguage = htmlpages.get(6);
             dc.setSQL(INSERT_TEMP_TABLE);
@@ -268,8 +268,8 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "ri.identifier as remote_identifier, ri.language_id "
                     + "from identifier as li " + "join htmlpage as lh "
                     + "on lh.identifier = li.id " + "and li.asset_type = 'htmlpage' " + "join "
-                    + tempTableName + " as ri " + "on li.asset_name = ri.asset_name "
-                    + "and li.parent_path = ri.parent_path "
+                    + tempTableName + " as ri " + "on LOWER(li.asset_name) = ri.asset_name "
+                    + "and LOWER(li.parent_path) = ri.parent_path "
                     + "and li.host_inode = ri.host_identifier " + "and li.id <> ri.identifier";
         } else {
             // Query the new content pages
@@ -284,7 +284,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
-                    + " t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
+                    + " t ON (LOWER(li.asset_name) = t.asset_name AND LOWER(li.parent_path) = t.parent_path "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                     + "AND lc.language_id = t.language_id)";
         }
@@ -321,8 +321,8 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                         + endpointId + "', ri.language_id " + "from identifier as li "
                         + "join htmlpage as lh " + "on lh.identifier = li.id "
                         + "and li.asset_type = 'htmlpage' " + "join " + tempTableName + " as ri "
-                        + "on li.asset_name = ri.asset_name "
-                        + "and li.parent_path = ri.parent_path "
+                        + "on LOWER(li.asset_name) = ri.asset_name "
+                        + "and LOWER(li.parent_path) = ri.parent_path "
                         + "and li.host_inode = ri.host_identifier " + "and li.id <> ri.identifier";
             } else {
                 // Query the new content pages
@@ -343,7 +343,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
-                        + " t ON (li.asset_name = t.asset_name AND li.parent_path = t.parent_path "
+                        + " t ON (LOWER(li.asset_name) = t.asset_name AND LOWER(li.parent_path) = t.parent_path "
                         + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                         + "AND lc.language_id = t.language_id)";
             }

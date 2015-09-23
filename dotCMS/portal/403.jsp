@@ -109,26 +109,19 @@
 
 	<style type="text/css">
 		body{
-			font-family: verdana, helvetica, san-serif;
+			font-family: helvetica, san-serif;
 			padding:20px;
+			margin-top:0px;
 		}
 		#main {
 			width: 400px;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
-			margin-left:auto;
-			margin-right:auto;
 		}
 		#footer {
 			text-align:center;
-			font-family: verdana, helvetica, san-serif;
-			font-size: 12px;
 		}
 		h1 {
-			font-family: verdana, helvetica, san-serif;
 			font-size: 20px;
-			text-decoration: none;
-			font-weight: normal;
+
 		}
 		#logo{
 			float: left;
@@ -143,19 +136,16 @@
 </head>
 <body>
 <div id="main">
-	<div id="logo">
-		<a href="http://<%=portalUrl%>/"><img src="<%=defaultImage%>" width="140"  hspace="10" border="0" alt="<%=LanguageUtil.get(pageContext,"403-image-title")%>" title="<%=LanguageUtil.get(pageContext,"403-image-title")%>"  /></a>
-	</div>
+
 	<div id="text">
 	
 		<h1><%= LanguageUtil.get(pageContext,"403-title") %></h1>
 		
 		<p><%= LanguageUtil.get(pageContext,"403-body1") %></p>
-		<p><%= LanguageUtil.get(pageContext,"403-body2") %></p>
+
 	</div>
 </div>
-<br clear="all"/>&nbsp;<br clear="all"/>
-<div id="footer">&copy; <script>var d = new Date();document.write(d.getFullYear());</script>, <a href="http://<%=portalUrl%>"><%= LanguageUtil.get(pageContext,"403-copywright") %></a></div>
+
 </body>
 </html>
 <%} catch( Exception e){
