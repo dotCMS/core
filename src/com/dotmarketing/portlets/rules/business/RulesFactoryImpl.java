@@ -580,7 +580,6 @@ public class RulesFactoryImpl implements RulesFactory {
 
             if (ruleAction.getParameters() != null) {
                 for (RuleActionParameter parameter : ruleAction.getParameters()) {
-                    parameter.setId(UUIDGenerator.generateUuid());
                     db.setSQL(sql.UPDATE_RULE_ACTION_PARAM);
                     db.addParam(parameter.getRuleActionId());
                     db.addParam(parameter.getKey());
