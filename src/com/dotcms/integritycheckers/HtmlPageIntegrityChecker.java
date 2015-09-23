@@ -240,8 +240,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 						htmlpages.get(2));
 				final String workingInode = getStringIfNotBlank(
 						"working_inode", htmlpages.get(0));
-				final String liveInode = getStringIfNotBlank("live_inode",
-						htmlpages.get(1));
+				final String liveInode = htmlpages.get(1);
 				final String htmlPageParentPath = getStringIfNotBlank(
 						"parent_path", htmlpages.get(3));
 				final String htmlPageAssetName = getStringIfNotBlank(

@@ -208,8 +208,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 						contentFile.get(2));
 				final String workingInode = getStringIfNotBlank(
 						"working_inode", contentFile.get(0));
-				final String liveInode = getStringIfNotBlank("live_inode",
-						contentFile.get(1));
+				final String liveInode = contentFile.get(1);
 				final String contentParentPath = getStringIfNotBlank(
 						"parent_path", contentFile.get(3));
 				final String contentName = getStringIfNotBlank("asset_name",
@@ -363,7 +362,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
         String createTempTableStr = new StringBuilder("create ").append(tempKeyword)
                 .append(" table ").append(tempTableName)
-                .append(" (working_inode varchar(36) not null, live_inode varchar(36) not null")
+                .append(" (working_inode varchar(36) not null, live_inode varchar(36) ")
                 .append(", identifier varchar(36) not null, parent_path varchar(255)")
                 .append(", asset_name varchar(255), host_identifier varchar(36) not null, language_id ")
                 .append(integerKeyword).append(" not null, primary key (working_inode, language_id) )")
