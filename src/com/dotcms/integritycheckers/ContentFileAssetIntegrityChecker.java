@@ -291,11 +291,19 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(languageId);
             dc.loadResult();
         } else {
-            dc.setSQL(new StringBuilder(
-                    "INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) ")
-                    .append("SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts ")
-                    .append("FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?")
-                    .toString());
+        	if(UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)){
+        		dc.setSQL(new StringBuilder(
+        				"INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) ")
+        				.append("SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts ")
+        				.append("FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?")
+        				.toString());
+        	}else{
+        		dc.setSQL(new StringBuilder(
+			        "INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) ")
+					.append("SELECT ?, ?, ?, null, deleted, locked_by, locked_on, version_ts ")
+					.append("FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?")
+					.toString());
+            }
             dc.addParam(newContentletIdentifier);
             dc.addParam(languageId);
             dc.addParam(remoteWorkingInode);
