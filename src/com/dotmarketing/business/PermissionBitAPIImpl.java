@@ -233,7 +233,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 
 	public boolean doesUserHaveInheriablePermissions(Permissionable parentPermissionable, String type, int requiredPermissions, User user) throws DotDataException {
 
-		
+		if(parentPermissionable == null){
+			Logger.error(this, "Parent permissionable is null");
+			throw new NullPointerException("Parent permissionable is null");
+		}
 		// Folders do not have PUBLISH, use EDIT instead
 		if(PermissionableType.FOLDERS.getCanonicalName().equals(type) && requiredPermissions == PERMISSION_PUBLISH){
 			requiredPermissions=PERMISSION_EDIT;
@@ -288,6 +291,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(permissionable != null){
 				Logger.debug(this.getClass(), "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
 				Logger.debug(this.getClass(), "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			}
+			if(permissionable == null){
+				Logger.error(this, "Permissionable object is null");
+				throw new NullPointerException("Permissionable object is null");
 			}
 			return false;
 		}
@@ -1194,6 +1201,10 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(permissionable != null){
 				Logger.debug(this, "Trying to get permissions on null inode of type :" + permissionable.getPermissionType()) ;
 				Logger.debug(this, "Trying to get permissions on null inode of class :" + permissionable.getClass()) ;
+			}
+			if(permissionable == null){
+				Logger.error(this, "Permissionable object is null");
+				throw new NullPointerException("Permissionable object is null");
 			}
 			return false;
 		}

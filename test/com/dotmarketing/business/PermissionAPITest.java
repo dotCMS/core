@@ -22,6 +22,7 @@ import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -162,6 +163,39 @@ public class PermissionAPITest extends TestBase {
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_PUBLISH, user));
         assertFalse(perm.doesUserHavePermission(host, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user));
 
+        /*should throw an error if the permissionable is null*/
+        boolean throwException = false;
+        try{
+        	perm.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user);
+        }catch(NullPointerException e){
+        	throwException=true;
+        }
+        assertTrue(throwException);
+        
+        throwException = false;
+        try{
+        	perm.doesUserHaveInheriablePermissions(null, "HTMLPAGES", PermissionAPI.PERMISSION_READ, user);
+        }catch(NullPointerException e){
+        	throwException=true;
+        }
+        assertTrue(throwException);
+        
+        throwException = false;
+        try{
+        	perm.doesUserHavePermission(null, PermissionAPI.PERMISSION_READ, user, false);
+        }catch(NullPointerException e){
+        	throwException=true;
+        }
+        assertTrue(throwException);
+        
+        throwException = false;
+        try{
+        	perm.doesUserHavePermissions(null, "HTMLPAGES", user, false) ;
+        }catch(NullPointerException e){
+        	throwException=true;
+        }
+        assertTrue(throwException);
+        
     }
 
     @Test
