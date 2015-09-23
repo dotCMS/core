@@ -1,11 +1,12 @@
 package com.dotmarketing.viewtools;
 
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import com.dotcms.repackage.org.apache.logging.log4j.Logger;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotmarketing.util.Logger;
 
 /**
  * Simple viewtool to log messages to our standard logger infrastructure.  Will output the template name to make debugging easier.
@@ -16,14 +17,12 @@ public class DotLoggerTool implements ViewTool {
 
 	private InternalContextAdapterImpl ica;
 	
-	private com.dotcms.repackage.org.apache.log4j.Logger logger;
+	private static Logger logger = LogManager.getLogger(DotLoggerTool.class);
 	
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
 		Context ctx=context.getVelocityContext();
 		ica = new InternalContextAdapterImpl(ctx);
-
-		logger=Logger.getLogger(DotLoggerTool.class);
 	}
 
 	public void info(String s) {

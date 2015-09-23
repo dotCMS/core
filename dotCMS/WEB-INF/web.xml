@@ -10,6 +10,12 @@
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
 	</context-param>
+
+	<context-param>
+		<param-name>log4jConfiguration</param-name>
+		<param-value>log4j2.xml</param-value>
+	</context-param>
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->

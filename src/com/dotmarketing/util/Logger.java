@@ -5,7 +5,7 @@
  */
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.org.apache.log4j.Level;
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.velocity.VelocityServlet;
 import org.apache.velocity.context.Context;
@@ -21,13 +21,13 @@ import java.util.WeakHashMap;
  */
 public class Logger{
 
-	private static WeakHashMap<Class, com.dotcms.repackage.org.apache.log4j.Logger> map = new WeakHashMap<Class, com.dotcms.repackage.org.apache.log4j.Logger>();
+	private static WeakHashMap<Class, com.dotcms.repackage.org.apache.logging.log4j.Logger> map = new WeakHashMap<>();
 
 	public static void clearLoggers(){
 		map.clear();
 	}
 
-    public static com.dotcms.repackage.org.apache.log4j.Logger clearLogger ( Class clazz ) {
+    public static com.dotcms.repackage.org.apache.logging.log4j.Logger clearLogger ( Class clazz ) {
         return map.remove( clazz );
 	}
 	
@@ -37,9 +37,9 @@ public class Logger{
 	 * @param cl
 	 * @return
 	 */
-	private synchronized static com.dotcms.repackage.org.apache.log4j.Logger loadLogger(Class cl){
+	private synchronized static com.dotcms.repackage.org.apache.logging.log4j.Logger loadLogger(Class cl){
 		if(map.get(cl) == null){
-			com.dotcms.repackage.org.apache.log4j.Logger logger = com.dotcms.repackage.org.apache.log4j.Logger.getLogger(cl);
+			com.dotcms.repackage.org.apache.logging.log4j.Logger logger = LogManager.getLogger(cl);
 			map.put(cl, logger);
 		}
 		return map.get(cl);
@@ -47,7 +47,7 @@ public class Logger{
 
     public static void info(Object ob, String message) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -55,7 +55,7 @@ public class Logger{
     }
 
     public static void info(Class cl, String message) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -64,7 +64,7 @@ public class Logger{
 
     public static void debug(Object ob, String message) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -73,7 +73,7 @@ public class Logger{
 
     public static void debug(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -81,7 +81,7 @@ public class Logger{
     }
 
     public static void debug(Class cl, String message) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -89,7 +89,7 @@ public class Logger{
     }
 
     public static void debug(Class cl, String message, Throwable ex) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -98,7 +98,7 @@ public class Logger{
 
     public static void error(Object ob, String message) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -108,7 +108,7 @@ public class Logger{
 
     public static void error(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -117,7 +117,7 @@ public class Logger{
     }
 
     public static void error(Class cl, String message) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -126,7 +126,7 @@ public class Logger{
     }
 
     public static void error(Class cl, String message, Throwable ex) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -136,7 +136,7 @@ public class Logger{
 
     public static void fatal(Object ob, String message) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -146,7 +146,7 @@ public class Logger{
 
     public static void fatal(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -154,7 +154,7 @@ public class Logger{
     }
 
     public static void fatal(Class cl, String message) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -162,7 +162,7 @@ public class Logger{
     }
 
     public static void fatal(Class cl, String message, Throwable ex) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -171,7 +171,7 @@ public class Logger{
 
     public static void warn(Object ob, String message) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -180,7 +180,7 @@ public class Logger{
 
     public static void warn(Object ob, String message, Throwable ex) {
         Class cl = ob.getClass();
-        com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+        com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -188,7 +188,7 @@ public class Logger{
     }
 
     public static void warn(Class cl, String message) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -196,48 +196,48 @@ public class Logger{
     }
 
     public static void warn(Class cl, String message, Throwable ex) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
         logger.warn(message, ex);
     }
     public static boolean isDebugEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-        return logger.isEnabledFor(Level.DEBUG);
+        return logger.isDebugEnabled();
 //    	return false;
     }
 
     public static boolean isInfoEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-        return logger.isEnabledFor(Level.INFO);
+        return logger.isInfoEnabled();
 //    	return false;
     }
     public static boolean isWarnEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-        return logger.isEnabledFor(Level.WARN);
+        return logger.isWarnEnabled();
 //    	return false;
     }
     public static boolean isErrorEnabled(Class cl) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
-        return logger.isEnabledFor(Level.ERROR);
+        return logger.isErrorEnabled();
 //    	return false;
     }
     
-    public static com.dotcms.repackage.org.apache.log4j.Logger getLogger(Class cl) {
-    	com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(cl);
+    public static com.dotcms.repackage.org.apache.logging.log4j.Logger getLogger(Class cl) {
+    	com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(cl);
     	if(logger == null){
     		logger = loadLogger(cl);	
     	}
@@ -250,7 +250,7 @@ public class Logger{
     	if(velocityCtx.get() != null){
     		Context ctx =  velocityCtx.get();
     		InternalContextAdapter ica =  new InternalContextAdapterImpl(ctx);
-    		com.dotcms.repackage.org.apache.log4j.Logger logger = map.get(VelocityServlet.class);
+    		com.dotcms.repackage.org.apache.logging.log4j.Logger logger = map.get(VelocityServlet.class);
     		logger.error("#--------------------------------------------------------------------------------------");
     		logger.error("#");
     		if(ica.getCurrentMacroName() != null){

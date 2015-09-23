@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
-
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -27,6 +25,15 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.liferay.util.FileUtil;
 
+/**
+ * This class provides access to utility methods that will search the database
+ * for data inconsistencies and fix/remove the incorrect data to ensure dotCMS
+ * works as expected.
+ * 
+ * @author root
+ * @since Mar 22, 2012
+ *
+ */
 public class MaintenanceUtil {
 
 	private static final FileAPI fileAPI = APILocator.getFileAPI();
@@ -757,6 +764,19 @@ public class MaintenanceUtil {
 			}
 
 		}
+	}
+
+	/**
+	 * Locates the Content Type fields that are pointing to Content Types that
+	 * no longer exist in the database and removes them.
+	 * 
+	 * @throws SQLException
+	 *             An error occurred when executing the fix queries.
+	 */
+	public static void deleteOrphanContentTypeFields() throws SQLException {
+		DotConnect dc = new DotConnect();
+		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM structure)");
+		dc.executeStatement("DELETE FROM field WHERE structure_inode NOT IN (SELECT inode FROM inode)");
 	}
 
 }

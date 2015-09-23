@@ -685,8 +685,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 		if(folder.isShowOnMenu())
 			RefreshMenus.deleteMenu(folder);
-
-
+		
 		folder.setModDate(new Date());
 		save(folder);
 
@@ -1251,6 +1250,7 @@ public class FolderFactoryImpl extends FolderFactory {
 
 	@Override
 	protected void save(Folder folderInode) throws DotDataException {
+		HibernateUtil.getSession().clear();
 		HibernateUtil.saveOrUpdate(folderInode);
 	}
 

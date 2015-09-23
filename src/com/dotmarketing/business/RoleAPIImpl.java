@@ -1,6 +1,8 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.org.owasp.esapi.ESAPI;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -9,11 +11,11 @@ import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.SystemProperties;
 
 /**
  * @author Jason Tesser
@@ -22,6 +24,8 @@ import java.util.List;
  */
 public class RoleAPIImpl implements RoleAPI {
 
+	private final String ROLENAME_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( "RoleName.regexp.pattern" ) );
+	
 	private RoleFactory rf = FactoryLocator.getRoleFactory();
 	private Role CMS_ADMIN = null;
 	private Role CMS_ANON = null;
@@ -198,7 +202,7 @@ public class RoleAPIImpl implements RoleAPI {
 				throw new DotStateException("Cannot save locked or system role");
 			}
 		}
-		if(!UtilMethods.isSet(role.getName())  && !ESAPI.validator().isValidInput("roleName", role.getName(), "RoleName", 100, false)) {
+		if(!UtilMethods.isSet(role.getName())  || !RegEX.contains( role.getName(), ROLENAME_REGEXP_PATTERN ) || role.getName().length()>100) {
 			throw new RoleNameException();
 		}
 		

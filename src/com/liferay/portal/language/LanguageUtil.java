@@ -102,7 +102,7 @@ public class LanguageUtil {
 		}
 	
 		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
+			Logger.debug(LanguageUtil.class, key);
 			value = key;
 		}
 	
@@ -110,9 +110,7 @@ public class LanguageUtil {
 	}
 
     public static String get(String companyId, Locale locale, String key) throws LanguageException {
-
         Optional<String> optValue = getOpt(companyId, locale, key);
-
         if(!optValue.isPresent()) {
             Logger.warn(LanguageUtil.class, key);
         }
@@ -155,7 +153,7 @@ public class LanguageUtil {
 		}
 
 		if (value == null) {
-			Logger.warn(LanguageUtil.class, key);
+			Logger.debug(LanguageUtil.class, key);
 			value = key;
 		}
 

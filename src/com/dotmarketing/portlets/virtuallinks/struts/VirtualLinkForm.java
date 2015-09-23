@@ -2,20 +2,23 @@ package com.dotmarketing.portlets.virtuallinks.struts;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.validator.ValidatorForm;
-import com.dotcms.repackage.org.owasp.esapi.ESAPI;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.Constants;
+import com.liferay.util.GetterUtil;
+import com.liferay.util.SystemProperties;
 
 
 /** @author Hibernate CodeGenerator */
 public class VirtualLinkForm extends ValidatorForm {
 
+	private final String VANITY_REGEXP_PATTERN = GetterUtil.getString( SystemProperties.get( "HTTPVanityURL.regexp.pattern" ) );
+    
 	/** identifier field */
     private String inode;
 
@@ -48,7 +51,7 @@ public class VirtualLinkForm extends ValidatorForm {
         
         	ActionErrors errors = super.validate(mapping, request);
         	
-            if(UtilMethods.isSet(url) && (url.trim().equals("/") || !ESAPI.validator().isValidInput("vanityURL", url, "HTTPVanityURL", 2000, false) ))
+            if(!UtilMethods.isSet(url) || url.trim().equals("/") || !RegEX.contains( url, VANITY_REGEXP_PATTERN ) || url.length() > 2000 )
             	errors.add("url", new ActionMessage("message.virtuallink.invalid.URL"));
             
             return errors;

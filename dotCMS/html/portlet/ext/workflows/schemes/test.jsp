@@ -1,6 +1,5 @@
 <%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
-<%@page import="com.dotmarketing.business.DotJBCacheAdministratorImpl"%>
 <%@page import="java.util.Map"%>
 <%@page import="java.util.List"%>
 

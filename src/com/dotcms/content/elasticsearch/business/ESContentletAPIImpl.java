@@ -4352,6 +4352,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return QueryUtil.DBSearch(query, dbColToObjectAttribute, "structure_inode = '" + fields.get(0).getStructureInode() + "'", user, true,respectFrontendRoles);
     }
 
+	/**
+	 * Copies a contentlet, including all its fields including binary files,
+	 * image and file fields are pointers and the are preserved as the are so if
+	 * source contentlet points to image A and resulting new contentlet will
+	 * point to same image A as well, also copies source permissions.
+	 * 
+	 * @param contentletToCopy
+	 *            - The contentlet that will be copied to the new destination.
+	 * @param host
+	 *            - The destination host.
+	 * @param folder
+	 *            - The destination folder.
+	 * @param user
+	 *            - The user performing this action.
+	 * @param copySuffix
+	 *            - A name suffix when there is a contentlet that already has
+	 *            the same URL.
+	 * @param respectFrontendRoles
+	 *            -
+	 * @return The {@link Contentlet} object that was created. Its inode
+	 *         represents the latest version of such a contentlet.
+	 * @throws DotDataException
+	 *             An error occurred when accessing the database.
+	 * @throws DotSecurityException
+	 *             The {@code user} object does not have the permissions to
+	 *             perform this action.
+	 * @throws DotContentletStateException
+	 *             The contentlet object could not be saved.
+	 */
     private Contentlet copyContentlet(Contentlet contentletToCopy, Host host, Folder folder, User user, final String copySuffix, boolean respectFrontendRoles) throws DotDataException, DotSecurityException, DotContentletStateException {
     	Contentlet resultContentlet = new Contentlet();
     	String newIdentifier = Strings.EMPTY;
@@ -4484,6 +4513,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             newContentlet.getMap().put("__disable_workflow__", true);
             newContentlet.getMap().put(Contentlet.DONT_VALIDATE_ME, true);
+            // Use the generated identifier if one version of this contentlet  
+            // has already been checked in
+            if (UtilMethods.isSet(newIdentifier)) {
+            	newContentlet.setIdentifier(newIdentifier);
+            }
             newContentlet = checkin(newContentlet, rels, parentCats, perAPI.getPermissions(contentlet), user, respectFrontendRoles);
             if(!UtilMethods.isSet(newIdentifier))
             	newIdentifier = newContentlet.getIdentifier();

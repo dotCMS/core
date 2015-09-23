@@ -23,4 +23,4 @@
 #-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=8000
 
 # Javaagent
--javaagent:/opt/IBM/WebSphere/Liberty/usr/servers/dotcms/apps/dotcms.war/WEB-INF/lib/dot.jamm-0.2.5_1.jar
+-javaagent:/opt/IBM/WebSphere/Liberty/usr/servers/dotcms/apps/dotcms.war/WEB-INF/lib/dot.jamm-0.2.5_2.jar

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.repackage.junit.framework.Assert;
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.BeforeClass;
@@ -31,6 +32,10 @@ public class HibernateUtilTest {
     @After
     @Before
     public void prep() throws Exception {
+    	Session session = HibernateUtil.getSession();
+    	if (session != null) {
+    		session.clear();
+    	}
         HibernateUtil.closeSession();
     }
     
