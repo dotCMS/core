@@ -3,10 +3,12 @@ package com.dotmarketing.portlets.rules.business;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
@@ -353,7 +355,10 @@ public class RulesAPIImpl implements RulesAPI {
 
     public void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         conditionGroup = checkNotNull(conditionGroup, "ConditionGroup is required.");
-        Rule rule = checkNotNull(rulesFactory.getRuleById(conditionGroup.getRuleId()), "There is no rule with the given id: " + conditionGroup.getRuleId());
+        Rule rule = Preconditions.checkNotNull(rulesFactory.getRuleById(conditionGroup.getRuleId()),
+                DotRuntimeException.class,
+                "Invalid Rule specified: %s",
+                conditionGroup.getRuleId());
 
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its groups/conditions ");
@@ -365,7 +370,8 @@ public class RulesAPIImpl implements RulesAPI {
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         condition = checkNotNull(condition, "Condition is required.");
 
-        ConditionGroup group = checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+        ConditionGroup group = Preconditions.checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+                DotRuntimeException.class,
                 "Invalid ConditionGroup specified: %s",
                 condition.getConditionGroup());
 
@@ -381,11 +387,13 @@ public class RulesAPIImpl implements RulesAPI {
     public void saveConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         conditionValue = checkNotNull(conditionValue, "Condition Value is required.");
 
-        Condition condition = checkNotNull(getConditionById(conditionValue.getConditionId(), user, true),
+        Condition condition = Preconditions.checkNotNull(getConditionById(conditionValue.getConditionId(), user, true),
+                DotRuntimeException.class,
                 "Invalid Condition specified: %s",
                 conditionValue.getConditionId());
 
-        ConditionGroup group = checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+        ConditionGroup group = Preconditions.checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
+                DotRuntimeException.class,
                 "Invalid ConditionGroup specified: %s",
                 condition.getConditionGroup());
 
