@@ -22,7 +22,7 @@ import {ruleEngineTemplate} from './templates/index'
   template: ruleEngineTemplate,
   directives: [RuleComponent, NgFor, NgIf]
 })
-class RuleEngineComponent {
+class RuleEngineComponent{
   rules:any[];
   baseUrl:string;
   rulesRef:EntityMeta;
@@ -77,7 +77,7 @@ class RuleEngineComponent {
 
   addRule() {
     let testRule = {
-      name: "CoreWeb created this rule. " + new Date().toISOString(),
+      name: "CoreWeb created this rule.",
       enabled: true,
       priority: 10,
       fireOn: "EVERY_PAGE",
@@ -90,6 +90,7 @@ class RuleEngineComponent {
       throw e
     })
   }
+
 }
 
 

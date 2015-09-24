@@ -1,7 +1,7 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
-import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {NgFor, NgIf, Component, Directive, View,ElementRef} from 'angular2/angular2';
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
@@ -16,7 +16,7 @@ import {ruleTemplate} from './templates/index'
   template: ruleTemplate,
   directives: [RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
 })
-class RuleComponent {
+class RuleComponent{
   rule:any;
   _ruleSnap:any;
   collapsed:boolean;
@@ -24,13 +24,24 @@ class RuleComponent {
   ruleGroups:Array<any>;
   ruleActions:Array<any>;
   groupsSnap:EntitySnapshot;
+  elementRef:ElementRef;
 
-  constructor() {
+  constructor(elementRef:ElementRef) {
+    this.elementRef = elementRef; //DOM element
     console.log('Creating RuleComponent')
     this.collapsed = true
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
     this.ruleActions = []
+  }
+
+  onInit(){
+    if(this.rule.name === 'CoreWeb created this rule.'){
+      this.rule.name = 'CoreWeb created this rule.' +  new Date().toISOString();//to avoid duplicate name error for now
+      this.updateRule();
+      var el = this.elementRef.nativeElement.children[0].children[0].children[0].children[0].children[0].childNodes[1];
+      window.setTimeout(function() {el.focus();}, 10); //avoid tick recursively error
+    }
   }
 
   set ruleSnap(ruleSnap:any) {
