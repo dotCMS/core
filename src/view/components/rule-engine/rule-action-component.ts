@@ -52,6 +52,10 @@ export class RuleActionComponent {
     this.actionlet = {}
   }
 
+  setActionName(name:string) {
+    this.action.name = name
+    this.updateAction()
+  }
 
   onSetActionMeta(snapshot){
     console.log("Action's type is ", this.action, snapshot);

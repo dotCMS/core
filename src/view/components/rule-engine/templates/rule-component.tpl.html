@@ -2,7 +2,7 @@
   <div class="panel-heading">
     <div class="container">
       <div class="row" (click)="collapsed = !collapsed">
-        <div class="col-xs-6">
+        <div class="col-xs-5">
           <input type="text" class="form-control  rule-title"
                  placeholder="Describe the rule"
                  [value]="rule.name"
@@ -35,9 +35,12 @@
             </div>
           </div>
           </div>
-          <div class="col-xs-2">
+          <div class="col-xs-3">
             <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
               <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addGroup()"></span>
+            </button>
+            <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
+              <span class="glyphicon glyphicon-flash" aria-hidden="true" (click)="addRuleAction()"></span>
             </button>
             <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
                     (click)="removeRule()">
@@ -67,7 +70,9 @@
         <hr/>
       </div>
       <div class="panel panel-default actions">
-        <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
+        <rule-action *ng-for="var actionMeta of ruleActions; var i=index"
+                     [action-meta]="actionMeta"
+                ></rule-action>
       </div>
 
     </div>
