@@ -12,6 +12,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -66,8 +67,10 @@ public class RulesAPIImpl implements RulesAPI {
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
             ImmutableList.<Class<? extends RuleActionlet>>builder()
-                         .add(CountRequestsActionlet.class)
-                         .add(TestActionlet.class).build();
+                    .add(CountRequestsActionlet.class)
+                    .add(SetSessionAttributeActionlet.class)
+                    .add(TestActionlet.class)
+                    .build();
 
     public RulesAPIImpl() {
         perAPI = APILocator.getPermissionAPI();
