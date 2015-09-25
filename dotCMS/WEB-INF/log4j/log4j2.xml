@@ -18,8 +18,8 @@
     <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-pushpublish-%d{MM-dd-yyyy}-%i.log.gz</Property>
     <Property name="VELOCITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-velocity.log</Property>
     <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/$${date:yyyy-MM}/dotcms-velocity-%d{MM-dd-yyyy}-%i.log.gz</Property>
-    <Property name="PATTERN">%-5level %d [%t] %c:%M(%L): %m%n</Property>
-    <Property name="CONSOLE_PATTERN">%-5level %d [%t] %c:%M(%L): %m%n</Property>
+    <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
+    <Property name="CONSOLE_PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
     <Property name="MESSAGE_PATTERN">[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %m%n</Property>
   </Properties>
 

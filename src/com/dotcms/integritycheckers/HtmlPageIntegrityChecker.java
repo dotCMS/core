@@ -229,34 +229,48 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 
         DotConnect dc = new DotConnect();
         String tempTableName = getTempTableName(endpointId);
-
-        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?,?,?)";
+        final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (working_inode, live_inode, identifier, parent_path, asset_name, host_identifier, language_id) values(?,?,?,?,?,?,?)";
+        boolean hasResultsToCheck = false;
         while (htmlpages.readRecord()) {
-
-            String workingInode = null;
-            String liveInode = null;
-
-            workingInode = htmlpages.get(0);
-            liveInode = htmlpages.get(1);
-
-            String htmlPageIdentifier = htmlpages.get(2);
-            String htmlPageParentPath = htmlpages.get(3).toLowerCase();
-            String htmlPageAssetName = htmlpages.get(4).toLowerCase();
-            String htmlPageHostIdentifier = htmlpages.get(5);
-            String htmlPageLanguage = htmlpages.get(6);
-            dc.setSQL(INSERT_TEMP_TABLE);
-
-            dc.addParam(workingInode);
-            dc.addParam(liveInode);
-            dc.addParam(htmlPageIdentifier);
-            dc.addParam(htmlPageParentPath);
-            dc.addParam(htmlPageAssetName);
-            dc.addParam(htmlPageHostIdentifier);
-            dc.addParam(new Long(htmlPageLanguage));
-
-            dc.loadResult();
+        	hasResultsToCheck = true;
+            String htmlPageIdentifier = null;
+            
+			try {
+				htmlPageIdentifier = getStringIfNotBlank("identifier",
+						htmlpages.get(2));
+				final String workingInode = getStringIfNotBlank(
+						"working_inode", htmlpages.get(0));
+				final String liveInode = htmlpages.get(1);
+				final String htmlPageParentPath = getStringIfNotBlank(
+						"parent_path", htmlpages.get(3));
+				final String htmlPageAssetName = getStringIfNotBlank(
+						"asset_name", htmlpages.get(4).toLowerCase());
+				final String htmlPageHostIdentifier = getStringIfNotBlank(
+						"host_identifier", htmlpages.get(5));
+				final String htmlPageLanguage = getStringIfNotBlank(
+						"language_id", htmlpages.get(6));
+				dc.setSQL(INSERT_TEMP_TABLE);
+				dc.addParam(workingInode);
+				dc.addParam(liveInode);
+				dc.addParam(htmlPageIdentifier);
+				dc.addParam(htmlPageParentPath);
+				dc.addParam(htmlPageAssetName);
+				dc.addParam(htmlPageHostIdentifier);
+				dc.addParam(new Long(htmlPageLanguage));
+				dc.loadResult();
+			} catch (DotDataException e) {
+				htmlpages.close();
+				final String assetId = UtilMethods.isSet(htmlPageIdentifier) ? htmlPageIdentifier
+						: "";
+				throw new DotDataException(
+						"An error occured when generating temp table for asset: "
+								+ assetId, e);
+			}
         }
         htmlpages.close();
+        if (!hasResultsToCheck) {
+        	return;
+        }
 
         // Compare the data from the CSV to the local database data and see if
         // we have conflicts.
@@ -269,7 +283,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "from identifier as li " + "join htmlpage as lh "
                     + "on lh.identifier = li.id " + "and li.asset_type = 'htmlpage' " + "join "
                     + tempTableName + " as ri " + "on LOWER(li.asset_name) = ri.asset_name "
-                    + "and LOWER(li.parent_path) = ri.parent_path "
+                    + "and li.parent_path = ri.parent_path "
                     + "and li.host_inode = ri.host_identifier " + "and li.id <> ri.identifier";
         } else {
             // Query the new content pages
@@ -284,7 +298,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                     + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier) "
                     + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                     + "INNER JOIN " + tempTableName
-                    + " t ON (LOWER(li.asset_name) = t.asset_name AND LOWER(li.parent_path) = t.parent_path "
+                    + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
                     + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                     + "AND lc.language_id = t.language_id)";
         }
@@ -322,14 +336,16 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "join htmlpage as lh " + "on lh.identifier = li.id "
                         + "and li.asset_type = 'htmlpage' " + "join " + tempTableName + " as ri "
                         + "on LOWER(li.asset_name) = ri.asset_name "
-                        + "and LOWER(li.parent_path) = ri.parent_path "
+                        + "and li.parent_path = ri.parent_path "
                         + "and li.host_inode = ri.host_identifier " + "and li.id <> ri.identifier";
             } else {
                 // Query the new content pages
                 insertSQL = "insert into "
                         // Legacy HTML pages and contentlet pages share the same
                         // result table
-                        + getIntegrityType().getResultsTableName()
+                        + getIntegrityType().getResultsTableName() 
+                        + " (" + getIntegrityType().getFirstDisplayColumnLabel() + ", local_working_inode, local_live_inode, remote_working_inode, remote_live_inode, " 
+                        + "local_identifier, remote_identifier, endpoint_id, language_id)"
                         + " select DISTINCT "
                         + fullHtmlPage
                         + " as " + getIntegrityType().getFirstDisplayColumnLabel() + ", "
@@ -343,7 +359,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                         + "INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) "
                         + "INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = 5) "
                         + "INNER JOIN " + tempTableName
-                        + " t ON (LOWER(li.asset_name) = t.asset_name AND LOWER(li.parent_path) = t.parent_path "
+                        + " t ON (LOWER(li.asset_name) = t.asset_name AND li.parent_path = t.parent_path "
                         + "AND li.host_inode = host_identifier AND lc.identifier <> t.identifier "
                         + "AND lc.language_id = t.language_id)";
             }
