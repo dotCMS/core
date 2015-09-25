@@ -10,6 +10,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.client.authentication.HttpAuthenticationFeature;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.rest.RestClientBuilder;
+import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -28,7 +29,7 @@ import static com.dotcms.repackage.org.junit.Assert.assertTrue;
  *
  * Use this test class to write tests against Actionlets Rest endpoint.
  */
-public class ActionletResourceTest extends TestBase {
+public class ActionletResourceFTest extends TestBase {
 
     private HttpServletRequest request;
     private String serverName;
@@ -36,26 +37,10 @@ public class ActionletResourceTest extends TestBase {
     private User user;
     Host defaultHost;
     Client client;
+    private final FunctionalTestConfig config;
 
-    public ActionletResourceTest(){
-        request = ServletTestRunner.localRequest.get();
-        serverName = request.getServerName();
-        serverPort = request.getServerPort();
-        HostAPI hostAPI = APILocator.getHostAPI();
-
-        //Setting the test user
-        try{
-            user = APILocator.getUserAPI().getSystemUser();
-            defaultHost = hostAPI.findDefaultHost(user, false);
-        }catch(DotDataException dd){
-            dd.printStackTrace();
-        }catch(DotSecurityException ds){
-            ds.printStackTrace();
-        }
-
-        client = RestClientBuilder.newClient();
-        HttpAuthenticationFeature feature = HttpAuthenticationFeature.basic("admin@dotcms.com", "admin");
-        client.register(feature);
+    public ActionletResourceFTest(){
+        config = new FunctionalTestConfig();
     }
 
     /**
@@ -65,8 +50,8 @@ public class ActionletResourceTest extends TestBase {
      */
     @Test
     public void testListAllActionlets() throws JSONException {
-        //Client Call.
-        WebTarget target = client.target("http://" + serverName + ":" + serverPort + "/api/v1");
+
+        WebTarget target = config.restBaseTarget();
         //Response.
         Response response = target.path("/system/ruleengine/actionlets/").request(MediaType.APPLICATION_JSON_TYPE).get();
 

@@ -367,8 +367,6 @@ public class UsersCountryConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
-			// TODO: Remove
-			ipAddress = "170.123.234.133";
 			country = geoIp2Util.getCountryIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,

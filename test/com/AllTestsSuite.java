@@ -1,6 +1,7 @@
 package com;
 
 
+import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPITest;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
@@ -21,10 +22,10 @@ import com.dotcms.repackage.org.junit.runners.Suite;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
-import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsRestAPITest;
-import com.dotcms.rest.api.v1.sites.rules.ConditionsRestAPITest;
-import com.dotcms.rest.api.v1.sites.rules.RulesRestAPITest;
-import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceTest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
+import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -101,13 +102,14 @@ import com.dotmarketing.webdav.WebDavTest;
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
     RulesAPITest.class,
-    RulesRestAPITest.class,
-    ConditionGroupsRestAPITest.class,
-    ConditionsRestAPITest.class,
+    RuleResourceFTest.class,
+    ConditionGroupResourceFTest.class,
+    ConditionResourceFTest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ConditionletTest.class,
-    ActionletResourceTest.class,
-    SetSessionAttributeActionletTest.class
+    ActionletResourceFTest.class,
+    SetSessionAttributeActionletTest.class,
+    UsersCountryConditionletFTest.class
 })
 public class AllTestsSuite {
 

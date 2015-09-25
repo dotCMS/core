@@ -14,7 +14,7 @@ import java.lang.annotation.*;
         validatedBy = {OperatorValidator.class}
 )
 public @interface Operator {
-    String message() default "{javax.validation.constraints.FireOn.message}";
+    String message() default "{javax.validation.constraints.Operator.message}";
 
     Class<?>[] groups() default {};
 
