@@ -10,6 +10,7 @@ import com.dotcms.repackage.javax.validation.constraints.Min;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.validation.constraints.Pattern;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.validation.constraints.FireOn;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -24,11 +25,10 @@ import java.util.Map;
 @JsonDeserialize(builder = RestRule.Builder.class)
 public final class RestRule extends Validated  {
 
-    @Length(min = 1, max = 36)
+    @Length(min = 36, max = 36)
     public final String key;
 
-    @NotNull
-    @Length(min = 1, max = 100)
+    @NotBlank
     public final String name;
 
     @FireOn

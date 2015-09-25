@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.sites.ruleengine;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
+import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
@@ -13,17 +15,19 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestRuleAction.Builder.class)
 public class RestRuleAction extends Validated {
 
+    @Length(min = 36, max = 36)
     public final String id;
 
-    @NotNull
+    @NotBlank
     public final String name;
 
     @NotNull
+    @Length(min = 36, max = 36)
     public final String owningRule;
 
     public final int priority;
 
-    @NotNull
+    @NotBlank
     public final String actionlet;
 
     public final Map<String, RestRuleActionParameter> parameters;

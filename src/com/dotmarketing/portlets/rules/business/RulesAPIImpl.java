@@ -420,6 +420,11 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotDataException("There is no Rule with the provided ruleId: "+ruleAction.getRuleId());
         }
 
+        if(findActionlet(ruleAction.getActionlet())==null) {
+            Logger.info(this, "There is no actionlet with the given id: " + ruleAction.getActionlet());
+            throw new DotDataException("There is no actionlet with the provided actionletId: "+ruleAction.getActionlet());
+        }
+
         if (!perAPI.doesUserHavePermission(rule, PermissionAPI.PERMISSION_EDIT, user, true)) {
             throw new DotSecurityException("User " + user + " cannot edit rule: " + rule.getId());
         }
