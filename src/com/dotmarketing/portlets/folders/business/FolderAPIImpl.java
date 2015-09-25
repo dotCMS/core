@@ -405,6 +405,17 @@ public class FolderAPIImpl implements FolderAPI  {
 			HibernateUtil.getSession().clear();
 			List<Contentlet> conList = capi.findContentletsByFolder(folder, user, false);
 			for (Contentlet c : conList) {
+				// Find all multi-language contentlets and archive them
+				Identifier ident = APILocator.getIdentifierAPI().find(c.getIdentifier());
+	            List<Contentlet> otherLanguageCons = capi.findAllVersions(ident, user, false);
+	            for (Contentlet cv : otherLanguageCons) {
+					if(cv.isLive()){
+						capi.unpublish(cv, user, false);
+					}
+					if(!cv.isArchived()){
+						capi.archive(cv, user, false);
+					}
+	            }
 				capi.delete(c, user, false);
 			}
 
