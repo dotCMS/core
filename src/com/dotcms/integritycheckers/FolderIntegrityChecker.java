@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Folder integrity checker implementation
@@ -117,8 +118,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 createTempTable = createTempTable.replaceAll("varchar\\(", "varchar2\\(");
             }
 
-            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?,?,?,?)";
-
+			final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (inode, identifier, parent_path, asset_name, host_identifier) values(?,?,?,?,?)";
             while (folders.readRecord()) {
 
                 if (!tempCreated) {
@@ -126,22 +126,39 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     tempCreated = true;
                 }
 
-                final String folderInode = folders.get(0);
-                final String folderIdentifier = folders.get(1);
-                final String parentPath = folders.get(2);
-                final String assetName = folders.get(3);
-                final String hostIdentifier = folders.get(4);
-
-                dc.setSQL(INSERT_TEMP_TABLE);
-                dc.addParam(folderInode);
-                dc.addParam(folderIdentifier);
-                dc.addParam(parentPath);
-                dc.addParam(assetName);
-                dc.addParam(hostIdentifier);
-                dc.loadResult();
+				String folderIdentifier = null;
+				try {
+					folderIdentifier = getStringIfNotBlank("identifier",
+							folders.get(1));
+					final String folderInode = getStringIfNotBlank("inode",
+							folders.get(0));
+					final String parentPath = getStringIfNotBlank(
+							"parent_path", folders.get(2));
+					final String assetName = getStringIfNotBlank("asset_name",
+							folders.get(3));
+					final String hostIdentifier = getStringIfNotBlank(
+							"host_identifier", folders.get(4));
+					dc.setSQL(INSERT_TEMP_TABLE);
+					dc.addParam(folderInode);
+					dc.addParam(folderIdentifier);
+					dc.addParam(parentPath);
+					dc.addParam(assetName);
+					dc.addParam(hostIdentifier);
+					dc.loadResult();
+				} catch (DotDataException e) {
+					folders.close();
+					final String assetId = UtilMethods.isSet(folderIdentifier) ? folderIdentifier
+							: "";
+					throw new DotDataException(
+							"An error occured when generating temp table for asset: "
+									+ assetId, e);
+				}
             }
 
             folders.close();
+            if (!tempCreated) {
+            	return false;
+            }
 
             // compare the data from the CSV to the local db data and see if we
             // have conflicts
@@ -167,7 +184,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 }
 
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
-                        + getIntegrityType().getResultsTableName()
+                        + getIntegrityType().getResultsTableName() 
+                        + " (folder, local_inode, remote_inode, local_identifier, remote_identifier, endpoint_id)" 
                         + " select "
                         + fullFolder
                         + " as folder, "
@@ -272,19 +290,19 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     // 1.3) Insert dummy temp row on FOLDER table
 
                     if (DbConnectionFactory.isOracle()) {
-                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+                        dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
                                 + DbConnectionFactory.getDBFalse()
                                 + "', '0', '', 'TEMP_IDENTIFIER', '"
                                 + fileAssetSt.getInode()
                                 + "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
                     } else if (DbConnectionFactory.isPostgres()) {
-                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
+                        dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
                                 + DbConnectionFactory.getDBFalse()
                                 + ", '0', '', 'TEMP_IDENTIFIER', '"
                                 + fileAssetSt.getInode()
                                 + "', '1900-01-01 00:00:00.00')");
                     } else {
-                        dc.executeStatement("insert into folder values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+                        dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
                                 + DbConnectionFactory.getDBFalse()
                                 + "', '0', '', 'TEMP_IDENTIFIER', '"
                                 + fileAssetSt.getInode()
@@ -371,7 +389,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     dc.loadResult();
 
                     // 4.3) insert real new FOLDER row
-                    dc.setSQL("insert into folder values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+                    dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
                     dc.addParam(newFolderInode);
                     dc.addParam(name);
                     dc.addParam(title);

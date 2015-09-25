@@ -25,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
@@ -97,15 +98,14 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             String tempKeyword = getTempKeyword();
 
             String createTempTable = "create " + tempKeyword + " table " + tempTableName
-                    + " (inode varchar(36) not null, velocity_var_name varchar(255), "
+                    + " (inode varchar(36) not null, velocity_var_name varchar(255) not null, "
                     + " primary key (inode) )";
 
             if (DbConnectionFactory.isOracle()) {
                 createTempTable = createTempTable.replaceAll("varchar\\(", "varchar2\\(");
             }
 
-            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?)";
-
+            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (inode, velocity_var_name) values(?,?)";
             while (structures.readRecord()) {
 
                 if (!tempCreated) {
@@ -113,17 +113,30 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                     tempCreated = true;
                 }
 
-                // select f.inode, i.parent_path, i.asset_name, i.host_inode
-                String structureInode = structures.get(0);
-                String verVarName = structures.get(1);
-
-                dc.setSQL(INSERT_TEMP_TABLE);
-                dc.addParam(structureInode);
-                dc.addParam(verVarName);
-                dc.loadResult();
+                String structureInode = null;
+				try {
+					structureInode = getStringIfNotBlank("inode",
+							structures.get(0));
+					final String verVarName = getStringIfNotBlank(
+							"velocity_var_name", structures.get(1));
+					dc.setSQL(INSERT_TEMP_TABLE);
+					dc.addParam(structureInode);
+					dc.addParam(verVarName);
+					dc.loadResult();
+				} catch (DotDataException e) {
+					structures.close();
+					final String assetId = UtilMethods.isSet(structureInode) ? structureInode
+							: "";
+					throw new DotDataException(
+							"An error occured when generating temp table for asset: "
+									+ assetId, e);
+				}
             }
 
             structures.close();
+            if (!tempCreated) {
+            	return false;
+            }
 
             // compare the data from the CSV to the local db data and see if we
             // have conflicts
@@ -137,7 +150,8 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
                 String INSERT_INTO_RESULTS_TABLE = "insert into "
-                        + getIntegrityType().getResultsTableName()
+                        + getIntegrityType().getResultsTableName() 
+                        + " (velocity_name, local_inode, remote_inode, endpoint_id)" 
                         + " select s.velocity_var_name as velocity_name, "
                         + "s.inode as local_inode, st.inode as remote_inode, '"
                         + endpointId
@@ -200,7 +214,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 // 1.2) Insert dummy temp row on STRUCTURE table
 
                 if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into structure values ('" + TEMP_INODE +"', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE +"', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '', '', '', 1, '"
                             + DbConnectionFactory.getDBTrue()
@@ -213,7 +227,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                             + st.getFolder()
                             + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
                 } else if (DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement("insert into structure values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
+                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
                             + DbConnectionFactory.getDBFalse()
                             + ", '', '', '', 1, "
                             + DbConnectionFactory.getDBTrue()
@@ -226,7 +240,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                             + st.getFolder()
                             + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
                 } else {
-                    dc.executeStatement("insert into structure values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '', '', '', 1, '"
                             + DbConnectionFactory.getDBTrue()
@@ -332,7 +346,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 dc.loadResult();
 
                 // 4.2) insert real new STRUCTURE row
-                dc.setSQL("insert into structure values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+                dc.setSQL("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
                 dc.addParam(newStructureInode);
                 dc.addParam(name);
                 dc.addParam(description);

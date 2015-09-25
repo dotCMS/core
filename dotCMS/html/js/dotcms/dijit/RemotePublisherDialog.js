@@ -10,6 +10,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
     title: "",
     admin: "",
     dateFilter: false,
+    removeOnly: false,
     container: null,
     cats: false,
     restricted:false,
@@ -30,6 +31,7 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
         var dateFilter = this.dateFilter;
         var cats = this.cats;
         var restricted = this.restricted;
+        var removeOnly = this.removeOnly;
         
         var connection = dojo.connect(dia, "onLoad", function () {
             dojo.disconnect(connection);
@@ -44,6 +46,12 @@ dojo.declare("dotcms.dijit.RemotePublisherDialog", null, {
             if(cats || restricted) {
             	dijit.byId("iwtExpire").set("disabled", true) ;
             	dijit.byId("iwtPublishExpire").set("disabled", true) ;
+            }
+            
+            if (removeOnly) {
+            	dijit.byId("iwtExpire").set("checked", true);
+            	dijit.byId("iwtPublish").set("disabled", true);
+            	dijit.byId("iwtPublishExpire").set("disabled", true);
             }
 
         });

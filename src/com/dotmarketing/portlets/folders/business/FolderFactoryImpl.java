@@ -6,10 +6,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -21,6 +23,7 @@ import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotIdentifierStateException;
@@ -39,6 +42,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
@@ -545,12 +549,17 @@ public class FolderFactoryImpl extends FolderFactory {
 		}
 		
 		//Content Pages
-		List<IHTMLPage> pageAssetList=new ArrayList<IHTMLPage>();
+		Set<IHTMLPage> pageAssetList=new HashSet<IHTMLPage>();
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getWorkingHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		pageAssetList.addAll(APILocator.getHTMLPageAssetAPI().getLiveHTMLPages(source, APILocator.getUserAPI().getSystemUser(), false));
 		for(IHTMLPage page : pageAssetList) {
 		    Contentlet cont = APILocator.getContentletAPI().find(page.getInode(), APILocator.getUserAPI().getSystemUser(), false);
-            APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+            Contentlet newContent = APILocator.getContentletAPI().copyContentlet(cont, newFolder, APILocator.getUserAPI().getSystemUser(), false);
+            List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+            for(MultiTree m : pageContents){
+            	MultiTree mt = new MultiTree(newContent.getIdentifier(), m.getParent2(), m.getChild());
+            	MultiTreeFactory.saveMultiTree(mt);
+            }
             pagesCopied.put(cont.getInode(), new IHTMLPage[] {page , APILocator.getHTMLPageAssetAPI().fromContentlet(cont)});
 		}
 		
