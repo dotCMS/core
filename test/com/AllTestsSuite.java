@@ -24,6 +24,7 @@ import com.dotcms.rest.WebResourceTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupsRestAPITest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionsRestAPITest;
 import com.dotcms.rest.api.v1.sites.rules.RulesRestAPITest;
+import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -105,6 +106,7 @@ import com.dotmarketing.webdav.WebDavTest;
     ConditionsRestAPITest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ConditionletTest.class,
+    ActionletResourceTest.class,
     SetSessionAttributeActionletTest.class
 })
 public class AllTestsSuite {
