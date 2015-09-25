@@ -13,26 +13,6 @@ public class RuleActionParameterTransform {
 
     public RuleActionParameterTransform(ApiProvider apiProvider) { this.rulesAPI = apiProvider.rulesAPI(); }
 
-    public RuleActionParameter restToApp(RestRuleActionParameter rest) {
-        RuleActionParameter app = new RuleActionParameter();
-        return applyRestToApp(rest, app);
-    }
-
-    public RuleActionParameter applyRestToApp(RestRuleActionParameter rest, RuleActionParameter app) {
-        app.setId(rest.id);
-        app.setKey(rest.key);
-        app.setValue(rest.value);
-        return app;
-    }
-
-    public RestRuleActionParameter appToRest(RuleActionParameter app) {
-        return toRest.apply(app);
-    }
-
-    public Function<RuleActionParameter, RestRuleActionParameter> appToRestFn() {
-        return toRest;
-    }
-
     public final Function<RuleActionParameter, RestRuleActionParameter> toRest = (app) -> {
 
         RestRuleActionParameter rest = new RestRuleActionParameter.Builder()
@@ -45,6 +25,20 @@ public class RuleActionParameterTransform {
         return rest;
     };
 
+    public final Function<RestRuleActionParameter, RuleActionParameter> toApp = (rest) -> {
+        RuleActionParameter app = new RuleActionParameter();
+        app.setId(rest.id);
+        app.setKey(rest.key);
+        app.setValue(rest.value);
+        return app;
+    };
+
+    public RuleActionParameter applyRestToApp(RestRuleActionParameter rest, RuleActionParameter app) {
+        app.setId(rest.id);
+        app.setKey(rest.key);
+        app.setValue(rest.value);
+        return app;
+    }
 
 }
 
