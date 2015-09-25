@@ -16,16 +16,17 @@ import com.dotmarketing.util.json.JSONObject;
 
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
-public class ConditionsRestAPITest extends TestBase {
+public class ConditionResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;
 
-    public ConditionsRestAPITest() {
+    public ConditionResourceFTest() {
         config = new FunctionalTestConfig();
     }
 
     /**
      * Used to create as many rules as needed for testing, based on simple rule creation
+
      */
     private String createRule(String ruleID) throws JSONException {
         //setup

@@ -15,11 +15,11 @@ import com.dotmarketing.util.json.JSONObject;
 
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
-public class ConditionGroupsRestAPITest extends TestBase {
+public class ConditionGroupResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;
 
-    public ConditionGroupsRestAPITest() {
+    public ConditionGroupResourceFTest() {
         config = new FunctionalTestConfig();
     }
 

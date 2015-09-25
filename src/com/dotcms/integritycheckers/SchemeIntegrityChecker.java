@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowCache;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UtilMethods;
 
 /**
  * Scheme integrity checker implementation.
@@ -94,14 +95,14 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
             String tempKeyword = getTempKeyword();
 
             String createTempTable = "create " + tempKeyword + " table " + tempTableName
-                    + " (inode varchar(36) not null, name varchar(255), "
+                    + " (inode varchar(36) not null, name varchar(255) not null, "
                     + " primary key (inode) )";
 
             if (DbConnectionFactory.isOracle()) {
                 createTempTable = createTempTable.replaceAll("varchar\\(", "varchar2\\(");
             }
 
-            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " values(?,?)";
+            final String INSERT_TEMP_TABLE = "insert into " + tempTableName + " (inode, name) values(?,?)";
 
             while (schemes.readRecord()) {
 
@@ -110,17 +111,29 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                     tempCreated = true;
                 }
 
-                // select f.inode, i.parent_path, i.asset_name, i.host_inode
-                String schemeInode = schemes.get(0);
-                String name = schemes.get(1);
-
-                dc.setSQL(INSERT_TEMP_TABLE);
-                dc.addParam(schemeInode);
-                dc.addParam(name);
-                dc.loadResult();
+                String schemeInode = null;
+                try {
+					schemeInode = getStringIfNotBlank("inode", schemes.get(0));
+					final String name = getStringIfNotBlank("name",
+							schemes.get(1));
+					dc.setSQL(INSERT_TEMP_TABLE);
+					dc.addParam(schemeInode);
+					dc.addParam(name);
+					dc.loadResult();
+				} catch (DotDataException e) {
+					schemes.close();
+					final String assetId = UtilMethods.isSet(schemeInode) ? schemeInode
+							: "";
+					throw new DotDataException(
+							"An error occured when generating temp table for asset: "
+									+ assetId, e);
+				}
             }
 
             schemes.close();
+            if (!tempCreated) {
+            	return false;
+            }
 
             // compare the data from the CSV to the local db data and see if we
             // have conflicts
@@ -132,7 +145,8 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
                 final String INSERT_INTO_RESULTS_TABLE = "insert into "
-                        + getIntegrityType().getResultsTableName()
+                        + getIntegrityType().getResultsTableName() 
+                        + " (name, local_inode, remote_inode, endpoint_id)"
                         + " select s.name, s.id as local_inode, wt.inode as remote_inode , '"
                         + endpointId + "' from workflow_scheme s " + "join " + tempTableName
                         + " wt on s.name = wt.name and s.id <> wt.inode";
@@ -192,7 +206,7 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                 // 1) Insert dummy temp row on WORKFLOW_SCHEME table
 
                 if (DbConnectionFactory.isOracle()) {
-                    dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into workflow_scheme (id, name, description, archived, mandatory, default_scheme, entry_action_id, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '"
                             + DbConnectionFactory.getDBFalse()
@@ -200,14 +214,14 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                             + DbConnectionFactory.getDBFalse()
                             + "', '', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
                 } else if (DbConnectionFactory.isPostgres()) {
-                    dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', "
+                    dc.executeStatement("insert into workflow_scheme (id, name, description, archived, mandatory, default_scheme, entry_action_id, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', "
                             + DbConnectionFactory.getDBFalse()
                             + ", "
                             + DbConnectionFactory.getDBFalse()
                             + ", "
                             + DbConnectionFactory.getDBFalse() + ", '', '1900-01-01 00:00:00.00')");
                 } else {
-                    dc.executeStatement("insert into workflow_scheme values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
+                    dc.executeStatement("insert into workflow_scheme (id, name, description, archived, mandatory, default_scheme, entry_action_id, mod_date) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_DESC', '"
                             + DbConnectionFactory.getDBFalse()
                             + "', '"
                             + DbConnectionFactory.getDBFalse()
@@ -243,7 +257,7 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                         + "'");
 
                 // 4) insert real new WORKFLOW_SCHEME row
-                dc.setSQL("insert into workflow_scheme values (?, ?, ?, ?, ?, ?, ?, ?) ");
+                dc.setSQL("insert into workflow_scheme (id, name, description, archived, mandatory, default_scheme, entry_action_id, mod_date) values (?, ?, ?, ?, ?, ?, ?, ?) ");
                 dc.addParam(newWorkflowId);
                 dc.addParam(name);
                 dc.addParam(desc);

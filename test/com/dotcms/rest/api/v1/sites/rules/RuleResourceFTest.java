@@ -14,11 +14,11 @@ import com.dotmarketing.util.json.JSONObject;
 
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
-public class RulesRestAPITest extends TestBase {
+public class RuleResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;
 
-    public RulesRestAPITest() {
+    public RuleResourceFTest() {
         config = new FunctionalTestConfig();
     }
 

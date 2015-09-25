@@ -2486,6 +2486,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				String workingContentletInode = (workingContentlet==null) ? "" : workingContentlet.getInode();
 
 				boolean priority = contentlet.isLowIndexPriority();
+				Boolean dontValidateMe = (Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME);
 				boolean isNewContent = false;
 				if(!InodeUtils.isSet(workingContentletInode)){
 				    isNewContent = true;
@@ -2679,8 +2680,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				// Publish once if needed and reindex once if needed. The publish
 				// method reindexes.
 				contentlet.setLowIndexPriority(priority);
-
-
+				//set again the don't validate me property if this was set
+				if(dontValidateMe != null){
+					contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, dontValidateMe);
+				}
 
 
 
@@ -2844,9 +2847,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             }
                         }
     			        if (!contentlet.isLive() && UtilMethods.isSet( st.getExpireDateVar() ) ) {//Verify if the structure have a Expire Date Field set
-			        		if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
-			        			throw new DotContentletValidationException( "message.contentlet.expired" );
-	    		            }
+    			        	if(contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME) == null || !(Boolean)contentlet.getMap().get(Contentlet.DONT_VALIDATE_ME)){
+	    				        if(UtilMethods.isSet(ident.getSysExpireDate()) && ident.getSysExpireDate().before( new Date())) {
+				        			throw new DotContentletValidationException( "message.contentlet.expired" );
+		    		            }
+    			        	}   
 	    		        }
     			        if(save) {
 

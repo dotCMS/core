@@ -22,6 +22,7 @@ import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
@@ -201,7 +202,7 @@ public class ConditionResource {
 
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
-        } catch (DotDataException e) {
+        }  catch (DotDataException | DotRuntimeException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
@@ -217,7 +218,7 @@ public class ConditionResource {
             conditionTransform.applyRestToApp(restCondition, condition);
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
-        } catch (DotDataException e) {
+        } catch (DotDataException | DotRuntimeException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
