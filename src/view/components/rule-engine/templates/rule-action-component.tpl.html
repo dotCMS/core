@@ -1,22 +1,19 @@
 <li class="list-group-item action-item">
   <div class="row">
     <div class="col-sm-5">
-      <input type="text" class="form-control" placeholder="Action Description" [value]="action.name" />
-    </div>
-    <div class="col-sm-1">
+      <input type="text" class="form-control" placeholder="Action Description" [value]="action.name" (change)="setActionName($event.target.value)"/>
     </div>
     <div class="col-sm-3">
       <select class="form-control clause-selector" [value]="actionlet.id" (change)="setActionlet($event.target.value)">
         <option value="{{actionlet.id}}" *ng-for="var actionlet of actionlets">{{actionlet.name}}</option>
       </select>
     </div>
-    <div class="col-sm-2">
-      <!--<input type="text" class="form-control" placeholder="Action Description" [value]="action.name" />-->
+    <div class="col-sm-3">
     </div>
     <div class="col-sm-1">
       <div class="operations actions-operations">
         <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Remove Action" (click)="removeRuleAction()">
-          <span class="glyphicon glyphicon-trash" aria-hidden="true"></span>
+          <span class="glyphicon glyphicon-trash" aria-hidden="true" (click)="removeRuleAction()"></span>
         </button>
       </div>
     </div>
