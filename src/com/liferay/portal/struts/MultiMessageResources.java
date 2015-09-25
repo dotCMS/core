@@ -176,6 +176,10 @@ public class MultiMessageResources extends PropertyMessageResources {
 
 
 							}
+                            if(props.containsKey(key)){
+                                Logger.warn(this.getClass(),
+                                            String.format("Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",key, props.get(key), val));
+                            }
 							props.put(key, val);
 						}
 

@@ -29,6 +29,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.CollectionFactory;
@@ -115,6 +116,19 @@ public class LanguageUtil {
             Logger.warn(LanguageUtil.class, key);
         }
         return optValue.orElse(key);
+    }
+
+    /**
+     * A slight variation on getOpt({defaultCompany}, Locale, String) that will return optional.empty even in the
+     * event of an exception, rather than declaring a checked exception that doesn't actually seem to ever actually
+     * be thrown, except in the event of some odd server error well beyond our control.
+     */
+    public static MultiMessageResources getMessagesForDefaultCompany(Locale locale, String key) {
+        return (MultiMessageResources)WebAppPool.get(PublicCompanyFactory.getDefaultCompanyId(), Globals.MESSAGES_KEY);
+    }
+
+    public static Locale getDefaultCompanyLocale(){
+        return PublicCompanyFactory.getDefaultCompany().getLocale();
     }
 
     public static Optional<String> getOpt(String companyId, Locale locale, String key) throws LanguageException {

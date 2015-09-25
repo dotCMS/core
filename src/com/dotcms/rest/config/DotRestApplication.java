@@ -2,13 +2,14 @@ package com.dotcms.rest.config;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionValueResource;
-import com.dotcms.rest.api.v1.sites.ruleengine.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.ActionResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionResource;
+import com.dotcms.rest.api.v1.sites.ruleengine.ConditionValueResource;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResource;
 import com.dotcms.rest.api.v1.sites.rules.RuleResource;
 import com.dotcms.rest.api.v1.system.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ConditionletsResource;
+import com.dotcms.rest.api.v1.system.i18n.I18NResource;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -53,6 +54,7 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 					REST_CLASSES.add(ConditionletsResource.class);
 					REST_CLASSES.add(ActionResource.class);
 					REST_CLASSES.add(ActionletsResource.class);
+					REST_CLASSES.add(I18NResource.class);
 
 				}
 			}
