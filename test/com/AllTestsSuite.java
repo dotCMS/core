@@ -42,6 +42,7 @@ import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
+import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
@@ -105,7 +106,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ConditionsRestAPITest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
     ConditionletTest.class,
-    ActionletResourceTest.class
+    ActionletResourceTest.class,
+    SetSessionAttributeActionletTest.class
 })
 public class AllTestsSuite {
 
