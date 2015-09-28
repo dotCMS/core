@@ -23,6 +23,7 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.WebAsset;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -39,6 +40,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
+import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.WebAssetFactory;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -1168,20 +1170,33 @@ public class BrowserAjax {
             }
 
             if(ident.getAssetType().equals("htmlpage")) {
+            	HTMLPage newPage = null;
                 if ( parent != null ) {
-                    HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
+                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, parent );
                 } else {
-                    HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
+                	newPage=HTMLPageFactory.copyHTMLPage( (HTMLPage) page, host );
+                }
+                /*copy page associated contentlets*/
+                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(page.getIdentifier());
+                for(MultiTree m : pageContents){
+                   	MultiTree mt = new MultiTree(newPage.getIdentifier(), m.getParent2(), m.getChild());
+                   	MultiTreeFactory.saveMultiTree(mt);
                 }
             }
             else {
                 Contentlet cont=APILocator.getContentletAPI().find(inode, user, false);
-
+                Contentlet newContentlet=null;
                 if(parent!=null) {
-                    APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
+                	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, parent, user, false);
                 }
                 else {
-                    APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
+                	newContentlet=APILocator.getContentletAPI().copyContentlet(cont, host, user, false);
+                }
+                /*copy page associated contentlets*/
+                List<MultiTree> pageContents = MultiTreeFactory.getMultiTree(cont.getIdentifier());
+                for(MultiTree m : pageContents){
+                   	MultiTree mt = new MultiTree(newContentlet.getIdentifier(), m.getParent2(), m.getChild());
+                   	MultiTreeFactory.saveMultiTree(mt);
                 }
             }
 
