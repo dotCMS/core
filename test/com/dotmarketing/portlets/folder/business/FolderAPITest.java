@@ -559,5 +559,59 @@ public class FolderAPITest {
 		
 	}
 
+	/**
+	 * Test delete folders with multilingua pages 
+	 * @throws Exception
+	 */
+	@Test
+	public void delete() throws Exception {
+		User user = APILocator.getUserAPI().getSystemUser();
+		Host demo = APILocator.getHostAPI().findByName("demo.dotcms.com", user, false);
+		long langIdUS = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+		long langIdES= APILocator.getLanguageAPI().getLanguage("es", "ES").getId();
+		
+		String folderPath = "/folderDeleteSourceTest"+System.currentTimeMillis();
+		Folder ftest = APILocator.getFolderAPI().createFolders(folderPath, demo, user, false);
+		//adding page
+		String pageStr ="mypage";
+		List<Template> templates = APILocator.getTemplateAPI().findTemplatesAssignedTo(demo);
+		Template template =null;
+		for(Template temp: templates){
+			if(temp.getTitle().equals("Quest - 1 Column")){
+				template=temp;
+				break;
+			}
+		}
+		/*create page content multilingual */
+		Contentlet contentAsset=new Contentlet();
+		contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
+		contentAsset.setHost(demo.getIdentifier());
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, pageStr);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, pageStr);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, pageStr);
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
+		contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
+		contentAsset.setLanguageId(langIdUS);
+		contentAsset.setFolder(ftest.getInode());
+		contentAsset=APILocator.getContentletAPI().checkin(contentAsset, user, false);
+		APILocator.getContentletAPI().publish(contentAsset, user, false);
+		
+		contentAsset.setLanguageId(langIdES);
+		contentAsset.setInode(null);
+		contentAsset=APILocator.getContentletAPI().checkin(contentAsset, user, false);
+		APILocator.getContentletAPI().publish(contentAsset, user, false);
+		
+		APILocator.getFolderAPI().delete(ftest, user, false);
+		
+		/*validate that the folder and pages were deleted*/
+		Folder  folder = APILocator.getFolderAPI().findFolderByPath(folderPath, demo, user, false);
+		Assert.assertTrue(folder.getInode() == null);
+	
+		IHTMLPage page = APILocator.getHTMLPageAssetAPI().getPageByPath(folderPath+"/"+pageStr, demo, langIdUS, false);
+		Assert.assertTrue(page == null);
+		
+		page = APILocator.getHTMLPageAssetAPI().getPageByPath(folderPath+"/"+pageStr, demo, langIdES, false);
+		Assert.assertTrue(page == null);
+	}
 
 }
