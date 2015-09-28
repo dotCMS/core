@@ -30,6 +30,10 @@ public class RuleActionTransform {
         app.setName(rest.name);
         app.setActionlet(rest.actionlet);
         app.setPriority(rest.priority);
+        if(rest.parameters!=null)
+            app.setParameters(rest.parameters.values().stream()
+                .map(parameterTransform.toApp)
+                .collect(Collectors.toList()));
         return app;
     }
 
@@ -44,7 +48,7 @@ public class RuleActionTransform {
     public final Function<RuleAction, RestRuleAction> toRest = (app) -> {
 
         Map<String, RestRuleActionParameter> params = app.getParameters().stream()
-                .map(parameterTransform.appToRestFn())
+                .map(parameterTransform.toRest)
                 .collect(Collectors.toMap(r -> r.id, Function.identity()));
 
         RestRuleAction rest = new RestRuleAction.Builder()
