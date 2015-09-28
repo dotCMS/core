@@ -578,13 +578,16 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(ruleAction.getId());
             db.loadResult();
 
+            deleteRuleActionsParameters(ruleAction);
+
             if (ruleAction.getParameters() != null) {
                 for (RuleActionParameter parameter : ruleAction.getParameters()) {
-                    db.setSQL(sql.UPDATE_RULE_ACTION_PARAM);
-                    db.addParam(parameter.getRuleActionId());
+                    parameter.setId(UUIDGenerator.generateUuid());
+                    db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
+                    db.addParam(parameter.getId());
+                    db.addParam(ruleAction.getId());
                     db.addParam(parameter.getKey());
                     db.addParam(parameter.getValue());
-                    db.addParam(parameter.getId());
                     db.loadResult();
                 }
             }
