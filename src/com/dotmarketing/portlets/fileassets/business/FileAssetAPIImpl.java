@@ -194,7 +194,14 @@ public class FileAssetAPIImpl implements FileAssetAPI {
 				Folder folder = APILocator.getFolderAPI().findFolderByPath(ident.getParentPath(), host, systemUser, false);
 				fa.setFolder(folder.getInode());
 			}catch(Exception e){
-				Logger.warn(this, "Unable to convert contentlet to file asset " + con, e);
+				try{
+					User systemUser = APILocator.getUserAPI().getSystemUser();
+					Host host = APILocator.getHostAPI().find(con.getHost(), systemUser , false);
+					Folder folder = APILocator.getFolderAPI().find(con.getFolder(), systemUser, false);
+					fa.setFolder(folder.getInode());
+				}catch(Exception e1){
+					Logger.warn(this, "Unable to convert contentlet to file asset " + con, e1);
+				}
 			}
 		}
 		return fa;
