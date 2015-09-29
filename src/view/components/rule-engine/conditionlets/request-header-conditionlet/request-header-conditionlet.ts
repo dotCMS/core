@@ -123,23 +123,19 @@ export class RequestHeaderConditionletModel {
   template: `
     <div class="row">
       <div class="col-sm-4">
-        <span class="cw-label">Header: </span>
         <select class="form-control header-key" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
           <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
         </select>
       </div>
       <div class="col-sm-3">
-        <span class="cw-label">&nbsp;</span>
         <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
           <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
       </div>
       <div class="col-sm-4">
-        <span class="cw-label">Values: </span>
         <input type="text" class="form-control condition-value" [value]="value.comparisonValues.join(', ')" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
       </div>
       <div class="col-sm-1">
-        <div class="cw-label">&nbsp;</div>
         <button type="button" class="btn btn-default" aria-label="Info" >
           <span class="glyphicon glyphicon-info-sign"></span>
         </button>

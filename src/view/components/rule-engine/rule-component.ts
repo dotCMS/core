@@ -40,7 +40,7 @@ class RuleComponent{
       this.rule.name = 'CoreWeb created this rule.' +  new Date().toISOString();//to avoid duplicate name error for now
       this.updateRule();
       var el = this.elementRef.nativeElement.children[0].children[0].children[0].children[0].children[0].childNodes[1];
-      window.setTimeout(function() {el.focus();}, 10); //avoid tick recursively error
+      window.setTimeout(function() {el['focus']();}, 10); //avoid tick recursively error
     }
   }
 
@@ -151,9 +151,11 @@ class RuleComponent{
     }
     let actionRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions')
 
-    actionRoot.push(action).then((snapshot)=> {
+    actionRoot.push(action).then((actionSnap:EntitySnapshot)=> {
       this.rule.actions = this.rule.ruleActions || {}
-      this.rule.actions[snapshot.key()] = true
+      this.rule.actions[actionSnap.key()] = true
+      let key = actionSnap.key()
+      this.ruleActions.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions/' + key))
       this.updateRule()
     })
   }

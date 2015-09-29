@@ -4,6 +4,8 @@
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 import {ruleActionTemplate} from './templates/index'
+import {SetSessionValueActionlet, SetSessionValueActionletModel} from './actionlets/set-session-value-actionlet/set-session-value-actionlet'
+import {SetSessionValueActionlet} from "./actionlets/set-session-value-actionlet/set-session-value-actionlet";
 
 
 var actionletsAry = []
@@ -32,7 +34,7 @@ export let initActionlets = function () {
 })
 @View({
   template: ruleActionTemplate,
-  directives: [NgIf, NgFor],
+  directives: [NgIf, NgFor, SetSessionValueActionlet],
 })
 export class RuleActionComponent {
   _actionMeta:any;
