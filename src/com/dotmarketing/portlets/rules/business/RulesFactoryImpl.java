@@ -113,15 +113,13 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public List<RuleAction> getRuleActionsByRule(String ruleId)
-            throws DotDataException {
+    public List<RuleAction> getRuleActionsByRule(String ruleId) throws DotDataException {
         List<RuleAction> actionList = cache.getActions(ruleId);
-        if (actionList == null) {
+        if(actionList == null) {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_RULE_ACTIONS_BY_RULE);
             db.addParam(ruleId);
-            actionList = convertListToObjects(db.loadObjectResults(),
-                    RuleAction.class);
+            actionList = convertListToObjects(db.loadObjectResults(), RuleAction.class);
 
             getRuleActionParametersFromDB(actionList, db);
 
@@ -708,8 +706,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 ret.add(this.convertMaptoObject(map, clazz));
             }
         } catch (final Exception e) {
-            throw new DotDataException("cannot convert object to " + clazz
-                    + " " + e.getMessage());
+            throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage(), e);
 
         }
         return ret;
@@ -723,8 +720,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 ret.add(this.convertMaptoObject(map, clazz));
             }
         } catch (final Exception e) {
-            throw new DotDataException("cannot convert object to " + clazz
-                    + " " + e.getMessage());
+            throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage(), e);
 
         }
         return ret;
@@ -735,17 +731,17 @@ public class RulesFactoryImpl implements RulesFactory {
             InvocationTargetException {
 
         if (clazz.getName().equals(Rule.class.getName())) {
-            return this.convertRule(map);
+            return convertRule(map);
         } else if (clazz.getName().equals(RuleAction.class.getName())) {
-            return this.convertRuleAction(map);
+            return convertRuleAction(map);
         } else if (clazz.getName().equals(Condition.class.getName())) {
-            return this.convertCondition(map);
+            return convertCondition(map);
         } else if (clazz.getName().equals(ConditionGroup.class.getName())) {
-            return this.convertConditionGroup(map);
+            return convertConditionGroup(map);
         } else if (clazz.getName().equals(RuleActionParameter.class.getName())) {
-            return this.convertRuleActionParam(map);
+            return convertRuleActionParam(map);
         } else if (clazz.getName().equals(ConditionValue.class.getName())) {
-            return this.convertConditionValue(map);
+            return convertConditionValue(map);
         } else {
             return this.convert(clazz.newInstance(), map);
         }
@@ -812,7 +808,8 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setId(row.get("id").toString());
         r.setRuleActionId(row.get("rule_action_id").toString());
         r.setKey(row.get("paramkey").toString());
-        r.setValue(row.get("value").toString());
+        Object value = row.get("value");
+        r.setValue(value == null ? null : String.valueOf(value));
         return r;
     }
 
