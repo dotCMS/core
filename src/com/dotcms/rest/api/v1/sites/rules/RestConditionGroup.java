@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonCreator;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -19,6 +20,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 @JsonDeserialize(builder = RestConditionGroup.Builder.class)
 public class RestConditionGroup extends Validated {
 
+    @JsonIgnore
     public final String id;
 
     @NotNull
