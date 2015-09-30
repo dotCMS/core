@@ -15,7 +15,7 @@ public abstract class PushedAssetsFactory {
 	protected static String DELETE_ASSETS_BY_ASSET_ID= "DELETE FROM publishing_pushed_assets WHERE asset_id = ?";
 	protected static String DELETE_ASSETS_BY_ENVIRONMENT_ID= "DELETE FROM publishing_pushed_assets WHERE environment_id = ?";
 	protected static String DELETE_ALL_ASSETS= "TRUNCATE publishing_pushed_assets";
-	protected static String SELECT_ASSET_LAST_PUSHED= "SELECT * FROM publishing_pushed_assets WHERE asset_id = ? ORDER BY push_date desc";
+	protected static String SELECT_ASSET_LAST_PUSHED = "SELECT * FROM publishing_pushed_assets WHERE asset_id = ? AND environment_id = ? ORDER BY push_date DESC";
 	
 	
 	

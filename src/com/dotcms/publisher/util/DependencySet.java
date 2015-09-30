@@ -153,7 +153,7 @@ public class DependencySet extends HashSet<String> {
 							APILocator.getPushedAssetsAPI().savePushedAsset(asset);
 						}
 						
-						cache.add(asset);
+						//cache.add(asset);
 						
 					} catch (DotDataException e) {
 						Logger.error(getClass(), "Could not save PushedAsset. "
