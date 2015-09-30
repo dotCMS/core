@@ -12,14 +12,14 @@
  *
  * ## POSIX Utility Argument Syntax (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
  * ```
- * cw-set-session-value-actionlet [-k session_key] [value]
+ * cw-set-session-value-action [-k session_key] [value]
  *   -k          The key under which the specified value will be made available on the Session.
  *   value       The value which will be set on the session. Currently only allows static string values. Dynamic lookup TBD.
  * ```
  *
  * ## UI Layout
  *
- * Conceptually the actionlet is made up of two fields:
+ * Conceptually the action type is made up of two fields:
  * ```
  * <div>
  *   <input name="session_key" required="true"/>
@@ -41,24 +41,10 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-
-
-export class SetSessionValueActionletModel {
-  sessionKeyValue:string;
-  sessionValue:string;
-
-  constructor(sessionKeyValue = null, sessionValue = null) {
-    this.sessionKeyValue = sessionKeyValue
-    this.sessionValue = sessionValue
-  }
-
-  clone():SetSessionValueActionletModel {
-    return new SetSessionValueActionletModel(this.sessionKeyValue, this.sessionValue)
-  }
-}
+import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
 
 @Component({
-  selector: 'cw-set-session-value-actionlet',
+  selector: 'cw-set-session-value-action',
   properties: [
     "sessionKeyValue", "sessionValue"
   ],
@@ -85,29 +71,31 @@ export class SetSessionValueActionletModel {
 </div>
   `
 })
-export class SetSessionValueActionlet {
+export class SetSessionValueAction {
 
-  value:SetSessionValueActionletModel;
+  value:SetSessionValueActionModel;
 
   change:EventEmitter;
 
-  constructor(@Attribute('sessionKeyValue') sessionKeyValue:string,
-              @Attribute('sessionValue') sessionValue:string) {
-    this.value = new SetSessionValueActionletModel(sessionKeyValue, sessionValue)
+  constructor(@Attribute('sessionKeyValue') sessionKeyValue:string = '',
+              @Attribute('sessionValue') sessionValue:string = '') {
+    this.value = new SetSessionValueActionModel()
+    this.value.sessionKeyValue = sessionKeyValue
+    this.value.sessionValue = sessionValue
     this.change = new EventEmitter();
   }
 
-  _modifyEventForForwarding(event:Event, field, oldState:SetSessionValueActionletModel):Event {
+  _modifyEventForForwarding(event:Event, field, oldState:SetSessionValueActionModel):Event {
     Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field})
     return event
   }
 
   set sessionKeyValue(value:string) {
-    this.value.sessionKeyValue = value
+    this.value.sessionKeyValue = value || ''
   }
 
   set sessionValue(value:string) {
-    this.value.sessionValue = value
+    this.value.sessionValue = value || ''
   }
 
   updateSessionKey(event:Event) {

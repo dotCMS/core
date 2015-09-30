@@ -2,21 +2,21 @@
   <div class="panel-body">
     <div class="row">
       <div class="col-sm-3">
-        <select class="form-control clause-selector" [value]="actionlet.id"
+        <select class="form-control clause-selector" [value]="actionModel.actionConfig?.actionTypeId"
                 (change)="setActionlet($event.target.value)">
-          <option value="{{actionlet.id}}" *ng-for="var actionlet of actionlets">{{actionlet.name}}</option>
+          <option value="{{actionTypeModel.id}}" *ng-for="var actionTypeModel of actionTypes">{{actionTypeModel.name}}</option>
         </select>
       </div>
       <div class="col-sm-1">
         <h4 class="separator"></h4>
       </div>
 
-      <cw-set-session-value-actionlet class="col-sm-7"
-                                      [session-key-value]="100"
-                                      [session-value]="lksdjf"
-                                      (change)="updateActionlet($event)">
+      <cw-set-session-value-action class="col-sm-7"
+                                      [session-key-value]="actionModel.actionConfig?.sessionKeyValue"
+                                      [session-value]="actionModel.actionConfig?.sessionValue"
+                                      (change)="actionConfigChanged($event)">
 
-      </cw-set-session-value-actionlet>
+      </cw-set-session-value-action>
 
       <div class="col-sm-1">
         <div class="operations">

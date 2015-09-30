@@ -4,12 +4,12 @@
 import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
 
 import {ruleActionTemplate} from './templates/index'
-import {SetSessionValueActionlet, SetSessionValueActionletModel} from './actionlets/set-session-value-actionlet/set-session-value-actionlet'
-import {SetSessionValueActionlet} from "./actionlets/set-session-value-actionlet/set-session-value-actionlet";
+import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
+import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
 
 
 var actionletsAry = []
-var actionletsMap = new Map()
+var actionTypesMap:Map<string,ActionTypeModel> = new Map()
 var actionletsPromise;
 
 
@@ -19,7 +19,8 @@ export let initActionlets = function () {
     actionletsRef.once('value', (snap) => {
       let actionlets = snap['val']()
       let results = (Object.keys(actionlets).map((key) => {
-        actionletsMap.set(key, actionlets[key])
+        let actionType = actionlets[key]
+        actionTypesMap.set(key, new ActionTypeModel(key, actionType.i18nKey))
         return actionlets[key]
       }))
 
@@ -34,41 +35,32 @@ export let initActionlets = function () {
 })
 @View({
   template: ruleActionTemplate,
-  directives: [NgIf, NgFor, SetSessionValueActionlet],
+  directives: [NgIf, NgFor, SetSessionValueAction],
 })
 export class RuleActionComponent {
   _actionMeta:any;
-  action:any;
-  actionValue:string;
-  actionlet:any;
-  actionlets:Array<any>;
+  actionModel:RuleActionModel;
+  actionTypes:Array<any>;
 
   constructor() {
-    console.log('Creating actionComponent')
-    this.actionlets = []
+    this.actionTypes = []
     actionletsPromise.then(()=> {
-      this.actionlets = actionletsAry
+      this.actionTypes = actionletsAry
     })
-    this.action = {}
-    this.actionValue = ''
-    this.actionlet = {}
-  }
-
-  setActionName(name:string) {
-    this.action.name = name
-    this.updateAction()
+    this.actionModel = new RuleActionModel()
   }
 
   onSetActionMeta(snapshot){
-    console.log("Action's type is ", this.action, snapshot);
-    this.action = snapshot.val()
-    this.actionlet = actionletsMap.get(this.action.actionlet)
-    console.log('Loaded action with actionlet: ', this.actionlet)
+    let val = snapshot.val()
+    this.actionModel.id = val.id
+    this.actionModel.name = val.name
+    this.actionModel.owningRuleId = val.owningRule
+    this.actionModel.priority = val.priority
+    this.actionModel.setActionType(actionTypesMap.get(val.actionlet), val.parameters)
   }
 
 
   set actionMeta(actionMeta) {
-    console.log("Setting actionMeta: ", actionMeta.key())
     this._actionMeta = actionMeta
     this._actionMeta.once('value', this.onSetActionMeta.bind(this))
   }
@@ -78,17 +70,17 @@ export class RuleActionComponent {
   }
 
   setActionlet(actionletId){
-    console.log('Setting actionlet id to: ', actionletId)
-    this.action.actionlet = actionletId
-    this.actionlet =  actionletsMap.get(this.action.actionlet)
+    this.actionModel.setActionType(actionTypesMap.get(actionletId))
     this.updateAction()
   }
 
+  actionConfigChanged(event){
+    this.actionModel.actionConfig = event.ngTarget.value
+    this.updateAction()
+  }
 
   updateAction() {
-    console.log('Updating RuleAction: ', this.action)
-    this.actionMeta.set(this.action)
-
+    this.actionMeta.set(this.actionModel.out())
   }
 
   removeRuleAction() {

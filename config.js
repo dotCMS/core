@@ -13,6 +13,7 @@ System.config({
     "emitDecoratorMetadata": true
   },
   paths: {
+    "api/*": "build/api/*",
     "coreweb/api/*": "build/api/*",
     "rule-engine/*": "build/view/components/rule-engine/*",
     "src/*": "build/*.js",

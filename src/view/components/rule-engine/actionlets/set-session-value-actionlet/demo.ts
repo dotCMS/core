@@ -1,35 +1,35 @@
 /// <reference path="../../../../../../typings/angular2/angular2.d.ts" />
 
 import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
-import {SetSessionValueActionlet} from './set-session-value-actionlet';
+import {SetSessionValueAction} from './set-session-value-action';
 
 @Component({
-  selector: 'cw-set-session-value-actionlet-demo'
+  selector: 'cw-set-session-value-action-demo'
 })
 @View({
-  directives: [SetSessionValueActionlet],
+  directives: [SetSessionValueAction],
   template: `
     <div class="panel panel-default">
       <div class="panel-heading">1) No values set.</div>
       <div class="panel-body">
-          <cw-set-session-value-actionlet></cw-set-session-value-actionlet>
+          <cw-set-session-value-action></cw-set-session-value-action>
       </div>
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">2) With initial value set for session-header-key</div>
       <div class="panel-body">
-        <cw-set-session-value-actionlet session-key-value="Hola"></cw-set-session-value-actionlet>
+        <cw-set-session-value-action session-key-value="Hola"></cw-set-session-value-action>
       </div>
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">3) With initial value set for session-header-key and session-value</div>
       <div class="panel-body">
         <div class="row">
-          <cw-set-session-value-actionlet class="col-sm-12"
+          <cw-set-session-value-action class="col-sm-12"
           [session-key-value]="demo['3'].sessionKeyValue"
           [session-value]="demo['3'].sessionValue"
           (change)="update(3, $event)"
-          ></cw-set-session-value-actionlet>
+          ></cw-set-session-value-action>
         </div>
         <div class="row">
           <div class="col-sm-4">{{demo['3'].sessionKeyValue}}</div><div class="col-sm-3">{{demo['3'].sessionValue}}</div>
@@ -40,11 +40,11 @@ import {SetSessionValueActionlet} from './set-session-value-actionlet';
       <div class="panel-heading">4) With initial value set for all values.</div>
         <div class="panel-body">
         <div class="row">
-          <cw-set-session-value-actionlet class="col-sm-12" 
+          <cw-set-session-value-action class="col-sm-12"
           [session-key-value]="demo['4'].sessionKeyValue"
           [session-value]="demo['4'].sessionValue"
           (change)="update(4, $event)"
-          ></cw-set-session-value-actionlet>
+          ></cw-set-session-value-action>
         </div>
         <div class="row">
           <div class="col-sm-4">{{demo['4'].sessionKeyValue}}</div><div class="col-sm-3">{{demo['4'].sessionValue}}</div>
