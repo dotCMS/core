@@ -62,18 +62,13 @@
       <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
                        [rule]="rule"
                        [group-snap]="groupSnap"
-                       [group-index]="i"
-          ></condition-group>
+                       [group-index]="i"></condition-group>
 
       <div class="section-separator">
         <h2>Then</h2>
         <hr/>
       </div>
-      <div class="panel panel-default actions">
-        <rule-action *ng-for="var actionMeta of ruleActions; var i=index"
-                     [action-meta]="actionMeta"
-                ></rule-action>
-      </div>
+      <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
 
     </div>
   </div>
