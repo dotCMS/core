@@ -26,6 +26,7 @@ import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -109,7 +110,8 @@ import com.dotmarketing.webdav.WebDavTest;
     ConditionletTest.class,
     ActionletResourceFTest.class,
     SetSessionAttributeActionletTest.class,
-    UsersCountryConditionletFTest.class
+    UsersCountryConditionletFTest.class,
+    ActionResourceFTest.class
 })
 public class AllTestsSuite {
 
