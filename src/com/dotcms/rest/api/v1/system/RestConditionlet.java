@@ -1,6 +1,5 @@
 package com.dotcms.rest.api.v1.system;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -13,7 +12,6 @@ import java.util.List;
 @JsonDeserialize(builder = RestConditionlet.Builder.class)
 public final class RestConditionlet extends Validated {
 
-    @JsonIgnore
 //    @Length(min = 1, max = 36)
     public final String id;
 
