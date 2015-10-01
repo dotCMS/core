@@ -1,8 +1,6 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotmarketing.portlets.rules.model.ConditionValue;
-
-import java.util.Map;
 import java.util.function.Function;
 
 public class ConditionValueTransform {
@@ -26,13 +24,5 @@ public class ConditionValueTransform {
         app.setValue(rest.value);
         return app;
     }
-
-    public final Function<Map.Entry<String, RestConditionValue>, ConditionValue> mapEntrytoApp = (entry) -> {
-        ConditionValue app = new ConditionValue();
-        app.setId(entry.getKey());
-        app.setPriority(entry.getValue().priority);
-        app.setValue(entry.getValue().value);
-        return app;
-    };
 }
 
