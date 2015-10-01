@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.sites.ruleengine;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
@@ -15,6 +17,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 @JsonDeserialize(builder = RestCondition.Builder.class)
 public final class RestCondition extends Validated {
 
+    @JsonIgnore
     public final String id;
 
     @NotNull
@@ -96,6 +99,18 @@ public final class RestCondition extends Validated {
 
         public Builder priority(int priority) {
             this.priority = priority;
+            return this;
+        }
+
+        public Builder from(RestCondition copy) {
+            id = copy.id;
+            name = copy.name;
+            owningGroup = copy.owningGroup;
+            conditionlet = copy.conditionlet;
+            comparison = copy.comparison;
+            operator = copy.operator;
+            values = ImmutableMap.copyOf(copy.values);
+            priority = copy.priority;
             return this;
         }
 

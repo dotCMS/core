@@ -21,9 +21,9 @@ public class ConditionTransform {
         app.setOperator(Condition.Operator.valueOf(rest.operator));
         app.setPriority(rest.priority);
         if(rest.values!=null)
-        app.setValues(rest.values.values().stream()
-                .map(conditionValueTransform.toApp)
-                .collect(Collectors.toList()));
+        app.setValues(rest.values.entrySet().stream()
+            .map(conditionValueTransform.mapEntrytoApp)
+            .collect(Collectors.toList()));
         return app;
     }
 

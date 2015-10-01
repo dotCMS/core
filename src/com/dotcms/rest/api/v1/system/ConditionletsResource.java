@@ -30,7 +30,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/system")
+@Path("/v1/system/ruleengine")
 public class ConditionletsResource {
 
     private final RulesAPI rulesAPI;
