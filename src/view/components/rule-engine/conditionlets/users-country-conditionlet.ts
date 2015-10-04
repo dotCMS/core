@@ -12,7 +12,9 @@
    template: `
     <div class="col-sm-5">
       <select class="form-control clause-selector" [value]="conditionletDir.condition.comparison" (change)="setComparison($event)">
-        <option value="{{x.id}}" *ng-for="var x of conditionletDir.conditionlet.comparisons">{{x.label}}</option>
+        <option value="{{x.id}}"
+                *ng-for="var x of conditionletDir.conditionlet.comparisons"
+                [selected]="x.id == conditionletDir.condition.comparison">{{x.label}}</option>
       </select>
     </div>
     <div class="col-sm-2">
