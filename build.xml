@@ -148,12 +148,6 @@
 
     </target>
 
-    <target name="clean-tinymce-gz" description="Removes all generated .gz pre-compressed files by tinymce_gzip.jsp">
-        <delete>
-            <fileset dir="dotCMS/html/js/tinymce/js/tinymce/" includes="*.gz"/>
-        </delete>
-    </target>
-
     <target name="clean-core" description="Removes all compiled classes, jar." depends="check-src-build">
         <replaceregexp flags="s" match="&lt;!-- BEGIN JSPS --&gt;(.*)&lt;!-- END JSPS --&gt;"
                        replace="&lt;!-- BEGIN JSPS --&gt; &lt;!-- END JSPS --&gt;">
@@ -565,7 +559,7 @@
 
     <target name="deploy-tests" depends="uncomment-test-servlet, build, deploy-core-with-tests, deploy-plugins" description="builds and deploys core, plugins and unit tests" />
 
-    <target name="clean" depends="clean-plugins,undeploy-plugins,clean-core,clean-tinymce-gz" description="Cleans plugins and core code and also undeploys plugins" />
+    <target name="clean" depends="clean-plugins,undeploy-plugins,clean-core" description="Cleans plugins and core code and also undeploys plugins" />
 
     <macrodef name="iterate">
         <attribute name="target"/>
