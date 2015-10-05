@@ -10,7 +10,7 @@
         <div class="row">
           <div class="col-sm-3">
             <select class="form-control clause-selector" [value]="condition.conditionlet" (change)="setConditionlet($event.target.value)">
-              <option value="{{conditionlet.id}}"  *ng-for="var conditionlet of conditionlets; var i=index">{{conditionlet.name}}</option>
+              <option value="{{conditionType.id}}"  *ng-for="var conditionType of conditionTypes; var i=index">{{conditionType.name}}</option>
             </select>
           </div>
           <div class="col-sm-1">

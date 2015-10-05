@@ -8,7 +8,6 @@ import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/se
 import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
 import {ApiRoot} from 'api/persistence/ApiRoot';
 import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
-import {ActionTypesProvider} from "../../../api/rule-engine/ActionTypes";
 
 
 @Component({
@@ -26,7 +25,6 @@ export class RuleActionComponent {
   actionTypes:Array<any>;
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ActionTypesProvider) typesProvider:ActionTypesProvider){
-    debugger;
     this.actionTypes = []
     this.typesProvider = typesProvider
     typesProvider.promise.then(()=> {

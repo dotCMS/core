@@ -9,9 +9,9 @@ import {bootstrap, NgFor, NgIf, Component, Directive, View, Inject} from 'angula
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
 import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
+import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
 
 
-import {initConditionlets} from './rule-condition-component';
 import {RuleComponent} from './rule-component';
 import {ruleEngineTemplate} from './templates/index'
 
@@ -96,8 +96,8 @@ class RuleEngineComponent{
 
 export function main() {
   ConnectionManager.persistenceHandler = RestDataStore
-  initConditionlets()
-  let app = bootstrap(RuleEngineComponent, [ApiRoot, ActionTypesProvider])
+
+  let app = bootstrap(RuleEngineComponent, [ApiRoot, ActionTypesProvider, ConditionTypesProvider])
   app.then( (appRef) => {
     console.log("Bootstrapped App: ", appRef)
   }).catch((e) => {

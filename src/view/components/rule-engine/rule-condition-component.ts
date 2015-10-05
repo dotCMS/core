@@ -2,11 +2,15 @@
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 
-import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
 
 import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 import {conditionTemplate} from './templates/index'
+
+import {ApiRoot} from 'api/persistence/ApiRoot';
+import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
+
 
 import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
 import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
@@ -29,31 +33,6 @@ import {UsersSiteVisitsConditionlet} from './conditionlets/users-site-visits-con
 import {UsersDateTimeConditionlet} from './conditionlets/users-date-time-conditionlet'
 import {UsersOperatingSystemConditionlet} from './conditionlets/users-operating-system-conditionlet'
 import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
-
-var conditionletsAry = []
-var conditionletsMap = new Map()
-var conditionletsPromise;
-
-
-let initConditionlets = function () {
-  let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
-  conditionletsPromise = new Promise((resolve, reject) => {
-    conditionletsRef.once('value', (snap) => {
-      let conditionlets = snap['val']()
-      let results = (Object.keys(conditionlets).map((key) => {
-        conditionletsMap.set(key, conditionlets[key])
-        return conditionlets[key]
-      }))
-      Array.prototype.push.apply(conditionletsAry, results);
-      resolve(snap);
-    })
-  });
-}
-
-
-/*
- ,
- */
 
 @Component({
   selector: 'rule-condition',
@@ -88,18 +67,19 @@ let initConditionlets = function () {
   ]
 })
 class ConditionComponent {
-  index:number;
-  _conditionMeta:any;
-  condition:any;
-  conditionValue:string;
-  conditionlet:any;
-  conditionlets:Array<any>;
+  index:number
+  _conditionMeta:any
+  condition:any
+  conditionValue:string
+  conditionlet:any
+  conditionTypes:Array<any>
+  typesProvider:ConditionTypesProvider
 
-  constructor() {
-    console.log('Creating ConditionComponent')
-    this.conditionlets = []
-    conditionletsPromise.then(()=> {
-      this.conditionlets = conditionletsAry
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ConditionTypesProvider) typesProvider:ConditionTypesProvider) {
+    this.conditionTypes = []
+    this.typesProvider = typesProvider
+    typesProvider.promise.then(()=> {
+      this.conditionTypes = typesProvider.ary
     })
     this.condition = {}
     this.conditionValue = ''
@@ -110,7 +90,7 @@ class ConditionComponent {
   onSetConditionMeta(snapshot) {
     console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
-    this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
+    this.conditionlet = this.typesProvider.map.get(this.condition.conditionlet)
     this.conditionValue = this.getComparisonValue()
   }
 
@@ -154,7 +134,7 @@ class ConditionComponent {
       this.conditionValue = newVal
     }
     this.condition.conditionlet = conditionletId
-    this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
+    this.conditionlet = this.typesProvider.map.get(this.condition.conditionlet)
 
     this.updateCondition()
   }
@@ -198,11 +178,11 @@ class ConditionComponent {
     this.updateCondition()
   }
 
-  onFoo(event){
+  onFoo(event) {
     alert('wow')
   }
 
-  onConditionletChange(event){
+  onConditionletChange(event) {
     console.log('onConditionletChange', event)
   }
 
@@ -217,4 +197,4 @@ class ConditionComponent {
   }
 }
 
-export {ConditionComponent, initConditionlets}
+export {ConditionComponent}
