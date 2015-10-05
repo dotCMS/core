@@ -77,13 +77,14 @@ public class ConditionResource {
 
         try {
             getHost(siteId, user);
-            Condition condition = rulesAPI.getConditionById(conditionId, user, false);
+            Condition condition = checkNotNull(rulesAPI.getConditionById(conditionId, user, false)
+                ,BadRequestException.class, "Not valid Condition");
             RestCondition restCondition = conditionTransform.appToRest(condition);
             return Response.ok(restCondition).build();
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error getting Condition", e);
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        } 
     }
 
     /**
