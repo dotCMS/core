@@ -6,6 +6,7 @@ declare class EntityMeta {
   once(eventType:string, cb?:Function):Promise<any>;
   on(eventType:string, cb?:Function):Promise<any>;
   push(data:any):Promise<any>;
+  child(path:string);
 }
 
 declare class EntitySnapshot {

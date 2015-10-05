@@ -49,6 +49,9 @@ let RootMaker = {
 
 export class EntitySnapshot {
   constructor(path, entity=null) {
+    if(!path.startsWith('http')){
+      //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
+    }
     this._path = path
     this._entity = entity // @todo ggranum: this should be cloned
     Dispatcher.snapshotCreated(this)
@@ -97,6 +100,9 @@ export class EntitySnapshot {
 
 export class EntityMeta {
   constructor(url) {
+    if(!url.startsWith('http')){
+      //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
+    }
     this.path = url
     this.pathTokens = url ? url.split("/") : []
     this.latestSnapshot = null
