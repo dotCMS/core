@@ -448,9 +448,6 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                 }
 
             }
-
-            discardConflicts(serverId);
-
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }

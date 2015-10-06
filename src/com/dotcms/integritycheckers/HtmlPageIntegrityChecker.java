@@ -200,8 +200,6 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
                 }
             }
         }
-
-        discardConflicts(endpointId);
     }
 
     /**
@@ -684,6 +682,10 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         contentletAPI.copyProperties(newWorkingContentPage, existingWorkingContentPage.getMap());
         newWorkingContentPage.setIdentifier(newHtmlPageIdentifier);
         newWorkingContentPage.setInode(remoteWorkingInode);
+        // If page was removed before in the end point, remove the NOTFOUND flag 
+        // for that page from the cache
+		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(
+				newHtmlPageIdentifier, newWorkingContentPage.getLanguageId());
         indexAPI.addContentToIndex(newWorkingContentPage);
 
         if (UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
