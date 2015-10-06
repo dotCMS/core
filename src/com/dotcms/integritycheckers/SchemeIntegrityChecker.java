@@ -277,9 +277,6 @@ public class SchemeIntegrityChecker extends AbstractIntegrityChecker {
                 // 6) delete dummy temp
                 dc.executeStatement("delete from workflow_scheme where id = 'TEMP_INODE'");
             }
-
-            discardConflicts(serverId);
-
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }

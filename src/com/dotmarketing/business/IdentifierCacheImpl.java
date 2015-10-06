@@ -264,7 +264,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
     }
 
     @Override
-    protected void removeContentletVersionInfoToCache(String identifier, long lang) {
+    public void removeContentletVersionInfoToCache(String identifier, long lang) {
         String key=identifier+"-lang:"+lang;
         cache.remove(getVersionInfoGroup()+key, getVersionInfoGroup());
     }
