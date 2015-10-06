@@ -8,6 +8,7 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.exception.BadRequestException;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
@@ -47,7 +48,7 @@ public class RestRuleAction extends Validated {
         @JsonProperty(required = true) private String name;
         @JsonProperty(required = true) private String owningRule;
         @JsonProperty(required = true) private String actionlet;
-        @JsonProperty private Map<String, RestRuleActionParameter> parameters;
+        @JsonProperty private Map<String, RestRuleActionParameter> parameters = new HashMap<>();
         @JsonProperty private int priority=0;
 
         public Builder name(String name) {

@@ -49,7 +49,7 @@ public class RuleActionTransform {
 
         Map<String, RestRuleActionParameter> params = null;
 
-        if(app.getParameters()!=null && !app.getParameters().isEmpty()) {
+        if(app.getParameters()!=null) {
 
             params = app.getParameters().stream()
                 .map(parameterTransform.toRest)
