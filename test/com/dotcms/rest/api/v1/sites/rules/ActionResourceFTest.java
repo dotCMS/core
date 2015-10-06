@@ -301,4 +301,95 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     }
+    
+    /**
+     * Delete an action... return 204
+     */
+    @Test
+    public void deleteAction() throws JSONException{
+    	//Creation of the Rule
+    	String ruleId = createRule("Delete Action");
+    	
+    	//Setup
+    	JSONObject actionJSON = new JSONObject();
+    	actionJSON.put("name", "Action Test REST");
+    	actionJSON.put("owningRule", ruleId);
+		actionJSON.put("actionlet", "CountRequestsActionlet");
+    	    	
+    	// client call
+    	WebTarget target = config.restBaseTarget();
+    	
+    	//create
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    			.post(Entity.json(actionJSON.toString()));
+    	
+    	assertTrue(response.getStatus() == HttpStatus.SC_OK);
+    	
+    	//response
+    	String responseStr = response.readEntity(String.class);
+    	JSONObject responseJSON = new JSONObject(responseStr);
+    	String action = (String)responseJSON.get("id");
+    	
+    	//delete
+    	response = target.path("/sites/" + config.defaultHostId + "/ruleengine/ruleActions/" + action)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .delete();
+    	
+    	assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+    }
+    
+    /**
+     * Delete non-existent action... return 404
+     */
+    @Test
+    public void deleteNonExistentAction() {
+        WebTarget target = config.restBaseTarget();
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/ruleActions/" + "00000000-0000-0000-0000-000000000000")
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .delete();
+        
+        assertTrue(response.getStatus() == HttpStatus.SC_NOT_FOUND);
+    }
+    
+    /**
+     * Update an action... return 200
+     */
+    @Test
+    public void updateAction() throws JSONException{
+    	//Creation of the Rule
+    	String ruleId = createRule("Update Action");
+    	
+    	//Setup
+    	JSONObject actionJSON = new JSONObject();
+    	actionJSON.put("name", "Action Test REST");
+    	actionJSON.put("owningRule", ruleId);
+		actionJSON.put("actionlet", "CountRequestsActionlet");
+    	    	
+    	// client call
+    	WebTarget target = config.restBaseTarget();
+    	
+    	//create
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    			.post(Entity.json(actionJSON.toString()));
+    	
+    	assertTrue(response.getStatus() == HttpStatus.SC_OK);
+    	
+    	//response
+    	String responseStr = response.readEntity(String.class);
+    	JSONObject responseJSON = new JSONObject(responseStr);
+    	String action = (String)responseJSON.get("id");
+    	
+        JSONObject updateJSON = new JSONObject();
+        updateJSON.put("name", "Updated Name");
+        updateJSON.put("owningRule", ruleId);
+        updateJSON.put("actionlet", "CountRequestsActionlet");
+        
+        response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions/" + action)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .put(Entity.json(updateJSON.toString()));
+
+        // test update
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+    }
 }
