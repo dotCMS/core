@@ -60,6 +60,15 @@ task copyToLib(dependsOn: [copyToFelix, copyToLibDir, copyStarterProject, copyCo
 dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+    antLibs group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
+    antLibs group: 'com.dotcms.lib', name: 'dot.commons-lang', version: '2.4_2'
+    antLibs group: 'com.dotcms.lib', name: 'dot.tika-app', version: '1.3_3'
+    antLibs group: 'com.dotcms.lib', name: 'dot.log4j-1.2-api', version: '2.3_1'
+    antLibs group: 'com.dotcms.lib', name: 'dot.log4j-api', version: '2.3_1'
+    antLibs group: 'com.dotcms.lib', name: 'dot.log4j-core', version: '2.3_1'
+    antLibs group: 'com.dotcms.lib', name: 'dot.log4j-web', version: '2.3_1'
+    antLibs group: 'com.dotcms.lib', name: 'dot.slf4j-api', version: '1.7.12_2'
+    antLibs group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version: '1.7.12_2'
 }
 
 /**
@@ -111,7 +120,8 @@ configurations.antLibs.each { File f ->
 
 
 ant.importBuild 'build.xml'
+copyToLib.mustRunAfter(clean)
 compile.dependsOn(copyToLib)
-project.'undeploy-plugins'.dependsOn(copyToLib)
+project.'create-dist'.dependsOn(copyToLib)
 
 
