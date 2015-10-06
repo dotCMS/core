@@ -44,6 +44,14 @@ public class Preconditions {
         return argument;
     }
 
+    public static <T> T[] checkNotEmpty(T[] argument, Class<? extends RuntimeException> exceptionType, String message, Object... messageArgs) {
+        if(argument == null || argument.length == 0) {
+            throw newException(message, exceptionType, messageArgs);
+        }
+        return argument;
+    }
+
+
 
     static RuntimeException newException(
         String message, Class<? extends RuntimeException> exceptionType,

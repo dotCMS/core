@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.i18n;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
@@ -17,9 +18,9 @@ import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.struts.MultiMessageResources;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
-import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.TreeMap;
 
@@ -29,10 +30,8 @@ import java.util.TreeMap;
 @Path("/v1/system/i18n")
 public class I18NResource {
 
-
     public I18NResource() {
     }
-
 
     @GET
     @Path("/{lang:[\\w]{2,3}(?:-?[\\w]{2})?}/{rsrc:.*}")
@@ -44,31 +43,22 @@ public class I18NResource {
         MultiMessageResources messages = LanguageUtil.getMessagesForDefaultCompany(lookup.locale, lookup.key);
 
         // Looking up the key accomplishes two things:
-        // 1) If present, it's MUCH faster than looping
-        // 2) Forces the loading of the language that was provided.
-        Optional<String> result = Optional.ofNullable(messages.getMessage(Locale.forLanguageTag(lang), lookup.key));
+        // 1) Forces the loading of the language that was provided.
+        // 2) Let's us check for 'invalid' (according to ReST) Resource Key use.
+        Optional<String> singleResult = Optional.ofNullable(messages.getMessage(Locale.forLanguageTag(lang), lookup.key));
+        Map<String, String> subTreeResult = getMessagesForLocale(messages, lookup.locale, lookup);
 
-        if(!lookup.ref.endsWith("/")) {
-            if(result.isPresent()) {
-                response = Response.ok("{ \"" + lookup.leafName + "\": \"" + result + "\"}").build();
-            } else {
-                throw new NotFoundException("Could not find matching resource string for the reference '%s'",
-                                            lookup.ref);
-            }
-        } else {
-            if(result.isPresent()) {
-                logInvalidPropertyDefinition(result.get(), lookup.key);
-            }
-            Map<String, String> localizedMessages = getMessagesForLocale(messages, lookup.locale, lookup);
+        checkHasResult(lookup, singleResult, subTreeResult);
+
+        boolean isSubtree = refIsSubTree(lookup, singleResult, subTreeResult);
+
+        if(isSubtree) {
             Map<String, String> responseMap = Maps.newHashMap();
 
-            for (Map.Entry<String, String> entry : localizedMessages.entrySet()) {
+            for (Map.Entry<String, String> entry : subTreeResult.entrySet()) {
                 String key = entry.getKey();
                 key = key.substring(lookup.key.length() + 1); // trim the base reference and trailing '.'
                 responseMap.put(key, entry.getValue());
-            }
-            if(responseMap.isEmpty()) {
-                throw new NotFoundException("Message not found for resource %s", lookup.ref);
             }
 
             JSONObject root = new JSONObject();
@@ -77,11 +67,33 @@ public class I18NResource {
             }
 
             response = Response.ok(root.toString()).build();
+        } else {
+            response = Response.ok("\"" + singleResult + "\"").build();
         }
         return response;
     }
 
-    private void messageToJson(JSONObject root, String[] pathKeys, String value) {
+    @VisibleForTesting
+    void checkHasResult(RestResourceLookup lookup, Optional<String> singleResult, Map<String, String> subTreeResult) {
+        if(!singleResult.isPresent() && subTreeResult.isEmpty()) {
+            throw new NotFoundException("No resource messages found for %s", lookup.ref);
+        }
+    }
+
+    private boolean refIsSubTree(RestResourceLookup lookup, Optional<String> singleResult, Map<String, String> subTreeResult) {
+        boolean isTree = subTreeResult.size() > 1;
+        if(isTree && singleResult.isPresent()) {
+            // the case where both `foo.bar=x` and `foo.bar.baz=y` exist.
+            logInvalidPropertyDefinition(singleResult.get(), lookup.key);
+        }
+        return isTree;
+    }
+
+    @VisibleForTesting
+    void messageToJson(JSONObject root, String[] pathKeys, String value) {
+        root = Preconditions.checkNotNull(root, InternalServerException.class, "Root cannot be null.");
+        pathKeys = Preconditions.checkNotEmpty(pathKeys, InternalServerException.class, "PathKeys cannot be null.");
+
         StringBuilder currentPath = new StringBuilder("");
         try {
             JSONObject parent = root;
@@ -125,48 +137,67 @@ public class I18NResource {
     }
 
     private void logInvalidPropertyDefinition(String value, String currentPath) {
-        Logger.warn(this.getClass(),
-                    String.format("Resource message key is defined as both a key and a value: %s",
-                                  currentPath));
+        Logger.warn(this.getClass(), String.format("Resource message key is defined as both a key and a value: %s", currentPath));
         Logger.warn(this.getClass(), String.format("Ignoring value: %s=%s", currentPath, value));
     }
 
-    private Map<String, String> getMessagesForLocale(
-        MultiMessageResources messages,
-        Locale locale,
-        RestResourceLookup lookup) {
+    private Map<String, String> getMessagesForLocale(MultiMessageResources messages, Locale locale, RestResourceLookup lookup) {
         @SuppressWarnings("unchecked")
         Map<String, String> map = messages.getMessages();
-        TreeMap<String, String> treeMap = new TreeMap<>(map);
-        String lang = locale.getLanguage();
-        String startKeyToken = '.' + lookup.key + '.';
-        String endKeyToken = '.' + lookup.key + '/';
 
-        NavigableMap<String, String> defaultMessages =
-            treeMap.subMap(treeMap.lowerKey(startKeyToken), false, treeMap.lowerKey(endKeyToken), true);
+        String lang = locale.getLanguage();
+        char dotPlusOne = ((char)('.' + 1)); // this is a forward slash, at least on in US on mac. Use math to be certain.
+        String startKeyToken = '.' + lookup.key + '.';
+        String endKeyToken = '.' + lookup.key + dotPlusOne;
+
+        TreeMap<String, String> treeMap = new TreeMap<>(map);
+        Map<String, String> defaultMessages = getSubTree(startKeyToken, endKeyToken, treeMap);
 
         startKeyToken = lang + startKeyToken;
         endKeyToken = lang + endKeyToken;
-        NavigableMap<String, String> subTree =
-            treeMap.subMap(treeMap.lowerKey(startKeyToken), false, treeMap.lowerKey(endKeyToken), true);
+
+        Map<String, String> languageSpecificMessages = getSubTree(startKeyToken, endKeyToken, treeMap);
         Map<String, String> allMessages = Maps.newHashMap();
 
         for (Map.Entry<String, String> entry : defaultMessages.entrySet()) {
             allMessages.put(entry.getKey().substring(1), entry.getValue());
         }
         int trimLanguageLength = lang.length() + 1;
-        for (Map.Entry<String, String> entry : subTree.entrySet()) {
+        for (Map.Entry<String, String> entry : languageSpecificMessages.entrySet()) {
             allMessages.put(entry.getKey().substring(trimLanguageLength), entry.getValue());
         }
         return allMessages;
     }
 
-    private static class RestResourceLookup {
+    @VisibleForTesting
+    Map<String, String> getSubTree(String startKeyToken, String endKeyToken, TreeMap<String, String> treeMap) {
+        String fromKey = treeMap.lowerKey(startKeyToken);
+
+        // increment last character in token so that when 'foo.bar' is requested as end token,
+        // we also get 'foo.bar.baz' etc.
+        StringBuilder incrementedToken = new StringBuilder(endKeyToken);
+        char endTokenLastChar = endKeyToken.charAt(endKeyToken.length() - 1);
+        incrementedToken.setCharAt(endKeyToken.length() - 1, (char)(endTokenLastChar + 1));
+
+        String toKey = treeMap.ceilingKey(incrementedToken.toString());
+        Map<String, String> result;
+        if(fromKey == null && toKey == null) {
+            result = Collections.emptyMap();
+        } else if(fromKey == null) {
+            result = treeMap.headMap(toKey, false); // take first 'half' of the tree
+        } else if(toKey == null) {
+            result = treeMap.tailMap(fromKey, false); // take last 'half' of the tree
+        } else {
+            result = treeMap.subMap(fromKey, false, toKey, false); // take a chunk out of the middle.
+        }
+        return result;
+    }
+
+    static class RestResourceLookup {
 
         private final Locale locale;
         private final String ref;
         private final String key;
-        private final String leafName;
 
         public RestResourceLookup(String lang, String childRef) {
             Preconditions.checkNotEmpty(lang, BadRequestException.class, "Language is required.");
@@ -178,15 +209,12 @@ public class I18NResource {
                 key = key.substring(0, key.length() - 1);
             }
             this.key = key;
-            int idx = key.lastIndexOf('.') + 1;
-            this.leafName = (idx != 0 && idx < key.length()) ? key.substring(idx) : key;
             locale = Locale.forLanguageTag(lang);
 
             if(locale == null) {
                 throw new BadRequestException("Could not process requested language '%s'", lang);
             }
         }
-
     }
 }
  
