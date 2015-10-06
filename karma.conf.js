@@ -9,6 +9,7 @@ module.exports = function(config) {
     frameworks: ['jspm', 'jasmine'],
 
     jspm: {
+      config: "config-karma.local.js",
       loadFiles: ['build/**/*.spec.js'  ],
       serveFiles: ['build/**/{*.js,!(it|spec)*.js}'],
       paths: {

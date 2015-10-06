@@ -147,6 +147,28 @@ var project = {
     project.server.close(callback)
   },
 
+  rewriteJspmConfigForUnitTests: function(cb){
+    var inFile = __dirname + '/config.js'
+    var outFile = __dirname + '/config-karma.local.js'
+    var fs = require('fs')
+    fs.readFile(inFile, 'utf8', function (err,data) {
+      if (err) {
+        console.log("It broke: ", err);
+        cb(err)
+      }
+      var result = data.replace(/baseURL/g, '// baseURL');
+
+      fs.writeFile(outFile, result, 'utf8', function (err) {
+        if (err) {
+          console.log("It broke while writing: ", err);
+          cb(err)
+        }
+        cb()
+      });
+    });
+
+  },
+
   runTests: function (singleRun, intTests, callback) {
     var configFile = __dirname + (intTests === true ? '/karma-it.conf.js' : '/karma.conf.js')
     new karmaServer({
@@ -157,7 +179,12 @@ var project = {
 }
 
 gulp.task('test', [], function (done) {
-  project.runTests(true, false, done)
+  project.rewriteJspmConfigForUnitTests(function(err){
+    if(err){
+      done(err)
+    }
+    project.runTests(true, false, done)
+  });
 })
 
 gulp.task('itest', function (done) {
