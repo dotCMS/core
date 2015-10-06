@@ -28,9 +28,9 @@
     </div>
   `
  })
- export class UsersIpAddressConditionlet extends BaseConditionletComponent{
+ export class UsersIpAddressConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  }

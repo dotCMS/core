@@ -23,10 +23,10 @@
     </div>
   `
  })
- export class UsersStateConditionlet extends BaseConditionletComponent{
+ export class UsersStateConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  
  }

@@ -25,7 +25,9 @@ export class ConditionTypesProvider {
         let types = snap['val']()
         let results = (Object.keys(types).map((key) => {
           let conditionType = types[key]
-          this.map.set(key, {'key': key, 'i18nKey': conditionType.i18nKey})
+          let typeModel = {'key': key, 'i18nKey': conditionType.i18nKey}
+          Object.assign(typeModel, conditionType)
+          this.map.set(key, typeModel)
           return types[key]
         }))
 

@@ -23,10 +23,9 @@
     </div>
   `
  })
- export class UsersCityConditionlet extends BaseConditionletComponent{
+ export class UsersCityConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor(ConditionletDirective, @Attribute('id') id:string) {
    }
  
  }

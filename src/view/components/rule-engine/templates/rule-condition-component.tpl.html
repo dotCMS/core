@@ -16,35 +16,9 @@
           <div class="col-sm-1">
             <h4 class="separator"></h4>
           </div>
-          <cw-conditionlet class="row col-sm-7"
-                        [condition]="condition"
-                        [conditionlet]="conditionlet"
-                        [value]="conditionValue"
-                        (value-change)="setComparisonValue($event.isNow)"
-                        (comparison-change)="setComparison($event.isNow)">
-            <cw-request-header-conditionlet *ng-if="conditionlet.id == 'UsersBrowserHeaderConditionlet'" ></cw-request-header-conditionlet>
-            <cw-browser-conditionlet *ng-if="conditionlet.id == 'UsersBrowserConditionlet'"></cw-browser-conditionlet>
-            <users-visited-url-conditionlet *ng-if="conditionlet.id == 'UsersVisitedUrlConditionlet'"></users-visited-url-conditionlet>
-            <users-ip-address-conditionlet *ng-if="conditionlet.id == 'UsersIpAddressConditionlet'"></users-ip-address-conditionlet>
-            <users-city-conditionlet *ng-if="conditionlet.id == 'UsersCityConditionlet'"></users-city-conditionlet>
-            <users-time-conditionlet *ng-if="conditionlet.id == 'UsersTimeConditionlet'"></users-time-conditionlet>
-            <users-landing-page-url-conditionlet *ng-if="conditionlet.id == 'UsersLandingPageUrlConditionlet'"></users-landing-page-url-conditionlet>
-            <users-platform-conditionlet *ng-if="conditionlet.id == 'UsersPlatformConditionlet'"></users-platform-conditionlet>
-            <users-language-conditionlet *ng-if="conditionlet.id == 'UsersLanguageConditionlet'"></users-language-conditionlet>
-            <users-page-visits-conditionlet *ng-if="conditionlet.id == 'UsersPageVisitsConditionlet'"></users-page-visits-conditionlet>
-            <users-country-conditionlet *ng-if="conditionlet.id == 'UsersCountryConditionlet'"></users-country-conditionlet>
-            <mock-true-conditionlet *ng-if="conditionlet.id == 'MockTrueConditionlet'"></mock-true-conditionlet>
-            <users-url-parameter-conditionlet *ng-if="conditionlet.id == 'UsersUrlParameterConditionlet'"></users-url-parameter-conditionlet>
-            <users-referring-url-conditionlet *ng-if="conditionlet.id == 'UsersReferringUrlConditionlet'"></users-referring-url-conditionlet>
-            <users-current-url-conditionlet *ng-if="conditionlet.id == 'UsersCurrentUrlConditionlet'"></users-current-url-conditionlet>
-            <users-host-conditionlet *ng-if="conditionlet.id == 'UsersHostConditionlet'"></users-host-conditionlet>
-            <users-state-conditionlet *ng-if="conditionlet.id == 'UsersStateConditionlet'"></users-state-conditionlet>
-            <users-site-visits-conditionlet *ng-if="conditionlet.id == 'UsersSiteVisitsConditionlet'"></users-site-visits-conditionlet>
-            <users-date-time-conditionlet *ng-if="conditionlet.id == 'UsersDateTimeConditionlet'"></users-date-time-conditionlet>
-            <users-operating-system-conditionlet *ng-if="conditionlet.id == 'UsersOperatingSystemConditionlet'"></users-operating-system-conditionlet>
-            <users-log-in-conditionlet *ng-if="conditionlet.id == 'UsersLogInConditionlet'"></users-log-in-conditionlet>
-          </cw-conditionlet>
 
+          <cw-request-header-conditionlet *ng-if="conditionType.id == 'UsersBrowserHeaderConditionlet'" ></cw-request-header-conditionlet>
+          <cw-browser-conditionlet *ng-if="conditionType.id == 'UsersBrowserConditionlet'"></cw-browser-conditionlet>
 
           <div class="col-sm-1">
             <div class="operations">

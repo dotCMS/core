@@ -8,7 +8,7 @@ import {ConditionletDirective} from './conditionlets/conditionlet-base';
 
 import {conditionTemplate} from './templates/index'
 
-import {ApiRoot} from 'api/persistence/ApiRoot';
+import {ApiRoot} from 'api/persistence/ApiRoot'
 import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
 
 
@@ -23,7 +23,6 @@ import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditio
 import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
 import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
 import {UsersCountryConditionlet} from './conditionlets/users-country-conditionlet'
-import {MockTrueConditionlet} from './conditionlets/mock-true-conditionlet'
 import {UsersUrlParameterConditionlet} from './conditionlets/users-url-parameter-conditionlet'
 import {UsersReferringUrlConditionlet} from './conditionlets/users-referring-url-conditionlet'
 import {UsersCurrentUrlConditionlet} from './conditionlets/users-current-url-conditionlet'
@@ -53,7 +52,6 @@ import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
     UsersLanguageConditionlet,
     UsersPageVisitsConditionlet,
     UsersCountryConditionlet,
-    MockTrueConditionlet,
     UsersUrlParameterConditionlet,
     UsersReferringUrlConditionlet,
     UsersCurrentUrlConditionlet,
@@ -71,7 +69,7 @@ class ConditionComponent {
   _conditionMeta:any
   condition:any
   conditionValue:string
-  conditionlet:any
+  conditionType:any
   conditionTypes:Array<any>
   typesProvider:ConditionTypesProvider
 
@@ -83,14 +81,14 @@ class ConditionComponent {
     })
     this.condition = {}
     this.conditionValue = ''
-    this.conditionlet = {}
+    this.conditionType = {}
     this.index = 0
   }
 
   onSetConditionMeta(snapshot) {
     console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
-    this.conditionlet = this.typesProvider.map.get(this.condition.conditionlet)
+    this.conditionType = this.typesProvider.map.get(this.condition.conditionlet)
     this.conditionValue = this.getComparisonValue()
   }
 
@@ -126,7 +124,7 @@ class ConditionComponent {
   setConditionlet(conditionletId) {
     console.log('Setting conditionlet id to: ', conditionletId)
     let dataType = this.getConditionletDataType(conditionletId)
-    if (dataType != this.getConditionletDataType(this.conditionlet.id)) {
+    if (dataType != this.getConditionletDataType(this.conditionType.id)) {
       console.log('Condition data type changed, resetting condition value.')
       let newVal = ''
       let key = this.getComparisonValueKey() || 'aFakeId'
@@ -134,7 +132,7 @@ class ConditionComponent {
       this.conditionValue = newVal
     }
     this.condition.conditionlet = conditionletId
-    this.conditionlet = this.typesProvider.map.get(this.condition.conditionlet)
+    this.conditionType = this.typesProvider.map.get(this.condition.conditionlet)
 
     this.updateCondition()
   }

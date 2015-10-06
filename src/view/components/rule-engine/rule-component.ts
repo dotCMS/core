@@ -1,12 +1,13 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
-import {NgFor, NgIf, Component, Directive, View,ElementRef} from 'angular2/angular2';
+import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
 import {ruleTemplate} from './templates/index'
+import {ApiRoot} from 'api/persistence/ApiRoot';
 
 @Component({
   selector: 'rule',
@@ -17,18 +18,19 @@ import {ruleTemplate} from './templates/index'
   directives: [RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
 })
 class RuleComponent{
-  rule:any;
-  _ruleSnap:any;
-  collapsed:boolean;
-  fireOnDropDownExpanded:boolean;
-  ruleGroups:Array<any>;
-  ruleActions:Array<any>;
-  groupsSnap:EntitySnapshot;
-  elementRef:ElementRef;
+  apiRoot:ApiRoot
+  rule:any
+  _ruleSnap:any
+  collapsed:boolean
+  fireOnDropDownExpanded:boolean
+  ruleGroups:Array<any>
+  ruleActions:Array<any>
+  groupsSnap:EntitySnapshot
+  elementRef:ElementRef
 
-  constructor(elementRef:ElementRef) {
-    this.elementRef = elementRef; //DOM element
-    console.log('Creating RuleComponent')
+  constructor(elementRef:ElementRef, @Inject(ApiRoot) apiRoot:ApiRoot) {
+    this.apiRoot = apiRoot
+    this.elementRef = elementRef //DOM element
     this.collapsed = true
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
@@ -38,14 +40,13 @@ class RuleComponent{
   onInit(){
     if(this.rule.name === 'CoreWeb created this rule.'){
       this.rule.name = 'CoreWeb created this rule.' +  new Date().toISOString();//to avoid duplicate name error for now
-      this.updateRule();
-      var el = this.elementRef.nativeElement.children[0].children[0].children[0].children[0].children[0].childNodes[1];
-      window.setTimeout(function() {el['focus']();}, 10); //avoid tick recursively error
+      this.updateRule()
+      var el = this.elementRef.nativeElement.children[0].children[0].children[0].children[0].children[0].childNodes[1]
+      window.setTimeout(function() {el['focus']();}, 10) //avoid tick recursively error
     }
   }
 
   set ruleSnap(ruleSnap:any) {
-    console.log('Setting Rule snapshot')
     this._ruleSnap = ruleSnap
     this.rule = ruleSnap.val()
     this.ruleGroups = []
@@ -71,7 +72,7 @@ class RuleComponent{
     if (actionsSnap.exists()) {
       actionsSnap.forEach((childSnap:EntitySnapshot) => {
         let key = childSnap.key()
-        actionMetas.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions/' + key))
+        actionMetas.push(this.apiRoot.defaultSite.child('ruleengine/ruleActions/' + key))
       })
     }
     return actionMetas
@@ -131,7 +132,7 @@ class RuleComponent{
         }
       }
     }
-    let condRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
+    let condRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/conditions')
 
     condRoot.push(condition).then((result) => {
       group.conditions = group.conditions || {}
@@ -149,13 +150,13 @@ class RuleComponent{
       owningRule: this.ruleSnap.key(),
       actionlet: 'CountRequestsActionlet'
     }
-    let actionRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions')
+    let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/ruleActions')
 
     actionRoot.push(action).then((actionSnap:EntitySnapshot)=> {
       this.rule.actions = this.rule.ruleActions || {}
       this.rule.actions[actionSnap.key()] = true
       let key = actionSnap.key()
-      this.ruleActions.push(new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions/' + key))
+      this.ruleActions.push(actionRoot.child(key))
       this.updateRule()
     })
   }

@@ -23,10 +23,10 @@
     </div>
   `
  })
- export class UsersReferringUrlConditionlet extends BaseConditionletComponent{
+ export class UsersReferringUrlConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  
  }
