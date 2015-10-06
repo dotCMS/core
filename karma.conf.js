@@ -8,15 +8,17 @@ module.exports = function(config) {
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
     frameworks: ['jspm', 'jasmine'],
 
-
     jspm: {
-      loadFiles: ['src/**/*.spec.js'],
-      serveFiles: ['src/*/{*.ts,!(spec)/**/*.ts}',
-        'src/*/{*.js,!(it|spec)/**/*.js}'],
+      loadFiles: ['build/**/*.spec.js'  ],
+      serveFiles: ['build/**/{*.js,!(it|spec)*.js}'],
       paths: {
-        "coreweb/api/*": "src/api/*",
-        "rule-engine/*": "src/view/components/rule-engine/*",
-        "src/*": "src/*.js"
+        "api/*": "build/api/*",
+        "coreweb/api/*": "build/api/*",
+        "rule-engine/*": "build/view/components/rule-engine/*",
+        "src/*": "build/*.js",
+        "*.html": "*.html",
+        "github:*": "jspm_packages/github/*",
+        "npm:*": "jspm_packages/npm/*"
       }
     },
 

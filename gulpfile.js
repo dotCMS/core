@@ -52,8 +52,43 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
+var typescriptProject = ts.createProject({
+  outDir: config.buildDir,
+  module: 'commonjs',
+  target: 'es5',
+  emitDecoratorMetadata: true,
+  experimentalDecorators: true,
+  typescript: require('typescript')
+});
+
 var project = {
   server: null,
+
+  compileJavascript: function(cb){
+    return gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', cb);
+  },
+
+  /**
+   *
+   */
+  compileTypescript: function (cb) {
+    var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
+
+    var x = tsResult.js.pipe(gulp.dest('build'))
+    var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
+
+    // ignoring typscript definitions for now.
+    x.on('finish', cb)
+    x.on('error', cb)
+  },
+
+  watch: function () {
+    gulp.watch('./src/**/*.html', ['compile-templates']);
+    gulp.watch('./src/**/*.js', ['compile-js']);
+    gulp.watch('./src/**/*.ts', ['compile-ts']);
+    return gulp.watch('./src/**/*.scss', ['compile-styles']);
+  },
+
   /**
    * Configure the proxy and start the webserver.
    */
@@ -127,19 +162,20 @@ gulp.task('test', [], function (done) {
 
 gulp.task('itest', function (done) {
   project.startServer()
-  project.runTests(true, true, function(){
+  project.runTests(true, true, function () {
     project.stopServer(done)
   })
 })
 
 
-gulp.task('tdd', [], function (done) {
-  project.runTests(false, false, done)
+gulp.task('tdd', function () {
+  project.watch(true, false)
+  return project.runTests(false, false)
 })
 
 gulp.task('itdd', ['dev-watch'], function (done) {
   project.startServer()
-  project.runTests(false, true, function(){
+  project.runTests(false, true, function () {
     project.stopServer(done)
   })
 })
@@ -388,24 +424,8 @@ gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap', 'copy-dist-
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
-var typescriptProject = ts.createProject({
-  outDir: config.buildDir,
-  module: 'commonjs',
-  target: 'es5',
-  emitDecoratorMetadata: true,
-  experimentalDecorators: true,
-  typescript: require('typescript')
-});
-
-gulp.task('compile-ts', function (done) {
-  var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
-
-  var x = tsResult.js.pipe(gulp.dest('build'))
-  var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
-
-  // ignoring typscript definitions for now.
-  x.on('finish', done)
-  x.on('error', done)
+gulp.task('compile-ts', function (cb) {
+  project.compileTypescript(cb)
 });
 
 
@@ -419,8 +439,8 @@ gulp.task('compile-styles', function (done) {
       .pipe(gulp.dest(config.buildDir)).on('finish', done);
 });
 
-gulp.task('compile-js', ['compile-ts'], function (done) {
-  gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', done);
+gulp.task('compile-js', function (done) {
+  project.compileJavascript(done)
 })
 
 gulp.task('compile-templates', [], function (done) {
@@ -511,10 +531,7 @@ gulp.task('prod-watch', ['compile-all'], function () {
 });
 
 gulp.task('dev-watch', ['compile-all'], function () {
-  gulp.watch('./src/**/*.html', ['compile-templates']);
-  gulp.watch('./src/**/*.js', ['compile-js']);
-  gulp.watch('./src/**/*.ts', ['compile-ts']);
-  return gulp.watch('./src/**/*.scss', ['compile-styles']);
+  return project.watch()
 });
 
 gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function (done) {

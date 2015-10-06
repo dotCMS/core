@@ -2,8 +2,7 @@
 /// <reference path="../../../../../typings/angular2/angular2.d.ts" />
  
  import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
- import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
- 
+
  @Component({
   selector: 'conditionlet users-site-visits-conditionlet'
  })
@@ -26,7 +25,6 @@
  export class UsersSiteVisitsConditionlet {
  
    constructor( @Attribute('id') id:string) {
-
    }
  
  }

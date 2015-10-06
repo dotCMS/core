@@ -4,8 +4,6 @@
 
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
 
-import {ConditionletDirective} from './conditionlets/conditionlet-base';
-
 import {conditionTemplate} from './templates/index'
 
 import {ApiRoot} from 'api/persistence/ApiRoot'
@@ -39,9 +37,7 @@ import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor, ConditionletDirective,
-    UsersCountryConditionlet,
-    UsersPageVisitsConditionlet,
+  directives: [NgIf, NgFor,
     UsersVisitedUrlConditionlet,
     UsersIpAddressConditionlet,
     UsersCityConditionlet,

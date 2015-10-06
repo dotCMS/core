@@ -66,7 +66,8 @@ export class ConditionGroupComponent {
 
   getConditions() {
     let conditionMetas = []
-    this.groupSnap.child('conditions').forEach((childSnap) => {
+    let conditionsRef = this.groupSnap.child('conditions')
+    conditionsRef.forEach((childSnap) => {
       let key = childSnap.key()
       var ref = this.conditionsRef.child(key);
       conditionMetas.push(ref)
