@@ -12,8 +12,8 @@
 	</context-param>
 
 	<context-param>
-		<param-name>log4jConfiguration</param-name>
-		<param-value>log4j2.xml</param-value>
+		<param-name>isLog4jAutoInitializationDisabled</param-name>
+		<param-value>true</param-value>
 	</context-param>
 
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
