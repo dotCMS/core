@@ -27,6 +27,7 @@ class RuleComponent{
   ruleActions:Array<any>
   groupsSnap:EntitySnapshot
   elementRef:ElementRef
+  actionsRef:any
 
   constructor(elementRef:ElementRef, @Inject(ApiRoot) apiRoot:ApiRoot) {
     this.apiRoot = apiRoot
@@ -35,6 +36,12 @@ class RuleComponent{
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
     this.ruleActions = []
+    this.actionsRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions')
+    this.actionsRef.on('child_removed', (childActionSnap) => {
+      this.ruleActions = this.ruleActions.filter((action) => {
+        return action.key() != childActionSnap.key()
+      })
+    })
   }
 
   onInit(){
