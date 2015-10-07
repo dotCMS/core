@@ -1561,10 +1561,20 @@ dojo.require("dotcms.dojo.push.PushHandler");
 		}
 	}
 
-	function remotePublish (objId) {
-
-		pushHandler.showDialog(objId);
-
+	/**
+	* Displays the Push Publish modal window.
+	*
+	* objId - The Identifier or inode of the object to push.
+	* referrer - The referrer page.
+	* isArchived - If true, only the "Remove" option in the Push Dialog 
+	*              will be displayed.
+	*/
+	function remotePublish (objId, referrer, isArchived) {
+		if (isArchived != undefined && isArchived != null) {
+			pushHandler.showDialog(objId, false, isArchived);
+		} else {
+			pushHandler.showDialog(objId);
+		}
 	}
 
 	function addToBundle (objId) {

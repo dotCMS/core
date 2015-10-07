@@ -1,7 +1,7 @@
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'edf4073-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'e7956f1-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
     compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
 
@@ -95,7 +95,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jaxws-rt', version:'2.2.8_2'
     compile group: 'com.dotcms.lib', name: 'dot.jazzy-core', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jboss-common-core', version:'2.2.3.GA_2'
-    compile group: 'com.dotcms.lib', name: 'dot.jboss-logging-spi', version:'2.0.5.GA_2'
     compile group: 'com.dotcms.lib', name: 'dot.jbosscache-core', version:'3.2.5.GA_2'
     compile group: 'com.dotcms.lib', name: 'dot.jcaptcha-mod', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.jempbox', version:'1.6.0_2'
@@ -127,9 +126,9 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.lesscss', version:'1.5.1-SNAPSHOT_3'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-1.2-api', version:'2.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-api', version:'2.3_1'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-jcl', version:'2.3_1'
-    compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_1'
+    compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.2_2'
     compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.2_2'

@@ -461,7 +461,19 @@
 					strHTML += '</a>';
 				}
 			}
-	
+			
+			// If archived, only display the "Remove" option in the Push Dialog
+			if (archived) {
+				if (enterprise) {
+                    if (sendingEndpoints) {
+                        strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                            strHTML += '<span class="sServerIcon"></span>';
+                            strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+                        strHTML += '</a>';
+                    }
+				}
+			}
+			
 			if (live && publish ) {
 				strHTML += '<a href="javascript: unpublishFile(\'' + objId + '\', \'' + referer +'\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 		    		strHTML += '<span class="unpublishIcon"></span>';
@@ -558,6 +570,18 @@
 			strHTML += '</a>';
 		}
 
+		// If archived, only display the "Remove" option in the Push Dialog
+        if (archived) {
+            if (enterprise) {
+                if (sendingEndpoints) {
+                    strHTML += '<a class="contextPopupMenu" href="javascript: remotePublish(\'' + objId + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');">';
+                        strHTML += '<span class="sServerIcon"></span>';
+                        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+                    strHTML += '</a>';
+                }
+            }
+        }
+        
 		if (!live && working && publish) {
 			if (!archived) {
 				strHTML += '<a href="javascript: archiveLink(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
@@ -731,7 +755,19 @@
 				}
 	
 			}
-	
+			
+			// If archived, only display the "Remove" option in the Push Dialog
+			if (archived) {
+				if (enterprise) {
+                    if (sendingEndpoints) {
+                        strHTML += '<a href="javascript: remotePublish(\'' + objIden + '\', \'' + referer + '\', true); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
+                        strHTML += '<span class="sServerIcon"></span>';
+                        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Remote-Publish")) %>';
+                        strHTML += '</a>';
+                    }
+				}
+			}
+			
 			if (live && publish) {
 				strHTML += '<a href="javascript: unpublishHTMLPage(\'' + objId + '\', \'' + referer + '\'); hidePopUp(\'context_menu_popup_'+objId+'\');" class="contextPopupMenu">';
 			    	strHTML += '<span class="unpublishIcon"></span>';
