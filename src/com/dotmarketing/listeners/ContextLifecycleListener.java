@@ -69,7 +69,9 @@ public class ContextLifecycleListener implements ServletContextListener {
             if ( !contextPath.endsWith( File.separator ) ) {
                 contextPath += File.separator;
             }
-            path = contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml";
+			File file = new File(contextPath + "WEB-INF" + File.separator + "log4j" + File.separator + "log4j2.xml");
+			path = file.toURI().toString();
+
         } catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 		}

@@ -112,8 +112,6 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             }
 
         }
-
-        discardConflicts(endpointId);
     }
 
     /**
