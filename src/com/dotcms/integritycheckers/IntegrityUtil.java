@@ -347,16 +347,9 @@ public class IntegrityUtil {
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
-        try {
-	        // lets generate the tables with the data to be fixed
-	        generateDataToFixTable(endpointId, type);
-	        fixConflicts(endpointId, type);
-        } catch (Exception e) {
-        	throw e;
-        } finally {
-        	// If failed or successful, ALWAYS discard conflicts
-        	discardConflicts(endpointId, type);
-        }
+        // lets generate the tables with the data to be fixed
+        generateDataToFixTable(endpointId, type);
+        fixConflicts(endpointId, type);
     }
 
 	/**
