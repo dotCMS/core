@@ -27,7 +27,7 @@ class RuleComponent{
   ruleActions:Array<any>
   groupsSnap:EntitySnapshot
   elementRef:ElementRef
-  actionsRef:any
+  actionsRef:EntityMeta
 
   constructor(elementRef:ElementRef, @Inject(ApiRoot) apiRoot:ApiRoot) {
     this.apiRoot = apiRoot
@@ -36,7 +36,7 @@ class RuleComponent{
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
     this.ruleActions = []
-    this.actionsRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/ruleActions')
+    this.actionsRef = apiRoot.defaultSite.child('ruleengine/ruleActions')
     this.actionsRef.on('child_removed', (childActionSnap) => {
       this.ruleActions = this.ruleActions.filter((action) => {
         return action.key() != childActionSnap.key()
@@ -79,7 +79,7 @@ class RuleComponent{
     if (actionsSnap.exists()) {
       actionsSnap.forEach((childSnap:EntitySnapshot) => {
         let key = childSnap.key()
-        actionMetas.push(this.apiRoot.defaultSite.child('ruleengine/ruleActions/' + key))
+        actionMetas.push(this.actionsRef.child(key))
       })
     }
     return actionMetas
@@ -111,13 +111,11 @@ class RuleComponent{
       operator: 'AND'
     }
 
-    this.ruleSnap.ref().child('conditionGroups').push(group).then((snapshot) => {
+    this.groupsSnap.ref().push(group, (snapshot) => {
       let group = snapshot['val']()
       this.rule.conditionGroups[snapshot.key()] = group
       group.conditions = group.conditions || {}
       this.updateRule().then(()=> this.addCondition(snapshot) )
-    }).catch((e) => {
-      console.log(e)
     })
   }
 
@@ -128,12 +126,13 @@ class RuleComponent{
       priority: 10,
       name: "Condition. " + new Date().toISOString(),
       owningGroup: groupSnap.key(),
-      conditionlet: 'UsersCountryConditionlet',
+      conditionlet: 'UsersBrowserHeaderConditionlet',
       comparison: 'Is',
       operator: 'AND',
       values: {
-        a: {
-          id: 'a',
+        fakeId: {
+          id: 'fakeId',
+          key: 'headerValue',
           value: 'US',
           priority: 10
         }
@@ -141,12 +140,10 @@ class RuleComponent{
     }
     let condRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/conditions')
 
-    condRoot.push(condition).then((result) => {
+    condRoot.push(condition, (result) => {
       group.conditions = group.conditions || {}
       group.conditions[result.key()] = true
       groupSnap.ref().set(group)
-    }).catch((e) => {
-      console.log(e)
     })
   }
 
@@ -159,7 +156,7 @@ class RuleComponent{
     }
     let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/ruleActions')
 
-    actionRoot.push(action).then((actionSnap:EntitySnapshot)=> {
+    actionRoot.push(action, (actionSnap:EntitySnapshot)=> {
       this.rule.actions = this.rule.ruleActions || {}
       this.rule.actions[actionSnap.key()] = true
       let key = actionSnap.key()

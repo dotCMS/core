@@ -133,7 +133,7 @@ export class RequestHeaderConditionletModel {
         </select>
       </div>
       <div class="col-sm-4">
-        <input type="text" class="form-control condition-value" [value]="value.comparisonValues.join(', ')" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
+        <input type="text" class="form-control condition-value" [value]="value.comparisonValues" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
       </div>
       <div class="col-sm-1">
         <button type="button" class="btn btn-default" aria-label="Info" >
@@ -148,6 +148,7 @@ export class RequestHeaderConditionlet {
   comparisonOptions:Array<string> = ["exists", "is", "startsWith", "endsWith", "contains", "regex"];
   predefinedHeaderKeyOptions:Array<string> = commonRequestHeaders;
 
+  parameterKeys: Array<string> = ['headerKeyValue', 'comparisionValues']
   value:RequestHeaderConditionletModel;
 
   change:EventEmitter;
@@ -191,8 +192,9 @@ export class RequestHeaderConditionlet {
   }
 
   updateComparisonValues(event:Event) {
+    let value = event.target['value']
     let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
-    this.value.comparisonValues.push('Todo: Implement input-select element.')
+    this.value.comparisonValues = value
     this.change.next(e)
   }
 

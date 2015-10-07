@@ -66,8 +66,8 @@ export class ConditionGroupComponent {
 
   getConditions() {
     let conditionMetas = []
-    let conditionsRef = this.groupSnap.child('conditions')
-    conditionsRef.forEach((childSnap) => {
+    let conditionSnap = this.groupSnap.child('conditions')
+    conditionSnap.forEach((childSnap) => {
       let key = childSnap.key()
       var ref = this.conditionsRef.child(key);
       conditionMetas.push(ref)
@@ -83,24 +83,23 @@ export class ConditionGroupComponent {
       priority: 10,
       name: "Condition. " + new Date().toISOString(),
       owningGroup: this._groupSnap.key(),
-      conditionlet: 'UsersCountryConditionlet',
+      conditionlet: 'UsersBrowserHeaderConditionlet',
       comparison: 'Is',
       operator: 'AND',
       values: {
-        a: {
-          id: 'a',
-          value: 'US',
+        fakeId: {
+          id: 'fakeId',
+          key: 'headerValue',
+          value: '',
           priority: 10
         }
       }
     }
 
-    this.conditionsRef.push(condition).then((result) => {
+    this.conditionsRef.push(condition, (result) => {
       this.group.conditions = this.group.conditions || {}
       this.group.conditions[result.key()] = true
       this.updateGroup()
-    }).catch((e) => {
-      console.log(e)
     })
   }
 

@@ -90,10 +90,12 @@ export class EntitySnapshot {
   }
 
   forEach(childAction) {
-    Object.keys(this._entity).every((key) => {
-      let snap = this.child(key)
-      return childAction(snap) !== true // break if 'true' returned by callback.
-    })
+    if (this._entity) {
+      Object.keys(this._entity).every((key) => {
+        let snap = this.child(key)
+        return childAction(snap) !== true // break if 'true' returned by callback.
+      })
+    }
   }
 }
 
@@ -175,9 +177,11 @@ export class EntityMeta {
           let snap = new EntitySnapshot(result.path, data)
           let childMeta = new EntityMeta(result.path);
           childMeta.latestSnapshot = snap
+          onComplete(snap)
           return snap
         }).catch((e) => {
           console.log('Error creating snapshot', e)
+          onComplete(e)
           throw e
         })
   }

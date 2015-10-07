@@ -7,7 +7,7 @@ import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject
 import {conditionTemplate} from './templates/index'
 
 import {ApiRoot} from 'api/persistence/ApiRoot'
-import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
+import {ConditionTypesProvider, ConditionTypeModel} from 'api/rule-engine/ConditionTypes';
 
 
 import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
@@ -65,7 +65,7 @@ class ConditionComponent {
   _conditionMeta:any
   condition:any
   conditionValue:string
-  conditionType:any
+  conditionType:ConditionTypeModel
   conditionTypes:Array<any>
   typesProvider:ConditionTypesProvider
 
@@ -77,15 +77,15 @@ class ConditionComponent {
     })
     this.condition = {}
     this.conditionValue = ''
-    this.conditionType = {}
+    this.conditionType = new ConditionTypeModel('', {})
     this.index = 0
   }
 
   onSetConditionMeta(snapshot) {
     console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
-    this.conditionType = this.typesProvider.map.get(this.condition.conditionlet)
-    this.conditionValue = this.getComparisonValue()
+    this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
+    var rhsValues = this.conditionType.rhsValues(this.condition.values);
   }
 
 
@@ -99,81 +99,23 @@ class ConditionComponent {
     return this._conditionMeta;
   }
 
-  getConditionletDataType(conditionletId) {
-    let dataType;
-    switch (conditionletId) {
-      case 'UsersTimeConditionlet':
-        dataType = 'time'
-        break;
-      case 'UsersDateTimeConditionlet':
-        dataType = 'date'
-        break;
-      default :
-      {
-        dataType = 'text'
-      }
-    }
-    return dataType
 
-  }
+  setConditionlet(conditionTypeId) {
+    console.log('Setting condition type id to: ', conditionTypeId)
+    let newVal = ''
+    this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
+    let foo = this.conditionType.rhsValues(this.condition.values)
 
-  setConditionlet(conditionletId) {
-    console.log('Setting conditionlet id to: ', conditionletId)
-    let dataType = this.getConditionletDataType(conditionletId)
-    if (dataType != this.getConditionletDataType(this.conditionType.id)) {
-      console.log('Condition data type changed, resetting condition value.')
-      let newVal = ''
-      let key = this.getComparisonValueKey() || 'aFakeId'
-      this.condition.values[key] = {id: key, priority: 10, value: newVal}
-      this.conditionValue = newVal
-    }
-    this.condition.conditionlet = conditionletId
-    this.conditionType = this.typesProvider.map.get(this.condition.conditionlet)
+    //this.condition.values[key] = {id: key, key: key, priority: 10, value: newVal}
+    this.conditionValue = newVal
+    this.condition.conditionlet = conditionTypeId
 
-    this.updateCondition()
-  }
-
-  setComparison(comparisonId) {
-    console.log('Setting conditionlet comparison id to: ', comparisonId)
-    this.condition.comparison = comparisonId
-    this.updateCondition()
-
-  }
-
-  getComparisonValueKey() {
-    let key = null
-    let keys = Object.keys(this.condition.values)
-    if (keys.length) {
-      key = keys[0]
-    }
-    return key
-  }
-
-  getComparisonValue() {
-    let value = ''
-    let key = this.getComparisonValueKey()
-    if (key) {
-      value = this.condition.values[key].value
-    }
-    return value
-  }
-
-  setComparisonValue(newValue) {
-    if (newValue === undefined) {
-      return
-    }
-    let key = this.getComparisonValueKey() || 'aFakeId'
-    this.condition.values[key] = {id: key, priority: 10, value: newValue}
     this.updateCondition()
   }
 
   toggleOperator() {
     this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
     this.updateCondition()
-  }
-
-  onFoo(event) {
-    alert('wow')
   }
 
   onConditionletChange(event) {
@@ -188,6 +130,17 @@ class ConditionComponent {
   removeCondition() {
     console.log('Removing Condition: ', this.condition)
     this.conditionMeta.remove()
+  }
+
+
+  updateAndStuff(event) {
+    let target = event.ngTarget
+    let val = target.value
+    let key = 'aFakeId'
+
+    this.condition.values[key] = {id: key, priority: 10, value: ''}
+    this.condition.comparison = val.comparatorValue
+
   }
 }
 
