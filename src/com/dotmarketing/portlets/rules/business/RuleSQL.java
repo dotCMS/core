@@ -41,8 +41,8 @@ abstract class RuleSQL {
     protected String SELECT_CONDITION_GROUP_BY_ID = "select * from rule_condition_group where id=?";
     protected String DELETE_CONDITION_GROUP_BY_ID = "delete from rule_condition_group where id=?";
 
-    protected String INSERT_CONDITION_VALUE = "insert into rule_condition_value (id, condition_id, value, priority) values (?,?,?,?)";
-    protected String UPDATE_CONDITION_VALUE = "update rule_condition_value set condition_id=?, value=?, priority=? where id=?";
+    protected String INSERT_CONDITION_VALUE = "insert into rule_condition_value (id, condition_id, paramkey, value, priority) values (?,?,?,?,?)";
+    protected String UPDATE_CONDITION_VALUE = "update rule_condition_value set condition_id=?, paramkey=?, value=?, priority=? where id=?";
     protected String SELECT_CONDITION_VALUES_BY_CONDITION = "select * from rule_condition_value where condition_id=?";
     protected String SELECT_CONDITION_VALUE_BY_ID = "select * from rule_condition_value where id=?";
     protected String DELETE_CONDITION_VALUES_BY_CONDITION = "delete from rule_condition_value where condition_id=?";

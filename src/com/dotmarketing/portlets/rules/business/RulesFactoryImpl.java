@@ -429,6 +429,7 @@ public class RulesFactoryImpl implements RulesFactory {
                         db.setSQL(sql.INSERT_CONDITION_VALUE);
                         db.addParam(value.getId());
                         db.addParam(condition.getId());
+                        db.addParam(value.getKey());
                         db.addParam(value.getValue());
                         db.addParam(value.getPriority());
                         db.loadResult();
@@ -451,6 +452,7 @@ public class RulesFactoryImpl implements RulesFactory {
                     for (ConditionValue value : condition.getValues()) {
                         db.setSQL(sql.UPDATE_CONDITION_VALUE);
                         db.addParam(condition.getId());
+                        db.addParam(value.getKey());
                         db.addParam(value.getValue());
                         db.addParam(value.getPriority());
                         db.addParam(value.getId());
@@ -501,6 +503,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.setSQL(sql.INSERT_CONDITION_VALUE);
                 db.addParam(conditionValue.getId());
                 db.addParam(conditionValue.getConditionId());
+                db.addParam(conditionValue.getKey());
                 db.addParam(conditionValue.getValue());
                 db.addParam(conditionValue.getPriority());
                 db.loadResult();
@@ -508,6 +511,7 @@ public class RulesFactoryImpl implements RulesFactory {
             } else {
                 db.setSQL(sql.UPDATE_CONDITION_VALUE);
                 db.addParam(conditionValue.getConditionId());
+                db.addParam(conditionValue.getKey());
                 db.addParam(conditionValue.getValue());
                 db.addParam(conditionValue.getPriority());
                 db.addParam(conditionValue.getId());
@@ -788,7 +792,9 @@ public class RulesFactoryImpl implements RulesFactory {
         ConditionValue c = new ConditionValue();
         c.setId(row.get("id").toString());
         c.setConditionId(row.get("condition_id").toString());
-        c.setValue(row.get("value").toString());
+        c.setKey(row.get("paramkey").toString());
+        Object value = row.get("value");
+        c.setValue(value != null ? value.toString() : null);
         c.setPriority(Integer.parseInt(row.get("priority").toString()));
         return c;
     }
