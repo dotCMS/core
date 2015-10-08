@@ -323,6 +323,23 @@ public class IntegrityUtil {
         }
     }
 
+	/**
+	 * Un-zips the file containing the information of the specified type. The
+	 * data of the records that will be fixed in the destination end point will
+	 * be stored in a results table, which is unique for every type of integrity
+	 * fix.
+	 * 
+	 * @param dataToFix
+	 *            - The {@link InputStream} containing the data to fix.
+	 * @param endpointId
+	 *            - The ID of the end point where the data will be fixed.
+	 * @param type
+	 *            - The type of object (Content Page, Folder, Content Type,
+	 *            etc.) that will be fixed.
+	 * @throws Exception
+	 *             An error occurred during the integrity fix process. The
+	 *             results table must be wiped out.
+	 */
     public void fixConflicts(InputStream dataToFix, String endpointId, IntegrityType type)
             throws Exception {
         final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
@@ -330,12 +347,33 @@ public class IntegrityUtil {
         // lets first unzip the given file
         unzipFile(dataToFix, outputDir);
 
-        // lets generate the tables with the data to be fixed
-        generateDataToFixTable(endpointId, type);
-
-        fixConflicts(endpointId, type);
+        try {
+	        // lets generate the tables with the data to be fixed
+	        generateDataToFixTable(endpointId, type);
+	        fixConflicts(endpointId, type);
+        } catch (Exception e) {
+        	throw e;
+        } finally {
+        	// If failed or successful, ALWAYS discard conflicts
+        	discardConflicts(endpointId, type);
+        }
     }
 
+	/**
+	 * Takes the information from the .ZIP file and stores it in the results
+	 * table so that the process to fix records begins. Every type of object
+	 * (Content Page, Folder, Content Type, etc.) has its own results table
+	 * which indicates what records <b>MUST</b> be changed in the specified end
+	 * point.
+	 * 
+	 * @param endpointId
+	 *            - The ID of the end point where the data will be fixed.
+	 * @param type
+	 *            - The type of object (Content Page, Folder, Content Type,
+	 *            etc.) that will be fixed.
+	 * @throws Exception
+	 *             An error occurred during the integrity fix process.
+	 */
     public void generateDataToFixTable(String endpointId, IntegrityType type) throws Exception {
 
         try {
@@ -464,6 +502,20 @@ public class IntegrityUtil {
         return false;
     }
 
+	/**
+	 * Executes the integrity fix process according to the specified type.
+	 * 
+	 * @param endpointId
+	 *            - The ID of the end point where the data will be fixed.
+	 * @param type
+	 *            - The type of object (Content Page, Folder, Content Type,
+	 *            etc.) that will be fixed.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             action.
+	 */
     public void fixConflicts(final String endpointId, IntegrityType type) throws DotDataException,
             DotSecurityException {
         type.createIntegrityCheckerInstance().executeFix(endpointId);

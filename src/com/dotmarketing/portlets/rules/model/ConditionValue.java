@@ -5,6 +5,7 @@ public class ConditionValue {
     private String conditionId;
     private String value;
     private int priority;
+    private String key;
 
     public String getId() {
         return id;
@@ -12,6 +13,14 @@ public class ConditionValue {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
     }
 
     public String getConditionId() {
@@ -43,5 +52,6 @@ public class ConditionValue {
 		return "ConditionValue [id=" + id + ", conditionId=" + conditionId
 				+ ", value=" + value + ", priority=" + priority + "]";
 	}
+
 
 }
