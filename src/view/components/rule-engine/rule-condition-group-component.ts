@@ -92,6 +92,18 @@ export class ConditionGroupComponent {
           key: 'headerValue',
           value: '',
           priority: 10
+        },
+        fakeId2: {
+          id: 'fakeId2',
+          key: 'temp-hack',
+          value: '',
+          priority: 1
+        },
+        fakeId3: {
+          id: 'fakeId3',
+          key: 'temp-hack',
+          value: '',
+          priority: 1
         }
       }
     }

@@ -20,7 +20,7 @@ import {UsersLandingPageUrlConditionlet} from './conditionlets/users-landing-pag
 import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditionlet'
 import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
 import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
-import {UsersCountryConditionlet} from './conditionlets/users-country-conditionlet'
+import {CountryCondition} from './conditionlets/country/country-condition'
 import {UsersUrlParameterConditionlet} from './conditionlets/users-url-parameter-conditionlet'
 import {UsersReferringUrlConditionlet} from './conditionlets/users-referring-url-conditionlet'
 import {UsersCurrentUrlConditionlet} from './conditionlets/users-current-url-conditionlet'
@@ -47,7 +47,7 @@ import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
     UsersPlatformConditionlet,
     UsersLanguageConditionlet,
     UsersPageVisitsConditionlet,
-    UsersCountryConditionlet,
+    CountryCondition,
     UsersUrlParameterConditionlet,
     UsersReferringUrlConditionlet,
     UsersCurrentUrlConditionlet,
@@ -82,15 +82,22 @@ class ConditionComponent {
   }
 
   onSetConditionMeta(snapshot) {
-    console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
     this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
+    this.conditionValue = this.badValuesToToMap(this.condition.values)
     var rhsValues = this.conditionType.rhsValues(this.condition.values);
   }
 
+  badValuesToToMap(bad):any {
+    let notBad = {}
+    Object.keys(bad).forEach((key)=> {
+      let item = bad[key]
+      notBad[item.key] = item
+    })
+    return notBad
+  }
 
   set conditionMeta(conditionRef) {
-    console.log("Setting conditionMeta: ", conditionRef.key())
     this._conditionMeta = conditionRef
     conditionRef.once('value', this.onSetConditionMeta.bind(this))
   }
@@ -101,15 +108,11 @@ class ConditionComponent {
 
 
   setConditionlet(conditionTypeId) {
-    console.log('Setting condition type id to: ', conditionTypeId)
     let newVal = ''
-    this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
-    let foo = this.conditionType.rhsValues(this.condition.values)
-
-    //this.condition.values[key] = {id: key, key: key, priority: 10, value: newVal}
+    this.conditionType = this.typesProvider.getType(conditionTypeId)
     this.conditionValue = newVal
     this.condition.conditionlet = conditionTypeId
-
+    this.condition.values = {}
     this.updateCondition()
   }
 
@@ -118,28 +121,37 @@ class ConditionComponent {
     this.updateCondition()
   }
 
-  onConditionletChange(event) {
-    console.log('onConditionletChange', event)
-  }
 
   updateCondition() {
-    console.log('Updating Condition: ', this.condition)
     this.conditionMeta.set(this.condition)
   }
 
   removeCondition() {
-    console.log('Removing Condition: ', this.condition)
     this.conditionMeta.remove()
   }
 
 
-  updateAndStuff(event) {
+  conditionChanged(event) {
     let target = event.ngTarget
     let val = target.value
-    let key = 'aFakeId'
+    let parameterKeys = val['parameterKeys']
+    let oldKeys = Object.keys(this.condition.values)
+    this.condition.values = {}
+    let idx = 0
+    parameterKeys.forEach((key)=>{
+      let oldKey = oldKeys[idx++]
+      let id = oldKey ? oldKey : 'fake-' + key
+      this.condition.values[id] = {
+        id: id,
+        key: key,
+        value: val[key],
+        priority: 0
+      }
+    })
 
-    this.condition.values[key] = {id: key, priority: 10, value: ''}
     this.condition.comparison = val.comparatorValue
+
+    this.updateCondition()
 
   }
 }

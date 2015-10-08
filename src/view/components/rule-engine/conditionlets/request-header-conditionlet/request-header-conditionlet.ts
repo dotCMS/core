@@ -94,18 +94,19 @@ let commonRequestHeaders = [
 
 
 export class RequestHeaderConditionletModel {
-  headerKeyValue:string;
-  comparatorValue:string;
-  comparisonValues:Array<string>;
+  parameterKeys: Array<string> = ['headerKeyValue', 'compareTo']
+  headerKeyValue:string
+  comparatorValue:string
+  compareTo:string
 
-  constructor(headerKeyValue = null, comparatorValue = null, comparisonValues = []) {
-    this.headerKeyValue = headerKeyValue
+  constructor(headerKeyValue:string = null, comparatorValue:string = null, compareTo:string = '') {
+    this.headerKeyValue = headerKeyValue || commonRequestHeaders[0]
     this.comparatorValue = comparatorValue
-    this.comparisonValues = comparisonValues || []
+    this.compareTo = compareTo
   }
 
   clone():RequestHeaderConditionletModel {
-    return new RequestHeaderConditionletModel(this.headerKeyValue, this.comparatorValue, [].concat(this.comparisonValues))
+    return new RequestHeaderConditionletModel(this.headerKeyValue, this.comparatorValue, this.compareTo)
   }
 }
 
@@ -133,7 +134,7 @@ export class RequestHeaderConditionletModel {
         </select>
       </div>
       <div class="col-sm-4">
-        <input type="text" class="form-control condition-value" [value]="value.comparisonValues" placeholder="Enter a value" (change)="updateComparisonValues($event)"/>
+        <input type="text" class="form-control condition-value" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
       </div>
       <div class="col-sm-1">
         <button type="button" class="btn btn-default" aria-label="Info" >
@@ -148,7 +149,6 @@ export class RequestHeaderConditionlet {
   comparisonOptions:Array<string> = ["exists", "is", "startsWith", "endsWith", "contains", "regex"];
   predefinedHeaderKeyOptions:Array<string> = commonRequestHeaders;
 
-  parameterKeys: Array<string> = ['headerKeyValue', 'comparisionValues']
   value:RequestHeaderConditionletModel;
 
   change:EventEmitter;
@@ -156,7 +156,7 @@ export class RequestHeaderConditionlet {
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('comparisonValues') comparisonValues:Array<string>) {
-    this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue, comparisonValues)
+    this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
   }
 
@@ -173,8 +173,12 @@ export class RequestHeaderConditionlet {
     this.value.comparatorValue = value
   }
 
-  set comparisonValues(value:Array<string>){
-    this.value.comparisonValues = value || []
+  set comparisonValues(value:any) {
+    this.value.parameterKeys.forEach((paramKey)=> {
+      let v = value[paramKey]
+      v = v ? v.value : ''
+      this.value[paramKey] = v
+    })
   }
 
   updateHeaderKey(event:Event) {
@@ -191,10 +195,10 @@ export class RequestHeaderConditionlet {
     this.change.next(e)
   }
 
-  updateComparisonValues(event:Event) {
+  updateCompareToValue(event:Event) {
     let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
-    this.value.comparisonValues = value
+    let e = this._modifyEventForForwarding(event, 'compareTo', this.value.clone())
+    this.value.compareTo = value
     this.change.next(e)
   }
 
