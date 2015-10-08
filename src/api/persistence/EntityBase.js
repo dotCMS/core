@@ -49,6 +49,9 @@ let RootMaker = {
 
 export class EntitySnapshot {
   constructor(path, entity=null) {
+    if(!path.startsWith('http')){
+      //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
+    }
     this._path = path
     this._entity = entity // @todo ggranum: this should be cloned
     Dispatcher.snapshotCreated(this)
@@ -87,16 +90,21 @@ export class EntitySnapshot {
   }
 
   forEach(childAction) {
-    Object.keys(this._entity).every((key) => {
-      let snap = this.child(key)
-      return childAction(snap) !== true // break if 'true' returned by callback.
-    })
+    if (this._entity) {
+      Object.keys(this._entity).every((key) => {
+        let snap = this.child(key)
+        return childAction(snap) !== true // break if 'true' returned by callback.
+      })
+    }
   }
 }
 
 
 export class EntityMeta {
   constructor(url) {
+    if(!url.startsWith('http')){
+      //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
+    }
     this.path = url
     this.pathTokens = url ? url.split("/") : []
     this.latestSnapshot = null
@@ -169,9 +177,11 @@ export class EntityMeta {
           let snap = new EntitySnapshot(result.path, data)
           let childMeta = new EntityMeta(result.path);
           childMeta.latestSnapshot = snap
+          onComplete(snap)
           return snap
         }).catch((e) => {
           console.log('Error creating snapshot', e)
+          onComplete(e)
           throw e
         })
   }

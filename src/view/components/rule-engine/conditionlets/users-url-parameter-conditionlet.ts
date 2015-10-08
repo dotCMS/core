@@ -2,7 +2,7 @@
 /// <reference path="../../../../../typings/angular2/angular2.d.ts" />
  
  import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
- import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
+
  
  @Component({
   selector: 'conditionlet users-url-parameter-conditionlet'
@@ -23,10 +23,10 @@
     </div>
   `
  })
- export class UsersUrlParameterConditionlet extends BaseConditionletComponent{
+ export class UsersUrlParameterConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  
  }

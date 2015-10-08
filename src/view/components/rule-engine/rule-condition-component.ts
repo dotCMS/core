@@ -2,11 +2,13 @@
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 
-import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter} from 'angular2/angular2';
-
-import {ConditionletDirective} from './conditionlets/conditionlet-base';
+import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
 
 import {conditionTemplate} from './templates/index'
+
+import {ApiRoot} from 'api/persistence/ApiRoot'
+import {ConditionTypesProvider, ConditionTypeModel} from 'api/rule-engine/ConditionTypes';
+
 
 import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
 import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
@@ -18,8 +20,7 @@ import {UsersLandingPageUrlConditionlet} from './conditionlets/users-landing-pag
 import {UsersPlatformConditionlet} from './conditionlets/users-platform-conditionlet'
 import {UsersLanguageConditionlet} from './conditionlets/users-language-conditionlet'
 import {UsersPageVisitsConditionlet} from './conditionlets/users-page-visits-conditionlet'
-import {UsersCountryConditionlet} from './conditionlets/users-country-conditionlet'
-import {MockTrueConditionlet} from './conditionlets/mock-true-conditionlet'
+import {CountryCondition} from './conditionlets/country/country-condition'
 import {UsersUrlParameterConditionlet} from './conditionlets/users-url-parameter-conditionlet'
 import {UsersReferringUrlConditionlet} from './conditionlets/users-referring-url-conditionlet'
 import {UsersCurrentUrlConditionlet} from './conditionlets/users-current-url-conditionlet'
@@ -30,40 +31,13 @@ import {UsersDateTimeConditionlet} from './conditionlets/users-date-time-conditi
 import {UsersOperatingSystemConditionlet} from './conditionlets/users-operating-system-conditionlet'
 import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
 
-var conditionletsAry = []
-var conditionletsMap = new Map()
-var conditionletsPromise;
-
-
-let initConditionlets = function () {
-  let conditionletsRef:EntityMeta = new EntityMeta('/api/v1/system/conditionlets')
-  conditionletsPromise = new Promise((resolve, reject) => {
-    conditionletsRef.once('value', (snap) => {
-      let conditionlets = snap['val']()
-      let results = (Object.keys(conditionlets).map((key) => {
-        conditionletsMap.set(key, conditionlets[key])
-        return conditionlets[key]
-      }))
-      Array.prototype.push.apply(conditionletsAry, results);
-      resolve(snap);
-    })
-  });
-}
-
-
-/*
- ,
- */
-
 @Component({
   selector: 'rule-condition',
   properties: ["conditionMeta", "index"]
 })
 @View({
   template: conditionTemplate,
-  directives: [NgIf, NgFor, ConditionletDirective,
-    UsersCountryConditionlet,
-    UsersPageVisitsConditionlet,
+  directives: [NgIf, NgFor,
     UsersVisitedUrlConditionlet,
     UsersIpAddressConditionlet,
     UsersCityConditionlet,
@@ -73,8 +47,7 @@ let initConditionlets = function () {
     UsersPlatformConditionlet,
     UsersLanguageConditionlet,
     UsersPageVisitsConditionlet,
-    UsersCountryConditionlet,
-    MockTrueConditionlet,
+    CountryCondition,
     UsersUrlParameterConditionlet,
     UsersReferringUrlConditionlet,
     UsersCurrentUrlConditionlet,
@@ -88,35 +61,43 @@ let initConditionlets = function () {
   ]
 })
 class ConditionComponent {
-  index:number;
-  _conditionMeta:any;
-  condition:any;
-  conditionValue:string;
-  conditionlet:any;
-  conditionlets:Array<any>;
+  index:number
+  _conditionMeta:any
+  condition:any
+  conditionValue:string
+  conditionType:ConditionTypeModel
+  conditionTypes:Array<any>
+  typesProvider:ConditionTypesProvider
 
-  constructor() {
-    console.log('Creating ConditionComponent')
-    this.conditionlets = []
-    conditionletsPromise.then(()=> {
-      this.conditionlets = conditionletsAry
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ConditionTypesProvider) typesProvider:ConditionTypesProvider) {
+    this.conditionTypes = []
+    this.typesProvider = typesProvider
+    typesProvider.promise.then(()=> {
+      this.conditionTypes = typesProvider.ary
     })
     this.condition = {}
     this.conditionValue = ''
-    this.conditionlet = {}
+    this.conditionType = new ConditionTypeModel('', {})
     this.index = 0
   }
 
   onSetConditionMeta(snapshot) {
-    console.log("Condition's type is ", this.condition);
     this.condition = snapshot.val()
-    this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
-    this.conditionValue = this.getComparisonValue()
+    this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
+    this.conditionValue = this.badValuesToToMap(this.condition.values)
+    var rhsValues = this.conditionType.rhsValues(this.condition.values);
   }
 
+  badValuesToToMap(bad):any {
+    let notBad = {}
+    Object.keys(bad).forEach((key)=> {
+      let item = bad[key]
+      notBad[item.key] = item
+    })
+    return notBad
+  }
 
   set conditionMeta(conditionRef) {
-    console.log("Setting conditionMeta: ", conditionRef.key())
     this._conditionMeta = conditionRef
     conditionRef.once('value', this.onSetConditionMeta.bind(this))
   }
@@ -125,71 +106,13 @@ class ConditionComponent {
     return this._conditionMeta;
   }
 
-  getConditionletDataType(conditionletId) {
-    let dataType;
-    switch (conditionletId) {
-      case 'UsersTimeConditionlet':
-        dataType = 'time'
-        break;
-      case 'UsersDateTimeConditionlet':
-        dataType = 'date'
-        break;
-      default :
-      {
-        dataType = 'text'
-      }
-    }
-    return dataType
 
-  }
-
-  setConditionlet(conditionletId) {
-    console.log('Setting conditionlet id to: ', conditionletId)
-    let dataType = this.getConditionletDataType(conditionletId)
-    if (dataType != this.getConditionletDataType(this.conditionlet.id)) {
-      console.log('Condition data type changed, resetting condition value.')
-      let newVal = ''
-      let key = this.getComparisonValueKey() || 'aFakeId'
-      this.condition.values[key] = {id: key, priority: 10, value: newVal}
-      this.conditionValue = newVal
-    }
-    this.condition.conditionlet = conditionletId
-    this.conditionlet = conditionletsMap.get(this.condition.conditionlet)
-
-    this.updateCondition()
-  }
-
-  setComparison(comparisonId) {
-    console.log('Setting conditionlet comparison id to: ', comparisonId)
-    this.condition.comparison = comparisonId
-    this.updateCondition()
-
-  }
-
-  getComparisonValueKey() {
-    let key = null
-    let keys = Object.keys(this.condition.values)
-    if (keys.length) {
-      key = keys[0]
-    }
-    return key
-  }
-
-  getComparisonValue() {
-    let value = ''
-    let key = this.getComparisonValueKey()
-    if (key) {
-      value = this.condition.values[key].value
-    }
-    return value
-  }
-
-  setComparisonValue(newValue) {
-    if (newValue === undefined) {
-      return
-    }
-    let key = this.getComparisonValueKey() || 'aFakeId'
-    this.condition.values[key] = {id: key, priority: 10, value: newValue}
+  setConditionlet(conditionTypeId) {
+    let newVal = ''
+    this.conditionType = this.typesProvider.getType(conditionTypeId)
+    this.conditionValue = newVal
+    this.condition.conditionlet = conditionTypeId
+    this.condition.values = {}
     this.updateCondition()
   }
 
@@ -198,23 +121,39 @@ class ConditionComponent {
     this.updateCondition()
   }
 
-  onFoo(event){
-    alert('wow')
-  }
-
-  onConditionletChange(event){
-    console.log('onConditionletChange', event)
-  }
 
   updateCondition() {
-    console.log('Updating Condition: ', this.condition)
     this.conditionMeta.set(this.condition)
   }
 
   removeCondition() {
-    console.log('Removing Condition: ', this.condition)
     this.conditionMeta.remove()
+  }
+
+
+  conditionChanged(event) {
+    let target = event.ngTarget
+    let val = target.value
+    let parameterKeys = val['parameterKeys']
+    let oldKeys = Object.keys(this.condition.values)
+    this.condition.values = {}
+    let idx = 0
+    parameterKeys.forEach((key)=>{
+      let oldKey = oldKeys[idx++]
+      let id = oldKey ? oldKey : 'fake-' + key
+      this.condition.values[id] = {
+        id: id,
+        key: key,
+        value: val[key],
+        priority: 0
+      }
+    })
+
+    this.condition.comparison = val.comparatorValue
+
+    this.updateCondition()
+
   }
 }
 
-export {ConditionComponent, initConditionlets}
+export {ConditionComponent}

@@ -5,15 +5,15 @@
 /// <reference path="./rule-condition-component.ts" />
 /// <reference path="./rule-component.ts" />
 
-import {bootstrap, NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {bootstrap, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+
+import {ApiRoot} from 'api/persistence/ApiRoot';
+import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
+import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
 
 
-import {initActionlets} from './rule-action-component';
-import {initConditionlets} from './rule-condition-component';
 import {RuleComponent} from './rule-component';
-
 import {ruleEngineTemplate} from './templates/index'
-
 
 @Component({
   selector: 'rule-engine'
@@ -28,10 +28,10 @@ class RuleEngineComponent{
   rulesRef:EntityMeta;
   filterText:string;
 
-  constructor() {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot){
     this.rules = []
     this.baseUrl = ConnectionManager.baseUrl;
-    this.rulesRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/rules')
+    this.rulesRef = apiRoot.defaultSite.child('rules')
     this.filterText = ""
     this.readSnapshots(this.rulesRef).catch((e) => console.log(e));
     this.rulesRef.on('child_added', (snap) => {
@@ -96,9 +96,8 @@ class RuleEngineComponent{
 
 export function main() {
   ConnectionManager.persistenceHandler = RestDataStore
-  initConditionlets()
-  initActionlets()
-  let app = bootstrap(RuleEngineComponent)
+
+  let app = bootstrap(RuleEngineComponent, [ApiRoot, ActionTypesProvider, ConditionTypesProvider])
   app.then( (appRef) => {
     console.log("Bootstrapped App: ", appRef)
   }).catch((e) => {

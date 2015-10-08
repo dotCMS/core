@@ -2,10 +2,11 @@
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 
-import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 import {ConditionComponent} from './rule-condition-component';
 
 import {conditionGroupTemplate} from './templates/index'
+import {ApiRoot} from 'api/persistence/ApiRoot'
 
 @Component({
   selector: 'condition-group',
@@ -20,20 +21,21 @@ import {conditionGroupTemplate} from './templates/index'
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
-  groupIndex:number;
-  _groupSnap:any;
+  apiRoot:ApiRoot
+  groupIndex:number
+  _groupSnap:any
   group:any;
   rule:any;
   groupCollapsed:boolean;
   conditions:Array<any>;
   conditionsRef:any;
 
-  constructor() {
-    console.log('Creating ConditionGroupComponent')
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot) {
+    this.apiRoot = apiRoot
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
-    this.conditionsRef = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
+    this.conditionsRef = this.apiRoot.defaultSite.child('ruleengine/conditions')
     this.conditionsRef.on('child_added', (conditionSnap) => {
       if(conditionSnap.val().owningGroup == this.groupSnap.key()) {
         this.conditions.push(conditionSnap.ref())
@@ -64,7 +66,8 @@ export class ConditionGroupComponent {
 
   getConditions() {
     let conditionMetas = []
-    this.groupSnap.child('conditions').forEach((childSnap) => {
+    let conditionSnap = this.groupSnap.child('conditions')
+    conditionSnap.forEach((childSnap) => {
       let key = childSnap.key()
       var ref = this.conditionsRef.child(key);
       conditionMetas.push(ref)
@@ -80,25 +83,35 @@ export class ConditionGroupComponent {
       priority: 10,
       name: "Condition. " + new Date().toISOString(),
       owningGroup: this._groupSnap.key(),
-      conditionlet: 'UsersCountryConditionlet',
+      conditionlet: 'UsersBrowserHeaderConditionlet',
       comparison: 'Is',
       operator: 'AND',
       values: {
-        a: {
-          id: 'a',
-          value: 'US',
+        fakeId: {
+          id: 'fakeId',
+          key: 'headerValue',
+          value: '',
           priority: 10
+        },
+        fakeId2: {
+          id: 'fakeId2',
+          key: 'temp-hack',
+          value: '',
+          priority: 1
+        },
+        fakeId3: {
+          id: 'fakeId3',
+          key: 'temp-hack',
+          value: '',
+          priority: 1
         }
       }
     }
-    let condRoot:EntityMeta = new EntityMeta('/api/v1/sites/48190c8c-42c4-46af-8d1a-0cd5db894797/ruleengine/conditions')
 
-    condRoot.push(condition).then((result) => {
+    this.conditionsRef.push(condition, (result) => {
       this.group.conditions = this.group.conditions || {}
       this.group.conditions[result.key()] = true
       this.updateGroup()
-    }).catch((e) => {
-      console.log(e)
     })
   }
 

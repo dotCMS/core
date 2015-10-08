@@ -1,34 +1,15 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
 /// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
-import {NgFor, NgIf, Component, Directive, View} from 'angular2/angular2';
+import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
 import {ruleActionTemplate} from './templates/index'
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
 import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
+import {ApiRoot} from 'api/persistence/ApiRoot';
+import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
 
 
-var actionletsAry = []
-var actionTypesMap:Map<string,ActionTypeModel> = new Map()
-var actionletsPromise;
-
-
-export let initActionlets = function () {
-  let actionletsRef:EntityMeta = new EntityMeta('/api/v1/system/ruleengine/actionlets')
-  actionletsPromise = new Promise((resolve, reject) => {
-    actionletsRef.once('value', (snap) => {
-      let actionlets = snap['val']()
-      let results = (Object.keys(actionlets).map((key) => {
-        let actionType = actionlets[key]
-        actionTypesMap.set(key, new ActionTypeModel(key, actionType.i18nKey))
-        return actionlets[key]
-      }))
-
-      Array.prototype.push.apply(actionletsAry,results);
-      resolve(snap);
-    })
-  });
-}
 @Component({
   selector: 'rule-action',
   properties: ["actionMeta"]
@@ -40,12 +21,14 @@ export let initActionlets = function () {
 export class RuleActionComponent {
   _actionMeta:any;
   actionModel:RuleActionModel;
+  typesProvider:ActionTypesProvider
   actionTypes:Array<any>;
 
-  constructor() {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ActionTypesProvider) typesProvider:ActionTypesProvider){
     this.actionTypes = []
-    actionletsPromise.then(()=> {
-      this.actionTypes = actionletsAry
+    this.typesProvider = typesProvider
+    typesProvider.promise.then(()=> {
+      this.actionTypes = typesProvider.ary
     })
     this.actionModel = new RuleActionModel()
   }
@@ -56,7 +39,7 @@ export class RuleActionComponent {
     this.actionModel.name = val.name
     this.actionModel.owningRuleId = val.owningRule
     this.actionModel.priority = val.priority
-    this.actionModel.setActionType(actionTypesMap.get(val.actionlet), val.parameters)
+    this.actionModel.setActionType(this.typesProvider.map.get(val.actionlet), val.parameters)
   }
 
 
@@ -70,7 +53,7 @@ export class RuleActionComponent {
   }
 
   setActionlet(actionletId){
-    this.actionModel.setActionType(actionTypesMap.get(actionletId))
+    this.actionModel.setActionType(this.typesProvider.map.get(actionletId))
     this.updateAction()
   }
 

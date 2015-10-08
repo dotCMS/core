@@ -2,7 +2,7 @@
 /// <reference path="../../../../../typings/angular2/angular2.d.ts" />
  
  import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
- import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
+
  
  @Component({
   selector: 'conditionlet users-visited-url-conditionlet'
@@ -23,10 +23,10 @@
     </div>
   `
  })
- export class UsersVisitedUrlConditionlet extends BaseConditionletComponent{
+ export class UsersVisitedUrlConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  
  }

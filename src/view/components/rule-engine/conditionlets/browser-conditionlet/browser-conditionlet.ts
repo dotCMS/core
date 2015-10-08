@@ -76,10 +76,10 @@ import {ConditionletDirective, BaseConditionletComponent} from '../conditionlet-
     </div>
   `
 })
-export class BrowserConditionlet extends BaseConditionletComponent {
+export class BrowserConditionlet {
 
-  constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-    super(conditionletDir, id)
+  constructor( @Attribute('id') id:string) {
+
   }
 
 }

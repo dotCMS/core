@@ -2,7 +2,7 @@
 /// <reference path="../../../../../typings/angular2/angular2.d.ts" />
  
  import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
- import {ConditionletDirective, BaseConditionletComponent} from './conditionlet-base';
+
  import {CwCidrInput} from '../../input/cidr/cidr';
  import {CwIpAddressInput} from '../../input/ip-address/ip-address';
 
@@ -28,9 +28,9 @@
     </div>
   `
  })
- export class UsersIpAddressConditionlet extends BaseConditionletComponent{
+ export class UsersIpAddressConditionlet {
  
-   constructor(@SkipSelf() @Host() conditionletDir:ConditionletDirective, @Attribute('id') id:string) {
-     super(conditionletDir, id)
+   constructor( @Attribute('id') id:string) {
+
    }
  }
