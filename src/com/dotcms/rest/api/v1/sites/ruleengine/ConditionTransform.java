@@ -48,7 +48,7 @@ public class ConditionTransform {
                 .priority(app.getPriority())
                 .values(app.getValues().stream()
                            .map(conditionValueTransform.toRest)
-                           .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity())))
+                           .collect(Collectors.toMap(restCondition -> restCondition.key, Function.identity())))
                 .build();
 
         return rest;
