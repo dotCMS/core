@@ -1,14 +1,32 @@
+import {Inject} from 'angular2/angular2';
+
+import {UserModel} from "api/auth/UserModel";
+
 
 export class ApiRoot {
+  // Points to {baseUrl}/api/v1
   root:EntityMeta;
   defaultSite:EntityMeta;
   baseUrl: string = "http://localhost:8080/";
-  username: string = 'admin@dotcms.com';
-  password: string = 'admin';
+  username: string
+  password: string
   defaultSiteId: string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
-  constructor(){
+  userModel: UserModel;
+  resourceRef: EntityMeta
+  constructor(@Inject(UserModel) userModel:UserModel){
+    this.userModel = userModel
+    this.username = userModel.username
+    this.password = userModel.password
     let url = this.checkQueryForUrl(document.location.search.substring(1))
     this.setBaseUrl(url) // if null, just uses the base of the current URL
+    this.resourceRef = this.root.child('system/i18n')
+  }
+
+  testStuff(){
+    let countryDataListRef:EntityMeta = this.resourceRef.child('en/system/locale/country')
+    countryDataListRef.on('value', (snapshot)=>{
+      let jsonData = snapshot.val()
+    })
   }
 
   checkQueryForUrl(locationQuery:string):string{
