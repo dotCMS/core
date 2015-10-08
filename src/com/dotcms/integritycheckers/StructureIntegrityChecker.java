@@ -393,9 +393,6 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 dc.executeStatement("delete from structure where inode = '" + TEMP_INODE + "'" );
                 dc.executeStatement("delete from inode where inode = '" + TEMP_INODE + "'" );
             }
-
-            discardConflicts(serverId);
-
         } catch (SQLException e) {
             throw new DotDataException(e.getMessage(), e);
         }

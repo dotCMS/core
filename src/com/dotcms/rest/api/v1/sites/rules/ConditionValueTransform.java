@@ -6,7 +6,12 @@ import java.util.function.Function;
 public class ConditionValueTransform {
     public final Function<ConditionValue, RestConditionValue> toRest = (app) -> {
 
-        RestConditionValue rest = new RestConditionValue.Builder().id(app.getId()).value(app.getValue()).priority(app.getPriority()).build();
+        RestConditionValue rest = new RestConditionValue.Builder()
+            .id(app.getId())
+            .value(app.getValue())
+            .key(app.getKey())
+            .priority(app.getPriority())
+            .build();
 
         return rest;
     };
@@ -15,6 +20,7 @@ public class ConditionValueTransform {
         app.setId(rest.id);
         app.setPriority(rest.priority);
         app.setValue(rest.value);
+        app.setKey(rest.key);
         return app;
     };
 
@@ -22,6 +28,7 @@ public class ConditionValueTransform {
         app.setId(rest.id);
         app.setPriority(rest.priority);
         app.setValue(rest.value);
+        app.setKey(rest.key);
         return app;
     }
 }
