@@ -654,9 +654,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		    final List<Role> userRoles = new ArrayList<Role>();
 		    if (UtilMethods.isSet(searcher.getAssignedTo())) {
 
-    			final Role r = new Role();
-    			r.setId(searcher.getAssignedTo());
-    			userRoles.add(r);
+		    	
+		    	final Role r = APILocator.getRoleAPI().loadRoleById(searcher.getAssignedTo());
+		    	if(r!=null)userRoles.add(r);
     		} else {
     			userRoles.addAll(APILocator.getRoleAPI().loadRolesForUser(searcher.getUser().getUserId(), false));
     			userRoles.add(APILocator.getRoleAPI().getUserRole(searcher.getUser()));
@@ -672,7 +672,9 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
     			rolesString += "'" + role.getId() + "'";
     		}
 
-    		query.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
+    		if(rolesString.length()>0){
+    			query.append(" ( workflow_task.assigned_to in (" + rolesString + ")  ) and ");
+    		}
 		}
 		query.append(" workflow_step.id = workflow_task.status and workflow_step.scheme_id = workflow_scheme.id and ");
 
@@ -713,7 +715,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				// condition.append(" status , ");
 			}
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
-				orderby=searcher.getOrderBy();
+				orderby=searcher.getOrderBy().replaceAll("[^\\w_\\. ]", "");
 			} else {
 
 				orderby="mod_date desc";
