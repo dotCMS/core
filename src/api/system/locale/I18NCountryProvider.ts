@@ -9,12 +9,15 @@ export class I18NCountryProvider {
   byName: any
   names: Array<string>
   promise:Promise
+  userLocale:string
 
   constructor(@Inject(ApiRoot) apiRoot) {
     this.byIsoCode = {}
     this.byName = {}
     this.names = []
-    this.countryRef = apiRoot.resourceRef.child('en/system/locale/country')
+    this.userLocale = apiRoot.userModel.locale //i.e. 'en-US'
+    let userLocaleLang = this.userLocale.substr(0,2) //i.e. 'en'
+    this.countryRef = apiRoot.resourceRef.child(userLocaleLang + '/system/locale/country')//i.e.'en/system/locale/country'
     this.init();
   }
 

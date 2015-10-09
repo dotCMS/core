@@ -3,8 +3,6 @@
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf, Inject} from 'angular2/angular2';
 import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
 
-
-
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']
 
@@ -20,7 +18,6 @@ export class CountryConditionModel {
     return new CountryConditionModel(this.comparatorValue, this.isoCode)
   }
 }
-
 
 @Component({
   selector: 'cw-country-condition',
@@ -56,7 +53,6 @@ export class CountryCondition {
     //"startsWith", "endsWith", "contains", "regex"
   ];
 
-
   countries:Array<any>
 
   value:CountryConditionModel
@@ -66,9 +62,7 @@ export class CountryCondition {
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
 
-
     countryProvider.promise.then(()=> {
-      var byIsoCode = countryProvider.byIsoCode
       var byNames = countryProvider.byName
       var names = countryProvider.names
       names.forEach((name)=>{
