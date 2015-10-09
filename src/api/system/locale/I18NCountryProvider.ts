@@ -16,8 +16,7 @@ export class I18NCountryProvider {
     this.byName = {}
     this.names = []
     this.userLocale = apiRoot.userModel.locale //i.e. 'en-US'
-    let userLocaleLang = this.userLocale.substr(0,2) //i.e. 'en'
-    this.countryRef = apiRoot.resourceRef.child(userLocaleLang + '/system/locale/country')//i.e.'en/system/locale/country'
+    this.countryRef = apiRoot.resourceRef.child(this.userLocale + '/system/locale/country')//i.e.'en-US/system/locale/country'
     this.init();
   }
 
