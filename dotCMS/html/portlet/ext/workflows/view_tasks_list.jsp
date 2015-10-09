@@ -16,6 +16,8 @@
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowTask"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowSearcher"%>
+<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 <%
 
 	Map<String, Object>  newMap = new HashMap<String, Object>();
