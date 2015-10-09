@@ -144,7 +144,7 @@ class RuleComponent{
         },
         fakeId3: {
           id: 'fakeId3',
-          key: 'temp-hack',
+          key: 'temp-hack2',
           value: '',
           priority: 1
         }

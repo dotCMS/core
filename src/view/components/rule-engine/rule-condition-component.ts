@@ -84,17 +84,7 @@ class ConditionComponent {
   onSetConditionMeta(snapshot) {
     this.condition = snapshot.val()
     this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
-    this.conditionValue = this.badValuesToToMap(this.condition.values)
-    var rhsValues = this.conditionType.rhsValues(this.condition.values);
-  }
-
-  badValuesToToMap(bad):any {
-    let notBad = {}
-    Object.keys(bad).forEach((key)=> {
-      let item = bad[key]
-      notBad[item.key] = item
-    })
-    return notBad
+    this.conditionValue = this.condition.values
   }
 
   set conditionMeta(conditionRef) {
