@@ -9,7 +9,6 @@ import com.dotcms.rest.api.Validated;
 @JsonDeserialize(builder = RestConditionValue.Builder.class)
 public final class RestConditionValue extends Validated {
 
-    @JsonIgnore
     public final String id;
 
     @NotNull

@@ -68,7 +68,7 @@ public class I18NResource {
 
             response = Response.ok(root.toString()).build();
         } else {
-            response = Response.ok("\"" + singleResult + "\"").build();
+            response = Response.ok("\"" + singleResult.get() + "\"").build();
         }
         return response;
     }
@@ -81,7 +81,7 @@ public class I18NResource {
     }
 
     private boolean refIsSubTree(RestResourceLookup lookup, Optional<String> singleResult, Map<String, String> subTreeResult) {
-        boolean isTree = subTreeResult.size() > 1;
+        boolean isTree = subTreeResult.size() > 1 || (subTreeResult.size() == 1 && !singleResult.isPresent());
         if(isTree && singleResult.isPresent()) {
             // the case where both `foo.bar=x` and `foo.bar.baz=y` exist.
             logInvalidPropertyDefinition(singleResult.get(), lookup.key);
@@ -123,16 +123,16 @@ public class I18NResource {
                     logInvalidPropertyDefinition(value, currentPath.toString());
                 } else {
                     Logger.warn(this.getClass(),
-                                String.format("Resource message key has duplicate definitions: %s",
-                                              StringUtils.join(pathKeys, '.')));
+                        String.format("Resource message key has duplicate definitions: %s",
+                            StringUtils.join(pathKeys, '.')));
                 }
             } else {
                 parent.put(pathKeys[lastIdx], value);
             }
         } catch (JSONException e) {
             throw new InternalServerException(e,
-                                              "Unexpected error while reading resources strings at: %s",
-                                              currentPath.toString());
+                "Unexpected error while reading resources strings at: %s",
+                currentPath.toString());
         }
     }
 
@@ -144,29 +144,42 @@ public class I18NResource {
     private Map<String, String> getMessagesForLocale(MultiMessageResources messages, Locale locale, RestResourceLookup lookup) {
         @SuppressWarnings("unchecked")
         Map<String, String> map = messages.getMessages();
+        Map<String, String> allMessages = Maps.newHashMap();
+        TreeMap<String, String> treeMap = new TreeMap<>(map);
 
-        String lang = locale.getLanguage();
         char dotPlusOne = ((char)('.' + 1)); // this is a forward slash, at least on in US on mac. Use math to be certain.
         String startKeyToken = '.' + lookup.key + '.';
         String endKeyToken = '.' + lookup.key + dotPlusOne;
 
-        TreeMap<String, String> treeMap = new TreeMap<>(map);
-        Map<String, String> defaultMessages = getSubTree(startKeyToken, endKeyToken, treeMap);
+        String variant = ""; // default.
+        replaceLessSpecificVariantMessages(startKeyToken, endKeyToken, treeMap, variant, allMessages);
 
-        startKeyToken = lang + startKeyToken;
-        endKeyToken = lang + endKeyToken;
+        variant = locale.getLanguage(); // zh
+        replaceLessSpecificVariantMessages(startKeyToken, endKeyToken, treeMap, variant, allMessages);
 
-        Map<String, String> languageSpecificMessages = getSubTree(startKeyToken, endKeyToken, treeMap);
-        Map<String, String> allMessages = Maps.newHashMap();
+        variant = variant + '_' + locale.getCountry(); // zh_CN
+        replaceLessSpecificVariantMessages(startKeyToken, endKeyToken, treeMap, variant, allMessages);
 
-        for (Map.Entry<String, String> entry : defaultMessages.entrySet()) {
-            allMessages.put(entry.getKey().substring(1), entry.getValue());
-        }
-        int trimLanguageLength = lang.length() + 1;
-        for (Map.Entry<String, String> entry : languageSpecificMessages.entrySet()) {
-            allMessages.put(entry.getKey().substring(trimLanguageLength), entry.getValue());
-        }
+        variant = variant + '_' + locale.getVariant(); // zh_CN_BOBSYOURUNCLE
+        replaceLessSpecificVariantMessages(startKeyToken, endKeyToken, treeMap, variant, allMessages);
+
         return allMessages;
+    }
+
+    private void replaceLessSpecificVariantMessages(String startKeyToken,
+                                                    String endKeyToken,
+                                                    TreeMap<String, String> treeMap,
+                                                    String variant,
+                                                    Map<String, String> allMessages) {
+        int trimKeyLength = variant.length() + 1;
+        startKeyToken = variant + startKeyToken;
+        endKeyToken = variant + endKeyToken;
+
+        Map<String, String> moreSpecificMessages = getSubTree(startKeyToken, endKeyToken, treeMap);
+
+        for (Map.Entry<String, String> entry : moreSpecificMessages.entrySet()) {
+            allMessages.put(entry.getKey().substring(trimKeyLength), entry.getValue());
+        }
     }
 
     @VisibleForTesting

@@ -5,6 +5,7 @@ import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,9 +40,12 @@ public class ConditionGroupTransform {
 
     public final Function<ConditionGroup, RestConditionGroup> toRest = (app) -> {
 
-        Map<String, Boolean> restConditionMap =
-                app.getConditions().stream()
-                        .collect(Collectors.toMap(Condition::getId, c->Boolean.TRUE));
+        Map<String, Boolean> restConditionMap = new HashMap<>();
+
+        if(app.getConditions()!=null && !app.getConditions().isEmpty()) {
+            restConditionMap = app.getConditions().stream()
+                .collect(Collectors.toMap(Condition::getId, c -> Boolean.TRUE));
+        }
 
         RestConditionGroup rest = new RestConditionGroup.Builder()
                 .operator(app.getOperator().name())
