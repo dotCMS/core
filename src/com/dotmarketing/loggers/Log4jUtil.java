@@ -91,6 +91,21 @@ public class Log4jUtil {
     }
 
     /**
+     * Normally there is no need to do this manually.
+     * Each LoggerContext registers a shutdown hook that takes care of releasing resources when the JVM exits (unless system property log4j.shutdownHookEnabled is set to false).
+     * Web applications should include the log4j-web module in their classpath which disables the shutdown
+     * hook but instead cleans up log4j resources when the web application is stopped.
+     */
+    public static void shutdown () {
+
+        // get the current context
+        LoggerContext context = (LoggerContext) LogManager.getContext();
+
+        //Shutting down log4j in order to avoid memory leaks
+        Configurator.shutdown(context);
+    }
+
+    /**
      * Initialises/reconfigures log4j based on a given log4j configuration file
      *
      * @param log4jConfigFilePath
@@ -101,7 +116,7 @@ public class Log4jUtil {
 
             try {
 
-                LoggerContext loggerContext = (LoggerContext) LogManager.getContext();
+                LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
 
                 if ( !loggerContext.isInitialized() || loggerContext.isStopped() ) {
 

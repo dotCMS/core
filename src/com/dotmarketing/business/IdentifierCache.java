@@ -41,7 +41,7 @@ public abstract class IdentifierCache implements Cachable {
     
     abstract protected void addContentletVersionInfoToCache(ContentletVersionInfo contV);
     
-    abstract protected void removeContentletVersionInfoToCache(String identifier, long lang);
+    abstract public void removeContentletVersionInfoToCache(String identifier, long lang);
 
 	abstract public void clearCache();
 
