@@ -65,9 +65,11 @@ export class CountryCondition {
     countryProvider.promise.then(()=> {
       var byNames = countryProvider.byName
       var names = countryProvider.names
+      var tempCountries = []
       names.forEach((name)=>{
-        this.countries.push({id: byNames[name], label: name})
+        tempCountries.push({id: byNames[name], label: name})
       })
+      this.countries = tempCountries
     })
 
   }
