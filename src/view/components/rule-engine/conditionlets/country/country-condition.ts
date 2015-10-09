@@ -33,15 +33,15 @@ export class CountryConditionModel {
 })
 @View({
   directives: [NgFor],
-  template: `<div class="col-sm-5">
+  template: `<div class="col-sm-2">
   <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
           <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
 </div>
-<div class="col-sm-2">
+<div class="col-sm-1">
   <h4 class="separator"></h4>
 </div>
-<div class="col-sm-5">
+<div class="col-sm-4">
   <select class="form-control clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
     <option value="{{country.id}}" *ng-for="var country of countries" [selected]="country.id == value.isoCode">{{country.label}}
     </option>
@@ -68,11 +68,12 @@ export class CountryCondition {
 
 
     countryProvider.promise.then(()=> {
-      var byIsoCode = countryProvider.byIsoCode;
-      Object.keys(byIsoCode).forEach((key)=>{
-        this.countries.push({id: key, label: byIsoCode[key].name})
+      var byIsoCode = countryProvider.byIsoCode
+      var byNames = countryProvider.byName
+      var names = countryProvider.names
+      names.forEach((name)=>{
+        this.countries.push({id: byNames[name], label: name})
       })
-      debugger
     })
 
   }
