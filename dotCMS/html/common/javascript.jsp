@@ -1,4 +1,3 @@
-<%@page import="com.dotmarketing.exception.DotSecurityException"%>
 <%@page import="com.liferay.util.FileUtil"%>
 <%@page import="com.dotmarketing.util.Constants"%>
 <%@ page contentType="text/javascript;charset=UTF-8" language="java" session="false" %>
@@ -41,8 +40,20 @@
 	**/
 	
 	/** generated js **/
-
-
+	requires.add("/dwr/util.js");
+	requires.add("/dwr/interface/TemplateAjax.js");
+	requires.add("/dwr/interface/HostAjax.js");
+	requires.add("/dwr/interface/ContainerAjax.js");
+	requires.add("/dwr/interface/RoleAjax.js");
+	requires.add("/dwr/interface/BrowserAjax.js");
+	requires.add("/dwr/interface/UserAjax.js");
+	requires.add("/dwr/interface/InodeAjax.js");
+	requires.add("/dwr/interface/BrowserAjax.js");
+	requires.add("/dwr/interface/UserAjax.js");
+	requires.add("/dwr/interface/HostAjax.js");
+	
+	/** static js **/
+	files.add(dojoPath + "/dojo/dot-dojo.js");
 	files.add("/html/js/dotcms/dojo/data/UsersReadStore.js");
 	files.add("/html/js/calendar/calendar_stripped.js");
 	files.add("/html/js/calendar/calendar-setup_stripped.js");
