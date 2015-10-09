@@ -87,21 +87,21 @@ export class ConditionGroupComponent {
       comparison: 'Is',
       operator: 'AND',
       values: {
-        fakeId: {
+        headerKeyValue: {
           id: 'fakeId',
-          key: 'headerValue',
+          key: 'headerKeyValue',
           value: '',
           priority: 10
         },
-        fakeId2: {
+        compareTo: {
           id: 'fakeId2',
-          key: 'temp-hack',
+          key: 'compareTo',
           value: '',
           priority: 1
         },
-        fakeId3: {
+        isoCode: {
           id: 'fakeId3',
-          key: 'temp-hack2',
+          key: 'isoCode',
           value: '',
           priority: 1
         }

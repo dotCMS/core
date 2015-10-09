@@ -125,16 +125,15 @@ class ConditionComponent {
     let target = event.ngTarget
     let val = target.value
     let parameterKeys = val['parameterKeys']
-    let oldKeys = Object.keys(this.condition.values)
-    this.condition.values = {}
-    let idx = 0
+    let oldVals = this.condition.values
+
     parameterKeys.forEach((key)=>{
-      let oldKey = oldKeys[idx++]
-      let id = oldKey ? oldKey : 'fake-' + key
-      this.condition.values[id] = {
+      let oldVal = oldVals[key]
+      let id = oldVal ? oldVal.id : ''
+      this.condition.values[key] = {
         id: id,
         key: key,
-        value: val[key],
+        value: val[key] || oldVal[key],
         priority: 0
       }
     })
