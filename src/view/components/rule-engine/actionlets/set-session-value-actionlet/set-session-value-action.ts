@@ -46,7 +46,7 @@ import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
 @Component({
   selector: 'cw-set-session-value-action',
   properties: [
-    "sessionKeyValue", "sessionValue"
+    "sessionKey", "sessionValue"
   ],
   events: [
     "change"
@@ -56,7 +56,7 @@ import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
   directives: [NgFor],
   template: `<div class="row">
   <div class="col-sm-5">
-    <input type="text" class="form-control action-value" [value]="value.sessionKeyValue"
+    <input type="text" class="form-control action-value" [value]="value.sessionKey"
            placeholder="Enter a session key" (change)="updateSessionKey($event)"/>
   </div>
   <div class="col-sm-6">
@@ -77,10 +77,10 @@ export class SetSessionValueAction {
 
   change:EventEmitter;
 
-  constructor(@Attribute('sessionKeyValue') sessionKeyValue:string = '',
+  constructor(@Attribute('sessionKey') sessionKey:string = '',
               @Attribute('sessionValue') sessionValue:string = '') {
     this.value = new SetSessionValueActionModel()
-    this.value.sessionKeyValue = sessionKeyValue
+    this.value.sessionKey = sessionKey
     this.value.sessionValue = sessionValue
     this.change = new EventEmitter();
   }
@@ -90,8 +90,8 @@ export class SetSessionValueAction {
     return event
   }
 
-  set sessionKeyValue(value:string) {
-    this.value.sessionKeyValue = value || ''
+  set sessionKey(value:string) {
+    this.value.sessionKey = value || ''
   }
 
   set sessionValue(value:string) {
@@ -100,8 +100,8 @@ export class SetSessionValueAction {
 
   updateSessionKey(event:Event) {
     let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'sessionKeyValue', this.value.clone())
-    this.value.sessionKeyValue = value
+    let e = this._modifyEventForForwarding(event, 'sessionKey', this.value.clone())
+    this.value.sessionKey = value
     this.change.next(e)
   }
 

@@ -35,12 +35,12 @@ export class ActionConfigModel {
 
 
 export class SetSessionValueActionModel extends ActionConfigModel {
-  sessionKeyValue:string;
+  sessionKey:string;
   sessionValue:string;
 
   constructor(parameters:Object = {}) {
     super("SetSessionAttributeActionlet")
-    this.sessionKeyValue = ''
+    this.sessionKey = ''
     this.sessionValue = ''
     Object.keys(parameters).forEach((paramId) => {
       let param = parameters[paramId]
@@ -50,9 +50,9 @@ export class SetSessionValueActionModel extends ActionConfigModel {
           this.sessionValue = param.value || ''
           break
         }
-        case 'sessionKeyValue':
+        case 'sessionKey':
         {
-          this.sessionKeyValue = param.value || ''
+          this.sessionKey = param.value || ''
           break
         }
       }
@@ -62,17 +62,17 @@ export class SetSessionValueActionModel extends ActionConfigModel {
 
   clone():SetSessionValueActionModel {
     var model = new SetSessionValueActionModel()
-    model.sessionKeyValue = this.sessionKeyValue
+    model.sessionKey = this.sessionKey
     model.sessionValue = this.sessionValue
     return model
   }
 
   out():any {
     return {
-      sessionKeyValue: {
-        id: 'sessionKeyValue',
-        key: 'sessionKeyValue',
-        value: this.sessionKeyValue
+      sessionKey: {
+        id: 'sessionKey',
+        key: 'sessionKey',
+        value: this.sessionKey
       }, sessionValue: {
         id: 'sessionValue',
         key: 'sessionValue',

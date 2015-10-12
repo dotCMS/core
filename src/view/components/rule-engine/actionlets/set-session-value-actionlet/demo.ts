@@ -18,7 +18,7 @@ import {SetSessionValueAction} from './set-session-value-action';
     <div class="panel panel-default">
       <div class="panel-heading">2) With initial value set for session-header-key</div>
       <div class="panel-body">
-        <cw-set-session-value-action session-key-value="Hola"></cw-set-session-value-action>
+        <cw-set-session-value-action session-key="Hola"></cw-set-session-value-action>
       </div>
     </div>
     <div class="panel panel-default">
@@ -26,13 +26,13 @@ import {SetSessionValueAction} from './set-session-value-action';
       <div class="panel-body">
         <div class="row">
           <cw-set-session-value-action class="col-sm-12"
-          [session-key-value]="demo['3'].sessionKeyValue"
+          [session-key]="demo['3'].sessionKey"
           [session-value]="demo['3'].sessionValue"
           (change)="update(3, $event)"
           ></cw-set-session-value-action>
         </div>
         <div class="row">
-          <div class="col-sm-4">{{demo['3'].sessionKeyValue}}</div><div class="col-sm-3">{{demo['3'].sessionValue}}</div>
+          <div class="col-sm-4">{{demo['3'].sessionKey}}</div><div class="col-sm-3">{{demo['3'].sessionValue}}</div>
         </div>
       </div>
     </div>
@@ -41,13 +41,13 @@ import {SetSessionValueAction} from './set-session-value-action';
         <div class="panel-body">
         <div class="row">
           <cw-set-session-value-action class="col-sm-12"
-          [session-key-value]="demo['4'].sessionKeyValue"
+          [session-key]="demo['4'].sessionKey"
           [session-value]="demo['4'].sessionValue"
           (change)="update(4, $event)"
           ></cw-set-session-value-action>
         </div>
         <div class="row">
-          <div class="col-sm-4">{{demo['4'].sessionKeyValue}}</div><div class="col-sm-3">{{demo['4'].sessionValue}}</div>
+          <div class="col-sm-4">{{demo['4'].sessionKey}}</div><div class="col-sm-3">{{demo['4'].sessionValue}}</div>
         </div>
       </div>
     </div>
@@ -63,11 +63,11 @@ class App {
       '1': {},
       '2': {},
       '3': {
-        sessionKeyValue: 'The most popular number in history',
+        sessionKey: 'The most popular number in history',
         sessionValue: '40 + 2'
       },
       '4': {
-        sessionKeyValue: 'life, the universe and everything',
+        sessionKey: 'life, the universe and everything',
         sessionValue: '42'
       }
 
