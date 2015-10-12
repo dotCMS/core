@@ -9,6 +9,16 @@ import {ConditionGroupComponent} from './rule-condition-group-component';
 import {ruleTemplate} from './templates/index'
 import {ApiRoot} from 'api/persistence/ApiRoot';
 
+
+var rsrc = {
+  fireOn: {
+    EVERY_PAGE: 'Every Page',
+    ONCE_PER_VISIT: 'Once per visit',
+    ONCE_PER_VISITOR: 'Once per visitor',
+    EVERY_REQUEST: 'Every Request'
+  }
+}
+
 @Component({
   selector: 'rule',
   properties: ["ruleSnap"]
@@ -87,6 +97,10 @@ class RuleComponent{
 
   get ruleSnap():any {
     return this._ruleSnap
+  }
+
+  fireOnLabel(fireOnId:string){
+    return rsrc.fireOn[fireOnId];
   }
 
   setFireOn(value:string) {

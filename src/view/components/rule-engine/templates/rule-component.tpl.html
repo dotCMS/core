@@ -15,22 +15,16 @@
             <label>Fire on:</label>
 
             <div class="btn-group">
-              <button type="button" class="btn btn-default" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">
-                {{rule.fireOn}}
-              </button>
-              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"
-                      (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">
-                <span class="caret"></span>
-                <span class="sr-only">Toggle Drop Down</span>
+              <button type="button" class="btn btn-default" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">{{fireOnLabel(rule.fireOn)}}</button>
+              <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">
+                <span class="caret" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded"></span>
+                <span class="sr-only" (click)="fireOnDropDownExpanded = !fireOnDropDownExpanded">Toggle Drop Down</span>
               </button>
               <ul class="dropdown-menu collapse" role="menu" [class.in]="fireOnDropDownExpanded">
-                <li (click)="setFireOn('EVERY_PAGE')"><a href="#" (click)="setFireOn('EVERY_PAGE')">Every page</a></li>
-                <li (click)="setFireOn('ONCE_PER_VISIT')"><a href="#" (click)="setFireOn('ONCE_PER_VISIT')">Once per
-                  visit</a></li>
-                <li (click)="setFireOn('ONCE_PER_VISITOR')"><a href="#" (click)="setFireOn('ONCE_PER_VISITOR')">Once per
-                  visitor</a></li>
-                <li (click)="setFireOn('EVERY_REQUEST')"><a href="#" (click)="setFireOn('EVERY_REQUEST')">Every
-                  request</a></li>
+                <li (click)="setFireOn('EVERY_PAGE')"><a href="#" (click)="setFireOn('EVERY_PAGE')">{{fireOnLabel('EVERY_PAGE')}}</a></li>
+                <li (click)="setFireOn('ONCE_PER_VISIT')"><a href="#" (click)="setFireOn('ONCE_PER_VISIT')">{{fireOnLabel('ONCE_PER_VISIT')}}</a></li>
+                <li (click)="setFireOn('ONCE_PER_VISITOR')"><a href="#" (click)="setFireOn('ONCE_PER_VISITOR')">{{fireOnLabel('ONCE_PER_VISITOR')}}</a></li>
+                <li (click)="setFireOn('EVERY_REQUEST')"><a href="#" (click)="setFireOn('EVERY_REQUEST')">{{fireOnLabel('EVERY_REQUEST')}}</a></li>
               </ul>
             </div>
           </div>
