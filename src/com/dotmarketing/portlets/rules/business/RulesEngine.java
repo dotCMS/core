@@ -45,7 +45,7 @@ public class RulesEngine {
             Set<Rule> rules = APILocator.getRulesAPI().getRulesByHost(host.getIdentifier(), systemUser, false, fireOn);
 
             for (Rule rule : rules) {
-                Boolean result = null;
+                boolean result = false;
                 try {
                     result = rule.evaluate(req, res);
                 } catch (DotDataException e) {
