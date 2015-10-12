@@ -141,7 +141,7 @@ class RuleComponent{
       name: "Condition. " + new Date().toISOString(),
       owningGroup: groupSnap.key(),
       conditionlet: 'UsersBrowserHeaderConditionlet',
-      comparison: 'Is',
+      comparison: 'is',
       operator: 'AND',
       values: {
         headerKeyValue: {

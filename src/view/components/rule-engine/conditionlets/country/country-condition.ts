@@ -92,7 +92,7 @@ export class CountryCondition {
   updateComparator(event:Event) {
     let value = event.target['value']
     let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
-    this.value.comparatorValue = value
+    this.value.comparatorValue = value ? value.toLowerCase() : ''
     this.change.next(e)
   }
 

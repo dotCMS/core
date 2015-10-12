@@ -84,7 +84,7 @@ export class ConditionGroupComponent {
       name: "Condition. " + new Date().toISOString(),
       owningGroup: this._groupSnap.key(),
       conditionlet: 'UsersBrowserHeaderConditionlet',
-      comparison: 'Is',
+      comparison: 'is',
       operator: 'AND',
       values: {
         headerKeyValue: {
