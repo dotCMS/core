@@ -70,6 +70,7 @@ class ConditionComponent {
   typesProvider:ConditionTypesProvider
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ConditionTypesProvider) typesProvider:ConditionTypesProvider) {
+    this.conditionType = new ConditionTypeModel('', {})
     this.conditionTypes = []
     this.typesProvider = typesProvider
     typesProvider.promise.then(()=> {
@@ -77,14 +78,16 @@ class ConditionComponent {
     })
     this.condition = {}
     this.conditionValue = ''
-    this.conditionType = new ConditionTypeModel('', {})
     this.index = 0
   }
 
   onSetConditionMeta(snapshot) {
     this.condition = snapshot.val()
-    this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
-    this.conditionValue = this.condition.values
+    this.typesProvider.promise.then(() => {
+      this.conditionType = this.typesProvider.getType(this.condition.conditionlet)
+      this.conditionValue = this.condition.values
+    } );
+
   }
 
   set conditionMeta(conditionRef) {
