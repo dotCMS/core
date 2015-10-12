@@ -48,6 +48,8 @@ public class UsersCountryConditionlet extends Conditionlet {
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
 
+    private static final String ISO_CODE = "isoCode";
+
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
@@ -379,7 +381,8 @@ public class UsersCountryConditionlet extends Conditionlet {
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
 		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+			if(value.getKey().equals(ISO_CODE))
+                inputValues.add(new ConditionletInputValue(INPUT_ID, value
 					.getValue()));
 		}
 		ValidationResults validationResults = validate(comparison, inputValues);

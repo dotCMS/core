@@ -75,7 +75,7 @@ public final class RestCondition extends Validated {
         }
 
         public Builder comparison(String comparison) {
-            this.comparison = comparison;
+            this.comparison = comparison.toLowerCase();
             return this;
         }
 

@@ -25,7 +25,7 @@ public class SetSessionAttributeActionlet extends RuleActionlet{
     @Override
     public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
 
-        String sessionKeyParam = params.get("sessionKey").getValue();
+        String sessionKeyParam = params.get("sessionKeyValue").getValue();
         String sessionValueParam = params.get("sessionValue").getValue();
 
         if(UtilMethods.isSet(sessionKeyParam) && UtilMethods.isSet(sessionValueParam)){
