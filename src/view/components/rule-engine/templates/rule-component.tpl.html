@@ -1,13 +1,18 @@
 <div class="panel panel-default rule">
   <div class="panel-heading">
     <div class="container">
-      <div class="row" (click)="collapsed = !collapsed">
-        <div class="col-xs-5">
+      <div class="row">
+        <div class="col-xs-1">
+          <button type="button" class="btn btn-default btn-md" arial-label="Expand" (click)="collapsed = !collapsed">
+            <span class="glyphicon glyphicon-triangle-right" [class.glyphicon-triangle-bottom]="!collapsed" aria-hidden="true" (click)="collapsed = !collapsed"></span>
+          </button>
+        </div>
+        <div class="col-xs-4">
           <input type="text" class="form-control  rule-title"
-                 placeholder="Describe the rule"
-                 [value]="rule.name"
-                 (change)="setRuleName($event.target.value)"
-                 (focus)="collapsed = false">
+          placeholder="Describe the rule"
+          [value]="rule.name"
+          (change)="setRuleName($event.target.value)"
+          (focus)="collapsed = false">
         </div>
 
         <div class="col-xs-3 col-xs-offset-1">
@@ -28,41 +33,39 @@
               </ul>
             </div>
           </div>
-          </div>
-          <div class="col-xs-3">
-            <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
-              <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addGroup()"></span>
-            </button>
-            <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
+        </div>
+        <div class="col-xs-2 col-xs-offset-1">
+          <button type="button" class="btn btn-default btn-md" [class.btn-danger]="rule.enabled" aria-label="Enable/Disable Rule"
+          (click)="toggleEnabled()">
+          <span class="glyphicon glyphicon-off" (click)="toggleEnabled()"></span>
+          </button>
+        <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
+          <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addGroup()"></span>
+        </button>
+<!--             <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
               <span class="glyphicon glyphicon-flash" aria-hidden="true" (click)="addRuleAction()"></span>
-            </button>
+            </button> -->
             <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
-                    (click)="removeRule()">
-              <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
-            </button>
-            <button type="button" class="btn btn-default btn-md" [class.btn-danger]="rule.enabled" aria-label="Enable/Disable Rule"
-                    (click)="toggleEnabled()">
-              <span class="glyphicon glyphicon-off" (click)="toggleEnabled()"></span>
-            </button>
-          </div>
+            (click)="removeRule()">
+            <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
+          </button>
         </div>
       </div>
     </div>
-    <div class="panel-body collapse" [class.in]="!collapsed">
-      <div class="section-separator">
-        <h2>When</h2>
-        <hr/>
-      </div>
-      <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
-                       [rule]="rule"
-                       [group-snap]="groupSnap"
-                       [group-index]="i"></condition-group>
-
-      <div class="section-separator">
-        <h2>Then</h2>
-        <hr/>
-      </div>
-      <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
-
-    </div>
   </div>
+  <div class="panel-body collapse" [class.in]="!collapsed">
+    <div class="section-separator alert alert-info">
+      <p>This rule fires when the following condition(s) are met?</p>
+    </div>
+    <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
+    [rule]="rule"
+    [group-snap]="groupSnap"
+    [group-index]="i"></condition-group>
+
+    <div class="section-separator alert alert-success">
+      <p>This rule sets the following action(s)</p>
+    </div>
+    <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
+
+  </div>
+</div>
