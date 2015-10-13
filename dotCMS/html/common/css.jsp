@@ -39,7 +39,7 @@
 	files.add("/html/css/reset-fonts-grids.css");
 	files.add("/html/css/base.css");
 	files.add("/html/css/dot_admin.css");
-	files.add("/html/js/calendar/calendar-blue.css");
+
 	files.add("/html/css/font-awesome.min.css");
 
 	/** 
