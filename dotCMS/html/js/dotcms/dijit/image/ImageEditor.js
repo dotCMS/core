@@ -36,17 +36,20 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
  * e.type = "text/css"; e.rel = "stylesheet"; e.media = "screen";
  * document.getElementsByTagName("head")[0].appendChild(e); },
  */
-    _initBaseFilterUrl: function(){
-        if(this.inode != '0'){
+    _initBaseFilterUrl: function() {
+        var byIdentifier = this.identifier != '' && this.identifier != '0';
+
+        if(byIdentifier) {
+            this.baseFilterUrl+= "/" + this.identifier;
+        } else {
             this.baseFilterUrl+= "/" + this.inode;
         }
-        else if(this.identifier != '0'){
-            this.baseFilterUrl+= "/" + this.identifier;
-        }
+
         if(this.fieldName != undefined){
             this.baseFilterUrl+= "/" + this.fieldName;
         }
-        if(this.inode != '0'){
+
+        if(!byIdentifier){
             this.baseFilterUrl+= "/byInode/1";
         }
 
@@ -180,7 +183,13 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
         // clean up any old image editors laying around
         this._cleanUpImageEditor();
         window.top._dotImageEditor = this;
-        var url = this.imageToolJsp + "?inode=" + this.inode + "&fieldName="+ this.fieldName ;
+        var url = this.imageToolJsp;
+        if(this.identifier != '' && this.identifier != "0") {
+            url = url + "?identifier=" + this.identifier;
+        } else {
+            url = url + "?inode=" + this.inode;
+        }
+        url = url + "&fieldName="+ this.fieldName;
         console.log("url=" + url);
         this.imageEditor = new dijit.Dialog({
               title: "Image Editor",
@@ -210,9 +219,6 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
      *
      */
     initViewport: function(){
-
-
-
         // make the iframe all big
         var frame=dojo.byId("imageToolIframe");
         console.log("ctx : " + this);
@@ -376,10 +382,7 @@ dojo.declare("dotcms.dijit.image.ImageEditor", dijit._Widget,{
 
     addToClipboard : function(){
         var fileUrl = this.cleanUrl(this.currentUrl);
-        var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?";
-
-        url+="action=setClipboard&";
-        url+="fileUrl=" + fileUrl+"&";
+        var url = (this.ajaxUrl.indexOf("?")>-1) ? this.ajaxUrl + "&"  : this.ajaxUrl + "?action=setClipboard&fileUrl=" + fileUrl + "&";
         //alert(url);
         var target = this.iframe.dojo.byId('me');
         dojo.style(target, "opacity", 0);
