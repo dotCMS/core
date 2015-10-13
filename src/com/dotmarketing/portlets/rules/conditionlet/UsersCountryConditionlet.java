@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -52,12 +53,19 @@ public class UsersCountryConditionlet extends Conditionlet {
 
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
+    private final GeoIp2CityDbUtil geoIp2Util;
 
-	public UsersCountryConditionlet() {
-		super(CONDITIONLET_NAME);
+    public UsersCountryConditionlet() {
+		this(GeoIp2CityDbUtil.getInstance());
 	}
 
-	@Override
+    @VisibleForTesting
+    protected UsersCountryConditionlet(GeoIp2CityDbUtil geoIp2Util) {
+        super(CONDITIONLET_NAME);
+        this.geoIp2Util = geoIp2Util;
+    }
+
+    @Override
 	public Set<Comparison> getComparisons() {
 		if (this.comparisons == null) {
 			this.comparisons = new LinkedHashSet<Comparison>();
@@ -358,14 +366,13 @@ public class UsersCountryConditionlet extends Conditionlet {
 
 	@Override
 	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
+                            HttpServletResponse response,
+                            String comparisonId,
+                            List<ConditionValue> values) {
+		if (!UtilMethods.isSet(values) || values.size() == 0 || !UtilMethods.isSet(comparisonId)) {
 			return false;
 		}
-		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-		String country = null;
+        String country = null;
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();

@@ -71,6 +71,7 @@ test {
     // enable TestNG support (default is JUnit)
     useTestNG()
     workingDir "${rootProject.rootDir}"
+    testLogging.showStandardStreams = true
 }
 
 javadoc.classpath = sourceSets.main.compileClasspath;
@@ -255,7 +256,7 @@ task createUpdateDistribution(dependsOn: [distZip]) {}
 /**
  * Full distribution is just an update distribution plus the starter content and a tar bundle.
  */
-task createDistribution(dependsOn: [createUpdateDistribution, distTar]) {}
+task createDistribution(dependsOn: [test, createUpdateDistribution, distTar]) {}
 
 
 task _copyTomcat(type:Sync){
