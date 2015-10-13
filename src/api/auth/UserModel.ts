@@ -9,7 +9,7 @@ export class UserModel {
     this.username = 'admin@dotcms.com'
     this.password = 'admin'
     this.locale = 'en-US' // default to 'en-US'
-    let url = document.location.search.substring(1)
+    let url = top.document.location.search.substring(1)
     this.locale = this.checkQueryForUrl(url)
   }
 
