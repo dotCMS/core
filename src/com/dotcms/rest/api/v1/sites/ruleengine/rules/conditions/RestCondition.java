@@ -1,13 +1,11 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
-import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.validation.constraints.Operator;
-import com.dotmarketing.portlets.rules.model.Condition;
+
 import java.util.Map;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;

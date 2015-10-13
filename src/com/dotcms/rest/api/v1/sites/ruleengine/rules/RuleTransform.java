@@ -1,5 +1,7 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;

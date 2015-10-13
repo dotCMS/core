@@ -1,17 +1,13 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.javax.validation.Valid;
-import com.dotcms.repackage.javax.validation.constraints.Digits;
-import com.dotcms.repackage.javax.validation.constraints.Min;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.javax.validation.constraints.Pattern;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.validation.constraints.FireOn;
 import com.dotmarketing.portlets.rules.model.Rule;
 import java.util.Map;

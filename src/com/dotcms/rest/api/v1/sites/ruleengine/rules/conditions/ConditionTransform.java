@@ -1,6 +1,5 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
-import com.dotcms.rest.api.v1.sites.rules.ConditionValueTransform;
 import com.dotmarketing.portlets.rules.model.Condition;
 import java.util.function.Function;
 import java.util.stream.Collectors;

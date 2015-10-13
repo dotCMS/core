@@ -1,13 +1,12 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
-
-@JsonDeserialize(builder = RestRuleActionParameter.Builder.class)
-public class RestRuleActionParameter extends Validated {
+@JsonDeserialize(builder = RestConditionValue.Builder.class)
+public final class RestConditionValue extends Validated {
 
     public final String id;
 
@@ -16,17 +15,27 @@ public class RestRuleActionParameter extends Validated {
 
     public final String value;
 
-    private RestRuleActionParameter(Builder builder) {
+    public final Integer priority;
+
+    private RestConditionValue(Builder builder) {
         id = builder.id;
-        key = builder.key;
         value = builder.value;
+        key = builder.key;
+        priority = builder.priority;
         checkValid();
     }
 
     public static final class Builder {
+
         @JsonProperty private String id;
         @JsonProperty private String key;
         @JsonProperty private String value;
+        @JsonProperty private Integer priority;
+
+        public Builder id(String id) {
+            this.id = id;
+            return this;
+        }
 
         public Builder key(String key) {
             this.key = key;
@@ -38,13 +47,13 @@ public class RestRuleActionParameter extends Validated {
             return this;
         }
 
-        public Builder id(String id) {
-            this.id = id;
+        public Builder priority(Integer priority) {
+            this.priority = priority;
             return this;
         }
 
-        public RestRuleActionParameter build() {
-            return new RestRuleActionParameter(this);
+        public RestConditionValue build() {
+            return new RestConditionValue(this);
         }
     }
 }
