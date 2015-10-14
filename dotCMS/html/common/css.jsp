@@ -17,7 +17,7 @@
 <%@page import="java.util.Iterator"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-
+<%@ include file="/html/common/uservalidation.jsp"%>
 <%
 
 	response.setContentType("text/css");
