@@ -17,7 +17,6 @@
 <%@page import="java.util.Iterator"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%
 
