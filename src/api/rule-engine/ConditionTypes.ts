@@ -50,7 +50,7 @@ export class ConditionTypesProvider {
     this.typeModels = new Map<string, Function>()
     this.map = new Map<string,any>()
     this.ary = []
-    this.ref = apiRoot.root.child('system/conditionlets')
+    this.ref = apiRoot.root.child('system/ruleengine/conditionlets')
     this.init();
   }
 

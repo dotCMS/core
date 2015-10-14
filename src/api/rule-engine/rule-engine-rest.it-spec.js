@@ -11,7 +11,7 @@ describe('Integration.api.rule-engine.ReST.RuleApi', function () {
   });
 
   it('is available at ' + remoteApiRootRef, function (done) {
-    Store.getItem(remoteApiRootRef + 'system/conditionlets').then((conditionlets) => {
+    Store.getItem(remoteApiRootRef + 'system/ruleengine/conditionlets').then((conditionlets) => {
       expect(conditionlets).toBeDefined()
       done()
     }).catch((e) =>{
@@ -29,7 +29,7 @@ describe('Integration.api.rule-engine.ReST.RuleApi', function () {
 
 
   it('provides a list of all available Conditionlet types', function (done) {
-    Store.getItem(remoteApiRootRef + 'system/conditionlets').then((conditionlets) => {
+    Store.getItem(remoteApiRootRef + 'system/ruleengine/conditionlets').then((conditionlets) => {
       expect(conditionlets).toBeDefined()
       let headerConditionlet = conditionlets["UsersBrowserHeaderConditionlet"]
       expect(headerConditionlet).toBeDefined()

@@ -46,7 +46,7 @@ class RuleComponent{
     this.fireOnDropDownExpanded = false
     this.ruleGroups = []
     this.ruleActions = []
-    this.actionsRef = apiRoot.defaultSite.child('ruleengine/ruleActions')
+    this.actionsRef = apiRoot.defaultSite.child('ruleengine/actions')
     this.actionsRef.on('child_removed', (childActionSnap) => {
       this.ruleActions = this.ruleActions.filter((action) => {
         return action.key() != childActionSnap.key()
@@ -180,7 +180,7 @@ class RuleComponent{
       owningRule: this.ruleSnap.key(),
       actionlet: 'CountRequestsActionlet'
     }
-    let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/ruleActions')
+    let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/actions')
 
     actionRoot.push(action, (actionSnap:EntitySnapshot)=> {
       this.rule.actions = this.rule.ruleActions || {}
