@@ -9,6 +9,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -39,9 +40,9 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 public class RuleResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
     private final RuleTransform ruleTransform = new RuleTransform();
     private HostAPI hostAPI;
+    private final WebResource webResource;
 
     @SuppressWarnings("unused")
     public RuleResource() {
@@ -49,14 +50,14 @@ public class RuleResource {
     }
 
     private RuleResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected RuleResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected RuleResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     /**
@@ -205,7 +206,7 @@ public class RuleResource {
     }
 
     private User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     private List<RestRule> getRulesInternal(User user, Host host) {

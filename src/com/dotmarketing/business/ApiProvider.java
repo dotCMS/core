@@ -33,6 +33,8 @@ public class ApiProvider {
         return APILocator.getUserAPI();
     }
 
+    public LayoutAPI layoutAPI() { return APILocator.getLayoutAPI(); }
+
     /*******  Web API Accessors ******/
     public UserWebAPI userWebAPI() {
         return WebAPILocator.getUserWebAPI();
