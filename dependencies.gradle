@@ -184,12 +184,13 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.xmlpull', version:'1.1.3.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.xpp3-min', version:'1.1.4c_2'
     compile group: 'com.dotcms.lib', name: 'dot.xstream', version:'1.4.8_2'
-    
-
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
     
     compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_3'
+
+    compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
+    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
 
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {

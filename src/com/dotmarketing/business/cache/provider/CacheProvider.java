@@ -29,8 +29,6 @@ import java.util.Set;
  */
 public abstract class CacheProvider implements Serializable {
 
-    private static final long serialVersionUID = -2139235480907776009L;
-
     /**
      * Returns the human readable name for this Cache Provider
      *

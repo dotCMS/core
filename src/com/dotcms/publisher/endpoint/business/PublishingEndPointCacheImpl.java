@@ -46,7 +46,10 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 		for(String key : keys) {
 			if(!key.equals(initialEntryKey)) {
 				try {
-					endPoints.add((PublishingEndPoint)cache.get(key, cacheGroup));
+					Object endPoint = cache.get(key, cacheGroup);
+					if ( endPoint != null ) {
+						endPoints.add((PublishingEndPoint) endPoint);
+					}
 				}
 				catch(DotCacheException e) {
 					Logger.error(PublishingEndPointCacheImpl.class, "Cache does not contain object for key returned via getKeys().  Key = " + key, e);
