@@ -37,7 +37,7 @@ public class ConditionGroupResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -54,7 +54,7 @@ public class ConditionGroupResourceFTest extends TestBase {
      */
     private void deleteRule(String ruleID) {
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules/" + ruleID)
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     }
@@ -75,7 +75,7 @@ public class ConditionGroupResourceFTest extends TestBase {
         groupJSON.put("operator", Condition.Operator.AND.name());
 
         WebTarget target = config.restBaseTarget();
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule + "/conditionGroups")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(groupJSON.toString()));
 
@@ -85,7 +85,7 @@ public class ConditionGroupResourceFTest extends TestBase {
         JSONObject responseJSON = new JSONObject(responseStr);
         String group = (String)responseJSON.get("id");
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule + "/conditionGroups/" + group)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 

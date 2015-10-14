@@ -66,7 +66,7 @@ public class ConditionResource {
      * <p>
      * <p>If a conditionId is provided, it will return the condition whose id matches the provided conditionId.
      * <p>
-     * Usage: /conditions/
+     * Usage: /conditions/{conditionId}
      */
     @GET
     @Path("/conditions/{conditionId}")

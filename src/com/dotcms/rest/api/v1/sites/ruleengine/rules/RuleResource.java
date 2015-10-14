@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
-@Path("/v1/sites/{siteId}")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class RuleResource {
 
     private final RulesAPI rulesAPI;

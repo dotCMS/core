@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
-@Path("/v1/sites/{siteId}/ruleengine/conditions/{conditionId}")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;
@@ -60,7 +60,7 @@ public class ConditionValueResource {
     }
 
     @GET
-    @Path("/conditionValues")
+    @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
@@ -86,7 +86,7 @@ public class ConditionValueResource {
      * Usage: /conditions/
      */
     @GET
-    @Path("/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request,
                          @PathParam("siteId") String siteId,
@@ -113,7 +113,7 @@ public class ConditionValueResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/conditionValues")
+    @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -143,7 +143,7 @@ public class ConditionValueResource {
      * Usage: PUT /rules/conditiongroups/{groupId}/conditions
      */
     @PUT
-    @Path("/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionValue update(@Context HttpServletRequest request,
@@ -170,7 +170,7 @@ public class ConditionValueResource {
      * Usage: DELETE api/rules-engine/rules
      */
     @DELETE
-    @Path("/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     public Response remove(@Context HttpServletRequest request,
                            @PathParam("siteId") String siteId,
                            @PathParam("conditionId") String conditionId,

@@ -36,7 +36,7 @@ public class ActionResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -53,7 +53,7 @@ public class ActionResourceFTest extends TestBase {
      */
     private void deleteRule(String ruleID) {
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules/" + ruleID)
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     }
@@ -77,7 +77,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -107,7 +107,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
@@ -132,7 +132,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
@@ -157,7 +157,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
@@ -181,7 +181,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
@@ -206,7 +206,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -217,7 +217,7 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     	//get
-    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions/"+action).request(MediaType.APPLICATION_JSON_TYPE)
+    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/"+action).request(MediaType.APPLICATION_JSON_TYPE)
     			.get();
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
     	
@@ -241,7 +241,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -252,7 +252,7 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     	//get
-    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions/"+"00000000-0000-0000-0000-000000000000").request(MediaType.APPLICATION_JSON_TYPE)
+    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/"+"00000000-0000-0000-0000-000000000000").request(MediaType.APPLICATION_JSON_TYPE)
     			.get();
     	assertTrue(response.getStatus() == HttpStatus.SC_NOT_FOUND);
     	
@@ -290,7 +290,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -320,7 +320,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -331,7 +331,7 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     	//delete
-    	response = target.path("/sites/" + config.defaultHostId + "/ruleengine/ruleActions/" + action)
+    	response = target.path("/sites/" + config.defaultHostId + "/ruleengine/actions/" + action)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     	
@@ -344,7 +344,7 @@ public class ActionResourceFTest extends TestBase {
     @Test
     public void deleteNonExistentAction() {
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/ruleActions/" + "00000000-0000-0000-0000-000000000000")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/actions/" + "00000000-0000-0000-0000-000000000000")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .delete();
         
@@ -369,7 +369,7 @@ public class ActionResourceFTest extends TestBase {
     	WebTarget target = config.restBaseTarget();
     	
     	//create
-    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions").request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions").request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
@@ -384,7 +384,7 @@ public class ActionResourceFTest extends TestBase {
         updateJSON.put("owningRule", ruleId);
         updateJSON.put("actionlet", "CountRequestsActionlet");
         
-        response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/ruleActions/" + action)
+        response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/" + action)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.json(updateJSON.toString()));
 

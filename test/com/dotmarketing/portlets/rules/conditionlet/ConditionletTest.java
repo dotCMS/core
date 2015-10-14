@@ -67,10 +67,12 @@ public class ConditionletTest extends TestBase {
 		List<Comparison> comparisons = new ArrayList<Comparison>(comparisonSet);
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey(inputs.get(0).getId());
 		value1.setPriority(1);
 		value1.setValue("VA");
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(0).getId());
+        value2.setKey(inputs.get(0).getId());
 		value2.setPriority(2);
 		value2.setValue("FL");
 		conditionletValues.add(value1);
@@ -106,14 +108,17 @@ public class ConditionletTest extends TestBase {
 		List<Comparison> comparisons = new ArrayList<Comparison>(comparisonSet);
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
-		value1.setPriority(1);
+		value1.setKey("isoCode");
+        value1.setPriority(1);
 		value1.setValue("US");
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(0).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		value2.setValue("CA");
 		ConditionValue value3 = new ConditionValue();
 		value3.setId(inputs.get(0).getId());
+        value3.setKey("isoCode");
 		value3.setPriority(3);
 		value3.setValue("CO");
 		conditionletValues.add(value1);
@@ -151,6 +156,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("Albany");
 		conditionletValues.add(value1);
@@ -162,6 +168,7 @@ public class ConditionletTest extends TestBase {
 		value1.setValue("Salt Lake City");
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(0).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		value2.setValue("Springfield");
 		conditionletValues.add(value2);
@@ -191,14 +198,17 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("en");
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(0).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		value2.setValue("de");
 		ConditionValue value3 = new ConditionValue();
 		value3.setId(inputs.get(0).getId());
+        value3.setKey("isoCode");
 		value3.setPriority(3);
 		value3.setValue("ja");
 		conditionletValues.add(value1);
@@ -237,6 +247,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("demo.dotcms.com");
 		conditionletValues.add(value1);
@@ -297,6 +308,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("Chrome");
 		conditionletValues.add(value1);
@@ -365,6 +377,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("Mac OS X");
 		conditionletValues.add(value1);
@@ -433,6 +446,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("192.168.0.3");
 		conditionletValues.add(value1);
@@ -492,6 +506,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("http://demo.dotcms.com/services/investment-banking");
 		conditionletValues.add(value1);
@@ -559,6 +574,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("/products");
 		conditionletValues.add(value1);
@@ -626,6 +642,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("/services/investment-banking");
 		conditionletValues.add(value1);
@@ -699,6 +716,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("2");
 		conditionletValues.add(value1);
@@ -779,6 +797,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("1");
 		conditionletValues.add(value1);
@@ -846,6 +865,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("Computer");
 		conditionletValues.add(value1);
@@ -910,6 +930,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		baseClientDate.add(Calendar.MINUTE, -5);
 		value1.setValue("" + baseClientDate.getTime().getTime());
@@ -959,11 +980,13 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("query");
 		conditionletValues.add(value1);
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(1).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		value2.setValue("testparametervalue");
 		conditionletValues.add(value2);
@@ -1027,6 +1050,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("/contact-us");
 		conditionletValues.add(value1);
@@ -1103,6 +1127,7 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		baseClientDate.add(Calendar.MINUTE, -5);
 		value1.setValue("" + baseClientDate.getTime().getTime());
@@ -1142,6 +1167,7 @@ public class ConditionletTest extends TestBase {
 		value1.setValue("" + baseClientDate.getTime().getTime());
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(1).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		baseClientDate.add(Calendar.MINUTE, 15);
 		value2.setValue("" + baseClientDate.getTime().getTime());
@@ -1168,11 +1194,13 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
+        value1.setKey("isoCode");
 		value1.setPriority(1);
 		value1.setValue("User-Agent");
 		conditionletValues.add(value1);
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(1).getId());
+        value2.setKey("isoCode");
 		value2.setPriority(2);
 		value2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36");
 		conditionletValues.add(value2);
