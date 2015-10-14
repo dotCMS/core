@@ -42,9 +42,6 @@
         <button type="button" class="btn btn-default btn-md" arial-label="Add Group" (click)="addGroup()">
           <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addGroup()"></span>
         </button>
-<!--             <button type="button" class="btn btn-default btn-md" arial-label="Add Action" (click)="addRuleAction()">
-              <span class="glyphicon glyphicon-flash" aria-hidden="true" (click)="addRuleAction()"></span>
-            </button> -->
             <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
             (click)="removeRule()">
             <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
@@ -55,15 +52,20 @@
   </div>
   <div class="panel-body collapse" [class.in]="!collapsed">
     <div class="section-separator alert alert-info">
-      <p>This rule fires when the following condition(s) are met?</p>
+      This rule fires when the following condition(s) are met?
     </div>
     <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
     [rule]="rule"
     [group-snap]="groupSnap"
     [group-index]="i"></condition-group>
 
-    <div class="section-separator alert alert-success">
-      <p>This rule sets the following action(s)</p>
+    <div class="alert alert-success">
+      This rule sets the following action(s)
+      <p class="pull-right" title="Add Action">
+        <a class="btn btn-default add-action" (click)="addRuleAction()">
+          <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addRuleAction()"></span>
+        </a>
+    </p>
     </div>
     <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
 
