@@ -33,6 +33,7 @@ System.config({
     "es6-promise": "npm:es6-promise@2.3.0",
     "es6-shim": "github:es-shims/es6-shim@0.32.3",
     "events": "github:jspm/nodelibs-events@0.1.0",
+    "jquery": "github:components/jquery@2.1.4",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
     "rx": "npm:rx@2.5.3",
     "text": "github:systemjs/plugin-text@0.0.2",

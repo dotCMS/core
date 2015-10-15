@@ -16,11 +16,12 @@ import {Component, View, Attribute} from 'angular2/angular2';
 })
 @View({
   template: `
+    <div class="ui input">
       <input type="text" [value]="value"
                      (input)="updateValue($event)"
                      (focus)="setHasFocus(true)"
                      (blur)="setHasFocus(false)"
-                     placeholder="{{placeholderText()}}"/>
+                     placeholder="{{placeholderText()}}"/></div>
   `
 })
 export class CwCidrInput {
