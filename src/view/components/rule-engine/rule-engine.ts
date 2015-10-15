@@ -34,7 +34,7 @@ class RuleEngineComponent{
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot){
     this.rules = []
     this.baseUrl = ConnectionManager.baseUrl;
-    this.rulesRef = apiRoot.defaultSite.child('rules')
+    this.rulesRef = apiRoot.defaultSite.child('ruleengine/rules')
     this.filterText = ""
     this.readSnapshots(this.rulesRef).catch((e) => console.log(e));
     this.rulesRef.on('child_added', (snap) => {
