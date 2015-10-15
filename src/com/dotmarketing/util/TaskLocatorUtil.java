@@ -136,6 +136,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03135FixStructurePageDetail.class);
 		ret.add(Task03140AddFileAssetsIntegrityResultTable.class);
 		ret.add(Task03150LoweCaseURLOnVirtualLinksTable.class);
+		ret.add(Task03160PublishingPushedAssetsTable.class);
 		ret.add(Task03500RulesEngineDataModel.class);
 		
         return ret;

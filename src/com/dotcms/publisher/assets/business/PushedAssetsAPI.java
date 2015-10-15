@@ -65,4 +65,9 @@ public interface PushedAssetsAPI {
 
 
 
+	public PushedAsset getLastPushForAsset(String assetId, String environmentId)  throws DotDataException;
+
+
+	
+	
 }
