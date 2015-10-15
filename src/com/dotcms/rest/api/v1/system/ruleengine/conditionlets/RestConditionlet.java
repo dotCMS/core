@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
@@ -6,17 +6,16 @@ import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 //import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
+import com.dotcms.rest.api.v1.system.ruleengine.actionlets.RestComparison;
 
 import java.util.List;
 
 @JsonDeserialize(builder = RestConditionlet.Builder.class)
 public final class RestConditionlet extends Validated {
 
-//    @Length(min = 1, max = 36)
     public final String id;
 
     @NotNull
-//    @Length(min = 1, max = 100)
     public final String name;
 
     @NotNull
@@ -36,13 +35,6 @@ public final class RestConditionlet extends Validated {
         private String name;
         private List<RestComparison> comparisons;
 
-        /*
-        RestConditionlet restConditionlet = new RestConditionlet.Builder()
-        .id( input.getId() )
-        .name( input.getName() )
-        .comparisons( input.getComparisons() )
-        .build();
-        */
         public Builder() {
         }
 

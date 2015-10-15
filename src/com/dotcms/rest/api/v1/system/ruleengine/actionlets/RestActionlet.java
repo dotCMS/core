@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -27,13 +27,6 @@ public final class RestActionlet extends Validated {
         @JsonProperty private String name;
         @JsonProperty private String i18nKey;
 
-        /*
-            RestActionlet restActionlet = new RestActionlet.Builder()
-            .id( input.getId() )
-            .name( input.getName() )
-            .i18nKey( input.getI18nKey() )
-            .build();
-        */
         public Builder() {}
 
         public Builder id(String id) {

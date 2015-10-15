@@ -195,8 +195,6 @@ public class UsersStateConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			String ipAddress = address.getHostAddress();
-			// TODO: Remove
-			ipAddress = "170.123.234.133";
 			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
 		} catch (IOException | GeoIp2Exception e) {
 			Logger.error(this,
