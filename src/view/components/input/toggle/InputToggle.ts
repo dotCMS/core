@@ -1,8 +1,7 @@
 /// <reference path="../../../../../typings/es6/lib.es6.d.ts" />
 /// <reference path="../../../../../typings/angular2/angular2.d.ts" />
 
-import {Component, View, Attribute, ElementRef} from 'angular2/angular2';
-var idCounter = 1
+import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
 
 @Component({
   selector: 'cw-toggle-input',
@@ -11,6 +10,8 @@ var idCounter = 1
     'value',
     'onText',
     'offText'
+  ],events: [
+    "change"
   ]
 })
 @View({
@@ -22,18 +23,20 @@ var idCounter = 1
   .on-label, .off-label {
     position: absolute;
     top: 0;
-    padding-top: .2em;
-    font-weight: bolder;
+    padding-top: .3em;
+    font-weight: 900;
     font-size: 75%;
     z-index: 2;
   }
 
   .on-label {
     left: .75em;
+    color: white;
   }
 
   .off-label {
     right: .75em;
+    color:#555;
   }
 
   .off .on-label, .on .off-label {
@@ -41,31 +44,31 @@ var idCounter = 1
   }
 
 </style>
-  <div class="ui toggle fitted checkbox" [class.on]="value === true" [class.off]="value === false">
+  <span class="ui toggle fitted checkbox" [class.on]="value === true" [class.off]="value === false">
     <input type="checkbox" [value]="value" [checked]="value" (change)="updateValue($event.target.checked)">
     <label></label>
     <span class="on-label">{{onText}}</span>
     <span class="off-label">{{offText}}</span>
-  </div>
+  </span>
   `
 })
 export class InputToggle {
-  el:ElementRef
   value:boolean
   onText:string
   offText:string
+  change:EventEmitter
 
-  constructor(el:ElementRef, @Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
-    this.el = el
-    var nativeEl = el.nativeElement
+  constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
     this.value = (value !== false && value !== 'false')
     this.onText = onText || 'On'
     this.offText = offText || 'Off'
+    this.change = new EventEmitter()
   }
 
   updateValue(value) {
     console.log('input value changed: [from / to]', this.value, value)
     this.value = value;
+    this.change.next(value)
   }
 }
 
