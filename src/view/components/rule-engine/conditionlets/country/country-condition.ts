@@ -49,7 +49,7 @@ export class CountryConditionModel {
 export class CountryCondition {
   change:EventEmitter;
 
-  comparisonOptions:Array<string> = ["is",
+  comparisonOptions:Array<string> = ["is", "is not"
     //"startsWith", "endsWith", "contains", "regex"
   ];
 
