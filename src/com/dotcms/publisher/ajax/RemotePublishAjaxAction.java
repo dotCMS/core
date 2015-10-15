@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
@@ -928,6 +929,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
                                 }
                             }
 
+                        } else if (assetType != null && assetType.equalsIgnoreCase("field")) {
+                        	// Check if the asset is a language
+                        	Language language = APILocator.getLanguageAPI().getLanguage(_assetId);
+                        	if (language != null && UtilMethods.isSet(language.getLanguage())) {
+                        		ids.add(_assetId);
+                        	}
                         } else { // if the asset is not a folder and has identifier, put it, if not, put the inode
                             Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
