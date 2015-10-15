@@ -1,10 +1,6 @@
 package com.dotcms.rest;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -13,8 +9,6 @@ import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-
-import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -26,12 +20,18 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/environment")
-public class EnvironmentResource extends WebResource {
+public class EnvironmentResource {
 
-	/**
+    private final WebResource webResource = new WebResource();
+
+    /**
 	 * <p>Returns a JSON representation of the environments (with servers) that the Role with the given roleid can push to
 	 * <br>Each Environment node contains: id, name.
 	 *
@@ -45,7 +45,8 @@ public class EnvironmentResource extends WebResource {
 	@Produces("application/json")
 	public Response loadEnvironments(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, LanguageException, JSONException {
 
-		InitDataObject initData = init(params, true, request, true);
+
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

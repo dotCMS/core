@@ -1,10 +1,5 @@
 package com.dotcms.rest;
 
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.notifications.bean.Notification;
 import com.dotcms.notifications.business.NotificationAPI;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -24,12 +19,17 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 
 @Path("/notification")
-public class NotificationResource extends WebResource {
+public class NotificationResource {
 
-	 /**
+    private final WebResource webResource = new WebResource();
+
+    /**
      * Returns a JSON Array with the notifications for the given User
      *
      * @param request
@@ -45,7 +45,8 @@ public class NotificationResource extends WebResource {
     @Produces ("application/json")
     public Response getNotifications ( @Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam ("params") String params, @HeaderParam("Range") String range ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, true );
+
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         User user = initData.getUser();
         String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
@@ -119,7 +120,7 @@ public class NotificationResource extends WebResource {
     @Produces ("application/json")
     public Response getNewNotificationsCount ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-    	InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
     	ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
     	User user = initData.getUser();

@@ -1,27 +1,11 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.ServletContext;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
-import com.dotcms.repackage.javax.ws.rs.client.Client;
-import com.dotcms.repackage.javax.ws.rs.client.Entity;
-import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -29,13 +13,17 @@ import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
-import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -51,10 +39,22 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 
 @Path("/integrity")
-public class IntegrityResource extends WebResource {
+public class IntegrityResource {
+
+    private final WebResource webResource = new WebResource();
 
     public enum ProcessStatus {
         PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELED
@@ -209,7 +209,7 @@ public class IntegrityResource extends WebResource {
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     public Response checkIntegrity(@Context HttpServletRequest request, @PathParam("params") String params)  {
-        InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
@@ -437,7 +437,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -605,7 +605,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -681,7 +681,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -794,7 +794,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -898,7 +898,7 @@ public class IntegrityResource extends WebResource {
     @Produces (MediaType.APPLICATION_JSON)
     public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         JSONObject jsonResponse = new JSONObject();
 

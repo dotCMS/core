@@ -1,10 +1,5 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +23,9 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This method takes a contentlet and fires a workflow action on it. It requires
@@ -38,9 +36,11 @@ import com.liferay.portal.model.User;
  *
  */
 @Path("/workflow")
-public class WorkflowResource extends WebResource {
+public class WorkflowResource {
 
-	@PUT
+    private final WebResource webResource = new WebResource();
+
+    @PUT
 	@Path("/fire/{params:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -57,7 +57,7 @@ public class WorkflowResource extends WebResource {
 				wfAssign = null, 
 				wfComments = null;
 
-		InitDataObject initData = init(null, true, request, false);
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		if (jsonParams.has(RESTParams.CALLBACK.getValue())) {
 			callback = jsonParams.get(RESTParams.CALLBACK.getValue()).asText();

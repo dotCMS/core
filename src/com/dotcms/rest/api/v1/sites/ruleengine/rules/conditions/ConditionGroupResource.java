@@ -15,7 +15,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -40,7 +39,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
-public class ConditionGroupResource extends WebResource {
+public class ConditionGroupResource  {
 
     private final RulesAPI rulesAPI;
     private final WebResource webResource;

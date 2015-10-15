@@ -1,21 +1,13 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Optional;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
 import com.dotcms.repackage.org.glassfish.jersey.server.ContainerRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
@@ -24,7 +16,6 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -34,9 +25,14 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
-public class WebResource {
+public final class WebResource {
 
     private final UserWebAPI userWebAPI;
     private final UserAPI userAPI;
@@ -87,40 +83,9 @@ public class WebResource {
     }
 
     public InitDataObject init(boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException {
-
         return init(null, authenticate, request, rejectWhenNoUser, null);
     }
 
-    /**
-     *
-     * <p>1) Checks if SSL is required. If it is required and no secure request is provided, throws a ForbiddenException.
-     * <p>2) If 1) does not throw an exception, returns an {@link InitDataObject} with:
-     *
-     * <br>a) a <code>Map</code> with the keys and values extracted from <code>params</code>.
-     *
-     *<br><br>if <code>authenticate</code> is set to <code>true</code>:
-     * <br>b) , an authenticated {@link User}, if found.
-     * If no User can be retrieved, and <code>rejectWhenNoUser</code> is <code>true</code>, it will throw an exception,
-     * otherwise returns <code>null</code>.
-     *
-     * <br><br>There are five ways to get the User. They are executed in the specified order. When found, the remaining ways won't be executed.
-     * <br>1) Using username and password contained in <code>params</code>.
-     * <br>2) Using username and password in Base64 contained in the <code>request</code> HEADER parameter DOTAUTH.
-     * <br>3) Using username and password in Base64 contained in the <code>request</code> HEADER parameter AUTHORIZATION (BASIC Auth).
-     * <br>4) From the session. It first tries to get the Backend logged in user. If no user found, tries to get the Frontend logged in user.
-     *
-     *
-     * @param params a string containing the URL parameters in the /key/value form
-     * @param authenticate
-     * @param request
-     * @param rejectWhenNoUser determines whether a SecurityException is thrown or not when authentication fails.
-     * @return an initDataObject with the resulting <code>Map</code>
-     */
-
-    public InitDataObject init(String params, boolean authenticate, HttpServletRequest request, boolean rejectWhenNoUser) throws SecurityException {
-
-        return init(params, authenticate, request, rejectWhenNoUser, null);
-    }
 
     /**
      *
@@ -209,11 +174,11 @@ public class WebResource {
         }
 
         if(user == null && !forceFrontendAuth) {
-            user = getBackUserFromRequest(request);
+            user = getBackUserFromRequest(request, userWebAPI);
         }
 
         if(user == null) {
-            user = getFrontEndUserFromRequest(request);
+            user = getFrontEndUserFromRequest(request, userWebAPI);
         }
 
         if(user==null && (Config.getBooleanProperty("REST_API_REJECT_WITH_NO_USER", false) || rejectWhenNoUser) ) {
@@ -230,7 +195,7 @@ public class WebResource {
     }
 
 
-    private Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {
+    private static Optional<UsernamePassword> getAuthCredentialsFromMap(Map<String, String> map) {
 
         Optional<UsernamePassword> result = Optional.absent();
 
@@ -245,7 +210,7 @@ public class WebResource {
     }
 
     @VisibleForTesting
-    Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(HttpServletRequest request) throws SecurityException {
+    static Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(HttpServletRequest request) throws SecurityException {
 
         Optional<UsernamePassword> result = Optional.absent();
         // Extract authentication credentials
@@ -267,7 +232,7 @@ public class WebResource {
     }
 
     @VisibleForTesting
-    Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
+    static Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
         Optional<UsernamePassword> result = Optional.absent();
 
         String authentication = request.getHeader("DOTAUTH");
@@ -289,7 +254,7 @@ public class WebResource {
      * If a wrong <code>username</code> or <code>password</code> are provided, a SecurityException is thrown
      */
     @VisibleForTesting
-    User authenticateUser(String username, String password, HttpServletRequest req, UserAPI userAPI) throws SecurityException {
+    static User authenticateUser(String username, String password, HttpServletRequest req, UserAPI userAPI) throws SecurityException {
         User user = null;
         String ip = req != null ? req.getRemoteAddr() : "";
 
@@ -331,7 +296,7 @@ public class WebResource {
      * This method returns the Backend logged in user from request.
      */
 
-    private User getBackUserFromRequest(HttpServletRequest req) {
+    private static User getBackUserFromRequest(HttpServletRequest req, UserWebAPI userWebAPI) {
         User user = null;
 
         if(req != null) { // let's check if we have a request and try to get the user logged in from it
@@ -348,7 +313,7 @@ public class WebResource {
      * This method returns the Frontend logged in user from request.
      */
 
-    private User getFrontEndUserFromRequest(HttpServletRequest req) {
+    private static User getFrontEndUserFromRequest(HttpServletRequest req, UserWebAPI userWebAPI) {
         User user = null;
 
         if(req != null) { // let's check if we have a request and try to get the user logged in from it
@@ -370,7 +335,7 @@ public class WebResource {
      * @return a <code>Map</code> with the keys and values extracted from <code>params</code>
      */
 
-    private Map<String, String> buildParamsMap(String params) {
+    private static Map<String, String> buildParamsMap(String params) {
 
         if (params.startsWith("/")) {
             params = params.substring(1);
@@ -386,13 +351,13 @@ public class WebResource {
     }
 
 
-    private void checkForceSSL(HttpServletRequest request) {
+    private static void checkForceSSL(HttpServletRequest request) {
         if(Config.getBooleanProperty("FORCE_SSL_ON_RESP_API", false) && UtilMethods.isSet(request) && !request.isSecure())
             throw new SecurityException("SSL Required.", Response.Status.FORBIDDEN);
 
     }
 
-    protected Map processJSON(InputStream input) throws JSONException, IOException {
+    protected static Map processJSON(InputStream input) throws JSONException, IOException {
         HashMap<String,Object> map=new HashMap<String,Object>();
         JSONObject obj=new JSONObject(IOUtils.toString(input));
         Iterator<String> keys = obj.keys();
