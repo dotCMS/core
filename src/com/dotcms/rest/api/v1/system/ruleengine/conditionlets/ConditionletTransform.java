@@ -1,5 +1,6 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
+import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ComparisonTransform;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import java.util.function.Function;
 import java.util.stream.Collectors;

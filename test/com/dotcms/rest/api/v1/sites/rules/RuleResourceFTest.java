@@ -29,13 +29,13 @@ public class RuleResourceFTest extends TestBase {
     public void testRule() throws JSONException {
         // setup
         JSONObject ruleJSON = new JSONObject();
-        ruleJSON.put("name", "testRule");
+        ruleJSON.put("name", "testRule" + String.valueOf(System.currentTimeMillis()));
 
         // client call
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHost.getIdentifier() + "/rules")
+        Response response = target.path("/sites/" + config.defaultHost.getIdentifier() + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -47,7 +47,7 @@ public class RuleResourceFTest extends TestBase {
         String rule = (String)responseJSON.get("id");
 
         // delete
-        response = target.path("/sites/" + config.defaultHost.getIdentifier() + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHost.getIdentifier() + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
@@ -69,7 +69,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -92,7 +92,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -104,7 +104,7 @@ public class RuleResourceFTest extends TestBase {
         String rule = (String)responseJSON.get("id");
 
         // delete
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
@@ -131,7 +131,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule1JSON.toString()));
 
@@ -144,7 +144,7 @@ public class RuleResourceFTest extends TestBase {
         String rule = (String)responseJSON.get("id");
 
         // create second rule
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule2JSON.toString()));
 
@@ -152,7 +152,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
 
         // delete
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
@@ -180,7 +180,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule1JSON.toString()));
 
@@ -192,7 +192,7 @@ public class RuleResourceFTest extends TestBase {
         String rule = (String)responseJSON.get("id");
 
         // create second rule
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule2JSON.toString()));
 
@@ -200,7 +200,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
 
         // delete
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
@@ -236,7 +236,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule1JSON.toString()));
 
@@ -244,7 +244,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
 
         // create
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule2JSON.toString()));
 
@@ -252,7 +252,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
 
         // create
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule3JSON.toString()));
 
@@ -267,7 +267,7 @@ public class RuleResourceFTest extends TestBase {
     public void testRuleDeleteNoExisting() {
         // client call
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules/" + "NoRule")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + "NoRule")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
         // response
@@ -286,7 +286,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
         String responseStr = response.readEntity(String.class);
@@ -294,7 +294,7 @@ public class RuleResourceFTest extends TestBase {
         String rule = (String)responseJSON.get("id");
 
         // get
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get();
 
@@ -306,12 +306,12 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(ruleJSON.getString("enabled").equals("true"));
         assertTrue(ruleJSON.getString("fireOn").equals(Rule.FireOn.EVERY_PAGE.toString()));
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
         // get non existing rule
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + "00000000-0000-0000-0000-000000000000")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + "00000000-0000-0000-0000-000000000000")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get();
 
@@ -346,21 +346,21 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule1JSON.toString()));
         String responseStr = response.readEntity(String.class);
         JSONObject responseJSON = new JSONObject(responseStr);
         String rule1 = (String)responseJSON.get("id");
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule2JSON.toString()));
         responseStr = response.readEntity(String.class);
         responseJSON = new JSONObject(responseStr);
         String rule2 = (String)responseJSON.get("id");
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(rule3JSON.toString()));
         responseStr = response.readEntity(String.class);
@@ -368,7 +368,7 @@ public class RuleResourceFTest extends TestBase {
         String rule3 = (String)responseJSON.get("id");
 
         response =
-            target.path("/sites/" + config.defaultHostId + "/rules").request(MediaType.APPLICATION_JSON_TYPE).get();
+            target.path("/sites/" + config.defaultHostId + "/ruleengine/rules").request(MediaType.APPLICATION_JSON_TYPE).get();
 
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
@@ -382,13 +382,13 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(result2JSON.getString("name").equals("testListRule2"));
         assertTrue(result3JSON.getString("name").equals("testListRule3"));
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule1)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule1)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule2)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule2)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule3)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule3)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     }
@@ -407,7 +407,7 @@ public class RuleResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
         String responseStr = response.readEntity(String.class);
@@ -418,7 +418,7 @@ public class RuleResourceFTest extends TestBase {
         updateJSON.put("name", testRuleRename);
         updateJSON.put("enabled", "false");
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .put(Entity.json(updateJSON.toString()));
 
@@ -426,7 +426,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
         // get changed rule
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get();
 
@@ -437,7 +437,7 @@ public class RuleResourceFTest extends TestBase {
         assertTrue(ruleJSON.getString("fireOn").equals(Rule.FireOn.EVERY_PAGE.toString()));
 
         // delete
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + rule)
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
 
@@ -445,7 +445,7 @@ public class RuleResourceFTest extends TestBase {
         JSONObject updateNoRuleJSON = new JSONObject();
         updateNoRuleJSON.put("name", "NoRuleToUpdate");
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + "00000000-0000-0000-0000-000000000000")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + "00000000-0000-0000-0000-000000000000")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .put(Entity.json(updateJSON.toString()));
 

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -39,7 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
-@Path("/v1")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionGroupResource extends WebResource {
 
     private final RulesAPI rulesAPI;
@@ -64,7 +64,7 @@ public class ConditionGroupResource extends WebResource {
     }
 
     @GET
-    @Path("sites/{siteId}/rules/{ruleId}/conditionGroups")
+    @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
             throws JSONException {
@@ -82,7 +82,7 @@ public class ConditionGroupResource extends WebResource {
     }
 
     @GET
-    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{groupId}")
+    @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public RestConditionGroup self(@Context HttpServletRequest request,
                                       @PathParam("siteId") String siteId,
@@ -104,7 +104,7 @@ public class ConditionGroupResource extends WebResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups")
+    @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -134,7 +134,7 @@ public class ConditionGroupResource extends WebResource {
      * Usage: /rules/
      */
     @PUT
-    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{groupId}")
+    @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionGroup update(@Context HttpServletRequest request,
@@ -161,7 +161,7 @@ public class ConditionGroupResource extends WebResource {
      */
 
     @DELETE
-    @Path("/sites/{siteId}/rules/{ruleId}/conditionGroups/{conditionGroupId}")
+    @Path("/rules/{ruleId}/conditionGroups/{conditionGroupId}")
     public Response remove(@Context HttpServletRequest request,
                                          @PathParam("siteId") String siteId,
                                          @PathParam("ruleId") String ruleId,

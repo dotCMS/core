@@ -8,8 +8,8 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.http.HttpStatus;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
-import com.dotcms.rest.api.v1.sites.ruleengine.RestCondition;
-import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestCondition;
+import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionValue;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -50,7 +50,7 @@ public class UsersCountryConditionletFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // POST rule
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -63,7 +63,7 @@ public class UsersCountryConditionletFTest extends TestBase {
 
         // POST condition group
 
-        response = target.path("/sites/" + config.defaultHostId + "/rules/" + RULE_ID + "/conditionGroups")
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + RULE_ID + "/conditionGroups")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(groupJSON.toString()));
 
@@ -103,7 +103,7 @@ public class UsersCountryConditionletFTest extends TestBase {
             assertTrue(returnedCondition.name.equals(CONDITION_NAME));
 
             // create a condition value
-            RestConditionValue value = new RestConditionValue.Builder().value("VE").priority(0).build();
+            RestConditionValue value = new RestConditionValue.Builder().key("isoCode").value("VE").priority(0).build();
 
             // POST condition value
             response = target.path("/sites/" + config.defaultHostId + "/ruleengine/conditions/" + conditionId + "/conditionValues")
@@ -133,11 +133,11 @@ public class UsersCountryConditionletFTest extends TestBase {
 
         } finally {
 
-            target.path("/sites/" + config.defaultHostId + "/rules/" + RULE_ID + "/conditionGroups/" + GROUP_ID)
+            target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + RULE_ID + "/conditionGroups/" + GROUP_ID)
                     .request(MediaType.APPLICATION_JSON_TYPE)
                     .delete();
 
-            target.path("/sites/" + config.defaultHostId + "/rules/" + RULE_ID)
+            target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + RULE_ID)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .delete();
         }

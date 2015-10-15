@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
 import com.dotcms.rest.api.RestTransform;
 import com.dotmarketing.portlets.rules.conditionlet.Comparison;

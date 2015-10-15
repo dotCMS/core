@@ -1,8 +1,7 @@
-package com.dotcms.rest.api.v1.sites.rules;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.javax.validation.Valid;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
-@Path("/v1")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class RuleResource {
 
     private final RulesAPI rulesAPI;
@@ -67,9 +66,9 @@ public class RuleResource {
      */
     @GET
     @JSONP
-    @Path("/sites/{id}/rules")
+    @Path("/rules")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("id") String siteId) {
+    public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);
@@ -89,7 +88,7 @@ public class RuleResource {
      */
     @GET
     @JSONP
-    @Path("/sites/{siteId}/rules/{ruleId}")
+    @Path("/rules/{ruleId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestRule self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -107,10 +106,10 @@ public class RuleResource {
      */
     @POST
     @JSONP
-    @Path("/sites/{id}/rules")
+    @Path("/rules")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response add(@Context HttpServletRequest request, @PathParam("id") String siteId, RestRule restRule) {
+    public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request);
         Host host = getHost(siteId, user);
@@ -133,7 +132,7 @@ public class RuleResource {
      */
     @PUT
     @JSONP
-    @Path("/sites/{siteId}/rules/{ruleId}")
+    @Path("/rules/{ruleId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
     public RestRule update(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId, RestRule restRule) {
@@ -154,7 +153,7 @@ public class RuleResource {
      * Usage: DELETE api/rules-engine/rules/{ruleId}
      */
     @DELETE
-    @Path("/sites/{siteId}/rules/{ruleId}")
+    @Path("/rules/{ruleId}")
     public Response remove(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         User user = getUser(request);
 

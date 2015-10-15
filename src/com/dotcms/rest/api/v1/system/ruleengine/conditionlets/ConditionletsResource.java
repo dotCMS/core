@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -31,7 +31,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 
-@Path("/v1/system")
+@Path("/v1/system/ruleengine")
 public class ConditionletsResource {
 
     private final RulesAPI rulesAPI;
@@ -69,10 +69,10 @@ public class ConditionletsResource {
      * <p>Returns a JSON with the Comparisons of a given contentlet.
      * <br>Each Comparisons node contains the id and label
      * <p>
-     * Usage: /comparisons/conditionlet/{id}
+     * Usage: /conditionlets/{id}/comparisons
      */
     @GET
-    @Path("/{id}/comparisons")
+    @Path("/conditionlets/{id}/comparisons")
     @Produces(MediaType.APPLICATION_JSON)
     public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         User user = getUser(request);
@@ -109,7 +109,7 @@ public class ConditionletsResource {
      * <p>Returns a JSON with the Comparisons of a given contentlet.
      * <br>Each Comparisons node contains the id and label
      * <p>
-     * Usage: /conditionletInputs/
+     * Usage: /conditionlets/{id}/comparisons/{comparison}/inputs
      */
     @GET
     @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")

@@ -150,8 +150,6 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 		try {
 			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
 			ipAddress = address.getHostAddress();
-			// TODO: Remove
-			ipAddress = "170.123.234.133";
 		} catch (UnknownHostException e) {
 			Logger.error(this,
 					"Could not retrieved a valid IP address from request: "

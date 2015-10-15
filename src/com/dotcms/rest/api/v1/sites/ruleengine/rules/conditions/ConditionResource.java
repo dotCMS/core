@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
-@Path("/v1")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionResource {
 
     private final RulesAPI rulesAPI;
@@ -67,10 +67,10 @@ public class ConditionResource {
      * <p>
      * <p>If a conditionId is provided, it will return the condition whose id matches the provided conditionId.
      * <p>
-     * Usage: /conditions/
+     * Usage: /conditions/{conditionId}
      */
     @GET
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}")
+    @Path("/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
@@ -95,7 +95,7 @@ public class ConditionResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/sites/{siteId}/ruleengine/conditions")
+    @Path("/conditions")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestCondition condition) {
@@ -120,7 +120,7 @@ public class ConditionResource {
      * Usage: PUT /rules/conditiongroups/{groupId}/conditions
      */
     @PUT
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}")
+    @Path("/conditions/{conditionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestCondition update(@Context HttpServletRequest request,
@@ -145,7 +145,7 @@ public class ConditionResource {
      * Usage: DELETE api/rules-engine/rules
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}")
+    @Path("/conditions/{conditionId}")
     public Response remove(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
         User user = getUser(request);

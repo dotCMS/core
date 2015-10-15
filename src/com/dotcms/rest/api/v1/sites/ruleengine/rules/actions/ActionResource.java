@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
-@Path("/v1")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class ActionResource {
 
     private final RulesAPI rulesAPI;
@@ -59,36 +59,13 @@ public class ActionResource {
     }
 
     /**
-     * <p>Returns a JSON with the RuleActions defined for the Rule with the given ruleId.
-     * <p/>
-     */
-//
-//    @GET
-//    @Path("/sites/{siteId}/ruleengine/ruleActions")
-//    @Produces(MediaType.APPLICATION_JSON)
-//    public Map<String, RestRuleAction> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId)
-//            throws JSONException {
-//        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-//        User user = getUser(request);
-//        getHost(siteId, user);
-//        Rule rule = getRule(ruleId, user);
-//        List<RestRuleAction> restActions = getActionsInternal(user, rule);
-//        Map<String, RestRuleAction> hash = Maps.newHashMapWithExpectedSize(restActions.size());
-//        for (RestRuleAction restAction : restActions) {
-//            hash.put(restAction.id, restAction);
-//        }
-//
-//        return hash;
-//    }
-
-    /**
      * <p>Returns a JSON representation of the Rule with the given ruleId
      * <p/>
      * Usage: GET api/rules-engine/sites/sites/{siteId}/rules/{ruleId}
      */
     @GET
     @JSONP
-    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
+    @Path("/actions/{actionId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestRuleAction self(@Context HttpServletRequest request,
                          @PathParam("siteId") String siteId,
@@ -108,7 +85,7 @@ public class ActionResource {
      */
 
     @POST
-    @Path("/sites/{siteId}/ruleengine/ruleActions/")
+    @Path("/actions/")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -134,7 +111,7 @@ public class ActionResource {
      */
 
     @PUT
-    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
+    @Path("/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestRuleAction update(@Context HttpServletRequest request,
@@ -156,7 +133,7 @@ public class ActionResource {
      * Usage: DELETE api/rules-engine/rules/ruleActions/{ruleActionId}
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/ruleActions/{actionId}")
+    @Path("/actions/{actionId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response remove(@Context HttpServletRequest request,

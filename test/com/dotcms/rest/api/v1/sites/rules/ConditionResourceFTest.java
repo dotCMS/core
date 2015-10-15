@@ -39,7 +39,7 @@ public class ConditionResourceFTest extends TestBase {
         WebTarget target = config.restBaseTarget();
 
         // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(ruleJSON.toString()));
 
@@ -56,7 +56,7 @@ public class ConditionResourceFTest extends TestBase {
      */
     private void deleteRule(String ruleID) {
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules/" + ruleID)
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     }
@@ -69,7 +69,7 @@ public class ConditionResourceFTest extends TestBase {
         groupJSON.put("operator", Condition.Operator.AND.name());
 
         WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/rules/" + ruleID + "/conditionGroups")
+        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID + "/conditionGroups")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .post(Entity.json(groupJSON.toString()));
 
@@ -83,7 +83,7 @@ public class ConditionResourceFTest extends TestBase {
     private void deleteConditionGroup(String group, String ruleID) {
         WebTarget target = config.restBaseTarget();
         Response response =
-            target.path("/sites/" + config.defaultHostId + "/rules/" + ruleID + "/conditionGroups/" + group)
+            target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID + "/conditionGroups/" + group)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .delete();
     }
@@ -107,11 +107,12 @@ public class ConditionResourceFTest extends TestBase {
         conditionJSON.put("owningGroup", group);
 
         JSONObject valueJSON = new JSONObject();
+        valueJSON.put("key", "isoCode");
         valueJSON.put("value", "FR");
         valueJSON.put("priority", 0);
 
         JSONObject valuesJSON = new JSONObject();
-        valuesJSON.put("123", valueJSON);
+        valuesJSON.put("isoCode", valueJSON);
 
         conditionJSON.put("values", valuesJSON);
 
@@ -153,11 +154,12 @@ public class ConditionResourceFTest extends TestBase {
         conditionJSON.put("owningGroup", group);
 
         JSONObject valueJSON = new JSONObject();
+        valueJSON.put("key", "isoCode");
         valueJSON.put("value", "FR");
         valueJSON.put("priority", 0);
 
         JSONObject valuesJSON = new JSONObject();
-        valuesJSON.put("123", valueJSON);
+        valuesJSON.put("isoCode", valueJSON);
 
         conditionJSON.put("values", valuesJSON);
 

@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system;
+package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
@@ -17,12 +17,6 @@ public final class RestComparison {
         private String id;
         private String label;
 
-        /*
-            RestComparison restComparison = new RestComparison.Builder()
-            .id( input.getId() )
-            .label( input.getLabel() )
-            .build();
-        */
         public Builder() {}
 
         public Builder id(String id) {

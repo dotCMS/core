@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.javax.ws.rs.*;
@@ -8,9 +8,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.api.v1.sites.rules.ConditionValueTransform;
-import com.dotcms.rest.api.v1.sites.rules.RestConditionValue;
-import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -36,7 +33,7 @@ import java.util.stream.Collectors;
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
-@Path("/v1")
+@Path("/v1/sites/{siteId}/ruleengine")
 public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;
@@ -61,7 +58,7 @@ public class ConditionValueResource {
     }
 
     @GET
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues")
+    @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
             throws JSONException {
@@ -87,7 +84,7 @@ public class ConditionValueResource {
      * Usage: /conditions/
      */
     @GET
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request,
                          @PathParam("siteId") String siteId,
@@ -114,7 +111,7 @@ public class ConditionValueResource {
      * Usage: /rules/
      */
     @POST
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues")
+    @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request,
@@ -144,7 +141,7 @@ public class ConditionValueResource {
      * Usage: PUT /rules/conditiongroups/{groupId}/conditions
      */
     @PUT
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_JSON)
     public RestConditionValue update(@Context HttpServletRequest request,
@@ -171,7 +168,7 @@ public class ConditionValueResource {
      * Usage: DELETE api/rules-engine/rules
      */
     @DELETE
-    @Path("/sites/{siteId}/ruleengine/conditions/{conditionId}/conditionValues/{valueId}")
+    @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     public Response remove(@Context HttpServletRequest request,
                            @PathParam("siteId") String siteId,
                            @PathParam("conditionId") String conditionId,

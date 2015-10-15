@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.sites.ruleengine;
+package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
