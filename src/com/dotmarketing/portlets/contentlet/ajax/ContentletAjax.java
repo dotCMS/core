@@ -1682,6 +1682,7 @@ public class ContentletAjax {
 						Contentlet contentlet = conAPI.find(inode, APILocator
 								.getUserAPI().getSystemUser(), false);
 						if (contentlet != null) {
+							conAPI.archive(contentlet, user, false);
 							conAPI.delete(contentlet, APILocator.getUserAPI()
 									.getSystemUser(), false, true);
 						}

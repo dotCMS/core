@@ -44,7 +44,8 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.liferay.portal.NoSuchRoleException"%>
 <%@page import="com.dotmarketing.business.Role"%>
-
+<%request.setAttribute("requiredPortletAccess", "EXT_21"); %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 <style type="text/css">
 	@import "/html/portlet/ext/workflows/schemes/workflow.css";
 	#filterTasksFrm dt{height:30px;}

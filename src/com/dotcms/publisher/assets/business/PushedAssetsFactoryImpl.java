@@ -6,12 +6,13 @@ import java.util.Map;
 
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 
 public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
-
+	private PushedAssetsCache cache=CacheLocator.getPushedAssetsCache();
 	public void savePushedAsset(PushedAsset asset) throws DotDataException {
 		final DotConnect db = new DotConnect();
 		db.setSQL(INSERT_ASSETS);
@@ -21,6 +22,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.addParam(asset.getPushDate());
 		db.addParam(asset.getEnvironmentId());
 		db.loadResult();
+		cache.removePushedAssetById(asset.getAssetId(), asset.getEnvironmentId());
 	}
 
 	@Override
@@ -31,6 +33,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.addParam(bundleId);
 		db.addParam(environmentId);
 		db.loadResult();
+		cache.clearCache();
 
 	}
 
@@ -41,7 +44,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.setSQL(DELETE_ASSETS_BY_ASSET_ID);
 		db.addParam(assetId);
 		db.loadResult();
-
+		cache.clearCache();
 	}
 
 	@Override
@@ -51,7 +54,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		db.setSQL(DELETE_ASSETS_BY_ENVIRONMENT_ID);
 		db.addParam(environmentId);
 		db.loadResult();
-
+		cache.clearCache();
 	}
 
 	@Override
@@ -86,6 +89,7 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		final DotConnect db = new DotConnect();
 		db.setSQL(DELETE_ALL_ASSETS);
 		db.loadResult();
+		cache.clearCache();
 	}
 
 	@Override
@@ -132,6 +136,29 @@ public class PushedAssetsFactoryImpl extends PushedAssetsFactory {
 		}
 
 		return assets;
+	}
+	
+	
+	public PushedAsset getLastPushForAsset(String assetId, String environmentId)  throws DotDataException{
+		
+		PushedAsset asset = cache.getPushedAsset(assetId, environmentId);
+		if(asset==null){
+			DotConnect dc = new DotConnect();
+			dc.setSQL(SELECT_ASSET_LAST_PUSHED);
+			dc.addParam(assetId);
+			dc.addParam(environmentId);
+			dc.setMaxRows(1);
+			List<Map<String, Object>> res = dc.loadObjectResults();
+	
+			for(Map<String, Object> row : res){
+				asset = PublisherUtil.getPushedAssetByMap(row);
+				cache.add(asset);
+			}
+		}
+		
+		return asset;
+		
+		
 	}
 
 }
