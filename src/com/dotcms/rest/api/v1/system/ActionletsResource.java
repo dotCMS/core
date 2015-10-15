@@ -7,6 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -26,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 public class ActionletsResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final ActionletTransform transform = new ActionletTransform();
 
     public ActionletsResource() {
@@ -34,13 +35,13 @@ public class ActionletsResource {
     }
 
     private ActionletsResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ActionletsResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ActionletsResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     /**
@@ -69,6 +70,6 @@ public class ActionletsResource {
 
     @VisibleForTesting
     User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 }

@@ -43,7 +43,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 public class ConditionGroupResource extends WebResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final ConditionGroupTransform groupTransform = new ConditionGroupTransform();
     private HostAPI hostAPI;
 
@@ -53,14 +53,14 @@ public class ConditionGroupResource extends WebResource {
     }
 
     private ConditionGroupResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionGroupResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionGroupResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     @GET
@@ -182,7 +182,7 @@ public class ConditionGroupResource extends WebResource {
 
     @VisibleForTesting
     User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting
