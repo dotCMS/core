@@ -35,12 +35,15 @@ import java.util.Set;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
-public class RulesAPIImpl implements RulesAPI {
+public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
+
+    private final PermissionAPI perAPI;
+    private final RulesFactory rulesFactory;
 
     private static final Map<String, Conditionlet> conditionletMap = Maps.newHashMap();
     private static final Map<String, RuleActionlet> actionletMap = Maps.newHashMap();
-    private final PermissionAPI perAPI;
-    private final RulesFactory rulesFactory;
+
+    private static final List<Class> conditionletOSGIclasses = new ArrayList<Class>();
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
                          .add(UsersBrowserConditionlet.class)
@@ -75,7 +78,7 @@ public class RulesAPIImpl implements RulesAPI {
     public RulesAPIImpl() {
         perAPI = APILocator.getPermissionAPI();
         rulesFactory = FactoryLocator.getRulesFactory();
-        initConditionlets();
+        refreshConditionletsMap();
         initActionletMap();
     }
 
@@ -603,10 +606,11 @@ public class RulesAPIImpl implements RulesAPI {
         return parameter;
     }
 
-    private void initConditionlets() {
+    private void refreshConditionletsMap() {
         synchronized (conditionletMap) {
-            // get the dotmarketing-config.properties conditionlet classes
+            //Get the OSGi ones.
             List<Conditionlet> conditionlets = Lists.newArrayList(getCustomConditionlets());
+            //Get the default ones.
             conditionlets.addAll(getDefaultConditionlets());
 
             for (Conditionlet conditionlet : conditionlets) {
@@ -628,21 +632,20 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     private List<Conditionlet> getCustomConditionlets() {
-        List<Conditionlet> customClasses = Lists.newArrayList();
-        String customClassesStr = Config.getStringProperty(WebKeys.RULES_CONDITIONLET_CLASSES, null, false);
-        if(customClassesStr != null) {
+        //Get the Conditionlets form OSGI.
+        List<Conditionlet> customConditionlets = Lists.newArrayList();
 
-            String[] st = customClassesStr.split(",");
-            for (String className : st) {
-                try {
-                    Conditionlet e = (Conditionlet)Class.forName(className.trim()).newInstance();
-                    customClasses.add(e);
-                } catch (Exception e1) {
-                    Logger.error(RulesAPIImpl.class, "Error instantiating class '" + className + "' " + e1.getMessage(), e1);
-                }
+        for (Class<Conditionlet> z : conditionletOSGIclasses) {
+            try {
+                customConditionlets.add(z.newInstance());
+            } catch (InstantiationException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
+            } catch (IllegalAccessException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
             }
         }
-        return customClasses;
+
+        return customConditionlets;
     }
 
     private List<Conditionlet> getDefaultConditionlets() {
@@ -728,5 +731,30 @@ public class RulesAPIImpl implements RulesAPI {
 
     public RuleActionlet findActionlet(String actionletId) throws DotDataException, DotSecurityException {
         return actionletMap.get(actionletId);
+    }
+
+    /**
+     * Adds a given Conditionlet class to the list of Rules Engine Conditionlet, this method will instantiate and
+     * initialize (init method) the given Conditionlet.
+     *
+     * @param conditionletClass
+     */
+    @Override
+    public String addConditionlet(Class conditionletClass) {
+        conditionletOSGIclasses.add(conditionletClass);
+        refreshConditionletsMap();
+        return conditionletClass.getCanonicalName();
+    }
+
+    /**
+     * Removes a given Conditionlet class from the list of Rules Engine Conditionlet.
+     *
+     * @param conditionletName
+     */
+    @Override
+    public void removeConditionlet(String conditionletName) {
+        Conditionlet conditionlet = conditionletMap.get(conditionletName);
+        conditionletOSGIclasses.remove(conditionlet.getClass());
+        refreshConditionletsMap();
     }
 }
