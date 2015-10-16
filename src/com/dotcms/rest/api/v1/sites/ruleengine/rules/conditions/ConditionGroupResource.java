@@ -70,7 +70,7 @@ public class ConditionGroupResource extends WebResource {
             throws JSONException {
 
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        ruleId = checkNotEmpty(siteId, BadRequestException.class, "Rule Id is required.");
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
         getHost(siteId, user);
         Rule rule = getRule(ruleId, user);
@@ -89,7 +89,7 @@ public class ConditionGroupResource extends WebResource {
                                       @PathParam("ruleId") String ruleId,
                                       @PathParam("groupId") String groupId) throws JSONException {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
-        ruleId = checkNotEmpty(siteId, BadRequestException.class, "Rule Id is required.");
+        ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
         getHost(siteId, user);
         getRule(ruleId, user);
