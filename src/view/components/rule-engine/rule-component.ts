@@ -6,6 +6,7 @@ import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angul
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
+//noinspection TypeScriptCheckImport
 import {ruleTemplate} from './templates/index'
 import {ApiRoot} from 'api/persistence/ApiRoot';
 
@@ -48,6 +49,7 @@ class RuleComponent{
     this.ruleActions = []
     this.actionsRef = apiRoot.defaultSite.child('ruleengine/actions')
     this.actionsRef.on('child_removed', (childActionSnap) => {
+      delete this.rule.actions[childActionSnap.key()]
       this.ruleActions = this.ruleActions.filter((action) => {
         return action.key() != childActionSnap.key()
       })
@@ -75,6 +77,7 @@ class RuleComponent{
       this.ruleGroups.push(childSnap)
     })
     this.groupsSnap.ref().on('child_removed', (childGroupSnap)=>{
+      delete this.rule.conditionGroups[childGroupSnap.key()]
       this.ruleGroups = this.ruleGroups.filter((group) => {
         return group.key() != childGroupSnap.key()
       })
