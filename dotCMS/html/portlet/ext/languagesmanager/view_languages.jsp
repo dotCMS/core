@@ -10,12 +10,21 @@ String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,Windo
 %>
 
 <script language="Javascript">
+dojo.require("dotcms.dojo.push.PushHandler");
+
+var pushHandler = new dotcms.dojo.push.PushHandler('Push Publish');
+
 function addLanguage(){
 	window.location.href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString()%>"><portlet:param name="struts_action" value="/ext/languages_manager/edit_language" /><portlet:param name="id" value="" /></portlet:actionURL>';
 }
 function editDefault(){
 	window.location.href = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/languages_manager/edit_language_keys" /></portlet:actionURL>&cmd=edit';
 }
+
+function remotePublish(objId) {
+    pushHandler.showDialog(objId);
+}
+
 </script>
 
 <liferay:box top="/html/common/box_top.jsp" bottom="/html/common/box_bottom.jsp">
@@ -64,6 +73,10 @@ function editDefault(){
 						<portlet:param name="<%= Constants.CMD %>" value="edit" /></portlet:actionURL>">
 						<%= LanguageUtil.get(pageContext, "Edit-Language") %>
 					</a>
+					|
+                    <a href="javascript: remotePublish('<%= String.valueOf(longLanguageId) %>');">
+                        <%= LanguageUtil.get(pageContext, "Push Publish") %>
+                    </a>
 				 <%}%>
 			</td>
 			<%l++;%>
@@ -72,3 +85,15 @@ function editDefault(){
 <%}%>
 </table>
 </liferay:box>
+<form id="remotePublishForm">
+    <input name="assetIdentifier" id="assetIdentifier" type="hidden" value="">
+    <input name="remotePublishDate" id="remotePublishDate" type="hidden" value="">
+    <input name="remotePublishTime" id="remotePublishTime" type="hidden" value="">
+    <input name="remotePublishExpireDate" id="remotePublishExpireDate" type="hidden" value="">
+    <input name="remotePublishExpireTime" id="remotePublishExpireTime" type="hidden" value="">
+    <input name="iWantTo" id=iWantTo type="hidden" value="">
+    <input name="whoToSend" id=whoToSend type="hidden" value="">
+    <input name="bundleName" id=bundleName type="hidden" value="">
+    <input name="bundleSelect" id=bundleSelect type="hidden" value="">
+    <input name="forcePush" id=forcePush type="hidden" value="">
+</form>
