@@ -122,26 +122,19 @@ export class RequestHeaderConditionletModel {
 @View({
   directives: [NgFor],
   template: `
-    <div class="row">
-      <div class="col-sm-4">
+      <div class="col-sm-3">
         <select class="form-control header-key" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
           <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
         </select>
       </div>
-      <div class="col-sm-3">
+      <div class="col-sm-2">
         <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
           <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-3">
         <input type="text" class="form-control condition-value" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
       </div>
-      <div class="col-sm-1">
-        <button type="button" class="btn btn-default" aria-label="Info" >
-          <span class="glyphicon glyphicon-info-sign"></span>
-        </button>
-      </div>
-    </div>
   `
 })
 export class RequestHeaderConditionlet {

@@ -1,22 +1,16 @@
-<div class="panel panel-default clause">
-  <div class="panel-body">
+<div class="panel panel-default clause conditions">
     <div class="row">
       <div class="col-sm-1">
         <button *ng-if="index !== 0" type="button" class="btn btn-default" (click)="toggleOperator()">
           {{condition.operator}}
         </button>
       </div>
-      <div class="col-sm-11">
-        <div class="row">
           <div class="col-sm-3">
             <select class="form-control clause-selector" [value]="conditionType?.id" (change)="setConditionlet($event.target.value)">
               <option value="{{conditionType.id}}" *ng-for="var conditionType of conditionTypes; var i=index">
                 {{conditionType.name}}
               </option>
             </select>
-          </div>
-          <div class="col-sm-1">
-            <h4 class="separator"></h4>
           </div>
           <cw-request-header-conditionlet
               *ng-if="conditionType?.id == 'UsersBrowserHeaderConditionlet'"
@@ -32,16 +26,11 @@
                                 (change)="conditionChanged($event)"
           ></cw-country-condition>
 
-          <div class="col-sm-1">
-            <div class="operations">
+          <div class="col-sm-2">
               <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause"
                       (click)="removeCondition()">
                 <span class="glyphicon glyphicon-trash" aria-hidden="true" (click)="removeCondition()"></span>
               </button>
-            </div>
           </div>
-        </div>
-      </div>
     </div>
-  </div>
 </div>

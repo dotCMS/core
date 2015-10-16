@@ -70,12 +70,13 @@
   text-align: right;
 }
 
-.add-action {
+.add-button-alert {
   display: inline !important;
 }
 
 .collapse-icon{
   vertical-align: -webkit-baseline-middle;
+    width: 10px !important;
 }
 
 .page-title-search {
@@ -120,6 +121,11 @@
   &:focus {
     background-color: $primary-50;
   }
+}
+
+.conditions{
+    border: none !important;
+    box-shadow: none !important;  
 }
 
 .section-separator {

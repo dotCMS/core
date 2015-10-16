@@ -30,13 +30,11 @@ export class CountryConditionModel {
 })
 @View({
   directives: [NgFor],
-  template: `<div class="col-sm-2">
+  template: `
+  <div class="col-sm-2">
   <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
           <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
-</div>
-<div class="col-sm-1">
-  <h4 class="separator"></h4>
 </div>
 <div class="col-sm-4">
   <select class="form-control clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
