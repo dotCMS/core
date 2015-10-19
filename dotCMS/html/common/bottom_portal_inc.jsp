@@ -49,7 +49,6 @@
 		myId.src ="/html/common/keep_alive.jsp?r=<%=System.currentTimeMillis()%>";
 	}
 	function killSession(){
-		alert("Session Expired !!");
 		window.location = "/c/portal/logout?referer=/c";
 	}
 	<% if(Config.getStringProperty("KEEP_SESSION_ALIVE").equalsIgnoreCase("true")) {%>
