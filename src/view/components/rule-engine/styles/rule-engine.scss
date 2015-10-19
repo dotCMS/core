@@ -70,6 +70,15 @@
   text-align: right;
 }
 
+.add-button-alert {
+  display: inline !important;
+}
+
+.collapse-icon{
+  vertical-align: -webkit-baseline-middle;
+    width: 10px !important;
+}
+
 .page-title-search {
   margin-top: 40px;
 
@@ -112,6 +121,11 @@
   &:focus {
     background-color: $primary-50;
   }
+}
+
+.conditions{
+    border: none !important;
+    box-shadow: none !important;  
 }
 
 .section-separator {

@@ -1,29 +1,18 @@
-<div class="panel panel-default clause-group">
-  <div class="panel-heading">
-    <div class="row">
-      <div class="col-sm-1">
-        <button *ng-if="groupIndex !== 0" class="btn btn-default" (click)="toggleGroupOperator()">
-          {{group.operator}}
-        </button>
-      </div>
-      <div class="col-xs-11">
-        <div class="operations clause-group-operations">
-          <button type="button" class="btn btn-default btn-md" (click)="groupCollapsed = !groupCollapsed">
-            <span class="glyphicon glyphicon-resize-vertical" aria-hidden="true"></span>
-          </button>
-          <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
-            <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addCondition()"></span>
-          </button>
-        </div>
-
-        <!--Remove group will happen when there is no clauses-->
-        <!--<button class="btn btn-default" aria-label="Delete Group" (click)="removeGroup(rule, group)">-->
-          <!--<span class="glyphicon glyphicon-trash" aria-hidden="true"></span>-->
-        <!--</button>-->
+   <div class="row"> 
+    <div class="col-sm-12">
+      <div class="alert alert-info" *ng-if="groupIndex !== 0">
+        <p class="pull-left">
+          <a class="btn btn-default add-button-alert" (click)="toggleGroupOperator()">
+            {{group.operator}}
+          </a>
+        </p>
+        when the following condition(s) are met?
       </div>
     </div>
   </div>
-  <div class="panel-body collapse" [class.in]="!groupCollapsed">
+  <div class="panel-body">
     <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta" [index]="i"> </rule-condition>
+    <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
+      <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addCondition()"></span>
+    </button>
   </div>
-</div>
