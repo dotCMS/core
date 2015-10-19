@@ -1,31 +1,16 @@
 package com.dotmarketing.viewtools.navigation;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.tools.view.tools.ViewRenderTool;
-
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.*;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -33,10 +18,19 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.dotmarketing.velocity.VelocityServlet;
 import com.liferay.portal.model.User;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.view.tools.ViewRenderTool;
 
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import javax.servlet.http.HttpServletRequest;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class NavResult implements Iterable<NavResult>, Permissionable, Serializable {
+
+    private Long languageId;
     private String title;
     private String href;
     private int order;
@@ -50,15 +44,14 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     private String folderId;
     private List<String> childrenFolderIds;
     private List<NavResult> children;
-    private NavTool tool;
     private User sysuser=null;
     private boolean checkPermissions;
     
-    public NavResult(String parent, String hostId, String folderId, NavTool tool) {
+    public NavResult(String parent, String hostId, String folderId, Long languageId) {
         this.hostId=hostId;
         this.folderId=folderId;
         this.parent=parent;
-        this.tool = tool;
+        this.languageId=languageId;
 
         title=href="";
         order=0;
@@ -71,8 +64,8 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         
     }
     
-    public NavResult(String parent, String host, NavTool tool) {
-        this(parent,host,null, tool);
+    public NavResult(String parent, String host, Long languageId) {
+        this(parent,host,null,languageId);
     }
     
     public String getTitle() throws Exception {
@@ -149,7 +142,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
             Host host=APILocator.getHostAPI().find(hostId, sysuser, true);
             Folder folder=APILocator.getFolderAPI().find(folderId, sysuser, true);
             Identifier ident=APILocator.getIdentifierAPI().find(folder);
-            NavResult lazyMe=tool.getNav(host, ident.getPath());
+            NavResult lazyMe=NavTool.getNav(host, ident.getPath(), languageId, sysuser);
             children=lazyMe.getChildren();
             childrenFolderIds=lazyMe.getChildrenFolderIds();
         }
@@ -160,7 +153,7 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
                     // for folders we avoid returning the same instance
                     // it could be changed elsewhere and we need it to
                     // load its children lazily
-                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId, tool);
+                    NavResult ff=new NavResult(folderId,nn.hostId,nn.folderId,nn.languageId);
                     ff.setTitle(nn.getTitle());
                     ff.setHref(nn.getHref());
                     ff.setOrder(nn.getOrder());
@@ -206,11 +199,11 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Identifier ident=APILocator.getIdentifierAPI().find(folder);
         return ident.getURI();
     }
-    
+
     public NavResult getParent() throws DotDataException, DotSecurityException {
         String path=getParentPath();
         if(path!=null) {
-            return tool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path);
+            return NavTool.getNav(APILocator.getHostAPI().find(hostId,sysuser,true), path, languageId, sysuser);
         }
         else return null;
     }
