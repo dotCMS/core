@@ -21,7 +21,10 @@
 
 
 <%
-
+	User userToCheck = com.liferay.portal.util.PortalUtil.getUser(request);
+	if(userToCheck == null ){
+		return;
+	}
 	String dojoPath = Config.getStringProperty("path.to.dojo");
 	if(!UtilMethods.isSet(dojoPath)){
 		// Change dojopath in dotmarketing-config.properties!

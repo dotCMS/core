@@ -1,5 +1,18 @@
 package com.dotcms.rest;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.dotcms.integritycheckers.IntegrityChecker;
 import com.dotcms.integritycheckers.IntegrityType;
 import com.dotcms.integritycheckers.IntegrityUtil;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -847,24 +860,22 @@ public class IntegrityResource {
 
         String remoteIP = null;
         JSONObject jsonResponse = new JSONObject();
-
+        IntegrityUtil integrityUtil = new IntegrityUtil();
+        PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
+        PublishingEndPoint requesterEndPoint = null;
         try {
             String auth_token = PublicEncryptionFactory.decryptString(auth_token_enc);
             remoteIP = request.getRemoteHost();
             if(!UtilMethods.isSet(remoteIP))
                 remoteIP = request.getRemoteAddr();
 
-            PublishingEndPointAPI endpointAPI = APILocator.getPublisherEndPointAPI();
-            final PublishingEndPoint requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
+            requesterEndPoint = endpointAPI.findEnabledSendingEndPointByAddress(remoteIP);
 
             if(!BundlePublisherResource.isValidToken(auth_token, remoteIP, requesterEndPoint)) {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
-            IntegrityUtil integrityUtil = new IntegrityUtil();
-//            HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
-//            HibernateUtil.commitTransaction();
 
         } catch ( Exception e ) {
             try {
@@ -874,7 +885,17 @@ public class IntegrityResource {
             }
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts from remote", e );
             return response( "Error fixing "+type+" conflicts from remote" , true );
-        }
+        } finally {
+			try {
+				if (requesterEndPoint != null) {
+					// Discard conflicts if successful or failed
+					integrityUtil.discardConflicts(requesterEndPoint.getId(),
+							IntegrityType.valueOf(type.toUpperCase()));
+				}
+			} catch (DotDataException e) {
+				// Ignore
+			}
+		}
 
         jsonResponse.put( "success", true );
         jsonResponse.put( "message", "Conflicts fixed in Remote Endpoint" );
@@ -920,11 +941,8 @@ public class IntegrityResource {
         }
 
 
-
+        IntegrityUtil integrityUtil = new IntegrityUtil();
         try {
-
-            IntegrityUtil integrityUtil = new IntegrityUtil();
-
             if(whereToFix.equals("local")) {
 
             	HibernateUtil.startTransaction();
@@ -999,7 +1017,15 @@ public class IntegrityResource {
 
             Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
             return response( "Error fixing conflicts for endpoint: " + endpointId , true );
-        }
+		} finally {
+			try {
+				// Discard conflicts if successful or failed
+				integrityUtil.discardConflicts(endpointId,
+						IntegrityType.valueOf(type.toUpperCase()));
+			} catch (DotDataException e) {
+				// Ignore
+			}
+		}
 
         return response( jsonResponse.toString(), false );
     }

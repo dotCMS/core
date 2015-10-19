@@ -19,7 +19,7 @@ public class PushedAssetsCacheImpl implements PushedAssetsCache, Cachable {
 	}
 
 
-	public synchronized PushedAsset getPushedAsset(String assetId, String environmentId) {
+	public  PushedAsset getPushedAsset(String assetId, String environmentId) {
 		PushedAsset asset = null;
 		try {
 			asset = (PushedAsset) cache.get(assetId + "|" + environmentId, cacheGroup);
@@ -30,13 +30,13 @@ public class PushedAssetsCacheImpl implements PushedAssetsCache, Cachable {
 		return asset;
 	}
 
-	public synchronized void add(PushedAsset asset) {
+	public  void add(PushedAsset asset) {
 		if(asset != null) {
 			cache.put(asset.getAssetId() + "|" + asset.getEnvironmentId() , asset, cacheGroup);
 		}
 	}
 
-	public synchronized void removePushedAssetById(String assetId, String environmentId) {
+	public  void removePushedAssetById(String assetId, String environmentId) {
 		if(UtilMethods.isSet(assetId) && UtilMethods.isSet(environmentId) )
 			cache.remove(assetId + "|" + environmentId, cacheGroup);
 	}
