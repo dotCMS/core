@@ -2,11 +2,10 @@ package com.dotmarketing.business.cache.provider.redis;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
 import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.velocity.DotResourceCache;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -22,6 +21,8 @@ import java.util.*;
 public class RedisProvider extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
+
+    private static final String ONLY_MEMORY_GROUP = DotResourceCache.primaryOnlyMemoryGroup.toLowerCase();
 
     //Global Map of contents that could not be added to this cache
     private static Map<String, String> cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
@@ -113,7 +114,7 @@ public class RedisProvider extends CacheProvider {
         compoundKey.append(key);
 
         if ( cannotCacheCache.get(compoundKey.toString()) != null ) {
-            Logger.info(this, "Returning because object is in cannot cache cache - Redis: group [" + group + "] - key [" + key + "].");
+            Logger.debug(this, "Returning because object is in cannot cache cache - Redis: group [" + group + "] - key [" + key + "].");
             return;
         }
 
@@ -235,33 +236,18 @@ public class RedisProvider extends CacheProvider {
             return;
         }
 
-        Runnable cacheRemoveRunnable = new Runnable() {
-            public void run () {
+        //Building the key
+        StringWriter compoundKey = new StringWriter();
+        compoundKey.append(group.toLowerCase());
+        compoundKey.append(delimit);
+        compoundKey.append(key.toLowerCase());
 
-                //Building the key
-                StringWriter compoundKey = new StringWriter();
-                compoundKey.append(group.toLowerCase());
-                compoundKey.append(delimit);
-                compoundKey.append(key.toLowerCase());
-
-                //Deleting the record from the Redis master
-                try ( Jedis jedis = writePool.getResource() ) {
-                    jedis.del(compoundKey.toString());
-                } catch ( Exception e ) {
-                    Logger.error(this, "Error removing from Redis: group [" + group + "] - key [" + key + "].", e);
-                }
-            }
-        };
-        try {
-            if ( !DbConnectionFactory.getConnection().getAutoCommit() ) {
-                HibernateUtil.addCommitListener(cacheRemoveRunnable);
-                return;
-            }
+        //Deleting the record from the Redis master
+        try ( Jedis jedis = writePool.getResource() ) {
+            jedis.del(compoundKey.toString());
         } catch ( Exception e ) {
             Logger.error(this, "Error removing from Redis: group [" + group + "] - key [" + key + "].", e);
         }
-
-        cacheRemoveRunnable.run();
     }
 
     @Override
@@ -300,8 +286,9 @@ public class RedisProvider extends CacheProvider {
 
                 }
 
+                String[] groupKeys = keysToDelete.toArray(new String[keysToDelete.size()]);
                 //If something missing to be delete it
-                jedis.del(keysToDelete.toArray(new String[keysToDelete.size()]));
+                jedis.del(groupKeys);
                 break;
             }
 
@@ -407,15 +394,7 @@ public class RedisProvider extends CacheProvider {
 
         Boolean exclude = false;
 
-        if ( key.startsWith("velocitycacheusers") ) {
-            exclude = false;
-        } else if ( key.startsWith("velocitycache") ) {
-            if ( !(key.contains("live") || key.contains("working")) ) {
-                exclude = true;
-            }
-        } else if ( group.equals("velocitycache") && key.endsWith(".vm") ) {//Velocity macros cannot be cached
-            exclude = true;
-        } else if ( key.startsWith("velocitymenucache") ) {
+        if ( group.equals(ONLY_MEMORY_GROUP) ) {
             exclude = true;
         }
 
