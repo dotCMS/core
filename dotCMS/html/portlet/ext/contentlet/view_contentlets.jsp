@@ -496,7 +496,7 @@
 
 
 <!-- START Right Column -->
-        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
+        <div dojoType="dijit.layout.ContentPane" splitter="true" region="center" class="portlet-content-search" id="contentWrapper" style="overflow-y:auto; overflow-x:auto;margin:35px 0 0 0;">
 
                         <div id="metaMatchingResultsDiv" style="display:none;padding-top:7px;">
                                 <!-- START Listing Results -->
