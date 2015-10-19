@@ -122,7 +122,7 @@ export class RequestHeaderConditionletModel {
 @View({
   directives: [NgFor],
   template: `
-      <div class="col-sm-3">
+      <div class="col-sm-2">
         <select class="form-control header-key" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
           <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
         </select>

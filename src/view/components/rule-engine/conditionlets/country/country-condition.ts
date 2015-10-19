@@ -36,7 +36,7 @@ export class CountryConditionModel {
           <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
         </select>
 </div>
-<div class="col-sm-4">
+<div class="col-sm-5">
   <select class="form-control clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
     <option value="{{country.id}}" *ng-for="var country of countries" [selected]="country.id == value.isoCode">{{country.label}}
     </option>

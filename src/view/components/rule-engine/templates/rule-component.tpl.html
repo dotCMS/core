@@ -38,7 +38,7 @@
           (click)="toggleEnabled()">
           <span class="glyphicon glyphicon-off" (click)="toggleEnabled()"></span>
         </button>
-        <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Rule"
+        <button type="button" class="btn btn-default btn-md" aria-label="Delete Rule"
         (click)="removeRule()">
         <span class="glyphicon glyphicon-trash" (click)="removeRule()"></span>
       </button>
@@ -52,7 +52,7 @@
 </div>
 <div class="panel-body collapse" [class.in]="!collapsed">
   <div class="section-separator alert alert-info">
-    This rule fires when the following condition(s) are met?
+    This rule <strong>fires when</strong> the following condition(s) are met?
   </div>
   <condition-group *ng-for="var groupSnap of ruleGroups; var i=index"
   [rule]="rule"
@@ -60,12 +60,12 @@
   [group-index]="i"></condition-group>
 
   <div class="alert alert-success">
-    This rule sets the following action(s)
+    This rule sets the following <strong>action(s)</strong>
   </div>
   <rule-action *ng-for="var actionMeta of ruleActions; var i=index" [action-meta]="actionMeta"></rule-action>
   <div class="col-md-2">
-      <button type="button" class="btn btn-default btn-md" aria-label="Add Action" (click)="addRuleAction()">
-      <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addRuleAction()"></span>
+      <button type="button" class="btn btn-default btn-md add-button" aria-label="Add Action" (click)="addRuleAction()">
+      <span class="glyphicon glyphicon-plus add-icon" aria-hidden="true" (click)="addRuleAction()"></span>
     </button>
   </div>
 </div>

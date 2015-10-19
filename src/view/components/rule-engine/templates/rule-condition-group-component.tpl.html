@@ -12,7 +12,7 @@
   </div>
   <div class="panel-body">
     <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta" [index]="i"> </rule-condition>
-    <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
-      <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addCondition()"></span>
+    <button type="button" class="btn btn-default btn-md add-button" aria-label="Add Condition" (click)="addCondition()">
+      <span class="glyphicon glyphicon-plus add-icon" aria-hidden="true" (click)="addCondition()"></span>
     </button>
   </div>
