@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules.business;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -10,6 +11,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
@@ -21,17 +23,14 @@ import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
@@ -622,7 +621,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
                         conditionletMap.putIfAbsent(id, instance);
                     }
                     else {
-                        Logger.warn(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");
+                        Logger.info(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");
                     }
                 } catch (InstantiationException | IllegalAccessException e) {
                     Logger.error(RulesAPIImpl.class, e.getMessage(), e);
@@ -733,6 +732,15 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         return actionletMap.get(actionletId);
     }
 
+    public void registerBundleService () {
+        if(Config.getBooleanProperty("felix.osgi.enable", true)){
+            // Register main service
+            BundleContext context = HostActivator.instance().getBundleContext();
+            Hashtable<String, String> props = new Hashtable<String, String>();
+            context.registerService(ConditionletOSGIService.class.getName(), this, props);
+        }
+    }
+
     /**
      * Adds a given Conditionlet class to the list of Rules Engine Conditionlet, this method will instantiate and
      * initialize (init method) the given Conditionlet.
@@ -755,6 +763,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
     public void removeConditionlet(String conditionletName) {
         Conditionlet conditionlet = conditionletMap.get(conditionletName);
         conditionletOSGIclasses.remove(conditionlet.getClass());
+        conditionletMap.remove(conditionletName);
         refreshConditionletsMap();
     }
 }
