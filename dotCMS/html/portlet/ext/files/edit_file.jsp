@@ -324,7 +324,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 			if(val.lastIndexOf(".") > 0){
 				val = val.substring(0, val.lastIndexOf("."));
 			}
-			var arg=/[\+\%\&\!\"\'\#\<%= "$" %>\/\\\=\?\�\�}\:\;\*\<\>\`\�\||_]/g ;
+			var arg=/[\+\%\&\!\"\'\#\<%= "$" %>\/\\\=\?\¡\¿}\:\;\*\<\>\`\´\||_]/g ;
 			val = val.replace(arg," ");
 			while (val.indexOf("  ") > -1){
 				val = val.replace("  ", " ");
