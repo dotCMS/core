@@ -3,7 +3,6 @@
 
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
-import {ruleActionTemplate} from './templates/index'
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
 import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -15,7 +14,31 @@ import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
   properties: ["actionMeta"]
 })
 @View({
-  template: ruleActionTemplate,
+  template: `<div class="panel panel-default clause conditions">
+  <div class="row">
+    <div class="col-sm-3 col-sm-offset-1">
+      <select class="form-control clause-selector" [value]="actionModel.actionConfig?.actionTypeId"
+              (change)="setActionlet($event.target.value)">
+        <option value="{{actionTypeModel.id}}" *ng-for="var actionTypeModel of actionTypes">{{actionTypeModel.name}}
+        </option>
+      </select>
+    </div>
+
+    <cw-set-session-value-action
+        [session-key]="actionModel.actionConfig?.sessionKey"
+        [session-value]="actionModel.actionConfig?.sessionValue"
+        (change)="actionConfigChanged($event)">
+
+    </cw-set-session-value-action>
+
+    <div class="col-sm-2">
+      <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Action"
+              (click)="removeRuleAction()">
+        <span class="glyphicon glyphicon-trash" aria-hidden="true" (click)="removeRuleAction()"></span>
+      </button>
+    </div>
+  </div>
+</div>`,
   directives: [NgIf, NgFor, SetSessionValueAction],
 })
 export class RuleActionComponent {

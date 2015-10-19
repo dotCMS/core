@@ -4,8 +4,6 @@
 
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
 
-import {conditionTemplate} from './templates/index'
-
 import {ApiRoot} from 'api/persistence/ApiRoot'
 import {ConditionTypesProvider, ConditionTypeModel} from 'api/rule-engine/ConditionTypes';
 
@@ -36,7 +34,43 @@ import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
   properties: ["conditionMeta", "index"]
 })
 @View({
-  template: conditionTemplate,
+  template: `<div class="panel panel-default clause conditions">
+  <div class="row">
+    <div class="col-sm-1">
+      <button *ng-if="index !== 0" type="button" class="btn btn-default" (click)="toggleOperator()">
+        {{condition.operator}}
+      </button>
+    </div>
+    <div class="col-sm-3">
+      <select class="form-control clause-selector" [value]="conditionType?.id"
+              (change)="setConditionlet($event.target.value)">
+        <option value="{{conditionType.id}}" *ng-for="var conditionType of conditionTypes; var i=index">
+          {{conditionType.name}}
+        </option>
+      </select>
+    </div>
+    <cw-request-header-conditionlet
+        *ng-if="conditionType?.id == 'UsersBrowserHeaderConditionlet'"
+        [comparator-value]="condition?.comparison"
+        [comparison-values]="conditionValue"
+        (change)="conditionChanged($event)"
+    >
+    </cw-request-header-conditionlet>
+    <cw-browser-conditionlet *ng-if="conditionType?.id == 'UsersBrowserConditionlet'"></cw-browser-conditionlet>
+    <cw-country-condition *ng-if="conditionType?.id == 'UsersCountryConditionlet'"
+                          [comparator-value]="condition?.comparison"
+                          [comparison-values]="conditionValue"
+                          (change)="conditionChanged($event)"
+    ></cw-country-condition>
+
+    <div class="col-sm-2">
+      <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause"
+              (click)="removeCondition()">
+        <span class="glyphicon glyphicon-trash" aria-hidden="true" (click)="removeCondition()"></span>
+      </button>
+    </div>
+  </div>
+</div>`,
   directives: [NgIf, NgFor,
     UsersVisitedUrlConditionlet,
     UsersIpAddressConditionlet,

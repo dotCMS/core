@@ -5,7 +5,6 @@
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 import {ConditionComponent} from './rule-condition-component';
 
-import {conditionGroupTemplate} from './templates/index'
 import {ApiRoot} from 'api/persistence/ApiRoot'
 
 @Component({
@@ -17,7 +16,24 @@ import {ApiRoot} from 'api/persistence/ApiRoot'
   ]
 })
 @View({
-  template: conditionGroupTemplate,
+  template: `<div class="row">
+  <div class="col-sm-12">
+    <div class="alert alert-info" *ng-if="groupIndex !== 0">
+      <p class="pull-left">
+        <a class="btn btn-default add-button-alert" (click)="toggleGroupOperator()">
+          {{group.operator}}
+        </a>
+      </p>
+      when the following condition(s) are met?
+    </div>
+  </div>
+</div>
+<div class="panel-body">
+  <rule-condition *ng-for="var meta of conditions; var i=index" [condition-meta]="meta" [index]="i"></rule-condition>
+  <button type="button" class="btn btn-default btn-md" aria-label="Add Condition" (click)="addCondition()">
+    <span class="glyphicon glyphicon-plus" aria-hidden="true" (click)="addCondition()"></span>
+  </button>
+</div>`,
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
