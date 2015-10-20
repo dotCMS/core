@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules.business;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -10,6 +11,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
@@ -21,26 +23,26 @@ import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
-public class RulesAPIImpl implements RulesAPI {
+public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
+
+    private final PermissionAPI perAPI;
+    private final RulesFactory rulesFactory;
 
     private static final Map<String, Conditionlet> conditionletMap = Maps.newHashMap();
     private static final Map<String, RuleActionlet> actionletMap = Maps.newHashMap();
-    private final PermissionAPI perAPI;
-    private final RulesFactory rulesFactory;
+
+    private static final List<Class> conditionletOSGIclasses = new ArrayList<Class>();
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
                          .add(UsersBrowserConditionlet.class)
@@ -75,7 +77,7 @@ public class RulesAPIImpl implements RulesAPI {
     public RulesAPIImpl() {
         perAPI = APILocator.getPermissionAPI();
         rulesFactory = FactoryLocator.getRulesFactory();
-        initConditionlets();
+        refreshConditionletsMap();
         initActionletMap();
     }
 
@@ -603,10 +605,11 @@ public class RulesAPIImpl implements RulesAPI {
         return parameter;
     }
 
-    private void initConditionlets() {
+    private void refreshConditionletsMap() {
         synchronized (conditionletMap) {
-            // get the dotmarketing-config.properties conditionlet classes
+            //Get the OSGi ones.
             List<Conditionlet> conditionlets = Lists.newArrayList(getCustomConditionlets());
+            //Get the default ones.
             conditionlets.addAll(getDefaultConditionlets());
 
             for (Conditionlet conditionlet : conditionlets) {
@@ -618,7 +621,7 @@ public class RulesAPIImpl implements RulesAPI {
                         conditionletMap.putIfAbsent(id, instance);
                     }
                     else {
-                        Logger.warn(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");
+                        Logger.info(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");
                     }
                 } catch (InstantiationException | IllegalAccessException e) {
                     Logger.error(RulesAPIImpl.class, e.getMessage(), e);
@@ -628,21 +631,20 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     private List<Conditionlet> getCustomConditionlets() {
-        List<Conditionlet> customClasses = Lists.newArrayList();
-        String customClassesStr = Config.getStringProperty(WebKeys.RULES_CONDITIONLET_CLASSES, null, false);
-        if(customClassesStr != null) {
+        //Get the Conditionlets form OSGI.
+        List<Conditionlet> customConditionlets = Lists.newArrayList();
 
-            String[] st = customClassesStr.split(",");
-            for (String className : st) {
-                try {
-                    Conditionlet e = (Conditionlet)Class.forName(className.trim()).newInstance();
-                    customClasses.add(e);
-                } catch (Exception e1) {
-                    Logger.error(RulesAPIImpl.class, "Error instantiating class '" + className + "' " + e1.getMessage(), e1);
-                }
+        for (Class<Conditionlet> z : conditionletOSGIclasses) {
+            try {
+                customConditionlets.add(z.newInstance());
+            } catch (InstantiationException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
+            } catch (IllegalAccessException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
             }
         }
-        return customClasses;
+
+        return customConditionlets;
     }
 
     private List<Conditionlet> getDefaultConditionlets() {
@@ -728,5 +730,40 @@ public class RulesAPIImpl implements RulesAPI {
 
     public RuleActionlet findActionlet(String actionletId) throws DotDataException, DotSecurityException {
         return actionletMap.get(actionletId);
+    }
+
+    public void registerBundleService () {
+        if(Config.getBooleanProperty("felix.osgi.enable", true)){
+            // Register main service
+            BundleContext context = HostActivator.instance().getBundleContext();
+            Hashtable<String, String> props = new Hashtable<String, String>();
+            context.registerService(ConditionletOSGIService.class.getName(), this, props);
+        }
+    }
+
+    /**
+     * Adds a given Conditionlet class to the list of Rules Engine Conditionlet, this method will instantiate and
+     * initialize (init method) the given Conditionlet.
+     *
+     * @param conditionletClass
+     */
+    @Override
+    public String addConditionlet(Class conditionletClass) {
+        conditionletOSGIclasses.add(conditionletClass);
+        refreshConditionletsMap();
+        return conditionletClass.getCanonicalName();
+    }
+
+    /**
+     * Removes a given Conditionlet class from the list of Rules Engine Conditionlet.
+     *
+     * @param conditionletName
+     */
+    @Override
+    public void removeConditionlet(String conditionletName) {
+        Conditionlet conditionlet = conditionletMap.get(conditionletName);
+        conditionletOSGIclasses.remove(conditionlet.getClass());
+        conditionletMap.remove(conditionletName);
+        refreshConditionletsMap();
     }
 }
