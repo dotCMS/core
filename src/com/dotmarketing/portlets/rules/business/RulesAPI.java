@@ -319,5 +319,6 @@ public interface RulesAPI {
      */
     RuleActionlet findActionlet(String clazz) throws DotDataException, DotSecurityException;
 
+    void registerBundleService();
 
 }

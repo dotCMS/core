@@ -14,6 +14,9 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
+import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
@@ -64,8 +67,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
     private CacheOSGIService cacheOSGIService;
+    private ConditionletOSGIService conditionletOSGIService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
+    private Collection<Conditionlet> conditionlets;
     private Collection<Class<CacheProvider>> cacheProviders;
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
@@ -96,6 +101,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
         forceToolBoxLoading( context );
         //Forcing the loading of the WorkflowService
         forceWorkflowServiceLoading( context );
+        //Forcing the loading of the Rule Engine Conditionlet
+        forceRuleConditionletServiceLoading(context);
         //Forcing the loading of the CacheOSGIService
         forceCacheProviderServiceLoading(context);
     }
@@ -206,6 +213,31 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 if ( serviceRefSelected == null ) {
                     //Forcing the registration of our required services
                     workflowAPI.registerBundleService();
+                }
+            }
+        }
+    }
+
+    /**
+     * Is possible on certain scenarios to have our Rule Conditionlet without initialization, or most probably a Rule Conditionlet without
+     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
+     *
+     * @param context
+     */
+    private void forceRuleConditionletServiceLoading ( BundleContext context ) {
+
+        //Getting the service to register our Actionlet.
+        ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+        if ( serviceRefSelected == null ) {
+
+            //Forcing the loading of the Rule Conditionlet Service.
+            RulesAPI rulesAPI = APILocator.getRulesAPI();
+            if ( rulesAPI != null ) {
+
+                serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+                if ( serviceRefSelected == null ) {
+                    //Forcing the registration of our required services
+                    rulesAPI.registerBundleService();
                 }
             }
         }
@@ -564,6 +596,32 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Register a Rules Engine Conditionlet service
+     *
+     * @param context
+     * @param conditionlet
+     */
+    @SuppressWarnings ("unchecked")
+    protected void registerRuleConditionlet ( BundleContext context, Conditionlet conditionlet) {
+
+        //Getting the service to register our Conditionlet
+        ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+        if ( serviceRefSelected == null ) {
+            return;
+        }
+
+        if ( conditionlets == null ) {
+            conditionlets = new ArrayList<Conditionlet>();
+        }
+
+        this.conditionletOSGIService = (ConditionletOSGIService) context.getService( serviceRefSelected );
+        this.conditionletOSGIService.addConditionlet(conditionlet.getClass());
+        conditionlets.add( conditionlet );
+
+        Logger.info( this, "Added Rule Conditionlet: " + conditionlet.getName() );
+    }
+
+    /**
      * Register a given CacheProvider implementation
      *
      * @param context
@@ -734,6 +792,20 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
                 Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName());
+            }
+        }
+    }
+
+    /**
+     * Unregister the registered Rules Conditionlet services
+     */
+    protected void unregisterConditionlets() {
+
+        if ( this.conditionletOSGIService != null && conditionletOSGIService != null ) {
+            for ( Conditionlet conditionlet : conditionlets ) {
+
+                this.conditionletOSGIService.removeConditionlet(conditionlet.getClass().getSimpleName());
+                Logger.info( this, "Removed Rules Conditionlet: " + conditionlet.getClass().getSimpleName());
             }
         }
     }
