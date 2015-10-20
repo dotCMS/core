@@ -1,4 +1,4 @@
-package com.dotcms.rest.api.v1.system.conditionlet;
+package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.junit.Test;
@@ -6,7 +6,6 @@ import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 
