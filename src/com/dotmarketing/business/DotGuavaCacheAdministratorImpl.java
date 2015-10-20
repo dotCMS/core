@@ -399,18 +399,6 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 		cacheRemoveRunnable.run();
 	}
 
-	public Set<String> getKeys ( String group ) {
-
-		if ( group == null ) {
-			return null;
-		}
-
-		group = group.toLowerCase();
-
-		//Returns all the registered keys in a given group
-		return cacheProviderAPI.getKeys(group);
-	}
-
 	public Set<String> getGroups () {
 		//Returns all groups in the cache
 		return cacheProviderAPI.getGroups();

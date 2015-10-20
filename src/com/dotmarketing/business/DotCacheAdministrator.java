@@ -23,20 +23,6 @@ public interface DotCacheAdministrator  {
 	 * Initializes the CacheProviders
 	 */
 	void initProviders ();
-	
-	/**
-	 * Returns all keys within the group
-	 * 
-	 * @param group
-	 * @return
-	 * @deprecated Not all caching implementations are familiar with the concept
-	 *             of cache groups. Therefore, this method will not be
-	 *             applicable anymore and any existing or new implementation
-	 *             will have to figure out a new solution to replace cache
-	 *             groups.
-	 */
-	@Deprecated 
-	Set<String> getKeys ( String group );
 
 	/**
 	 * Returns all groups in the cache
