@@ -4,13 +4,12 @@
 package com.dotmarketing.velocity;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.Set;
 
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
 import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
@@ -68,15 +67,6 @@ public class DotResourceCache implements ResourceCache,Cachable {
     		Logger.fatal(this,"Unable to instaniate dotCMS Velocity Cache",mfe);
 			Logger.error(this,mfe.getMessage(),mfe);
 		}
-	}
-	
-	/* (non-Javadoc)
-	 * @see org.apache.velocity.runtime.resource.ResourceCache#enumerateKeys()
-	 */
-	public Iterator enumerateKeys() {
-		Set<String> s = cache.getKeys(primaryGroup);
-		s.addAll(cache.getKeys(menuGroup));
-		return s.iterator(); 
 	}
 
 	/* (non-Javadoc)
