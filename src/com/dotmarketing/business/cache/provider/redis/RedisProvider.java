@@ -6,10 +6,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
-import redis.clients.jedis.JedisPoolConfig;
-import redis.clients.jedis.Protocol;
+import redis.clients.jedis.*;
 
 import java.io.*;
 import java.util.*;
@@ -26,9 +23,6 @@ public class RedisProvider extends CacheProvider {
 
     //Global Map of contents that could not be added to this cache
     private static Map<String, String> cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
-
-    //Global list of groups
-    private Set<String> groups = new HashSet<>();
 
     private JedisPool writePool;//Master
     private JedisPool readPool;//Slave
@@ -144,14 +138,10 @@ public class RedisProvider extends CacheProvider {
             //Add the object to redis master
             jedis.set(compoundKey.toString().getBytes(), data);
 
-            //Add the given group to the global list of groups
-            groups.add(group);
-
         } catch ( NotSerializableException ex ) {
             remove(group, key);
             cannotCacheCache.put(compoundKey.toString(), compoundKey.toString());
-            Logger.error(this, "Error Adding to Redis [NotSerializableException]: group [" + group + "] - key [" + key + "].");
-            Logger.debug(this, "Error Adding to Redis: group [" + group + "] - key [" + key + "].", ex);
+            Logger.error(this, "Error Adding to Redis [NotSerializableException]: group [" + group + "] - key [" + key + "].", ex);
         } catch ( Exception e ) {
             Logger.error(this, "Error Adding to Redis: group [" + group + "] - key [" + key + "].", e);
         } finally {
@@ -295,9 +285,6 @@ public class RedisProvider extends CacheProvider {
         } catch ( Exception e ) {
             Logger.error(this, "Error removing from Redis: group [" + group + "].", e);
         }
-
-        //Remove the given group from the global list of groups
-        groups.remove(group);
     }
 
     @Override
@@ -308,9 +295,6 @@ public class RedisProvider extends CacheProvider {
         } catch ( Exception e ) {
             Logger.error(this, "Error removing all from Redis.", e);
         }
-
-        //Clear the global list of groups
-        groups.clear();
 
         //Reset the list of objects that cannot be in the Cache
         resetCannotCacheCache();
@@ -337,7 +321,24 @@ public class RedisProvider extends CacheProvider {
 
     @Override
     public Set<String> getGroups () {
-        return groups;
+
+        Set<String> currentGroups = new HashSet<>();
+
+        try ( Jedis jedis = readPool.getResource() ) {
+
+            //Get the complete list of keys
+            Set<String> keys = jedis.keys("*");
+            for ( String key : keys ) {
+
+                //Read each key in order to get the groups
+                currentGroups.add(key.split(String.valueOf(delimit))[0]);
+            }
+
+        } catch ( Exception e ) {
+            Logger.error(this, "Error retrieving Redis groups list", e);
+        }
+
+        return currentGroups;
     }
 
     @Override
@@ -345,23 +346,48 @@ public class RedisProvider extends CacheProvider {
 
         List<Map<String, Object>> list = new ArrayList<>();
 
-        Set<String> currentGroups = new HashSet<>();
-        currentGroups.addAll(getGroups());
+        try ( Jedis jedis = readPool.getResource() ) {
 
-        for ( String group : currentGroups ) {
+            //Getting some stats from redis
+            Client client = jedis.getClient();
+            client.info("memory");
+            String memoryStats = client.getBulkReply();
 
-            Map<String, Object> stats = new HashMap<>();
-            stats.put("name", getName());
-            stats.put("key", getKey());
-            stats.put("region", group);
-            stats.put("toDisk", false);
+            //Read the total memory usage
+            int memoryUsage = -1;
+            String memoryUsageString = getRedisProperty(memoryStats, "used_memory");
+            if ( memoryUsageString != null ) {
+                memoryUsage = Integer.valueOf(memoryUsageString);
+            }
 
-            stats.put("isDefault", false);
-            stats.put("memory", "0");
-            stats.put("disk", -1);
-            stats.put("configuredSize", -1);
+            //Getting the list of groups
+            Set<String> currentGroups = getGroups();
 
-            list.add(stats);
+            for ( String group : currentGroups ) {
+
+                Map<String, Object> stats = new HashMap<>();
+                stats.put("name", getName());
+                stats.put("key", getKey());
+                stats.put("region", group);
+                stats.put("toDisk", true);
+
+                stats.put("isDefault", false);
+                stats.put("memory", -1);
+                stats.put("disk", getKeys(group).size());
+                stats.put("configuredSize", memoryUsage);
+
+                /*
+                Show the complete memory usage just one time,
+                the cache stats page needs improvements (html/portlet/ext/cmsmaintenance/cachestats_guava.jsp), that page was not
+                created in caches that does not rely on groups
+                 */
+                memoryUsage = 0;
+
+                list.add(stats);
+            }
+
+        } catch ( Exception e ) {
+            Logger.error(this, "Error generating Stats for Redis", e);
         }
 
         return list;
@@ -373,6 +399,32 @@ public class RedisProvider extends CacheProvider {
         Logger.info(this.getClass(), "*** Destroying [" + getName() + "] pool.");
         writePool.destroy();
         readPool.destroy();
+    }
+
+    private String getRedisProperty ( String redisReport, String property ) {
+
+        String value = null;
+
+        String[] readLines = redisReport.split("\r\n");
+        for ( String readLine : readLines ) {
+
+            String[] lineValues = readLine.split(":");
+
+            //First check if it is a property or a header
+            if ( lineValues.length > 1 ) {
+
+                String currentProperty = lineValues[0];
+                String currentValue = lineValues[1];
+
+                if ( currentProperty.equals(property) ) {
+                    //Found it
+                    value = currentValue;
+                    break;
+                }
+            }
+        }
+
+        return value;
     }
 
     /**
