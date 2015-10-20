@@ -15,7 +15,6 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
-import com.dotcms.rest.config.AuthenticationProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -40,10 +39,10 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1/sites/{siteId}/ruleengine")
-public class ConditionGroupResource extends WebResource {
+public class ConditionGroupResource  {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final ConditionGroupTransform groupTransform = new ConditionGroupTransform();
     private HostAPI hostAPI;
 
@@ -53,14 +52,14 @@ public class ConditionGroupResource extends WebResource {
     }
 
     private ConditionGroupResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionGroupResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionGroupResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     @GET
@@ -182,7 +181,7 @@ public class ConditionGroupResource extends WebResource {
 
     @VisibleForTesting
     User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting

@@ -1,6 +1,14 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.bundle.bean.Bundle;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
+import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -10,28 +18,16 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
-
-import java.net.URISyntaxException;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/bundle")
-public class BundleResource extends WebResource {
+public class BundleResource {
+
+    private final WebResource webResource = new WebResource();
 
     /**
      * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
@@ -49,7 +45,8 @@ public class BundleResource extends WebResource {
     @Produces ("application/json")
     public Response getUnsendBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, true );
+
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -113,8 +110,8 @@ public class BundleResource extends WebResource {
 	@Path("/updatebundle/{params:.*}")
 	@Produces("application/json")
 	public Response updateBundle(@Context HttpServletRequest request, @PathParam("params") String params) throws IOException {
-	
-		InitDataObject initData = init(params, true, request, true);
+
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 	    //Creating an utility response object
 	    ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 	
@@ -143,7 +140,7 @@ public class BundleResource extends WebResource {
 	@Produces("application/json")
 	public Response deletePushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
 
-        InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -170,7 +167,7 @@ public class BundleResource extends WebResource {
 	@Produces("application/json")
 	public Response deleteEnvironmentPushHistory(@Context HttpServletRequest request, @PathParam("params") String params) {
 
-        InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 

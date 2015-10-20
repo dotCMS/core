@@ -7,9 +7,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueTransform;
-import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionValue;
-import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -39,7 +37,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final ConditionValueTransform conditionValueTransform;
     private HostAPI hostAPI;
 
@@ -48,14 +46,14 @@ public class ConditionValueResource {
     }
 
     private ConditionValueResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionValueResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionValueResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
         this.conditionValueTransform = new ConditionValueTransform();
     }
 
@@ -194,7 +192,7 @@ public class ConditionValueResource {
 
     @VisibleForTesting
     User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting

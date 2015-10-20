@@ -14,7 +14,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -40,7 +40,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 public class ConditionResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final ConditionTransform conditionTransform;
     private HostAPI hostAPI;
 
@@ -49,14 +49,14 @@ public class ConditionResource {
     }
 
     private ConditionResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ConditionResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ConditionResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
         this.conditionTransform = new ConditionTransform();
     }
 
@@ -78,7 +78,7 @@ public class ConditionResource {
         try {
             getHost(siteId, user);
             Condition condition = checkNotNull(rulesAPI.getConditionById(conditionId, user, false)
-                ,BadRequestException.class, "Not valid Condition");
+                , BadRequestException.class, "Not valid Condition");
             RestCondition restCondition = conditionTransform.appToRest(condition);
             return Response.ok(restCondition).build();
         } catch (DotDataException | DotSecurityException e) {
@@ -162,7 +162,7 @@ public class ConditionResource {
 
     @VisibleForTesting
     User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     @VisibleForTesting

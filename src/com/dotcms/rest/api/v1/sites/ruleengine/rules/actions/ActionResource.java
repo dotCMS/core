@@ -15,7 +15,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
-import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -38,7 +38,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 public class ActionResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
     private final RuleActionTransform actionTransform = new RuleActionTransform();
     private HostAPI hostAPI;
 
@@ -47,14 +47,14 @@ public class ActionResource {
     }
 
     private ActionResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    protected ActionResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    protected ActionResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     /**
@@ -152,7 +152,7 @@ public class ActionResource {
     }
 
     private User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 
     private Host getHost(String siteId, User user) {

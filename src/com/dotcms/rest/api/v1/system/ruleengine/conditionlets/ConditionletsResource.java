@@ -11,7 +11,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
-import com.dotcms.rest.config.AuthenticationProvider;
+import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.ApiProvider;
@@ -34,20 +34,20 @@ import javax.servlet.http.HttpServletRequest;
 public class ConditionletsResource {
 
     private final RulesAPI rulesAPI;
-    private final AuthenticationProvider authProxy;
+    private final WebResource webResource;
 
     public ConditionletsResource() {
         this(new ApiProvider());
     }
 
     private ConditionletsResource(ApiProvider apiProvider) {
-        this(apiProvider, new AuthenticationProvider(apiProvider));
+        this(apiProvider, new WebResource(apiProvider));
     }
 
     @VisibleForTesting
-    ConditionletsResource(ApiProvider apiProvider, AuthenticationProvider authProxy) {
+    ConditionletsResource(ApiProvider apiProvider, WebResource webResource) {
         this.rulesAPI = apiProvider.rulesAPI();
-        this.authProxy = authProxy;
+        this.webResource = webResource;
     }
 
     /**
@@ -156,6 +156,6 @@ public class ConditionletsResource {
     }
 
     private User getUser(@Context HttpServletRequest request) {
-        return authProxy.authenticate(request);
+        return webResource.init(true, request, true).getUser();
     }
 }
