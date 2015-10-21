@@ -14,6 +14,7 @@ System.config({
   },
   paths: {
     "api/*": "build/api/*",
+    "view/*": "build/view/*",
     "coreweb/api/*": "build/api/*",
     "rule-engine/*": "build/view/components/rule-engine/*",
     "src/*": "build/*.js",
@@ -23,21 +24,34 @@ System.config({
   },
 
   map: {
+    "angular-material": "github:angular/bower-material@0.11.4",
     "angular2": "npm:angular2@2.0.0-alpha.36",
     "babel": "npm:babel-core@5.8.23",
     "babel-runtime": "npm:babel-runtime@5.8.20",
-    "bootstrap": "github:twbs/bootstrap@3.3.4",
     "clean-css": "npm:clean-css@3.3.9",
     "core-js": "npm:core-js@1.1.3",
     "css": "github:systemjs/plugin-css@0.1.15",
     "es6-promise": "npm:es6-promise@2.3.0",
     "es6-shim": "github:es-shims/es6-shim@0.32.3",
     "events": "github:jspm/nodelibs-events@0.1.0",
+    "jquery": "github:components/jquery@2.1.4",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
     "rx": "npm:rx@2.5.3",
     "text": "github:systemjs/plugin-text@0.0.2",
     "whatwg-fetch": "npm:whatwg-fetch@0.9.0",
     "zone.js": "npm:zone.js@0.5.4",
+    "github:angular/bower-angular-animate@1.4.7": {
+      "angular": "github:angular/bower-angular@1.4.7"
+    },
+    "github:angular/bower-angular-aria@1.4.7": {
+      "angular": "github:angular/bower-angular@1.4.7"
+    },
+    "github:angular/bower-material@0.11.4": {
+      "angular": "github:angular/bower-angular@1.4.7",
+      "angular-animate": "github:angular/bower-angular-animate@1.4.7",
+      "angular-aria": "github:angular/bower-angular-aria@1.4.7",
+      "css": "github:systemjs/plugin-css@0.1.15"
+    },
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
     },
@@ -90,9 +104,6 @@ System.config({
     },
     "github:jspm/nodelibs-vm@0.1.0": {
       "vm-browserify": "npm:vm-browserify@0.0.4"
-    },
-    "github:twbs/bootstrap@3.3.4": {
-      "jquery": "github:components/jquery@2.1.4"
     },
     "npm:amdefine@1.0.0": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",

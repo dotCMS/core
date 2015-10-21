@@ -34,43 +34,50 @@ import {UsersLogInConditionlet} from './conditionlets/users-log-in-conditionlet'
   properties: ["conditionMeta", "index"]
 })
 @View({
-  template: `<div class="panel panel-default clause conditions">
-  <div class="row">
-    <div class="col-sm-1">
-      <button *ng-if="index !== 0" type="button" class="btn btn-default" (click)="toggleOperator()">
-        {{condition.operator}}
-      </button>
+  template: `<div flex layout="column" layout-align="center-start" class="cw-condition cw-entry">
+  <div flex layout="row" layout-align="space-between-center">
+
+    <div class="cw-btn-group" >
+      <div class="ui basic icon buttons" (click)="toggleOperator()" *ng-if="index !== 0">
+        <button flex="none" class="ui button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()">
+          {{condition.operator}}
+        </button>
+      </div>
     </div>
-    <div class="col-sm-3">
-      <select class="form-control clause-selector" [value]="conditionType?.id"
-              (change)="setConditionlet($event.target.value)">
-        <option value="{{conditionType.id}}" *ng-for="var conditionType of conditionTypes; var i=index">
-          {{conditionType.name}}
-        </option>
-      </select>
-    </div>
+    <div class="cw-spacer cw-condition-operator" (click)="toggleOperator()" *ng-if="index === 0"></div>
+    <select [value]="conditionType?.id" (change)="setConditionlet($event.target.value)">
+      <option value="{{conditionType.id}}" *ng-for="var conditionType of conditionTypes; var i=index">
+        {{conditionType.name}}
+      </option>
+    </select>
+
     <cw-request-header-conditionlet
+        flex="grow"
         *ng-if="conditionType?.id == 'UsersBrowserHeaderConditionlet'"
         [comparator-value]="condition?.comparison"
         [comparison-values]="conditionValue"
-        (change)="conditionChanged($event)"
-    >
+        (change)="conditionChanged($event)">
     </cw-request-header-conditionlet>
-    <cw-browser-conditionlet *ng-if="conditionType?.id == 'UsersBrowserConditionlet'"></cw-browser-conditionlet>
-    <cw-country-condition *ng-if="conditionType?.id == 'UsersCountryConditionlet'"
-                          [comparator-value]="condition?.comparison"
-                          [comparison-values]="conditionValue"
-                          (change)="conditionChanged($event)"
-    ></cw-country-condition>
+    <cw-browser-conditionlet
+        flex="grow"
+        *ng-if="conditionType?.id == 'UsersBrowserConditionlet'">
+    </cw-browser-conditionlet>
+    <cw-country-condition
+        flex="grow"
+        *ng-if="conditionType?.id == 'UsersCountryConditionlet'"
+        [comparator-value]="condition?.comparison"
+        [comparison-values]="conditionValue"
+        (change)="conditionChanged($event)">
+    </cw-country-condition>
 
-    <div class="col-sm-2">
-      <button type="button" class="btn btn-default btn-md btn-danger" aria-label="Delete Clause"
-              (click)="removeCondition()">
-        <span class="glyphicon glyphicon-trash" aria-hidden="true" (click)="removeCondition()"></span>
-      </button>
+    <div class="cw-btn-group">
+      <div class="ui basic icon buttons">
+        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
+          <i class="trash icon" (click)="removeCondition()"></i>
+        </button>
     </div>
   </div>
-</div>`,
+`,
   directives: [NgIf, NgFor,
     UsersVisitedUrlConditionlet,
     UsersIpAddressConditionlet,
