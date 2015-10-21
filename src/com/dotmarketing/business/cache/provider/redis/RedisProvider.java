@@ -307,11 +307,16 @@ public class RedisProvider extends CacheProvider {
             return null;
         }
 
-        group = group.toLowerCase();
-
         //Reading the keys from the redis slave
         try ( Jedis jedis = readPool.getResource() ) {
-            return jedis.keys(group + "*");
+
+            //Building the key
+            StringWriter compoundKey = new StringWriter();
+            compoundKey.append(group.toLowerCase());
+            compoundKey.append(delimit);
+            compoundKey.append("*");
+
+            return jedis.keys(compoundKey.toString());
         } catch ( Exception e ) {
             Logger.error(this, "Error retrieving Redis keys", e);
         }
