@@ -131,7 +131,6 @@ class RuleComponent {
   }
 
   toggleCollapsed() {
-    console.log('collapsed: ', this.collapsed)
     this.collapsed = !this.collapsed
   }
 
@@ -185,7 +184,6 @@ class RuleComponent {
   }
 
   addCondition(groupSnap) {
-    console.log('Adding condition to new condition group')
     let group = groupSnap.val()
     let condition = {
       priority: 10,
@@ -253,7 +251,6 @@ class RuleComponent {
   }
 
   updateRule() {
-    console.log('Updating Rule')
     return this.ruleSnap.ref().set(this.rule)
   }
 

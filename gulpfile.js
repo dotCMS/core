@@ -285,7 +285,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
-      .directory('./dist/jspm_packages', 'jspm_packages')
+      .directory('./dist/thirdparty', 'thirdparty')
       .finalize()
 
 });
@@ -440,8 +440,8 @@ gulp.task('copy-dist-images', function () {
 })
 
 
-gulp.task('copy-dist-bootstrap', function () {
-  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest(config.distDir + '/jspm_packages/github/twbs/'))
+gulp.task('copy-dist-thirdparty', function () {
+  return gulp.src(['./thirdparty/**/*']).pipe(gulp.dest(config.distDir + '/thirdparty/'))
 })
 
 gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], function () {
@@ -449,7 +449,7 @@ gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], fu
 })
 
 
-gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap', 'copy-dist-images'], function () {
+gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-thirdparty', 'copy-dist-images'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
