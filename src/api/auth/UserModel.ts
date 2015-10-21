@@ -21,6 +21,7 @@ export class UserModel {
       let idx = q.indexOf(token)
       if (idx >= 0) {
         let end = q.indexOf('&', idx)
+        end = end != -1 ? end : q.indexOf('#', idx)
         end = end != -1 ? end : q.length
         locale = q.substring(idx + token.length, end)
         console.log('Locale set to to ', locale)

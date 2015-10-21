@@ -54,15 +54,20 @@ import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
 })
 @View({
   directives: [NgFor],
-  template: `
-  <div class="col-sm-3">
-    <input type="text" class="form-control action-value" [value]="value.sessionKey"
-           placeholder="Enter a session key" (change)="updateSessionKey($event)"/>
-  </div>
-  <div class="col-sm-3">
-    <input type="text" class="form-control action-value" [value]="value.sessionValue" placeholder="Enter a value"
-           (change)="updateSessionValue($event)"/>
-  </div>
+  template: `<div flex="grow" layout="row" layout-align="space-around-center">
+  <input flex
+         type="text"
+         class="cw-action-value cw-input"
+         [value]="value.sessionKey"
+         placeholder="Enter a session key"
+         (change)="updateSessionKey($event)"/>
+  <input flex
+         type="text"
+         class="cw-action-value cw-input"
+         [value]="value.sessionValue"
+         placeholder="Enter a value"
+         (change)="updateSessionValue($event)"/>
+</div>
   `
 })
 export class SetSessionValueAction {

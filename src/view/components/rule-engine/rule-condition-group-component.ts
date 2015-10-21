@@ -5,7 +5,6 @@
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 import {ConditionComponent} from './rule-condition-component';
 
-import {conditionGroupTemplate} from './templates/index'
 import {ApiRoot} from 'api/persistence/ApiRoot'
 
 @Component({
@@ -17,7 +16,36 @@ import {ApiRoot} from 'api/persistence/ApiRoot'
   ]
 })
 @View({
-  template: conditionGroupTemplate,
+  template: `<div flex="grow" layout="column" layout-align="center-start" class="cw-rule-group">
+  <div flex="grow" layout="row" layout-align="center-center">
+    <div flex layout="row" layout-align="start-center" class="cw-header" *ng-if="groupIndex === 0">
+      This rule fires when the following conditions are met:
+    </div>
+    <div flex layout="row" layout-align="center-center" class="cw-header" *ng-if="groupIndex !== 0">
+      <div class="ui basic icon buttons">
+        <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
+          <div (click)="toggleGroupOperator()">{{group.operator}}</div>
+        </button>
+      </div>
+      <span flex class="cw-header-text">when the following condition(s) are met:</span>
+    </div>
+  </div>
+  <div flex layout="column" layout-align="center-center" class="cw-conditions">
+    <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var meta of conditions; var i=index">
+      <rule-condition flex layout="row" [condition-meta]="meta" [index]="i"></rule-condition>
+      <div class="cw-spacer cw-add-condition" *ng-if="i !== (conditions.length - 1)"></div>
+      <div class="cw-btn-group" *ng-if="i === (conditions.length - 1)">
+        <div class="ui basic icon buttons">
+          <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" >
+            <i class="plus icon" aria-hidden="true" (click)="addCondition();"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+`,
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
@@ -37,16 +65,16 @@ export class ConditionGroupComponent {
     this.groupIndex = 0
     this.conditionsRef = this.apiRoot.defaultSite.child('ruleengine/conditions')
     this.conditionsRef.on('child_added', (conditionSnap) => {
-      if(conditionSnap.val().owningGroup == this.groupSnap.key()) {
+      if (conditionSnap.val().owningGroup == this.groupSnap.key()) {
         this.conditions.push(conditionSnap.ref())
       }
     })
     this.conditionsRef.on('child_removed', (conditionSnap) => {
-      if(conditionSnap.val().owningGroup == this.groupSnap.key()){
-        this.conditions = this.conditions.filter((existingSnap) =>{
+      if (conditionSnap.val().owningGroup == this.groupSnap.key()) {
+        this.conditions = this.conditions.filter((existingSnap) => {
           return existingSnap.key() != conditionSnap.key()
         })
-        if(this.conditions.length === 0){
+        if (this.conditions.length === 0) {
           this._groupSnap.ref().remove()
         }
       }

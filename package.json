@@ -8,13 +8,14 @@
   "jspm": {
     "directories": {},
     "dependencies": {
+      "angular-material": "github:angular/bower-material@^0.11.4",
       "angular2": "npm:angular2@2.0.0-alpha.36",
-      "bootstrap": "github:twbs/bootstrap@3.3.4",
       "clean-css": "npm:clean-css@3.3.9",
       "css": "github:systemjs/plugin-css@0.1.15",
       "es6-promise": "npm:es6-promise@2.3.0",
       "es6-shim": "github:es-shims/es6-shim@0.32.3",
       "events": "github:jspm/nodelibs-events@0.1.0",
+      "jquery": "github:components/jquery@2.1.4",
       "reflect-metadata": "npm:reflect-metadata@0.1.0",
       "rx": "npm:rx@2.5.3",
       "text": "github:systemjs/plugin-text@0.0.2",

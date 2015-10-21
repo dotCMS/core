@@ -94,7 +94,7 @@ let commonRequestHeaders = [
 
 
 export class RequestHeaderConditionletModel {
-  parameterKeys: Array<string> = ['headerKeyValue', 'compareTo']
+  parameterKeys:Array<string> = ['headerKeyValue', 'compareTo']
   headerKeyValue:string
   comparatorValue:string
   compareTo:string
@@ -121,21 +121,19 @@ export class RequestHeaderConditionletModel {
 })
 @View({
   directives: [NgFor],
-  template: `
-      <div class="col-sm-2">
-        <select class="form-control header-key" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
-          <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">{{hkOpt}}</option>
-        </select>
-      </div>
-      <div class="col-sm-2">
-        <select class="form-control comparator" [value]="value.comparatorValue" (change)="updateComparator($event)">
-          <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">{{cOpt}}</option>
-        </select>
-      </div>
-      <div class="col-sm-3">
-        <input type="text" class="form-control condition-value" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
-      </div>
-  `
+  template: `<div flex="grow" layout="row" layout-align="space-around-center">
+  <select flex class="cw-input" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
+    <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">
+      {{hkOpt}}
+    </option>
+  </select>
+  <select flex class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
+    <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
+      {{cOpt}}
+    </option>
+  </select>
+  <input flex type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
+</div>`
 })
 export class RequestHeaderConditionlet {
   // @todo populate the comparisons options from the server.
@@ -154,15 +152,15 @@ export class RequestHeaderConditionlet {
   }
 
   _modifyEventForForwarding(event:Event, field, oldState:RequestHeaderConditionletModel):Event {
-    Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field })
+    Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field})
     return event
   }
 
-  set headerKeyValue(value:string){
+  set headerKeyValue(value:string) {
     this.value.headerKeyValue = value
   }
 
-  set comparatorValue(value:string){
+  set comparatorValue(value:string) {
     this.value.comparatorValue = value
   }
 
