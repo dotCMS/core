@@ -381,9 +381,6 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 		cacheRemoveRunnable.run();
 	}
 
-	/*
-	 * This method should only be called by Jgroups because it doesn't handle any local transaction as the remove does. 
-	 */
 	public void removeLocalOnly ( final String key, final String group ) {
 
 		if ( key == null || group == null ) {
