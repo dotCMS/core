@@ -54,7 +54,17 @@ public class UsersContinentConditionlet extends Conditionlet {
     private static final long serialVersionUID = 1L;
 
     private static final String INPUT_ID = "country";
-    private static final String CONDITIONLET_NAME = "User's Continent";
+
+    private static final String CONDITIONLET_NAME_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.name";
+    private static final String CONDITIONLET_IS_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.comparison.is";
+    private static final String CONDITIONLET_ISNOT_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.comparison.isnot";
+    private static final String CONDITIONLET_COUNTRY_AFRICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.africa";
+    private static final String CONDITIONLET_COUNTRY_ANTARCTICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.antarctica";
+    private static final String CONDITIONLET_COUNTRY_ASIA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.asia";
+    private static final String CONDITIONLET_COUNTRY_EUROPE = "com.dotmarketing.osgi.ruleengine.conditionlet.country.europe";
+    private static final String CONDITIONLET_COUNTRY_NORTH_AMERICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.northamerica";
+    private static final String CONDITIONLET_COUNTRY_OCEANIA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.oceania";
+    private static final String CONDITIONLET_COUNTRY_SOUTH_AMERICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.southamerica";
 
     private static final String COMPARISON_IS = "is";
     private static final String COMPARISON_ISNOT = "isNot";
@@ -71,7 +81,7 @@ public class UsersContinentConditionlet extends Conditionlet {
 
     @VisibleForTesting
     protected UsersContinentConditionlet(GeoIp2CityDbUtil geoIp2Util) {
-        super(CONDITIONLET_NAME);
+        super(CONDITIONLET_NAME_KEY);
         this.geoIp2Util = geoIp2Util;
     }
 
@@ -79,8 +89,8 @@ public class UsersContinentConditionlet extends Conditionlet {
     public Set<Comparison> getComparisons() {
         if (this.comparisons == null) {
             this.comparisons = new LinkedHashSet<Comparison>();
-            this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-            this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
+            this.comparisons.add(new Comparison(COMPARISON_IS, CONDITIONLET_IS_KEY));
+            this.comparisons.add(new Comparison(COMPARISON_ISNOT, CONDITIONLET_ISNOT_KEY));
         }
         return this.comparisons;
     }
@@ -138,16 +148,16 @@ public class UsersContinentConditionlet extends Conditionlet {
             // Set field configuration and available options
             inputField.setId(INPUT_ID);
             inputField.setMultipleSelectionAllowed(true);
-            inputField.setDefaultValue("AL");
+            inputField.setDefaultValue("NA");
             inputField.setMinNum(1);
             Set<EntryOption> options = new LinkedHashSet<EntryOption>();
-            options.add(new EntryOption("AF", "Africa"));
-            options.add(new EntryOption("AN", "Antarctica"));
-            options.add(new EntryOption("AS", "Asia"));
-            options.add(new EntryOption("EU", "Europe"));
-            options.add(new EntryOption("NA", "North america"));
-            options.add(new EntryOption("OC", "Oceania"));
-            options.add(new EntryOption("SA", "South america"));
+            options.add(new EntryOption("AF", CONDITIONLET_COUNTRY_AFRICA));
+            options.add(new EntryOption("AN", CONDITIONLET_COUNTRY_ANTARCTICA));
+            options.add(new EntryOption("AS", CONDITIONLET_COUNTRY_ASIA));
+            options.add(new EntryOption("EU", CONDITIONLET_COUNTRY_EUROPE));
+            options.add(new EntryOption("NA", CONDITIONLET_COUNTRY_NORTH_AMERICA));
+            options.add(new EntryOption("OC", CONDITIONLET_COUNTRY_OCEANIA));
+            options.add(new EntryOption("SA", CONDITIONLET_COUNTRY_SOUTH_AMERICA));
             inputField.setData(options);
             this.inputValues = new LinkedHashMap<String, ConditionletInput>();
             this.inputValues.put(inputField.getId(), inputField);
