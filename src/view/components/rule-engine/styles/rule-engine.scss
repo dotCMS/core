@@ -42,6 +42,10 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 }
 
+.cw-hidden {
+  display: none !important;
+}
+
 .cw-rule {
   margin: 0 2em 2em 2em;
   border: 1px solid $background-primary;

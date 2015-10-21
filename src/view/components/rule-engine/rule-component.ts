@@ -25,7 +25,7 @@ var rsrc = {
   properties: ["ruleSnap", "hidden"]
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule" *ng-if="!hidden">
+  template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden">
     <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true" (click)="toggleCollapsed()"></i>
     <input flex type="text" class="cw-name cw-input" placeholder="Describe the rule" [value]="rule.name" (change)="setRuleName($event.target.value)" (focus)="collapsed = false">
@@ -47,7 +47,7 @@ var rsrc = {
       </div>
     </div>
   </div>
-  <div flex layout="column" class="cw-accordion-body" *ng-if="!collapsed">
+  <div flex layout="column" class="cw-accordion-body" [class.cw-hidden]="collapsed">
     <condition-group flex="grow" layout="row" *ng-for="var groupSnap of ruleGroups; var i=index"
                      [rule]="rule"
                      [group-snap]="groupSnap"
