@@ -11,7 +11,6 @@ public class SchedulerJobLocator {
 		jobsList.add("com.dotmarketing.quartz.job.BinaryCleanupJob");
 		jobsList.add("com.dotmarketing.quartz.job.CalendarReminderThread");
 		jobsList.add("com.dotmarketing.quartz.job.CascadePermissionsJob");
-		jobsList.add("com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask");
 		jobsList.add("com.dotmarketing.quartz.job.ContentFromEmailJob");
 		jobsList.add("com.dotmarketing.quartz.job.ContentImportThread");
 		jobsList.add("com.dotmarketing.quartz.DotJob");

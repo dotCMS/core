@@ -23,13 +23,6 @@ public interface DotCacheAdministrator  {
 	 * Initializes the CacheProviders
 	 */
 	void initProviders ();
-	
-	/**
-	 * Returns all keys within the group
-	 * @param group
-	 * @return
-	 */
-	Set<String> getKeys ( String group );
 
 	/**
 	 * Returns all groups in the cache

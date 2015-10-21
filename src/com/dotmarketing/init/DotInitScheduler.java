@@ -26,7 +26,6 @@ import com.dotmarketing.business.cluster.mbeans.Cluster;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CalendarReminderThread;
-import com.dotmarketing.quartz.job.CleanBlockCacheScheduledTask;
 import com.dotmarketing.quartz.job.ContentFromEmailJob;
 import com.dotmarketing.quartz.job.ContentReindexerThread;
 import com.dotmarketing.quartz.job.ContentReviewThread;
@@ -522,41 +521,6 @@ public class DotInitScheduler {
 					sched.deleteJob("DashboardJobImpl", "dotcms_jobs");
 				}
 			}
-
-			if(UtilMethods.isSet(Config.getStringProperty("CLEAN_BLOCK_CACHE_JOB_CRON_EXPRESSION"))) {
-				try {
-					isNew = false;
-
-					try {
-						if ((job = sched.getJobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs")) == null) {
-							job = new JobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs", CleanBlockCacheScheduledTask.class);
-							isNew = true;
-						}
-					} catch (SchedulerException se) {
-						sched.deleteJob("CleanBlockCacheScheduledTask", "dotcms_jobs");
-						job = new JobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs", CleanBlockCacheScheduledTask.class);
-						isNew = true;
-					}
-					calendar = GregorianCalendar.getInstance();
-				    trigger = new CronTrigger("trigger16", "group16", "CleanBlockCacheScheduledTask", "dotcms_jobs", calendar.getTime(), null, Config.getStringProperty("CLEAN_BLOCK_CACHE_JOB_CRON_EXPRESSION"));
-					trigger.setMisfireInstruction(CronTrigger.MISFIRE_INSTRUCTION_DO_NOTHING);
-					sched.addJob(job, true);
-
-					if (isNew)
-						sched.scheduleJob(trigger);
-					else
-						sched.rescheduleJob("trigger16", "group16", trigger);
-				} catch (Exception e) {
-					Logger.error(DotInitScheduler.class, e.getMessage(),e);
-				}
-			} else {
-		        Logger.info(DotInitScheduler.class, "CleanBlockCacheScheduledTask Cron Job schedule disabled on this server");
-		        Logger.info(DotInitScheduler.class, "Deleting CleanBlockCacheScheduledTask Job");
-				if ((job = sched.getJobDetail("CleanBlockCacheScheduledTask", "dotcms_jobs")) != null) {
-					sched.deleteJob("CleanBlockCacheScheduledTask", "dotcms_jobs");
-				}
-			}
-
 
 			if(Config.getBooleanProperty("ENABLE_CREATE_CONTENT_FROM_EMAIL")) {
 				try {

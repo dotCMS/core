@@ -17,9 +17,8 @@ import com.dotmarketing.util.Logger;
  */
 public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cachable {
 	private final static String cacheGroup = "PublishingEndPointCache";
+	private final static String MAP_KEY = "publishing_endpoints_map";
 	private final static String[] cacheGroups = {cacheGroup};
-	private final static String initialEntryKey = "_aaaa_";
-	private PublishingEndPoint initialEntryObject = new PublishingEndPoint();
 	private DotCacheAdministrator cache;
 	private boolean isLoaded = false;
 
@@ -29,9 +28,14 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 	
 	public synchronized boolean isLoaded()
 	{	
-		if(cache.getKeys(cacheGroup).size() == 0) {
+		try {
+			Object obj = cache.get(MAP_KEY, cacheGroup);
+			if (obj != null) {
+				isLoaded = true;
+			}
+		} catch (DotCacheException e) {
+			Logger.debug(this, "PublishingEndPoint cache not loaded yet");
 			isLoaded = false;
-			cache.put(initialEntryKey, initialEntryObject, cacheGroup);
 		}
 		return isLoaded;
 	}
@@ -42,19 +46,18 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 
 	public synchronized List<PublishingEndPoint> getEndPoints() {
 		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
-		Set<String> keys = cache.getKeys(cacheGroup);
-		for(String key : keys) {
-			if(!key.equals(initialEntryKey)) {
-				try {
-					Object endPoint = cache.get(key, cacheGroup);
-					if ( endPoint != null ) {
-						endPoints.add((PublishingEndPoint) endPoint);
-					}
-				}
-				catch(DotCacheException e) {
-					Logger.error(PublishingEndPointCacheImpl.class, "Cache does not contain object for key returned via getKeys().  Key = " + key, e);
+		try {
+			Map<String, PublishingEndPoint> endPointsMap = (Map<String, PublishingEndPoint>) cache
+					.get(MAP_KEY, cacheGroup);
+			Set<String> keySet = endPointsMap.keySet();
+			if (keySet != null && keySet.size() > 0) {
+				for (String key : keySet) {
+					endPoints.add((PublishingEndPoint) endPointsMap.get(key));
 				}
 			}
+		} catch (DotCacheException e) {
+			Logger.debug(this, "PublishingEndPoint cache entry not found for: "
+					+ MAP_KEY);
 		}
 		return endPoints;
 	}
@@ -62,7 +65,11 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 	public synchronized PublishingEndPoint getEndPointById(String id) {
 		PublishingEndPoint endPoint = null;
 		try {
-			endPoint = (PublishingEndPoint) cache.get(id, cacheGroup);
+			Map<String, PublishingEndPoint> endPointsMap = (Map<String, PublishingEndPoint>) cache
+					.get(MAP_KEY, cacheGroup);
+			if (endPointsMap != null && endPointsMap.containsKey(id)) {
+				endPoint = (PublishingEndPoint) endPointsMap.get(id);
+			}
 		}
 		catch(DotCacheException e) {
 			Logger.debug(this, "PublishingEndPoint cache entry not found for: " + id);
@@ -71,14 +78,17 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 	}
 
 	public synchronized void add(PublishingEndPoint anEndPoint) {
-		if(anEndPoint != null) {
-			cache.put(anEndPoint.getId(), anEndPoint, cacheGroup);
-		}
+		cache.remove(MAP_KEY, cacheGroup);
+		isLoaded = false;
+	}
+
+	public synchronized void addAll(Map<String, PublishingEndPoint> endPoints) {
+		cache.put(MAP_KEY, endPoints, cacheGroup);
 	}
 
 	public synchronized void removeEndPointById(String id) {
-		if(id != null)
-			cache.remove(id, cacheGroup);
+		cache.remove(MAP_KEY, cacheGroup);
+		isLoaded = false;
 	}
 
 	public String getPrimaryGroup() {
@@ -90,6 +100,7 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 	}
 
 	public synchronized void clearCache() {
+		cache.remove(MAP_KEY, cacheGroup);
 		cache.flushGroup(cacheGroup);
 		isLoaded = false;
 	}

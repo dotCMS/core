@@ -79,7 +79,6 @@ public class CacheLocator extends Locator<CacheIndex>{
         public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
 
 		public void initProviders () {dotcache.initProviders();}
-		public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
 		public Set<String> getGroups () {return dotcache.getGroups();}
 		public void flushAll() { dotcache.flushAll(); }
         public void flushGroup(String group) { dotcache.flushGroup(group); }
