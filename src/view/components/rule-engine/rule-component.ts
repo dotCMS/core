@@ -99,10 +99,13 @@ class RuleComponent {
     if (this.rule.name === 'CoreWeb created this rule.') {
       this.rule.name = 'CoreWeb created this rule.' + new Date().toISOString();//to avoid duplicate name error for now
       this.updateRule()
-      var el = this.elementRef.nativeElement.children[0].children[0].children[0].children[0].children[1].childNodes[1]
+      var el:Element = this.elementRef.nativeElement
       window.setTimeout(function () {
-        el['focus']();
-      }, 10) //avoid tick recursively error
+        var els = el.getElementsByClassName('cw-name')
+        if(els[0]) {
+          els[0]['focus']();
+        }
+      }, 50) //avoid tick recursively error
     }
   }
 

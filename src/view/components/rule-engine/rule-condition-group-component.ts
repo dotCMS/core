@@ -24,7 +24,7 @@ import {ApiRoot} from 'api/persistence/ApiRoot'
     <div flex layout="row" layout-align="center-center" class="cw-header" *ng-if="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
-          <div>{{group.operator}}</div>
+          <div (click)="toggleGroupOperator()">{{group.operator}}</div>
         </button>
       </div>
       <span flex class="cw-header-text">when the following condition(s) are met:</span>
