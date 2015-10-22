@@ -174,9 +174,8 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "structure";
                                   }
                                   // Check if it is a language
-                                  Language language = APILocator.getLanguageAPI().getLanguage(identifier);
-                                  if (language != null && UtilMethods.isSet(language.getLanguage())) {
-                                	  type = "language";
+                                  if(APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
+                                      type = Language.ASSET_TYPE;
                                   }
                                   // check if it is a folder
                                   else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {

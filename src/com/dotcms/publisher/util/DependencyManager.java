@@ -245,7 +245,7 @@ public class DependencyManager {
 				} else {
 					workflows.add(asset.getAsset(),scheme.getModDate());
 				}
-			} else if (asset.getType().equals("language")) {
+			} else if (asset.getType().equals(Language.ASSET_TYPE)) {
 				Language language = APILocator.getLanguageAPI()
 						.getLanguage(asset.getAsset());
 				if (language == null || !UtilMethods.isSet(language.getLanguage())) {
