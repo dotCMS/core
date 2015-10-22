@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GuavaCache extends CacheProvider {
 
+    private static final long serialVersionUID = 1348649382678659786L;
+
     static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
     static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
     static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;

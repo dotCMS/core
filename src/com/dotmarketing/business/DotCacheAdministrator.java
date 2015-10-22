@@ -43,7 +43,7 @@ public interface DotCacheAdministrator  {
 	void flushGroup ( String group );
 	
 	/**
-	 * Flushes all cache locally
+	 * Flushes all cache on the local server only
 	 */
 	void flushAlLocalOnly ();
 	

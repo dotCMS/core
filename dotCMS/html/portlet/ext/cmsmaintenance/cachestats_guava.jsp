@@ -122,7 +122,9 @@ MemoryMeter meter = new MemoryMeter();
 				String sizeHighlightColor = "#aaaaaa";
 				if ( !isDefault ) {
 
-					totalConfMem += configuredSize;
+					if ( configuredSize > 0 ) {
+						totalConfMem += configuredSize;
+					}
 
 					if ( cacheStats != null ) {
 						metaStats = metaStats.plus(cacheStats);
@@ -130,7 +132,9 @@ MemoryMeter meter = new MemoryMeter();
 
 					try {
 						int i = new Integer(s.get("memory").toString());
-						totalMem += i;
+						if ( i > 0 ) {
+							totalMem += i;
+						}
 					} catch ( Exception e ) {
 					}
 

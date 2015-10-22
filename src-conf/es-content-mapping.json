@@ -38,14 +38,6 @@
                         "type": "geo_point"
                     }
                 }
-            },
-            {
-                "ipaddress": {
-                    "match": "*ipaddress",
-                    "mapping": {
-                        "type": "ip"
-                    }
-                }
             }
         ]
     }

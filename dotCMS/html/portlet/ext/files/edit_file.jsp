@@ -324,7 +324,7 @@ if(com.dotmarketing.util.UtilMethods.isImage(file.getFileName())){
 			if(val.lastIndexOf(".") > 0){
 				val = val.substring(0, val.lastIndexOf("."));
 			}
-			var arg=/[\+\%\&\!\"\'\#\<%= "$" %>\/\\\=\?\¡\¿}\:\;\*\<\>\`\´\||_]/g ;
+			var arg=/[\+\%\&\!\"\'\#\<%= "$" %>\/\\\=\?\Â¡\Â¿}\:\;\*\<\>\`\Â´\||_]/g ;
 			val = val.replace(arg," ");
 			while (val.indexOf("  ") > -1){
 				val = val.replace("  ", " ");
@@ -515,13 +515,11 @@ function editImage(inode, callingImg){
 
 
 							<%=identifier.getURI()%></a>
-								<% if (file.getMimeType()!=null  && file.getMimeType().indexOf("text")!=-1 || file.getMimeType().indexOf("xml")!=-1) { %>
+								<% if (file.getMimeType()!=null && file.getMimeType().contains("text") || file.getMimeType().contains("xml") || file.getFileName().endsWith(".vm")) { %>
 									<% if (InodeUtils.isSet(file.getInode()) && canUserWriteToFile && !popup) { %>
-										<% if (file.getMimeType()!=null && file.getMimeType().indexOf("text")!=-1 || file.getMimeType().indexOf("xml")!=-1) { %>
-											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText('<%= file.getInode()%>','<%= file.getIdentifier()%>')" type="button">
-												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
-											</button>
-										<% } %>
+										<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText('<%= file.getInode()%>','<%= file.getIdentifier()%>')" type="button">
+											<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
+										</button>
 									<% } %>
 							<% } %>
 						<dd>

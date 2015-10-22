@@ -21,6 +21,8 @@ import java.util.zip.InflaterInputStream;
 
 public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
+	private static final long serialVersionUID = 5285667050052706116L;
+
 	static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
 	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
 	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
