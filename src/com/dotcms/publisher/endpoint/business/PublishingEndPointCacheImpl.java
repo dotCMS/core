@@ -32,6 +32,8 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 			Object obj = cache.get(MAP_KEY, cacheGroup);
 			if (obj != null) {
 				isLoaded = true;
+			} else {
+				isLoaded = false;
 			}
 		} catch (DotCacheException e) {
 			Logger.debug(this, "PublishingEndPoint cache not loaded yet");
@@ -45,14 +47,18 @@ public class PublishingEndPointCacheImpl implements PublishingEndPointCache, Cac
 	}
 
 	public synchronized List<PublishingEndPoint> getEndPoints() {
-		List<PublishingEndPoint> endPoints = new ArrayList<PublishingEndPoint>();
+		List<PublishingEndPoint> endPoints = null;
 		try {
 			Map<String, PublishingEndPoint> endPointsMap = (Map<String, PublishingEndPoint>) cache
 					.get(MAP_KEY, cacheGroup);
-			Set<String> keySet = endPointsMap.keySet();
-			if (keySet != null && keySet.size() > 0) {
-				for (String key : keySet) {
-					endPoints.add((PublishingEndPoint) endPointsMap.get(key));
+			if (endPointsMap != null) {
+				endPoints = new ArrayList<PublishingEndPoint>();
+				Set<String> keySet = endPointsMap.keySet();
+				if (keySet != null && keySet.size() > 0) {
+					for (String key : keySet) {
+						endPoints.add((PublishingEndPoint) endPointsMap
+								.get(key));
+					}
 				}
 			}
 		} catch (DotCacheException e) {
