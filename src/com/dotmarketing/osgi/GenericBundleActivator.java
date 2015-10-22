@@ -13,7 +13,9 @@ import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
@@ -24,6 +26,7 @@ import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.OSGIUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.ejb.PortletManager;
 import com.liferay.portal.ejb.PortletManagerFactory;
@@ -44,7 +47,7 @@ import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
-import java.io.File;
+import java.io.*;
 import java.net.URL;
 import java.util.*;
 
@@ -619,6 +622,66 @@ public abstract class GenericBundleActivator implements BundleActivator {
         conditionlets.add( conditionlet );
 
         Logger.info( this, "Added Rule Conditionlet: " + conditionlet.getName() );
+
+        //Register Language under /resources/messages folder.
+        Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
+        while( langFiles.hasMoreElements() ){
+
+            String langFile = (String)langFiles.nextElement();
+
+            //We need to verify file is a language file.
+            String languageFilePrefix = "messages" + File.separator + "Language_";
+            String languageFileSuffix = ".properties";
+            String languageFileDelimiter = "-";
+
+            //Validating Language file name: For example: Language_en-US.properties
+            if(langFile.startsWith(languageFilePrefix)
+                && langFile.contains(languageFileDelimiter)
+                && langFile.endsWith(languageFileSuffix)){
+
+                //Get the Language and Country Codes.
+                String languageCountry = langFile.replace(languageFilePrefix,"").replace(languageFileSuffix, "");
+                String languageCode = languageCountry.split(languageFileDelimiter)[0];
+                String countryCode = languageCountry.split(languageFileDelimiter)[1];
+
+                URL file = context.getBundle().getEntry(langFile);
+                Map<String, String> generalKeysToAdd = new HashMap<String, String>();
+
+                try {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()));
+                    String line;
+                    while ((line = in.readLine()) != null){
+                        //Make sure line contains = sign.
+                        String delimiter = "=";
+                        if(line.contains(delimiter)){
+                            String[] keyValue = line.split(delimiter);
+                            String key = keyValue[0];
+                            String value = keyValue[1];
+
+                            generalKeysToAdd.put(key,value);
+                        }
+                    }
+                } catch (IOException e) {
+                    Logger.error(this.getClass(), "Error opening Language File: " + langFile, e);
+                }
+
+                try {
+                    Language languageObject = APILocator.getLanguageAPI().getLanguage(languageCode, countryCode);
+                    if(UtilMethods.isSet(languageObject.getLanguageCode())){
+
+                        APILocator.getLanguageAPI().saveLanguageKeys(languageObject,
+                            generalKeysToAdd,
+                            new HashMap<String, String>(),
+                            new HashSet<String>());
+                    } else {
+                        Logger.warn(this.getClass(), "Country and Language do not exist: " + languageCountry);
+                    }
+
+                } catch (DotDataException e) {
+                    Logger.error(this.getClass(), "Error inserting language properties for: " + languageCountry, e);
+                }
+            }
+        }
     }
 
     /**
@@ -729,6 +792,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         unregisterActionlets();
         unregisterCacheProviders();
+        unregisterConditionlets();
         unregisterViewToolServices();
         unregisterPreHooks();
         unregisterPostHooks();
