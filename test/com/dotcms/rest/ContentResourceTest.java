@@ -78,7 +78,9 @@ public class ContentResourceTest extends TestBase {
         User sysuser=APILocator.getUserAPI().getSystemUser();
         String demoId=demo.getIdentifier();
 
-        Response response = webTarget.path("/publish/1").request().put(Entity.entity(new JSONObject()
+        Response response = webTarget.path("/publish/1/").request()
+            .header(authheader, authvalue)
+            .put(Entity.entity(new JSONObject()
                 .put("stInode", st.getInode())
                 .put("languageId", 1)
                 .put("title", "Test content from ContentResourceTest")
