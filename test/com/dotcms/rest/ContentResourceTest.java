@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -19,8 +20,10 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Before;
@@ -209,7 +212,9 @@ public class ContentResourceTest extends TestBase {
     public void multipartPUT() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
         final User sysuser=APILocator.getUserAPI().getSystemUser();
-        Response response = webTarget.path("/publish/1").request()
+        final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
+
+        Response response = client.target(webTarget.getUri() + "/publish/1").request()
                                    .header(authheader, authvalue).put(Entity.entity(
                         new MultiPart()
                                 .bodyPart(new BodyPart(
