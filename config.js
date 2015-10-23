@@ -31,7 +31,7 @@ System.config({
     "clean-css": "npm:clean-css@3.3.9",
     "core-js": "npm:core-js@1.1.3",
     "css": "github:systemjs/plugin-css@0.1.15",
-    "es6-promise": "npm:es6-promise@2.3.0",
+    "es6-promise": "npm:es6-promise@3.0.2",
     "es6-shim": "github:es-shims/es6-shim@0.32.3",
     "events": "github:jspm/nodelibs-events@0.1.0",
     "jquery": "github:components/jquery@2.1.4",
@@ -39,7 +39,7 @@ System.config({
     "rx": "npm:rx@2.5.3",
     "text": "github:systemjs/plugin-text@0.0.2",
     "whatwg-fetch": "npm:whatwg-fetch@0.9.0",
-    "zone.js": "npm:zone.js@0.5.4",
+    "zone.js": "npm:zone.js@0.5.8",
     "github:angular/bower-angular-animate@1.4.7": {
       "angular": "github:angular/bower-angular@1.4.7"
     },
@@ -285,11 +285,6 @@ System.config({
       "inherits": "npm:inherits@2.0.1",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
-    "npm:es6-promise@2.3.0": {
-      "assert": "github:jspm/nodelibs-assert@0.1.0",
-      "process": "github:jspm/nodelibs-process@0.1.2",
-      "util": "github:jspm/nodelibs-util@0.1.0"
-    },
     "npm:es6-promise@3.0.2": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
@@ -415,9 +410,6 @@ System.config({
     },
     "npm:vm-browserify@0.0.4": {
       "indexof": "npm:indexof@0.0.1"
-    },
-    "npm:zone.js@0.5.4": {
-      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:zone.js@0.5.8": {
       "es6-promise": "npm:es6-promise@3.0.2",
