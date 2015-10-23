@@ -7,7 +7,10 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.liferay.portal.model.User;
+
 import java.util.List;
+
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.util.Logger;
 
@@ -35,5 +38,11 @@ public class SamplePreContentHook extends ContentletAPIPreHookAbstractImp {
         Logger.info(this,"+++++++++++++++++++++++++++++++++++++++++++++++" );
 		return super.checkin(currentContentlet, relationshipsData, cats,selectedPermissions, user, respectFrontendRoles);
 	}
+
+    @Override
+    public boolean deleteByHost(Host host, User user, boolean respectFrontendRoles) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 }
