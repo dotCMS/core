@@ -1,5 +1,7 @@
 package com.dotmarketing.business.cache.provider;
 
+import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,9 @@ import java.util.Set;
  *         Date: 8/31/15
  */
 public abstract class CacheProvider implements Serializable {
+
+    protected static final String ONLY_MEMORY_GROUP = DotResourceCache.primaryOnlyMemoryGroup.toLowerCase();
+    protected static final String USER_VTLS_GROUP = DotResourceCache.primaryUserVTLGroup.toLowerCase();
 
     /**
      * Returns the human readable name for this Cache Provider
