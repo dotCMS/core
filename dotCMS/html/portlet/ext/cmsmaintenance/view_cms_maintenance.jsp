@@ -9,7 +9,7 @@
 <%@page import="com.dotcms.content.elasticsearch.business.ESIndexAPI"%>
 <%@page import="java.lang.management.RuntimeMXBean"%>
 <%@page import="java.lang.management.ManagementFactory"%>
-<%@page import="com.dotmarketing.business.DotGuavaCacheAdministratorImpl"%>
+<%@page import="com.dotmarketing.business.ChainableCacheAdministratorImpl"%>
 <%@page import="com.dotmarketing.business.cache.provider.h2.H2CacheLoader"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ page import="java.util.Calendar"%>
@@ -495,7 +495,7 @@ function refreshCache(){
 	var x = dijit.byId("cacheStatsCp");
 	var y =Math.floor(Math.random()*1123213213);
 
-	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(DotGuavaCacheAdministratorImpl.class)){%>
+	<%if(CacheLocator.getCacheAdministrator().getImplementationClass().equals(ChainableCacheAdministratorImpl.class)){%>
 		if(dijit.byId("showSize").checked){
 			x.attr( "href","/html/portlet/ext/cmsmaintenance/cachestats_guava.jsp?showSize=true&r=" + y  );
 

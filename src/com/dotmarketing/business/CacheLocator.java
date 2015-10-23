@@ -122,7 +122,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		if(instance != null)
 			return;
 
-		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
+		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());
