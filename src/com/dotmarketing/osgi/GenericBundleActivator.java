@@ -564,15 +564,16 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Register a given CacheProvider implementation
+     * Register a given CacheProvider implementation for a given region
      *
      * @param context
+     * @param cacheRegion
      * @param provider
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
     @SuppressWarnings ( "unchecked" )
-    protected void registerCacheProvider ( BundleContext context, Class<CacheProvider> provider ) throws Exception {
+    protected void registerCacheProvider ( BundleContext context, String cacheRegion, Class<CacheProvider> provider ) throws Exception {
 
         //Getting the service to register our Cache provider implementation
         ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
@@ -585,7 +586,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         this.cacheOSGIService = (CacheOSGIService) context.getService(serviceRefSelected);
-        this.cacheOSGIService.addCacheProvider(provider);
+        this.cacheOSGIService.addCacheProvider(cacheRegion, provider);
         cacheProviders.add(provider);
 
         Logger.info(this, "Added Cache Provider: " + provider.getName());

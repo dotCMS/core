@@ -59,7 +59,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             channel.setReceiver(this);
             channel.connect(Config.getStringProperty("CACHE_JGROUPS_GROUP_NAME", "dotCMSCluster"));
             channel.setDiscardOwnMessages(true);
-            channel.send(new Message(null, null, DotGuavaCacheAdministratorImpl.TEST_MESSAGE));
+            channel.send(new Message(null, null, ChainableCacheAdministratorImpl.TEST_MESSAGE));
 
             Address channelAddress = channel.getAddress();
             PhysicalAddress physicalAddr = (PhysicalAddress) channel.down(new Event(Event.GET_PHYSICAL_ADDRESS, channelAddress));
@@ -95,7 +95,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     public void testCluster () throws CacheTransportException {
 
         try {
-            send(DotGuavaCacheAdministratorImpl.TEST_MESSAGE);
+            send(ChainableCacheAdministratorImpl.TEST_MESSAGE);
             Logger.info(this, "Sending Ping to Cluster " + new Date());
         } catch ( Exception e ) {
             Logger.error(JGroupsCacheTransport.class, e.getMessage(), e);
@@ -130,7 +130,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
     public void viewAccepted ( View new_view ) {
         super.viewAccepted(new_view);
         Logger.info(this, "Method view: Cluster View is : " + new_view);
-        Logger.info(DotGuavaCacheAdministratorImpl.class, "viewAccepted + Cluster View is : " + new_view);
+        Logger.info(ChainableCacheAdministratorImpl.class, "viewAccepted + Cluster View is : " + new_view);
     }
 
     @Override
@@ -145,7 +145,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             return;
         }
 
-        if ( v.toString().equals(DotGuavaCacheAdministratorImpl.TEST_MESSAGE) ) {
+        if ( v.toString().equals(ChainableCacheAdministratorImpl.TEST_MESSAGE) ) {
 
             Logger.info(this, "Received Message Ping " + new Date());
             try {
@@ -155,16 +155,16 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             }
 
             //Handle when other server is responding to ping.
-        } else if ( v.toString().startsWith(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE) ) {
+        } else if ( v.toString().startsWith(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE) ) {
 
             String message = v.toString();
             //Deletes the first part of the message, no longer needed.
-            message = message.replace(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE, "");
+            message = message.replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE, "");
 
             //Gets the part of the message that has the Data in Milli.
-            String dateInMillis = message.substring(0, message.indexOf(DotGuavaCacheAdministratorImpl.VALIDATE_SEPARATOR));
+            String dateInMillis = message.substring(0, message.indexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR));
             //Gets the last part of the message that has the Server ID.
-            String serverID = message.substring(message.lastIndexOf(DotGuavaCacheAdministratorImpl.VALIDATE_SEPARATOR) + 1);
+            String serverID = message.substring(message.lastIndexOf(ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR) + 1);
 
             synchronized (this) {
                 //Creates or updates the Map inside the Map.
@@ -180,33 +180,33 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
                 cacheStatus.put(dateInMillis, localMap);
             }
 
-            Logger.debug(this, DotGuavaCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
+            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + " SERVER_ID: " + serverID + " DATE_MILLIS: " + dateInMillis);
 
             //Handle when other server is trying to ping local server.
-        } else if ( v.toString().startsWith(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE) ) {
+        } else if ( v.toString().startsWith(ChainableCacheAdministratorImpl.VALIDATE_CACHE) ) {
 
             String message = v.toString();
             //Deletes the first part of the message, no longer needed.
-            message = message.replace(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE, "");
+            message = message.replace(ChainableCacheAdministratorImpl.VALIDATE_CACHE, "");
 
             //Gets the part of the message that has the Data in Milli.
             String dateInMillis = message;
             //Sends the message back in order to alert the server we are alive.
             try {
-                send(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + dateInMillis + DotGuavaCacheAdministratorImpl.VALIDATE_SEPARATOR + APILocator.getServerAPI().readServerId());
+                send(ChainableCacheAdministratorImpl.VALIDATE_CACHE_RESPONSE + dateInMillis + ChainableCacheAdministratorImpl.VALIDATE_SEPARATOR + APILocator.getServerAPI().readServerId());
             } catch ( CacheTransportException e ) {
                 Logger.error(this.getClass(), "Error sending message", e);
                 throw new DotRuntimeException("Error sending message", e);
             }
 
-            Logger.debug(this, DotGuavaCacheAdministratorImpl.VALIDATE_CACHE + " DATE_MILLIS: " + dateInMillis);
+            Logger.debug(this, ChainableCacheAdministratorImpl.VALIDATE_CACHE + " DATE_MILLIS: " + dateInMillis);
 
         } else if ( v.toString().equals("ACK") ) {
             Logger.info(this, "ACK Received " + new Date());
         } else if ( v.toString().equals("MultiMessageResources.reload") ) {
             MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY);
             messages.reload();
-        } else if ( v.toString().equals(DotGuavaCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
+        } else if ( v.toString().equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
             //Don't do anything is we are only checking sending.
         } else {
             invalidateCacheFromCluster(v.toString());
@@ -266,7 +266,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
         //If we are already in Cluster.
         if ( numberServers > 0 ) {
             //Sends the message to the other servers.
-            send(DotGuavaCacheAdministratorImpl.VALIDATE_CACHE + dateInMillis);
+            send(ChainableCacheAdministratorImpl.VALIDATE_CACHE + dateInMillis);
 
             //Waits for 2 seconds in order all the servers respond.
             int maxWaitTime = maxWaitSeconds * 1000;

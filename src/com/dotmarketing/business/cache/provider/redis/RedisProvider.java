@@ -406,6 +406,14 @@ public class RedisProvider extends CacheProvider {
         readPool.destroy();
     }
 
+    /**
+     * Reads and parses the string report generated for the INFO Redis command in order
+     * to return any specific required property.
+     *
+     * @param redisReport
+     * @param property
+     * @return
+     */
     private String getRedisProperty ( String redisReport, String property ) {
 
         String value = null;

@@ -8,14 +8,15 @@ import com.dotcms.repackage.org.jboss.cache.loader.CacheLoader;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.util.CacheUtil;
 import com.dotmarketing.cache.RegionLock;
-import com.dotmarketing.util.*;
-import com.dotmarketing.velocity.ResourceWrapper;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import org.h2.jdbcx.JdbcConnectionPool;
 
 import java.io.*;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -27,16 +28,11 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
 	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
 
-	private final ConcurrentHashMap<String, Boolean> cacheToDisk = new ConcurrentHashMap<>();
 	private static Map cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
 	private int numberOfSpaces = 9;
 	private int dbsPerSpace = Config.getIntProperty("DBS_PER_SPACE", 1);
 	protected static int dbsInitialized = 0;
-	private Map<Integer, JdbcConnectionPool> conPool = new HashMap<Integer, JdbcConnectionPool>();
-	
-	private String templateExtension=Config.getStringProperty("VELOCITY_TEMPLATE_EXTENSION");
-	private String containerExtension=Config.getStringProperty("VELOCITY_CONTAINER_EXTENSION");
-	private String fieldExtension=Config.getStringProperty("VELOCITY_FIELD_EXTENSION");
+	private Map<Integer, JdbcConnectionPool> conPool = new HashMap<>();
 
 	private boolean allowConnections = true;
 	
@@ -92,13 +88,11 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	@Override
 	public void put ( String group, String key, Object content ) {
 
-		if ( isDiskCache(group) ) {
-			try {
-				//Add the given content to the group and for a given key
-				put(new Fqn(group, key), key, content);
-			} catch ( Exception e ) {
-				Logger.debug(this, e.getMessage(), e);
-			}
+		try {
+			//Add the given content to the group and for a given key
+			put(new Fqn(group, key), key, content);
+		} catch ( Exception e ) {
+			Logger.debug(this, e.getMessage(), e);
 		}
 	}
 
@@ -107,46 +101,43 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
 		Object foundObject = null;
 
-		if ( isDiskCache(group) ) {
-			try {
-				//Get the content from the group and for a given key
-				Map m = get(new Fqn(group, key));
-				if ( m != null ) {
-					foundObject = m.get(key);
-				}
-			} catch ( Exception e ) {
-				Logger.debug(this, e.getMessage(), e);
+		try {
+			//Get the content from the group and for a given key
+			Map m = get(new Fqn(group, key));
+			if ( m != null ) {
+				foundObject = m.get(key);
 			}
+		} catch ( Exception e ) {
+			Logger.debug(this, e.getMessage(), e);
 		}
+
 		return foundObject;
 	}
 
 	@Override
 	public void remove ( String group ) {
 
-		if ( isDiskCache(group) ) {
-			try {
-				//Invalidates the Cache for the given group
-				remove(new Fqn(group));
-			} catch ( Exception e ) {
-				Logger.debug(this, e.getMessage(), e);
-			}
+		try {
+			//Invalidates the Cache for the given group
+			remove(new Fqn(group));
+		} catch ( Exception e ) {
+			Logger.debug(this, e.getMessage(), e);
 		}
 	}
 
 	@Override
 	public void remove ( String group, String key ) {
 
-		if ( isDiskCache(group) ) {
-			try {
-				if ( !UtilMethods.isSet(key) ) {
-					Logger.error(this, "Empty key passed in, clearing group " + group + " by mistake");
-				}
-				//Invalidates from Cache a key from a given group
-				remove(new Fqn(group, key), key.toLowerCase());
-			} catch ( Exception e ) {
-				Logger.error(this, e.getMessage(), e);
+		try {
+
+			if ( !UtilMethods.isSet(key) ) {
+				Logger.error(this, "Empty key passed in, clearing group " + group + " by mistake");
 			}
+
+			//Invalidates from Cache a key from a given group
+				remove(new Fqn(group, key), key.toLowerCase());
+		} catch ( Exception e ) {
+			Logger.error(this, e.getMessage(), e);
 		}
 	}
 
@@ -161,8 +152,6 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 
 		resetCannotCacheCache();
-
-		cacheToDisk.clear();
 	}
 
 	@Override
@@ -182,12 +171,10 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
 		Set<String> keys = new HashSet<>();
 
-		if ( isDiskCache(group) ) {
-			try {
-				keys = getGroupKeys(group);
-			} catch ( Exception ex ) {
-				Logger.error(this, "can't get h2 cache keys on group " + group, ex);
-			}
+		try {
+			keys = getGroupKeys(group);
+		} catch ( Exception ex ) {
+			Logger.error(this, "can't get h2 cache keys on group " + group, ex);
 		}
 
 		return keys;
@@ -207,15 +194,12 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			stats.put("name", getName());
 			stats.put("key", getKey());
 			stats.put("region", group);
-			stats.put("toDisk", isDiskCache(group));
+			stats.put("toDisk", true);
 
 			boolean isDefault = false;
 			stats.put("isDefault", isDefault);
 			stats.put("memory", -1);
-			stats.put("disk", -1);
-			if ( isDiskCache(group) ) {
-				stats.put("disk", getGroupCount(group));
-			}
+			stats.put("disk", getGroupCount(group));
 
 			int configured = isDefault
 					? Config.getIntProperty("cache." + DEFAULT_CACHE + ".size")
@@ -244,9 +228,6 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	}
 	
 	public Map<Object, Object> get(Fqn arg0) throws Exception {
-		if (!cacheToDisk(arg0.toString())) {
-			return null;
-		}
 		return loadAttributes(arg0);
 	}
 
@@ -266,35 +247,31 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		
 	}
 
-	public void prepare(Object arg0, List<Modification> arg1, boolean arg2)
-			throws Exception {
+	public void prepare ( Object arg0, List<Modification> arg1, boolean arg2 ) throws Exception {
 		put(arg1);
-		
 	}
 
 	public void put(List<Modification> arg0) throws Exception {
 		for (Modification mod : arg0) {
 			put(mod.getFqn(), mod.getData());
-
 		}
-		
 	}
 
 	public void put(Fqn arg0, Map<Object, Object> arg1) throws Exception {
 		doMarshall(arg0, arg1);		
 	}
 
-	public Object put(Fqn arg0, Object key, Object value) throws Exception {
-		Object retval;
+	public Object put ( Fqn arg0, Object key, Object value ) throws Exception {
+
 		Map m = new HashMap();
-		retval = m.put(key, value);
+		Object retval = m.put(key, value);
 		put(arg0, m);
+
 		return retval;
 	}
 
 	public void remove(Fqn arg0) throws Exception {
 		deleteItem(arg0);
-		
 	}
 
 	public Object remove(Fqn arg0, Object arg1) throws Exception {
@@ -444,7 +421,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		if(!allowConnections && !system){
 			return null;
 		}
-		Connection c = null;
+		Connection c;
 		try{
 			c= conPool.get(dbnumber).getConnection();
 		}catch (Exception e) {
@@ -462,19 +439,13 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			return;
 		}
 		fqn = Fqn.fromString(fqn.toString().toLowerCase());
-		if (!cacheToDisk(fqn.toString())) {
-			return;
-		}
 		if (fqn.toString().length() > 255) {
-			return;
-		}
-		if (!cacheToDisk(fqn,attrs)) {
+			Logger.error(this.getClass(), "Key exceeded 255 characters [" + fqn.toString() + "]");
 			return;
 		}
 
 		if (cannotCacheCache.get(fqn.toString()) != null) {
-			Logger.info(this,
-					"returning because object is in cannot cache cache " + fqn.toString());
+			Logger.info(this, "returning because object is in cannot cache cache " + fqn.toString());
 			return;
 		}
 
@@ -599,12 +570,10 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			return null;
 		}
 		fqn = Fqn.fromString(fqn.toString().toLowerCase());
-		if (!cacheToDisk(fqn.toString())) {
-			return null;
-		}
-		ObjectInputStream input = null;
-		InputStream bin = null;
-		InputStream is = null;
+
+		ObjectInputStream input;
+		InputStream bin;
+		InputStream is;
 		Connection c=null;
 		String groupName= getGroupName(fqn);
 		if (RegionLock.getInstance().isLocked(groupName)) {
@@ -848,9 +817,6 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	
 	
 	private Map loadAttributes(Fqn fqn) throws Exception {
-		if (!cacheToDisk(fqn.toString())) {
-			return null;
-		}
 
 		Map m;
 		try {
@@ -860,29 +826,10 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			// child no longer exists!
 			m = null;
 		} catch (Exception e) {
-
+			Logger.error(this.getClass(), "Error unmarshalling object.", e);
 			m = null;
 		}
 		return m;
-	}
-	
-	private boolean cacheToDisk(String key) {
-		if(key.indexOf("/")==key.lastIndexOf("/")){
-			return false;
-		}
-		return canSerialize(key);
-	}
-	
-	private boolean canSerialize(String key){
-		if (key.startsWith("/velocitymenucache")) {
-			return false;
-		}
-		if (key.startsWith("/velocitycache")) {
-			if (!(key.contains("live") || key.contains("working"))) {
-				return false;
-			}
-		}
-		return true;
 	}
 	
 	private String buildDeleteItemSQL(Fqn fqn){
@@ -1058,54 +1005,5 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 		return ret;
 	}
-	
-	private boolean cacheToDisk(Fqn fqn, Map attrs) {
-		String groupName= getGroupName(fqn);
-		if (Config.getBooleanProperty("SKIP_MACRO_CACHE",true)) {
-			if ("velocitycache".equalsIgnoreCase(groupName)) {
-				String key=fqn.toString();
-				if ( key.endsWith(containerExtension) || key.endsWith(templateExtension) || key.endsWith(fieldExtension)) {
-					ResourceWrapper w=(ResourceWrapper)attrs.values().toArray()[0];
-					boolean ret=RegEX.contains(w.getResource().getData().toString(), "\\[#macro\\]");
-					return !ret;
-				}
-			}
-		}
-		return true;
-	}
 
-	private boolean isDiskCache ( String group ) {
-
-		if ( group == null ) {
-			return false;
-		}
-		group = group.toLowerCase();
-		Boolean ret = cacheToDisk.get(group);
-		if ( ret == null ) {
-
-			if ( Config.containsProperty("cache." + group + ".disk") ) {
-				ret = Config.getBooleanProperty("cache." + group + ".disk", false);
-			} else if ( group.startsWith(LIVE_CACHE_PREFIX) && Config.containsProperty("cache." + LIVE_CACHE_PREFIX + ".disk") ) {
-				ret = Config.getBooleanProperty("cache." + LIVE_CACHE_PREFIX + ".disk", false);
-			} else if ( group.startsWith(WORKING_CACHE_PREFIX) && Config.containsProperty("cache." + WORKING_CACHE_PREFIX + ".disk") ) {
-				ret = Config.getBooleanProperty("cache." + WORKING_CACHE_PREFIX + ".disk", false);
-			}
-			/*
-			else if (group.startsWith("velocitymenucache")) {
-				ret = false;
-			}
-
-			else if (group.startsWith("velocitycache")) {
-				 ret = false;
-			}
-			*/
-			else {
-				ret = Config.getBooleanProperty("cache.default.disk", false);
-			}
-			cacheToDisk.put(group, ret);
-		}
-
-		return ret;
-	}
-		
 }
