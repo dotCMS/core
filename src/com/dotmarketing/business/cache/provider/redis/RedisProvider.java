@@ -19,8 +19,6 @@ public class RedisProvider extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
 
-    private static final String ONLY_MEMORY_GROUP = DotResourceCache.primaryOnlyMemoryGroup.toLowerCase();
-
     //Global Map of contents that could not be added to this cache
     private static Map<String, String> cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
 

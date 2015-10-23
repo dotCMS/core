@@ -88,9 +88,17 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	@Override
 	public void put ( String group, String key, Object content ) {
 
+		//Building the key
+		Fqn fqn = new Fqn(group, key);
+
+		//Check if we must exclude this record from this cache
+		if ( exclude(group, key, fqn) ) {
+			return;
+		}
+
 		try {
 			//Add the given content to the group and for a given key
-			put(new Fqn(group, key), key, content);
+			put(fqn, key, content);
 		} catch ( Exception e ) {
 			Logger.debug(this, e.getMessage(), e);
 		}
@@ -244,7 +252,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	}
 
 	public void loadState(Fqn arg0, ObjectOutputStream arg1) throws Exception {
-		
+
 	}
 
 	public void prepare ( Object arg0, List<Modification> arg1, boolean arg2 ) throws Exception {
@@ -412,8 +420,8 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	public void stop() {
 		
 	}
-	
-	private Connection createConnection(boolean autoCommit, int dbnumber) throws SQLException {
+
+	private Connection createConnection ( boolean autoCommit, int dbnumber ) throws SQLException {
 		return createConnection(autoCommit, dbnumber, false);
 	}
 	
@@ -549,7 +557,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 					removeData(fqn);
 					cannotCacheCache.put(fqn.toString(), fqn.toString());
 				}
-			} catch (Exception e1) {
+			} catch ( Exception e1 ) {
 				Logger.warn(this, "Unable to delete file", e1);
 			}
 			Logger.debug(this, "Unable to serialize object with FQN "
@@ -902,9 +910,9 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	            if(smt!=null) smt.close();
 	            closeConnection(conn);
 	        }
-	    }
-	    
-	    return keys;
+		}
+
+		return keys;
 	}
 
 	public String getGroupCount ( String group ) {
@@ -938,7 +946,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 		return groups;
 	}
-	
+
 	private String _getGroupCount(String group){
 
 		long ret = 0;
@@ -1004,6 +1012,29 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 			c++;
 		}
 		return ret;
+	}
+
+	/**
+	 * Method that verifies if must exclude content that can not or must not be added to this h2 cache
+	 * based on the given cache group and key
+	 *
+	 * @param group
+	 * @param key
+	 * @return
+	 */
+	private boolean exclude ( String group, String key, Fqn fqn ) {
+
+		Boolean exclude = false;
+
+		if ( group.equals(ONLY_MEMORY_GROUP) ) {
+			exclude = true;
+		}
+
+		if ( exclude ) {
+			cannotCacheCache.put(fqn.toString(), fqn.toString());
+		}
+
+		return exclude;
 	}
 
 }

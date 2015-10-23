@@ -1,5 +1,7 @@
 package com.dotmarketing.business.cache.provider;
 
+import com.dotmarketing.velocity.DotResourceCache;
+
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
@@ -10,24 +12,31 @@ import java.util.Set;
  * <br/>
  * <br/>
  * In order add and use a custom CacheProvider in the Cache Providers execution chain is required an Enterprise
- * License, without it only the default CacheProviders will be use ({@link com.dotmarketing.business.cache.provider.guava.GuavaCache},
+ * License, without it only the default CacheProviders can be use ({@link com.dotmarketing.business.cache.provider.guava.GuavaCache},
  * {@link com.dotmarketing.business.cache.provider.h2.H2CacheLoader}).
  * <br/>
  * <br/>
- * With a valid Enterprise License the CacheProviders to use can be specified using the property <strong>cache.adminconfigpool.chain</strong>
- * in the <strong>dotmarketing-config.properties</strong> file, in that property you can specify the list of classes to use as CacheProviders, that
- * list will also define the order of execution of those providers.
+ * With a valid Enterprise License the CacheProviders to use can be specified using properties specifying the chain for a specific cache
+ * region <strong>cache.mycacheregionexample.chain</strong> in the <strong>dotmarketing-config.properties</strong> file,
+ * with those properties you can specify the list of classes to use as CacheProviders for each region, that list will also define the order of execution of those providers.
+ * <p/>
+ * In order to define a default chain to use for cache regions that are not specified in the <strong>dotmarketing-config.properties</strong>
+ * the property <strong>cache.default.chain</strong> must be used.
  * <p/>
  * <strong>Examples:</strong>
  * <ul>
- * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
- * <li>cache.adminconfigpool.chain=com.dotmarketing.business.cache.provider.guava.TestCacheProvider,com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
+ * <li>cache.default.chain=com.dotmarketing.business.cache.provider.guava.TestCacheProvider,com.dotmarketing.business.cache.provider.guava.GuavaCache,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
+ * <li>cache.velocitymemoryonlycache.chain=com.dotmarketing.business.cache.provider.guava.GuavaCache</li>
+ * <li>cache.velocityuservtlcache.chain=com.dotmarketing.business.cache.provider.redis.RedisProvider,com.dotmarketing.business.cache.provider.h2.H2CacheLoader</li>
  * </ul>
  *
  * @author Jonathan Gamba
  *         Date: 8/31/15
  */
 public abstract class CacheProvider implements Serializable {
+
+    protected static final String ONLY_MEMORY_GROUP = DotResourceCache.primaryOnlyMemoryGroup.toLowerCase();
+    protected static final String USER_VTLS_GROUP = DotResourceCache.primaryUserVTLGroup.toLowerCase();
 
     /**
      * Returns the human readable name for this Cache Provider
