@@ -4,7 +4,7 @@
 
 #Build dirs and artifacts
 build/
-dist/
+./dist/
 out/
 gh_pages/
 staging/
