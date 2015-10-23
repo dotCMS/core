@@ -1,8 +1,8 @@
-import  {ConnectionManager} from './ConnectionManager.js'
-import  {Check} from '../validation/Check.js'
+import  {Check} from 'api/validation/Check'
+import  {ApiRoot} from 'api/persistence/ApiRoot'
 
 
-let emptyFn = function () {
+let emptyFn = function (a:any=null) {
 }
 
 let Dispatcher = {
@@ -31,24 +31,13 @@ let Dispatcher = {
   }
 }
 
-let RootMaker = {
-
-  gimme(){
-    let root = {}
-    Object.observe(root, RootMaker.ceilingCatWatchesForAdditions, ['add'] )
-  },
-
-  ceilingCatWatchesForAdditions(changes){
-    changes.forEach((change) => {
-
-    })
-
-  }
-}
-
-
 export class EntitySnapshot {
-  constructor(path, entity=null) {
+  _path:string
+  _entity: EntityMeta
+  _key:string
+  _meta:EntityMeta
+
+  constructor(path, entity:EntityMeta=null) {
     if(!path.startsWith('http')){
       //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
     }
@@ -101,6 +90,12 @@ export class EntitySnapshot {
 
 
 export class EntityMeta {
+  path: string
+  pathTokens: Array<string>
+  latestSnapshot:EntitySnapshot
+  $key:string
+  watches:any
+
   constructor(url) {
     if(!url.startsWith('http')){
       //throw new Error("Reference must be absolute. Use Entity.child('...') to perform relative lookups: ref='" + path + "'.")
@@ -143,7 +138,7 @@ export class EntityMeta {
     if (data === null) {
       return this.remove(onComplete)
     }
-    let prom = ConnectionManager.persistenceHandler.setItem(this.path, data)
+    let prom = ApiRoot.instance().persistenceHandler.setItem(this.path, data)
     prom.then(() => {
       Dispatcher.notify(this.path, "change", new EntitySnapshot(this.toString(), data))
       onComplete()
@@ -162,7 +157,7 @@ export class EntityMeta {
   }
 
   remove(onComplete = emptyFn) {
-    let prom = ConnectionManager.persistenceHandler.removeItem(this.path)
+    let prom = ApiRoot.instance().dataStore.removeItem(this.path)
     prom.then(() => {
       Dispatcher.notify(this.path, 'removed', this.latestSnapshot)
       onComplete()
@@ -171,7 +166,7 @@ export class EntityMeta {
   }
 
   push(data, onComplete = emptyFn) {
-    return ConnectionManager.persistenceHandler.setItem(this.path, data, true)
+    return ApiRoot.instance().dataStore.setItem(this.path, data, true)
         .then((result) => {
           console.log("Push succeeded, creating snapshot")
           let snap = new EntitySnapshot(result.path, data)
@@ -188,7 +183,7 @@ export class EntityMeta {
 
 
   _sync() {
-    ConnectionManager.persistenceHandler.getItem(this.path).then((responseEntity) => {
+    ApiRoot.instance().dataStore.getItem(this.path).then((responseEntity) => {
       let snap = new EntitySnapshot(this.toString(), responseEntity)
       Dispatcher.notify(this.path, 'changed', snap)
       return snap

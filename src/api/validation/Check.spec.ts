@@ -1,8 +1,10 @@
+/// <reference path="../../../typings/jasmine/jasmine.d.ts" />
+
 import {Check} from './Check';
 var errorMessage = 'The message'
 var errorRegex
 
-describe('Check.notEmpty', function () {
+describe('Unit.validation.Check.notEmpty', function () {
 
   var validCases = [
     {args: ' ', description: 'a single space.'},
@@ -64,7 +66,7 @@ describe('Check.notEmpty', function () {
 });
 
 
-describe('Check.Exists', function () {
+describe('Unit.validation.Check.Exists', function () {
   var validCases = [
     {args: ' ', description: 'a single space.'},
     {args: '', description: 'an empty string'},
@@ -108,7 +110,7 @@ describe('Check.Exists', function () {
 });
 
 
-describe('Check.isString', function () {
+describe('Unit.validation.Check.isString', function () {
 
   var validCases = [
     {args: '', description: 'an empty string literal'},

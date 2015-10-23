@@ -1,5 +1,4 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
@@ -9,6 +8,11 @@ import {ConditionGroupComponent} from './rule-condition-group-component';
 //noinspection TypeScriptCheckImport
 import {InputToggle} from 'view/components/input/toggle/InputToggle'
 import {ApiRoot} from 'api/persistence/ApiRoot';
+
+import {RuleService, RuleModel} from "api/rule-engine/Rule";
+import {ActionService, ActionModel} from "api/rule-engine/Action";
+import {CwEvent} from "api/util/CwEvent";
+import {EntityMeta} from "api/persistence/EntityBase";
 
 
 var rsrc = {
@@ -22,7 +26,7 @@ var rsrc = {
 
 @Component({
   selector: 'rule',
-  properties: ["ruleSnap", "hidden"]
+  properties: ["model", "hidden"]
 })
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
@@ -70,62 +74,65 @@ var rsrc = {
 class RuleComponent {
   apiRoot:ApiRoot
   hidden:boolean
-  rule:any
-  _ruleSnap:any
   collapsed:boolean
   ruleGroups:Array<any>
   ruleActions:Array<any>
-  groupsSnap:EntitySnapshot
   elementRef:ElementRef
   actionsRef:EntityMeta
+  private ruleService:RuleService
+  rule:RuleModel
 
-  constructor(elementRef:ElementRef, @Inject(ApiRoot) apiRoot:ApiRoot) {
-    this.apiRoot = apiRoot
-    this.hidden = false
+  constructor(elementRef:ElementRef, @Inject(ApiRoot) apiRoot:ApiRoot,
+              @Inject(RuleService) ruleService:RuleService,
+              @Inject(ActionService) actionService:ActionService ) {
     this.elementRef = elementRef //DOM element
+    this.apiRoot = apiRoot
+    this.ruleService = ruleService;
+
+    this.hidden = false
     this.collapsed = true
     this.ruleGroups = []
     this.ruleActions = []
-    this.actionsRef = apiRoot.defaultSite.child('ruleengine/actions')
-    this.actionsRef.on('child_removed', (childActionSnap) => {
-      delete this.rule.actions[childActionSnap.key()]
-      this.ruleActions = this.ruleActions.filter((action) => {
-        return action.key() != childActionSnap.key()
-      })
-    })
+
+    //this.actionsRef = apiRoot.defaultSite.child('ruleengine/actions')
+    //this.actionsRef.on('child_removed', (childActionSnap) => {
+    //  delete this.rule.actions[childActionSnap.key()]
+    //  this.ruleActions = this.ruleActions.filter((action) => {
+    //    return action.key() != childActionSnap.key()
+    //  })
+    //})
   }
 
   onInit() {
-    if (this.rule.name === 'CoreWeb created this rule.') {
-      this.rule.name = 'CoreWeb created this rule.' + new Date().toISOString();//to avoid duplicate name error for now
-      this.updateRule()
-      var el:Element = this.elementRef.nativeElement
-      window.setTimeout(function () {
-        var els = el.getElementsByClassName('cw-name')
-        if(els[0]) {
-          els[0]['focus']();
-        }
-      }, 50) //avoid tick recursively error
-    }
+    //if (this.rule.name === 'CoreWeb created this rule.') {
+    //  this.rule.name = 'CoreWeb created this rule.' + new Date().toISOString();//to avoid duplicate name error for now
+    //  this.updateRule()
+    //  var el:Element = this.elementRef.nativeElement
+    //  window.setTimeout(function () {
+    //    var els = el.getElementsByClassName('cw-name')
+    //    if(els[0]) {
+    //      els[0]['focus']();
+    //    }
+    //  }, 50) //avoid tick recursively error
+    //}
   }
 
-  set ruleSnap(ruleSnap:any) {
-    this._ruleSnap = ruleSnap
-    this.rule = ruleSnap.val()
+  set model(rule:RuleModel) {
+    this.rule = rule
     this.ruleGroups = []
-    this.groupsSnap = this.ruleSnap.child('conditionGroups')
-    this.groupsSnap.forEach((childSnap) => {
-      this.ruleGroups.push(childSnap)
-    })
-    this.groupsSnap.ref().on('child_added', (childSnap)=> {
-      this.ruleGroups.push(childSnap)
-    })
-    this.groupsSnap.ref().on('child_removed', (childGroupSnap)=> {
-      delete this.rule.conditionGroups[childGroupSnap.key()]
-      this.ruleGroups = this.ruleGroups.filter((group) => {
-        return group.key() != childGroupSnap.key()
-      })
-    })
+    //this.groupsSnap = this.ruleSnap.child('conditionGroups')
+    //this.groupsSnap.forEach((childSnap) => {
+    //  this.ruleGroups.push(childSnap)
+    //})
+    //this.groupsSnap.ref().on('child_added', (childSnap)=> {
+    //  this.ruleGroups.push(childSnap)
+    //})
+    //this.groupsSnap.ref().on('child_removed', (childGroupSnap)=> {
+    //  delete this.rule.conditionGroups[childGroupSnap.key()]
+    //  this.ruleGroups = this.ruleGroups.filter((group) => {
+    //    return group.key() != childGroupSnap.key()
+    //  })
+    //})
 
     this.ruleActions = this.getRuleActions()
   }
@@ -136,18 +143,18 @@ class RuleComponent {
 
   getRuleActions() {
     let actionMetas = []
-    let actionsSnap = this.ruleSnap.child('ruleActions')
-    if (actionsSnap.exists()) {
-      actionsSnap.forEach((childSnap:EntitySnapshot) => {
-        let key = childSnap.key()
-        actionMetas.push(this.actionsRef.child(key))
-      })
-    }
+    //let actionsSnap = this.ruleSnap.child('ruleActions')
+    //if (actionsSnap.exists()) {
+    //  actionsSnap.forEach((childSnap:EntitySnapshot) => {
+    //    let key = childSnap.key()
+    //    actionMetas.push(this.actionsRef.child(key))
+    //  })
+    //}
     return actionMetas
   }
 
-  get ruleSnap():any {
-    return this._ruleSnap
+  get model():RuleModel {
+    return this.rule
   }
 
   fireOnLabel(fireOnId:string) {
@@ -170,88 +177,88 @@ class RuleComponent {
   }
 
   addGroup() {
-    let group = {
-      priority: 10,
-      operator: 'AND'
-    }
-
-    this.groupsSnap.ref().push(group, (snapshot) => {
-      let group = snapshot['val']()
-      this.rule.conditionGroups[snapshot.key()] = group
-      group.conditions = group.conditions || {}
-      this.updateRule().then(()=> this.addCondition(snapshot))
-    })
+    //let group = {
+    //  priority: 10,
+    //  operator: 'AND'
+    //}
+    //
+    //this.groupsSnap.ref().push(group, (snapshot) => {
+    //  let group = snapshot['val']()
+    //  this.rule.conditionGroups[snapshot.key()] = group
+    //  group.conditions = group.conditions || {}
+    //  this.updateRule().then(()=> this.addCondition(snapshot))
+    //})
   }
 
   addCondition(groupSnap) {
-    let group = groupSnap.val()
-    let condition = {
-      priority: 10,
-      name: "Condition. " + new Date().toISOString(),
-      owningGroup: groupSnap.key(),
-      conditionlet: 'UsersBrowserHeaderConditionlet',
-      comparison: 'is',
-      operator: 'AND',
-      values: {
-        headerKeyValue: {
-          id: 'fakeId',
-          key: 'headerKeyValue',
-          value: '',
-          priority: 10
-        },
-        compareTo: {
-          id: 'fakeId2',
-          key: 'compareTo',
-          value: '',
-          priority: 1
-        },
-        isoCode: {
-          id: 'fakeId3',
-          key: 'isoCode',
-          value: '',
-          priority: 1
-        }
-      }
-    }
-    let condRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/conditions')
-
-    condRoot.push(condition, (result) => {
-      group.conditions = group.conditions || {}
-      group.conditions[result.key()] = true
-      groupSnap.ref().set(group)
-    })
+    //let group = groupSnap.val()
+    //let condition = {
+    //  priority: 10,
+    //  name: "Condition. " + new Date().toISOString(),
+    //  owningGroup: groupSnap.key(),
+    //  conditionlet: 'UsersBrowserHeaderConditionlet',
+    //  comparison: 'is',
+    //  operator: 'AND',
+    //  values: {
+    //    headerKeyValue: {
+    //      id: 'fakeId',
+    //      key: 'headerKeyValue',
+    //      value: '',
+    //      priority: 10
+    //    },
+    //    compareTo: {
+    //      id: 'fakeId2',
+    //      key: 'compareTo',
+    //      value: '',
+    //      priority: 1
+    //    },
+    //    isoCode: {
+    //      id: 'fakeId3',
+    //      key: 'isoCode',
+    //      value: '',
+    //      priority: 1
+    //    }
+    //  }
+    //}
+    //let condRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/conditions')
+    //
+    //condRoot.push(condition, (result) => {
+    //  group.conditions = group.conditions || {}
+    //  group.conditions[result.key()] = true
+    //  groupSnap.ref().set(group)
+    //})
   }
 
   addRuleAction() {
-    let action = {
-      name: "CoreWeb created this action: " + new Date().toISOString(),
-      priority: 10,
-      owningRule: this.ruleSnap.key(),
-      actionlet: 'CountRequestsActionlet'
-    }
-    let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/actions')
-
-    actionRoot.push(action, (actionSnap:EntitySnapshot)=> {
-      this.rule.actions = this.rule.ruleActions || {}
-      this.rule.actions[actionSnap.key()] = true
-      let key = actionSnap.key()
-      this.ruleActions.push(actionRoot.child(key))
-      this.updateRule()
-    })
+    //let action = {
+    //  name: "CoreWeb created this action: " + new Date().toISOString(),
+    //  priority: 10,
+    //  owningRule: this.ruleSnap.key(),
+    //  actionlet: 'CountRequestsActionlet'
+    //}
+    //let actionRoot:EntityMeta = this.apiRoot.defaultSite.child('ruleengine/actions')
+    //
+    //actionRoot.push(action, (actionSnap:EntitySnapshot)=> {
+    //  this.rule.actions = this.rule.ruleActions || {}
+    //  this.rule.actions[actionSnap.key()] = true
+    //  let key = actionSnap.key()
+    //  this.ruleActions.push(actionRoot.child(key))
+    //  this.updateRule()
+    //})
   }
 
 
   removeRule() {
     if (confirm('Are you sure you want delete this rule?')) {
-      this.ruleSnap.ref().remove().catch((e) => {
-        console.log("Error removing rule", e)
-        throw e
-      })
+      //this.ruleSnap.ref().remove().catch((e) => {
+      //  console.log("Error removing rule", e)
+      //  throw e
+      //})
     }
   }
 
   updateRule() {
-    return this.ruleSnap.ref().set(this.rule)
+    //return this.ruleSnap.ref().set(this.rule)
   }
 
 }

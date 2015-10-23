@@ -41,7 +41,7 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
+import {SetSessionValueActionModel} from 'api/rule-engine/ActionType'
 
 @Component({
   selector: 'cw-set-session-value-action',

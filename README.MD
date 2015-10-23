@@ -78,7 +78,7 @@ When all else fails, try running `gulp clean` and deleting the jspm_packages and
   * [Requisite John Lindquist intro video](https://egghead.io/lessons/angularjs-angular-2-template-syntax)
   * [Angular 2 + Flux](http://victorsavkin.com/post/99998937651/building-angular-apps-using-flux-architecture)
   * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
-  
+  * [Pascal Precht on dependency injection](https://www.youtube.com/watch?v=8c-qv9TisVE&list=PL9w_03cWjMXOkPgcoOnLaPJBoa2GJWxvD&index=9)
 
   
 #### JSPM
@@ -87,7 +87,8 @@ When all else fails, try running `gulp clean` and deleting the jspm_packages and
   * [About bundling](https://github.com/jspm/jspm-cli/blob/master/docs/production-workflows.md)
   * [Gitter Page- irc,kinda](https://gitter.im/jspm/jspm)
   
-  
+#### Layout
+  * [Flex layouts by Angular Material CSS](https://material.angularjs.org/HEAD/layout)
   
 #### General
   * [Jasmine - Unit testing framework](http://jasmine.github.io/2.2/introduction.html)

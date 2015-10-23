@@ -2,6 +2,8 @@
 import {Inject} from 'angular2/angular2';
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
+import {EntityMeta, EntitySnapshot} from "api/persistence/EntityBase";
+
 
 export class I18NCountryProvider {
   countryRef:EntityMeta
@@ -15,7 +17,7 @@ export class I18NCountryProvider {
     this.byIsoCode = {}
     this.byName = {}
     this.names = []
-    this.userLocale = apiRoot.userModel.locale //i.e. 'en-US'
+    this.userLocale = apiRoot.authUser.locale //i.e. 'en-US'
     this.countryRef = apiRoot.resourceRef.child(this.userLocale + '/system/locale/country')//i.e.'en-US/system/locale/country'
     this.init();
   }

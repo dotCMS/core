@@ -1,12 +1,10 @@
 /// <reference path="../../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
-import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
+import {ActionTypesProvider, ActionTypeModel, ActionConfigModel, ActionModel} from "api/rule-engine/ActionType"
 import {ApiRoot} from 'api/persistence/ApiRoot';
-import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
 
 
 @Component({
@@ -40,7 +38,7 @@ import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
 })
 export class RuleActionComponent {
   _actionMeta:any;
-  actionModel:RuleActionModel;
+  actionModel:ActionModel;
   typesProvider:ActionTypesProvider
   actionTypes:Array<any>;
 
@@ -50,7 +48,7 @@ export class RuleActionComponent {
     typesProvider.promise.then(()=> {
       this.actionTypes = typesProvider.ary
     })
-    this.actionModel = new RuleActionModel()
+    this.actionModel = new ActionModel()
   }
 
   onSetActionMeta(snapshot){
