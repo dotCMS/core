@@ -1,6 +1,9 @@
-/// <reference path="../../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
+/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
 
 import {bootstrap, bind, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+//noinspection TypeScriptCheckImport
+import * as Rx from 'rxjs/dist/cjs/Rx'
 
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -49,9 +52,8 @@ class RuleEngineComponent {
     this.filterText = ""
     this.rules = []
 
-    this.ruleService.onAdd.toRx().subscribe(
-        (event:CwEvent) => {
-          this.rules.push(event.target)
+    this.ruleService.get().subscribe( (rule:RuleModel) => {
+          this.rules.push(rule)
         },
         (err) => {
           console.log('Something went wrong: ' + err.message);

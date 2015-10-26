@@ -14,6 +14,5 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="jasmine-DefinitelyTyped" level="application" />
     <orderEntry type="library" name="system@0.16" level="application" />
-    <orderEntry type="library" name="flux-DefinitelyTyped" level="application" />
   </component>
 </module>

@@ -1,4 +1,12 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
+/// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
+/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
+
+import {Inject, Observable} from 'angular2/angular2'
+
+//noinspection TypeScriptCheckImport
+import * as Rx from 'rxjs/dist/cjs/Rx'
+
+
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
 import {CwEvent} from "api/util/CwEvent";
@@ -61,36 +69,23 @@ export class RuleModel extends CwModel{
 
 export class RuleService {
   ref:EntityMeta
-  onAdd:EventEmitter
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot) {
-    this.onAdd = new EventEmitter()
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
-    this.init();
   }
 
-  init() {
-    this.ref.once('value', (snap) => {
-      let rules = snap['val']()
-      Object.keys(rules).forEach((key) => {
-        let ruleVal = rules[key]
-        let rule = this._fromRefVal(key, ruleVal)
-        this._watchRule(rule)
-        this.onAdd.next(new CwEvent("ruleAdded", rule))
-      })
-    });
-
-    this.ref.on('child_added', (snap) => {
-      debugger
-      //this.ref= this.rules.concat(snap)
+  get():Rx.Observable{
+    return Rx.Observable.create( (subscriber:Rx.Observer) => {
+      this.ref.once('value', (snap) => {
+        let rules = snap['val']()
+        Object.keys(rules).forEach((key) => {
+          let ruleVal = rules[key]
+          let rule = this._fromRefVal(key, ruleVal)
+          this._watchRule(rule)
+          subscriber.next(rule)
+        })
+      });
     })
-    this.ref.on('child_removed', (snap) => {
-      debugger
-      //this.rules = this.rules.filter((rule)=> {
-      //  return rule.key() !== snap.key()
-      //})
-    })
-
   }
 
   _fromRefVal(key, val):RuleModel {

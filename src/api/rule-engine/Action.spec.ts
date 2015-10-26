@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/jasmine/jasmine.d.ts" />
+/// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/typings/jasmine/jasmine.d.ts" />
 
 import {RuleModel, RuleService} from 'api/rule-engine/Rule';
 import {ActionModel} from 'api/rule-engine/Action';

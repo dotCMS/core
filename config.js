@@ -24,12 +24,13 @@ System.config({
   },
 
   map: {
+    "@reactivex/rxjs@5.0.0-alpha.4": "npm:@reactivex/rxjs@5.0.0-alpha.4",
     "angular-material": "github:angular/bower-material@0.11.4",
     "angular2": "npm:angular2@2.0.0-alpha.44",
-    "babel": "npm:babel-core@5.8.23",
-    "babel-runtime": "npm:babel-runtime@5.8.20",
+    "babel": "npm:babel-core@5.8.25",
+    "babel-runtime": "npm:babel-runtime@5.8.25",
     "clean-css": "npm:clean-css@3.3.9",
-    "core-js": "npm:core-js@1.1.3",
+    "core-js": "npm:core-js@1.2.3",
     "css": "github:systemjs/plugin-css@0.1.15",
     "es6-promise": "npm:es6-promise@3.0.2",
     "es6-shim": "github:es-shims/es6-shim@0.32.3",
@@ -37,6 +38,7 @@ System.config({
     "jquery": "github:components/jquery@2.1.4",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
     "rx": "npm:rx@2.5.3",
+    "rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.4",
     "text": "github:systemjs/plugin-text@0.0.2",
     "whatwg-fetch": "npm:whatwg-fetch@0.9.0",
     "zone.js": "npm:zone.js@0.5.8",
@@ -137,7 +139,7 @@ System.config({
     "npm:assert@1.3.0": {
       "util": "npm:util@0.10.3"
     },
-    "npm:babel-runtime@5.8.20": {
+    "npm:babel-runtime@5.8.25": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:browserify-aes@1.0.5": {
@@ -223,8 +225,9 @@ System.config({
     "npm:constants-browserify@0.0.1": {
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
-    "npm:core-js@1.1.3": {
+    "npm:core-js@1.2.3": {
       "fs": "github:jspm/nodelibs-fs@0.1.2",
+      "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },

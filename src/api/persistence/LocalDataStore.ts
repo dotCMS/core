@@ -1,4 +1,3 @@
-
 import  {Check} from 'api/validation/Check'
 import  {Verify} from 'api/validation/Verify'
 import {DataStore} from 'api/persistence/DataStore'
@@ -23,7 +22,7 @@ export class LocalDataStore extends DataStore {
 
   setItem(path, value) {
     path = this.checkPath(path)
-    if( Verify.exists(value) ){
+    if (Verify.exists(value)) {
       localStorage.setItem(path, JSON.stringify(value))
     }
     else {
