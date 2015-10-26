@@ -84,7 +84,7 @@ import com.dotmarketing.webdav.WebDavTest;
     ESIndexSpeedTest.class,
     PluginMergerTest.class,
     WebDavTest.class,
-    ContentResourceTest.class,
+    ContentResourceTest.class, //Needs Enterprise License
     RoleAPITest.class,
     LanguageAPITest.class,
     FolderAPITest.class,

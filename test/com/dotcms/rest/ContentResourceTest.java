@@ -7,8 +7,10 @@ import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -18,8 +20,10 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.repackage.org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.StreamDataBodyPart;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Before;
@@ -63,7 +67,9 @@ public class ContentResourceTest extends TestBase {
     String authvalue="Basic "+new String(Base64.encode("admin@dotcms.com:admin".getBytes()));
     
     @Before
-    public void before() {
+    public void before() throws Exception{
+        LicenseTestUtil.getLicense();
+
         client=RestClientBuilder.newClient();
         HttpServletRequest request = ServletTestRunner.localRequest.get();
         String serverName = request.getServerName();
@@ -78,7 +84,9 @@ public class ContentResourceTest extends TestBase {
         User sysuser=APILocator.getUserAPI().getSystemUser();
         String demoId=demo.getIdentifier();
 
-        Response response = webTarget.path("/publish/1").request().put(Entity.entity(new JSONObject()
+        Response response = webTarget.path("/publish/1/").request()
+            .header(authheader, authvalue)
+            .put(Entity.entity(new JSONObject()
                 .put("stInode", st.getInode())
                 .put("languageId", 1)
                 .put("title", "Test content from ContentResourceTest")
@@ -204,22 +212,24 @@ public class ContentResourceTest extends TestBase {
     public void multipartPUT() throws Exception {
         final String salt=Long.toString(System.currentTimeMillis());
         final User sysuser=APILocator.getUserAPI().getSystemUser();
-        Response response = webTarget.path("/publish/1").request()
+        final Client client = ClientBuilder.newClient().register(MultiPartFeature.class);
+
+        Response response = client.target(webTarget.getUri() + "/publish/1").request()
                                    .header(authheader, authvalue).put(Entity.entity(
                         new MultiPart()
                                 .bodyPart(new BodyPart(
-                                        new JSONObject()
-                                                .put("hostFolder", "demo.dotcms.com:/resources")
-                                                .put("title", "newfile" + salt + ".txt")
-                                                .put("fileName", "newfile" + salt + ".txt")
-                                                .put("languageId", "1")
-                                                .put("stInode", CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset").getInode())
-                                                .toString(), MediaType.APPLICATION_JSON_TYPE))
+                                    new JSONObject()
+                                        .put("hostFolder", "demo.dotcms.com:/resources")
+                                        .put("title", "newfile" + salt + ".txt")
+                                        .put("fileName", "newfile" + salt + ".txt")
+                                        .put("languageId", "1")
+                                        .put("stInode", CacheLocator.getContentTypeCache().getStructureByVelocityVarName("FileAsset").getInode())
+                                        .toString(), MediaType.APPLICATION_JSON_TYPE))
                                 .bodyPart(new StreamDataBodyPart(
-                                        "newfile" + salt + ".txt",
-                                        new ByteArrayInputStream(("this is the salt " + salt).getBytes()),
-                                        "newfile" + salt + ".txt",
-                                        MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
+                                    "newfile" + salt + ".txt",
+                                    new ByteArrayInputStream(("this is the salt " + salt).getBytes()),
+                                    "newfile" + salt + ".txt",
+                                    MediaType.APPLICATION_OCTET_STREAM_TYPE)), MediaType.MULTIPART_FORM_DATA_TYPE));
 
         Assert.assertEquals(200, response.getStatus());
         Contentlet cont=APILocator.getContentletAPI().find((String) response.getHeaders().getFirst("inode"),sysuser,false);
@@ -244,12 +254,12 @@ public class ContentResourceTest extends TestBase {
                                 .put("stInode", st.getInode())
                                 .put("languageId", 1)
                                 .put("host1", "demo.dotcms.com")
-                                .put("title", "blog post "+salt)
-                                .put("urlTitle", "blog-post-"+salt)
+                                .put("title", "blog post " + salt)
+                                .put("urlTitle", "blog-post-" + salt)
                                 .put("author", "junit")
                                 .put("sysPublishDate", new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss")
-                                                          .format(Calendar.getInstance().getTime()))
-                                .put("body","blog post content "+salt)
+                                    .format(Calendar.getInstance().getTime()))
+                                .put("body", "blog post content " + salt)
                                 .put("topic", "investing,banking")
                                 .put("tags", "junit,integration tests,jenkins")
                                 .put("contentHost", "demo.dotcms.com:/home").toString(), MediaType.APPLICATION_JSON_TYPE));
@@ -435,7 +445,7 @@ public class ContentResourceTest extends TestBase {
         User bill=APILocator.getUserAPI().loadUserById("dotcms.org.2806");
         Role billrole=APILocator.getRoleAPI().getUserRole(bill);
         Response response =webTarget.path("/Save%20and%20Assign/1/wfActionComments/please%20do%20this%20for%20me/wfActionAssign/"+billrole.getId())
-            .request(MediaType.APPLICATION_JSON_TYPE)
+            .request()
             .header(authheader, authvalue).put(Entity.entity(
                 new JSONObject()
                     .put("stInode", st.getInode())
@@ -574,7 +584,7 @@ public class ContentResourceTest extends TestBase {
                     new JSONObject()
                         .put("stName", st1.getVelocityVarName())
                         .put(title1.getVelocityVarName(), "a simple title")
-                        .put(rel.getRelationTypeValue(), "+structureName:"+st2.getVelocityVarName())
+                        .put(rel.getRelationTypeValue(), "+structureName:" + st2.getVelocityVarName())
                         .toString(), MediaType.APPLICATION_JSON_TYPE));
         Assert.assertEquals(200, response.getStatus());
         

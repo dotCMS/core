@@ -949,14 +949,14 @@ public class ContentResource {
 					
 					result = getXMLContentIds(contentlet);
 					return Response.ok(result,MediaType.APPLICATION_XML)
-							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/xml"))
+							.location(new URI("content/inode/"+contentlet.getInode()+"/type/xml"))
 							.header("inode", contentlet.getInode())
 							.header("identifier", contentlet.getIdentifier())
 							.status(Status.OK).build();
 				} else if("text".equals(type)){
 					
 					return Response.ok("inode:"+contentlet.getInode()+",identifier:"+contentlet.getIdentifier(),MediaType.TEXT_PLAIN)
-							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/text"))
+							.location(new URI("content/inode/"+contentlet.getInode()+"/type/text"))
 							.header("inode", contentlet.getInode())
 							.header("identifier", contentlet.getIdentifier())
 							.status(Status.OK).build();
@@ -968,14 +968,14 @@ public class ContentResource {
 
 						String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
 						return Response.ok(callback+"("+result+")","application/javascript")
-								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
+								.location(new URI("content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
 					}else{
 
 						return Response.ok(result,MediaType.APPLICATION_JSON)
-								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/json"))
+								.location(new URI("content/inode/"+contentlet.getInode()+"/type/json"))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
@@ -986,7 +986,7 @@ public class ContentResource {
 				return Response.serverError().build();
 			}
 		}else {
-			return Response.seeOther(new URI("/content/inode/"+contentlet.getInode()))
+			return Response.seeOther(new URI("content/inode/"+contentlet.getInode()))
 					.header("inode", contentlet.getInode())
 					.header("identifier", contentlet.getIdentifier())
 					.status(Status.OK).build();
