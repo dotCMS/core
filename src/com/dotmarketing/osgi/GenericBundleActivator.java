@@ -1,17 +1,21 @@
 package com.dotmarketing.osgi;
 
+import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
+import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ActionConfig;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.org.osgi.framework.BundleActivator;
+import com.dotcms.repackage.org.osgi.framework.BundleContext;
+import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.NormalRule;
 import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.business.cache.CacheOSGIService;
-import com.dotmarketing.business.cache.provider.CacheProvider;
-import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
@@ -31,14 +35,9 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
-import com.dotcms.repackage.org.apache.felix.http.proxy.DispatcherTracker;
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
-import com.dotcms.repackage.org.osgi.framework.Bundle;
-import com.dotcms.repackage.org.osgi.framework.BundleActivator;
-import com.dotcms.repackage.org.osgi.framework.BundleContext;
-import com.dotcms.repackage.org.osgi.framework.ServiceReference;
 import org.quartz.SchedulerException;
 
 import java.io.File;
@@ -63,10 +62,8 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
     private PrimitiveToolboxManager toolboxManager;
     private WorkflowAPIOsgiService workflowOsgiService;
-    private CacheOSGIService cacheOSGIService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
-    private Collection<Class<CacheProvider>> cacheProviders;
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
     private Collection<Portlet> portlets;
@@ -564,35 +561,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
-     * Register a given CacheProvider implementation for a given region
-     *
-     * @param context
-     * @param cacheRegion
-     * @param provider
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     */
-    @SuppressWarnings ( "unchecked" )
-    protected void registerCacheProvider ( BundleContext context, String cacheRegion, Class<CacheProvider> provider ) throws Exception {
-
-        //Getting the service to register our Cache provider implementation
-        ServiceReference serviceRefSelected = context.getServiceReference(CacheOSGIService.class.getName());
-        if ( serviceRefSelected == null ) {
-            return;
-        }
-
-        if ( cacheProviders == null ) {
-            cacheProviders = new ArrayList<>();
-        }
-
-        this.cacheOSGIService = (CacheOSGIService) context.getService(serviceRefSelected);
-        this.cacheOSGIService.addCacheProvider(cacheRegion, provider);
-        cacheProviders.add(provider);
-
-        Logger.info(this, "Added Cache Provider: " + provider.getName());
-    }
-
-    /**
      * Register a ViewTool service using a ToolInfo object
      *
      * @param context
@@ -671,7 +639,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
     protected void unregisterServices ( BundleContext context ) throws Exception {
 
         unregisterActionlets();
-        unregisterCacheProviders();
         unregisterViewToolServices();
         unregisterPreHooks();
         unregisterPostHooks();
@@ -735,20 +702,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 this.workflowOsgiService.removeActionlet( actionlet.getClass().getCanonicalName() );
                 Logger.info( this, "Removed actionlet: " + actionlet.getClass().getCanonicalName());
-            }
-        }
-    }
-
-    /**
-     * Unregister the registered CacheProviders services
-     */
-    protected void unregisterCacheProviders () {
-
-        if ( this.cacheOSGIService != null && cacheProviders != null ) {
-            for ( Class<CacheProvider> provider : cacheProviders ) {
-
-                this.cacheOSGIService.removeCacheProvider(provider);
-                Logger.info(this, "Removed Cache Provider: " + provider.getCanonicalName());
             }
         }
     }
