@@ -243,11 +243,16 @@ dojo.require("dojo.cookie");
 
 
          // check for new notifications now and every N seconds
-        checkNotifications();
+        //checkNotifications();
 
-         window.setInterval(function(){
-			checkNotifications();
-		}, 5000);
+		<% if(Config.getBooleanProperty("KEEP_SESSION_ALIVE", true)) {%>
+			// Call Every 5 seconds
+			window.setInterval(function(){
+				checkNotifications();
+			}, 5000);
+    	<%} else { %>
+			setTimeout("checkNotifications()",5000);
+    	<%} %>
 
     });
 

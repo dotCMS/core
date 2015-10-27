@@ -295,6 +295,12 @@ public class Config {
 	    return props.getKeys();
 	}
 
+	@SuppressWarnings ( "unchecked" )
+	public static Iterator<String> subset ( String prefix ) {
+		_refreshProperties();
+		return props.subset(prefix).getKeys();
+	}
+
 	public static boolean containsProperty(String key) {
 		return props.containsKey(key);
 	}

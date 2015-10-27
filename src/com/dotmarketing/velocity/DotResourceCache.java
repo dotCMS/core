@@ -4,13 +4,12 @@
 package com.dotmarketing.velocity;
 
 import java.io.File;
-import java.util.Iterator;
-import java.util.Set;
 
 import com.dotcms.repackage.org.apache.oro.text.regex.MalformedPatternException;
 import com.dotcms.repackage.org.apache.oro.text.regex.MatchResult;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Compiler;
 import com.dotcms.repackage.org.apache.oro.text.regex.Perl5Matcher;
+
 import org.apache.velocity.runtime.RuntimeServices;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.ResourceCache;
@@ -52,9 +51,11 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	private DotCacheAdministrator cache;
 	
 	private String primaryGroup = "VelocityCache";
+	public static final String primaryOnlyMemoryGroup = "VelocityMemoryOnlyCache";
+	public static final String primaryUserVTLGroup = "VelocityUserVTLCache";
 	private String menuGroup = "VelocityMenuCache";
 	private String missGroup = "VelocityMissCache";
-	
+
     // region's name for the cache
     private String[] groupNames = {primaryGroup,menuGroup,missGroup};
     
@@ -69,30 +70,28 @@ public class DotResourceCache implements ResourceCache,Cachable {
 			Logger.error(this,mfe.getMessage(),mfe);
 		}
 	}
-	
-	/* (non-Javadoc)
-	 * @see org.apache.velocity.runtime.resource.ResourceCache#enumerateKeys()
-	 */
-	public Iterator enumerateKeys() {
-		Set<String> s = cache.getKeys(primaryGroup);
-		s.addAll(cache.getKeys(menuGroup));
-		return s.iterator(); 
-	}
 
 	/* (non-Javadoc)
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#get(java.lang.Object)
 	 */
 	public Resource get(Object resourceKey) {
-		resourceKey=cleanKey(resourceKey.toString());
+
+		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
-		if(isMenu(resourceKey.toString())){
+
+		if ( isMenu(cleanedResourceKey) ) {
 			group = menuGroup;
+		} else if ( isMemoryOnly(cleanedResourceKey) ) {
+			group = primaryOnlyMemoryGroup;
+		} else if ( isUserVtl(resourceKey.toString()) ) {
+			group = primaryUserVTLGroup;
 		}
-		String key = group + resourceKey;
-    	ResourceWrapper rw = null;
-    	try{
-    		rw = (ResourceWrapper)cache.get(key,group);
-    	}catch (DotCacheException e) {
+
+		String key = group + cleanedResourceKey;
+		ResourceWrapper rw = null;
+		try {
+			rw = (ResourceWrapper) cache.get(key, group);
+		} catch ( DotCacheException e ) {
 			Logger.debug(this, "Cache Entry not found", e);
 		}
         return rw != null ? rw.getResource() : null;	
@@ -126,15 +125,22 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#put(java.lang.Object, org.apache.velocity.runtime.resource.Resource)
 	 */
 	public Resource put(Object resourceKey, Resource resource) {
+
 		ResourceWrapper rw = new ResourceWrapper(resource);
-		resourceKey=cleanKey(resourceKey.toString());
+		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
-		if(isMenu(resourceKey.toString())){
+
+		if ( isMenu(cleanedResourceKey) ) {
 			group = menuGroup;
+		} else if ( isMemoryOnly(cleanedResourceKey) ) {
+			group = primaryOnlyMemoryGroup;
+		} else if ( isUserVtl(resourceKey.toString()) ) {
+			group = primaryUserVTLGroup;
 		}
-		String key = group + resourceKey;
-        // Add the key to the cache
-        cache.put(key, rw,group);
+
+		String key = group + cleanedResourceKey;
+		// Add the key to the cache
+		cache.put(key, rw, group);
 
         return rw.getResource();
 
@@ -144,19 +150,26 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	 * @see org.apache.velocity.runtime.resource.ResourceCache#remove(java.lang.Object)
 	 */
 	public Resource remove(Object resourceKey) {
-		resourceKey=cleanKey(resourceKey.toString());
+
+		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
-		if(isMenu(resourceKey.toString())){
+
+		if ( isMenu(cleanedResourceKey) ) {
 			group = menuGroup;
+		} else if ( isMemoryOnly(cleanedResourceKey) ) {
+			group = primaryOnlyMemoryGroup;
+		} else if ( isUserVtl(resourceKey.toString()) ) {
+			group = primaryUserVTLGroup;
 		}
-		String key = group + resourceKey;
+
+		String key = group + cleanedResourceKey;
 		ResourceWrapper rw = null;
     	try{
 	       cache.remove(key,group);
-	       if(resourceKey.toString().contains("content")){
-	    	   cache.remove(missGroup + resourceKey, missGroup);
-	       }
-    	}catch (Exception e) {
+			if ( cleanedResourceKey.contains("content") ) {
+				cache.remove(missGroup + cleanedResourceKey, missGroup);
+			}
+		} catch ( Exception e ) {
 			Logger.debug(this, e.getMessage(), e);
 		} 
     	return rw != null ? rw.getResource() : null;	
@@ -229,6 +242,45 @@ public class DotResourceCache implements ResourceCache,Cachable {
 		}else{
 			return false;
 		}
+	}
+
+	/**
+	 * Method that verifies if a key belongs to the <strong>VelocityMemoryOnlyCache</strong> group cache.
+	 * <br>
+	 * The <strong>VelocityMemoryOnlyCache</strong> is a group used for values that can not properly being <strong>Marshal/Unmarshal</strong>
+	 * and for that reason cannot live on disk caches.
+	 *
+	 * @param key
+	 * @return
+	 */
+	private boolean isMemoryOnly ( String key ) {
+		return key.endsWith(".vm");
+	}
+
+	/**
+	 * Method that verifies if a key belongs to the <strong>VelocityUserVTLCache</strong> group cache.
+	 * <br>
+	 * The <strong>VelocityUserVTLCache</strong> is a group used to store vtl files used mostly on the front end.
+	 *
+	 * @param key
+	 * @return
+	 */
+	private boolean isUserVtl ( String key ) {
+
+		if ( key.startsWith(ResourceManager.RESOURCE_TEMPLATE + "") ) {
+			key = key.substring((ResourceManager.RESOURCE_TEMPLATE + "").length());
+		}
+
+		if ( (key.startsWith("/") || key.startsWith("\\")) && key.endsWith(".vtl") ) {
+
+			if ( key.startsWith("/preview_") || key.startsWith("/static/preview_") ) {
+				return false;
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

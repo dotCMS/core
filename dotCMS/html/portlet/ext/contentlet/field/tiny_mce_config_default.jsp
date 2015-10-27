@@ -21,7 +21,6 @@ var tinyMCEProps = {
     		plugins: [
         		"advlist anchor autolink lists link image charmap print preview hr anchor pagebreak",
         		"searchreplace wordcount visualblocks visualchars code fullscreen",
-        		"insertdatetime media nonbreaking save table contextmenu directionality",
         		"emoticons template paste textcolor spellchecker colorpicker textpattern validation dotimageclipboard compat3x"
     		],
 
@@ -34,7 +33,7 @@ var tinyMCEProps = {
             paste_strip_class_attributes : "all",
             convert_urls : true,
             cleanup : true,
-            
+            browser_spellcheck:true,
             urlconverter_callback : cmsURLConverter,
             verify_css_classes : false,
             <%

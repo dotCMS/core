@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.factories.RelationshipFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -243,6 +244,17 @@ public class DependencyManager {
 					Logger.warn(getClass(), "WorkflowScheme id: "+ (asset.getAsset() != null ? asset.getAsset() : "N/A") +" does NOT have working or live version, not Pushed");
 				} else {
 					workflows.add(asset.getAsset(),scheme.getModDate());
+				}
+			} else if (asset.getType().equals(Language.ASSET_TYPE)) {
+				Language language = APILocator.getLanguageAPI()
+						.getLanguage(asset.getAsset());
+				if (language == null || !UtilMethods.isSet(language.getLanguage())) {
+					Logger.warn(getClass(), "Language id: "
+							+ (asset.getAsset() != null ? asset.getAsset()
+									: "N/A")
+							+ " is not present in the database, not Pushed");
+				} else {
+					languages.add(asset.getAsset());
 				}
 			}
 		}

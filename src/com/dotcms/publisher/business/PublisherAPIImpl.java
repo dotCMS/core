@@ -15,6 +15,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -172,7 +173,10 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                                       type = "structure";
                                   }
-
+                                  // Check if it is a language
+                                  if(APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
+                                      type = Language.ASSET_TYPE;
+                                  }
                                   // check if it is a folder
                                   else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {

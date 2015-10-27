@@ -172,8 +172,13 @@ dojo.declare("dotcms.dijit.form.FileAjaxUploader", [dijit._Widget, dijit._Templa
 		console.log(this.fileNameDisplayField);
 		var fileInfo = {};
 		fileInfo['fileName'] = this.fileName;
-		fileInfo['path'] = location.protocol +"//"+ location.host +
-		'/contentAsset/raw-data/' + this.inode + '/' + this.id + "?byInode=true";
+		if(this.identifier != '0') {
+			fileInfo['path'] = location.protocol +"//"+ location.host +
+			'/contentAsset/raw-data/' + this.identifier + '/' + this.id;
+		} else {
+			fileInfo['path'] = location.protocol +"//"+ location.host +
+			'/contentAsset/raw-data/' + this.inode + '/' + this.id + "?byInode=true";
+		}
 		var html = dojo.replace(this.fileInfoTemplate, fileInfo);
 		
 		this.fileInfoDialog.title = this.fileName;

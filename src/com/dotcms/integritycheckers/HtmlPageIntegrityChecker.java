@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageCache;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.util.ConfigUtils;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -193,7 +194,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             } else {
                 int counter = versionCount.get(oldIdentifier);
                 boolean fixAllVersions = counter == 1 ? true : false;
-                fixContentPageConflicts(result, fixAllVersions);
+                verifyAndFixConflict(result, fixAllVersions);
                 if (!fixAllVersions) {
                     // Decrease version counter if greater than 1
                     versionCount.put(oldIdentifier, counter - 1);
@@ -427,60 +428,341 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         dc.loadResult();
     }
 
+	/**
+	 * Before starting to fix the reported Integrity Checker conflicts, dotCMS
+	 * has to make sure that the new information is unique in the system. This
+	 * method checks that the new values that will be set for the Identifier,
+	 * the working Inode and the live Inode <b>DO NOT EXIST</b> in the database
+	 * of the specified end point.
+	 * <p>
+	 * If they do, it means that the page was previously fixed by the Integrity
+	 * Checker, and then moved to another folder or had its URL changed.
+	 * Therefore, the Integrity Checker didn't detect it and generates errors if
+	 * this situation is not solved before moving on.
+	 * </p>
+	 * 
+	 * @param pageData
+	 *            - The information that will be used to solve the integrity
+	 *            conflict. Its Identifier and Inodes might exist already, so
+	 *            the Integrity Checker must handle that first.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, the page only has 1 language and ALL
+	 *            existing records of the local page will have their Identifier
+	 *            and Inodes replaced to fix the conflict.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             selected action.
+	 */
+	private void verifyAndFixConflict(Map<String, Object> pageData,
+			boolean fixAllVersions) throws DotDataException,
+			DotSecurityException {
+		String conflictingIdentifier = (String) pageData.get("remote_identifier");
+		String conflictingWorkingInode = (String) pageData.get("remote_working_inode");
+		String conflictingLiveInode = (String) pageData.get("remote_live_inode");
+		Long languageId = (Long) pageData.get("language_id");
+		DotConnect dc = new DotConnect();
+		// Get the data of the existing page that has the identifier that MUST
+		// be changed before fixing the reported conflict(s)
+		StringBuilder query = new StringBuilder();
+		query.append(
+				"SELECT cvi.working_inode, cvi.live_inode, cvi.lang, i.parent_path, i.asset_name ")
+				.append("FROM contentlet_version_info cvi INNER JOIN identifier i ON cvi.identifier = i.id ")
+				.append("WHERE cvi.identifier = ?");
+		dc.setSQL(query.toString());
+		dc.addParam(conflictingIdentifier);
+		List<Map<String, Object>> conflictingPages = dc.loadObjectResults();
+		if (conflictingPages != null && !conflictingPages.isEmpty()) {
+			if (conflictingPages.size() > 1) {
+				orderConflictingPages(conflictingPages, languageId);
+			}
+			// Fix previous conflicts before fixing the reported problems
+			updateConflictingPageIds(conflictingPages, conflictingIdentifier,
+					conflictingWorkingInode, conflictingLiveInode, languageId);
+		}
+		fixContentPageConflicts(pageData, fixAllVersions);
+	}
+
+	/**
+	 * Utility method that places the main conflicting page version as the first
+	 * record based on the language ID, so that the integrity fix process takes
+	 * it first.
+	 * 
+	 * @param conflictingPages
+	 *            - The list of conflicting pages.
+	 * @param languageId
+	 *            - The language ID of the main conflicting page.
+	 */
+	private void orderConflictingPages(
+			List<Map<String, Object>> conflictingPages, Long languageId) {
+		int index = 0;
+		for (Map<String, Object> pageInfo : conflictingPages) {
+			Long language = (Long) pageInfo.get("lang");
+			if (languageId == language) {
+				break;
+			} else {
+				index++;
+			}
+		}
+		if (index > 0) {
+			Map<String, Object> pageData = conflictingPages.get(index);
+			conflictingPages.remove(index);
+			conflictingPages.add(0, pageData);
+		}
+	}
+
+	/**
+	 * Takes all the different versions (i.e., languages) of the page containing
+	 * the Identifier and Inodes that must be replaced and gets the data ready
+	 * to perform the change. Depending on the amount of information that must
+	 * be changed, this method takes two steps:
+	 * <ol>
+	 * <li>If the page version info needs to have its <b>Identifier and Inodes
+	 * updated</b>, the page needs to go through a special integrity fix
+	 * process, which is slightly different from the common one. In the new one,
+	 * we need to specify different working and live Inodes to get the version
+	 * info from (since we'll be fixing an older version of the page), but we
+	 * <b>WILL NOT</b> be adding a new version info, as we always do. Then, just
+	 * run the re-index on the page and flush the respective caches.</li>
+	 * <li>If the page version info needs to have its <b>Identifier updated
+	 * ONLY</b>, the page just needs to be re-indexed and also flush the
+	 * respective caches. This approach happens when the page has more than one
+	 * language, which also means all the required information has been added by
+	 * the first step.</li>
+	 * </ol>
+	 * 
+	 * @param pageLanguages
+	 *            - The different versions (languages) of the page whose
+	 *            Identifier and Inodes must be updated.
+	 * @param identifierToChange
+	 *            - The Identifier that must be replaced.
+	 * @param workingInodeToChange
+	 *            - The working Inode that must be replaced.
+	 * @param liveInodeToChange
+	 *            - The live Inode that must be replaced.
+	 * @param existingLanguageId
+	 *            - The page language associated to the working/live Inode that
+	 *            must be replaced.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             selected action.
+	 */
+	private void updateConflictingPageIds(List<Map<String, Object>> pageLanguages,
+			String identifierToChange, String workingInodeToChange,
+			String liveInodeToChange, Long existingLanguageId) throws DotDataException,
+			DotSecurityException {
+		int versionCounter = pageLanguages.size();
+		// New Identifier that will be set for the conflicting page
+		String newIdentifier = UUIDGenerator.generateUuid();
+		for (Map<String, Object> pageInfo : pageLanguages) {
+			boolean fixAllVersions = versionCounter == 1 ? true : false;
+			String existingParentPath = (String) pageInfo.get("parent_path");
+			String existingAssetName = (String) pageInfo.get("asset_name");
+			// Current working and live inodes for the existing page used to 
+			// re-index the page after changing its data
+			String workingInode = (String) pageInfo.get("working_inode");
+			String liveInode = (String) pageInfo.get("live_inode");
+			Long languageId = (Long) pageInfo.get("lang");
+			if (languageId == existingLanguageId) {
+				// New Inodes that will be set for the existing page
+				String newWorkingInode = UUIDGenerator.generateUuid();
+				String newLiveInode = newWorkingInode;
+				if (!workingInodeToChange.equalsIgnoreCase(liveInodeToChange)) {
+					newLiveInode = UUIDGenerator.generateUuid();
+				}
+				Map<String, Object> existingPageData = new HashMap<String, Object>();
+				existingPageData.put("local_identifier", identifierToChange);
+				existingPageData.put("remote_identifier", newIdentifier);
+				existingPageData.put(getIntegrityType()
+						.getFirstDisplayColumnLabel(), existingParentPath
+						+ existingAssetName);
+				existingPageData.put("local_working_inode", workingInodeToChange);
+				existingPageData.put("local_live_inode", liveInodeToChange);
+				existingPageData.put("remote_working_inode", newWorkingInode);
+				existingPageData.put("remote_live_inode", newLiveInode);
+				existingPageData.put("language_id",
+						new Long(pageInfo.get("lang").toString()));
+				boolean addNewVersionInfo = false;
+				if (workingInode.equalsIgnoreCase(workingInodeToChange)
+						&& liveInode.equalsIgnoreCase(liveInodeToChange)) {
+					addNewVersionInfo = true;
+				}
+				fixContentPageConflicts(existingPageData, fixAllVersions,
+						addNewVersionInfo, workingInode, liveInode);
+			} else {
+				reindexExistingPage(identifierToChange, existingAssetName,
+						newIdentifier, workingInode, liveInode, languageId,
+						fixAllVersions);
+			}
+ 	        versionCounter--;
+ 		}
+ 	}
+
+	/**
+	 * Re-indexes a page that only had its Identifier changed. This method is
+	 * called to process the other languages of a conflicting page. In order for
+	 * this method to perform correctly, the IDs of the conflicting page in the
+	 * conflicting language should have run first so that this method will have
+	 * all the information it needs.
+	 * 
+	 * @param existingIdentifier
+	 *            - The Identifier that must be changed
+	 * @param assetName
+	 *            - The name of the Content Page.
+	 * @param newIdentifier
+	 *            - The newly generated Identifier.
+	 * @param workingInode
+	 *            - The working Inode used to get the Page object that will be
+	 *            updated and re-indexed.
+	 * @param liveInode
+	 *            - If available, the live Inode used to get the Page object
+	 *            that will be updated and re-indexed.
+	 * @param languageId
+	 *            - The language ID of the page.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, all the records associated to the old
+	 *            Identifier will be updated to have the new Identifier, and
+	 *            that will be the final step of the integrity fix process.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             selected action.
+	 */
+	private void reindexExistingPage(String existingIdentifier, String assetName, String newIdentifier, String workingInode,
+			String liveInode, Long languageId, boolean fixAllVersions) throws DotDataException, DotSecurityException {
+		ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        User systemUser = APILocator.getUserAPI().getSystemUser();
+		Contentlet oldWorkingPage = contentletAPI.find(workingInode,
+				systemUser, false);
+        Contentlet oldLivePage = null;
+        try {
+			oldLivePage = contentletAPI.find(liveInode,
+					systemUser, false);
+        } catch (DotHibernateException e) { /* No Live Version */
+        }
+        if (fixAllVersions) {
+			fixFinalPageVersion(newIdentifier, existingIdentifier, assetName);
+        }
+        // Add a new Lucene index for the updated page
+        Contentlet updatedWorkingPage = new Contentlet();
+        Contentlet updatedLivePage = null;
+        updatedWorkingPage.setStructureInode(oldWorkingPage.getStructureInode());
+        contentletAPI.copyProperties(updatedWorkingPage, oldWorkingPage.getMap());
+        updatedWorkingPage.setIdentifier(newIdentifier);
+        // If the working Inode is different from the live Inode...
+        if (UtilMethods.isSet(liveInode) && !liveInode.equals(workingInode)) {
+            updatedLivePage = new Contentlet();
+            updatedLivePage.setStructureInode(oldLivePage.getStructureInode());
+            contentletAPI.copyProperties(updatedLivePage, oldLivePage.getMap());
+            updatedLivePage.setIdentifier(newIdentifier);
+        }
+		reindexFixedPage(updatedWorkingPage, oldWorkingPage, updatedLivePage,
+				oldLivePage, workingInode, liveInode, languageId,
+				fixAllVersions);
+	}
+
+	/**
+	 * Contains the information that will fix the integrity conflict. Such
+	 * information will be used to update the end point data that will end up in
+	 * having the sender and receiver environments with the same consistent data
+	 * (see
+	 * {@link #fixContentPageConflicts(Map, boolean, boolean, String, String)})
+	 * 
+	 * @param pageData
+	 *            - The information used to update the page data in the end
+	 *            point.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, all the records associated to the old
+	 *            Identifier will be updated to have the new Identifier, and
+	 *            that will be the final step of the integrity fix process.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             selected action.
+	 */
+	private void fixContentPageConflicts(Map<String, Object> pageData,
+			boolean fixAllVersions) throws DotDataException,
+			DotSecurityException {
+		fixContentPageConflicts(pageData, fixAllVersions, true, null, null);
+	}
+
     /**
-     * Directly updates the information of a given Content Page - i.e., the new
-     * {@link IHTMLPage} - to resolve the conflict (two pages with same path but
-     * different identifier) found in the receiver server before a push publish
-     * is triggered. This new HTML page is a specialized form of the
-     * {@link Contentlet} class.
-     * <p>
-     * This method is the same for solving both local and remote conflicts. The
-     * only difference is in what server (either the sender or the receiver)
-     * this method is called and the distribution of data fields, which is
-     * handled by a previous method. Bearing this in mind, the conflict
-     * resolution process performs the following plain SQL queries (the
-     * execution order is very important to avoid foreign key conflicts):
-     * <ol>
-     * <li>Create the <code>Inode</code> and <code>Identifier</code> records,
-     * which <b>MUST EXIST</b> before a contentlet (content page) can be
-     * created. Initially, the <code>asset_Name</code> of the new Identifier
-     * will have a temporary name.</li>
-     * <li>Create the new <code>Contentlet</code> and
-     * <code>Contentlet_Version_Info</code> records <b>WITHOUT DELETING</b> the
-     * old page records. Otherwise, exceptions will be thrown regarding foreign
-     * key constraints with several other tables.</li>
-     * <li>Delete the old <code>Contentlet_Version_Info</code> and
-     * <code>Contentlet</code> records.</li>
-     * <li>Update all the existing versions of the page in the
-     * <code>Contentlet</code> table so they point to the new identifier.</li>
-     * <li>Delete the old <code>Identifier</code> and <code>Inode</code>
-     * records.</li>
-     * <li>Update the <code>Identifier</code> record with the correct
-     * <code>asset_name</code>.</li>
-     * <li>Update the <code>Multi_Tree</code> records so that the change in the
-     * identifier does not cause the page content to be missing.</li>
-     * <li>Remove the old page entries from <code>Contentlet</code> and
-     * <code>Identifier</code> cache. This also includes removing the entries
-     * for any existing versions of the page so that older versions of the page
-     * can be brought back under the new identifier without any errors.</li>
-     * </ol>
-     * </p>
-     *
-     * @param pageData
-     *            - A {@link Map} with the page information that was captured
-     *            when the conflict was detected.
-     * @param fixAllVersions
-     *            - If <code>true</code>, all existing versions of the page will
-     *            be updated in order to keep data consistency. Otherwise, ONLY
-     *            the specified page and language will be updated.
-     * @throws DotDataException
-     *             An error occurred when interacting with the database.
-     * @throws DotSecurityException
-     *             The current user does not have permission to perform this
-     *             action.
-     */
-    private void fixContentPageConflicts(Map<String, Object> pageData, boolean fixAllVersions)
-            throws DotDataException, DotSecurityException {
+	 * Directly updates the information of a given Content Page - i.e., the new
+	 * {@link IHTMLPage} - to resolve the conflict (two pages with same path but
+	 * different identifier) found in the receiver server before a push publish
+	 * is triggered. This new HTML page is a specialized form of the
+	 * {@link Contentlet} class. This method presents slight variations when 
+	 * used to fix conflicts for a page that was previously fixed by the 
+	 * Integrity Checker, and then was moved to another folder or had its URL 
+	 * changed. 
+	 * <p>
+	 * This method is the same for solving both local and remote conflicts. The
+	 * only difference is in what server (either the sender or the receiver)
+	 * this method is called and the distribution of data fields, which is
+	 * handled by a previous method. Bearing this in mind, the conflict
+	 * resolution process performs the following plain SQL queries (the
+	 * execution order is very important to avoid foreign key conflicts):
+	 * <ol>
+	 * <li>Create the <code>Inode</code> and <code>Identifier</code> records,
+	 * which <b>MUST EXIST</b> before a contentlet (content page) can be
+	 * created. Initially, the <code>asset_Name</code> of the new Identifier
+	 * will have a temporary name.</li>
+	 * <li>Create the new <code>Contentlet</code> and
+	 * <code>Contentlet_Version_Info</code> records <b>WITHOUT DELETING</b> the
+	 * old page records. Otherwise, exceptions will be thrown regarding foreign
+	 * key constraints with several other tables.</li>
+	 * <li>Delete the old <code>Contentlet_Version_Info</code> and
+	 * <code>Contentlet</code> records.</li>
+	 * <li>Update all the existing versions of the page in the
+	 * <code>Contentlet</code> table so they point to the new identifier.</li>
+	 * <li>Delete the old <code>Identifier</code> and <code>Inode</code>
+	 * records.</li>
+	 * <li>Update the <code>Identifier</code> record with the correct
+	 * <code>asset_name</code>.</li>
+	 * <li>Update the <code>Multi_Tree</code> records so that the change in the
+	 * identifier does not cause the page content to be missing.</li>
+	 * <li>Remove the old page entries from <code>Contentlet</code> and
+	 * <code>Identifier</code> cache. This also includes removing the entries
+	 * for any existing versions of the page so that older versions of the page
+	 * can be brought back under the new identifier without any errors.</li>
+	 * </ol>
+	 * </p>
+	 *
+	 * @param pageData
+	 *            - A {@link Map} with the page information that was captured
+	 *            when the conflict was detected.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, all existing versions of the page will
+	 *            be updated in order to keep data consistency. Otherwise, ONLY
+	 *            the specified page and language will be updated.
+	 * @param addNewVersionInfo
+	 *            - If <code>true</code>, a new version info of the page will be
+	 *            created, which applies to common integrity fixes. This DO NOT
+	 *            apply if we're solving conflicts caused by a page that was
+	 *            previously fixed and moved or had its URL changed.
+	 * @param workingInode
+	 *            - For conflicting pages that were moved or had its URL
+	 *            changed, this value allows us to get a specific working
+	 *            version info object, and not just the most current one.
+	 * @param liveInode
+	 *            - For conflicting pages that were moved or had its URL
+	 *            changed, this value allows us to get a specific live version
+	 *            info object, and not just the most current one.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotSecurityException
+	 *             The current user does not have permission to perform this
+	 *             action.
+	 */
+	private void fixContentPageConflicts(Map<String, Object> pageData,
+			boolean fixAllVersions, boolean addNewVersionInfo,
+			String workingInode, String liveInode) throws DotDataException,
+			DotSecurityException {
         DotConnect dc = new DotConnect();
         String oldHtmlPageIdentifier = (String) pageData.get("local_identifier");
         String newHtmlPageIdentifier = (String) pageData.get("remote_identifier");
@@ -489,33 +771,33 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         String localLiveInode = (String) pageData.get("local_live_inode");
         String remoteWorkingInode = (String) pageData.get("remote_working_inode");
         String remoteLiveInode = (String) pageData.get("remote_live_inode");
-
-        Long languageId;
+        Long languageId = null;
         if (DbConnectionFactory.isOracle()) {
             BigDecimal lang = (BigDecimal) pageData.get("language_id");
             languageId = new Long(lang.toPlainString());
         } else {
             languageId = (Long) pageData.get("language_id");
         }
-
+        // Get the asset name form the page URL
         String[] assetUrl = assetName.split("/");
         assetName = assetUrl[assetUrl.length - 1];
         ContentletAPI contentletAPI = APILocator.getContentletAPI();
-        ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
         User systemUser = APILocator.getUserAPI().getSystemUser();
-        Contentlet existingWorkingContentPage = contentletAPI.find(localWorkingInode, systemUser,
-                false);
+        // Get working and live pages to re-index them after applying the fix
+		Contentlet existingWorkingContentPage = contentletAPI.find(UtilMethods
+				.isSet(workingInode) ? workingInode : localWorkingInode,
+				systemUser, false);
         Contentlet existingLiveContentPage = null;
-
         try {
-            existingLiveContentPage = contentletAPI.find(localLiveInode, systemUser, false);
+			existingLiveContentPage = contentletAPI.find(
+					UtilMethods.isSet(liveInode) ? liveInode : localLiveInode,
+					systemUser, false);
         } catch (DotHibernateException e) { /* No Live Version */
         }
-
+        // If not existing, add the new Identifier with a temporary asset name
         dc.setSQL("SELECT id FROM identifier WHERE id = ?");
         dc.addParam(newHtmlPageIdentifier);
         List<Map<String, Object>> results = dc.loadObjectResults();
-        // If not existing, add the new Identifier with a temporary asset name
         if (results == null || results.size() == 0) {
             dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
                     + "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
@@ -524,13 +806,13 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(oldHtmlPageIdentifier);
             dc.loadResult();
         }
-        // Insert the new Inodes records so it can be used in the contentlet
+        // Insert the new working Inode record
         dc.setSQL("INSERT INTO inode(inode, owner, idate, type) " + "SELECT ?, owner, idate, type "
                 + "FROM inode i WHERE i.inode = ?");
         dc.addParam(remoteWorkingInode);
         dc.addParam(localWorkingInode);
         dc.loadResult();
-
+        // If different from working, insert the new live Inode record
         if (!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && UtilMethods.isSet(localLiveInode)) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type) "
@@ -539,7 +821,6 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(localLiveInode);
             dc.loadResult();
         }
-
         // Insert the new working Contentlet record with the new Inode
         String contentletQuery = "INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
                 + "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, ?, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
@@ -555,13 +836,12 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         dc.addParam(oldHtmlPageIdentifier);
         dc.addParam(languageId);
         dc.loadResult();
-
+        // If different from working, Insert the new live Contentlet record
         if (!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && UtilMethods.isSet(localLiveInode)) {
             contentletQuery = "INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, identifier, language_id, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25) "
                     + "SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, last_review, next_review, review_interval, disabled_wysiwyg, ?, ?, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25 "
                     + "FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = cvi.live_inode) WHERE c.identifier = ? and c.language_id = ?";
-
             dc.setSQL(contentletQuery);
             dc.addParam(remoteLiveInode);
             dc.addParam(newHtmlPageIdentifier);
@@ -570,48 +850,47 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(languageId);
             dc.loadResult();
         }
-
-        // Insert the new Contentlet_version_info record with the new Inode
-
-        if (UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
-            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
-                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(languageId);
-            dc.addParam(remoteWorkingInode);
-            dc.addParam(remoteLiveInode);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.addParam(localWorkingInode);
-            dc.addParam(languageId);
-            dc.loadResult();
-        } else {
-            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
-                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(languageId);
-            dc.addParam(remoteWorkingInode);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.addParam(localWorkingInode);
-            dc.addParam(languageId);
-            dc.loadResult();
+        // If the new page requires a new version info...
+        if (addNewVersionInfo) {
+        	// Insert the new Contentlet_version_info record with the new Inode
+	        if (UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
+	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+	                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
+	                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+	            dc.addParam(newHtmlPageIdentifier);
+	            dc.addParam(languageId);
+	            dc.addParam(remoteWorkingInode);
+	            dc.addParam(remoteLiveInode);
+	            dc.addParam(oldHtmlPageIdentifier);
+	            dc.addParam(localWorkingInode);
+	            dc.addParam(languageId);
+	            dc.loadResult();
+	        } else {
+	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+	                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
+	                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+	            dc.addParam(newHtmlPageIdentifier);
+	            dc.addParam(languageId);
+	            dc.addParam(remoteWorkingInode);
+	            dc.addParam(oldHtmlPageIdentifier);
+	            dc.addParam(localWorkingInode);
+	            dc.addParam(languageId);
+	            dc.loadResult();
+	        }
+	        // Remove the live_inode references from Contentlet_version_info
+	        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
+	        dc.addParam(oldHtmlPageIdentifier);
+	        dc.addParam(languageId);
+	        dc.addParam(localWorkingInode);
+	        dc.loadResult();
         }
-
-        // Remove the live_inode references from Contentlet_version_info
-        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
-        dc.addParam(oldHtmlPageIdentifier);
-        dc.addParam(languageId);
-        dc.addParam(localWorkingInode);
-        dc.loadResult();
-
-        // Remove the conflicting version of the Contentlet record
+        // Remove the conflicting working version of the Contentlet record
         dc.setSQL("DELETE FROM contentlet WHERE identifier = ? AND inode = ? AND language_id = ?");
         dc.addParam(oldHtmlPageIdentifier);
         dc.addParam(localWorkingInode);
         dc.addParam(languageId);
         dc.loadResult();
-
+        // If different from working, remove the conflicting live version too
         if (UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && !localLiveInode.equals(localWorkingInode)) {
             // Remove the conflicting version of the Contentlet record
@@ -621,34 +900,10 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(languageId);
             dc.loadResult();
         }
-
         // If fixing all versions, or last version of the same Identifier
         if (fixAllVersions) {
-            // Update other Contentlet languages with new Identifier
-            dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.loadResult();
-            // Update previous version of the Contentlet_version_info with new
-            // Identifier
-            dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.loadResult();
-            // Remove the old Identifier record
-            dc.setSQL("DELETE FROM identifier WHERE id = ?");
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.loadResult();
-            // Update the Identifier with the correct asset name
-            dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
-            dc.addParam(assetName);
-            dc.addParam(newHtmlPageIdentifier);
-            dc.loadResult();
-            // Update the content references in the page with the new Identifier
-            dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(oldHtmlPageIdentifier);
-            dc.loadResult();
+			fixFinalPageVersion(newHtmlPageIdentifier, oldHtmlPageIdentifier,
+					assetName);
         } else {
             // Update other Contentlet languages with new Identifier
             dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ? AND language_id = ?");
@@ -662,12 +917,12 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(newHtmlPageIdentifier);
             dc.addParam(oldHtmlPageIdentifier);
             dc.addParam(languageId);
+            dc.loadResult();
         }
         // Remove the old Inode record
         dc.setSQL("DELETE FROM inode WHERE inode = ?");
         dc.addParam(localWorkingInode);
         dc.loadResult();
-
         if (UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && !localLiveInode.equals(localWorkingInode)) {
             // Remove the old Inode record
@@ -675,62 +930,174 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             dc.addParam(localLiveInode);
             dc.loadResult();
         }
-
         // Add a new Lucene index for the updated page
         Contentlet newWorkingContentPage = new Contentlet();
+        Contentlet newLiveContentPage = null;
         newWorkingContentPage.setStructureInode(existingWorkingContentPage.getStructureInode());
         contentletAPI.copyProperties(newWorkingContentPage, existingWorkingContentPage.getMap());
         newWorkingContentPage.setIdentifier(newHtmlPageIdentifier);
-        newWorkingContentPage.setInode(remoteWorkingInode);
-        // If page was removed before in the end point, remove the NOTFOUND flag 
-        // for that page from the cache
-		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(
-				newHtmlPageIdentifier, newWorkingContentPage.getLanguageId());
-        indexAPI.addContentToIndex(newWorkingContentPage);
-
+        if (addNewVersionInfo) {
+        	newWorkingContentPage.setInode(remoteWorkingInode);
+        }
         if (UtilMethods.isSet(localLiveInode) && !localLiveInode.equals(localWorkingInode)) {
-            Contentlet newLiveContentPage = new Contentlet();
+            newLiveContentPage = new Contentlet();
             newLiveContentPage.setStructureInode(existingLiveContentPage.getStructureInode());
             contentletAPI.copyProperties(newLiveContentPage, existingLiveContentPage.getMap());
             newLiveContentPage.setIdentifier(newHtmlPageIdentifier);
-            newLiveContentPage.setInode(remoteLiveInode);
-            indexAPI.addContentToIndex(newLiveContentPage);
+            if (addNewVersionInfo) {
+            	newLiveContentPage.setInode(remoteLiveInode);
+            }
         }
-
-        // Remove the Lucene index for the old page
-        indexAPI.removeContentFromIndex(existingWorkingContentPage);
-
-        if (UtilMethods.isSet(existingLiveContentPage)
-                && !existingWorkingContentPage.getInode()
-                        .equals(existingLiveContentPage.getInode())) {
-            indexAPI.removeContentFromIndex(existingLiveContentPage);
-        }
-
-        // Clear cache entries of ALL versions of the Contentlet too
-        CacheLocator.getContentletCache().remove(localWorkingInode);
-
-        if (UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)) {
-            CacheLocator.getContentletCache().remove(localLiveInode);
-        }
-
-        CacheLocator.getIdentifierCache().removeFromCacheByInode(localWorkingInode);
-
-        if (UtilMethods.isSet(localLiveInode) && !localWorkingInode.equals(localLiveInode)) {
-            CacheLocator.getIdentifierCache().removeFromCacheByInode(localLiveInode);
-        }
-        // Refresh all or only language-specific versions of the page
-        if (fixAllVersions) {
-            dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ?");
-            dc.addParam(newHtmlPageIdentifier);
-        } else {
-            dc.setSQL("SELECT inode FROM contentlet WHERE identifier = ? AND language_id = ?");
-            dc.addParam(newHtmlPageIdentifier);
-            dc.addParam(languageId);
-        }
-        List<Map<String, Object>> versions = dc.loadObjectResults();
-        for (Map<String, Object> result : versions) {
-            String historyInode = (String) result.get("inode");
-            CacheLocator.getContentletCache().remove(historyInode);
-        }
+		reindexFixedPage(newWorkingContentPage, existingWorkingContentPage,
+				newLiveContentPage, existingLiveContentPage, localWorkingInode,
+				localLiveInode, languageId, fixAllVersions);
     }
+
+	/**
+	 * Runs the queries that will wrap up the integrity fix process. They will
+	 * replace ALL of the old Identifiers in the end point database, which will
+	 * cause the old Identifier to be removed and we'll not be able to look for
+	 * data based on the old Identifier. These queries must be run once and
+	 * involve:
+	 * <ol>
+	 * <li>Updating the Contentlet records.</li>
+	 * <li>Updating the Version info records.</li>
+	 * <li>Deleting the old Identifier.</li>
+	 * <li>Updating the temporary asset name in the Identifier table with the
+	 * correct one.</li>
+	 * <li>Updating the multi-tree records that hold the references to the page
+	 * contents.</li>
+	 * </ol>
+	 * 
+	 * @param newIdentifier
+	 *            - The new Identifier for the page.
+	 * @param oldIdentifier
+	 *            - The previous Identifier of the page.
+	 * @param assetName
+	 *            - The correct asset name.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 */
+	private void fixFinalPageVersion(String newIdentifier,
+			String oldIdentifier, String assetName) throws DotDataException {
+		DotConnect dc = new DotConnect();
+		// Update other Contentlet languages with new Identifier
+		dc.setSQL("UPDATE contentlet SET identifier = ? WHERE identifier = ?");
+		dc.addParam(newIdentifier);
+		dc.addParam(oldIdentifier);
+		dc.loadResult();
+		// Update previous version of the Contentlet_version_info with new
+		// Identifier
+		dc.setSQL("UPDATE contentlet_version_info SET identifier = ? WHERE identifier = ?");
+		dc.addParam(newIdentifier);
+		dc.addParam(oldIdentifier);
+		dc.loadResult();
+		// Remove the old Identifier record
+		dc.setSQL("DELETE FROM identifier WHERE id = ?");
+		dc.addParam(oldIdentifier);
+		dc.loadResult();
+		// Update the Identifier with the correct asset name
+		dc.setSQL("UPDATE identifier SET asset_name = ? WHERE id = ?");
+		dc.addParam(assetName);
+		dc.addParam(newIdentifier);
+		dc.loadResult();
+		// Update the content references in the page with the new Identifier
+		dc.setSQL("UPDATE multi_tree SET parent1 = ? WHERE parent1 = ?");
+		dc.addParam(newIdentifier);
+		dc.addParam(oldIdentifier);
+		dc.loadResult();
+	}
+
+	/**
+	 * Re-indexes a Content Page after its information has been updated/fixed by
+	 * the Integrity Checker process. Changing information on a page involves
+	 * performing two actions (with no particular order):
+	 * <ul>
+	 * <li>Re-indexing the page object.</li>
+	 * <li>Clearing specific values/objects from the dotCMS caches to make sure
+	 * they reflect the latest changes.</li>
+	 * </ul>
+	 * Working with the re-index and caches <b>is crucial</b> because the
+	 * integrity fix process uses direct SQL queries to fix the inconsistencies,
+	 * not the APIs. If a value is not evicted form the right cache, fresh
+	 * information will not be visible and might lead to system and data
+	 * inconsistencies.
+	 * 
+	 * @param updatedWorkingPage
+	 *            - The working page object with the updated information.
+	 * @param oldWorkingPage
+	 *            - The working page object WITHOUT the updated information.
+	 * @param updatedLivePage
+	 *            - The live page object with the updated information.
+	 * @param oldLivePage
+	 *            - The live page object WITHOUT the updated information.
+	 * @param localWorkingInode
+	 *            - The working Inode that was replaced.
+	 * @param localLiveInode
+	 *            - The live Inode that was replaced.
+	 * @param languageId
+	 *            - The language ID of the page.
+	 * @param fixAllVersions
+	 *            - If <code>true</code>, all the Inodes associated to the page
+	 *            will be evicted from the cache.
+	 * @throws DotDataException
+	 *             An error occurred when running one of the SQL queries.
+	 * @throws DotSecurityException
+	 *             The specified user does not have permissions to perform the
+	 *             selected action.
+	 */
+	private void reindexFixedPage(Contentlet updatedWorkingPage,
+			Contentlet oldWorkingPage, Contentlet updatedLivePage,
+			Contentlet oldLivePage, String localWorkingInode,
+			String localLiveInode, Long languageId, boolean fixAllVersions)
+			throws DotDataException, DotSecurityException {
+		ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
+		String identifier = updatedWorkingPage.getIdentifier();
+		// If page was removed before in the end point, remove the NOTFOUND flag
+		// for that page from the cache
+		CacheLocator.getIdentifierCache().removeContentletVersionInfoToCache(
+				identifier, updatedWorkingPage.getLanguageId());
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(
+				identifier);
+		indexAPI.addContentToIndex(updatedWorkingPage);
+		// If working and live pages are different...
+		if (updatedLivePage != null) {
+			CacheLocator.getIdentifierCache()
+					.removeContentletVersionInfoToCache(identifier,
+							updatedLivePage.getLanguageId());
+			indexAPI.addContentToIndex(updatedLivePage);
+		}
+		// Remove the Lucene index for the old page
+		indexAPI.removeContentFromIndex(oldWorkingPage);
+		if (oldLivePage != null
+				&& !oldWorkingPage.getInode().equals(oldLivePage.getInode())) {
+			indexAPI.removeContentFromIndex(oldLivePage);
+		}
+		// Clear cache entries of ALL versions of the Contentlet too
+		CacheLocator.getContentletCache().remove(localWorkingInode);
+		CacheLocator.getIdentifierCache().removeFromCacheByInode(
+				localWorkingInode);
+		if (UtilMethods.isSet(localLiveInode)
+				&& !localWorkingInode.equals(localLiveInode)) {
+			CacheLocator.getContentletCache().remove(localLiveInode);
+			CacheLocator.getIdentifierCache().removeFromCacheByInode(
+					localLiveInode);
+		}
+		// Refresh either all or only language-specific versions of the page
+		DotConnect dc = new DotConnect();
+		if (fixAllVersions) {
+			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ?");
+			dc.addParam(identifier);
+		} else {
+			dc.setSQL("SELECT inode FROM contentlet c WHERE c.identifier = ? AND c.language_id = ?");
+			dc.addParam(identifier);
+			dc.addParam(languageId);
+		}
+		List<Map<String, Object>> versions = dc.loadObjectResults();
+		for (Map<String, Object> result : versions) {
+			String historyInode = (String) result.get("inode");
+			CacheLocator.getContentletCache().remove(historyInode);
+		}
+	}
+
 }

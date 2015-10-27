@@ -13,6 +13,8 @@ import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 public class Language implements Serializable {
     private static final long serialVersionUID = 1L;
 
+    public static final String ASSET_TYPE = "language";
+
     /** identifier field */
     private long id;
 

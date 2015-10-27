@@ -2,7 +2,8 @@
 dependencies {
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: 'd55ec15'
-    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '6980959'
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '5abf2b5-SNAPSHOT'
+
     compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
 
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_2'
@@ -183,6 +184,8 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-api', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.slf4j-jcl', version:'1.7.12_2'
     compile group: 'com.dotcms.lib', name: 'dot.tika-app', version:'1.3_3'
+    compile group: 'redis.clients', name: 'jedis', version:'2.7.3'
+    compile group: 'org.apache.commons', name: 'commons-pool2', version:'2.0'
     compile group: 'com.dotcms.lib', name: 'dot.maxmind-db', version:'1.0.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.geoip2', version:'2.1.0_2'
     compile group: 'com.dotcms.lib', name: 'dot.useragentutils', version:'1.15_2'
@@ -198,7 +201,7 @@ dependencies {
 	compile group: 'com.dotcms.lib', name: 'dot.validation-api', version:'1.1.0.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.hibernate-validator', version:'4.3.2.Final_2'
 	compile group: 'com.dotcms.lib', name: 'dot.jboss-logging', version:'3.3.0.Final_2'
-	
+
     compile group: 'org.springframework', name: 'spring-asm', version:'3.1.0.RELEASE'
     compile(group: 'org.springframework', name: 'spring-beans', version:'3.1.0.RELEASE') {
         exclude(module: 'commons-logging')

@@ -26,10 +26,6 @@
 
 
 .imageToolButtonBar {
-	position:absolute;
-	left:0px;
-	right:0px;
-	top:0px;
 	background:#fff;
 
 	border-bottom:1px solid silver;
@@ -42,18 +38,8 @@
 
 
 #imageViewPort{
-	overflow:auto;
-	/*border:1px solid red;*/
-	padding:0px;
-	margin:0px;
-	position:absolute;
-	left:0px;
-	right:0px;
-	top:36px;
-	bottom:123px;
-	
-
- 	background-color:#eeeeee;
+    overflow: auto;
+    margin-top: 5px;
 }
 
 
