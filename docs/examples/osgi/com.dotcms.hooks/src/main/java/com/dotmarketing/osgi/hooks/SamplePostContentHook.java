@@ -1,5 +1,6 @@
 package com.dotmarketing.osgi.hooks;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -35,6 +36,11 @@ public class SamplePostContentHook extends ContentletAPIPostHookAbstractImp {
         Logger.info( this, "INSIDE SamplePostContentHook.checkin()" );
         Logger.info( this, "+++++++++++++++++++++++++++++++++++++++++++++++" );
         super.checkin( currentContentlet, relationshipsData, cats, selectedPermissions, user, respectFrontendRoles, returnValue );
+    }
+
+    @Override
+    public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
+        // TODO Auto-generated method stub
     }
 
 }

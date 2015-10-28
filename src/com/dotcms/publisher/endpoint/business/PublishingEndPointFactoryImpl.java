@@ -3,6 +3,7 @@ package com.dotcms.publisher.endpoint.business;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -37,11 +38,13 @@ public class PublishingEndPointFactoryImpl extends PublishingEndPointFactory {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(GET_END_POINTS);
 		List<Map<String, Object>> res = dc.loadObjectResults();
+		Map<String, PublishingEndPoint> endPointsMap = new HashMap<String, PublishingEndPoint>();
 		for(Map<String, Object> row : res){
 			PublishingEndPoint endPoint = PublisherUtil.getObjectByMap(row);
 			endPoints.add(endPoint);
-			cache.add(endPoint);
+			endPointsMap.put(endPoint.getId(), endPoint);
 		}
+		cache.addAll(endPointsMap);
 		cache.setLoaded(true);
 		return endPoints;
 	}

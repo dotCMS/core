@@ -13,6 +13,8 @@ import java.util.Set;
  */
 public class TestCacheProvider extends CacheProvider {
 
+    private static final long serialVersionUID = -388836120327525960L;
+
     @Override
     public String getName () {
         return "Test Cache Provider";

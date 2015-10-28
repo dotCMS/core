@@ -90,35 +90,15 @@ public class RulesCacheImpl extends RulesCache {
 
 	@Override
 	public List<Rule> getRulesByHostId(String hostId) {
-		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
+		// TODO - reimplement
 		List<Rule> rules = null;
-		for (String ruleId : ruleIds) {
-			if(ruleId.indexOf(':')>-1) continue;
-            Rule rule = getRule(ruleId);
-			if (rule.getHost().equals(hostId)) {
-				if (rules == null) {
-					rules = new ArrayList<Rule>();
-				}
-				rules.add(rule);
-			}
-		}
 		return rules;
 	}
 
 	@Override
 	public List<Rule> getRulesByFolderId(String folderId) {
-		Set<String> ruleIds = this.cache.getKeys(getPrimaryGroup());
+		// TODO - reimplement
 		List<Rule> rules = null;
-		for (String ruleId : ruleIds) {
-            if(ruleId.indexOf(':')>-1) continue;
-			Rule rule = getRule(ruleId);
-			if (rule.getFolder().equals(folderId)) {
-				if (rules == null) {
-					rules = new ArrayList<Rule>();
-				}
-				rules.add(rule);
-			}
-		}
 		return rules;
 	}
 
@@ -170,15 +150,7 @@ public class RulesCacheImpl extends RulesCache {
 
 	@Override
 	public Condition getCondition(String conditionId) {
-		Set<String> conditionGroups = this.cache.getKeys(RULE_CONDITIONS_GROUP);
-		for (String conditionGroup : conditionGroups) {
-			List<Condition> conditionList = getConditionsByGroupId(conditionGroup);
-			for (Condition condition : conditionList) {
-				if (condition.getId().equals(conditionId)) {
-					return condition;
-				}
-			}
-		}
+		// TODO - reimplement
 		return null;
 	}
 
@@ -253,13 +225,7 @@ public class RulesCacheImpl extends RulesCache {
 
 	@Override
 	public void removeConditionsByRuleId(String ruleId) {
-		Set<String> conditionGroups = this.cache.getKeys(RULE_CONDITIONS_GROUP);
-		for (String condGroup : conditionGroups) {
-			ConditionGroup conditionGroup = getConditionGroup(condGroup);
-			if (conditionGroup.getRuleId().equals(ruleId)) {
-				removeConditions(condGroup);
-			}
-		}
+		// TODO - reimplement
 	}
 
 	@Override
@@ -308,15 +274,7 @@ public class RulesCacheImpl extends RulesCache {
 
 	@Override
 	public ConditionGroup getConditionGroup(String conditionGroupId) {
-		Set<String> ruleIds = this.cache.getKeys(RULE_CONDITION_GROUPS_CACHE);
-		for (String ruleId : ruleIds) {
-			List<ConditionGroup> conditionGroups = getConditionGroups(ruleId);
-			for (ConditionGroup cachedCondGroup : conditionGroups) {
-				if (cachedCondGroup.getId().equals(conditionGroupId)) {
-					return cachedCondGroup;
-				}
-			}
-		}
+		// TODO - reimplement
 		return null;
 	}
 
@@ -411,15 +369,7 @@ public class RulesCacheImpl extends RulesCache {
 
 	@Override
 	public RuleAction getAction(String actionId) {
-		Set<String> ruleIds = this.cache.getKeys(RULE_ACTIONS_CACHE);
-		for (String ruleId : ruleIds) {
-			List<RuleAction> actionList = getActions(ruleId);
-			for (RuleAction cachedAction : actionList) {
-				if (cachedAction.getId().equals(actionId)) {
-					return cachedAction;
-				}
-			}
-		}
+		// TODO - reimplement
 		return null;
 	}
 

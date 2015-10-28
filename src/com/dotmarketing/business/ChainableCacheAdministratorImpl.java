@@ -32,7 +32,7 @@ import java.util.*;
  * @version 1.6.5
  *
  */
-public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
+public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
 
 	CacheTransport cacheTransport;
 
@@ -60,11 +60,11 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 		this.cacheTransport = transport;
 	}
 
-	public DotGuavaCacheAdministratorImpl () {
+	public ChainableCacheAdministratorImpl () {
 		this(null);
 	}
 
-	public DotGuavaCacheAdministratorImpl ( CacheTransport transport ) {
+	public ChainableCacheAdministratorImpl ( CacheTransport transport ) {
 
 		if ( transport != null ) {
 			useTransportChannel = true;
@@ -232,7 +232,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 					try {
 						getTransport().send("0:" + ROOT_GOUP);
 					} catch ( Exception e ) {
-						Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+						Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 					}
 				} else {
 					throw new CacheTransportException("No Cache transport implementation is defined");
@@ -269,7 +269,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 				try {
 					cacheTransport.send("0:" + group);
 				} catch (Exception e) {
-					Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+					Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 				}
 
 			}
@@ -357,7 +357,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 							try {
 								getTransport().send(k + ":" + g);
 							} catch ( Exception e ) {
-								Logger.error(DotGuavaCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
+								Logger.error(ChainableCacheAdministratorImpl.class, "Unable to send invalidation to cluster : " + e.getMessage(), e);
 							}
 						} else {
 							throw new CacheTransportException("No Cache transport implementation is defined");
@@ -375,15 +375,12 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 				HibernateUtil.addCommitListener(cacheRemoveRunnable);
 			}
 		} catch (Exception e) {
-			Logger.error(DotGuavaCacheAdministratorImpl.class,e.getMessage(),e);
+			Logger.error(ChainableCacheAdministratorImpl.class,e.getMessage(),e);
 		}
 
 		cacheRemoveRunnable.run();
 	}
 
-	/*
-	 * This method should only be called by Jgroups because it doesn't handle any local transaction as the remove does. 
-	 */
 	public void removeLocalOnly ( final String key, final String group ) {
 
 		if ( key == null || group == null ) {
@@ -397,18 +394,6 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 			}
 		};
 		cacheRemoveRunnable.run();
-	}
-
-	public Set<String> getKeys ( String group ) {
-
-		if ( group == null ) {
-			return null;
-		}
-
-		group = group.toLowerCase();
-
-		//Returns all the registered keys in a given group
-		return cacheProviderAPI.getKeys(group);
 	}
 
 	public Set<String> getGroups () {
@@ -447,7 +432,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 			try {
 				getTransport().send(msg);
 			} catch ( Exception e ) {
-				Logger.warn(DotGuavaCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
+				Logger.warn(ChainableCacheAdministratorImpl.class, "Unable to send message to cluster : " + e.getMessage(), e);
 			}
 
 		} else {
@@ -471,7 +456,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 			try {
 				return getTransport().validateCacheInCluster(dateInMillis, numberServers, maxWaitSeconds);
 			} catch ( CacheTransportException e ) {
-				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+				Logger.error(ChainableCacheAdministratorImpl.class, e.getMessage(), e);
 				throw new DotCacheException(e);
 			}
 
@@ -487,7 +472,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 			try {
 				getTransport().testCluster();
 			} catch ( Exception e ) {
-				Logger.error(DotGuavaCacheAdministratorImpl.class, e.getMessage(), e);
+				Logger.error(ChainableCacheAdministratorImpl.class, e.getMessage(), e);
 			}
 
 		} else {
@@ -506,7 +491,7 @@ public class DotGuavaCacheAdministratorImpl implements DotCacheAdministrator {
 
     @Override
     public Class getImplementationClass() {
-        return DotGuavaCacheAdministratorImpl.class;
+        return ChainableCacheAdministratorImpl.class;
     }
 
     @Override

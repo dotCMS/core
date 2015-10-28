@@ -74,5 +74,12 @@ public interface LanguageAPI {
      *
      */
     public void clearCache();
+
+    /**
+     * Checks if the parameter is an asset type language 
+     * @param id
+     * @return true if its a language type, otherwise returns false
+     */
+    public boolean isAssetTypeLanguage(String id);
     
 }

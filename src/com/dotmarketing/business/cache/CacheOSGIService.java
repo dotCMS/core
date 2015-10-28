@@ -10,18 +10,19 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 public interface CacheOSGIService {
 
     /**
-     * Adds a given CacheProvider class to the chain of CacheProviders to use, this method will instantiate and
+     * Adds a given CacheProvider class to the chain of CacheProviders to use for a given region, this method will instantiate and
      * initialize (init method) the given CacheProvider.
      *
+     * @param cacheRegion
      * @param cacheProvider
      * @throws Exception
      */
-    void addCacheProvider ( Class<CacheProvider> cacheProvider ) throws Exception;
+    void addCacheProvider ( String cacheRegion, Class<CacheProvider> cacheProvider ) throws Exception;
 
     /**
      * Removes a given CacheProvider class from the chain of CacheProviders to use, this method before to delete
      * the record from the chain will invalidate (removeAll method) and shutdown (shutdown method) the given CacheProvider
-     * if found in the current chain.
+     * if find in the current chain.
      *
      * @param cacheProvider
      */

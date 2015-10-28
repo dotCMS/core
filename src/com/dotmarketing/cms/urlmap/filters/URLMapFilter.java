@@ -68,7 +68,7 @@ import com.liferay.portal.model.User;
  */
 public class URLMapFilter implements Filter {
 
-	private List<PatternCache> patternsCache = new ArrayList<PatternCache>();
+	private List<PatternCache> patternsCache = new ArrayList<>();
 	private ContentletAPI conAPI;
 	private UserWebAPI wuserAPI;
 	private HostWebAPI whostAPI;
@@ -130,13 +130,13 @@ public class URLMapFilter implements Filter {
 		long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
 		
 		String mastRegEx = null;
-		StringBuilder query = null;
+		StringBuilder query;
 		try {
 			mastRegEx = CacheLocator.getContentTypeCache().getURLMasterPattern();
 		} catch (DotCacheException e2) {
 			Logger.error(URLMapFilter.class, e2.getMessage(), e2);
 		}
-		if (mastRegEx == null) {
+		if (mastRegEx == null || patternsCache.isEmpty()) {
 			synchronized (ContentTypeCacheImpl.MASTER_STRUCTURE) {
 				try {
 					mastRegEx = buildCacheObjects();

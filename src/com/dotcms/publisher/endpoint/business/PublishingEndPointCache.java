@@ -4,6 +4,7 @@
 package com.dotcms.publisher.endpoint.business;
 
 import java.util.List;
+import java.util.Map;
 
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 
@@ -17,6 +18,7 @@ public interface PublishingEndPointCache {
 	public List<PublishingEndPoint> getEndPoints();
 	public PublishingEndPoint getEndPointById(String id);
 	public void add(PublishingEndPoint anEndPoint);
+	public void addAll(Map<String, PublishingEndPoint> endPoints);
 	public void removeEndPointById(String id);
 	public void clearCache();
 }

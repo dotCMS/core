@@ -10,7 +10,7 @@ import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotGuavaCacheAdministratorImpl;
+import com.dotmarketing.business.ChainableCacheAdministratorImpl;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -124,7 +124,7 @@ public class InitServlet extends HttpServlet {
                      Without a license this testCluster call will fail as the LicenseManager calls the ClusterFactory.removeNodeFromCluster()
                      if a license is not found.
                      */
-                    ((DotGuavaCacheAdministratorImpl) CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
+                    ((ChainableCacheAdministratorImpl) CacheLocator.getCacheAdministrator().getImplementationObject()).testCluster();
                     Logger.info( this, "     Ping Sent" );
                 } catch ( Exception e ) {
                     Logger.error( this, "   Ping Error: " + e.getMessage() );

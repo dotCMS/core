@@ -83,7 +83,6 @@ public class CacheLocator extends Locator<CacheIndex>{
         public CommitListenerCacheWrapper(DotCacheAdministrator dotcache) { this.dotcache=dotcache; }
 
 		public void initProviders () {dotcache.initProviders();}
-		public Set<String> getKeys(String group) { return dotcache.getKeys(group); }
 		public Set<String> getGroups () {return dotcache.getGroups();}
 		public void flushAll() { dotcache.flushAll(); }
         public void flushGroup(String group) { dotcache.flushGroup(group); }
@@ -127,7 +126,7 @@ public class CacheLocator extends Locator<CacheIndex>{
 		if(instance != null)
 			return;
 
-		String clazz = Config.getStringProperty("cache.locator.class", DotGuavaCacheAdministratorImpl.class.getCanonicalName());
+		String clazz = Config.getStringProperty("cache.locator.class", ChainableCacheAdministratorImpl.class.getCanonicalName());
 		Logger.info(CacheLocator.class, "loading cache administrator: "+clazz);
 		try{
 			adminCache = new CommitListenerCacheWrapper((DotCacheAdministrator) Class.forName(clazz).newInstance());

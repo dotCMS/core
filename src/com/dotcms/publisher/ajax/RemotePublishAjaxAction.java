@@ -22,6 +22,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.*;
@@ -907,8 +908,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
                         String assetType = APILocator.getIdentifierAPI().getAssetTypeFromDB(_assetId);
 
                         //If we don't find the Type in table identifier we try to hit table inode.
-                        if(assetType == null){
+                        if(assetType == null) {
                             assetType = InodeUtils.getAssetTypeFromDB(_assetId);
+                        }
+
+                        // If we don't find the Type in table inode we try to hit table language.
+                        if(assetType == null && APILocator.getLanguageAPI().isAssetTypeLanguage(_assetId)) {
+                            // Check if the asset is a language
+                            assetType = Language.ASSET_TYPE;
+                            ids.add(_assetId);
+                            continue;
                         }
 
                         if(assetType != null && assetType.equals(Identifier.ASSET_TYPE_FOLDER)){
@@ -927,7 +936,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
                                     ids.add(_assetId);
                                 }
                             }
-
                         } else { // if the asset is not a folder and has identifier, put it, if not, put the inode
                             Identifier iden = APILocator.getIdentifierAPI().findFromInode( _assetId );
                             if ( !ids.contains( iden.getId() ) ) {//Multiples languages have the same identifier
@@ -936,16 +944,16 @@ public class RemotePublishAjaxAction extends AjaxAction {
                             	}
                             }
                         }
-
                     } catch ( DotStateException e ) {
+                        Logger.warn(RemotePublishAjaxAction.class, "Unable to find asset id = [" + _assetId + "]");
+
                     	if(!UtilMethods.isSet(bundleId) || !isAssetInBundle(_assetId, bundleId)){
                     		ids.add( _assetId );
                     	}
                     }
                 }
             }
-
-        }
+        } // for loop
 
         return ids;
     }

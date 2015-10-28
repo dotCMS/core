@@ -19,6 +19,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class GuavaCache extends CacheProvider {
 
+    private static final long serialVersionUID = 1348649382678659786L;
+
     static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
     static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
     static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
@@ -218,41 +220,25 @@ public class GuavaCache extends CacheProvider {
 
                     if ( separateCache ) {
                         int size;
-                        boolean toDisk;
                         if ( cacheName.startsWith(LIVE_CACHE_PREFIX) ) {
                             size = Config.getIntProperty("cache." + cacheName + ".size", -1);
                             if ( size < 0 ) {
                                 size = Config.getIntProperty("cache." + LIVE_CACHE_PREFIX + ".size", -1);
-                            }
-                            if ( Config.containsProperty("cache." + cacheName + ".disk") ) {
-                                toDisk = Config.getBooleanProperty("cache." + cacheName + ".disk", false);
-                            } else {
-                                toDisk = Config.getBooleanProperty("cache." + LIVE_CACHE_PREFIX + ".disk", false);
                             }
                         } else if ( cacheName.startsWith(WORKING_CACHE_PREFIX) ) {
                             size = Config.getIntProperty("cache." + cacheName + ".size", -1);
                             if ( size < 0 ) {
                                 size = Config.getIntProperty("cache." + WORKING_CACHE_PREFIX + ".size", -1);
                             }
-                            if ( Config.containsProperty("cache." + cacheName + ".disk") ) {
-                                toDisk = Config.getBooleanProperty("cache." + cacheName + ".disk", false);
-                            } else {
-                                toDisk = Config.getBooleanProperty("cache." + WORKING_CACHE_PREFIX + ".disk", false);
-                            }
                         } else {
                             size = Config.getIntProperty("cache." + cacheName + ".size", -1);
-                            if ( Config.containsProperty("cache." + cacheName + ".disk") ) {
-                                toDisk = Config.getBooleanProperty("cache." + cacheName + ".disk", false);
-                            } else {
-                                toDisk = Config.getBooleanProperty("cache." + DEFAULT_CACHE + ".disk", false);
-                            }
                         }
 
                         if ( size == -1 ) {
                             size = Config.getIntProperty("cache." + DEFAULT_CACHE + ".size", 100);
                         }
 
-                        Logger.info(this.getClass(), "***\t Building Cache : " + cacheName + ", size:" + size + ", toDisk:" + toDisk + ",Concurrency:" + Config.getIntProperty("cache.concurrencylevel", 32));
+                        Logger.info(this.getClass(), "***\t Building Cache : " + cacheName + ", size:" + size + ",Concurrency:" + Config.getIntProperty("cache.concurrencylevel", 32));
                         CacheBuilder<Object, Object> cb = CacheBuilder
                                 .newBuilder()
                                 .maximumSize(size)

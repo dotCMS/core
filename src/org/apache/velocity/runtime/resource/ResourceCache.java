@@ -19,7 +19,6 @@ package org.apache.velocity.runtime.resource;
  * under the License.    
  */
 
-import java.util.Iterator;
 import org.apache.velocity.runtime.RuntimeServices;
 
 /**
@@ -65,9 +64,4 @@ public interface ResourceCache
      */
     public Resource remove( Object resourceKey );
 
-    /**
-     *  returns an Iterator of Keys in the cache.
-     * @return An Iterator of Keys in the cache.
-     */
-     public Iterator enumerateKeys();
 }

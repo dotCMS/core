@@ -455,7 +455,7 @@
                 <%if(LicenseUtil.getLevel() < 199){ %>
                 <div id="thumbnailParent<%=field.getVelocityVarName()%>">
                     <div style="position:relative;width:<%=showDim+40 %>px;">
-                        <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1&filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
+                        <img src="/contentAsset/image/<%=contentlet.getIdentifier()%>/<%=field.getVelocityVarName() %>?filter=Thumbnail&thumbnail_w=<%=showDim %>&thumbnail_h=<%=showDim %>"
                                 class="thumbnailDiv thumbnailDiv<%=field.getVelocityVarName()%>"
                                 onmouseover="dojo.attr(this, 'className', 'thumbnailDivHover');"
                                 onmouseout="dojo.attr(this, 'className', 'thumbnailDiv');"
@@ -465,7 +465,7 @@
 
                     <div dojoType="dijit.Dialog" id="fileDia<%=field.getVelocityVarName()%>" title="<%=LanguageUtil.get(pageContext,"Image") %>"  style="width:760px;height:500px;display:none;"">
                         <div style="text-align:center;margin:auto;overflow:auto;width:700px;height:400px;">
-                            <img src="/contentAsset/image/<%=binInode %>/<%=field.getVelocityVarName() %>/?byInode=1" />
+                            <img src="/contentAsset/image/<%=contentlet.getIdentifier()%>/<%=field.getVelocityVarName() %>" />
                         </div>
                         <div class="callOutBox">
                             <%=LanguageUtil.get(pageContext,"dotCMS-Enterprise-comes-with-an-advanced-Image-Editor-tool") %>
@@ -480,6 +480,7 @@
 	                        <div dojoType="dotcms.dijit.image.ImageEditor"
 	                            editImageText="<%= LanguageUtil.get(pageContext, "Edit-Image") %>"
 	                            inode="<%= binInode%>"
+	                            identifier="<%=contentlet.getIdentifier()%>"
 	                            fieldName="<%=field.getVelocityVarName()%>"
 	                            binaryFieldId="<%=field.getFieldContentlet()%>"
 	                            fieldContentletId="<%=field.getFieldContentlet()%>"
@@ -506,7 +507,7 @@
             <div id="<%=field.getVelocityVarName()%>" name="<%=field.getFieldContentlet()%>" <%= UtilMethods.isSet(fileName)?"fileName=\"" + fileName.replaceAll("\"", "\\\"") +"\"":"" %>
                fieldName="<%=field.getVelocityVarName()%>"
                inode="<%= binInode%>"
-               identifier="<%=field.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
+               identifier="<%=contentlet.getIdentifier()%>" onRemove="removeThumbnail('<%=field.getVelocityVarName()%>', '<%= binInode %>')"
                dojoType="dotcms.dijit.form.FileAjaxUploader" onUploadFinish="saveBinaryFileOnContent<%=field.getVelocityVarName()%>">
             </div>
             <script type="text/javascript">
@@ -545,10 +546,12 @@
 
 						  com.dotmarketing.portlets.fileassets.business.FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(contentlet);
 						  String mimeType = fa.getMimeType();
+						  String fileAssetName = fa.getFileName();
 						 %>
 
 							<a href="<%=resourceLink %>" target="_new"><%=identifier.getParentPath()+contentlet.getStringProperty(FileAssetAPI.FILE_NAME_FIELD)%></a>
-								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1 || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1)) { %>
+								<% if (mimeType.indexOf("officedocument")==-1 && (mimeType.indexOf("text")!=-1 || mimeType.indexOf("javascript")!=-1
+                                        || mimeType.indexOf("xml")!=-1 || mimeType.indexOf("php")!=-1) || fileAssetName.endsWith(".vm")) { %>
 									<% if (InodeUtils.isSet(binInode) && canUserWriteToContentlet) { %>
 											<button iconClass="editIcon" dojoType="dijit.form.Button" onClick="editText($('contentletInode').value)" type="button">
 												<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "edit-text")) %>
