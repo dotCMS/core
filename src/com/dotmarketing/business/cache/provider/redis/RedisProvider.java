@@ -19,6 +19,8 @@ public class RedisProvider extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
 
+    private Boolean isInitialized = false;
+
     //Global Map of contents that could not be added to this cache
     private static Map<String, String> cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
 
@@ -86,7 +88,13 @@ public class RedisProvider extends CacheProvider {
             Logger.info(this.getClass(), "***\t [" + getName() + "] -- Slave [" + readHost + ":" + readPort + "].");
         }
 
+        isInitialized = true;
         Logger.info(this.getClass(), "*** Initialized Cache Provider [" + getName() + "].");
+    }
+
+    @Override
+    public boolean isInitialized () throws Exception {
+        return isInitialized;
     }
 
     @Override
@@ -402,6 +410,8 @@ public class RedisProvider extends CacheProvider {
         Logger.info(this.getClass(), "*** Destroying [" + getName() + "] pool.");
         writePool.destroy();
         readPool.destroy();
+
+        isInitialized = false;
     }
 
     /**
