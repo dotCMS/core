@@ -4,7 +4,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
@@ -42,7 +41,7 @@ public class RulesEngine {
 
         try {
 
-            Set<Rule> rules = APILocator.getRulesAPI().getRulesByHost(host.getIdentifier(), systemUser, false, fireOn);
+            Set<Rule> rules = APILocator.getRulesAPI().getRulesByHostFireOn(host.getIdentifier(), systemUser, false, fireOn);
 
             for (Rule rule : rules) {
                 boolean result = false;

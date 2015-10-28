@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -37,13 +38,13 @@ public class NoOpRulesCacheImpl extends RulesCache {
     }
 
     @Override
-    public List<Rule> getRulesByHostId(String hostId) {
+    public List<String> getRulesByHost(Host hostId) {
         return null;
     }
 
     @Override
-    public List<Rule> getRulesByFolderId(String folderId) {
-        return null;
+    public void putRulesByHost(Host host, List<Rule> rules) {
+
     }
 
     @Override

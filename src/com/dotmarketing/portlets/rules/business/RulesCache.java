@@ -25,6 +25,7 @@ public abstract class RulesCache implements Cachable {
 
 	// Caching groups for the different sections of a rule
 	protected static final String PRIMARY_GROUP = "RulesCache";
+	protected static final String HOST_RULES_CACHE_GROUP = "HostRulesCache";
 	protected static final String RULE_CONDITION_GROUPS_CACHE = "RuleConditionGroupsCache";
 	protected static final String RULE_CONDITIONS_GROUP = "RuleConditionsCache";
 	protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
@@ -123,21 +124,20 @@ public abstract class RulesCache implements Cachable {
 	 * Returns the list of {@link Rule} objects that have been created for a
 	 * specific site (host).
 	 * 
-	 * @param hostId
-	 *            - The {@link Host} ID.
+	 * @param host
+	 *            - The {@link Host}.
 	 * @return The associated list of {@link Rule} objects.
 	 */
-	public abstract List<Rule> getRulesByHostId(String hostId);
+    public abstract List<String> getRulesByHost(Host host);
 
-	/**
-	 * Returns the list of {@link Rule} objects that have been created for a
-	 * specific folder.
-	 * 
-	 * @param folderId
-	 *            - The {@link Folder} ID.
-	 * @return The associated list of {@link Rule} objects.
-	 */
-	public abstract List<Rule> getRulesByFolderId(String folderId);
+    /**
+     * Puts the list of {@link Rule} objects that have been created for a
+     * specific site (host).
+     * @param host - The {@link Host}.
+     * @param rules - The list of {@link Rule}.
+     */
+
+    public abstract void putRulesByHost(Host host, List<Rule> rules);
 
 	/**
 	 * Removes the {@link Rule} object from the caching structure.

@@ -4,12 +4,17 @@ import java.util.*;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.collections.IteratorUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.rest.validation.Preconditions;
+
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implements the Rule Engine caching functionality. The structures that make up
@@ -89,18 +94,33 @@ public class RulesCacheImpl extends RulesCache {
 	}
 
 	@Override
-	public List<Rule> getRulesByHostId(String hostId) {
-		// TODO - reimplement
-		List<Rule> rules = null;
-		return rules;
+	public List<String> getRulesByHost(Host host) {
+		host = checkNotNull(host, "Host is required");
+		String hostInode = checkNotNull(host.getInode(), "Host Id is required");
+        try {
+            return (List<String>) cache.get(HOST_RULES_CACHE_GROUP + hostInode, HOST_RULES_CACHE_GROUP);
+        } catch (DotCacheException e) {
+            Logger.debug(RulesCacheImpl.class,e.getMessage(),e);
+            return null;
+        }
 	}
 
-	@Override
-	public List<Rule> getRulesByFolderId(String folderId) {
-		// TODO - reimplement
-		List<Rule> rules = null;
-		return rules;
-	}
+    @Override
+    public void putRulesByHost(Host host, List<Rule> rules) {
+        host = checkNotNull(host, "Host Id is required");
+        rules = checkNotNull(rules, "Rule List is required");
+
+        List<String> rulesIds = new ArrayList<>();
+
+        for(Rule rule: rules) {
+            rulesIds.add(rule.getId());
+            addRule(rule);
+        }
+
+        String hostInode = checkNotNull(host.getInode(), "Host Id is required");
+
+        cache.put(HOST_RULES_CACHE_GROUP +hostInode, rulesIds, HOST_RULES_CACHE_GROUP);
+    }
 
 	@Override
 	public void removeRule(Rule rule) {
@@ -108,6 +128,8 @@ public class RulesCacheImpl extends RulesCache {
 			this.cache.remove(rule.getId(), getPrimaryGroup());
             Set<Rule> rules = getRules(rule.getHost(), rule.getFireOn());
             if(rules!=null) rules.remove(rule);
+            Host host =
+            List<String> rulesIds = getRulesByHost(rule.getHost());
 		}
 	}
 

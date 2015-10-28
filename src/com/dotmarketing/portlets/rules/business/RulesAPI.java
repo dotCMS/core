@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
@@ -23,7 +24,7 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Rule> getEnabledRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    List<Rule> getEnabledRulesByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      *
@@ -34,7 +35,7 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Rule> getAllRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    List<Rule> getAllRulesByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      *
@@ -45,19 +46,7 @@ public interface RulesAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Set<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException;
-
-
-    /**
-     *
-     * @param folder
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
-    List<Rule> getRulesByFolder(String folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    Set<Rule> getRulesByHostFireOn(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException;
 
     /**
      *

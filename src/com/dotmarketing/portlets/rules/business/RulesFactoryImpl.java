@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -25,6 +26,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.dotcms.rest.validation.Preconditions.checkNotNull;
+
 public class RulesFactoryImpl implements RulesFactory {
 
 
@@ -38,29 +41,32 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public List<Rule> getEnabledRulesByHost(String host) throws DotDataException {
-        List<Rule> ruleList = cache.getRulesByHostId(host);
-        if (ruleList == null) {
-            final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_ENABLED_RULES_BY_HOST);
-            db.addParam(host);
-            ruleList = convertListToObjects(db.loadObjectResults(), Rule.class);
-            cache.addRules(ruleList);
-        }
-        return ruleList;
+    public List<Rule> getEnabledRulesByHost(Host host) throws DotDataException {
+        List<Rule> ruleList = getAllRulesByHost(host);
+        return ruleList.stream().filter(rule -> rule.isEnabled()).collect(Collectors.toList());
     }
 
     @Override
-    public List<Rule> getAllRulesByHost(String host) throws DotDataException {
-        List<Rule> ruleList = cache.getRulesByHostId(host);
-        if (ruleList == null) {
+    public List<Rule> getAllRulesByHost(Host host) throws DotDataException {
+        host = checkNotNull(host, "Host is required.");
+        List<String> rulesIds = cache.getRulesByHost(host);
+        List<Rule> rules;
+        if (rulesIds == null) {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_ALL_RULES_BY_HOST);
             db.addParam(host);
-            ruleList = convertListToObjects(db.loadObjectResults(), Rule.class);
-            cache.addRules(ruleList);
+            rules = convertListToObjects(db.loadObjectResults(), Rule.class);
+            cache.putRulesByHost(host,rules);
+        } else {
+            rules = new ArrayList<>();
+            for(String ruleId: rulesIds) {
+                Rule rule = getRuleById(ruleId);
+                if(rule!=null) {
+                    rules.add(rule);
+                }
+            }
         }
-        return ruleList;
+        return rules;
     }
 
     @Override
@@ -73,19 +79,6 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(fireOn.toString());
             ruleList = convertListToObjectsSet(db.loadObjectResults(), Rule.class);
             cache.addRules(ruleList, host, fireOn);
-        }
-        return ruleList;
-    }
-
-    @Override
-    public List<Rule> getRulesByFolder(String folder) throws DotDataException {
-        List<Rule> ruleList = cache.getRulesByHostId(folder);
-        if (ruleList == null) {
-            final DotConnect db = new DotConnect();
-            db.setSQL(sql.SELECT_RULES_BY_FOLDER);
-            db.addParam(folder);
-            ruleList = convertListToObjects(db.loadObjectResults(), Rule.class);
-            cache.addRules(ruleList);
         }
         return ruleList;
     }

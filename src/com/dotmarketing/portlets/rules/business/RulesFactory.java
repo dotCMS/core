@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.*;
@@ -11,13 +12,11 @@ import java.util.Set;
 
 public interface RulesFactory {
 
-    List<Rule> getEnabledRulesByHost(String host) throws DotDataException;
+    List<Rule> getEnabledRulesByHost(Host host) throws DotDataException;
 
-    List<Rule> getAllRulesByHost(String host) throws DotDataException;
+    List<Rule> getAllRulesByHost(Host host) throws DotDataException;
 
     Set<Rule> getRulesByHost(String host, Rule.FireOn fireOn) throws DotDataException;
-
-    List<Rule> getRulesByFolder(String folder) throws DotDataException;
 
     List<Rule> getRulesByNameFilter(String nameFilter);
 
