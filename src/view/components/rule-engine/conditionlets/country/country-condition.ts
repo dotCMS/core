@@ -22,7 +22,7 @@ export class CountryConditionModel {
 @Component({
   selector: 'cw-country-condition',
   properties: [
-    "comparatorValue", "comparisonValues"
+    "comparatorValue", "comparisonValues",
   ],
   events: [
     "change"
@@ -30,14 +30,16 @@ export class CountryConditionModel {
 })
 @View({
   directives: [NgFor],
-  template: `<div flex="grow" layout="row" layout-align="space-around-center">
-  <select class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
+  template: `<div flex="grow" layout="row" layout-align="start-center" class="cw-condition-component">
+  <!-- Spacer-->
+  <div flex="20" class="cw-input">&nbsp;</div>
+  <select flex="20" class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
     <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
       {{cOpt}}
     </option>
   </select>
 
-  <select class="cw-input cw-clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
+  <select flex class="cw-input cw-clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
     <option value="{{country.id}}" *ng-for="var country of countries" [selected]="country.id == value.isoCode">
       {{country.label}}
     </option>
@@ -84,7 +86,7 @@ export class CountryCondition {
 
   set comparisonValues(value:any) {
     let isoCode = value[this.value.parameterKeys[0]]
-    isoCode = isoCode ? isoCode.value : ''
+    isoCode = isoCode ? isoCode.value : this.countries[0].id
     this.value.isoCode = isoCode
   }
 
@@ -92,12 +94,14 @@ export class CountryCondition {
     let value = event.target['value']
     let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
     this.value.comparatorValue = value ? value.toLowerCase() : ''
+    this.value.parameterKeys = ["isoCode"]
     this.change.next(e)
   }
 
   updateComparisonValues(event:Event) {
     let value = event.target['value']
     let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
+    this.value.parameterKeys = ["isoCode"]
     this.value.isoCode = value
     this.change.next(e)
   }

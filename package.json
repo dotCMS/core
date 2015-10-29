@@ -16,7 +16,7 @@
       "es6-shim": "github:es-shims/es6-shim@0.32.3",
       "events": "github:jspm/nodelibs-events@0.1.0",
       "jquery": "github:components/jquery@2.1.4",
-      "reflect-metadata": "npm:reflect-metadata@0.1.0",
+      "reflect-metadata": "npm:reflect-metadata@0.1.2",
       "rx": "npm:rx@2.5.3",
       "rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.4",
       "text": "github:systemjs/plugin-text@0.0.2",
@@ -68,6 +68,7 @@
   "scripts": {
     "tsc": "tsc -p src -w",
     "start": "live-server --open=src",
-    "test": "live-server --open=src/unit-tests.html"
+    "test": "live-server --open=src/unit-tests.html",
+    "itest": "gulp serve --open=/src/integration-tests.html"
   }
 }

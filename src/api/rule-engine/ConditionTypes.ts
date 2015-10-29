@@ -13,7 +13,8 @@ var ENABLED_CONDITION_TYPE_IDS = {
 
 
 export class ConditionTypeModel {
-  id:string
+
+  private _id:string
   i18nKey:string
   comparisons:Array<string>
 
@@ -22,11 +23,18 @@ export class ConditionTypeModel {
     this.comparisons = []
     if (type && type.comparisons) {
       Object.keys(type.comparisons).forEach((key)=> {
-        this.comparisons.push(type.comparisons[key].id)
+        this.comparisons.push(type.comparisons[key]._id)
       })
     }
   }
 
+  get id():string {
+    return this._id;
+  }
+
+  set id(value:string) {
+    this._id = (value && value.length) ? value : 'NoSelection'
+  }
   rhsValues(parameters:any):any {
     let map = {}
     if (parameters) {

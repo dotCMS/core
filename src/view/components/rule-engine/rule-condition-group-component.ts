@@ -5,12 +5,16 @@ import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2
 import {ConditionComponent} from './rule-condition-component';
 
 import {ApiRoot} from 'api/persistence/ApiRoot'
+import {ConditionGroupModel} from "api/rule-engine/ConditionGroup";
+import {ConditionModel} from "api/rule-engine/Condition";
+import {ConditionService} from "../../../api/rule-engine/Condition";
+import {RuleModel} from "../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'condition-group',
   properties: [
     "rule",
-    "groupSnap",
+    "group",
     "groupIndex"
   ]
 })
@@ -30,13 +34,13 @@ import {ApiRoot} from 'api/persistence/ApiRoot'
     </div>
   </div>
   <div flex layout="column" layout-align="center-center" class="cw-conditions">
-    <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var meta of conditions; var i=index">
-      <rule-condition flex layout="row" [condition-meta]="meta" [index]="i"></rule-condition>
+    <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var condition of conditions; var i=index">
+      <rule-condition flex layout="row" [condition]="condition" [index]="i"></rule-condition>
       <div class="cw-spacer cw-add-condition" *ng-if="i !== (conditions.length - 1)"></div>
       <div class="cw-btn-group" *ng-if="i === (conditions.length - 1)">
         <div class="ui basic icon buttons">
           <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" >
-            <i class="plus icon" aria-hidden="true" (click)="addCondition();"></i>
+            <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -48,108 +52,67 @@ import {ApiRoot} from 'api/persistence/ApiRoot'
   directives: [ConditionComponent, NgIf, NgFor]
 })
 export class ConditionGroupComponent {
-  apiRoot:ApiRoot
   groupIndex:number
-  _groupSnap:any
-  group:any;
-  rule:any;
-  groupCollapsed:boolean;
-  conditions:Array<any>;
-  conditionsRef:any;
+  _group:ConditionGroupModel
+  rule:RuleModel
+  conditions:Array<ConditionModel>;
+  groupCollapsed:boolean
+  private apiRoot:ApiRoot
+  private conditionService:ConditionService;
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot) {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ConditionService) conditionService:ConditionService) {
     this.apiRoot = apiRoot
+    this.conditionService = conditionService;
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
-    this.conditionsRef = this.apiRoot.defaultSite.child('ruleengine/conditions')
-    this.conditionsRef.on('child_added', (conditionSnap) => {
-      if (conditionSnap.val().owningGroup == this.groupSnap.key()) {
-        this.conditions.push(conditionSnap.ref())
+    this.conditionService.onAdd.subscribe((conditionModel) => {
+      if (conditionModel.owningGroup.key == this._group.key) {
+        this.conditions.push(conditionModel)
       }
     })
-    this.conditionsRef.on('child_removed', (conditionSnap) => {
-      if (conditionSnap.val().owningGroup == this.groupSnap.key()) {
-        this.conditions = this.conditions.filter((existingSnap) => {
-          return existingSnap.key() != conditionSnap.key()
+    this.conditionService.onRemove.subscribe((conditionModel) => {
+      debugger
+      if (conditionModel.owningGroup.key == this._group.key) {
+        this.conditions = this.conditions.filter((aryModel:ConditionModel)=>{
+          return aryModel.key != conditionModel.key
         })
-        if (this.conditions.length === 0) {
-          this._groupSnap.ref().remove()
-        }
       }
     })
+
   }
 
-  set groupSnap(groupSnap) {
-    console.log('Setting ConditionGroup snapshot: ', groupSnap.key())
-    this._groupSnap = groupSnap
-    this.group = groupSnap.val()
-    this.getConditions()
+  set group(group:ConditionGroupModel) {
+    this._group = group
+    let groupKeys = Object.keys(group.conditions)
+    if(groupKeys.length == 0){
+      this.addCondition()
+    } else {
+      this.conditionService.listForGroup(group)
+    }
   }
 
-  get groupSnap() {
-    return this._groupSnap;
-  }
-
-  getConditions() {
-    let conditionMetas = []
-    let conditionSnap = this.groupSnap.child('conditions')
-    conditionSnap.forEach((childSnap) => {
-      let key = childSnap.key()
-      var ref = this.conditionsRef.child(key);
-      conditionMetas.push(ref)
-      ref.once('value', (snap)=> {
-      });
-    })
-    return conditionMetas
+  get group() {
+    return this._group;
   }
 
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
-    let condition = {
-      priority: 10,
-      name: "Condition. " + new Date().toISOString(),
-      owningGroup: this._groupSnap.key(),
-      conditionlet: 'UsersBrowserHeaderConditionlet',
-      comparison: 'is',
-      operator: 'AND',
-      values: {
-        headerKeyValue: {
-          id: 'fakeId',
-          key: 'headerKeyValue',
-          value: '',
-          priority: 10
-        },
-        compareTo: {
-          id: 'fakeId2',
-          key: 'compareTo',
-          value: '',
-          priority: 1
-        },
-        isoCode: {
-          id: 'fakeId3',
-          key: 'isoCode',
-          value: '',
-          priority: 1
-        }
-      }
-    }
+    let condition = new ConditionModel()
+    condition.priority = 10
+    condition.name = "Condition. " + new Date().toISOString()
+    condition.owningGroup = this._group
+    condition.comparison = 'is'
+    condition.operator = 'AND'
+    condition.setParameter('headerKeyValue', '')
+    condition.setParameter('compareTo', '')
+    condition.setParameter('isoCode', '')
 
-    this.conditionsRef.push(condition, (result) => {
-      this.group.conditions = this.group.conditions || {}
-      this.group.conditions[result.key()] = true
-      this.updateGroup()
-    })
+    this.conditionService.add(condition)
   }
 
   toggleGroupOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
-    this.updateGroup()
-  }
-
-  updateGroup() {
-    console.log('Updating ConditionsGroup')
-    this.groupSnap.ref().set(this.group)
   }
 
 }

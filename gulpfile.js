@@ -41,7 +41,7 @@ config.proxyHost = config.proxyProtocol + '://' + config.proxyHostname + ':' + c
 
 
 var minimistCliOpts = {
-  boolean: ['open'],
+  string: ['open'],
   alias: {
     'open': ['o']
   },
@@ -135,7 +135,9 @@ var project = {
         .on('listening', function () {
           console.log('Started connect web server on ' + config.appHost)
           if (config.args.open) {
-            open(config.appHost + '/index-dev.html')
+            var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
+            console.log('Opening default browser to ' + openTo, config.args)
+            open(config.appHost + openTo)
           }
           else {
             console.log("add the '-o' flag to automatically open the default browser")

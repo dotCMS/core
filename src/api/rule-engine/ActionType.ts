@@ -1,5 +1,6 @@
 import {Inject} from 'angular2/angular2';
 import {ApiRoot} from 'api/persistence/ApiRoot';
+import {EntityMeta} from "api/persistence/EntityBase";
 
 
 export class ActionTypeModel {
@@ -7,7 +8,7 @@ export class ActionTypeModel {
   i18nKey:string;
 
 
-  constructor(id:string = null, i18nKey:string = null) {
+  constructor(id:string = 'NoSelection', i18nKey:string = null) {
     this.id = id;
     this.i18nKey = i18nKey;
   }
@@ -86,7 +87,7 @@ export class SetSessionValueActionModel extends ActionConfigModel {
   }
 }
 
-export class ActionModel {
+export class ActionModelOld {
   id:string;
   actionConfig:ActionConfigModel;
   priority:number;
@@ -119,8 +120,8 @@ export class ActionModel {
     }
   }
 
-  clone():ActionModel {
-    return new ActionModel(this.id, this.actionConfig.clone())
+  clone():ActionModelOld {
+    return new ActionModelOld(this.id, this.actionConfig.clone())
   }
 }
 

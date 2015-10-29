@@ -121,13 +121,13 @@ export class RequestHeaderConditionletModel {
 })
 @View({
   directives: [NgFor],
-  template: `<div flex="grow" layout="row" layout-align="space-around-center">
-  <select flex class="cw-input" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
+  template: `<div flex layout="row" layout-align="space-around-center" class="cw-condition-component">
+  <select flex="20" class="cw-input" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
     <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">
       {{hkOpt}}
     </option>
   </select>
-  <select flex class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
+  <select flex="20" class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
     <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
       {{cOpt}}
     </option>

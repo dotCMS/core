@@ -1,3 +1,4 @@
+
 import  {Check} from 'api/validation/Check'
 import  {ApiRoot} from 'api/persistence/ApiRoot'
 
@@ -70,7 +71,13 @@ export class EntitySnapshot {
   }
 
   child(key) {
-    let childPath = this._path + '/' + key
+    key = key.startsWith('/') ? key.substring(1) : key
+    let childPath;
+    if(!this._path.endsWith('/')){
+      childPath = this._path + '/' + key
+    } else {
+      childPath = this._path + key
+    }
     let childVal = null
     if (this.exists() && this._entity.hasOwnProperty(key)) {
       childVal = this._entity[key]
@@ -119,7 +126,14 @@ export class EntityMeta {
   }
 
   child(key) {
-    return new EntityMeta(this.path + "/" + key)
+    key = key.startsWith('/') ? key.substring(1) : key
+    let childPath;
+    if(!this.path.endsWith('/')){
+      childPath = this.path + '/' + key
+    } else {
+      childPath = this.path + key
+    }
+    return new EntityMeta(childPath)
   }
 
   key() {
@@ -138,7 +152,7 @@ export class EntityMeta {
     if (data === null) {
       return this.remove(onComplete)
     }
-    let prom = ApiRoot.instance().persistenceHandler.setItem(this.path, data)
+    let prom = ApiRoot.instance().dataStore.setItem(this.path, data)
     prom.then(() => {
       Dispatcher.notify(this.path, "change", new EntitySnapshot(this.toString(), data))
       onComplete()

@@ -1,10 +1,10 @@
-import {Injector, bind} from 'angular2/angular2';
+import {Injector, Provider} from 'angular2/angular2';
 
 import {DataStore} from 'api/persistence/DataStore'
 import {LocalDataStore} from "api/persistence/LocalDataStore";
 
 var injector = Injector.resolveAndCreate([
-  bind(DataStore).toClass(<ng.Type>LocalDataStore)
+  new Provider(DataStore, {useClass: LocalDataStore})
 ])
 describe('Unit.api.persistence.LocalDataStore', function () {
 

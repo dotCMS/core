@@ -1,7 +1,8 @@
 /// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 /// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
 
-import {bootstrap, bind, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+
 //noinspection TypeScriptCheckImport
 import * as Rx from 'rxjs/dist/cjs/Rx'
 
@@ -17,12 +18,18 @@ import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
 import {RuleComponent} from './rule-component';
 import {RuleService, RuleModel} from "api/rule-engine/Rule";
 import {ActionService} from "api/rule-engine/Action";
-import {CwEvent} from "api/util/CwEvent";
+import {CwChangeEvent} from "api/util/CwEvent";
 import {RestDataStore} from "api/persistence/RestDataStore";
 import {DataStore} from "api/persistence/DataStore";
+import {ConditionGroupService} from "api/rule-engine/ConditionGroup";
+import {ConditionService} from "api/rule-engine/Condition";
 
+
+/**
+ *
+ */
 @Component({
-  selector: 'rule-engine'
+  selector: 'cw-rule-engine'
 })
 @View({
   template: `<div flex layout="column" class="cw-rule-engine">
@@ -32,11 +39,11 @@ import {DataStore} from "api/persistence/DataStore";
       <input type="text" placeholder="Start typing to filter rules..." [value]="filterText" (keyup)="filterText = $event.target.value">
     </div>
     <div flex="2"></div>
-    <button  class="ui button cw-button-add" aria-label="Create a new Rule" (click)="addRule()">
+    <button  class="ui button cw-button-add" aria-label="Create a new Rule" (click)="addRule()" [disabled]="ruleStub != null">
       <i class="plus icon" aria-hidden="true"></i>Add Rule
     </button>
   </div>
-  <rule flex layout="row" *ng-for="var r of rules" [model]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText.toLowerCase()))"></rule>
+  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
 </div>
 
 `,
@@ -45,23 +52,66 @@ import {DataStore} from "api/persistence/DataStore";
 class RuleEngineComponent {
   rules:RuleModel[];
   filterText:string;
-  ruleService:RuleService;
+  private ruleService:RuleService;
+  private ruleStub:RuleModel
+  private stubWatch:Rx.Subscriber
 
   constructor(@Inject(RuleService) ruleService:RuleService) {
     this.ruleService = ruleService;
     this.filterText = ""
     this.rules = []
+    this.ruleService.onAdd.subscribe(
+        (rule:RuleModel) => { this.handleAdd(rule) },
+        (err) => { this.handleAddError(err) } )
+    this.ruleService.onRemove.subscribe(
+        (rule:RuleModel) => { this.handleRemove(rule) },
+        (err) => { this.handleRemoveError(err) })
+    this.ruleService.list()
+  }
 
-    this.ruleService.get().subscribe( (rule:RuleModel) => {
-          this.rules.push(rule)
-        },
-        (err) => {
-          console.log('Something went wrong: ' + err.message);
-        })
+  handleAdd(rule:RuleModel) {
+    if (rule === this.ruleStub) {
+      //noinspection TypeScriptUnresolvedFunction
+      this.stubWatch.remove()
+      this.stubWatch = null
+      this.ruleStub = null
+    } else {
+      this.rules.push(rule)
+      rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => { this.handleRuleChange(event)})
+    }
+  }
+
+  handleRuleChange(event:CwChangeEvent<RuleModel>){
+    if(event.target.valid){
+      this.ruleService.save(event.target)
+    }
+  }
+
+  handleRemove(rule:RuleModel) {
+    this.rules = this.rules.filter((arrayRule) => {
+      return arrayRule.key !== rule.key
+    })
+
+    // @todo ggranum: we're leaking Subscribers here, sadly. Might cause issues for long running edit sessions.
+  }
+
+  handleAddError(err) {
+    console.log('Could not add rule: ', err.message, err);
+  }
+
+  handleRemoveError(err) {
+    console.log('Something went wrong: ' + err.message);
+
   }
 
   addRule() {
-    this.ruleService.add()
+    this.ruleStub = new RuleModel()
+    this.rules.push(this.ruleStub)
+    this.stubWatch = this.ruleStub.onValidityChange.subscribe((event) => {
+      if(event.valid){
+        this.ruleService.save(this.ruleStub)
+      }
+    })
   }
 
 }
@@ -77,8 +127,9 @@ export function main() {
     I18NCountryProvider,
     RuleService,
     ActionService,
-    bind(DataStore).toClass(<ng.Type>RestDataStore)
-
+    ConditionGroupService,
+    ConditionService,
+    new Provider(DataStore, {useClass: RestDataStore})
   ])
   app.then((appRef) => {
     console.log("Bootstrapped App: ", appRef)
