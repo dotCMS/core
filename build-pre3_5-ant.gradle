@@ -28,7 +28,7 @@ task copyToFelix(type: Copy) {
 }
 
 task copyToLibDir(type: Sync) {
-        from configurations.compile + configurations.tomcatLibs
+        from configurations.compile
         into libsFolder
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
