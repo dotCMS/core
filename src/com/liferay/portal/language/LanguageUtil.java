@@ -223,7 +223,7 @@ public class LanguageUtil {
 			pattern = pattern2;
 		}
 		try {
-			Logger.warn(LanguageUtil.class, pattern);
+			Logger.debug(LanguageUtil.class, pattern);
 
 			if (arguments != null) {
 				Object[] formattedArguments = new Object[arguments.length];
@@ -285,7 +285,7 @@ public class LanguageUtil {
 			pattern = pattern2;
 		}
 		try {
-			Logger.warn(LanguageUtil.class, pattern);
+			Logger.debug(LanguageUtil.class, pattern);
 
 			if (arguments != null) {
 				Object[] formattedArguments = new Object[arguments.length];

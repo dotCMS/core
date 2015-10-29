@@ -1,3 +1,5 @@
+<%@page import="com.dotcms.repackage.com.google.common.base.CaseFormat"%>
+<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -97,17 +99,14 @@
 								<%= LanguageUtil.get(pageContext, "Delete") %>
 							</button>
 							
-							
-	                        <button dojoType="dijit.form.Button" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')" iconClass="plusIcon">
+	                        <button dojoType="dijit.form.Button" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','publish')" iconClass="plusIcon">
 								<%=LanguageUtil.get(pageContext, "download-for-Publish") %>
 							</button>
-							<button dojoType="dijit.form.Button" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')" iconClass="deleteIcon">
+							<button dojoType="dijit.form.Button" disabled="<%= assets.isEmpty() %>" onClick="downloadUnpushedBundle('<%=bundle.getId()%>','unpublish')" iconClass="deleteIcon">
 								<%=LanguageUtil.get(pageContext, "download-for-UnPublish") %>
 							</button>
-											
-						
 
-							<button dojoType="dijit.form.Button" disabled="<%=assets.size()>0?"false":"true" %>"   onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="sServerIcon">
+							<button dojoType="dijit.form.Button" disabled="<%= assets.isEmpty() %>" onClick="remotePublish('<%=bundle.getId()%>'); " iconClass="sServerIcon">
 								<%= LanguageUtil.get(pageContext, "Remote-Publish") %>
 							</button>
 						</th>
@@ -128,6 +127,8 @@
                                     String structureName = "";
                                     String title = "";
                                     String inode = "";
+                                    String langCode = "";
+                                    String countryCode = "";
 
                                     if ( assetType.equals( "contentlet" ) ) {
 
@@ -149,13 +150,19 @@
                                             inode = contentlet.getInode();
                                             structureName = contentlet.getStructure().getName();
                                         }
+                                    } else if (assetType.equals("language")) {
+                                        Language language = APILocator.getLanguageAPI().getLanguage(identifier);
+                                        langCode = language.getLanguageCode();
+                                        countryCode = language.getCountryCode();
+                                        title = language.getLanguage() + "(" + countryCode + ")";
+                                        structureName = CaseFormat.LOWER_CAMEL.to(CaseFormat.UPPER_CAMEL, assetType);
                                     } else if (!assetType.equals("category")) {
                                         title = PublishAuditUtil.getInstance().getTitle(assetType, identifier);
                                         if (title.equals( assetType )) {
                                             title = "";
                                             Logger.warn( this.getClass(), "Unable to find Asset of type: [" + assetType + "] with identifier: [" + identifier + "]" );
                                             try{
-                                            	Logger.info( this.getClass(), "Cleaning Publishing Queue, idenifier [" + identifier + "] no longer exists");
+                                            	Logger.info( this.getClass(), "Cleaning Publishing Queue, identifier [" + identifier + "] no longer exists");
                                             	publisherAPI.deleteElementFromPublishQueueTable(identifier);	
                                             } catch (DotPublisherException dpe){
                                             	Logger.warn( this.getClass(), "Unable to delete Asset from Publishing Queue with identifier: [" + identifier + "]", dpe );
@@ -163,17 +170,24 @@
                                         }
                                     }
                                 %>
-                                    <%if (contentlet != null || !title.equals( "" ) ) {%>
+                                    <%
+                                      title = StringEscapeUtils.escapeHtml(title);
+                                      if (contentlet != null || !title.equals( "" ) ) {%>
                                         <div style="padding:4px;margin:3px;border-bottom:1px solid #eeeeee">
 
                                             <span class="deleteIcon" style="margin-right:2px; cursor: pointer" onclick="deleteAsset('<%=asset.getAsset()%>', '<%=bundle.getId()%>')"></span>&nbsp;
 
                                             <%if ( assetType.equals( "contentlet" ) ) {%>
                                                 <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_11&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_11_struts_action=/ext/contentlet/edit_contentlet&_EXT_11_cmd=edit&inode=<%=inode %>&referer=<%=referer %>">
-                                                    <strong style="text-decoration: underline;"><%=StringEscapeUtils.escapeHtml(title)%></strong>  : <%=structureName %>
+                                                    <strong style="text-decoration: underline;"><%= title %></strong>  : <%=structureName %>
+                                                </a>
+                                            <%} else if (assetType.equals("language")) {%>
+                                                <a href="/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=EXT_LANG&p_p_action=1&p_p_state=maximized&p_p_mode=view&_EXT_LANG_struts_action=/ext/languages_manager/edit_language&_EXT_LANG_id=1&_EXT_LANG_cmd=edit&referer=<%=referer %>">
+                                                    <img src="/html/images/languages/<%= langCode %>_<%= countryCode %>.gif" border="0" />
+                                                    <strong style="text-decoration: underline;"><%= title %></strong>  : <%= structureName %>
                                                 </a>
                                             <%} else {%>
-                                                <strong><%=StringEscapeUtils.escapeHtml(title)%></strong> : <%= assetType%>
+                                                <strong><%= title %></strong> : <%= assetType%>
                                             <%}%>
 
                                         </div>
