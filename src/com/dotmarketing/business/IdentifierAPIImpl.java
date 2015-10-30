@@ -114,8 +114,28 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 	}
 
 	public Identifier save(Identifier id) throws DotDataException, DotStateException {
-		Identifier ident = ifac.saveIdentifier(id);
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id.getId());
+
+		Identifier loadedObject = id;
+		if ( id != null && UtilMethods.isSet(id.getId()) ) {
+
+			/*
+			Load it from the db in order to avoid:
+			NonUniqueObjectException: a different object with the same identifier value was already associated with the session
+			 */
+			loadedObject = ifac.loadFromDb(id.getId());
+
+			//Copy the changed properties back
+			loadedObject.setAssetName(id.getAssetName());
+			loadedObject.setAssetType(id.getAssetType());
+			loadedObject.setParentPath(id.getParentPath());
+			loadedObject.setHostId(id.getHostId());
+			loadedObject.setOwner(id.getOwner());
+			loadedObject.setSysExpireDate(id.getSysExpireDate());
+			loadedObject.setSysPublishDate(id.getSysPublishDate());
+		}
+
+		Identifier ident = ifac.saveIdentifier(loadedObject);
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(loadedObject.getId());
 		return ident;
 	}
 
