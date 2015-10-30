@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 public class ConditionGroupResourceFTest extends TestBase {
@@ -84,6 +85,74 @@ public class ConditionGroupResourceFTest extends TestBase {
         String responseStr = response.readEntity(String.class);
         JSONObject responseJSON = new JSONObject(responseStr);
         String group = (String)responseJSON.get("id");
+
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .delete();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+
+        // rules clean up
+        deleteRule(rule);
+    }
+
+    /**
+     * Testing basic condition group creation... should succeed
+     * @throws JSONException
+     */
+    @Test
+    public void testConditionGroupWithPriority() throws JSONException {
+        Integer originalPriority = 99;
+        Integer updatedPriority = 59;
+
+        Response response = null;
+
+        // rules setup
+        String rule = createRule("testRuleConditionGroupPriority");
+
+        // condition testing
+        JSONObject groupJSON = new JSONObject();
+        groupJSON.put("operator", Condition.Operator.AND.name());
+        groupJSON.put("priority", originalPriority);
+
+        WebTarget target = config.restBaseTarget();
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .post(Entity.json(groupJSON.toString()));
+
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        String responseStr = response.readEntity(String.class);
+        JSONObject responseJSON = new JSONObject(responseStr);
+        String group = (String)responseJSON.get("id");
+
+        //We sent priority 99 and we should get the same as result.
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
+            .request(MediaType.APPLICATION_JSON_TYPE).get();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        responseStr = response.readEntity(String.class);
+        responseJSON = new JSONObject(responseStr);
+        Integer priority = (Integer)responseJSON.get("priority");
+        assertEquals(originalPriority, priority);
+
+        //Update priority.
+        groupJSON.put("priority", updatedPriority);
+
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .put(Entity.json(groupJSON.toString()));
+
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        //We updated to priority 59 and we should get the same as result.
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
+            .request(MediaType.APPLICATION_JSON_TYPE).get();
+        responseStr = response.readEntity(String.class);
+        responseJSON = new JSONObject(responseStr);
+        priority = (Integer)responseJSON.get("priority");
+        assertEquals(updatedPriority, priority);
 
         response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups/" + group)
             .request(MediaType.APPLICATION_JSON_TYPE)
