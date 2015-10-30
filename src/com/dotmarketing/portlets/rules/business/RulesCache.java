@@ -25,10 +25,13 @@ public abstract class RulesCache implements Cachable {
 
 	// Caching groups for the different sections of a rule
 	protected static final String PRIMARY_GROUP = "RulesCache";
-	protected static final String HOST_RULES_CACHE_GROUP = "HostRulesCache";
-	protected static final String RULE_CONDITION_GROUPS_CACHE = "RuleConditionGroupsCache";
-	protected static final String RULE_CONDITIONS_GROUP = "RuleConditionsCache";
-	protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
+	protected static final String CONDITIONS_CACHE = "ConditionsCache";
+	protected static final String CONDITION_GROUPS_CACHE = "ConditionsGroupsCache";
+	protected static final String ACTIONS_CACHE = "ActionsCache";
+    protected static final String HOST_RULES_CACHE = "HostRulesCache";
+    protected static final String RULE_CONDITION_GROUPS = "RuleConditionGroupsCache";
+    protected static final String CONDITION_GROUP_CONDITIONS_CACHE = "ConditionsGroupConditionsCache";
+    protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
 
 	@Override
 	public String getPrimaryGroup() {
@@ -37,36 +40,8 @@ public abstract class RulesCache implements Cachable {
 
 	@Override
 	public String[] getGroups() {
-		return new String[] { PRIMARY_GROUP, RULE_CONDITION_GROUPS_CACHE,
-                RULE_CONDITIONS_GROUP, RULE_ACTIONS_CACHE};
-	}
-
-	/**
-	 * Removes all the rules from the caching structure.
-	 */
-	protected void flushRules() {
-		CacheLocator.getCacheAdministrator().flushGroup(PRIMARY_GROUP);
-	}
-
-	/**
-	 * Removes all the condition groups from the caching structure.
-	 */
-	protected void flushConditionGroups() {
-		CacheLocator.getCacheAdministrator().flushGroup(RULE_CONDITION_GROUPS_CACHE);
-	}
-
-	/**
-	 * Removes all the conditions from the caching structure.
-	 */
-	protected void flushConditions() {
-		CacheLocator.getCacheAdministrator().flushGroup(RULE_CONDITIONS_GROUP);
-	}
-
-	/**
-	 * Removes all the action lists from the caching structure.
-	 */
-	protected void flushActions() {
-		CacheLocator.getCacheAdministrator().flushGroup(RULE_ACTIONS_CACHE);
+		return new String[] { PRIMARY_GROUP, CONDITIONS_CACHE, CONDITION_GROUPS_CACHE, ACTIONS_CACHE
+            , HOST_RULES_CACHE, RULE_CONDITION_GROUPS, CONDITION_GROUP_CONDITIONS_CACHE, RULE_ACTIONS_CACHE};
 	}
 
 	/**
@@ -76,19 +51,8 @@ public abstract class RulesCache implements Cachable {
 	 * 
 	 * @param rule
 	 *            - The {@link Rule} object to cache.
-	 * @return The recently added {@link Rule} object.
 	 */
-	protected abstract Rule addRule(Rule rule);
-
-	/**
-	 * Adds a list of {@link Rule} objects to the caching structure. Null or
-	 * empty lists will not be added to the cache.
-	 * 
-	 * @param hostId
-	 *            - The {@link Rule} objects.
-	 * @return The recently added list of {@link Rule} objects.
-	 */
-	public abstract List<Rule> addRules(List<Rule> rules);
+	public abstract void addRule(Rule rule);
 
     /**
      * Adds a list of {@link Rule} objects under the {@Link Host} with the given hostId
@@ -99,7 +63,7 @@ public abstract class RulesCache implements Cachable {
      * @param fireOn
      * @return
      */
-    public abstract Set<Rule> addRules(Set<Rule> rules, String hostId, Rule.FireOn fireOn);
+    public abstract void addRulesByHostFireOn(Set<Rule> rules, String hostId, Rule.FireOn fireOn);
 
     /**
      * Returns a list of {@link Rule} objects under the {@Link Host} with the given hostId
@@ -108,7 +72,7 @@ public abstract class RulesCache implements Cachable {
      * @param fireOn
      * @return
      */
-    public abstract Set<Rule> getRules(String hostId, Rule.FireOn fireOn);
+    public abstract Set<Rule> getRulesByHostFireOn(String hostId, Rule.FireOn fireOn);
 
 
     /**
@@ -128,7 +92,7 @@ public abstract class RulesCache implements Cachable {
 	 *            - The {@link Host}.
 	 * @return The associated list of {@link Rule} objects.
 	 */
-    public abstract List<String> getRulesByHost(Host host);
+    public abstract List<String> getRulesIdsByHost(Host host);
 
     /**
      * Puts the list of {@link Rule} objects that have been created for a
@@ -152,29 +116,13 @@ public abstract class RulesCache implements Cachable {
 	 * empty values will not be added to the cache. In case the condition
 	 * already exists, the entry will be updated with the new value.
 	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID.
 	 * @param condition
 	 *            - The {@link Condition} object to cache.
-	 * @return The recently added {@link Condition} object.
 	 */
-	protected abstract Condition addCondition(String conditionGroupId,
-			Condition condition);
+	public abstract void addCondition(Condition condition);
 
 	/**
 	 * Returns the {@link Condition} object associated to the specified key.
-	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID.
-	 * @param condition
-	 *            - The {@link Condition} object.
-	 * @return The associated {@link Condition} object.
-	 */
-	public abstract Condition getCondition(String conditionGroupId,
-			Condition condition);
-
-	/**
-	 * Returns the {@link Condition} object associated to the specified ID.
 	 * 
 	 * @param conditionId
 	 *            - The {@link Condition} ID.
@@ -185,93 +133,41 @@ public abstract class RulesCache implements Cachable {
 	/**
 	 * Removes the {@link Condition} object from the caching structure.
 	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID where the condition will be
-	 *            removed.
 	 * @param condition
 	 *            - The {@link Condition} object that will be removed.
 	 */
-	public abstract void removeCondition(String conditionGroupId,
-			Condition condition);
+	public abstract void removeCondition(Condition condition);
 
 	/**
-	 * Adds a list of {@link Condition} objects to their associated
-	 * {@link ConditionGroup} in the caching structure. Null or empty condition
+	 * Adds a list of {@link Condition} to their associated
+	 * {@link ConditionGroup} in the caching structure. Null or empty conditions ids
 	 * lists will not be added to the cache. In case the condition group already
 	 * exists, the entry will be updated with the new values.
 	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID.
+	 * @param conditionGroup
+	 *            - The {@link ConditionGroup}.
 	 * @param conditions
 	 *            - The {@link Condition} object to cache.
-	 * @return The recently added list of {@link Condition} objects.
 	 */
-	protected abstract List<Condition> addConditions(String conditionGroupId,
-			List<Condition> conditions);
+	public abstract void putConditionsByGroup(ConditionGroup conditionGroup, List<Condition> conditions);
 
 	/**
-	 * Returns the list of {@link Condition} objects associated to the specified
+	 * Returns the list of {@link Condition} ids associated to the specified
 	 * {@link ConditionGroup}.
 	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID.
+	 * @param conditionGroup
+	 *            - The {@link ConditionGroup}.
 	 * @return The associated list of {@link Condition} objects.
 	 */
-	public abstract List<Condition> getConditionsByGroupId(
-			String conditionGroupId);
+    public abstract List<String> getConditionsIdsByGroup(ConditionGroup conditionGroup);
 
 	/**
-	 * Returns the list of {@link Condition} objects associated to the specified
-	 * rule ID.
+	 * Adds a {@link ConditionGroup} object to the caching structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} object.
-	 * @return The associated list of {@link Condition} objects.
-	 */
-	public abstract List<Condition> getConditions(String ruleId);
-
-	/**
-	 * Removes the list of {@link Condition} objects of a specific
-	 * {@link ConditionGroup} from the caching structure.
-	 * 
-	 * @param conditionGroupId
-	 *            - The {@link ConditionGroup} ID.
-	 */
-	public abstract void removeConditions(String conditionGroupId);
-
-	/**
-	 * Removes the list of {@link Condition} objects of a specific {@link Rule}
-	 * from the caching structure.
-	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 */
-	public abstract void removeConditionsByRuleId(String ruleId);
-
-	/**
-	 * Adds a {@link ConditionGroup} object in a rule to the caching structure.
-	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
 	 * @param conditionGroup
 	 *            - The {@link ConditionGroup} object to cache.
-	 * @return The recently added {@link ConditionGroup} object.
 	 */
-	protected abstract ConditionGroup addConditionGroup(String ruleId,
-			ConditionGroup conditionGroup);
-
-	/**
-	 * Returns the {@link ConditionGroup} object associated to the specified
-	 * rule.
-	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 * @param conditionGroup
-	 *            - The {@link ConditionGroup} object to retrieve.
-	 * @return The associated {@link ConditionGroup} object.
-	 */
-	public abstract ConditionGroup getConditionGroup(String ruleId,
-			ConditionGroup conditionGroup);
+	public abstract void addConditionGroup(ConditionGroup conditionGroup);
 
 	/**
 	 * Returns the {@link ConditionGroup} object associated to the specified ID.
@@ -283,72 +179,42 @@ public abstract class RulesCache implements Cachable {
 	public abstract ConditionGroup getConditionGroup(String conditionGroupId);
 
 	/**
-	 * Removes the {@link ConditionGroup} object of a specific rule from the
+	 * Removes the {@link ConditionGroup} object from the
 	 * caching structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
 	 * @param conditionGroup
 	 *            - The {@link ConditionGroup} object to remove.
 	 */
-	public abstract void removeConditionGroup(String ruleId,
-			ConditionGroup conditionGroup);
+	public abstract void removeConditionGroup(ConditionGroup conditionGroup);
 
 	/**
 	 * Adds a list of {@link ConditionGroup} objects in a rule to the caching
 	 * structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 * @param conditionGroups
+	 * @param rule
+	 *            - The {@link Rule}.
+	 * @param groups
 	 *            - The {@link ConditionGroup} objects to cache.
 	 * @return The recently added {@link ConditionGroup} object.
 	 */
-	protected abstract List<ConditionGroup> addConditionGroups(String ruleId,
-			List<ConditionGroup> conditionGroups);
+    public abstract void putConditionGroupsByRule(Rule rule, List<ConditionGroup> groups);
 
 	/**
-	 * Returns the {@link Condition} object associated to the specified rule.
-	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 * @return The associated list of {@link ConditionGroup} objects.
-	 */
-	public abstract List<ConditionGroup> getConditionGroups(String ruleId);
-
-	/**
-	 * Removes the list of {@link ConditionGroup} objects of a specific rule
-	 * from the caching structure.
+	 * Returns the {@link Condition} ids associated to the specified rule.
 	 * 
 	 * @param rule
-	 *            - The {@link Rule} object.
+	 *            - The {@link Rule}.
+	 * @return The associated list of {@link ConditionGroup} ids.
 	 */
-	public abstract void removeConditionGroups(Rule rule);
+	public abstract List<String> getConditionGroupsIdsByRule(Rule rule);
 
 	/**
-	 * Adds a {@link RuleAction} object in a rule to the caching structure. In
-	 * case the action list already exists, the entry will be updated with the
-	 * new values.
+	 * Adds a {@link RuleAction} object to the caching structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
 	 * @param action
 	 *            - The {@link RuleAction} object to cache.
-	 * @return The recently added {@link RuleAction} object.
 	 */
-	protected abstract RuleAction addAction(String ruleId, RuleAction action);
-
-	/**
-	 * Returns the {@link RuleAction} object associated to the specified rule
-	 * and ID.
-	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 * @param actionId
-	 *            - The {@link RuleAction} ID.
-	 * @return The associated {@link RuleAction} object.
-	 */
-	public abstract RuleAction getAction(String ruleId, String actionId);
+	public abstract void addAction(RuleAction action);
 
 	/**
 	 * Returns the {@link RuleAction} object associated to the specified ID.
@@ -363,42 +229,30 @@ public abstract class RulesCache implements Cachable {
 	 * Removes the {@link RuleAction} object of a specific rule from the caching
 	 * structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
 	 */
-	public abstract void removeAction(String ruleId, RuleAction action);
+	public abstract void removeAction(RuleAction action);
 
 	/**
 	 * Adds a list of {@link RuleAction} objects in a rule to the caching
-	 * structure. In case the action list already exists, the entry will be
-	 * updated with the new values.
+	 * structure.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
+	 * @param rule
+	 *            - The {@link Rule}.
 	 * @param actions
 	 *            - The {@link RuleAction} objects to cache.
 	 * @return The recently added {@link RuleAction} object list.
 	 */
-	protected abstract List<RuleAction> addActions(String ruleId,
-			List<RuleAction> actions);
+    public abstract void putActionsByRule(Rule rule, List<RuleAction> actions);
 
 	/**
-	 * Returns the list of {@link RuleAction} objects associated to the
+	 * Returns the list of {@link RuleAction} ids associated to the
 	 * specified rule.
 	 * 
-	 * @param ruleId
-	 *            - The {@link Rule} ID.
-	 * @return The associated list of {@link RuleAction} objects.
-	 */
-	public abstract List<RuleAction> getActions(String ruleId);
-
-	/**
-	 * Removes the list of {@link RuleAction} objects of a specific rule from
-	 * the caching structure.
-	 * 
 	 * @param rule
-	 *            - The {@link Rule} object.
+	 *            - The {@link Rule}.
+	 * @return The associated list of {@link RuleAction} ids.
 	 */
-	public abstract void removeActions(Rule rule);
+    public abstract List<String> getActionsIdsByRule(Rule rule);
+
 
 }
