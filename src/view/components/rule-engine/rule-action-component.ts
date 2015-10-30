@@ -4,8 +4,7 @@ import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2
 
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
 import {ActionTypesProvider, ActionTypeModel} from "api/rule-engine/ActionType"
-import {ActionService} from "api/rule-engine/Action";
-import {ActionModel} from "api/rule-engine/Action";
+import {ActionService, ActionModel} from "api/rule-engine/Action";
 
 
 @Component({
@@ -51,15 +50,13 @@ export class RuleActionComponent {
     typesProvider.promise.then(()=> {
       this.actionTypes = typesProvider.ary
     })
-
     this._action.actionType = new ActionTypeModel()
-    this._action.actionType.id = "NoSelection"
   }
 
   set action(action:ActionModel){
     this._action = action
     action.onChange.subscribe((self)=>{
-      if(action.isValid()){
+      if(action.isValid() && action.isPersisted()){
         this.actionService.save(action)
       }
     })

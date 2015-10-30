@@ -56,7 +56,7 @@ import {ConditionModel} from "../../../api/rule-engine/Condition";
     </div>
     <div flex="none" class="cw-btn-group cw-condition-buttons">
       <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
+        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
           <i class="trash icon" ></i>
         </button>
       </div>
@@ -94,7 +94,7 @@ export class ConditionComponent {
   set condition(condition:ConditionModel) {
     this._condition = condition
     this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
-      if (event.target.isValid()) {
+      if (event.target.isValid() && event.target.isPersisted()) {
         this.conditionServce.save(event.target)
       }
     })

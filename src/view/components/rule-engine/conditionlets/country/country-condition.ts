@@ -71,6 +71,9 @@ export class CountryCondition {
         tempCountries.push({id: byNames[name], label: name})
       })
       this.countries = tempCountries
+      if(this.value.isoCode === 'NoSelection'){
+        this.value.isoCode = this.countries[0].id
+      }
     })
 
   }
@@ -86,7 +89,10 @@ export class CountryCondition {
 
   set comparisonValues(value:any) {
     let isoCode = value[this.value.parameterKeys[0]]
-    isoCode = isoCode ? isoCode.value : this.countries[0].id
+    isoCode = isoCode ? isoCode.value : null
+    if(!isoCode ){
+      isoCode = this.countries[0] ? this.countries[0].id : 'NoSelection'
+    }
     this.value.isoCode = isoCode
   }
 

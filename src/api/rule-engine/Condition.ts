@@ -1,6 +1,7 @@
+/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink.d.ts" />
+
 import {Inject, EventEmitter} from 'angular2/angular2';
-//noinspection TypeScriptCheckImport
-import * as Rx from 'rxjs/dist/cjs/Rx'
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -35,6 +36,8 @@ export class ConditionModel extends CwModel {
     this.operator = 'AND'
     this._parameters = {}
     this.priority = 1
+    this.setParameter("headerKeyValue", "")
+    this.setParameter("compareTo", "", 2)
   }
 
   setParameter(key:string, value:any, priority:number=1, id:string=null) {
@@ -55,8 +58,9 @@ export class ConditionModel extends CwModel {
   }
 
   clearParameters(){
-    this._parameters = {}
-    this._changed('parameters')
+    // @todo ggranum: Uncomment once we can add parameters to an existing Condition, server side.
+    //this._parameters = {}
+    //this._changed('parameters')
   }
 
   get parameters():{[key:string]: ConditionModelParameter} {
@@ -107,6 +111,10 @@ export class ConditionModel extends CwModel {
     this._operator = value;
   }
 
+  _changed(key:string){
+    console.log("api.rule-engine.ConditionModel", "_changed", key)
+    super._changed(key)
+  }
 
   isValid() {
     let valid = !!this._owningGroup
@@ -127,10 +135,12 @@ export class ConditionService {
   constructor(@Inject(ApiRoot) apiRoot) {
     this.ref = apiRoot.defaultSite.child('ruleengine/conditions')
     this.apiRoot = apiRoot
-    this._removed = new EventEmitter()
-    this.onRemove = this._removed.toRx()
     this._added = new EventEmitter()
-    this.onAdd = this._added.toRx()
+    this._removed = new EventEmitter()
+    let onAdd = Rx.Observable.from(this._added.toRx())
+    let onRemove = Rx.Observable.from(this._removed.toRx())
+    this.onAdd = onAdd.share()
+    this.onRemove = onRemove.share()
   }
 
   static fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
@@ -200,29 +210,39 @@ export class ConditionService {
 
   }
 
-  add(condition:ConditionModel) {
-    let json = ConditionService.toJson(condition)
+  add(model:ConditionModel) {
+    console.log("api.rule-engine.ConditionService", "add", model)
+    if(!model.isValid()){
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
+    }
+    let json = ConditionService.toJson(model)
     this.ref.push(json, (result)=> {
-      condition.key = result.key()
-      this._added.next(condition)
+      model.key = result.key()
+      this._added.next(model)
     })
   }
 
-  save(condition:ConditionModel, cb:Function = null) {
-    let json = ConditionService.toJson(condition)
-    this.ref.child(condition.key).set(json, (result)=> {
+  save(model:ConditionModel, cb:Function = null) {
+    console.log("api.rule-engine.ConditionService", "save", model)
+    if(!model.isValid()){
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
+    }
+
+    let json = ConditionService.toJson(model)
+    this.ref.child(model.key).set(json, (result)=> {
       if(cb){
-        cb(condition)
+        cb(model)
       }
     })
   }
 
 
-  remove(condition:ConditionModel, cb:Function = null) {
-    this.ref.child(condition.key).remove(()=> {
-      this._removed.next(condition)
+  remove(model:ConditionModel, cb:Function = null) {
+    console.log("api.rule-engine.ConditionService", "remove", model)
+    this.ref.child(model.key).remove(()=> {
+      this._removed.next(model)
       if(cb){
-        cb(condition)
+        cb(model)
       }
     })
   }

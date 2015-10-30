@@ -1,6 +1,8 @@
+//// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
+
 import {Inject, EventEmitter} from 'angular2/angular2';
-//noinspection TypeScriptCheckImport
-import * as Rx from 'rxjs/dist/cjs/Rx'
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+
 
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -94,10 +96,12 @@ export class ActionService {
   constructor(@Inject(ApiRoot) apiRoot) {
     this.ref = apiRoot.defaultSite.child('ruleengine/actions')
     this.apiRoot = apiRoot
-    this._removed = new EventEmitter()
-    this.onRemove = this._removed.toRx()
     this._added = new EventEmitter()
-    this.onAdd = this._added.toRx()
+    this._removed = new EventEmitter()
+    let onAdd = Rx.Observable.from(this._added.toRx())
+    let onRemove = Rx.Observable.from(this._removed.toRx())
+    this.onAdd = onAdd.share()
+    this.onRemove = onRemove.share()
   }
 
   _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot):ActionModel {
@@ -128,12 +132,6 @@ export class ActionService {
   list(rule:RuleModel):Rx.Observable {
     if (rule.isPersisted()) {
       this.addActionsFromRule(rule)
-    } else {
-      rule.onChange.subscribe((event) => {
-        if (event.key == 'key') {
-          this.addActionsFromRule(event.target)
-        }
-      })
     }
     return this.onAdd
   }
@@ -151,32 +149,36 @@ export class ActionService {
 
   }
 
-  add(action:ActionModel) {
-    let json = this._toJson(action)
+  add(model:ActionModel) {
+    console.log("api.rule-engine.ActionService", "add", model)
+
+    let json = this._toJson(model)
     this.ref.push(json, (result)=> {
-      action.key = result.key()
-      this._added.next(action)
+      model.key = result.key()
+      this._added.next(model)
     })
   }
 
-  save(action:ActionModel) {
-    if(!action.isValid()){
-      throw new Error("This should be thrown from a checkValid function on action, and should provide the info needed to make the user aware of the fix.")
+  save(model:ActionModel) {
+    console.log("api.rule-engine.ActionService", "save", model)
+    if(!model.isValid()){
+      throw new Error("This should be thrown from a checkValid function on model, and should provide the info needed to make the user aware of the fix.")
     }
-    if(!action.isPersisted()){
-      this.add(action)
+    if(!model.isPersisted()){
+      this.add(model)
     }
     else{
-      let json = this._toJson(action)
-      this.ref.child(action.key).set(json)
+      let json = this._toJson(model)
+      this.ref.child(model.key).set(json)
     }
   }
 
-  remove(action:ActionModel, cb:Function = null) {
-    this.ref.child(action.key).remove(()=> {
-      this._removed.next(action)
+  remove(model:ActionModel, cb:Function = null) {
+    console.log("api.rule-engine.ActionService", "remove", model)
+    this.ref.child(model.key).remove(()=> {
+      this._removed.next(model)
       if(cb){
-        cb(action)
+        cb(model)
       }
     })
   }

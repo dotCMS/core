@@ -298,7 +298,7 @@ export class EntityMeta {
             })
             break;
           default :
-            console.log("Unhandled event on self: ", eventType, this.path)
+            //console.log("Unhandled event on self: ", eventType, this.path)
         }
       } else if (isDescendant) {
         let isChild = path.split("/").length === (this.pathTokens.length + 1)

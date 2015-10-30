@@ -5,10 +5,9 @@ import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2
 import {ConditionComponent} from './rule-condition-component';
 
 import {ApiRoot} from 'api/persistence/ApiRoot'
-import {ConditionGroupModel} from "api/rule-engine/ConditionGroup";
-import {ConditionModel} from "api/rule-engine/Condition";
-import {ConditionService} from "../../../api/rule-engine/Condition";
-import {RuleModel} from "../../../api/rule-engine/Rule";
+import {ConditionGroupService, ConditionGroupModel} from "api/rule-engine/ConditionGroup";
+import {ConditionService, ConditionModel} from "api/rule-engine/Condition";
+import {RuleModel} from "/api/rule-engine/Rule";
 
 @Component({
   selector: 'condition-group',
@@ -39,7 +38,7 @@ import {RuleModel} from "../../../api/rule-engine/Rule";
       <div class="cw-spacer cw-add-condition" *ng-if="i !== (conditions.length - 1)"></div>
       <div class="cw-btn-group" *ng-if="i === (conditions.length - 1)">
         <div class="ui basic icon buttons">
-          <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" >
+          <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -57,26 +56,32 @@ export class ConditionGroupComponent {
   rule:RuleModel
   conditions:Array<ConditionModel>;
   groupCollapsed:boolean
+
+  private conditionStub:ConditionModel
+  //noinspection TypeScriptUnresolvedVariable
+  private conditionStubWatch:Rx.Subscriber
   private apiRoot:ApiRoot
+  private groupService:ConditionGroupService;
   private conditionService:ConditionService;
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ConditionService) conditionService:ConditionService) {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
+              @Inject(ConditionGroupService) groupService:ConditionGroupService,
+              @Inject(ConditionService) conditionService:ConditionService) {
     this.apiRoot = apiRoot
+    this.groupService = groupService;
     this.conditionService = conditionService;
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
     this.conditionService.onAdd.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
-        this.conditions.push(conditionModel)
+        this.handleAddCondition(conditionModel)
+
       }
     })
     this.conditionService.onRemove.subscribe((conditionModel) => {
-      debugger
       if (conditionModel.owningGroup.key == this._group.key) {
-        this.conditions = this.conditions.filter((aryModel:ConditionModel)=>{
-          return aryModel.key != conditionModel.key
-        })
+        this.handleRemoveCondition(conditionModel)
       }
     })
 
@@ -85,7 +90,7 @@ export class ConditionGroupComponent {
   set group(group:ConditionGroupModel) {
     this._group = group
     let groupKeys = Object.keys(group.conditions)
-    if(groupKeys.length == 0){
+    if (groupKeys.length == 0) {
       this.addCondition()
     } else {
       this.conditionService.listForGroup(group)
@@ -108,11 +113,38 @@ export class ConditionGroupComponent {
     condition.setParameter('compareTo', '')
     condition.setParameter('isoCode', '')
 
-    this.conditionService.add(condition)
+    this.conditionStub = condition
+    //noinspection TypeScriptUnresolvedVariable
+    this.conditionStubWatch = condition.onChange.subscribe((self)=> {
+      if (condition.isValid()) {
+        this.conditionService.add(condition)
+      }
+    })
+    this.conditions.push(this.conditionStub)
+
   }
 
   toggleGroupOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
   }
 
+  handleRemoveCondition(conditionModel:ConditionModel) {
+    this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
+      return aryModel.key != conditionModel.key
+    })
+    if (this.conditions.length === 0) {
+      this.groupService.remove(this.group)
+    }
+  }
+
+
+  handleAddCondition(conditionModel:ConditionModel) {
+    if(this.conditionStub && this.conditionStub.key === conditionModel.key){
+      this.conditionStub = null
+      //noinspection TypeScriptUnresolvedFunction
+      this.conditionStubWatch.unsubscribe()
+    } else{
+      this.conditions.push(conditionModel)
+    }
+  }
 }

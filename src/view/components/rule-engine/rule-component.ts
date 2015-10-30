@@ -1,12 +1,15 @@
 /// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
+/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
+
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
-//noinspection TypeScriptCheckImport
+
+
 import {InputToggle} from 'view/components/input/toggle/InputToggle'
 import {ApiRoot} from 'api/persistence/ApiRoot';
 
@@ -75,7 +78,17 @@ var rsrc = {
       <button class="cw-add-action-button ui button" arial-label="Add Action" (click)="addAction(); collapsed=false;" *ng-if="actions.length === 0">
         <i class="plus icon" aria-hidden="true"></i>
       </button>
-      <rule-action flex *ng-for="var action of actions; var i=index" [action]="action"></rule-action>
+      <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var action of actions; var i=index">
+      <rule-action flex [action]="action"></rule-action>
+      <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
+      <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
+        <div class="ui basic icon buttons">
+          <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
+            <i class="plus icon" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+      </div>
     </div>
   </div>
 </div>
@@ -97,8 +110,7 @@ class RuleComponent {
   private groupService:ConditionGroupService
 
   private actionStub:ActionModel
-  //noinspection TypeScriptUnresolvedVariable
-  private actionStubWatch:Rx.Subscriber
+  private actionStubWatch:Rx.Subscription
 
 
   constructor(elementRef:ElementRef,
@@ -130,19 +142,18 @@ class RuleComponent {
   }
 
   set rule(rule:RuleModel) {
-    this._rule = rule
-    this.actionService.onAdd.subscribe((action:ActionModel) => this.handleActionAdd(action), (err) => this.handleActionAddError(err))
-    this.actionService.onRemove.subscribe((action:ActionModel) => this.handleActionRemove(action), (err) => this.handleActionRemoveError(err))
-    this.actionService.list(this.rule)
 
-    this.groupService.onAdd.subscribe((group:ConditionGroupModel) => this.handleGroupAdd(group), (err) => this.handleGroupAddError(err))
-    this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
-    this.groupService.list(this.rule)
-
-    //this.groups = Object.keys(rule.groups).map((key)=>{
-    //  return rule.groups[key]
-    //})
-
+    if(!this.rule || this.rule.key !== rule.key){
+      this._rule = rule
+      this.groups = []
+      this.actions = []
+      this.actionService.onAdd.subscribe((action:ActionModel) => this.handleActionAdd(action), (err) => this.handleActionAddError(err))
+      this.actionService.onRemove.subscribe((action:ActionModel) => this.handleActionRemove(action), (err) => this.handleActionRemoveError(err))
+      this.groupService.onAdd.subscribe((group:ConditionGroupModel) => this.handleGroupAdd(group), (err) => this.handleGroupAddError(err))
+      this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
+      this.actionService.list(this.rule)
+      this.groupService.list(this.rule)
+    }
   }
 
   toggleCollapsed() {
@@ -159,12 +170,10 @@ class RuleComponent {
 
   setFireOn(value:string) {
     this.rule.fireOn = value
-    this.updateRule()
   }
 
   setRuleName(name:string) {
     this.rule.name = name
-    this.updateRule()
   }
 
   addGroup() {
@@ -190,7 +199,6 @@ class RuleComponent {
     if(action.owningRule.key === this.rule.key){
       if(action == this.actionStub){
         this.actionStub = null
-        //noinspection TypeScriptUnresolvedFunction
         this.actionStubWatch.unsubscribe()
       } else if(this.actions.indexOf(action) == -1) {
         this.actions.push(action)
@@ -199,7 +207,8 @@ class RuleComponent {
   }
 
   handleActionAddError(err:any) {
-
+    console.log("Error: ", err)
+    throw err
   }
 
   handleActionRemove(action:ActionModel) {
@@ -209,7 +218,8 @@ class RuleComponent {
   }
 
   handleActionRemoveError(err:any) {
-
+    console.log("Error: ", err)
+    throw err
   }
 
 
@@ -220,15 +230,19 @@ class RuleComponent {
   }
 
   handleGroupAddError(err:any) {
-
+    console.log("Error: ", err)
+    throw err
   }
 
   handleGroupRemove(group:ConditionGroupModel) {
-
+    this.groups = this.groups.filter((aryGroup)=>{
+      return aryGroup.key != group.key
+    })
   }
 
   handleGroupRemoveError(err:any) {
-
+    console.log("Error: ", err)
+    throw err
   }
 
   removeRule() {
@@ -236,11 +250,6 @@ class RuleComponent {
       this.ruleService.remove(this.rule)
     }
   }
-
-  updateRule() {
-    //return this.ruleSnap.ref().set(this.rule)
-  }
-
 
 }
 

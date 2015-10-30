@@ -1,9 +1,8 @@
 /// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
+/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink.d.ts" />
 
 import {Inject, EventEmitter} from 'angular2/angular2';
-//noinspection TypeScriptCheckImport
-import * as Rx from 'rxjs/dist/cjs/Rx'
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -98,10 +97,12 @@ export class RuleService {
               @Inject(ActionService) actionService:ActionService,
               @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
-    this._removed = new EventEmitter()
-    this.onRemove = this._removed.toRx()
     this._added = new EventEmitter()
-    this.onAdd = this._added.toRx()
+    this._removed = new EventEmitter()
+    let onAdd = Rx.Observable.from(this._added.toRx())
+    let onRemove = Rx.Observable.from(this._removed.toRx())
+    this.onAdd = onAdd.share()
+    this.onRemove = onRemove.share()
 
     actionService.onAdd.subscribe((actionModel:ActionModel) => {
       if (!actionModel.owningRule.actions[actionModel.key]) {

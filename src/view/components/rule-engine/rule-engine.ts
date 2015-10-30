@@ -1,10 +1,10 @@
 /// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
+/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink.d.ts" />
 
 import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
-//noinspection TypeScriptCheckImport
-import * as Rx from 'rxjs/dist/cjs/Rx'
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+
 
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
@@ -54,7 +54,7 @@ class RuleEngineComponent {
   filterText:string;
   private ruleService:RuleService;
   private ruleStub:RuleModel
-  private stubWatch:Rx.Subscriber
+  private stubWatch:Rx.Subscription
 
   constructor(@Inject(RuleService) ruleService:RuleService) {
     this.ruleService = ruleService;
@@ -71,8 +71,7 @@ class RuleEngineComponent {
 
   handleAdd(rule:RuleModel) {
     if (rule === this.ruleStub) {
-      //noinspection TypeScriptUnresolvedFunction
-      this.stubWatch.remove()
+      this.stubWatch.unsubscribe()
       this.stubWatch = null
       this.ruleStub = null
     } else {

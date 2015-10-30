@@ -24,7 +24,7 @@ System.config({
   },
 
   map: {
-    "@reactivex/rxjs@5.0.0-alpha.4": "npm:@reactivex/rxjs@5.0.0-alpha.4",
+    "@reactivex/rxjs@5.0.0-alpha.7": "npm:@reactivex/rxjs@5.0.0-alpha.7",
     "angular-material": "github:angular/bower-material@0.11.4",
     "angular2": "npm:angular2@2.0.0-alpha.44",
     "babel": "npm:babel-core@5.8.25",
@@ -37,8 +37,6 @@ System.config({
     "events": "github:jspm/nodelibs-events@0.1.0",
     "jquery": "github:components/jquery@2.1.4",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
-    "rx": "npm:rx@2.5.3",
-    "rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.4",
     "text": "github:systemjs/plugin-text@0.0.2",
     "whatwg-fetch": "npm:whatwg-fetch@0.9.0",
     "zone.js": "npm:zone.js@0.5.8",
@@ -107,7 +105,8 @@ System.config({
     "github:jspm/nodelibs-vm@0.1.0": {
       "vm-browserify": "npm:vm-browserify@0.0.4"
     },
-    "npm:@reactivex/rxjs@5.0.0-alpha.4": {
+
+    "npm:@reactivex/rxjs@5.0.0-alpha.7": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
@@ -119,7 +118,7 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:angular2@2.0.0-alpha.44": {
-      "@reactivex/rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.4",
+      "@reactivex/rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.7",
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "crypto": "github:jspm/nodelibs-crypto@0.1.0",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
@@ -378,9 +377,6 @@ System.config({
     },
     "npm:ripemd160@1.0.1": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
-      "process": "github:jspm/nodelibs-process@0.1.2"
-    },
-    "npm:rx@2.5.3": {
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:sha.js@2.4.4": {

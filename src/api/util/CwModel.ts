@@ -1,4 +1,7 @@
+/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
+
 import {Inject, EventEmitter} from 'angular2/angular2';
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 
 export class CwModel {
@@ -14,9 +17,9 @@ export class CwModel {
 
   constructor(key:string = null) {
     this._change = new EventEmitter()
-    this.onChange = this._change.toRx()
     this._validityChange = new EventEmitter()
-    this.onValidityChange = this._validityChange.toRx()
+    this.onChange = Rx.Observable.from(this._change.toRx()).debounceTime(100).share()
+    this.onValidityChange = Rx.Observable.from(this._validityChange.toRx()).debounceTime(100).share()
     this._key = key
     this.valid = this.isValid()
   }

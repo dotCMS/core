@@ -54,13 +54,13 @@ import {ActionModel} from "api/rule-engine/Action";
   <input flex
          type="text"
          class="cw-action-value cw-input"
-         [value]="action.getParameter('sessionKey')"
+         [value]="params.sessionKey"
          placeholder="Enter a session key"
          (change)="updateParamValue('sessionKey', $event)"/>
   <input flex
          type="text"
          class="cw-action-value cw-input"
-         [value]="action.getParameter('sessionValue')"
+         [value]="params.sessionValue"
          placeholder="Enter a value"
          (change)="updateParamValue('sessionValue', $event)"/>
 </div>
@@ -68,37 +68,31 @@ import {ActionModel} from "api/rule-engine/Action";
 })
 export class SetSessionValueAction {
 
-  _action:ActionModel;
-
   paramKeys:Array<String>
+  params:{[key:string]: string}
 
   configChange:EventEmitter;
 
   constructor(@Attribute('sessionKey') sessionKey:string = '',
               @Attribute('sessionValue') sessionValue:string = '') {
-    this._action = new ActionModel()
     this.paramKeys = ["sessionKey", "sessionValue"]
+    this.params = {
+      "sessionKey": sessionKey,
+      "sessionValue": sessionValue
+    }
     this.configChange = new EventEmitter();
   }
 
   set action(action:ActionModel){
-    this._action = action
-  }
-
-  get action():ActionModel {
-    return this._action
-  }
-
-  toParamValueObject(){
-    let params = {}
+    this.params = {}
     this.paramKeys.forEach((key)=>{
-      params[key] = this._action.getParameter(key)
+      this.params[key] = action.getParameter(key)
     })
-    return params
   }
 
   updateParamValue(key:string, event:Event) {
     let value = event.target['value']
-    this.configChange.next({type: 'actionParameterChanged', target: this, params: this.toParamValueObject()})
+    this.params[key] = value
+    this.configChange.next({type: 'actionParameterChanged', target: this, params: this.params})
   }
 }

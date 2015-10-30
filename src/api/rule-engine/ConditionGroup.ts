@@ -1,7 +1,7 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
-//noinspection TypeScriptCheckImport
-import * as Rx from 'rxjs/dist/cjs/Rx'
+/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
 
+import {Inject, EventEmitter} from 'angular2/angular2';
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 import {ApiRoot} from 'api/persistence/ApiRoot';
 import {CwChangeEvent} from "api/util/CwEvent";
@@ -61,12 +61,15 @@ export class ConditionGroupService {
   constructor(@Inject(ApiRoot) apiRoot, @Inject(ConditionService) conditionService:ConditionService) {
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
     this.apiRoot = apiRoot
-    this._removed = new EventEmitter()
-    this.onRemove = this._removed.toRx()
     this._added = new EventEmitter()
-    this.onAdd = this._added.toRx()
+    this._removed = new EventEmitter()
+    let onAdd = Rx.Observable.from(this._added.toRx())
+    let onRemove = Rx.Observable.from(this._removed.toRx())
+    this.onAdd = onAdd.share()
+    this.onRemove = onRemove.share()
 
     conditionService.onAdd.subscribe((conditionModel:ConditionModel) => {
+      console.log("api.rule-engine.ConditionGroup", "conditionService.onAdd.subscribe", conditionModel)
       if (!conditionModel.owningGroup.conditions[conditionModel.key]) {
         conditionModel.owningGroup.conditions[conditionModel.key] = true
         this.save(conditionModel.owningGroup)
@@ -74,6 +77,7 @@ export class ConditionGroupService {
     })
 
     conditionService.onRemove.subscribe((conditionModel:ConditionModel) => {
+      console.log("api.rule-engine.ConditionGroup", "conditionService.onRemove.subscriber", conditionModel)
       if (conditionModel.owningGroup.conditions[conditionModel.key]) {
         delete conditionModel.owningGroup.conditions[conditionModel.key]
         this.save(conditionModel.owningGroup)
@@ -112,12 +116,6 @@ export class ConditionGroupService {
   list(rule:RuleModel):Rx.Observable {
     if (rule.isPersisted()) {
       this.addConditionGroupsFromRule(rule)
-    } else {
-      rule.onChange.subscribe((event) => {
-        if (event.key == 'key') {
-          this.addConditionGroupsFromRule(event.target)
-        }
-      })
     }
     return this.onAdd
   }
@@ -134,25 +132,48 @@ export class ConditionGroupService {
   get(rule:RuleModel, key:string) {
   }
 
-  add(conditionGroup:ConditionGroupModel, cb:Function = null) {
-    let json = ConditionGroupService._toJson(conditionGroup)
-    this.ref.child(conditionGroup.owningRule.key).child('conditionGroups').push(json, (result)=> {
-      conditionGroup.key = result.key()
-      this._added.next(conditionGroup)
+  add(model:ConditionGroupModel, cb:Function = null) {
+    console.log("api.rule-engine.ConditionGroupService", "add", model)
+
+    if(!model.isValid()){
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
+    }
+    let json = ConditionGroupService._toJson(model)
+    this.ref.child(model.owningRule.key).child('conditionGroups').push(json, (result)=> {
+      model.key = result.key()
+      this._added.next(model)
       if (cb) {
-        cb(conditionGroup)
+        cb(model)
       }
     })
   }
 
-  save(conditionGroup:ConditionGroupModel, cb:Function = null) {
-    if (!conditionGroup.isPersisted()) {
-     this.add(conditionGroup, cb)
+  save(model:ConditionGroupModel, cb:Function = null) {
+    console.log("api.rule-engine.ConditionGroupService", "save", model)
+    if(!model.isValid()){
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
+    }
+    if (!model.isPersisted()) {
+      this.add(model, cb)
     } else {
-      let json = ConditionGroupService._toJson(conditionGroup)
-      this.ref.child(conditionGroup.owningRule.key).child('conditionGroups').child(conditionGroup.key).set(json, (result)=> {
+      let json = ConditionGroupService._toJson(model)
+      this.ref.child(model.owningRule.key).child('conditionGroups').child(model.key).set(json, (result)=> {
         if (cb) {
-          cb(conditionGroup)
+          cb(model)
+        }
+      })
+    }
+  }
+
+
+  remove(model:ConditionGroupModel, cb:Function = null) {
+    console.log("api.rule-engine.ConditionGroupService", "remove", model)
+    // ConditionGroup is a special case. Have to delete the group from
+    if (model.isPersisted()) {
+      this.ref.child(model.owningRule.key).child('conditionGroups').child(model.key).remove(()=> {
+        this._removed.next(model)
+        if (cb) {
+          cb(model)
         }
       })
     }
