@@ -67,12 +67,19 @@ public class UtilHTML {
 		if(v.isWorking()){
 			buf.append("<span class='workingIcon'></span>");
 		}
+		else{
+			buf.append("<span class='greyDotIcon' style='opacity:.2'></span>");
+		}
 		if(v.isLive()){
 			buf.append("<span class='liveIcon'></span>");
 		}
-		if(v.isArchived()){
-            buf.append("<span class='archivedIcon'></span>");
-        }
+		else if(v.isArchived()){
+	            buf.append("<span class='archivedIcon'></span>");
+	    }
+		else{
+			buf.append("<span class='greyDotIcon' style='opacity:.2'></span>");
+		}
+
 
 		return buf.toString();
 	}
