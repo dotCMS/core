@@ -785,6 +785,7 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setRuleId(row.get("rule_id").toString());
         c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
         c.setModDate((Date) row.get("mod_date"));
+        c.setPriority(Integer.parseInt(row.get("priority").toString()));
         return c;
     }
 
