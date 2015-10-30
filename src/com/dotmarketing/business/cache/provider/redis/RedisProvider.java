@@ -282,9 +282,11 @@ public class RedisProvider extends CacheProvider {
 
                 }
 
-                String[] groupKeys = keysToDelete.toArray(new String[keysToDelete.size()]);
-                //If something missing to be delete it
-                jedis.del(groupKeys);
+                if ( keysToDelete.size() > 0 ) {
+                    String[] groupKeys = keysToDelete.toArray(new String[keysToDelete.size()]);
+                    //If something missing to be delete it
+                    jedis.del(groupKeys);
+                }
                 break;
             }
 
