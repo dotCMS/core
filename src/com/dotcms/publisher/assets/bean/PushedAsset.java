@@ -1,8 +1,9 @@
 package com.dotcms.publisher.assets.bean;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class PushedAsset {
+public class PushedAsset implements Serializable {
 	private String bundleId;
 	private String assetId;
 	private String assetType;

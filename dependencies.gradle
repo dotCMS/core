@@ -1,6 +1,6 @@
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'c8ccb5e-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: 'f087daf-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '5abf2b5-SNAPSHOT'
 
     compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'

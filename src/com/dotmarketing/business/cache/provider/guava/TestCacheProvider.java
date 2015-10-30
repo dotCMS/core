@@ -15,6 +15,8 @@ public class TestCacheProvider extends CacheProvider {
 
     private static final long serialVersionUID = -388836120327525960L;
 
+    private Boolean isInitialized = false;
+
     @Override
     public String getName () {
         return "Test Cache Provider";
@@ -27,7 +29,13 @@ public class TestCacheProvider extends CacheProvider {
 
     @Override
     public void init () {
+        isInitialized = true;
         Logger.info(this.getClass(), "===== Initializing [" + getName() + "].");
+    }
+
+    @Override
+    public boolean isInitialized () throws Exception {
+        return isInitialized;
     }
 
     @Override
@@ -76,6 +84,7 @@ public class TestCacheProvider extends CacheProvider {
 
     @Override
     public void shutdown () {
+        isInitialized = false;
         Logger.info(this.getClass(), "===== Calling shutdown [" + getName() + "].");
     }
 
