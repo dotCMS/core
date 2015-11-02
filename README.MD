@@ -78,7 +78,9 @@ Verbiage subject to change.
 
 
 ##### List of Widgets (links to demo pages)
-  * [Input Toggle](http://localhost:9000/build/view/components/input/toggle/index.html)
+  * Semantic UI Wrappers [http://semantic-ui.com/]() 
+    * [Input Toggle](http://localhost:9000/build/view/components/input/toggle/index.html)
+    * [Input Dropdown](http://localhost:9000/build/view/components/semantic/modules/dropdown/index.html)
   
   For all demos, make sure to open the browser's console in order to view log messages.
 
