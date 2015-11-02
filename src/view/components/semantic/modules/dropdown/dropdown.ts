@@ -27,6 +27,9 @@ export class DropdownOption {
     this.value = value || valueId
     this.label = label || valueId
     this.icon = icon || ''
+    if(!this.icon.includes(' ')){
+      this.icon = (this.icon + ' icon').trim()
+    }
   }
 }
 export class DropdownModel {
@@ -72,13 +75,13 @@ export class DropdownModel {
 })
 @View({
   template: `
-<div class="ui fluid selection dropdown" [ng-class]="{search: model.settings.maxSelections, multiple: model.settings.maxSelections}" tabindex="0">
+<div class="ui fluid selection dropdown search" [ng-class]="{multiple: model.settings.maxSelections}" tabindex="0">
   <input type="hidden" [name]="model.name" [value]="model.selected.join(',')" >
   <i class="dropdown icon"></i>
   <div class="default text">{{model.placeholder}}</div>
   <div class="menu" tabindex="-1">
     <div *ng-for="var opt of model.options" class="item" [attr.data-value]="opt.id" [attr.data-text]="opt.label">
-      <i [ng-class]="opt.icon + ' icon'" ></i>
+      <i [ng-class]="opt.icon" ></i>
       {{opt.label}}
     </div>
   </div>

@@ -131,7 +131,7 @@ export class ConditionComponent {
 
 
   conditionChanged(event) {
-    let target = event.ngTarget
+    let target = event.target
     let val = target.value
     this.condition.comparison = val.comparatorValue
     let parameterKeys = val['parameterKeys']

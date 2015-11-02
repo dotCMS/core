@@ -3,6 +3,9 @@
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf, Inject} from 'angular2/angular2';
 import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
 
+import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+
+
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']
 
@@ -29,7 +32,7 @@ export class CountryConditionModel {
   ]
 })
 @View({
-  directives: [NgFor],
+  directives: [NgFor, Dropdown],
   template: `<div flex="grow" layout="row" layout-align="start-center" class="cw-condition-component">
   <!-- Spacer-->
   <div flex="20" class="cw-input">&nbsp;</div>
@@ -38,17 +41,15 @@ export class CountryConditionModel {
       {{cOpt}}
     </option>
   </select>
+  <cw-input-dropdown flex class="cw-clause-selector" [model]="countryDropdown" (change)="handleCountryChange($event)"></cw-input-dropdown>
 
-  <select flex class="cw-input cw-clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
-    <option value="{{country.id}}" *ng-for="var country of countries" [selected]="country.id == value.isoCode">
-      {{country.label}}
-    </option>
-  </select>
 </div>
   `
 })
 export class CountryCondition {
   change:EventEmitter;
+
+  private countryDropdown:DropdownModel
 
   comparisonOptions:Array<string> = ["is", "is not"
     //"startsWith", "endsWith", "contains", "regex"
@@ -62,16 +63,21 @@ export class CountryCondition {
     this.countries = []
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
+    this.countryDropdown = new DropdownModel("country", "Country")
 
     countryProvider.promise.then(()=> {
       var byNames = countryProvider.byName
       var names = countryProvider.names
       var tempCountries = []
-      names.forEach((name)=>{
+      let opts = []
+      names.forEach((name)=> {
         tempCountries.push({id: byNames[name], label: name})
+        let id = byNames[name]
+        opts.push(new DropdownOption(id, id, name, id.toLowerCase() + " flag"))
       })
       this.countries = tempCountries
-      if(this.value.isoCode === 'NoSelection'){
+      this.countryDropdown.addOptions(opts)
+      if (this.value.isoCode === 'NoSelection') {
         this.value.isoCode = this.countries[0].id
       }
     })
@@ -90,26 +96,26 @@ export class CountryCondition {
   set comparisonValues(value:any) {
     let isoCode = value[this.value.parameterKeys[0]]
     isoCode = isoCode ? isoCode.value : null
-    if(!isoCode ){
-      isoCode = this.countries[0] ? this.countries[0].id : 'NoSelection'
+    if (!isoCode) {
+      this.countryDropdown.selected = []
+    } else {
+      this.countryDropdown.selected = [isoCode]
     }
     this.value.isoCode = isoCode
   }
 
   updateComparator(event:Event) {
     let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
     this.value.comparatorValue = value ? value.toLowerCase() : ''
     this.value.parameterKeys = ["isoCode"]
-    this.change.next(e)
+    this.change.next({type: 'comparisonChange', target: this, value: value})
   }
 
-  updateComparisonValues(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
+  handleCountryChange(event) {
+    let isoCode = event.value
     this.value.parameterKeys = ["isoCode"]
-    this.value.isoCode = value
-    this.change.next(e)
+    this.value.isoCode = isoCode
+    this.change.next({type: 'countryChange', target: this, value: isoCode})
   }
 }
 
