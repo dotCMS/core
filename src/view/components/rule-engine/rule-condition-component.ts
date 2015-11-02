@@ -15,8 +15,6 @@ import {CwChangeEvent} from "api/util/CwEvent";
 import {ConditionModel} from "api/rule-engine/Condition";
 
 import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
-import {DropdownModel} from "../semantic/modules/dropdown/dropdown";
-import {DropdownOption} from "../semantic/modules/dropdown/dropdown";
 
 
 @Component({

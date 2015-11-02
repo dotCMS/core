@@ -17,8 +17,8 @@ import {RuleService, RuleModel} from "api/rule-engine/Rule";
 import {ActionService, ActionModel} from "api/rule-engine/Action";
 import {CwChangeEvent} from "api/util/CwEvent";
 import {EntityMeta} from "api/persistence/EntityBase";
-import {ConditionGroupModel} from "api/rule-engine/ConditionGroup";
-import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
+import {ConditionGroupModel, ConditionGroupService} from "api/rule-engine/ConditionGroup";
+
 
 
 var rsrc = {

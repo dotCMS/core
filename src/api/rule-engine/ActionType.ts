@@ -133,7 +133,7 @@ export class ActionTypesProvider {
   promise:Promise
 
   constructor(@Inject(ApiRoot) apiRoot) {
-    this.map = new Map<string,ActionTypeModel>()
+    this.map = new Map()
     this.ary = []
     this.actionsRef = apiRoot.root.child('system/ruleengine/actionlets')
     this.init();
@@ -154,5 +154,9 @@ export class ActionTypesProvider {
         resolve(this);
       })
     });
+  }
+
+  getType(id:string):ActionTypeModel {
+    return this.map.get(id);
   }
 }
