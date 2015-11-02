@@ -6,10 +6,12 @@ import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-public class ConditionGroup {
+public class ConditionGroup implements Serializable {
+    private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
     private Condition.Operator operator;

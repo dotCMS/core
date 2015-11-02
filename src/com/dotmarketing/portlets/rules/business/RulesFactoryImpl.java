@@ -51,12 +51,17 @@ public class RulesFactoryImpl implements RulesFactory {
     @Override
     public List<Rule> getAllRulesByHost(Host host) throws DotDataException {
         host = checkNotNull(host, "Host is required.");
+
+        if(Strings.isNullOrEmpty(host.getIdentifier())) {
+            throw new IllegalArgumentException("Host must have an id.");
+        }
+
         List<String> rulesIds = cache.getRulesIdsByHost(host);
         List<Rule> rules;
         if (rulesIds == null) {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_ALL_RULES_BY_HOST);
-            db.addParam(host);
+            db.addParam(host.getIdentifier());
             rules = convertListToObjects(db.loadObjectResults(), Rule.class);
             cache.putRulesByHost(host,rules);
         } else {
@@ -248,6 +253,8 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(groupId);
             conditions = convertListToObjects(db.loadObjectResults(), Condition.class);
 
+            getConditionsValuesFromDB(conditions, db);
+
             cache.putConditionsByGroup(group, conditions);
         } else {
             conditions = new ArrayList<>();
@@ -285,6 +292,12 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.SELECT_CONDITION_VALUES_BY_CONDITION);
         db.addParam(condition.getId());
         condition.setValues(convertListToObjects(db.loadObjectResults(), ConditionValue.class));
+    }
+
+    private void getConditionsValuesFromDB(List<Condition> conditions, DotConnect db) throws DotDataException {
+        for(Condition condition: conditions) {
+            getConditionValuesFromDB(condition, db);
+        }
     }
 
     @Override
@@ -356,17 +369,6 @@ public class RulesFactoryImpl implements RulesFactory {
                     .filter(group -> updatedGroups.contains(group.getId()))
                     .map(this::deleteRemovedGroupFromRule);
         }
-
-        cache.addRule(rule);
-
-        Set<Rule> rules = cache.getRulesByHostFireOn(rule.getHost(), rule.getFireOn());
-        if (rules == null) {
-            rules = new HashSet<>();
-        }
-
-        rules.add(rule);
-
-        cache.addRulesByHostFireOn(rules, rule.getHost(), rule.getFireOn());
 
     }
 
