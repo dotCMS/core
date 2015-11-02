@@ -2,11 +2,15 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
 
-public class RuleAction {
+public class RuleAction implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String id;
     private String name;
     private String ruleId;

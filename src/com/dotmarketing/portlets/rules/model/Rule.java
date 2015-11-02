@@ -8,12 +8,14 @@ import com.dotmarketing.util.json.JSONIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-public class Rule implements Permissionable {
+public class Rule implements Permissionable, Serializable {
 
+    private static final long serialVersionUID = 1L;
 
     public enum FireOn {
         EVERY_PAGE("EveryPage"),

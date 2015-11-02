@@ -5,6 +5,7 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotcms.rest.validation.Preconditions;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -81,7 +82,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         initActionletMap();
     }
 
-    public List<Rule> getEnabledRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public List<Rule> getEnabledRulesByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(host)) {
             return new ArrayList<>();
         }
@@ -89,7 +90,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         return perAPI.filterCollection(rulesFactory.getEnabledRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    public List<Rule> getAllRulesByHost(String host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public List<Rule> getAllRulesByHost(Host host, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(host)) {
             return new ArrayList<>();
         }
@@ -97,20 +98,12 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         return perAPI.filterCollection(rulesFactory.getAllRulesByHost(host), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
-    public Set<Rule> getRulesByHost(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException {
+    public Set<Rule> getRulesByHostFireOn(String host, User user, boolean respectFrontendRoles, Rule.FireOn fireOn) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(host)) {
             return new HashSet<>();
         }
 
         return new HashSet<>(perAPI.filterCollection(new ArrayList<>(rulesFactory.getRulesByHost(host, fireOn)), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
-    }
-
-    public List<Rule> getRulesByFolder(String folder, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(folder)) {
-            return new ArrayList<>();
-        }
-
-        return perAPI.filterCollection(rulesFactory.getEnabledRulesByHost(folder), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
     public List<Rule> getRulesByNameFilter(String nameFilter, User user, boolean respectFrontendRoles) {

@@ -1,6 +1,11 @@
 package com.dotmarketing.portlets.rules.model;
 
-public class ConditionValue {
+import java.io.Serializable;
+
+public class ConditionValue implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
     private String id;
     private String conditionId;
     private String value;
