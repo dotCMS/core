@@ -1,6 +1,8 @@
-/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
+//// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
+//// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
 
 import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
+import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -32,7 +34,9 @@ export class DropdownModel {
   placeholder:string
   selected:Array<string>
   options:Array<DropdownOption>
-  settings: { maxSelections?: number }
+  settings:{ maxSelections?: number }
+  private _optionChange:EventEmitter
+  onOptionChange:Rx.Observable
 
   constructor(name:string = null,
               placeholder:string = '',
@@ -43,6 +47,15 @@ export class DropdownModel {
     this.selected = selected
     this.options = options
     this.settings = {}
+    this._optionChange = new EventEmitter()
+    this.onOptionChange = Rx.Observable.from(this._optionChange.toRx()).share()
+  }
+
+  addOptions(options:Array<DropdownOption>) {
+    options.forEach((option) => {
+      this.options.push(option)
+    })
+    this._optionChange.next({type: 'add', target: this, value: options})
   }
 
 
@@ -75,19 +88,55 @@ export class DropdownModel {
 })
 export class Dropdown {
 
-  private _model:DropdownModel
-
   change:EventEmitter
+  private _model:DropdownModel
+  private optionWatch:Rx.Subscription
   private elementRef:ElementRef
 
+  private updateView:boolean
+
   constructor(@ElementRef elementRef:ElementRef) {
+
     this.elementRef = elementRef
     this.change = new EventEmitter()
-    this._model = new DropdownModel()
+    this.model = new DropdownModel()
+    this.updateView = false
+  }
+
+
+  get model():DropdownModel {
+    return this._model;
+  }
+
+  set model(model:DropdownModel) {
+    if (this.optionWatch) {
+      this.optionWatch.unsubscribe()
+      this.optionWatch = null
+    }
+    this._model = model;
+    this.optionWatch = this._model.onOptionChange.subscribe(()=> {
+      this.updateView = true
+    })
+
   }
 
   afterViewInit() {
-    console.log("view init")
+    if (this.model.options.length > 0) {
+      this.initDropdown()
+    } // else 'wait for options to be set'
+  }
+
+  afterViewChecked() {
+    if (this.updateView === true) {
+      this.updateView = false
+      this.initDropdown()
+    }
+  }
+
+  initDropdown() {
+    console.log("view init", this.model.selected, this.model.options.map((it)=> {
+      return it.id
+    }))
     var self = this;
     let config:any = {
       onChange: (value, text, $choice)=> {
@@ -99,7 +148,7 @@ export class Dropdown {
       onRemove: (removedValue, removedText, $removedChoice)=> {
         return this.onRemove(removedValue, removedText, $removedChoice)
       },
-      onLabelCreate: function(value, text) {
+      onLabelCreate: function (value, text) {
         let $label = this;
         return self.onLabelCreate($label, value, text)
       },
@@ -116,25 +165,18 @@ export class Dropdown {
         return this.onHide()
       }
     }
-
-    if(this.model.settings.maxSelections){
+    if (this.model.settings.maxSelections) {
       config.maxSelections = this.model.settings.maxSelections
     }
 
     var el:Element = this.elementRef.nativeElement
     //noinspection TypeScriptValidateTypes
-    $(el).children('.ui.dropdown').dropdown(config)
-
+    let x = $(el).children('.ui.dropdown')
+    console.log("El: ", x)
+    x.dropdown(config)
 
   }
 
-  get model():DropdownModel {
-    return this._model;
-  }
-
-  set model(model:DropdownModel) {
-    this._model = model;
-  }
 
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element

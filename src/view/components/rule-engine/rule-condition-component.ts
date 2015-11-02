@@ -11,9 +11,12 @@ import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-
 import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
 import {CountryCondition} from './conditionlets/country/country-condition'
 import {ConditionService, ConditionModel} from "api/rule-engine/Condition";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
-import Condition = protractor.until.Condition;
-import {ConditionModel} from "../../../api/rule-engine/Condition";
+import {CwChangeEvent} from "api/util/CwEvent";
+import {ConditionModel} from "api/rule-engine/Condition";
+
+import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+import {DropdownModel} from "../semantic/modules/dropdown/dropdown";
+import {DropdownOption} from "../semantic/modules/dropdown/dropdown";
 
 
 @Component({
@@ -30,12 +33,7 @@ import {ConditionModel} from "../../../api/rule-engine/Condition";
         </button>
       </div>
     </div>
-    <select flex="none" [value]="condition.conditionType?.id" (change)="setConditionType($event.target.value)">
-      <option value="NoSelection" [selected]="condition.conditionType.id=='NoSelection'">Select a Condition</option>
-      <option value="{{conditionType.id}}" [selected]="condition.conditionType.id == conditionType.id" *ng-for="var conditionType of conditionTypes; var i=index">
-        {{conditionType.name}}
-      </option>
-    </select>
+    <cw-input-dropdown [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
     <cw-request-header-conditionlet
         class="cw-condition-component"
@@ -66,37 +64,52 @@ import {ConditionModel} from "../../../api/rule-engine/Condition";
   directives: [NgIf, NgFor,
     RequestHeaderConditionlet,
     CountryCondition,
-    BrowserConditionlet
+    BrowserConditionlet,
+    Dropdown
   ]
 })
 export class ConditionComponent {
   index:number
   _condition:ConditionModel
   conditionValue:any
-  conditionTypes:Array<any>
+  conditionTypesDropdown:DropdownModel
   typesProvider:ConditionTypesProvider
   private conditionServce:ConditionService;
 
   constructor(@Inject(ConditionTypesProvider) typesProvider:ConditionTypesProvider, @Inject(ConditionService) conditionServce:ConditionService) {
     this.conditionServce = conditionServce;
     this.typesProvider = typesProvider
-    this.conditionTypes = []
-    typesProvider.promise.then(()=> {
-      this.conditionTypes = typesProvider.ary
-    })
+
+    this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition", [], [])
     let condition = new ConditionModel()
     condition.conditionType = new ConditionTypeModel('NoSelection', {})
     this.condition = condition
     this.conditionValue = ''
     this.index = 0
+
+    typesProvider.promise.then(()=> {
+      let opts = []
+      typesProvider.ary.forEach((type)=>{
+        opts.push(new DropdownOption(type.id))
+      })
+      this.conditionTypesDropdown.addOptions(opts)
+    })
   }
 
   set condition(condition:ConditionModel) {
     this._condition = condition
+    if(this._condition.conditionType){
+      this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
+    }
+
     this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
       if (event.target.isValid() && event.target.isPersisted()) {
         this.conditionServce.save(event.target)
       }
+      if(this._condition.conditionType){
+        this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
+      }
+
     })
     this.conditionValue = this.condition.parameters
   }
@@ -105,9 +118,8 @@ export class ConditionComponent {
     return this._condition;
   }
 
-
-  setConditionType(conditionTypeId) {
-    this.condition.conditionType = this.typesProvider.getType(conditionTypeId)
+  handleConditionTypeChange(event){
+    this.condition.conditionType = this.typesProvider.getType(event.target.model.selected[0])
     this.condition.clearParameters()
   }
 

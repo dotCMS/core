@@ -25,7 +25,7 @@ import {Dropdown, DropdownModel, DropdownOption} from './dropdown'
   <div class="column">
     <h4 class="ui top attached inverted header">Select Multiple, 'Yellow' selected by default.</h4>
     <div class="ui attached segment">
-      <cw-input-dropdown [model]="demo3"></cw-input-dropdown>
+      <cw-input-dropdown [model]="demo3" ></cw-input-dropdown>
     </div>
   </div>
   <div class="column">
@@ -54,8 +54,6 @@ class App {
     this.initDemo2()
     this.initDemo3()
     this.initDemo4()
-
-
   }
 
   initDemo2() {

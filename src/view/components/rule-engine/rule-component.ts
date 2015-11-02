@@ -126,7 +126,7 @@ class RuleComponent {
     this.actions = []
 
     this.hidden = false
-    this.collapsed = true
+    this.collapsed = false
   }
 
   onInit() {
