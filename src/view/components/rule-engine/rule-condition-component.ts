@@ -31,31 +31,30 @@ import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/
         </button>
       </div>
     </div>
-    <cw-input-dropdown [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
+    <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-    <cw-request-header-conditionlet
-        class="cw-condition-component"
-        *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
-        [comparator-value]="condition.comparison"
-        [comparison-values]="conditionValue"
-        (change)="conditionChanged($event)">
-    </cw-request-header-conditionlet>
-    <cw-country-condition
-        class="cw-condition-component"
-        *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
-        [comparator-value]="condition.comparison"
-        [comparison-values]="conditionValue"
-        (change)="conditionChanged($event)">
-    </cw-country-condition>
-    <div class="cw-condition-component"
-         *ng-if="condition.conditionType.id == 'NoSelection'">
+  <cw-request-header-conditionlet
+      class="cw-condition-component"
+      *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
+      [comparator-value]="condition.comparison"
+      [comparison-values]="conditionValue"
+      (change)="conditionChanged($event)">
+  </cw-request-header-conditionlet>
+  <cw-country-condition
+      class="cw-condition-component"
+      *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
+      [comparator-value]="condition.comparison"
+      [comparison-values]="conditionValue"
+      (change)="conditionChanged($event)">
+  </cw-country-condition>
+  <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'">
+  </div>
+  <div flex class="cw-btn-group cw-condition-buttons">
+    <div class="ui basic icon buttons">
+      <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
+        <i class="trash icon"></i>
+      </button>
     </div>
-    <div flex="none" class="cw-btn-group cw-condition-buttons">
-      <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
-          <i class="trash icon" ></i>
-        </button>
-      </div>
   </div>
 </div>
 `,

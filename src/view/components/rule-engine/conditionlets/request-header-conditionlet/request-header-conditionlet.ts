@@ -52,6 +52,7 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
+import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
 
 /**
  * @todo: Consider populating these from the server
@@ -120,77 +121,82 @@ export class RequestHeaderConditionletModel {
   ]
 })
 @View({
-  directives: [NgFor],
-  template: `<div flex layout="row" layout-align="space-around-center" class="cw-condition-component">
-  <select flex="20" class="cw-input" [value]="value.headerKeyValue" (change)="updateHeaderKey($event)">
-    <option [selected]="hkOpt === value.headerKeyValue" value="{{hkOpt}}" *ng-for="var hkOpt of predefinedHeaderKeyOptions">
-      {{hkOpt}}
-    </option>
-  </select>
-  <select flex="20" class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
-    <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
-      {{cOpt}}
-    </option>
-  </select>
-  <input flex type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
+  directives: [NgFor, Dropdown],
+  template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
+  <cw-input-dropdown flex="40"  class="cw-input" [model]="headerKeyDropdown" (change)="handleHeaderKeyChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex="initial" class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
+  <input flex="30" type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
 </div>`
 })
 export class RequestHeaderConditionlet {
   // @todo populate the comparisons options from the server.
-  comparisonOptions:Array<string> = ["exists", "is", "startsWith", "endsWith", "contains", "regex"];
-  predefinedHeaderKeyOptions:Array<string> = commonRequestHeaders;
+  comparisonOptions:Array<DropdownOption> = [
+    new DropdownOption("exists", "exists", "Exists"),
+    new DropdownOption("is", "is", "Is"),
+    new DropdownOption("is not", "is not", "Is Not"),
+    new DropdownOption("startsWith", "startsWith", "Starts With"),
+    new DropdownOption("endsWith", "endsWith", "Ends With"),
+    new DropdownOption("contains", "contains", "Contains"),
+    new DropdownOption("regex", "regex", "Regex")];
 
   value:RequestHeaderConditionletModel;
 
   change:EventEmitter;
+  private headerKeyDropdown:DropdownModel
+  private comparatorDropdown:DropdownModel
 
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('comparisonValues') comparisonValues:Array<string>) {
     this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
+
+    let headerKeyOptions = []
+    commonRequestHeaders.forEach((name)=> {
+      headerKeyOptions.push(new DropdownOption(name, name, name))
+    })
+    this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], headerKeyOptions)
+
+
+
   }
 
-  _modifyEventForForwarding(event:Event, field, oldState:RequestHeaderConditionletModel):Event {
-    Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field})
-    return event
-  }
 
   set headerKeyValue(value:string) {
     this.value.headerKeyValue = value
+    this.headerKeyDropdown.selected = [value]
   }
 
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
+    this.comparatorDropdown.selected = [value]
   }
 
   set comparisonValues(value:any) {
     this.value.parameterKeys.forEach((paramKey)=> {
       let v = value[paramKey]
       v = v ? v.value : ''
-      this.value[paramKey] = v
+      this[paramKey] = v
     })
   }
 
-  updateHeaderKey(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'headerKeyValue', this.value.clone())
+  handleHeaderKeyChange(event) {
+    let value = event.value
     this.value.headerKeyValue = value
-    this.change.next(e)
+    this.change.next({type:'headerKeyValue', target: this, value:value})
   }
 
-  updateComparator(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
+  handleComparatorChange(event) {
+    let value = event.value
     this.value.comparatorValue = value
-    this.change.next(e)
+    this.change.next({type:'comparator', target:this, value:value})
   }
 
   updateCompareToValue(event:Event) {
     let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'compareTo', this.value.clone())
     this.value.compareTo = value
-    this.change.next(e)
+    this.change.next({type:'compareToValue', target:this, value:value})
   }
 
 }

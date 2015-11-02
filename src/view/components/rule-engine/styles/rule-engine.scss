@@ -87,6 +87,18 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     width: 2em;
     height: 2em;
   }
+
+
+  .cw-comparator-selector{
+    min-width: 10em;
+    max-width: 10em;
+  }
+
+  .cw-condition-type-dropdown, .cw-action-type-dropdown{
+    max-width:18em;
+    min-width:18em;
+  }
+
 }
 
 .cw-rule-group {
@@ -127,9 +139,10 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
 }
 
 .cw-rule-actions, .cw-conditions {
+
   padding: .25em 2em 0 2em;
   .cw-entry {
-    > div {
+    > div.buttons {
       width: 100%;
     }
   }
@@ -172,15 +185,16 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     font-weight: bolder;
   }
   .cw-row-start-area {
-    max-width: 20em;
-    min-width: 20em;
+    max-width: 25em;
+    min-width: 25em;
   }
   .cw-condition-toggle {
     max-width: 5em;
     padding-right:0;
   }
   .cw-condition-buttons {
-    width: 2em;
+    width: 3em;
+    max-width: 3em;
   }
 }
 
@@ -191,6 +205,7 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     margin:0 1em
   }
 }
+
 
 .cw-clause-selector {
   //min-width: 15em;
