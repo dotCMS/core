@@ -36,12 +36,8 @@ export class CountryConditionModel {
   template: `<div flex="grow" layout="row" layout-align="start-center" class="cw-condition-component">
   <!-- Spacer-->
   <div flex="20" class="cw-input">&nbsp;</div>
-  <select flex="20" class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
-    <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
-      {{cOpt}}
-    </option>
-  </select>
-  <cw-input-dropdown flex class="cw-clause-selector" [model]="countryDropdown" (change)="handleCountryChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex="20"  class="cw-input" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex class="cw-input cw-clause-selector" [model]="countryDropdown" (change)="handleCountryChange($event)"></cw-input-dropdown>
 
 </div>
   `
@@ -49,20 +45,22 @@ export class CountryConditionModel {
 export class CountryCondition {
   change:EventEmitter;
 
-  private countryDropdown:DropdownModel
 
-  comparisonOptions:Array<string> = ["is", "is not"
-    //"startsWith", "endsWith", "contains", "regex"
-  ];
+  comparisonOptions:Array<DropdownOption> = [
+      new DropdownOption("is", "is", "Is"),
+      new DropdownOption("is not", "is not", "Is Not")  ];
 
   countries:Array<any>
 
   value:CountryConditionModel
+  private countryDropdown:DropdownModel
+  private comparatorDropdown:DropdownModel
 
   constructor(@Inject(I18NCountryProvider) countryProvider:I18NCountryProvider) {
     this.countries = []
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
     this.countryDropdown = new DropdownModel("country", "Country")
 
     countryProvider.promise.then(()=> {
@@ -91,6 +89,8 @@ export class CountryCondition {
 
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
+    this.comparatorDropdown.selected = [value]
+    console.log("Comparator value: ", value)
   }
 
   set comparisonValues(value:any) {
@@ -104,8 +104,8 @@ export class CountryCondition {
     this.value.isoCode = isoCode
   }
 
-  updateComparator(event:Event) {
-    let value = event.target['value']
+  handleComparatorChange(event) {
+    let value = event.value
     this.value.comparatorValue = value ? value.toLowerCase() : ''
     this.value.parameterKeys = ["isoCode"]
     this.change.next({type: 'comparisonChange', target: this, value: value})

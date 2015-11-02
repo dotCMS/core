@@ -27,7 +27,7 @@ export class DropdownOption {
     this.value = value || valueId
     this.label = label || valueId
     this.icon = icon || ''
-    if(!this.icon.includes(' ')){
+    if(!this.icon.includes(' ') && this.icon.length > 0){
       this.icon = (this.icon + ' icon').trim()
     }
   }
