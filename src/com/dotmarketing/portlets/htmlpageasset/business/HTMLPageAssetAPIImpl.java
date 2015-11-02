@@ -562,18 +562,43 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
         return move(page,host,APILocator.getFolderAPI().findSystemFolder(),user);
     }
     
-    public boolean move(HTMLPageAsset page, Host host, Folder parent, User user) throws DotDataException, DotSecurityException {
-        Identifier sourceIdent=APILocator.getIdentifierAPI().find(page);
-        Identifier targetFolderIdent=APILocator.getIdentifierAPI().find(parent);
-        Identifier targetIdent=APILocator.getIdentifierAPI().find(host,targetFolderIdent.getURI()+sourceIdent.getAssetName());
-        if(targetIdent==null || !InodeUtils.isSet(targetIdent.getId())) {
-            Contentlet cont=APILocator.getContentletAPI().checkout(page.getInode(), user, false);
-            cont.setFolder(parent.getInode());
-            cont.setHost(host.getIdentifier());
-            cont=APILocator.getContentletAPI().checkin(cont, user, false);
-            if(page.isLive()) {
-                APILocator.getContentletAPI().publish(cont, user, false);
+    public boolean move(HTMLPageAsset page, Host host, Folder parent, User user)
+            throws DotDataException, DotSecurityException {
+        Identifier sourceIdent = APILocator.getIdentifierAPI().find(page);
+        Identifier targetFolderIdent = APILocator.getIdentifierAPI().find(parent);
+        Identifier targetIdent = APILocator.getIdentifierAPI().find(host,
+                targetFolderIdent.getURI() + sourceIdent.getAssetName());
+        if (targetIdent == null || !InodeUtils.isSet(targetIdent.getId())) {
+            Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(page.getInode(), user, false);
+
+            /*
+             * Enable multi-language support when cut a page
+             */
+            Map<String, Boolean> inodesToMove = new HashMap<String, Boolean>();
+            // Getting all working contentlet version languages
+            for(Contentlet workingContentlet : APILocator.getContentletAPI().getAllLanguages(contentlet, false,
+                    user, false)) {
+                inodesToMove.put(workingContentlet.getInode(), false);
             }
+            // Getting all live contentlet version languages
+            for(Contentlet liveContentlet : APILocator.getContentletAPI().getAllLanguages(contentlet, true,
+                    user, false)) {
+                inodesToMove.put(liveContentlet.getInode(), true);
+            }
+
+            for (String contentletInode : inodesToMove.keySet()) {
+                Contentlet cont = APILocator.getContentletAPI().checkout(contentletInode, user, false);
+
+                cont.setFolder(parent.getInode());
+                cont.setHost(host.getIdentifier());
+                cont = APILocator.getContentletAPI().checkin(cont, user, false);
+                if (inodesToMove.get(contentletInode)) {
+                    // We need to publish those that were live
+                    APILocator.getContentletAPI().publish(cont, user, false);
+                }
+            }
+
             return true;
         }
         return false;

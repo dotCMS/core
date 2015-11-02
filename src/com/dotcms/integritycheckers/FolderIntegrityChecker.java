@@ -204,10 +204,8 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             }
 
-            dc.setSQL("select * from folders_ir");
-            results = dc.loadObjectResults();
-
-            return !results.isEmpty();
+            dc.setSQL("SELECT COUNT(*) AS results FROM " + getIntegrityType().getResultsTableName());
+            return (Long) dc.loadObjectResults().get(0).get("results") > 0;
         } catch (Exception e) {
             throw new Exception("Error running the Folders Integrity Check", e);
         }
