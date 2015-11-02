@@ -32,6 +32,7 @@ import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -40,6 +41,7 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
@@ -278,8 +280,6 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		assertTrue( newBundleFile.exists() );
 
 		//Prepare the post request
-        Client client = RestClientBuilder.newClient();
-
 		FormDataMultiPart form = new FormDataMultiPart();
 		form.field( "AUTH_TOKEN", PublicEncryptionFactory.encryptString( (PublicEncryptionFactory.decryptString( receivingFromEndpoint.getAuthKey().toString() )) ) );
 		form.field( "GROUP_ID", UtilMethods.isSet( receivingFromEndpoint.getGroupId() ) ? receivingFromEndpoint.getGroupId() : receivingFromEndpoint.getId() );
@@ -288,8 +288,10 @@ public class RemotePublishAjaxActionTest extends TestBase {
 		form.bodyPart( new FileDataBodyPart( "bundle", newBundleFile, MediaType.MULTIPART_FORM_DATA_TYPE ) );
 
 		//Sending bundle to endpoint
-        WebTarget webTarget = client.target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish");
-        Response clientResponse = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
+        Response clientResponse = ClientBuilder.newClient().register(MultiPartFeature.class)
+            .target(receivingFromEndpoint.toURL() + "/api/bundlePublisher/publish")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .post(Entity.entity(form, form.getMediaType()));
 		//Validations
 		assertEquals( clientResponse.getStatus(), HttpStatus.SC_OK );
 
