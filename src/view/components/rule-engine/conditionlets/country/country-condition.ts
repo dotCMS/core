@@ -25,7 +25,7 @@ export class CountryConditionModel {
 @Component({
   selector: 'cw-country-condition',
   properties: [
-    "comparatorValue", "comparisonValues",
+    "comparatorValue", "parameterValues",
   ],
   events: [
     "change"
@@ -87,35 +87,46 @@ export class CountryCondition {
     return event
   }
 
+  set isoCode(isoCode:string){
+    let selected = []
+    this.value.isoCode = isoCode
+    if (this.value.isoCode) {
+      selected.push(this.value.isoCode)
+    }
+    this.countryDropdown.selected = selected
+  }
+
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
     this.comparatorDropdown.selected = [value]
-    console.log("Comparator value: ", value)
   }
 
-  set comparisonValues(value:any) {
-    let isoCode = value[this.value.parameterKeys[0]]
-    isoCode = isoCode ? isoCode.value : null
-    if (!isoCode) {
-      this.countryDropdown.selected = []
-    } else {
-      this.countryDropdown.selected = [isoCode]
-    }
-    this.value.isoCode = isoCode
+  set parameterValues(value:any) {
+    this.value.parameterKeys.forEach((paramKey)=> {
+      let v = value[paramKey]
+      v = v ? v.value : ''
+      this[paramKey] = v
+    })
+  }
+
+  private getEventValue():Array<any>{
+    let eventValue = []
+    this.value.parameterKeys.forEach((key)=>{
+      eventValue.push({key: key, value:this.value[key]})
+    })
+    return eventValue
   }
 
   handleComparatorChange(event) {
     let value = event.value
-    this.value.comparatorValue = value ? value.toLowerCase() : ''
-    this.value.parameterKeys = ["isoCode"]
+    this.value.comparatorValue = value
     this.change.next({type: 'comparisonChange', target: this, value: value})
   }
 
   handleCountryChange(event) {
-    let isoCode = event.value
-    this.value.parameterKeys = ["isoCode"]
-    this.value.isoCode = isoCode
-    this.change.next({type: 'countryChange', target: this, value: isoCode})
+    this.value.isoCode = event.value
+    this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
+
   }
 }
 

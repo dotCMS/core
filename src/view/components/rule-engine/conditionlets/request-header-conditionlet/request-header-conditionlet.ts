@@ -114,7 +114,7 @@ export class RequestHeaderConditionletModel {
 @Component({
   selector: 'cw-request-header-conditionlet',
   properties: [
-    "headerKeyValue", "comparatorValue", "comparisonValues"
+    "headerKeyValue", "comparatorValue", "parameterValues"
   ],
   events: [
     "change"
@@ -125,7 +125,7 @@ export class RequestHeaderConditionletModel {
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <cw-input-dropdown flex="40"  class="cw-input" [model]="headerKeyDropdown" (change)="handleHeaderKeyChange($event)"></cw-input-dropdown>
   <cw-input-dropdown flex="initial" class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
-  <input flex="30" type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="updateCompareToValue($event)"/>
+  <input flex="30" type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="handleCompareToChange($event)"/>
 </div>`
 })
 export class RequestHeaderConditionlet {
@@ -147,7 +147,7 @@ export class RequestHeaderConditionlet {
 
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
-              @Attribute('comparisonValues') comparisonValues:Array<string>) {
+              @Attribute('parameterValues') parameterValues:Array<string>) {
     this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
     this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
@@ -157,9 +157,6 @@ export class RequestHeaderConditionlet {
       headerKeyOptions.push(new DropdownOption(name, name, name))
     })
     this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], headerKeyOptions)
-
-
-
   }
 
 
@@ -168,12 +165,18 @@ export class RequestHeaderConditionlet {
     this.headerKeyDropdown.selected = [value]
   }
 
+
+  set compareTo(value:string) {
+    this.value.compareTo = value
+  }
+
+
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
     this.comparatorDropdown.selected = [value]
   }
 
-  set comparisonValues(value:any) {
+  set parameterValues(value:any) {
     this.value.parameterKeys.forEach((paramKey)=> {
       let v = value[paramKey]
       v = v ? v.value : ''
@@ -181,22 +184,30 @@ export class RequestHeaderConditionlet {
     })
   }
 
-  handleHeaderKeyChange(event) {
-    let value = event.value
-    this.value.headerKeyValue = value
-    this.change.next({type:'headerKeyValue', target: this, value:value})
+  private getEventValue():Array<any>{
+    let eventValue = []
+    this.value.parameterKeys.forEach((key)=>{
+      eventValue.push({key: key, value:this.value[key]})
+    })
+    return eventValue
   }
 
   handleComparatorChange(event) {
     let value = event.value
     this.value.comparatorValue = value
-    this.change.next({type:'comparator', target:this, value:value})
+    this.change.next({type:'comparisonChange', target:this, value:value})
   }
 
-  updateCompareToValue(event:Event) {
-    let value = event.target['value']
-    this.value.compareTo = value
-    this.change.next({type:'compareToValue', target:this, value:value})
+
+  handleHeaderKeyChange(event) {
+    this.value.headerKeyValue = event.value
+    this.change.next({type:'parameterValueChange', target: this, value: this.getEventValue()})
+  }
+
+
+  handleCompareToChange(event:Event) {
+    this.value.compareTo = event.target['value']
+    this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
   }
 
 }

@@ -4,7 +4,6 @@ import {Inject, EventEmitter} from 'angular2/angular2';
 import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
 
 
-
 import {ApiRoot} from 'api/persistence/ApiRoot';
 import {CwChangeEvent} from "api/util/CwEvent";
 import {CwModel} from "api/util/CwModel";
@@ -15,39 +14,42 @@ import {ActionTypesProvider} from "./ActionType";
 
 
 interface ActionModelParameter {
-  id: string
   key:string
   value:any
 }
+
+let noop = (...arg:any[])=> {}
 
 export class ActionModel extends CwModel {
 
   private _name:string
   private _owningRule:RuleModel
   private _actionType:ActionTypeModel
-  parameters: { [key: string]: ActionModelParameter }
+  parameters:{ [key: string]: ActionModelParameter }
 
   constructor(key:string = null) {
     super(key)
-    this._actionType = new ActionTypeModel('NoSelection','')
+    this._actionType = new ActionTypeModel('NoSelection', '')
     this.parameters = {}
   }
 
-  setParameter(key:string, value:any, id:string=null){
+  setParameter(key:string, value:any) {
     let existing = this.parameters[key]
-    if(id === null) {
-      id = existing ? existing.id : ('random_' + Math.random())
-    }
-    this.parameters[key] = { id: id, key: key, value:value }
+    this.parameters[key] = {key: key, value: value}
     this._changed('parameters')
   }
 
   getParameter(key:string):any {
     let v:any = ''
-    if(this.parameters[key]){
+    if (this.parameters[key]) {
       v = this.parameters[key].value
     }
     return v
+  }
+
+  clearParameters():void {
+    this.parameters = {}
+    this._changed('parameters')
   }
 
   get actionType():ActionTypeModel {
@@ -83,6 +85,8 @@ export class ActionModel extends CwModel {
     valid = valid && this._actionType && this._actionType.id && this._actionType.id != 'NoSelection'
     return valid
   }
+
+
 }
 
 export class ActionService {
@@ -110,10 +114,10 @@ export class ActionService {
     ra.name = val.name;
     ra.owningRule = rule
     ra.actionType = new ActionTypeModel(val.actionlet)
-    if(val.parameters){
-      Object.keys(val.parameters).forEach((paramId)=>{
-        let param = val.parameters[paramId]
-        ra.setParameter(param.key, param.value, paramId)
+    if (val.parameters) {
+      Object.keys(val.parameters).forEach((paramKey)=> {
+        let param = val.parameters[paramKey]
+        ra.setParameter(param.key, param.value)
       })
     }
     return ra
@@ -121,7 +125,7 @@ export class ActionService {
 
   _toJson(action:ActionModel):any {
     let json:any = {}
-    json.name = action.name || "fake_name_" + new Date().getTime() + '_'+ Math.random()
+    json.name = action.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningRule = action.owningRule.key
     json.actionlet = action.actionType.id
     json.priority = action.priority
@@ -137,49 +141,51 @@ export class ActionService {
   }
 
   addActionsFromRule(rule:RuleModel) {
-    Object.keys(rule.actions).forEach((actionId)=>{
-      this.ref.child(actionId).once('value', (actionSnap:EntitySnapshot)=>{
-        this._added.next(this._fromSnapshot(rule, actionSnap))
-      })
+    Object.keys(rule.actions).forEach((actionId)=> {
+      this.get(rule, actionId)
     })
   }
 
-  get(rule:RuleModel, key:string) {
-
-
+  get(rule:RuleModel, key:string, cb:Function=noop) {
+    this.ref.child(key).once('value', (actionSnap:EntitySnapshot)=> {
+      let model = this._fromSnapshot(rule, actionSnap)
+      this._added.next(model)
+      cb(model)
+    })
   }
 
-  add(model:ActionModel) {
+  add(model:ActionModel, cb:Function = noop) {
     console.log("api.rule-engine.ActionService", "add", model)
 
     let json = this._toJson(model)
     this.ref.push(json, (result)=> {
       model.key = result.key()
       this._added.next(model)
+      cb(model)
     })
   }
 
-  save(model:ActionModel) {
+  save(model:ActionModel,cb:Function = noop ) {
     console.log("api.rule-engine.ActionService", "save", model)
-    if(!model.isValid()){
+    if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on model, and should provide the info needed to make the user aware of the fix.")
     }
-    if(!model.isPersisted()){
-      this.add(model)
+    if (!model.isPersisted()) {
+      this.add(model, cb)
     }
-    else{
+    else {
       let json = this._toJson(model)
-      this.ref.child(model.key).set(json)
+      this.ref.child(model.key).set(json, (result)=>{
+        cb(model)
+      })
     }
   }
 
-  remove(model:ActionModel, cb:Function = null) {
+  remove(model:ActionModel, cb:Function = noop) {
     console.log("api.rule-engine.ActionService", "remove", model)
     this.ref.child(model.key).remove(()=> {
       this._removed.next(model)
-      if(cb){
-        cb(model)
-      }
+      cb(model)
     })
   }
 }

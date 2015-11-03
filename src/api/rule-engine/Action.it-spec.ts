@@ -128,8 +128,9 @@ describe('Integration.api.rule-engine.ActionService', function () {
           expect(rule.actions[action.key]).toBe(true)
 
           /* Now read the Actions off the rule we just got back. Add listener first, then trigger call. */
-          actionService.onAdd.subscribe((action:ActionModel)=>{
+          let sub = actionService.onAdd.subscribe((action:ActionModel)=>{
             expect(action.getParameter("sessionKey")).toEqual("foo")
+            sub.unsubscribe()
             done()
           })
           actionService.list(rule)
@@ -140,6 +141,66 @@ describe('Integration.api.rule-engine.ActionService', function () {
       done()
     })
     actionService.add(anAction)
+  })
+
+
+  it("Will add a new action parameters to an existing action.", function(done){
+    var clientAction = new ActionModel()
+    clientAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
+    clientAction.owningRule = ruleUnderTest
+    clientAction.setParameter("sessionKey", "foo")
+    clientAction.setParameter("sessionValue", "bar")
+
+    let key = "aParamKey"
+    let value = "aParamValue"
+
+    actionService.add(clientAction, (resultAction)=>{
+      // serverAction is the same instance as resultAction
+      expect(clientAction.isPersisted()).toBe(true, "Action is not persisted!")
+      clientAction.clearParameters()
+      clientAction.setParameter(key, value)
+      actionService.save(clientAction, (savedAction)=>{
+        // savedAction is also the same instance as resultAction
+        actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
+          // updatedAction and clientAction SHOULD NOT be the same instance object.
+          updatedAction['abc123'] = 100
+          expect(clientAction['abc123']).toBeUndefined()
+          expect(clientAction.getParameter(key)).toBe(value, "ClientAction param value should still be set.")
+          expect(updatedAction.getParameter(key)).toBe(value, "Action refreshed from server should have the correct param value.")
+          expect(Object.keys(updatedAction.parameters).length).toEqual(1, "The old keys should have been removed.")
+          done()
+
+        })
+      })
+    })
+
+  })
+
+  it("Can update action parameter values on existing action.", function(done){
+    let param1 = { key: 'sessionKey', v1: 'value1', v2: 'value2'}
+    let param2 = { key: 'sessionValue', v1: 'abc123', v2: 'def456'}
+
+    var clientAction = new ActionModel()
+    clientAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
+    clientAction.owningRule = ruleUnderTest
+    clientAction.setParameter(param1.key, param1.v1)
+    clientAction.setParameter(param2.key, param2.v1)
+
+
+
+    actionService.add(clientAction, (resultAction)=>{
+      clientAction.setParameter(param1.key, param1.v2)
+      actionService.save(clientAction, (savedAction)=>{
+        actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
+          expect(updatedAction.getParameter(param1.key)).toBe(param1.v2, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameter(param2.key)).toBe(param2.v1, "Action refreshed from server should have the correct param value.")
+          expect(Object.keys(updatedAction.parameters).length).toEqual(2, "The old keys should have been removed.")
+          done()
+
+        })
+      })
+    })
+
   })
 
 

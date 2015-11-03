@@ -12,8 +12,10 @@ import {RuleModel, ConditionGroupModel} from "./Rule";
 import {ConditionTypeModel} from "./ConditionTypes";
 
 
+let noop = (...arg:any[])=> {
+}
+
 interface ConditionModelParameter {
-  id: string
   key:string
   value:any
   priority:number
@@ -34,33 +36,27 @@ export class ConditionModel extends CwModel {
     this._conditionType = new ConditionTypeModel('', '')
     this.comparison = 'is'
     this.operator = 'AND'
-    this._parameters = {}
     this.priority = 1
-    this.setParameter("headerKeyValue", "")
-    this.setParameter("compareTo", "", 2)
+    this._parameters = {}
   }
 
-  setParameter(key:string, value:any, priority:number=1, id:string=null) {
+  setParameter(key:string, value:any, priority:number = 1) {
     let existing = this._parameters[key]
-    if(!id){
-      id = existing ? existing.id : ('random_' + Math.random())
-    }
-    this._parameters[key] = {id: id, key: key, value: value, priority: priority}
+    this._parameters[key] = {key: key, value: value, priority: priority}
     this._changed('parameters')
   }
 
   getParameter(key:string):any {
     let v:any = ''
-    if (Object.hasOwnProperty(key)) {
-      v = this._parameters[key]
+    if (this.parameters[key] !== undefined) {
+      v = this.parameters[key].value
     }
     return v
   }
 
-  clearParameters(){
-    // @todo ggranum: Uncomment once we can add parameters to an existing Condition, server side.
-    //this._parameters = {}
-    //this._changed('parameters')
+  clearParameters() {
+    this._parameters = {}
+    this._changed('parameters')
   }
 
   get parameters():{[key:string]: ConditionModelParameter} {
@@ -111,7 +107,7 @@ export class ConditionModel extends CwModel {
     this._operator = value;
   }
 
-  _changed(key:string){
+  _changed(key:string) {
     console.log("api.rule-engine.ConditionModel", "_changed", key)
     super._changed(key)
   }
@@ -152,9 +148,9 @@ export class ConditionService {
     ra.comparison = val.comparison
     ra.priority = val.priority
     ra.operator = val.operator
-    Object.keys(val.values).forEach((key)=>{
+    Object.keys(val.values).forEach((key)=> {
       let x = val.values[key]
-      ra.setParameter(key, x.value, x.priority, x.id )
+      ra.setParameter(key, x.value, x.priority)
     })
     return ra
   }
@@ -207,43 +203,46 @@ export class ConditionService {
   }
 
   get(group:ConditionGroupModel, key:string, cb:Function = null) {
-
+        this.ref.child(key).once('value', (conditionSnap)=> {
+      let model = ConditionService.fromSnapshot(group, conditionSnap);
+      this._added.next(model)
+      cb(model)
+    })
   }
 
-  add(model:ConditionModel) {
+  add(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "add", model)
-    if(!model.isValid()){
+    if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionService.toJson(model)
     this.ref.push(json, (result)=> {
       model.key = result.key()
       this._added.next(model)
+      cb(model)
     })
   }
 
-  save(model:ConditionModel, cb:Function = null) {
+  save(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "save", model)
-    if(!model.isValid()){
+    if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
-
-    let json = ConditionService.toJson(model)
-    this.ref.child(model.key).set(json, (result)=> {
-      if(cb){
+    if (!model.isPersisted()) {
+      this.add(model, cb)
+    } else {
+      let json = ConditionService.toJson(model)
+      this.ref.child(model.key).set(json, (result)=> {
         cb(model)
-      }
-    })
+      })
+    }
   }
 
-
-  remove(model:ConditionModel, cb:Function = null) {
+  remove(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "remove", model)
     this.ref.child(model.key).remove(()=> {
       this._removed.next(model)
-      if(cb){
-        cb(model)
-      }
+      cb(model)
     })
   }
 

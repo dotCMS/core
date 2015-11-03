@@ -18,8 +18,10 @@ export class ConditionTypeModel {
   i18nKey:string
   comparisons:Array<string>
 
-  constructor(id:string, type) {
-    this.id = id
+  constructor(id:string = 'NoSelection', i18nKey:string = null, type:any=null) {
+    this._id = id;
+    this.i18nKey = i18nKey;
+
     this.comparisons = []
     if (type && type.comparisons) {
       Object.keys(type.comparisons).forEach((key)=> {

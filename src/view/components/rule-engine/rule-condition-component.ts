@@ -37,14 +37,14 @@ import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/
       class="cw-condition-component"
       *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
       [comparator-value]="condition.comparison"
-      [comparison-values]="conditionValue"
+      [parameter-values]="parameterValues"
       (change)="conditionChanged($event)">
   </cw-request-header-conditionlet>
   <cw-country-condition
       class="cw-condition-component"
       *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
       [comparator-value]="condition.comparison"
-      [comparison-values]="conditionValue"
+      [parameter-values]="parameterValues"
       (change)="conditionChanged($event)">
   </cw-country-condition>
   <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'">
@@ -68,7 +68,7 @@ import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/
 export class ConditionComponent {
   index:number
   _condition:ConditionModel
-  conditionValue:any
+  parameterValues:any
   conditionTypesDropdown:DropdownModel
   typesProvider:ConditionTypesProvider
   private conditionServce:ConditionService;
@@ -77,11 +77,11 @@ export class ConditionComponent {
     this.conditionServce = conditionServce;
     this.typesProvider = typesProvider
 
-    this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition", [], [])
+    this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition")
     let condition = new ConditionModel()
-    condition.conditionType = new ConditionTypeModel('NoSelection', {})
+    condition.conditionType = new ConditionTypeModel()
     this.condition = condition
-    this.conditionValue = ''
+    this.parameterValues = {}
     this.index = 0
 
     typesProvider.promise.then(()=> {
@@ -108,7 +108,7 @@ export class ConditionComponent {
       }
 
     })
-    this.conditionValue = this.condition.parameters
+    this.parameterValues = this.condition.parameters
   }
 
   get condition() {
@@ -130,15 +130,13 @@ export class ConditionComponent {
 
 
   conditionChanged(event) {
-    let target = event.target
-    let val = target.value
-    this.condition.comparison = val.comparatorValue
-    let parameterKeys = val['parameterKeys']
-
-    parameterKeys.forEach((key)=> {
-      this.condition.setParameter(key, val[key])
-    })
-
+    if(event.type == 'comparisonChange'){
+      this.condition.comparison = event.value
+    } else if(event.type == 'parameterValueChange'){
+      event.value.forEach((param)=> {
+        this.condition.setParameter(param.key, param.value)
+      })
+    }
   }
 }
 
