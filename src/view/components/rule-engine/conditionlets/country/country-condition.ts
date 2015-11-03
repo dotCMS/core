@@ -1,7 +1,10 @@
-/// <reference path="../../../../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf, Inject} from 'angular2/angular2';
 import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
+
+import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+
 
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']
@@ -22,53 +25,59 @@ export class CountryConditionModel {
 @Component({
   selector: 'cw-country-condition',
   properties: [
-    "comparatorValue", "comparisonValues"
+    "comparatorValue", "parameterValues",
   ],
   events: [
     "change"
   ]
 })
 @View({
-  directives: [NgFor],
-  template: `<div flex="grow" layout="row" layout-align="space-around-center">
-  <select class="cw-input" [value]="value.comparatorValue" (change)="updateComparator($event)">
-    <option [selected]="cOpt === value.comparatorValue" value="{{cOpt}}" *ng-for="var cOpt of comparisonOptions">
-      {{cOpt}}
-    </option>
-  </select>
+  directives: [NgFor, Dropdown],
+  template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component">
+  <!-- Spacer-->
+  <div flex="40" class="cw-input">&nbsp;</div>
+  <cw-input-dropdown flex="initial"  class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex="30" class="cw-input" [model]="countryDropdown" (change)="handleCountryChange($event)"></cw-input-dropdown>
 
-  <select class="cw-input cw-clause-selector" [value]="value.isoCode" (change)="updateComparisonValues($event)">
-    <option value="{{country.id}}" *ng-for="var country of countries" [selected]="country.id == value.isoCode">
-      {{country.label}}
-    </option>
-  </select>
 </div>
   `
 })
 export class CountryCondition {
   change:EventEmitter;
 
-  comparisonOptions:Array<string> = ["is", "is not"
-    //"startsWith", "endsWith", "contains", "regex"
-  ];
+
+  comparisonOptions:Array<DropdownOption> = [
+      new DropdownOption("is", "is", "Is"),
+      new DropdownOption("is not", "is not", "Is Not")  ];
 
   countries:Array<any>
 
   value:CountryConditionModel
+  private countryDropdown:DropdownModel
+  private comparatorDropdown:DropdownModel
 
   constructor(@Inject(I18NCountryProvider) countryProvider:I18NCountryProvider) {
     this.countries = []
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
+    this.countryDropdown = new DropdownModel("country", "Country")
 
     countryProvider.promise.then(()=> {
       var byNames = countryProvider.byName
       var names = countryProvider.names
       var tempCountries = []
-      names.forEach((name)=>{
+      let opts = []
+      names.forEach((name)=> {
         tempCountries.push({id: byNames[name], label: name})
+        let id = byNames[name]
+        opts.push(new DropdownOption(id, id, name, id.toLowerCase() + " flag"))
       })
       this.countries = tempCountries
+      this.countryDropdown.addOptions(opts)
+      if (this.value.isoCode === 'NoSelection') {
+        this.value.isoCode = this.countries[0].id
+      }
     })
 
   }
@@ -78,28 +87,46 @@ export class CountryCondition {
     return event
   }
 
+  set isoCode(isoCode:string){
+    let selected = []
+    this.value.isoCode = isoCode
+    if (this.value.isoCode) {
+      selected.push(this.value.isoCode)
+    }
+    this.countryDropdown.selected = selected
+  }
+
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
+    this.comparatorDropdown.selected = [value]
   }
 
-  set comparisonValues(value:any) {
-    let isoCode = value[this.value.parameterKeys[0]]
-    isoCode = isoCode ? isoCode.value : ''
-    this.value.isoCode = isoCode
+  set parameterValues(value:any) {
+    this.value.parameterKeys.forEach((paramKey)=> {
+      let v = value[paramKey]
+      v = v ? v.value : ''
+      this[paramKey] = v
+    })
   }
 
-  updateComparator(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparatorValue', this.value.clone())
-    this.value.comparatorValue = value ? value.toLowerCase() : ''
-    this.change.next(e)
+  private getEventValue():Array<any>{
+    let eventValue = []
+    this.value.parameterKeys.forEach((key)=>{
+      eventValue.push({key: key, value:this.value[key]})
+    })
+    return eventValue
   }
 
-  updateComparisonValues(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'comparisonValues', this.value.clone())
-    this.value.isoCode = value
-    this.change.next(e)
+  handleComparatorChange(event) {
+    let value = event.value
+    this.value.comparatorValue = value
+    this.change.next({type: 'comparisonChange', target: this, value: value})
+  }
+
+  handleCountryChange(event) {
+    this.value.isoCode = event.value
+    this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
+
   }
 }
 

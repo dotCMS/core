@@ -1,92 +1,97 @@
-/// <reference path="../../../../typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../typings/coreweb/coreweb-api.d.ts" />
+/// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
-import {ActionTypeModel, ActionConfigModel, RuleActionModel} from "api/rule-engine/rule-action"
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {ActionTypesProvider} from 'api/rule-engine/ActionTypes';
+import {ActionTypesProvider, ActionTypeModel} from "api/rule-engine/ActionType"
+import {ActionService, ActionModel} from "api/rule-engine/Action";
 
+import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
 
 @Component({
   selector: 'rule-action',
-  properties: ["actionMeta"]
+  properties: ["action"]
 })
 @View({
   template: `<div flex="grow" layout="column" class="cw-rule-action cw-entry">
   <div flex="grow" layout="row" layout-align="space-between-center">
-    <select class="form-control clause-selector" [value]="actionModel.actionConfig?.actionTypeId"
-            (change)="setActionlet($event.target.value)">
-      <option value="{{actionTypeModel.id}}" *ng-for="var actionTypeModel of actionTypes">{{actionTypeModel.name}}
-      </option>
-    </select>
+
+    <cw-input-dropdown [model]="actionTypesDropdown" (change)="handleActionTypeChange($event)"></cw-input-dropdown>
 
     <cw-set-session-value-action flex="grow"
-                                 [session-key]="actionModel.actionConfig?.sessionKey"
-                                 [session-value]="actionModel.actionConfig?.sessionValue"
-                                 (change)="actionConfigChanged($event)">
+                                  *ng-if="action.actionType.id == 'SetSessionAttributeActionlet'"
+                                 [action]="action"
+                                 (config-change)="actionConfigChanged($event)">
 
     </cw-set-session-value-action>
     <div class="cw-btn-group">
       <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Action" (click)="removeRuleAction()">
-          <i class="trash icon" (click)="removeRuleAction()"></i>
+        <button class="ui button" aria-label="Delete Action" (click)="removeAction()">
+          <i class="trash icon"></i>
         </button>
       </div>
     </div>
   </div>`,
-  directives: [NgIf, NgFor, SetSessionValueAction],
+  directives: [NgIf, NgFor, SetSessionValueAction, Dropdown],
 })
 export class RuleActionComponent {
-  _actionMeta:any;
-  actionModel:RuleActionModel;
-  typesProvider:ActionTypesProvider
-  actionTypes:Array<any>;
+  _action:ActionModel;
+  actionTypesDropdown:DropdownModel
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ActionTypesProvider) typesProvider:ActionTypesProvider){
-    this.actionTypes = []
+  private typesProvider:ActionTypesProvider
+  private actionService:ActionService;
+
+  constructor( typesProvider:ActionTypesProvider, actionService:ActionService){
+    this.actionService = actionService;
+    this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action", [], [])
+
     this.typesProvider = typesProvider
+    let action  = new ActionModel()
+    action.actionType = new ActionTypeModel()
+    this.action = action;
+
     typesProvider.promise.then(()=> {
-      this.actionTypes = typesProvider.ary
+      let opts = []
+      typesProvider.ary.forEach((type)=>{
+        opts.push(new DropdownOption(type.id))
+      })
+      this.actionTypesDropdown.addOptions(opts)
     })
-    this.actionModel = new RuleActionModel()
   }
 
-  onSetActionMeta(snapshot){
-    let val = snapshot.val()
-    this.actionModel.id = val.id
-    this.actionModel.name = val.name
-    this.actionModel.owningRuleId = val.owningRule
-    this.actionModel.priority = val.priority
-    this.actionModel.setActionType(this.typesProvider.map.get(val.actionlet), val.parameters)
+  set action(action:ActionModel){
+    this._action = action
+    if(this._action.actionType){
+      this.actionTypesDropdown.selected = [this._action.actionType.id]
+    }
+    action.onChange.subscribe((self)=>{
+      if(action.isValid() && action.isPersisted()){
+        this.actionService.save(action)
+      }
+      if(this._action.actionType){
+        this.actionTypesDropdown.selected = [this._action.actionType.id]
+      }
+    })
   }
 
-
-  set actionMeta(actionMeta) {
-    this._actionMeta = actionMeta
-    this._actionMeta.once('value', this.onSetActionMeta.bind(this))
+  get action():ActionModel {
+    return this._action
+  }
+  handleActionTypeChange(event){
+    this.action.actionType = this.typesProvider.getType(event.target.model.selected[0])
+    //this.action.clearParameters()
   }
 
-  get actionMeta() {
-    return this._actionMeta;
-  }
-
-  setActionlet(actionletId){
-    this.actionModel.setActionType(this.typesProvider.map.get(actionletId))
-    this.updateAction()
-  }
 
   actionConfigChanged(event){
-    this.actionModel.actionConfig = event.ngTarget.value
-    this.updateAction()
+    if(event.type == 'actionParameterChanged'){
+      Object.keys(event.params).forEach((key)=>{
+        this.action.setParameter(key, event.params[key])
+      })
+    }
   }
 
-  updateAction() {
-    this.actionMeta.set(this.actionModel.out())
-  }
-
-  removeRuleAction() {
-    this.actionMeta.remove()
+  removeAction() {
+    this.actionService.remove(this.action)
   }
 }

@@ -41,7 +41,7 @@ config.proxyHost = config.proxyProtocol + '://' + config.proxyHostname + ':' + c
 
 
 var minimistCliOpts = {
-  boolean: ['open'],
+  string: ['open'],
   alias: {
     'open': ['o']
   },
@@ -135,7 +135,9 @@ var project = {
         .on('listening', function () {
           console.log('Started connect web server on ' + config.appHost)
           if (config.args.open) {
-            open(config.appHost + '/index-dev.html')
+            var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
+            console.log('Opening default browser to ' + openTo, config.args)
+            open(config.appHost + openTo)
           }
           else {
             console.log("add the '-o' flag to automatically open the default browser")
@@ -285,7 +287,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
       .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
       .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
       .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
-      .directory('./dist/jspm_packages', 'jspm_packages')
+      .directory('./dist/thirdparty', 'thirdparty')
       .finalize()
 
 });
@@ -440,8 +442,8 @@ gulp.task('copy-dist-images', function () {
 })
 
 
-gulp.task('copy-dist-bootstrap', function () {
-  return gulp.src(['./jspm_packages/github/twbs/**/fonts/*']).pipe(gulp.dest(config.distDir + '/jspm_packages/github/twbs/'))
+gulp.task('copy-dist-thirdparty', function () {
+  return gulp.src(['./thirdparty/**/*']).pipe(gulp.dest(config.distDir + '/thirdparty/'))
 })
 
 gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], function () {
@@ -449,7 +451,7 @@ gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], fu
 })
 
 
-gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-bootstrap', 'copy-dist-images'], function () {
+gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-thirdparty', 'copy-dist-images'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 

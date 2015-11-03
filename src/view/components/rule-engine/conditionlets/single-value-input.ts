@@ -1,5 +1,5 @@
 
-/// <reference path="../../../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 import {Directive, LifecycleEvent, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
 

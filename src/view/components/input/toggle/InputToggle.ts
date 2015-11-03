@@ -1,5 +1,4 @@
-/// <reference path="../../../../../typings/es6/lib.es6.d.ts" />
-/// <reference path="../../../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
 
@@ -11,7 +10,7 @@ import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
     'onText',
     'offText'
   ],events: [
-    "change"
+    "toggle" // 'change' is fired by the input component.
   ]
 })
 @View({
@@ -53,22 +52,30 @@ import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
   `
 })
 export class InputToggle {
-  value:boolean
+  _value:boolean
   onText:string
   offText:string
-  change:EventEmitter
+  toggle:EventEmitter
 
   constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
     this.value = (value !== false && value !== 'false')
     this.onText = onText || 'On'
     this.offText = offText || 'Off'
-    this.change = new EventEmitter()
+    this.toggle = new EventEmitter()
+  }
+
+  set value(value:boolean){
+    this._value = value === true
+  }
+
+  get value():boolean {
+    return this._value
   }
 
   updateValue(value) {
     console.log('input value changed: [from / to]', this.value, value)
-    this.value = value;
-    this.change.next(value)
+    this.value = value
+    this.toggle.next({type: 'toggle', target: this, value: value })
   }
 }
 

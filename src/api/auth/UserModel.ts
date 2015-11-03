@@ -9,8 +9,12 @@ export class UserModel {
     this.username = 'admin@dotcms.com'
     this.password = 'admin'
     this.locale = 'en-US' // default to 'en-US'
-    let url = top.document.location.search.substring(1)
-    this.locale = this.checkQueryForUrl(url)
+    try{
+      let url = top.document.location.search.substring(1)
+      this.locale = this.checkQueryForUrl(url)
+    } catch(e){
+      console.log("Could not set locale from URL.")
+    }
   }
 
   checkQueryForUrl(locationQuery:string):string{

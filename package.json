@@ -1,35 +1,34 @@
 {
-  "version": "3.5.0-alpha",
-  "description": "JSPM Components using React, Angular2.0, es6, and other related magic.",
+  "version": "3.5.0-alpha.1",
+  "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
     "type": "git",
     "url": "https://github.com/ggranum/dc-components.git"
   },
   "jspm": {
-    "directories": {},
     "dependencies": {
+      "@reactivex/rxjs@5.0.0-alpha.7": "npm:@reactivex/rxjs@5.0.0-alpha.7",
       "angular-material": "github:angular/bower-material@^0.11.4",
-      "angular2": "npm:angular2@2.0.0-alpha.36",
+      "angular2": "npm:angular2@2.0.0-alpha.44",
       "clean-css": "npm:clean-css@3.3.9",
       "css": "github:systemjs/plugin-css@0.1.15",
-      "es6-promise": "npm:es6-promise@2.3.0",
+      "es6-promise": "npm:es6-promise@3.0.2",
       "es6-shim": "github:es-shims/es6-shim@0.32.3",
       "events": "github:jspm/nodelibs-events@0.1.0",
       "jquery": "github:components/jquery@2.1.4",
-      "reflect-metadata": "npm:reflect-metadata@0.1.0",
-      "rx": "npm:rx@2.5.3",
+      "reflect-metadata": "npm:reflect-metadata@0.1.2",
       "text": "github:systemjs/plugin-text@0.0.2",
       "whatwg-fetch": "npm:whatwg-fetch@^0.9.0",
-      "zone.js": "npm:zone.js@0.5.4"
+      "zone.js": "npm:zone.js@0.5.8"
     },
     "devDependencies": {
-      "babel": "npm:babel-core@5.8.23",
-      "babel-runtime": "npm:babel-runtime@5.8.20",
-      "core-js": "npm:core-js@1.1.3"
+      "babel": "npm:babel-core@^5.8.24",
+      "babel-runtime": "npm:babel-runtime@^5.8.24",
+      "core-js": "npm:core-js@^1.1.4"
     }
   },
   "devDependencies": {
-    "archiver": "^0.15.x",
+    "archiver": "^0.16.x",
     "connect": "^3.3.4",
     "connect-livereload": "^0.5.3",
     "connect-modrewrite": "^0.8.1",
@@ -45,14 +44,15 @@
     "gulp-typescript": "^2.8.x",
     "gulp-watch": "^4.2.4",
     "gulp-webserver": "^0.9.1",
-    "http-proxy": "^1.11.1",
-    "jasmine-core": "^2.1.3",
-    "jspm": "0.16.2",
+    "http-proxy": "^1.11.3",
+    "jasmine-core": "2.3.4",
+    "jspm": "0.16.13",
     "karma": "^0.13.x",
     "karma-chrome-launcher": "^0.2.x",
     "karma-jasmine": "^0.3.x",
     "karma-jspm": "^2.0.x",
-    "karma-junit-reporter": "^0.3.4",
+    "karma-junit-reporter": "^0.3.8",
+    "live-server": "^0.8.2",
     "merge2": "^0.3.6",
     "minimist": "^1.1.1",
     "node-zip": "^1.1.1",
@@ -61,6 +61,13 @@
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "~0.6.3",
-    "typescript": "^1.5.3"
+    "typescript": "^1.6.2"
+  },
+  "scripts": {
+    "tsc": "tsc -p src -w",
+    "start": "live-server --open=src",
+    "test": "live-server --open=src/unit-tests.html",
+    "itest": "gulp serve --open=/src/integration-tests.html",
+    "idemo": "gulp serve --open=/src/integration-demo.html"
   }
 }

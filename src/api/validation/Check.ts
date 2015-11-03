@@ -1,4 +1,4 @@
-import {Verify} from './Verify.js'
+import {Verify} from './Verify'
 
 
 let createCheckError = function (validation, value,  message) {

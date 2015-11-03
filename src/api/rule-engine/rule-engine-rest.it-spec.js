@@ -1,5 +1,4 @@
 import {Check} from '../validation/Check';
-import {ConnectionManager} from '../persistence/ConnectionManager'
 import {RestDataStore as Store} from '../persistence/RestDataStore'
 
 let remoteApiRootRef = "http://localhost:9000/api/v1/"

@@ -1,13 +1,9 @@
-/// <reference path="../../../../../../typings/angular2/angular2.d.ts" />
+/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 
 /**
  * Set a value on to the active session, using the supplied key.
  *
- * Express a condition based on two fields: a Header, and a Header Comparison
- * @see https://en.wikipedia.org/wiki/List_of_HTTP_header_fields#Request_fields
- * @see https://tools.ietf.org/html/rfc7231#section-5
- * @see http://www.iana.org/assignments/message-headers/message-headers.xml#perm-headers
  *
  *
  * ## POSIX Utility Argument Syntax (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
@@ -41,15 +37,15 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
+import {ActionModel} from "api/rule-engine/Action";
 
 @Component({
   selector: 'cw-set-session-value-action',
   properties: [
-    "sessionKey", "sessionValue"
+    "sessionKey", "sessionValue", "action"
   ],
   events: [
-    "change"
+    "configChange"
   ]
 })
 @View({
@@ -58,57 +54,45 @@ import {SetSessionValueActionModel} from 'api/rule-engine/rule-action'
   <input flex
          type="text"
          class="cw-action-value cw-input"
-         [value]="value.sessionKey"
+         [value]="params.sessionKey"
          placeholder="Enter a session key"
-         (change)="updateSessionKey($event)"/>
+         (change)="updateParamValue('sessionKey', $event)"/>
   <input flex
          type="text"
          class="cw-action-value cw-input"
-         [value]="value.sessionValue"
+         [value]="params.sessionValue"
          placeholder="Enter a value"
-         (change)="updateSessionValue($event)"/>
+         (change)="updateParamValue('sessionValue', $event)"/>
 </div>
   `
 })
 export class SetSessionValueAction {
 
-  value:SetSessionValueActionModel;
+  paramKeys:Array<String>
+  params:{[key:string]: string}
 
-  change:EventEmitter;
+  configChange:EventEmitter;
 
   constructor(@Attribute('sessionKey') sessionKey:string = '',
               @Attribute('sessionValue') sessionValue:string = '') {
-    this.value = new SetSessionValueActionModel()
-    this.value.sessionKey = sessionKey
-    this.value.sessionValue = sessionValue
-    this.change = new EventEmitter();
+    this.paramKeys = ["sessionKey", "sessionValue"]
+    this.params = {
+      "sessionKey": sessionKey,
+      "sessionValue": sessionValue
+    }
+    this.configChange = new EventEmitter();
   }
 
-  _modifyEventForForwarding(event:Event, field, oldState:SetSessionValueActionModel):Event {
-    Object.assign(event, {ngTarget: this, was: oldState, value: this.value, valueField: field})
-    return event
+  set action(action:ActionModel){
+    this.params = {}
+    this.paramKeys.forEach((key)=>{
+      this.params[key] = action.getParameter(key)
+    })
   }
 
-  set sessionKey(value:string) {
-    this.value.sessionKey = value || ''
-  }
-
-  set sessionValue(value:string) {
-    this.value.sessionValue = value || ''
-  }
-
-  updateSessionKey(event:Event) {
+  updateParamValue(key:string, event:Event) {
     let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'sessionKey', this.value.clone())
-    this.value.sessionKey = value
-    this.change.next(e)
+    this.params[key] = value
+    this.configChange.next({type: 'actionParameterChanged', target: this, params: this.params})
   }
-
-  updateSessionValue(event:Event) {
-    let value = event.target['value']
-    let e = this._modifyEventForForwarding(event, 'sessionValue', this.value.clone())
-    this.value.sessionValue = value;
-    this.change.next(e)
-  }
-
 }
