@@ -481,14 +481,17 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getId());
                 db.loadResult();
 
+                deleteConditionValues(condition);
+
                 if (condition.getValues() != null) {
                     for (ConditionValue value : condition.getValues()) {
-                        db.setSQL(sql.UPDATE_CONDITION_VALUE);
+                        value.setId(UUIDGenerator.generateUuid());
+                        db.setSQL(sql.INSERT_CONDITION_VALUE);
+                        db.addParam(value.getId());
                         db.addParam(condition.getId());
                         db.addParam(value.getKey());
                         db.addParam(value.getValue());
                         db.addParam(value.getPriority());
-                        db.addParam(value.getId());
                         db.loadResult();
                     }
                 }
