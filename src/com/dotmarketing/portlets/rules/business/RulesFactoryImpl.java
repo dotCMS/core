@@ -103,7 +103,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.SELECT_RULE_BY_ID);
             db.addParam(id);
             List<Rule> result = convertListToObjects(db.loadObjectResults(),
-                    Rule.class);
+                Rule.class);
             if (!result.isEmpty()) {
                 rule = result.get(0);
                 cache.addRule(rule);
@@ -151,7 +151,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.SELECT_RULE_ACTION_BY_ID);
             db.addParam(ruleActionId);
             List<RuleAction> result = convertListToObjects(
-                    db.loadObjectResults(), RuleAction.class);
+                db.loadObjectResults(), RuleAction.class);
             if (!result.isEmpty()) {
                 action = result.get(0);
                 getRuleActionParametersFromDB(action, db);
@@ -227,7 +227,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.SELECT_CONDITION_GROUP_BY_ID);
             db.addParam(conditionGroupId);
             List<ConditionGroup> result = convertListToObjects(
-                    db.loadObjectResults(), ConditionGroup.class);
+                db.loadObjectResults(), ConditionGroup.class);
             if (!result.isEmpty()) {
                 conditionGroup = result.get(0);
                 cache.addConditionGroup(conditionGroup);
@@ -238,7 +238,7 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public List<Condition> getConditionsByGroup(String groupId)
-            throws DotDataException {
+        throws DotDataException {
         if(Strings.isNullOrEmpty(groupId)) {
             throw new IllegalArgumentException("Invalid groupId.");
         }
@@ -277,7 +277,7 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.SELECT_CONDITION_BY_ID);
             db.addParam(id);
             List<Condition> result = convertListToObjects(
-                    db.loadObjectResults(), Condition.class);
+                db.loadObjectResults(), Condition.class);
             if (!result.isEmpty()) {
                 condition = result.get(0);
                 getConditionValuesFromDB(condition, db);
@@ -357,18 +357,20 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(rule.getId());
             db.loadResult();
 
-            cache.removeRule(rule);
+
 
             // remove groups who were not provided
 
             List<ConditionGroup> dbGroups = getConditionGroupsByRule(rule.getId());
             List<String> updatedGroups = rule.getGroups().stream()
-                                                 .map(ConditionGroup::getId)
-                                                 .collect(Collectors.toList());
+                .map(ConditionGroup::getId)
+                .collect(Collectors.toList());
             dbGroups.stream()
-                    .filter(group -> updatedGroups.contains(group.getId()))
-                    .map(this::deleteRemovedGroupFromRule);
+                .filter(group -> updatedGroups.contains(group.getId()))
+                .map(this::deleteRemovedGroupFromRule);
         }
+
+        cache.removeRule(rule);
 
     }
 
@@ -418,9 +420,9 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(group.getModDate());
             db.addParam(group.getId());
             db.loadResult();
-            cache.removeConditionGroup(group);
         }
 
+        cache.removeConditionGroup(group);
     }
 
     @Override
@@ -496,8 +498,9 @@ public class RulesFactoryImpl implements RulesFactory {
                     }
                 }
 
-                cache.removeCondition(condition);
             }
+
+            cache.removeCondition(condition);
 
         } catch (DotDataException e) {
             try {
@@ -622,16 +625,15 @@ public class RulesFactoryImpl implements RulesFactory {
                     db.loadResult();
                 }
             }
-
-            cache.removeAction(ruleAction);
-
         }
+
+        cache.removeAction(ruleAction);
 
     }
 
     @Override
     public void deleteConditionGroup(ConditionGroup conditionGroup)
-            throws DotDataException {
+        throws DotDataException {
         final DotConnect db = new DotConnect();
         db.setSQL(sql.DELETE_CONDITION_GROUP_BY_ID);
         db.addParam(conditionGroup.getId());
@@ -641,7 +643,7 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public void deleteConditionsByGroup(ConditionGroup conditionGroup)
-            throws DotDataException {
+        throws DotDataException {
 
         conditionGroup = checkNotNull(conditionGroup, "Condition Group is required.");
 
@@ -724,7 +726,7 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.SELECT_RULE_ACTIONS_PARAMS);
         db.addParam(action.getId());
         List<RuleActionParameter> params = convertListToObjects(db.loadObjectResults(),
-                RuleActionParameter.class);
+            RuleActionParameter.class);
 
         final Map<String, RuleActionParameter> map = new LinkedHashMap<>();
         for (final RuleActionParameter param : params) {
@@ -751,7 +753,7 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
-            throws DotDataException {
+        throws DotDataException {
         final List ret = new ArrayList();
         try {
             for (final Map<String, Object> map : rs) {
@@ -765,7 +767,7 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     private Set convertListToObjectsSet(List<Map<String, Object>> rs, Class clazz)
-            throws DotDataException {
+        throws DotDataException {
         final Set ret = new HashSet();
         try {
             for (final Map<String, Object> map : rs) {
@@ -779,8 +781,8 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     private Object convertMaptoObject(Map<String, Object> map, Class clazz)
-            throws InstantiationException, IllegalAccessException,
-            InvocationTargetException {
+        throws InstantiationException, IllegalAccessException,
+        InvocationTargetException {
 
         if (clazz.getName().equals(Rule.class.getName())) {
             return convertRule(map);
@@ -805,12 +807,12 @@ public class RulesFactoryImpl implements RulesFactory {
         r.setName(row.get("name").toString());
         r.setFireOn(Rule.FireOn.valueOf(row.get("fire_on").toString()));
         r.setShortCircuit(DbConnectionFactory.isDBTrue(row.get("short_circuit")
-                .toString()));
+            .toString()));
         r.setHost(row.get("host").toString());
         r.setFolder(row.get("folder").toString());
         r.setPriority(Integer.parseInt(row.get("priority").toString()));
         r.setEnabled(DbConnectionFactory
-                             .isDBTrue(row.get("enabled").toString()));
+            .isDBTrue(row.get("enabled").toString()));
         return r;
     }
 

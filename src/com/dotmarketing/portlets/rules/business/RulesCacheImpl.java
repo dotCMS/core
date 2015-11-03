@@ -73,11 +73,7 @@ public class RulesCacheImpl extends RulesCache {
 
         this.cache.remove(rule.getId(), getPrimaryGroup());
 
-        Set<Rule> rules = getRulesByHostFireOn(rule.getHost(), rule.getFireOn());
-        if (rules != null) {
-            rules.remove(rule);
-            addRulesByHostFireOn(rules, rule.getHost(), rule.getFireOn());
-        }
+        cache.remove(rule.getHost() + ":" + rule.getFireOn(), getPrimaryGroup());
 
         // let's clean the
         cache.remove(rule.getHost(), HOST_RULES_CACHE);
