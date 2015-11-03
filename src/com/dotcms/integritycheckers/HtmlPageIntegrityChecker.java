@@ -461,7 +461,14 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 		String conflictingIdentifier = (String) pageData.get("remote_identifier");
 		String conflictingWorkingInode = (String) pageData.get("remote_working_inode");
 		String conflictingLiveInode = (String) pageData.get("remote_live_inode");
-		Long languageId = (Long) pageData.get("language_id");
+        Long languageId;
+        if ( DbConnectionFactory.isOracle() ) {
+            BigDecimal lang = (BigDecimal) pageData.get("language_id");
+            languageId = new Long(lang.toPlainString());
+        } else {
+            languageId = (Long) pageData.get("language_id");
+        }
+
 		DotConnect dc = new DotConnect();
 		// Get the data of the existing page that has the identifier that MUST
 		// be changed before fixing the reported conflict(s)
