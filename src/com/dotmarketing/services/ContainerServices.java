@@ -141,7 +141,7 @@ public class ContainerServices {
            	    sb.append(" #set($_show_working_=false) ");
 
            	    // if timemachine future enabled
-           	    sb.append("#if(! $null.isNull($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
+           	    sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
            	    sb.append("  #set($_tmdate=$date.toDate($webapi.parseLong($request.session.getAttribute(\"tm_date\")))) ");
            	    sb.append("  #set($_ident=$webapi.findIdentifierById($contentletId)) ");
 
