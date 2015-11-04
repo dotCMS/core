@@ -24,7 +24,7 @@ var config = {
   proxyHostname: 'localhost',
   proxyPort: 8080,
   buildDir: './build',
-  distDir: './dist',
+  distDir: __dirname + '/dist',
   srcDir: './src',
   buildTarget: 'dev',
   noBundle: ['css', 'text'],
@@ -68,69 +68,116 @@ var project = {
   server: null,
 
   clean: function (cb) {
+    console.log("Starting 'Clean'")
     del.sync([config.distDir, config.buildDir, './gh_pages'])
+    console.log("Finished 'Clean'")
     cb()
   },
 
   compileJavascript: function (cb) {
-    return gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', cb);
+    cb()
   },
 
   /**
    *
    */
   compileTypescript: function (cb) {
-    //var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
-    //
-    //var x = tsResult.js.pipe(gulp.dest('build'))
-    //var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
-    //
-    // ignoring typscript definitions for now.
-    //x.on('finish', cb)
-    //x.on('error', cb)
     cb()
   },
 
   compileStyles: function (cb) {
+    console.log("Starting 'compileStyles'")
     var sass = require('gulp-sass')
     var sourcemaps = require('gulp-sourcemaps');
     gulp.src('./src/**/*.scss')
         .pipe(sourcemaps.init())
         .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
         .pipe(sourcemaps.write())
-        .pipe(gulp.dest(config.buildDir)).on('finish', cb);
+        .pipe(gulp.dest(config.buildDir)).on('finish', function () {
+      console.log("Finished 'compileStyles'")
+      cb()
+    });
   },
 
-  compileTemplates: function (cb) {
-    gulp.src('./src/**/*.html').pipe(gulp.dest(config.buildDir)).on('finish', cb);
+  callbackOnCount: function (count, cb, name) {
+    name = name || 'unknown'
+    return function () {
+      if (--count === 0) {
+        cb()
+      }
+    }
+  },
+
+  compileStatic: function (cb) {
+    console.log("Starting 'compileStatic'")
+
+    var done = project.callbackOnCount(2, function () {
+      console.log("Finished 'compileStatic'")
+      cb()
+    }, 'compileStatic')
+    var gitRev = require('git-rev')
+    gulp.src('./src/**/*.{js,css,eot,svg,ttf,woff,woff2,png}').pipe(gulp.dest(config.buildDir)).on('finish', function () {
+      console.log("Finished 'compileStatic - a'")
+      done()
+    });
+    gitRev.short(function (rev) {
+      gulp.src([config.srcDir + '/**/*.html'])
+          .pipe(replace(/\$\{build.revision\}/, rev))
+          .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
+          .pipe(gulp.dest(config.buildDir)).on('finish', function () {
+        console.log("Finished 'compileStatic - b'")
+        done()
+      });
+    })
   },
 
   compile: function (cb) {
-    project.compileJavascript(function(){
-      project.compileTypescript(function(){
-        project.compileStyles(function(){
-          project.compileTemplates(function(){
-            cb()
-          })})})})
+    var done = project.callbackOnCount(4, function () {
+      console.log("Finished 'compile'")
+      cb()
+    }, 'compile')
+    console.log("Starting 'compile'")
+    project.compileJavascript(done)
+    project.compileTypescript(done)
+    project.compileStyles(done)
+    project.compileStatic(done)
   },
 
-  bundleDist: function (cb) {
-    var sfxPath = config.buildDir + '/core-web.sfx.js'
-    console.info("Bundling self-executing build to " + sfxPath)
-    var jspm = require('jspm')
-    var jspmBuilder = new jspm.Builder()
-    jspmBuilder.buildStatic('index',
-        sfxPath,
-        {
-          inject: false,
-          minify: false,
-          sourceMaps: false
-        }).then(function () {
-      gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', cb);
-    }).catch(function (e) {
-      console.log("Error creating bundle with JSPM: ", e)
-      throw e
-    })
+  packageRelease: function (done) {
+    //project.clean(function () {
+      project.compile(function () {
+        console.log("Starting 'packageRelease'")
+        var outPath = config.distDir + '/core-web.zip'
+        if (!fs.existsSync(config.distDir)) {
+          fs.mkdirSync(config.distDir)
+        }
+        var output = fs.createWriteStream(outPath)
+        var archiver = require('archiver')
+        var archive = archiver.create('zip', {})
+
+        try {
+
+
+          output.on('close', function () {
+            console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
+            done()
+          });
+
+          archive.on('error', function (err) {
+            console.log("Hi!", err)
+            done(err)
+          });
+
+          archive.pipe(output);
+          console.log("xxx 'packageRelease'")
+
+          archive.directory('./build', '.').finalize()
+        }
+        catch (err) {
+          console.log("Hi!2", err)
+        }
+      })
+    //})
   },
 
   watch: function () {
@@ -260,7 +307,6 @@ gulp.task('itdd', ['dev-watch'], function (done) {
   })
 })
 
-
 gulp.task('start-server', function (done) {
   project.startServer()
   done()
@@ -270,25 +316,10 @@ gulp.task('start-server', function (done) {
 /**
  *  Deploy Tasks
  */
-gulp.task('package-release', ['copy-dist-all'], function (done) {
-  var outPath = config.buildDir + '/core-web.zip'
-  var output = fs.createWriteStream(outPath)
-  var archiver = require('archiver')
-  var archive = archiver.create('zip', {})
+gulp.task('package-release', [], function (done) {
 
-  output.on('close', function () {
-    fs.renameSync(outPath, config.distDir + '/core-web.zip')
-    console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
-    done()
-  });
+  project.packageRelease(done)
 
-  archive.on('error', function (err) {
-    done(err)
-  });
-
-  archive.pipe(output);
-
-  archive.directory('./dist', './').finalize()
 
 });
 
@@ -437,22 +468,13 @@ gulp.task('publish-github-pages', ['ghPages-clone'], function (done) {
   gitAdd(options)
 })
 
-gulp.task('copy-dist-images', function () {
-  return gulp.src(['*.ico']).pipe(gulp.dest(config.distDir))
-})
 
-
-gulp.task('copy-dist-thirdparty', function () {
-  return gulp.src(['./thirdparty/**/*']).pipe(gulp.dest(config.distDir + '/thirdparty/'))
-})
-
-gulp.task('copy-dist-main', ['bundle-dist'], function (done) {
+gulp.task('copy-dist-main', [], function (done) {
   var gitRev = require('git-rev')
 
   gitRev.short(function (rev) {
     console.log("Revision is: ", rev)
-    var result = gulp.src(['./*.html', 'index.js'])
-        .pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js'))
+    var result = gulp.src([config.buildDir + '/index.html'])
         .pipe(replace(/\$\{build.revision\}/, rev))
         .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
         .pipe(gulp.dest(config.distDir))
@@ -462,7 +484,7 @@ gulp.task('copy-dist-main', ['bundle-dist'], function (done) {
 })
 
 
-gulp.task('copy-dist-all', ['copy-dist-main', 'copy-dist-thirdparty', 'copy-dist-images'], function () {
+gulp.task('copy-dist-all', ['copy-dist-main'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
 
@@ -480,21 +502,12 @@ gulp.task('compile-js', function (done) {
 })
 
 gulp.task('compile-templates', [], function (done) {
-  project.compileTemplates(done)
+  project.compileStatic(done)
 })
 
 gulp.task('compile-all', [], function (done) {
   project.compile(done)
 })
-
-gulp.task('bundle-dist', [], function (done) {
-  project.clean(function(){
-    project.compile(function () {
-      project.bundleDist(done)
-    })
-  })
-})
-
 
 
 gulp.task('prod-watch', ['compile-all'], function () {
@@ -521,7 +534,6 @@ gulp.task('serve', ['start-server', 'dev-watch'], function (done) {
 
 
 gulp.task('build', ['package-release'], function (done) {
-  done()
 })
 
 gulp.task('clean', [], function (done) {

@@ -5,23 +5,6 @@
     "type": "git",
     "url": "https://github.com/ggranum/dc-components.git"
   },
-  "jspm": {
-    "dependencies": {
-      "clean-css": "npm:clean-css@3.3.9",
-      "css": "github:systemjs/plugin-css@0.1.19",
-      "es6-promise": "npm:es6-promise@3.0.2",
-      "es6-shim": "github:es-shims/es6-shim@0.32.3",
-      "events": "github:jspm/nodelibs-events@0.1.0",
-      "jquery": "github:components/jquery@2.1.4",
-      "reflect-metadata": "npm:reflect-metadata@0.1.2",
-      "text": "github:systemjs/plugin-text@0.0.3",
-      "whatwg-fetch": "npm:whatwg-fetch@^0.9.0",
-      "zone.js": "npm:zone.js@0.5.8"
-    },
-    "devDependencies": {
-      "typescript": "npm:typescript@^1.6.2"
-    }
-  },
   "devDependencies": {
     "archiver": "^0.16.x",
     "connect": "^3.3.4",
@@ -61,9 +44,9 @@
   "scripts": {
     "tsc": "tsc -p src -w",
     "start": "live-server --open=src",
-    "test": "live-server --open=src/unit-tests.html",
-    "itest": "gulp serve --open=/src/integration-tests.html",
-    "idemo": "gulp serve --open=/src/integration-demo.html"
+    "test": "live-server --open=build/unit-tests.html",
+    "itest": "gulp serve --open=/build/integration-tests.html",
+    "idemo": "gulp serve --open=/build/integration-demo.html"
   },
   "dependencies": {
     "angular2": "2.0.0-alpha.44",

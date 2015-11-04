@@ -1,5 +1,5 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 import {CwChangeEvent} from "./CwEvent";
 
 

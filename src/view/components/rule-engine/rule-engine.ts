@@ -1,6 +1,6 @@
 import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
-//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
