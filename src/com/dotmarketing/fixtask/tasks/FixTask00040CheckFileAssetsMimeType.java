@@ -135,7 +135,7 @@ public class FixTask00040CheckFileAssetsMimeType implements FixTask {
 			File _writing = null;
 
 			if (!new File(ConfigUtils.getBackupPath()+File.separator+"fixes").exists()) {
-				new File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdir();
+				new File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdirs();
 			}
 			_writing = new File(ConfigUtils.getBackupPath()+File.separator+"fixes" + java.io.File.separator + lastmoddate + "_"
 					+ "FixTask00040CheckFileAssetsMimeType" + ".xml");
