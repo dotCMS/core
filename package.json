@@ -67,5 +67,10 @@
     "test": "live-server --open=src/unit-tests.html",
     "itest": "gulp serve --open=/src/integration-tests.html",
     "idemo": "gulp serve --open=/src/integration-demo.html"
+  },
+  "dependencies": {
+    "angular2": "2.0.0-alpha.44",
+    "jquery": "2.1.4",
+    "systemjs": "0.19.2"
   }
 }

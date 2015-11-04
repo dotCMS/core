@@ -1,4 +1,4 @@
-/// <reference path="../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
+/// <reference path="../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 
 import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
 

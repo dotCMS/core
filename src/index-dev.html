@@ -10,10 +10,17 @@
 <cw-rule-engine>Loading...</cw-rule-engine>
 
 <!-- DEV MODE -->
-<script src="jspm_packages/system.src.js"></script>
-<script src="config.js"></script>
+<script src="thirdparty/system/dist/system.src.js"></script>
+<script src="thirdparty/angular2/bundles/angular2.dev.js"></script>
 
 <script>
+  System.config({
+    packages: {
+      'api': {defaultExtension: 'js'},
+      'view': {defaultExtension: 'js'}
+    }
+  });
+
   Promise.all([
     System.import('./index')
   ]).then(

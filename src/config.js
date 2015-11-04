@@ -12,11 +12,8 @@ System.config({
     "noImplicitAny": false
   },
   paths: {
-    "api/*": "build/api/*",
-    "view/*": "build/view/*",
-    "coreweb/api/*": "build/api/*",
-    "rule-engine/*": "build/view/components/rule-engine/*",
-    "src/*": "build/*.js",
+    "api/*": "api/*",
+    "view/*": "view/*",
     "*.html": "*.html",
     "github:*": "jspm_packages/github/*",
     "npm:*": "jspm_packages/npm/*"
