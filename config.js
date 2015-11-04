@@ -1,16 +1,15 @@
 System.config({
   baseURL: "/",
   defaultJSExtensions: true,
-  transpiler: "babel",
-  babelOptions: {
-    "optional": [
-      "runtime"
-    ],
-    "stage": 2
-  },
+  transpiler: "typescript",
   typescriptOptions: {
+    "target": "ES5",
     "module": "commonjs",
-    "emitDecoratorMetadata": true
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "removeComments": false,
+    "noImplicitAny": false
   },
   paths: {
     "api/*": "build/api/*",
@@ -24,20 +23,18 @@ System.config({
   },
 
   map: {
-    "@reactivex/rxjs@5.0.0-alpha.7": "npm:@reactivex/rxjs@5.0.0-alpha.7",
+    "@reactivex/rxjs@5.0.0-alpha.4": "npm:@reactivex/rxjs@5.0.0-alpha.4",
     "angular-material": "github:angular/bower-material@0.11.4",
-    "angular2": "npm:angular2@2.0.0-alpha.44",
-    "babel": "npm:babel-core@5.8.25",
-    "babel-runtime": "npm:babel-runtime@5.8.25",
+    "angular2": "npm:angular2@2.0.0-alpha.45",
     "clean-css": "npm:clean-css@3.3.9",
-    "core-js": "npm:core-js@1.2.3",
-    "css": "github:systemjs/plugin-css@0.1.15",
+    "css": "github:systemjs/plugin-css@0.1.19",
     "es6-promise": "npm:es6-promise@3.0.2",
     "es6-shim": "github:es-shims/es6-shim@0.32.3",
     "events": "github:jspm/nodelibs-events@0.1.0",
     "jquery": "github:components/jquery@2.1.4",
     "reflect-metadata": "npm:reflect-metadata@0.1.0",
-    "text": "github:systemjs/plugin-text@0.0.2",
+    "text": "github:systemjs/plugin-text@0.0.3",
+    "typescript": "npm:typescript@1.6.2",
     "whatwg-fetch": "npm:whatwg-fetch@0.9.0",
     "zone.js": "npm:zone.js@0.5.8",
     "github:angular/bower-angular-animate@1.4.7": {
@@ -105,8 +102,7 @@ System.config({
     "github:jspm/nodelibs-vm@0.1.0": {
       "vm-browserify": "npm:vm-browserify@0.0.4"
     },
-
-    "npm:@reactivex/rxjs@5.0.0-alpha.7": {
+    "npm:@reactivex/rxjs@5.0.0-alpha.4": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
@@ -117,14 +113,14 @@ System.config({
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
-    "npm:angular2@2.0.0-alpha.44": {
-      "@reactivex/rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.7",
+    "npm:angular2@2.0.0-alpha.45": {
+      "@reactivex/rxjs": "npm:@reactivex/rxjs@5.0.0-alpha.4",
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "crypto": "github:jspm/nodelibs-crypto@0.1.0",
       "fs": "github:jspm/nodelibs-fs@0.1.2",
       "path": "github:jspm/nodelibs-path@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2",
-      "reflect-metadata": "npm:reflect-metadata@0.1.1",
+      "reflect-metadata": "npm:reflect-metadata@0.1.2",
       "zone.js": "npm:zone.js@0.5.8"
     },
     "npm:asn1.js@2.2.1": {
@@ -137,9 +133,6 @@ System.config({
     },
     "npm:assert@1.3.0": {
       "util": "npm:util@0.10.3"
-    },
-    "npm:babel-runtime@5.8.25": {
-      "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:browserify-aes@1.0.5": {
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
@@ -222,12 +215,6 @@ System.config({
       "process": "github:jspm/nodelibs-process@0.1.2"
     },
     "npm:constants-browserify@0.0.1": {
-      "systemjs-json": "github:systemjs/plugin-json@0.1.0"
-    },
-    "npm:core-js@1.2.3": {
-      "fs": "github:jspm/nodelibs-fs@0.1.2",
-      "path": "github:jspm/nodelibs-path@0.1.0",
-      "process": "github:jspm/nodelibs-process@0.1.2",
       "systemjs-json": "github:systemjs/plugin-json@0.1.0"
     },
     "npm:core-util-is@1.0.1": {
@@ -371,7 +358,7 @@ System.config({
     "npm:reflect-metadata@0.1.0": {
       "assert": "github:jspm/nodelibs-assert@0.1.0"
     },
-    "npm:reflect-metadata@0.1.1": {
+    "npm:reflect-metadata@0.1.2": {
       "assert": "github:jspm/nodelibs-assert@0.1.0",
       "process": "github:jspm/nodelibs-process@0.1.2"
     },

@@ -1,3 +1,6 @@
+"use strict";
+
+
 var glob = require('glob')
 var fs = require('fs')
 var gulp = require('gulp')
@@ -64,7 +67,12 @@ var typescriptProject = ts.createProject({
 var project = {
   server: null,
 
-  compileJavascript: function(cb){
+  clean: function (cb) {
+    del.sync([config.distDir, config.buildDir, './gh_pages'])
+    cb()
+  },
+
+  compileJavascript: function (cb) {
     return gulp.src('./src/**/*.js').pipe(gulp.dest(config.buildDir)).on('finish', cb);
   },
 
@@ -80,6 +88,48 @@ var project = {
     // ignoring typscript definitions for now.
     x.on('finish', cb)
     x.on('error', cb)
+  },
+
+  compileStyles: function (cb) {
+    var sass = require('gulp-sass')
+    var sourcemaps = require('gulp-sourcemaps');
+    gulp.src('./src/**/*.scss')
+        .pipe(sourcemaps.init())
+        .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
+        .pipe(sourcemaps.write())
+        .pipe(gulp.dest(config.buildDir)).on('finish', cb);
+  },
+
+  compileTemplates: function (cb) {
+    gulp.src('./src/**/*.html').pipe(gulp.dest(config.buildDir)).on('finish', cb);
+  },
+
+  compile: function (cb) {
+    project.compileJavascript(function(){
+      project.compileTypescript(function(){
+        project.compileStyles(function(){
+          project.compileTemplates(function(){
+            cb()
+          })})})})
+  },
+
+  bundleDist: function (cb) {
+    var sfxPath = config.buildDir + '/core-web.sfx.js'
+    console.info("Bundling self-executing build to " + sfxPath)
+    var jspm = require('jspm')
+    var jspmBuilder = new jspm.Builder()
+    jspmBuilder.buildStatic('index',
+        sfxPath,
+        {
+          inject: false,
+          minify: false,
+          sourceMaps: false
+        }).then(function () {
+      gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', cb);
+    }).catch(function (e) {
+      console.log("Error creating bundle with JSPM: ", e)
+      throw e
+    })
   },
 
   watch: function () {
@@ -149,11 +199,11 @@ var project = {
     project.server.close(callback)
   },
 
-  rewriteJspmConfigForUnitTests: function(cb){
+  rewriteJspmConfigForUnitTests: function (cb) {
     var inFile = __dirname + '/config.js'
     var outFile = __dirname + '/config-karma.local.js'
     var fs = require('fs')
-    fs.readFile(inFile, 'utf8', function (err,data) {
+    fs.readFile(inFile, 'utf8', function (err, data) {
       if (err) {
         console.log("It broke: ", err);
         cb(err)
@@ -181,8 +231,8 @@ var project = {
 }
 
 gulp.task('test', [], function (done) {
-  project.rewriteJspmConfigForUnitTests(function(err){
-    if(err){
+  project.rewriteJspmConfigForUnitTests(function (err) {
+    if (err) {
       done(err)
     }
     project.runTests(true, false, done)
@@ -210,47 +260,6 @@ gulp.task('itdd', ['dev-watch'], function (done) {
 })
 
 
-
-
-gulp.task('bundle-deps', ['unbundle'], function (done) {
-  var deps = pConfig.jspm.dependencies || {}
-  var promises = []
-  var jspm = require('jspm')
-
-  for (var nm in deps) {
-    if (config.noBundle.indexOf(nm) < 0) {
-      var bundlePath = config.buildDir + '/' + nm + '.bundle.js'
-      promises.push(jspm.bundle(nm,
-          bundlePath,
-          {
-            inject: true,
-            minify: true,
-            sourceMaps: false
-          }))
-    }
-  }
-
-  Promise.all(promises).then(function (results) {
-    done()
-  }).catch(function (e) {
-    console.log("Error while bundling dependencies: ", e)
-    throw e
-  })
-})
-
-gulp.task('unbundle', ['default'], function (done) {
-  imports.exec('jspm unbundle', function (error, stdout, stderr) {
-    if (stdout) {
-      console.log(stdout);
-    }
-    if (stderr) {
-      console.warn(stderr)
-    }
-    done();
-  })
-})
-
-
 gulp.task('start-server', function (done) {
   project.startServer()
   done()
@@ -261,16 +270,13 @@ gulp.task('start-server', function (done) {
  *  Deploy Tasks
  */
 gulp.task('package-release', ['copy-dist-all'], function (done) {
-  var outDir = config.distDir
-  var outPath = outDir + '/core-web.zip'
-  if (!fs.existsSync(outDir)) {
-    fs.mkdirSync(outDir)
-  }
+  var outPath = config.buildDir + '/core-web.zip'
   var output = fs.createWriteStream(outPath)
   var archiver = require('archiver')
   var archive = archiver.create('zip', {})
 
   output.on('close', function () {
+    fs.renameSync(outPath, config.distDir + '/core-web.zip')
     console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
     done()
   });
@@ -281,14 +287,7 @@ gulp.task('package-release', ['copy-dist-all'], function (done) {
 
   archive.pipe(output);
 
-  archive.append(fs.createReadStream('./dist/core-web.min.js'), {name: 'core-web.min.js'})
-      .append(fs.createReadStream('./dist/core-web.js'), {name: 'core-web.js'})
-      //.append(fs.createReadStream('./dist/core-web.js.map'), {name: 'core-web.js.map'})  // map has bug as of JSPM 1.6-beta3:~/
-      .append(fs.createReadStream('./dist/index.html'), {name: 'index.html'})
-      .append(fs.createReadStream('./dist/core-web.sfx.js'), {name: 'core-web.sfx.js'})
-      .append(fs.createReadStream('./dist/favicon.ico'), {name: 'favicon.ico'})
-      .directory('./dist/thirdparty', 'thirdparty')
-      .finalize()
+  archive.directory('./dist', './').finalize()
 
 });
 
@@ -446,8 +445,19 @@ gulp.task('copy-dist-thirdparty', function () {
   return gulp.src(['./thirdparty/**/*']).pipe(gulp.dest(config.distDir + '/thirdparty/'))
 })
 
-gulp.task('copy-dist-main', ['bundle-dist', 'bundle-minified', 'bundle-dev'], function () {
-  return gulp.src(['./*.html', 'index.js']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
+gulp.task('copy-dist-main', ['bundle-dist'], function (done) {
+  var gitRev = require('git-rev')
+
+  gitRev.short(function (rev) {
+    console.log("Revision is: ", rev)
+    var result = gulp.src(['./*.html', 'index.js'])
+        .pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js'))
+        .pipe(replace(/\$\{build.revision\}/, rev))
+        .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
+        .pipe(gulp.dest(config.distDir))
+    done()
+  })
+
 })
 
 
@@ -461,13 +471,7 @@ gulp.task('compile-ts', function (cb) {
 
 
 gulp.task('compile-styles', function (done) {
-  var sass = require('gulp-sass')
-  var sourcemaps = require('gulp-sourcemaps');
-  gulp.src('./src/**/*.scss')
-      .pipe(sourcemaps.init())
-      .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
-      .pipe(sourcemaps.write())
-      .pipe(gulp.dest(config.buildDir)).on('finish', done);
+  project.compileStyles(done)
 });
 
 gulp.task('compile-js', function (done) {
@@ -475,85 +479,21 @@ gulp.task('compile-js', function (done) {
 })
 
 gulp.task('compile-templates', [], function (done) {
-  gulp.src('./src/**/*.html').pipe(gulp.dest(config.buildDir)).on('finish', done);
+  project.compileTemplates(done)
 })
 
+gulp.task('compile-all', [], function (done) {
+  project.compile(done)
+})
 
-gulp.task('bundle-dist', ['compile-all'], function (done) {
-  var sfxPath = config.buildDir + '/core-web.sfx.js'
-  console.info("Bundling self-executing build to " + sfxPath)
-  var jspm = require('jspm')
-  var jspmBuilder = new jspm.Builder()
-  jspmBuilder.buildSFX('index',
-      sfxPath,
-      {
-        inject: false,
-        minify: false,
-        sourceMaps: false
-      }).then(function () {
-    gulp.src(sfxPath).pipe(gulp.dest('./dist/')).on('finish', done);
-  }).catch(function (e) {
-    console.log("Error creating bundle with JSPM: ", e)
-    throw e
+gulp.task('bundle-dist', [], function (done) {
+  project.clean(function(){
+    project.compile(function () {
+      project.bundleDist(done)
+    })
   })
 })
 
-/**
- * Compile typescript and styles into build, then bundle the built files using JSPM.
- *
- */
-gulp.task('bundle-minified', ['compile-all'], function (done) {
-  var minifiedPath = config.buildDir + '/core-web.min.js'
-  console.info("Bundling minified build to " + minifiedPath)
-  var jspm = require('jspm')
-  var jspmBuilder = new jspm.Builder()
-
-  jspmBuilder.config({
-    "defaultJSExtensions": true,
-    "transpiler": "babel",
-    "babelOptions": {
-      "optional": [
-        "runtime"
-      ],
-      "stage": 1
-    }
-  })
-
-  jspmBuilder.build('./index',
-      minifiedPath,
-      {
-        inject: false,
-        minify: true,
-        sourceMaps: false
-      }).then(function () {
-    gulp.src(minifiedPath).pipe(gulp.dest('./dist/')).on('finish', done);
-  }).catch(function (e) {
-    console.log("Error creating bundle with JSPM: ", e);
-    throw e;
-  })
-})
-
-
-gulp.task('bundle-dev', ['compile-all'], function (done) {
-  var devPath = config.buildDir + '/core-web.js'
-  console.info("Bundling unminified build to " + devPath)
-  var jspm = require('jspm')
-  jspm.bundle('./index',
-      devPath,
-      {
-        inject: false,
-        minify: false,
-        sourceMaps: false // Bugged :~(
-      }).then(done).catch(function (e) {
-    console.log("Error creating bundle with JSPM: ", e);
-    throw e;
-  })
-})
-
-
-gulp.task('bundle-all', ['bundle-dev', 'bundle-minified', 'bundle-dist', 'compile-all'], function (done) {
-  done();
-})
 
 
 gulp.task('prod-watch', ['compile-all'], function () {
@@ -578,17 +518,13 @@ gulp.task('serve', ['start-server', 'dev-watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
-gulp.task('compile-all', ['compile-js', 'compile-ts', 'compile-styles', 'compile-templates'], function (done) {
+
+gulp.task('build', ['package-release'], function (done) {
   done()
 })
 
-gulp.task('build', ['bundle-all'], function (done) {
-  done()
-})
-
-gulp.task('clean', ['unbundle'], function (done) {
-  del.sync([config.distDir, config.buildDir, './gh_pages'])
-  done()
+gulp.task('clean', [], function (done) {
+  project.clean(done)
 })
 
 gulp.task('reset-workspace', function (done) {

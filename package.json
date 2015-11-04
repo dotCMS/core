@@ -1,5 +1,5 @@
 {
-  "version": "3.5.0-alpha.1",
+  "version": "3.5.0-alpha",
   "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
     "type": "git",
@@ -7,24 +7,22 @@
   },
   "jspm": {
     "dependencies": {
-      "@reactivex/rxjs@5.0.0-alpha.7": "npm:@reactivex/rxjs@5.0.0-alpha.7",
+      "@reactivex/rxjs@5.0.0-alpha.4": "npm:@reactivex/rxjs@5.0.0-alpha.4",
       "angular-material": "github:angular/bower-material@^0.11.4",
-      "angular2": "npm:angular2@2.0.0-alpha.44",
+      "angular2": "npm:angular2@2.0.0-alpha.45",
       "clean-css": "npm:clean-css@3.3.9",
-      "css": "github:systemjs/plugin-css@0.1.15",
+      "css": "github:systemjs/plugin-css@0.1.19",
       "es6-promise": "npm:es6-promise@3.0.2",
       "es6-shim": "github:es-shims/es6-shim@0.32.3",
       "events": "github:jspm/nodelibs-events@0.1.0",
       "jquery": "github:components/jquery@2.1.4",
       "reflect-metadata": "npm:reflect-metadata@0.1.2",
-      "text": "github:systemjs/plugin-text@0.0.2",
+      "text": "github:systemjs/plugin-text@0.0.3",
       "whatwg-fetch": "npm:whatwg-fetch@^0.9.0",
       "zone.js": "npm:zone.js@0.5.8"
     },
     "devDependencies": {
-      "babel": "npm:babel-core@^5.8.24",
-      "babel-runtime": "npm:babel-runtime@^5.8.24",
-      "core-js": "npm:core-js@^1.1.4"
+      "typescript": "npm:typescript@^1.6.2"
     }
   },
   "devDependencies": {
