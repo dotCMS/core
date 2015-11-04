@@ -1,4 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 
 
 /**
@@ -37,7 +36,7 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {ActionModel} from "api/rule-engine/Action";
+import {ActionModel} from "../../../../../api/rule-engine/Action";
 
 @Component({
   selector: 'cw-set-session-value-action',
@@ -85,7 +84,7 @@ export class SetSessionValueAction {
 
   set action(action:ActionModel){
     this.params = {}
-    this.paramKeys.forEach((key)=>{
+    this.paramKeys.forEach((key:string)=>{
       this.params[key] = action.getParameter(key)
     })
   }

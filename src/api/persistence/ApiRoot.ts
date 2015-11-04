@@ -1,8 +1,8 @@
 import {Inject} from 'angular2/angular2';
 
-import {EntityMeta} from "api/persistence/EntityBase";
-import {UserModel} from "api/auth/UserModel";
-import {DataStore} from "api/persistence/DataStore";
+import {EntityMeta} from "./EntityBase";
+import {DataStore} from "./DataStore";
+import {UserModel} from "../auth/UserModel";
 
 var instanceOfApiRoot = null
 export class ApiRoot {

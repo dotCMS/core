@@ -1,5 +1,3 @@
-/// <reference path="../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
 
 @Component({
@@ -58,7 +56,7 @@ export class InputToggle {
   toggle:EventEmitter
 
   constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
-    this.value = (value !== false && value !== 'false')
+    this.value = (value !== 'false')
     this.onText = onText || 'On'
     this.offText = offText || 'Off'
     this.toggle = new EventEmitter()

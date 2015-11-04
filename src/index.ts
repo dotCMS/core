@@ -1,7 +1,8 @@
 
-import * as RuleEngineView from 'view/components/rule-engine/index';
 
-RuleEngineView.main().then(function () {
+import {RuleEngineApp} from './view/components/rule-engine/rule-engine'
+
+RuleEngineApp.main().then(function () {
   console.log("Loaded rule-engine component.")
 });
 

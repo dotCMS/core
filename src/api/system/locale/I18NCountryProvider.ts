@@ -1,8 +1,8 @@
-/// <reference path="../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 import {Inject} from 'angular2/angular2';
+import {EntitySnapshot} from "../../persistence/EntityBase";
+import {ApiRoot} from "../../persistence/ApiRoot";
+import {EntityMeta} from "../../persistence/EntityBase";
 
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {EntityMeta, EntitySnapshot} from "api/persistence/EntityBase";
 
 
 export class I18NCountryProvider {
@@ -10,7 +10,7 @@ export class I18NCountryProvider {
   byIsoCode: any
   byName: any
   names: Array<string>
-  promise:Promise
+  promise:Promise<any>
   userLocale:string
 
   constructor(@Inject(ApiRoot) apiRoot) {
@@ -37,6 +37,3 @@ export class I18NCountryProvider {
     });
   }
 }
-
-
-

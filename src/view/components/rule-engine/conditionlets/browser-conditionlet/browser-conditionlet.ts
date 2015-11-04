@@ -1,4 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 
 import {Directive, Attribute, Host, SkipSelf, EventEmitter, NgFor, NgIf, Component, View} from 'angular2/angular2';
 

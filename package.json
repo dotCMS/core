@@ -7,9 +7,6 @@
   },
   "jspm": {
     "dependencies": {
-      "@reactivex/rxjs@5.0.0-alpha.4": "npm:@reactivex/rxjs@5.0.0-alpha.4",
-      "angular-material": "github:angular/bower-material@^0.11.4",
-      "angular2": "npm:angular2@2.0.0-alpha.45",
       "clean-css": "npm:clean-css@3.3.9",
       "css": "github:systemjs/plugin-css@0.1.19",
       "es6-promise": "npm:es6-promise@3.0.2",
@@ -71,6 +68,7 @@
   "dependencies": {
     "angular2": "2.0.0-alpha.44",
     "jquery": "2.1.4",
-    "systemjs": "0.19.2"
+    "systemjs": "0.19.2",
+    "whatwg-fetch": "^0.9.0"
   }
 }

@@ -1,4 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 
 
 /**
@@ -52,7 +51,7 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+import {Dropdown, DropdownModel, DropdownOption} from "../../../semantic/modules/dropdown/dropdown";
 
 /**
  * @todo: Consider populating these from the server
@@ -209,5 +208,4 @@ export class RequestHeaderConditionlet {
     this.value.compareTo = event.target['value']
     this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
   }
-
 }

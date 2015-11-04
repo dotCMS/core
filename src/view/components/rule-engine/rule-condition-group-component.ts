@@ -1,13 +1,14 @@
-/// <reference path="../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
-
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
+
+
 import {ConditionComponent} from './rule-condition-component';
 
-import {ApiRoot} from 'api/persistence/ApiRoot'
-import {ConditionGroupService, ConditionGroupModel} from "api/rule-engine/ConditionGroup";
-import {ConditionService, ConditionModel} from "api/rule-engine/Condition";
-import {RuleModel} from "/api/rule-engine/Rule";
+import {ApiRoot} from '../../../api/persistence/ApiRoot'
+import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
+import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
+import {RuleModel} from "../../../api/rule-engine/Rule";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
 
 @Component({
   selector: 'condition-group',
@@ -58,8 +59,7 @@ export class ConditionGroupComponent {
   groupCollapsed:boolean
 
   private conditionStub:ConditionModel
-  //noinspection TypeScriptUnresolvedVariable
-  private conditionStubWatch:Rx.Subscriber
+  private conditionStubWatch:Rx.Subscription<CwChangeEvent<any>>
   private apiRoot:ApiRoot
   private groupService:ConditionGroupService;
   private conditionService:ConditionService;
@@ -84,7 +84,6 @@ export class ConditionGroupComponent {
         this.handleRemoveCondition(conditionModel)
       }
     })
-
   }
 
   set group(group:ConditionGroupModel) {
@@ -136,7 +135,6 @@ export class ConditionGroupComponent {
       this.groupService.remove(this.group)
     }
   }
-
 
   handleAddCondition(conditionModel:ConditionModel) {
     if(this.conditionStub && this.conditionStub.key === conditionModel.key){

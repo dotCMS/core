@@ -1,4 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
 
 import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
 import {RequestHeaderConditionlet} from './request-header-conditionlet';

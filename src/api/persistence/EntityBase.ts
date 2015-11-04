@@ -1,6 +1,6 @@
 
-import  {Check} from 'api/validation/Check'
-import  {ApiRoot} from 'api/persistence/ApiRoot'
+import  {Check} from '../validation/Check'
+import {ApiRoot} from "./ApiRoot";
 
 
 let emptyFn = function (a:any=null) {

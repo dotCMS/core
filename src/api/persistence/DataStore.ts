@@ -1,4 +1,4 @@
-import  {Check} from 'api/validation/Check'
+import  {Check} from '../validation/Check'
 
 
 export class DataStore {

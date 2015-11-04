@@ -80,14 +80,15 @@ var project = {
    *
    */
   compileTypescript: function (cb) {
-    var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
-
-    var x = tsResult.js.pipe(gulp.dest('build'))
-    var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
-
+    //var tsResult = gulp.src('./src/**/*.ts').pipe(ts(typescriptProject));
+    //
+    //var x = tsResult.js.pipe(gulp.dest('build'))
+    //var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
+    //
     // ignoring typscript definitions for now.
-    x.on('finish', cb)
-    x.on('error', cb)
+    //x.on('finish', cb)
+    //x.on('error', cb)
+    cb()
   },
 
   compileStyles: function (cb) {

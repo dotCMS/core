@@ -1,10 +1,10 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf, Inject} from 'angular2/angular2';
-import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
 
-import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
 
+import {Dropdown} from "../../../semantic/modules/dropdown/dropdown";
+import {DropdownOption} from "../../../semantic/modules/dropdown/dropdown";
+import {I18NCountryProvider} from "../../../../../api/system/locale/I18NCountryProvider";
+import {DropdownModel} from "../../../semantic/modules/dropdown/dropdown";
 
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']

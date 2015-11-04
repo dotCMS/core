@@ -1,20 +1,14 @@
-/// <reference path="../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
-
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
-
-import {ApiRoot} from 'api/persistence/ApiRoot'
-import {ConditionTypesProvider, ConditionTypeModel} from 'api/rule-engine/ConditionTypes';
-
 
 import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
 import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
 import {CountryCondition} from './conditionlets/country/country-condition'
-import {ConditionService, ConditionModel} from "api/rule-engine/Condition";
-import {CwChangeEvent} from "api/util/CwEvent";
-import {ConditionModel} from "api/rule-engine/Condition";
+import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
 
-import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
+import {ConditionTypesProvider} from "../../../api/rule-engine/ConditionTypes";
+import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
 
 
 @Component({

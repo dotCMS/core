@@ -1,17 +1,15 @@
-/// <reference path="../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.KitchenSink.d.ts" />
 
 import {Inject, EventEmitter} from 'angular2/angular2';
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
 
 
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {CwChangeEvent} from "api/util/CwEvent";
-import {CwModel} from "api/util/CwModel";
-import {EntityMeta, EntitySnapshot} from 'api/persistence/EntityBase'
-import {ActionService, ActionModel} from "api/rule-engine/Action";
-import Condition = protractor.until.Condition;
 import {ConditionGroupService, ConditionGroupModel} from "./ConditionGroup";
+import {CwModel} from "../util/CwModel";
+import {EntitySnapshot} from "../persistence/EntityBase";
+import {EntityMeta} from "../persistence/EntityBase";
+import {ApiRoot} from "../persistence/ApiRoot";
+import {ActionService} from "./Action";
+import {ActionModel} from "./Action";
 
 
 export class RuleModel extends CwModel {
@@ -90,8 +88,8 @@ export class RuleService {
   ref:EntityMeta
   _removed:EventEmitter
   _added:EventEmitter
-  onRemove:Rx.Observable
-  onAdd:Rx.Observable
+  onRemove:Rx.Observable<RuleModel>
+  onAdd:Rx.Observable<RuleModel>
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
               @Inject(ActionService) actionService:ActionService,
@@ -170,7 +168,7 @@ export class RuleService {
     })
   }
 
-  list():Rx.Observable {
+  list():Rx.Observable<RuleModel> {
     this.ref.once('value', (snap) => {
       let rules = snap['val']()
       Object.keys(rules).forEach((key) => {

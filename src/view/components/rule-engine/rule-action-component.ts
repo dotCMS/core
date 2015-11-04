@@ -1,12 +1,12 @@
-/// <reference path="../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
 import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
-import {ActionTypesProvider, ActionTypeModel} from "api/rule-engine/ActionType"
-import {ActionService, ActionModel} from "api/rule-engine/Action";
 
-import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+import {ActionModel} from "../../../api/rule-engine/Action";
+import {ActionTypesProvider} from "../../../api/rule-engine/ActionType";
+import {ActionService} from "../../../api/rule-engine/Action";
+import {ActionTypeModel} from "../../../api/rule-engine/ActionType";
+import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
 
 @Component({
   selector: 'rule-action',

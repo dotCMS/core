@@ -7,6 +7,14 @@
     "experimentalDecorators": true,
     "removeComments": false,
     "noImplicitAny": false,
-    "outDir": "../build/"
-  }
+    "suppressImplicitAnyIndexErrors":true
+  },
+  "files": [
+    "index.ts",
+    "api/rule-engine/Action.it-spec.ts",
+    "api/rule-engine/Condition.it-spec.ts",
+    "api/rule-engine/ConditionGroup.it-spec.ts",
+    "api/rule-engine/Rule.it-spec.ts"
+
+  ]
 }

@@ -1,8 +1,6 @@
-//// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-//// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
 
 import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -12,6 +10,7 @@ import * as Rx from '@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.KitchenSink'
  * @todo ggranum: Extract semantic UI components into a separate github repo and include them via npm.
  */
 
+var $ = window['$']
 
 /**
  *
@@ -39,7 +38,7 @@ export class DropdownModel {
   options:Array<DropdownOption>
   settings:{ maxSelections?: number }
   private _optionChange:EventEmitter
-  onOptionChange:Rx.Observable
+  onOptionChange:Rx.Observable<any>
 
   constructor(name:string = null,
               placeholder:string = '',
@@ -93,7 +92,7 @@ export class Dropdown {
 
   change:EventEmitter
   private _model:DropdownModel
-  private optionWatch:Rx.Subscription
+  private optionWatch:Rx.Subscription<any>
   private elementRef:ElementRef
 
   private updateView:boolean
@@ -172,14 +171,10 @@ export class Dropdown {
       config.maxSelections = this.model.settings.maxSelections
     }
 
-    var el:Element = this.elementRef.nativeElement
-    //noinspection TypeScriptValidateTypes
-    let x = $(el).children('.ui.dropdown')
-    console.log("El: ", x)
-    x.dropdown(config)
+    var el = this.elementRef.nativeElement
+    $(el).children('.ui.dropdown').dropdown(config)
 
   }
-
 
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element

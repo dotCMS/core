@@ -1,24 +1,18 @@
-/// <reference path="../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.4/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/dist/cjs/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
-
-
-
-import {InputToggle} from 'view/components/input/toggle/InputToggle'
-import {ApiRoot} from 'api/persistence/ApiRoot';
-
-import {RuleService, RuleModel} from "api/rule-engine/Rule";
-import {ActionService, ActionModel} from "api/rule-engine/Action";
-import {CwChangeEvent} from "api/util/CwEvent";
-import {EntityMeta} from "api/persistence/EntityBase";
-import {ConditionGroupModel, ConditionGroupService} from "api/rule-engine/ConditionGroup";
-
+import {InputToggle} from "../input/toggle/InputToggle";
+import {RuleModel} from "../../../api/rule-engine/Rule";
+import {ActionModel} from "../../../api/rule-engine/Action";
+import {ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
+import {RuleService} from "../../../api/rule-engine/Rule";
+import {ActionService} from "../../../api/rule-engine/Action";
+import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
 
 
 var rsrc = {
@@ -110,7 +104,7 @@ class RuleComponent {
   private groupService:ConditionGroupService
 
   private actionStub:ActionModel
-  private actionStubWatch:Rx.Subscription
+  private actionStubWatch:Rx.Subscription<ActionModel>
 
 
   constructor(elementRef:ElementRef,
