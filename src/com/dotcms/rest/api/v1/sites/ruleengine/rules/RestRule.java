@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
@@ -22,6 +23,7 @@ import java.util.Map;
 public final class RestRule extends Validated  {
 
     @Length(min = 36, max = 36)
+    @JsonIgnore
     public final String key;
 
     @NotBlank

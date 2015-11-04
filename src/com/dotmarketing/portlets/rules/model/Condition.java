@@ -5,6 +5,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONIgnore;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -26,6 +27,7 @@ public class Condition implements Serializable {
         }
     }
 
+    @JSONIgnore
     private String id;
     private String name;
     private String conditionletId;
