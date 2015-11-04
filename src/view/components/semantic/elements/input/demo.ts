@@ -31,7 +31,7 @@ import {Input, InputModel} from './input'
   <div class="column">
     <h4 class="ui top attached inverted header">Error</h4>
     <div class="ui attached segment">
-      <cw-input [model]="demoError"></cw-input>
+      <cw-input [model]="demoError" (change)="customChange($event)"></cw-input>
     </div>
   </div>
   <div class="column">
@@ -76,8 +76,10 @@ class App {
   demoError() {
     let model = new InputModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.error = "Required"
-    model.placeholder = "Error"
+    model.value = "Required Field"
+    model.validate = (newValue:string)=> {
+      if(!newValue || newValue === 0){ throw new Error("Required Field") }
+    }
 
     this.demoError = model;
   }
@@ -91,8 +93,11 @@ class App {
     this.demoIcon = model;
   }
 
-}
+  customChange(event){
+    console.log("Value of field: " + event.target.value)
+  }
 
+}
 
 export function main() {
   let app = bootstrap(App)
