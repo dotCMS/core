@@ -55,14 +55,7 @@ var minimistCliOpts = {
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
 
-var typescriptProject = ts.createProject({
-  outDir: config.buildDir,
-  module: 'commonjs',
-  target: 'es5',
-  emitDecoratorMetadata: true,
-  experimentalDecorators: true,
-  typescript: require('typescript')
-});
+var typescriptProject = ts.createProject(config.srcDir + '/tsconfig.json');
 
 var project = {
   server: null,
@@ -82,25 +75,27 @@ var project = {
    *
    */
   compileTypescript: function (cb) {
-    cb()
+    var tsResult = typescriptProject.src().pipe(ts(typescriptProject));
+
+    var x = tsResult.js.pipe(gulp.dest('build'))
+    var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
+
+    // ignoring typscript definitions for now.
+    x.on('finish', cb)
+    x.on('error', cb)
   },
 
   compileStyles: function (cb) {
-    console.log("Starting 'compileStyles'")
     var sass = require('gulp-sass')
     var sourcemaps = require('gulp-sourcemaps');
     gulp.src('./src/**/*.scss')
         .pipe(sourcemaps.init())
         .pipe(sass({outputStyle: config.buildTarget === 'dev' ? 'expanded' : 'compressed'}))
         .pipe(sourcemaps.write())
-        .pipe(gulp.dest(config.buildDir)).on('finish', function () {
-      console.log("Finished 'compileStyles'")
-      cb()
-    });
+        .pipe(gulp.dest(config.buildDir)).on('finish', cb);
   },
 
-  callbackOnCount: function (count, cb, name) {
-    name = name || 'unknown'
+  callbackOnCount: function (count, cb) {
     return function () {
       if (--count === 0) {
         cb()
@@ -109,34 +104,20 @@ var project = {
   },
 
   compileStatic: function (cb) {
-    console.log("Starting 'compileStatic'")
 
-    var done = project.callbackOnCount(2, function () {
-      console.log("Finished 'compileStatic'")
-      cb()
-    }, 'compileStatic')
+    var done = project.callbackOnCount(2, cb)
     var gitRev = require('git-rev')
-    gulp.src('./src/**/*.{js,css,eot,svg,ttf,woff,woff2,png}').pipe(gulp.dest(config.buildDir)).on('finish', function () {
-      console.log("Finished 'compileStatic - a'")
-      done()
-    });
+    gulp.src('./src/**/*.{js,css,eot,svg,ttf,woff,woff2,png}').pipe(gulp.dest(config.buildDir)).on('finish', done);
     gitRev.short(function (rev) {
       gulp.src([config.srcDir + '/**/*.html'])
           .pipe(replace(/\$\{build.revision\}/, rev))
           .pipe(replace(/\$\{build.date\}/, new Date().toISOString()))
-          .pipe(gulp.dest(config.buildDir)).on('finish', function () {
-        console.log("Finished 'compileStatic - b'")
-        done()
-      });
+          .pipe(gulp.dest(config.buildDir)).on('finish', done);
     })
   },
 
   compile: function (cb) {
-    var done = project.callbackOnCount(4, function () {
-      console.log("Finished 'compile'")
-      cb()
-    }, 'compile')
-    console.log("Starting 'compile'")
+    var done = project.callbackOnCount(4, cb, 'compile')
     project.compileJavascript(done)
     project.compileTypescript(done)
     project.compileStyles(done)
@@ -144,9 +125,8 @@ var project = {
   },
 
   packageRelease: function (done) {
-    //project.clean(function () {
+    project.clean(function () {
       project.compile(function () {
-        console.log("Starting 'packageRelease'")
         var outPath = config.distDir + '/core-web.zip'
         if (!fs.existsSync(config.distDir)) {
           fs.mkdirSync(config.distDir)
@@ -155,29 +135,21 @@ var project = {
         var archiver = require('archiver')
         var archive = archiver.create('zip', {})
 
-        try {
+        output.on('close', function () {
+          console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
+          done()
+        });
 
+        archive.on('error', function (err) {
+          done(err)
+        });
 
-          output.on('close', function () {
-            console.log("Archive Created: " + outPath + ". Size: " + archive.pointer() / 1000000 + 'MB')
-            done()
-          });
+        archive.pipe(output);
 
-          archive.on('error', function (err) {
-            console.log("Hi!", err)
-            done(err)
-          });
+        archive.directory('./build', '.').finalize()
 
-          archive.pipe(output);
-          console.log("xxx 'packageRelease'")
-
-          archive.directory('./build', '.').finalize()
-        }
-        catch (err) {
-          console.log("Hi!2", err)
-        }
       })
-    //})
+    })
   },
 
   watch: function () {
