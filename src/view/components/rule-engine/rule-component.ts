@@ -15,16 +15,26 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {EntityMeta} from "../../../api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
+import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
+import {Dropdown} from "../semantic/modules/dropdown/dropdown";
 
 var rsrc = {
   fireOn: {
+
     EVERY_PAGE: 'Every Page',
     ONCE_PER_VISIT: 'Once per visit',
     ONCE_PER_VISITOR: 'Once per visitor',
     EVERY_REQUEST: 'Every Request'
   }
 }
+
+var fireOn = [
+new DropdownOption('EVERY_PAGE','EVERY_PAGE', 'Every Page'),
+new DropdownOption('ONCE_PER_VISIT','ONCE_PER_VISIT', 'Once per visit'),
+new DropdownOption('ONCE_PER_VISITOR','ONCE_PER_VISITOR', 'Once per visitor'),
+new DropdownOption('EVERY_REQUEST','EVERY_REQUEST', 'Every Request'),
+]
 
 @Component({
   selector: 'rule',
@@ -33,23 +43,20 @@ var rsrc = {
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
-    <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true" ></i>
+    <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
     <cw-input-text flex
-      (change)="handleRuleNameChange($event.target.value)"
-      (focus)="collapsed = false"
-      (click)="$event.stopPropagation()"
-      [model]="ruleNameInputTextModel">
+                   (change)="handleRuleNameChange($event.target.value)"
+                   (focus)="collapsed = false"
+                   (click)="$event.stopPropagation()"
+                   [model]="ruleNameInputTextModel">
     </cw-input-text>
-    <select [value]="rule.fireOn" (change)="setFireOn($event.target.value)" (click)="$event.stopPropagation()">
-      <option value="EVERY_PAGE" [selected]="rule.fireOn === 'EVERY_PAGE'">{{fireOnLabel('EVERY_PAGE')}}</option>
-      <option value="ONCE_PER_VISIT" [selected]="rule.fireOn === 'ONCE_PER_VISIT'">{{fireOnLabel('ONCE_PER_VISIT')}}</option>
-      <option value="ONCE_PER_VISITOR" [selected]="rule.fireOn === 'ONCE_PER_VISITOR'">{{fireOnLabel('ONCE_PER_VISITOR')}}</option>
-      <option value="EVERY_REQUEST" [selected]="rule.fireOn === 'EVERY_REQUEST'">{{fireOnLabel('EVERY_REQUEST')}}</option>
-    </select>
+
+    <cw-input-dropdown [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
+
     <cw-toggle-input class="cw-input"
-    [value]="rule.enabled"
-    (toggle)="rule.enabled = $event.target.value"
-    (click)="$event.stopPropagation()">
+                     [value]="rule.enabled"
+                     (toggle)="rule.enabled = $event.target.value"
+                     (click)="$event.stopPropagation()">
     </cw-toggle-input>
     <div class="cw-btn-group">
       <div class="ui basic icon buttons">
@@ -57,7 +64,7 @@ var rsrc = {
           <i class="trash icon"></i>
         </button>
         <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()">
-          <i class="plus icon" aria-hidden="true" ></i>
+          <i class="plus icon" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -75,22 +82,22 @@ var rsrc = {
         <i class="plus icon" aria-hidden="true"></i>
       </button>
       <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var action of actions; var i=index">
-      <rule-action flex [action]="action"></rule-action>
-      <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
-      <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
-        <div class="ui basic icon buttons">
-          <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
-            <i class="plus icon" aria-hidden="true"></i>
-          </button>
+        <rule-action flex [action]="action"></rule-action>
+        <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
+        <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
+          <div class="ui basic icon buttons">
+            <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
+              <i class="plus icon" aria-hidden="true"></i>
+            </button>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   </div>
 </div>
 
 `,
-  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor, InputText]
+  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor, InputText, Dropdown]
 })
 class RuleComponent {
   _rule:RuleModel
@@ -108,6 +115,8 @@ class RuleComponent {
   private actionStub:ActionModel
   private actionStubWatch:Rx.Subscription
   private ruleNameInputTextModel:InputTextModel
+  private fireOnDropdown :DropdownModel
+
 
   constructor(elementRef:ElementRef,
               @Inject(RuleService) ruleService:RuleService,
@@ -123,6 +132,8 @@ class RuleComponent {
 
     this.hidden = false
     this.collapsed = false
+
+    this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOn)
 
     this.ruleNameInputTextModel = new InputTextModel()
     this.ruleNameInputTextModel.placeholder = "Describe the rule"
@@ -156,6 +167,8 @@ class RuleComponent {
       this.actionService.list(this.rule)
       this.groupService.list(this.rule)
       this.ruleNameInputTextModel.value = rule.name
+      this.fireOnDropdown.selected = [rule.fireOn]
+
     }
   }
 
@@ -167,12 +180,8 @@ class RuleComponent {
     return this._rule
   }
 
-  fireOnLabel(fireOnId:string) {
-    return rsrc.fireOn[fireOnId];
-  }
-
-  setFireOn(value:string) {
-    this.rule.fireOn = value
+  handleFireOnDropdownChange(event:any) {
+    this.rule.fireOn = event.value
   }
 
   handleRuleNameChange(name:string) {
