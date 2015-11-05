@@ -137,9 +137,9 @@ var project = {
   },
 
   watch: function () {
+    console.log("You will need to run 'npm run tsc' in a separate console window to watch ts files.")
     gulp.watch('./src/**/*.html', ['compile-templates']);
     gulp.watch('./src/**/*.js', ['compile-js']);
-    gulp.watch('./src/**/*.ts', ['compile-ts']);
     return gulp.watch('./src/**/*.scss', ['compile-styles']);
   },
 
@@ -462,7 +462,7 @@ gulp.task('compile', [], function (done) {
   project.compile(done)
 })
 
-gulp.task('watch', ['package'], function () {
+gulp.task('watch', ['compile'], function () {
   return project.watch()
 });
 
