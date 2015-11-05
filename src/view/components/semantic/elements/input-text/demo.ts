@@ -1,5 +1,3 @@
-/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
 import {InputText, InputTextModel} from './input-text'
 
@@ -8,7 +6,7 @@ import {InputText, InputTextModel} from './input-text'
   selector: 'demo'
 })
 @View({
-  directives: [Input],
+  directives: [InputText],
   template: `<div class="ui three column grid">
   <div class="column">
     <h4 class="ui top attached inverted header">Default</h4>
@@ -50,13 +48,13 @@ class App {
   demoIcon:InputTextModel
 
   constructor(@Attribute('id') id:string) {
-    this.demoValue()
-    this.demoDisabled()
-    this.demoError()
-    this.demoIcon()
+    this.initDemoValue()
+    this.initDemoDisabled()
+    this.initDemoError()
+    this.initDemoIcon()
   }
 
-  demoValue() {
+  initDemoValue() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.value = "Costa Rica"
@@ -64,7 +62,7 @@ class App {
     this.demoValue = model;
   }
 
-  demoDisabled() {
+  initDemoDisabled() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.disabled = "true"
@@ -73,18 +71,18 @@ class App {
     this.demoDisabled = model;
   }
 
-  demoError() {
+  initDemoError() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.value = "Required Field"
     model.validate = (newValue:string)=> {
-      if(!newValue || newValue === 0){ throw new Error("Required Field") }
+      if(!newValue){ throw new Error("Required Field") }
     }
 
     this.demoError = model;
   }
 
-  demoIcon() {
+  initDemoIcon() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.icon = "circular search link"

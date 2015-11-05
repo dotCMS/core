@@ -1,4 +1,3 @@
-/// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/typings/jasmine/jasmine.d.ts" />
 
 
 

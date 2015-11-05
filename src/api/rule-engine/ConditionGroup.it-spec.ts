@@ -1,30 +1,24 @@
-/// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/typings/jasmine/jasmine.d.ts" />
 
-import {RuleModel, RuleService} from 'api/rule-engine/Rule';
-import {ConditionGroupModel} from 'api/rule-engine/ConditionGroup';
+import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
+import {ConditionService, ConditionModel} from '../../api/rule-engine/Condition';
 
 import {Injector, Provider} from 'angular2/angular2';
 
-import {DataStore} from 'api/persistence/DataStore'
-import {LocalDataStore} from "api/persistence/LocalDataStore";
-import {RestDataStore} from "api/persistence/RestDataStore";
+import {DataStore} from '../../api/persistence/DataStore'
+import {LocalDataStore} from '../../api/persistence/LocalDataStore';
+import {RestDataStore} from '../../api/persistence/RestDataStore';
+
+import {ApiRoot} from '../../api/persistence/ApiRoot';
+import {UserModel} from '../../api/auth/UserModel';
+import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
+import {ActionTypesProvider} from '../../api/rule-engine/ActionType';
+import {ConditionTypeModel, ConditionTypesProvider} from '../../api/rule-engine/ConditionTypes';
+import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
 
 
-
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {UserModel} from "api/auth/UserModel";
-import {EntityMeta, EntitySnapshot} from 'api/persistence/EntityBase';
-import {ConditionTypesProvider} from 'api/rule-engine/ConditionTypes';
-import {I18NCountryProvider} from 'api/system/locale/I18NCountryProvider'
-
-
-import {RuleService, RuleModel} from "api/rule-engine/Rule";
-import {ActionService} from "api/rule-engine/Action";
-import {ConditionService} from "api/rule-engine/Condition";
-import {ConditionGroupService, ConditionGroupModel} from "api/rule-engine/ConditionGroup";
-import {CwChangeEvent} from "api/util/CwEvent";
-import {RestDataStore} from "api/persistence/RestDataStore";
-import {DataStore} from "api/persistence/DataStore";
+import {ActionService} from '../../api/rule-engine/Action';
+import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/ConditionGroup';
+import {CwChangeEvent} from '../../api/util/CwEvent';
 
 
 var injector = Injector.resolveAndCreate([ApiRoot,

@@ -1,6 +1,3 @@
-/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-
-
 /**
  * Set a value on to the active session, using the supplied key.
  *
@@ -35,10 +32,9 @@
  *
  * --------------------------
  */
-
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {ActionModel} from "api/rule-engine/Action";
-import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
+import {ActionModel} from '../../../../../api/rule-engine/Action';
+import {InputText, InputTextModel} from '../../../semantic/elements/input-text/input-text';
 
 @Component({
   selector: 'cw-set-session-value-action',
@@ -89,7 +85,7 @@ export class SetSessionValueAction {
 
   set action(action:ActionModel){
     this.params = {}
-    this.paramKeys.forEach((key)=>{
+    this.paramKeys.forEach((key:string)=>{
       this.params[key] = action.getParameter(key)
     })
 

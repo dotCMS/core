@@ -1,6 +1,6 @@
-import  {Check} from 'api/validation/Check'
-import  {Verify} from 'api/validation/Verify'
-import {DataStore} from 'api/persistence/DataStore'
+import  {Check} from '../../api/validation/Check'
+import  {Verify} from '../../api/validation/Verify'
+import {DataStore} from '../../api/persistence/DataStore'
 
 export class LocalDataStore extends DataStore {
 
@@ -80,6 +80,5 @@ export class LocalDataStore extends DataStore {
       return {path: childPath, key: childPath.substring(pathLen), val: this.getItem(childPath)}
     })
   }
-
 }
 

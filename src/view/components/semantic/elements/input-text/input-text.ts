@@ -1,11 +1,8 @@
-/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-
 import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
- * Comments for event handlers, etc, copied directly from semantic-ui documentation.
  */
 
 export class InputTextModel {
@@ -28,9 +25,7 @@ export class InputTextModel {
     this.icon = icon
   }
 
-  validate():{
-  };
-
+  validate(value:string){ };
 }
 
 @Component({

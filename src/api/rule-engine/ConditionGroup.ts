@@ -1,15 +1,12 @@
-/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
-
 import {Inject, EventEmitter} from 'angular2/angular2';
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {CwChangeEvent} from "api/util/CwEvent";
-import {CwModel} from "api/util/CwModel";
-import {EntityMeta, EntitySnapshot} from "api/persistence/EntityBase";
 import {RuleModel} from "./Rule";
 import {ConditionTypeModel, ConditionTypesProvider} from "./ConditionTypes";
 import {ConditionService, ConditionModel} from "./Condition";
+import {CwModel} from "../util/CwModel";
+import {EntitySnapshot} from "../persistence/EntityBase";
+import {ApiRoot} from "../persistence/ApiRoot";
 
 
 export class ConditionGroupModel extends CwModel {
@@ -53,8 +50,8 @@ export class ConditionGroupModel extends CwModel {
 export class ConditionGroupService {
   private _removed:EventEmitter
   private _added:EventEmitter
-  onRemove:Rx.Observable
-  onAdd:Rx.Observable
+  onRemove:Rx.Observable<ConditionGroupModel>
+  onAdd:Rx.Observable<ConditionGroupModel>
   private apiRoot;
   private ref;
 
@@ -113,7 +110,7 @@ export class ConditionGroupService {
     return list
   }
 
-  list(rule:RuleModel):Rx.Observable {
+  list(rule:RuleModel):Rx.Observable<ConditionGroupModel> {
     if (rule.isPersisted()) {
       this.addConditionGroupsFromRule(rule)
     }

@@ -1,4 +1,3 @@
-/// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 
 /**
@@ -52,7 +51,7 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {Dropdown, DropdownModel, DropdownOption} from 'view/components/semantic/modules/dropdown/dropdown'
+import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
 
 /**
@@ -199,18 +198,18 @@ export class RequestHeaderConditionlet {
     return eventValue
   }
 
-  handleComparatorChange(event) {
+  handleComparatorChange(event:any) {
     let value = event.value
     this.value.comparatorValue = value
     this.change.next({type:'comparisonChange', target:this, value:value})
   }
 
-  handleHeaderKeyChange(event) {
+  handleHeaderKeyChange(event:any) {
     this.value.headerKeyValue = event.value
     this.change.next({type:'parameterValueChange', target: this, value: this.getEventValue()})
   }
 
-  handleCompareToChange(event:Event) {
+  handleCompareToChange(event:any) {
     this.value.compareTo = event.target.value
     this.requestHeaderInputTextModel.value = event.target.value
     this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})

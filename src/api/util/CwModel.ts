@@ -1,7 +1,6 @@
-/// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
-
 import {Inject, EventEmitter} from 'angular2/angular2';
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import {CwChangeEvent} from "./CwEvent";
 
 
 export class CwModel {
@@ -10,8 +9,8 @@ export class CwModel {
   private _key:string
   private _priority:number
 
-  onChange:Rx.Observable
-  onValidityChange:Rx.Observable
+  onChange:Rx.Observable<CwChangeEvent<any>>
+  onValidityChange:Rx.Observable<CwChangeEvent<any>>
   valid:boolean
 
 
@@ -65,5 +64,4 @@ export class CwModel {
   isValid() {
     return true
   }
-
 }

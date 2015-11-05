@@ -1,23 +1,19 @@
-/// <reference path="../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
-/// <reference path="../../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
 
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
+import {InputToggle} from '../../../view/components/input/toggle/InputToggle'
+import {ApiRoot} from '../../../api/persistence/ApiRoot';
 
-
-import {InputToggle} from 'view/components/input/toggle/InputToggle'
-import {ApiRoot} from 'api/persistence/ApiRoot';
-
-import {RuleService, RuleModel} from "api/rule-engine/Rule";
-import {ActionService, ActionModel} from "api/rule-engine/Action";
-import {CwChangeEvent} from "api/util/CwEvent";
-import {EntityMeta} from "api/persistence/EntityBase";
-import {ConditionGroupModel, ConditionGroupService} from "api/rule-engine/ConditionGroup";
+import {RuleService, RuleModel} from "../../../api/rule-engine/Rule";
+import {ActionService, ActionModel} from "../../../api/rule-engine/Action";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
+import {EntityMeta} from "../../../api/persistence/EntityBase";
+import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
 import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
 
@@ -131,7 +127,7 @@ class RuleComponent {
     this.ruleNameInputTextModel = new InputTextModel()
     this.ruleNameInputTextModel.placeholder = "Describe the rule"
     this.ruleNameInputTextModel.validate = (newValue:string)=> {
-      if(!newValue || newValue === 0){ throw new Error("Required Field") }
+      if(!newValue){ throw new Error("Required Field") }
     }
   }
 

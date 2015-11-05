@@ -1,6 +1,6 @@
 import {Inject} from 'angular2/angular2';
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {EntityMeta} from "api/persistence/EntityBase";
+import {EntityMeta} from "../persistence/EntityBase";
+import {ApiRoot} from "../persistence/ApiRoot";
 
 
 export class ActionTypeModel {
@@ -128,12 +128,12 @@ export class ActionModelOld {
 
 export class ActionTypesProvider {
   actionsRef:EntityMeta
-  ary:Array
+  ary:Array<any>
   map:Map<string,ActionTypeModel>
-  promise:Promise
+  promise:Promise<any>
 
   constructor(@Inject(ApiRoot) apiRoot) {
-    this.map = new Map()
+    this.map = new Map<string, ActionTypeModel>()
     this.ary = []
     this.actionsRef = apiRoot.root.child('system/ruleengine/actionlets')
     this.init();

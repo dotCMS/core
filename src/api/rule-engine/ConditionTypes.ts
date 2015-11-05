@@ -1,8 +1,7 @@
-/// <reference path="../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 import {Inject} from 'angular2/angular2';
+import {EntityMeta} from "../persistence/EntityBase";
+import {ApiRoot} from "../persistence/ApiRoot";
 
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {EntityMeta} from "api/persistence/EntityBase";
 
 // @todo ggranum: Remove this and code that defers to it once we either add an 'enabled' field to conditionlet types,
 // or we have implemented all the conditionlet types we intend to release with.
@@ -46,20 +45,19 @@ export class ConditionTypeModel {
     }
     return map
   }
-
 }
 
 
 export class ConditionTypesProvider {
   typeModels:Map<string, Function>
   ref:EntityMeta
-  ary:Array
+  ary:Array<any>
   map:Map<string,ConditionTypeModel>
-  promise:Promise
+  promise:Promise<any>
 
   constructor(@Inject(ApiRoot) apiRoot) {
-    this.typeModels = new Map()
-    this.map = new Map()
+    this.typeModels = new Map<string, Function>()
+    this.map = new Map<string, ConditionTypeModel>()
     this.ary = []
     this.ref = apiRoot.root.child('system/ruleengine/conditionlets')
     this.init();

@@ -7,6 +7,18 @@
     "experimentalDecorators": true,
     "removeComments": false,
     "noImplicitAny": false,
+    "suppressImplicitAnyIndexErrors":true,
     "outDir": "../build/"
-  }
+  },
+  "files": [
+    "index.ts",
+    "api/rule-engine/Action.it-spec.ts",
+    "api/rule-engine/Condition.it-spec.ts",
+    "api/rule-engine/ConditionGroup.it-spec.ts",
+    "api/rule-engine/Rule.it-spec.ts",
+
+    "view/components/semantic/elements/input-text/index.ts",
+    "view/components/semantic/modules/dropdown/index.ts"
+
+  ]
 }

@@ -1,17 +1,19 @@
 import {Inject} from 'angular2/angular2';
-import {Check} from 'api/validation/Check'
-import {DataStore} from "api/persistence/DataStore";
+import {Check} from '../../api/validation/Check'
+import {DataStore} from "../../api/persistence/DataStore";
 import 'whatwg-fetch';
 
 var fetch = window ? window['fetch'] : top['fetch']
+
 export class RestDataStore extends DataStore {
   authHeader: string
 
   constructor(){
+    super()
     console.log("Creating datastore")
   }
 
-  setItem(path:String, entity:any, isNew:boolean=false) {
+  setItem(path:string, entity:any, isNew:boolean=false) {
     path = this.checkPath(path)
     entity = Check.exists(entity, "Cannot save empty values. Did you mean to remove?")
     return this.remoteSet(path, entity, isNew).then((response) => {
@@ -38,7 +40,6 @@ export class RestDataStore extends DataStore {
   removeItem(path) {
     return this.remoteDelete(path);
   }
-
 
   remoteGet(path) {
     let url = this.pathToUrl(path)
@@ -164,6 +165,4 @@ export class RestDataStore extends DataStore {
           throw e
         })
   }
-
-
 }

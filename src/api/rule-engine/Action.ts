@@ -1,17 +1,11 @@
-//// <reference path="../../../jspm_packages/npm/@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.d.ts" />
-
 import {Inject, EventEmitter} from 'angular2/angular2';
-import * as Rx from '@reactivex/rxjs@5.0.0-alpha.7/dist/cjs/Rx.KitchenSink'
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
-
-import {ApiRoot} from 'api/persistence/ApiRoot';
-import {CwChangeEvent} from "api/util/CwEvent";
-import {CwModel} from "api/util/CwModel";
-import {EntityMeta, EntitySnapshot} from "api/persistence/EntityBase";
+import {ApiRoot} from "../persistence/ApiRoot";
+import {CwModel} from "../util/CwModel";
 import {RuleModel} from "./Rule";
 import {ActionTypeModel} from "./ActionType";
-import {ActionTypesProvider} from "./ActionType";
-
+import {EntitySnapshot} from "../persistence/EntityBase";
 
 interface ActionModelParameter {
   key:string
@@ -21,7 +15,6 @@ interface ActionModelParameter {
 let noop = (...arg:any[])=> {}
 
 export class ActionModel extends CwModel {
-
   private _name:string
   private _owningRule:RuleModel
   private _actionType:ActionTypeModel
@@ -85,15 +78,13 @@ export class ActionModel extends CwModel {
     valid = valid && this._actionType && this._actionType.id && this._actionType.id != 'NoSelection'
     return valid
   }
-
-
 }
 
 export class ActionService {
   private _removed:EventEmitter
   private _added:EventEmitter
-  onRemove:Rx.Observable
-  onAdd:Rx.Observable
+  onRemove:Rx.Observable<ActionModel>
+  onAdd:Rx.Observable<ActionModel>
   private apiRoot;
   private ref;
 
@@ -133,7 +124,7 @@ export class ActionService {
     return json
   }
 
-  list(rule:RuleModel):Rx.Observable {
+  list(rule:RuleModel):Rx.Observable<ActionModel> {
     if (rule.isPersisted()) {
       this.addActionsFromRule(rule)
     }
