@@ -51,7 +51,8 @@
  */
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {Dropdown, DropdownModel, DropdownOption} from "../../../semantic/modules/dropdown/dropdown";
+import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
+import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
 
 /**
  * @todo: Consider populating these from the server
@@ -120,11 +121,14 @@ export class RequestHeaderConditionletModel {
   ]
 })
 @View({
-  directives: [NgFor, Dropdown],
+  directives: [NgFor, Dropdown, InputText],
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <cw-input-dropdown flex="40"  class="cw-input" [model]="headerKeyDropdown" (change)="handleHeaderKeyChange($event)"></cw-input-dropdown>
   <cw-input-dropdown flex="initial" class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
-  <input flex="30" type="text" class="cw-input" [value]="value.compareTo" placeholder="Enter a value" (change)="handleCompareToChange($event)"/>
+  <cw-input-text flex="30"
+      (change)="handleCompareToChange($event)"
+      [model]="requestHeaderInputTextModel">
+  </cw-input-text>
 </div>`
 })
 export class RequestHeaderConditionlet {
@@ -144,6 +148,8 @@ export class RequestHeaderConditionlet {
   private headerKeyDropdown:DropdownModel
   private comparatorDropdown:DropdownModel
 
+  private requestHeaderInputTextModel: InputTextModel
+
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('parameterValues') parameterValues:Array<string>) {
@@ -156,19 +162,20 @@ export class RequestHeaderConditionlet {
       headerKeyOptions.push(new DropdownOption(name, name, name))
     })
     this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], headerKeyOptions)
-  }
 
+    this.requestHeaderInputTextModel = new InputTextModel()
+    this.requestHeaderInputTextModel.placeholder = "Enter a value"
+  }
 
   set headerKeyValue(value:string) {
     this.value.headerKeyValue = value
     this.headerKeyDropdown.selected = [value]
   }
 
-
   set compareTo(value:string) {
     this.value.compareTo = value
+    this.requestHeaderInputTextModel.value = value
   }
-
 
   set comparatorValue(value:string) {
     this.value.comparatorValue = value
@@ -191,21 +198,21 @@ export class RequestHeaderConditionlet {
     return eventValue
   }
 
-  handleComparatorChange(event) {
+  handleComparatorChange(event:any) {
     let value = event.value
     this.value.comparatorValue = value
     this.change.next({type:'comparisonChange', target:this, value:value})
   }
 
-
-  handleHeaderKeyChange(event) {
+  handleHeaderKeyChange(event:any) {
     this.value.headerKeyValue = event.value
     this.change.next({type:'parameterValueChange', target: this, value: this.getEventValue()})
   }
 
-
-  handleCompareToChange(event:Event) {
-    this.value.compareTo = event.target['value']
+  handleCompareToChange(event:any) {
+    this.value.compareTo = event.target.value
+    this.requestHeaderInputTextModel.value = event.target.value
     this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
   }
+
 }

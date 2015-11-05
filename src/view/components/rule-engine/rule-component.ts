@@ -5,15 +5,17 @@ import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angul
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
-import {InputToggle} from "../input/toggle/InputToggle";
-import {RuleModel} from "../../../api/rule-engine/Rule";
-import {ActionModel} from "../../../api/rule-engine/Action";
-import {ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
-import {RuleService} from "../../../api/rule-engine/Rule";
-import {ActionService} from "../../../api/rule-engine/Action";
-import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
 
+import {InputToggle} from '../../../view/components/input/toggle/InputToggle'
+import {ApiRoot} from '../../../api/persistence/ApiRoot';
+
+import {RuleService, RuleModel} from "../../../api/rule-engine/Rule";
+import {ActionService, ActionModel} from "../../../api/rule-engine/Action";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
+import {EntityMeta} from "../../../api/persistence/EntityBase";
+import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
+
+import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
 
 var rsrc = {
   fireOn: {
@@ -32,12 +34,12 @@ var rsrc = {
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
     <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true" ></i>
-    <input flex type="text" class="cw-name cw-input" placeholder="Describe the rule"
-      [value]="rule.name"
-      (change)="setRuleName($event.target.value)"
+    <cw-input-text flex
+      (change)="handleRuleNameChange($event.target.value)"
       (focus)="collapsed = false"
       (click)="$event.stopPropagation()"
-      >
+      [model]="ruleNameInputTextModel">
+    </cw-input-text>
     <select [value]="rule.fireOn" (change)="setFireOn($event.target.value)" (click)="$event.stopPropagation()">
       <option value="EVERY_PAGE" [selected]="rule.fireOn === 'EVERY_PAGE'">{{fireOnLabel('EVERY_PAGE')}}</option>
       <option value="ONCE_PER_VISIT" [selected]="rule.fireOn === 'ONCE_PER_VISIT'">{{fireOnLabel('ONCE_PER_VISIT')}}</option>
@@ -88,7 +90,7 @@ var rsrc = {
 </div>
 
 `,
-  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
+  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor, InputText]
 })
 class RuleComponent {
   _rule:RuleModel
@@ -104,8 +106,8 @@ class RuleComponent {
   private groupService:ConditionGroupService
 
   private actionStub:ActionModel
-  private actionStubWatch:Rx.Subscription<ActionModel>
-
+  private actionStubWatch:Rx.Subscription
+  private ruleNameInputTextModel:InputTextModel
 
   constructor(elementRef:ElementRef,
               @Inject(RuleService) ruleService:RuleService,
@@ -121,6 +123,12 @@ class RuleComponent {
 
     this.hidden = false
     this.collapsed = false
+
+    this.ruleNameInputTextModel = new InputTextModel()
+    this.ruleNameInputTextModel.placeholder = "Describe the rule"
+    this.ruleNameInputTextModel.validate = (newValue:string)=> {
+      if(!newValue){ throw new Error("Required Field") }
+    }
   }
 
   onInit() {
@@ -147,6 +155,7 @@ class RuleComponent {
       this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
       this.actionService.list(this.rule)
       this.groupService.list(this.rule)
+      this.ruleNameInputTextModel.value = rule.name
     }
   }
 
@@ -166,7 +175,7 @@ class RuleComponent {
     this.rule.fireOn = value
   }
 
-  setRuleName(name:string) {
+  handleRuleNameChange(name:string) {
     this.rule.name = name
   }
 
