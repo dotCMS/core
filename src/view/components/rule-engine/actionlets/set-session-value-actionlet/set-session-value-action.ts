@@ -38,6 +38,7 @@
 
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
 import {ActionModel} from "api/rule-engine/Action";
+import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
 
 @Component({
   selector: 'cw-set-session-value-action',
@@ -49,20 +50,16 @@ import {ActionModel} from "api/rule-engine/Action";
   ]
 })
 @View({
-  directives: [NgFor],
+  directives: [NgFor, InputText],
   template: `<div flex="grow" layout="row" layout-align="space-around-center">
-  <input flex
-         type="text"
-         class="cw-action-value cw-input"
-         [value]="params.sessionKey"
-         placeholder="Enter a session key"
-         (change)="updateParamValue('sessionKey', $event)"/>
-  <input flex
-         type="text"
-         class="cw-action-value cw-input"
-         [value]="params.sessionValue"
-         placeholder="Enter a value"
-         (change)="updateParamValue('sessionValue', $event)"/>
+  <cw-input-text flex
+      (change)="updateParamValue('sessionKey', $event)"
+      [model]="setSessionKeyInputTextModel">
+  </cw-input-text>
+  <cw-input-text flex
+      (change)="updateParamValue('sessionValue', $event)"
+      [model]="setSessionValueInputTextModel">
+  </cw-input-text>
 </div>
   `
 })
@@ -73,6 +70,9 @@ export class SetSessionValueAction {
 
   configChange:EventEmitter;
 
+  private setSessionKeyInputTextModel:InputTextModel
+  private setSessionValueInputTextModel:InputTextModel
+
   constructor(@Attribute('sessionKey') sessionKey:string = '',
               @Attribute('sessionValue') sessionValue:string = '') {
     this.paramKeys = ["sessionKey", "sessionValue"]
@@ -81,6 +81,10 @@ export class SetSessionValueAction {
       "sessionValue": sessionValue
     }
     this.configChange = new EventEmitter();
+    this.setSessionKeyInputTextModel = new InputTextModel();
+    this.setSessionValueInputTextModel = new InputTextModel();
+    this.setSessionKeyInputTextModel.placeholder = "Enter a session key"
+    this.setSessionValueInputTextModel.placeholder = "Enter a value"
   }
 
   set action(action:ActionModel){
@@ -88,11 +92,17 @@ export class SetSessionValueAction {
     this.paramKeys.forEach((key)=>{
       this.params[key] = action.getParameter(key)
     })
+
+    this.setSessionKeyInputTextModel.value = action.getParameter('sessionKey')
+    this.setSessionValueInputTextModel.value = action.getParameter('sessionValue')
   }
 
   updateParamValue(key:string, event:Event) {
     let value = event.target['value']
     this.params[key] = value
     this.configChange.next({type: 'actionParameterChanged', target: this, params: this.params})
+
+    if(key == 'sessionKey') this.setSessionKeyInputTextModel.value = value
+    if(key == 'sessionValue') this.setSessionValueInputTextModel.value = value
   }
 }
