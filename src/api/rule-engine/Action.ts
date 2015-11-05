@@ -101,7 +101,7 @@ export class ActionService {
 
   _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot):ActionModel {
     let val:any = snapshot.val()
-    let ra = new ActionModel(val.id)
+    let ra = new ActionModel(snapshot.key())
     ra.name = val.name;
     ra.owningRule = rule
     ra.actionType = new ActionTypeModel(val.actionlet)
