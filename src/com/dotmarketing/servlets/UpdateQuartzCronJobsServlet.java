@@ -1,6 +1,7 @@
 package com.dotmarketing.servlets;
 
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.quartz.CronTrigger;
 
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
 
 public class UpdateQuartzCronJobsServlet extends HttpServlet {
@@ -71,6 +73,12 @@ public class UpdateQuartzCronJobsServlet extends HttpServlet {
 			}
 		} catch (Exception e) {
 			Logger.error(UpdateQuartzCronJobsServlet.class, e.getMessage(), e);
+		}finally{
+			try {
+				DbConnectionFactory.getConnection().close();
+			} catch (SQLException e) {
+				Logger.error(UpdateQuartzCronJobsServlet.class,e.getMessage(),e);
+			}
 		}
 	}
 	
