@@ -23,30 +23,30 @@ and Angular 2 alpha 44 for framework and scaffolding (templating, dependency inj
   * Update Node to at least v0.12.x and NPM to 2.14.x
   * Install global NPM hooks
   * Run NPM Install
-  * Run JSPM Install
   * Run a server
   
 ```Shell
 git clone git@github.com:dotCMS/core-web.git
-npm -g install typescript@^1.5.3
+npm -g install typescript@^1.6.2
 npm install
-jspm install
 npm run itest
 ```
 
-To run for development purposes you should execute the itest target. This will open your browser to the integration tests,
+To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests,
 and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should
 have an up-to-date instance of dotCMS running.
  
 The `itest` target will also maintain a watch task that will compile your files when changes are detected. You will need
 to refresh the test page manually to re-run the integration tests.
 
-To see the main site as you develop, open another browser tab to http://localhost:9000/index-dev.html
+To see the main site as you develop, open another browser tab to http://localhost:9000/index.html
 
 ## The Build System
 
   * Gulp with NPM script targets for convenience.
-  * JSPM is used to bundle. This is subject to change as Angular2 now explicitly does not support JSPM.  
+  * Jasmine+Karma
+  * 
+    
 
 ## API Layer
 
@@ -102,10 +102,8 @@ as version updates occur, there are additions to some of the files.
 ### Clean often
 
 If you update and something breaks, try updating the project dependencies before anything else. Especially if 
-`{projectRoot}/config.js` or `{projectRoot}/package.json` have been modified by the update. If that doesn't work and it
-makes sense (or you don't know what else to try) you might consider deleting your `{projectRoot}/jspm_packages` and 
-`{projectRoot}/node_modules` directories and rerunning `npm install` and `jspm install`. And keep an eye on jspm install,
-in case it asks you to manually install a bootloader. 
+`{projectRoot}/package.json` has been modified by the update. If that doesn't work and it makes sense (or you don't 
+know what else to try) you might consider deleting your `{projectRoot}/node_modules` directory and rerunning `npm install`.
 
 ### Patterns and Practices
 
@@ -137,7 +135,7 @@ mock persistence layer.
  
 ### Troubleshooting
 
-When all else fails, try running `gulp clean` and deleting the jspm_packages and node_modules directories, and then re-run `npm install` and `jspm install`. 
+When all else fails, try running `gulp clean` and deleting the node_modules directory, and then re-run `npm install`. 
 
 ### Some useful links
 
@@ -153,12 +151,6 @@ When all else fails, try running `gulp clean` and deleting the jspm_packages and
   * [Some background on Functional programming with Ng2](http://victorsavkin.com/post/108837493941/better-support-for-functional-programming-in)
   * [Pascal Precht on dependency injection](https://www.youtube.com/watch?v=8c-qv9TisVE&list=PL9w_03cWjMXOkPgcoOnLaPJBoa2GJWxvD&index=9)
 
-  
-#### JSPM
-  * [Javascript Package Manager - Home Page](http://jspm.io/)
-  * [Github page](https://github.com/jspm/jspm-cli/)
-  * [About bundling](https://github.com/jspm/jspm-cli/blob/master/docs/production-workflows.md)
-  * [Gitter Page- irc,kinda](https://gitter.im/jspm/jspm)
   
 #### Layout
   * [Flex layouts by Angular Material CSS](https://material.angularjs.org/HEAD/layout)
