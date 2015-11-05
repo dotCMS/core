@@ -13,25 +13,26 @@ import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropd
   properties: ["action"]
 })
 @View({
-  template: `<div flex="grow" layout="column" class="cw-rule-action cw-entry">
-  <div flex="grow" layout="row" layout-align="space-between-center">
+  template: `<div flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
+<div flex="30" layout="row" layout-align="end-center" class="cw-row-start-area">
+    <cw-input-dropdown class="cw-action-type-dropdown" [model]="actionTypesDropdown" (change)="handleActionTypeChange($event)"></cw-input-dropdown>
+  </div>
 
-    <cw-input-dropdown [model]="actionTypesDropdown" (change)="handleActionTypeChange($event)"></cw-input-dropdown>
 
-    <cw-set-session-value-action flex="grow"
-                                  *ng-if="action.actionType.id == 'SetSessionAttributeActionlet'"
-                                 [action]="action"
-                                 (config-change)="actionConfigChanged($event)">
+  <cw-set-session-value-action flex="60"
+                               *ng-if="action.actionType.id == 'SetSessionAttributeActionlet'"
+                               [action]="action"
+                               (config-change)="actionConfigChanged($event)">
 
-    </cw-set-session-value-action>
-    <div class="cw-btn-group">
-      <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Action" (click)="removeAction()">
-          <i class="trash icon"></i>
-        </button>
-      </div>
+  </cw-set-session-value-action>
+  <div flex="5" class="cw-btn-group">
+    <div class="ui basic icon buttons">
+      <button class="ui button" aria-label="Delete Action" (click)="removeAction()">
+        <i class="trash icon"></i>
+      </button>
     </div>
-  </div>`,
+  </div>
+</div>`,
   directives: [NgIf, NgFor, SetSessionValueAction, Dropdown],
 })
 export class RuleActionComponent {
