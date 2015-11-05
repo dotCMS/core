@@ -1,7 +1,7 @@
 /// <reference path="../../../../../../jspm_packages/npm/angular2@2.0.0-alpha.44/angular2.d.ts" />
 
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
-import {Input, InputModel} from './input'
+import {InputText, InputTextModel} from './input-text'
 
 
 @Component({
@@ -13,41 +13,41 @@ import {Input, InputModel} from './input'
   <div class="column">
     <h4 class="ui top attached inverted header">Default</h4>
     <div class="ui attached segment">
-      <cw-input></cw-input>
+      <cw-input-text></cw-input-text>
     </div>
   </div>
   <div class="column">
     <h4 class="ui top attached inverted header">Value</h4>
     <div class="ui attached segment">
-      <cw-input [model]="demoValue"></cw-input>
+      <cw-input-text [model]="demoValue"></cw-input-text>
     </div>
   </div>
   <div class="column">
     <h4 class="ui top attached inverted header">Disabled</h4>
     <div class="ui attached segment">
-      <cw-input [model]="demoDisabled"></cw-input>
+      <cw-input-text [model]="demoDisabled"></cw-input-text>
     </div>
   </div>
   <div class="column">
     <h4 class="ui top attached inverted header">Error</h4>
     <div class="ui attached segment">
-      <cw-input [model]="demoError" (change)="customChange($event)"></cw-input>
+      <cw-input-text [model]="demoError" (change)="customChange($event)"></cw-input-text>
     </div>
   </div>
   <div class="column">
     <h4 class="ui top attached inverted header">Icon</h4>
     <div class="ui attached segment">
-      <cw-input [model]="demoIcon"></cw-input>
+      <cw-input-text [model]="demoIcon"></cw-input-text>
     </div>
   </div>
 </div>
   `
 })
 class App {
-  demoValue:InputModel
-  demoDisabled:InputModel
-  demoError:InputModel
-  demoIcon:InputModel
+  demoValue:InputTextModel
+  demoDisabled:InputTextModel
+  demoError:InputTextModel
+  demoIcon:InputTextModel
 
   constructor(@Attribute('id') id:string) {
     this.demoValue()
@@ -57,7 +57,7 @@ class App {
   }
 
   demoValue() {
-    let model = new InputModel()
+    let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.value = "Costa Rica"
 
@@ -65,7 +65,7 @@ class App {
   }
 
   demoDisabled() {
-    let model = new InputModel()
+    let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.disabled = "true"
     model.placeholder = "Disabled"
@@ -74,7 +74,7 @@ class App {
   }
 
   demoError() {
-    let model = new InputModel()
+    let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.value = "Required Field"
     model.validate = (newValue:string)=> {
@@ -85,7 +85,7 @@ class App {
   }
 
   demoIcon() {
-    let model = new InputModel()
+    let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.icon = "circular search link"
     model.placeholder = "Icon"

@@ -8,7 +8,7 @@ import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} 
  * Comments for event handlers, etc, copied directly from semantic-ui documentation.
  */
 
-export class InputModel {
+export class InputTextModel {
   name:string
   placeholder:string
   value:string
@@ -34,7 +34,7 @@ export class InputModel {
 }
 
 @Component({
-  selector: 'cw-input',
+  selector: 'cw-input-text',
 
   properties: [
     'model',
@@ -52,9 +52,9 @@ export class InputModel {
   `,
   directives: [NgClass, NgIf]
 })
-export class Input {
+export class InputText {
 
-  private _model:InputModel
+  private _model:InputTextModel
   private errorMessage:String
 
   change:EventEmitter
@@ -63,15 +63,15 @@ export class Input {
   constructor(@ElementRef elementRef:ElementRef) {
     this.elementRef = elementRef
     this.change = new EventEmitter()
-    this._model = new InputModel()
+    this._model = new InputTextModel()
     this.errorMessage = null
   }
 
-  get model():InputModel {
+  get model():InputTextModel {
     return this._model;
   }
 
-  set model(model:InputModel) {
+  set model(model:InputTextModel) {
     this._model = model;
   }
 
