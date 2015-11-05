@@ -50,10 +50,33 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   margin: 0 2em 2em 2em;
   border: 1px solid $background-primary;
 
+  div {
+    .cw-action-type-dropdown, .cw-condition-type-dropdown {
+      max-width: 15em;
+      min-width: 15em;
+    }
+  }
+
   .cw-header {
     background-color: $background-primary;
     height: 3.5em;
 
+  }
+
+  .cw-rule-caret {
+    min-width: 2em;
+    max-width: 2em;
+    margin-left: 1em;
+  }
+
+  .cw-fire-on-label {
+    font-weight: bold;
+    margin-right: .5em;
+  }
+
+  .cw-fire-on-dropdown {
+    min-width: 12em;
+    max-width: 12em;
   }
 
   .cw-input {
@@ -65,11 +88,14 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 
   cw-toggle-input.cw-input {
-    margin-top:.75em;
+    margin-top: .75em;
   }
 
   .cw-btn-group {
     padding-right: 1em;
+    .ui.basic {
+      background-color: white;
+    }
   }
 
   .cw-accordion-body {
@@ -88,15 +114,14 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     height: 2em;
   }
 
-
-  .cw-comparator-selector{
+  .cw-comparator-selector {
     min-width: 10em;
     max-width: 10em;
   }
 
-  .cw-condition-type-dropdown, .cw-action-type-dropdown{
-    max-width:18em;
-    min-width:18em;
+  .cw-condition-type-dropdown, .cw-action-type-dropdown {
+    max-width: 18em;
+    min-width: 18em;
   }
 
 }
@@ -134,8 +159,17 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 }
 
-.cw-button-toggle-operator {
-  width: 4em;
+.ui.basic.button.cw-button-toggle-operator {
+  max-height: 2.5em;
+  min-width: 4em;
+  max-width: 4em;
+  padding: .5em 0 .5em 0;
+  border-radius: 0;
+
+}
+
+.cw-condition-row {
+
 }
 
 .cw-rule-actions, .cw-conditions {
@@ -159,53 +193,55 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 }
 
-.cw-conditions {
-  width:100%;
-  .cw-button-add-item i {
-    color: $primary-one;
-  }
+.cw-button-add-item i {
+  color: $primary-one;
+}
 
-  .cw-spacer.cw-condition-operator {
-    width: 4em
-  }
+.cw-spacer.cw-condition-operator {
+  width: 4em
+}
 
-  .cw-spacer.cw-add-condition {
-    width: 2.25em;
-  }
+.cw-spacer.cw-add-condition {
+  width: 2.25em;
+}
 
-  .basic button.ui.cw-button-add-item, .basic button.ui.cw-button-add-item:hover {
+// Oy! Talk about overly specific!
+.cw-rule-engine .cw-rule .basic button.ui {
+  &.cw-button-add-item, .cw-button-add-item:hover, .cw-button-add-item:active, .cw-button-add-item:focus {
     border: none;
     box-shadow: none;
     margin: 0;
     padding-left: 0;
     padding-right: 0;
   }
+}
 
-  .basic button.ui.cw-button-add-item:hover {
-    font-weight: bolder;
-  }
-  .cw-row-start-area {
-    max-width: 25em;
-    min-width: 25em;
-  }
-  .cw-condition-toggle {
-    max-width: 5em;
-    padding-right:0;
-  }
-  .cw-condition-buttons {
-    width: 3em;
-    max-width: 3em;
-  }
+.basic button.ui.cw-button-add-item:hover {
+  font-weight: bolder;
+}
+
+.cw-row-start-area {
+  max-width: 25em;
+  min-width: 25em;
+}
+
+.cw-condition-toggle {
+  max-width: 5em;
+  padding-right: 0;
+}
+
+.cw-condition-buttons {
+  width: 3em;
+  max-width: 3em;
 }
 
 .cw-condition-component {
   max-width: 200em;
-  width:100%;
+  width: 100%;
   .cw-input {
-    margin:0 1em
+    margin: 0 1em
   }
 }
-
 
 .cw-clause-selector {
   //min-width: 15em;

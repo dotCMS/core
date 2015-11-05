@@ -136,9 +136,6 @@ export class Dropdown {
   }
 
   initDropdown() {
-    console.log("view init", this.model.selected, this.model.options.map((it)=> {
-      return it.id
-    }))
     var self = this;
     let config:any = {
       onChange: (value, text, $choice)=> {

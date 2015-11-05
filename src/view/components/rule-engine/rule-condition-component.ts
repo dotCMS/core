@@ -16,38 +16,39 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
   properties: ["condition", "index"]
 })
 @View({
-  template: `<div flex="grow" layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
-  <div flex="none" layout="row" layout-align="start-center" class="cw-row-start-area">
-    <div flex="none" class="cw-btn-group cw-condition-toggle">
-      <div class="ui basic icon buttons" (click)="toggleOperator()" *ng-if="index !== 0">
-        <button flex="none" class="ui button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()">
+  template: `<div flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
+  <div flex="30" layout="row" layout-align="end-center" class="cw-row-start-area">
+    <div flex class="cw-btn-group cw-condition-toggle">
+        <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
           {{condition.operator}}
         </button>
-      </div>
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-  <cw-request-header-conditionlet
-      class="cw-condition-component"
-      *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
-      [comparator-value]="condition.comparison"
-      [parameter-values]="parameterValues"
-      (change)="conditionChanged($event)">
-  </cw-request-header-conditionlet>
-  <cw-country-condition
-      class="cw-condition-component"
-      *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
-      [comparator-value]="condition.comparison"
-      [parameter-values]="parameterValues"
-      (change)="conditionChanged($event)">
-  </cw-country-condition>
-  <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'">
+  <div flex="60" class="cw-condition-row-main">
+    <cw-request-header-conditionlet
+        class="cw-condition-component"
+        *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
+        [comparator-value]="condition.comparison"
+        [parameter-values]="parameterValues"
+        (change)="conditionChanged($event)">
+    </cw-request-header-conditionlet>
+    <cw-country-condition
+        class="cw-condition-component"
+        *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
+        [comparator-value]="condition.comparison"
+        [parameter-values]="parameterValues"
+        (change)="conditionChanged($event)">
+    </cw-country-condition>
+    <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'"></div>
   </div>
-  <div flex class="cw-btn-group cw-condition-buttons">
-    <div class="ui basic icon buttons">
-      <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
-        <i class="trash icon"></i>
-      </button>
+  <div flex="5" layout="row" layout-align="end-center">
+    <div flex class="cw-btn-group cw-condition-buttons">
+      <div class="ui basic icon buttons">
+        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
+          <i class="trash icon"></i>
+        </button>
+      </div>
     </div>
   </div>
 </div>

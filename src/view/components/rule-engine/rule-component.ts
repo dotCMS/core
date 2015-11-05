@@ -1,4 +1,3 @@
-
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
 //import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
@@ -30,10 +29,10 @@ var rsrc = {
 }
 
 var fireOn = [
-new DropdownOption('EVERY_PAGE','EVERY_PAGE', 'Every Page'),
-new DropdownOption('ONCE_PER_VISIT','ONCE_PER_VISIT', 'Once per visit'),
-new DropdownOption('ONCE_PER_VISITOR','ONCE_PER_VISITOR', 'Once per visitor'),
-new DropdownOption('EVERY_REQUEST','EVERY_REQUEST', 'Every Request'),
+  new DropdownOption('EVERY_PAGE', 'EVERY_PAGE', 'Every Page'),
+  new DropdownOption('ONCE_PER_VISIT', 'ONCE_PER_VISIT', 'Once per visit'),
+  new DropdownOption('ONCE_PER_VISITOR', 'ONCE_PER_VISITOR', 'Once per visitor'),
+  new DropdownOption('EVERY_REQUEST', 'EVERY_REQUEST', 'Every Request'),
 ]
 
 @Component({
@@ -43,29 +42,32 @@ new DropdownOption('EVERY_REQUEST','EVERY_REQUEST', 'Every Request'),
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
-    <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
-    <cw-input-text flex
-                   (change)="handleRuleNameChange($event.target.value)"
-                   (focus)="collapsed = false"
-                   (click)="$event.stopPropagation()"
-                   [model]="ruleNameInputTextModel">
-    </cw-input-text>
-
-    <cw-input-dropdown [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
-
-    <cw-toggle-input class="cw-input"
-                     [value]="rule.enabled"
-                     (toggle)="rule.enabled = $event.target.value"
-                     (click)="$event.stopPropagation()">
-    </cw-toggle-input>
-    <div class="cw-btn-group">
-      <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Rule" (click)="removeRule()">
-          <i class="trash icon"></i>
-        </button>
-        <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()">
-          <i class="plus icon" aria-hidden="true"></i>
-        </button>
+    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ng-if="!hidden">
+      <i flex="none" class="caret icon cw-rule-caret" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
+      <cw-input-text flex="70"
+                     (change)="handleRuleNameChange($event.target.value)"
+                     (focus)="collapsed = false"
+                     (click)="$event.stopPropagation()"
+                     [model]="ruleNameInputTextModel">
+      </cw-input-text>
+      <span class="cw-fire-on-label">Fire On:</span>
+      <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
+    </div>
+    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ng-if="!hidden">
+      <cw-toggle-input class="cw-input"
+                       [value]="rule.enabled"
+                       (toggle)="rule.enabled = $event.target.value"
+                       (click)="$event.stopPropagation()">
+      </cw-toggle-input>
+      <div class="cw-btn-group">
+        <div class="ui basic icon buttons">
+          <button class="ui button" aria-label="Delete Rule" (click)="removeRule()">
+            <i class="trash icon"></i>
+          </button>
+          <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()">
+            <i class="plus icon" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -78,17 +80,18 @@ new DropdownOption('EVERY_REQUEST','EVERY_REQUEST', 'Every Request'),
       This rule sets the following action(s)
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
-      <button class="cw-add-action-button ui button" arial-label="Add Action" (click)="addAction(); collapsed=false;" *ng-if="actions.length === 0">
-        <i class="plus icon" aria-hidden="true"></i>
-      </button>
-      <div flex layout="row" layout-align="center-center" class="cw-conditions" *ng-for="var action of actions; var i=index">
-        <rule-action flex [action]="action"></rule-action>
-        <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
-        <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
-          <div class="ui basic icon buttons">
-            <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
-              <i class="plus icon" aria-hidden="true"></i>
-            </button>
+      <div flex layout="row" layout-align="space-between-center" *ng-for="var action of actions; var i=index">
+        <div flex layout="row" layout-align="start-center">
+          <rule-action flex [action]="action"></rule-action>
+        </div>
+        <div flex="0" layout="row" layout-align="end-center">
+          <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
+          <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
+            <div class="ui basic icon buttons">
+              <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
+                <i class="plus icon" aria-hidden="true"></i>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -115,13 +118,13 @@ class RuleComponent {
   private actionStub:ActionModel
   private actionStubWatch:Rx.Subscription
   private ruleNameInputTextModel:InputTextModel
-  private fireOnDropdown :DropdownModel
+  private fireOnDropdown:DropdownModel
 
 
   constructor(elementRef:ElementRef,
               @Inject(RuleService) ruleService:RuleService,
               @Inject(ActionService) actionService:ActionService,
-              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService ) {
+              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
     this.elementRef = elementRef
     this.actionService = actionService
     this.ruleService = ruleService;
@@ -138,7 +141,9 @@ class RuleComponent {
     this.ruleNameInputTextModel = new InputTextModel()
     this.ruleNameInputTextModel.placeholder = "Describe the rule"
     this.ruleNameInputTextModel.validate = (newValue:string)=> {
-      if(!newValue){ throw new Error("Required Field") }
+      if (!newValue) {
+        throw new Error("Required Field")
+      }
     }
   }
 
@@ -147,7 +152,7 @@ class RuleComponent {
       var el:Element = this.elementRef.nativeElement
       window.setTimeout(function () {
         var els = el.getElementsByClassName('cw-name')
-        if(els[0]) {
+        if (els[0]) {
           els[0]['focus']();
         }
       }, 50) //avoid tick recursively error
@@ -156,7 +161,7 @@ class RuleComponent {
 
   set rule(rule:RuleModel) {
 
-    if(!this.rule || this.rule.key !== rule.key){
+    if (!this.rule || this.rule.key !== rule.key) {
       this._rule = rule
       this.groups = []
       this.actions = []
@@ -168,11 +173,15 @@ class RuleComponent {
       this.groupService.list(this.rule)
       this.ruleNameInputTextModel.value = rule.name
       this.fireOnDropdown.selected = [rule.fireOn]
+      if(Object.keys(rule.actions).length === 0){
+        this.addAction()
+      }
 
     }
   }
 
   toggleCollapsed() {
+    console.log('eh?', this.collapsed)
     this.collapsed = !this.collapsed
   }
 
@@ -200,19 +209,19 @@ class RuleComponent {
     this.actionStub = new ActionModel()
     this.actionStub.owningRule = this.rule
     this.actions.push(this.actionStub)
-    this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=>{
-      if(vcEvent.target.valid) {
+    this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=> {
+      if (vcEvent.target.valid) {
         this.actionService.add(this.actionStub)
       }
     })
   }
 
   handleActionAdd(action:ActionModel) {
-    if(action.owningRule.key === this.rule.key){
-      if(action == this.actionStub){
+    if (action.owningRule.key === this.rule.key) {
+      if (action == this.actionStub) {
         this.actionStub = null
         this.actionStubWatch.unsubscribe()
-      } else if(this.actions.indexOf(action) == -1) {
+      } else if (this.actions.indexOf(action) == -1) {
         this.actions.push(action)
       }
     }
@@ -224,7 +233,7 @@ class RuleComponent {
   }
 
   handleActionRemove(action:ActionModel) {
-    this.actions = this.actions.filter((aryAction)=>{
+    this.actions = this.actions.filter((aryAction)=> {
       return aryAction.key != action.key
     })
   }
@@ -236,7 +245,7 @@ class RuleComponent {
 
 
   handleGroupAdd(group:ConditionGroupModel) {
-    if(group.owningRule.key === this.rule.key){
+    if (group.owningRule.key === this.rule.key) {
       this.groups.push(group)
     }
   }
@@ -247,7 +256,7 @@ class RuleComponent {
   }
 
   handleGroupRemove(group:ConditionGroupModel) {
-    this.groups = this.groups.filter((aryGroup)=>{
+    this.groups = this.groups.filter((aryGroup)=> {
       return aryGroup.key != group.key
     })
   }
