@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
@@ -16,6 +17,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 public class RestRuleAction extends Validated {
 
     @Length(min = 36, max = 36)
+    @JsonIgnore
     public final String id;
 
     @NotBlank

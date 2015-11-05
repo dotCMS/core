@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -13,6 +14,7 @@ import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 @JsonDeserialize(builder = RestCondition.Builder.class)
 public final class RestCondition extends Validated {
 
+    @JsonIgnore
     public final String id;
 
     @NotNull

@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,6 +27,7 @@ public class Condition implements Serializable {
         }
     }
 
+    @JsonIgnore
     private String id;
     private String name;
     private String conditionletId;

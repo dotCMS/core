@@ -53,7 +53,7 @@ public class RuleActionTransform {
 
             params = app.getParameters().stream()
                 .map(parameterTransform.toRest)
-                .collect(Collectors.toMap(r -> r.id, Function.identity()));
+                .collect(Collectors.toMap(r -> r.key, Function.identity()));
         }
 
         RestRuleAction rest = new RestRuleAction.Builder()
