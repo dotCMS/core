@@ -465,8 +465,8 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
      *             selected action.
      */
     private void checkAndFixIdentifierConflicts(AffectedIdentifierInfoBucket affectedIdentifier) throws DotDataException, DotSecurityException {
-		Long languageId = (Long) pageData.get("language_id");
-		// Get the data of the existing page that has the identifier that MUST
+
+        // Get the data of the existing page that has the identifier that MUST
 		// be changed before fixing the reported conflict(s)
 		DotConnect dc = new DotConnect();
 		StringBuilder query = new StringBuilder();
