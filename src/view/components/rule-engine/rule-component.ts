@@ -19,7 +19,7 @@ import {CwChangeEvent} from "api/util/CwEvent";
 import {EntityMeta} from "api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "api/rule-engine/ConditionGroup";
 
-
+import {Input, InputModel} from "view/components/semantic/elements/input/input";
 
 var rsrc = {
   fireOn: {
@@ -38,12 +38,12 @@ var rsrc = {
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
     <i class="caret icon" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true" ></i>
-    <input flex type="text" class="cw-name cw-input" placeholder="Describe the rule"
-      [value]="rule.name"
-      (change)="setRuleName($event.target.value)"
+    <cw-input flex
+      (change)="handleRuleNameChange($event.target.value)"
       (focus)="collapsed = false"
       (click)="$event.stopPropagation()"
-      >
+      [model]="ruleNameModel">
+    </cw-input>
     <select [value]="rule.fireOn" (change)="setFireOn($event.target.value)" (click)="$event.stopPropagation()">
       <option value="EVERY_PAGE" [selected]="rule.fireOn === 'EVERY_PAGE'">{{fireOnLabel('EVERY_PAGE')}}</option>
       <option value="ONCE_PER_VISIT" [selected]="rule.fireOn === 'ONCE_PER_VISIT'">{{fireOnLabel('ONCE_PER_VISIT')}}</option>
@@ -94,7 +94,7 @@ var rsrc = {
 </div>
 
 `,
-  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor]
+  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor, Input]
 })
 class RuleComponent {
   _rule:RuleModel
@@ -111,7 +111,7 @@ class RuleComponent {
 
   private actionStub:ActionModel
   private actionStubWatch:Rx.Subscription
-
+  private ruleNameModel:InputModel
 
   constructor(elementRef:ElementRef,
               @Inject(RuleService) ruleService:RuleService,
@@ -127,6 +127,12 @@ class RuleComponent {
 
     this.hidden = false
     this.collapsed = false
+
+    this.ruleNameModel = new InputModel()
+    this.ruleNameModel.placeholder = "Describe the rule"
+    this.ruleNameModel.validate = (newValue:string)=> {
+      if(!newValue || newValue === 0){ throw new Error("Required Field") }
+    }
   }
 
   onInit() {
@@ -153,6 +159,7 @@ class RuleComponent {
       this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
       this.actionService.list(this.rule)
       this.groupService.list(this.rule)
+      this.ruleNameModel.value = rule.name
     }
   }
 
@@ -172,7 +179,7 @@ class RuleComponent {
     this.rule.fireOn = value
   }
 
-  setRuleName(name:string) {
+  handleRuleNameChange(name:string) {
     this.rule.name = name
   }
 
