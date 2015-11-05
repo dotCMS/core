@@ -42,7 +42,7 @@ var rsrc = {
       (change)="handleRuleNameChange($event.target.value)"
       (focus)="collapsed = false"
       (click)="$event.stopPropagation()"
-      [model]="ruleNameModel">
+      [model]="ruleNameInputModel">
     </cw-input>
     <select [value]="rule.fireOn" (change)="setFireOn($event.target.value)" (click)="$event.stopPropagation()">
       <option value="EVERY_PAGE" [selected]="rule.fireOn === 'EVERY_PAGE'">{{fireOnLabel('EVERY_PAGE')}}</option>
@@ -111,7 +111,7 @@ class RuleComponent {
 
   private actionStub:ActionModel
   private actionStubWatch:Rx.Subscription
-  private ruleNameModel:InputModel
+  private ruleNameInputModel:InputModel
 
   constructor(elementRef:ElementRef,
               @Inject(RuleService) ruleService:RuleService,
@@ -128,9 +128,9 @@ class RuleComponent {
     this.hidden = false
     this.collapsed = false
 
-    this.ruleNameModel = new InputModel()
-    this.ruleNameModel.placeholder = "Describe the rule"
-    this.ruleNameModel.validate = (newValue:string)=> {
+    this.ruleNameInputModel = new InputModel()
+    this.ruleNameInputModel.placeholder = "Describe the rule"
+    this.ruleNameInputModel.validate = (newValue:string)=> {
       if(!newValue || newValue === 0){ throw new Error("Required Field") }
     }
   }
@@ -159,7 +159,7 @@ class RuleComponent {
       this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
       this.actionService.list(this.rule)
       this.groupService.list(this.rule)
-      this.ruleNameModel.value = rule.name
+      this.ruleNameInputModel.value = rule.name
     }
   }
 
