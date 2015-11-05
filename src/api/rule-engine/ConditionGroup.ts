@@ -85,7 +85,7 @@ export class ConditionGroupService {
 
   static _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot):ConditionGroupModel {
     let val:any = snapshot.val()
-    let ra = new ConditionGroupModel(val.id)
+    let ra = new ConditionGroupModel(snapshot.key())
     ra.owningRule = rule
     ra.operator = val.operator
     ra.priority = val.priority
