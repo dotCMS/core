@@ -4,6 +4,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.rest.validation.constraints.FireOn;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
@@ -73,7 +74,9 @@ public class RulesCacheImpl extends RulesCache {
 
         this.cache.remove(rule.getId(), getPrimaryGroup());
 
-        cache.remove(rule.getHost() + ":" + rule.getFireOn(), getPrimaryGroup());
+        for(Rule.FireOn fireOn: Rule.FireOn.values()) {
+            cache.remove(rule.getHost() + ":" + fireOn, getPrimaryGroup());
+        }
 
         // let's clean the
         cache.remove(rule.getHost(), HOST_RULES_CACHE);
