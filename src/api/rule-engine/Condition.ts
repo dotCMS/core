@@ -139,7 +139,7 @@ export class ConditionService {
 
   static fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
     let val:any = snapshot.val()
-    let ra = new ConditionModel(val.id)
+    let ra = new ConditionModel(snapshot.key())
     ra.name = val.name;
     ra.owningGroup = group
     ra.conditionType = new ConditionTypeModel(val.conditionlet, null)
