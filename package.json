@@ -42,6 +42,7 @@
   },
   "scripts": {
     "tsc": "tsc -p src -w",
+    "tsc-no": "tsc -p src",
     "start": "live-server--port=8180 --open=src",
     "test": "live-server --port=8280 --open=build/unit-tests.html",
     "itest": "gulp serve --open=/build/integration-tests.html",

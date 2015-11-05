@@ -9,6 +9,7 @@ var minimist = require('minimist')
 var replace = require('gulp-replace')
 var ts = require('gulp-typescript');
 var karmaServer = require('karma').Server
+var exec = require('child_process').exec
 
 var config = {
   appProtocol: 'http',
@@ -59,14 +60,11 @@ var project = {
    *
    */
   compileTypescript: function (cb) {
-    var tsResult = typescriptProject.src().pipe(ts(typescriptProject));
-
-    var x = tsResult.js.pipe(gulp.dest('build'))
-    var y = tsResult.dts.pipe(gulp.dest('build/definitions'))
-
-    // ignoring typscript definitions for now.
-    x.on('finish', cb)
-    x.on('error', cb)
+    exec('npm run tsc-no', function (err, stdout, stderr) {
+      // Ignoring non-zero exit code errors, as tsc will provide non-zero exit codes on warnings.
+      console.log(stdout);
+      cb();
+    })
   },
 
   compileStyles: function (cb) {
