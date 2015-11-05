@@ -6,15 +6,9 @@ var fs = require('fs')
 var gulp = require('gulp')
 var del = require('del')
 var minimist = require('minimist')
-var pConfig = require('./package.json')
 var replace = require('gulp-replace')
 var ts = require('gulp-typescript');
-var merge = require('merge2');
 var karmaServer = require('karma').Server
-var imports = {
-  exec: require('child_process').exec,
-  webServer: require('gulp-webserver')
-}
 
 var config = {
   appProtocol: 'http',
@@ -26,18 +20,8 @@ var config = {
   buildDir: './build',
   distDir: __dirname + '/dist',
   srcDir: './src',
-  buildTarget: 'dev',
-  noBundle: ['css', 'text'],
-  /**
-   *  WARNING! These directories are deleted by the 'reset-workspace' task.
-   *   Do not add any directory that is present after a fresh 'clone' operation.
-   */
-  transientDirectories: [
-    './node_modules',
-    './jspm_packages',
-    './build',
-    './dist'
-  ]
+  buildTarget: 'dev'
+
 }
 config.appHost = config.appProtocol + '://' + config.appHostname + ':' + config.appPort
 config.proxyHost = config.proxyProtocol + '://' + config.proxyHostname + ':' + config.proxyPort
@@ -288,11 +272,8 @@ gulp.task('start-server', function (done) {
 /**
  *  Deploy Tasks
  */
-gulp.task('package-release', [], function (done) {
-
+gulp.task('package', [], function (done) {
   project.packageRelease(done)
-
-
 });
 
 var generatePom = function (baseDeployName, groupId, artifactId, version, packaging, callback) {
@@ -323,7 +304,7 @@ var generatePom = function (baseDeployName, groupId, artifactId, version, packag
 
 }
 
-gulp.task('publish-snapshot', ['package-release'], function (done) {
+gulp.task('publish-snapshot', ['package'], function (done) {
   var artifactoryUpload = require('gulp-artifactory-upload');
   var getRev = require('git-rev')
   var config = require('./deploy-config.js').artifactory.snapshot
@@ -370,7 +351,7 @@ gulp.task('publish-snapshot', ['package-release'], function (done) {
 
 });
 
-gulp.task('ghPages-clone', ['package-release'], function (done) {
+gulp.task('ghPages-clone', ['package'], function (done) {
   var exec = require('child_process').exec;
 
   var options = {
@@ -477,17 +458,11 @@ gulp.task('compile-templates', [], function (done) {
   project.compileStatic(done)
 })
 
-gulp.task('compile-all', [], function (done) {
+gulp.task('compile', [], function (done) {
   project.compile(done)
 })
 
-
-gulp.task('prod-watch', ['compile-all'], function () {
-  gulp.watch('./src/**/*.ts', ['compile-ts']);
-  return gulp.watch('./src/**/*.scss', ['compile-styles']);
-});
-
-gulp.task('dev-watch', ['compile-all'], function () {
+gulp.task('watch', ['package'], function () {
   return project.watch()
 });
 
@@ -500,20 +475,15 @@ gulp.task('play', ['serve'], function (done) {
   console.log("This task will be removed in the next iteration, use 'gulp serve' instead.")
 })
 
-gulp.task('serve', ['start-server', 'dev-watch'], function (done) {
+gulp.task('serve', ['start-server', 'watch'], function (done) {
   // if 'done' is not passed in this task will not block.
 })
 
-
-gulp.task('build', ['package-release'], function (done) {
+gulp.task('build', ['package'], function (done) {
 })
 
 gulp.task('clean', [], function (done) {
   project.clean(done)
-})
-
-gulp.task('reset-workspace', function (done) {
-  del(config.transientDirectories, done)
 })
 
 gulp.task('default', function (done) {
