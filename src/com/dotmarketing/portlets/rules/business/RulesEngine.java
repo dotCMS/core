@@ -58,7 +58,7 @@ public class RulesEngine {
                     for (RuleAction action : actions) {
                         RuleActionlet actionlet = APILocator.getRulesAPI().findActionlet(action.getActionlet());
                         Map<String, RuleActionParameter> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
-                        actionlet.executeAction(req, params);
+                        actionlet.executeAction(req, res, params);
                     }
                 }
             }

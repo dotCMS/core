@@ -7,9 +7,11 @@ import java.util.function.Function;
 public class ActionletTransform implements RestTransform<RuleActionlet, RestActionlet> {
 
     private final Function<RuleActionlet, RestActionlet> toRest = (app) -> {
-        RestActionlet rest = new RestActionlet.Builder()
+
+    	RestActionlet rest = new RestActionlet.Builder()
                                      .id(app.getId())
                                      .name(app.getName())
+                                     .parameters(app.getParameters())
                                      .i18nKey(app.getI18nKey())
                                      .build();
 

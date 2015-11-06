@@ -5,6 +5,11 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,12 +23,14 @@ import java.util.Map;
  */
 public class SetSessionAttributeActionlet extends RuleActionlet{
 
+	private static final String[] PARAMS = new String[]{"sessionKey","sessionValue"};
+
     public SetSessionAttributeActionlet(){
-        super(SetSessionAttributeActionlet.class.getSimpleName());
+        super(SetSessionAttributeActionlet.class.getSimpleName(), PARAMS);
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params) {
+    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
 
         String sessionKeyParam = params.get("sessionKey").getValue();
         String sessionValueParam = params.get("sessionValue").getValue();

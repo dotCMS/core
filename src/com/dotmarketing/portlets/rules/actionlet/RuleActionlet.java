@@ -4,8 +4,10 @@ import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public abstract class RuleActionlet implements Serializable {
 
@@ -13,10 +15,24 @@ public abstract class RuleActionlet implements Serializable {
 
     private final String id;
     private final String name;
+    private final Map<String, Map<String,String>> parameters;
 
     public RuleActionlet(String name) {
         this.name = name;
         this.id = this.getClass().getSimpleName();
+        this.parameters = new HashMap<String, Map<String,String>>();
+    }
+
+    public RuleActionlet(String name, String[] parameters) {
+        this.name = name;
+        this.id = this.getClass().getSimpleName();
+        this.parameters = new HashMap<String, Map<String,String>>();
+        for(String parameter : parameters){
+        	HashMap<String,String> paramMap = new HashMap<String,String>();
+        	paramMap.put("key", parameter);
+        	paramMap.put("value", "");
+        	this.parameters.put(parameter, paramMap);
+        }
     }
 
     /**
@@ -44,7 +60,16 @@ public abstract class RuleActionlet implements Serializable {
 	 * returns the list of parameters that are accepted by the implementing actionlet
 	 * @return
 	 */
-//	public abstract List<WorkflowActionletParameter> getParameters();
+    public Map<String, Map<String,String>> getParameters(){
+    	return parameters;
+    }
+
+    /**
+     * returns true if the actionlet does not recieve parameters
+     */
+    public boolean hasParameters(){
+    	return parameters.isEmpty();
+    }
 
 	/**
 	 * if this is set, the all subsequent actionlets will not be fired.  This is true when executing both the
@@ -57,7 +82,7 @@ public abstract class RuleActionlet implements Serializable {
 	/**
 	 * Action that gets executed when the owner {@link com.dotmarketing.portlets.rules.conditionlet.Conditionlet} evaluates to true
 	 */
-	public abstract void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params);
+	public abstract void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params);
 
     @Override
     public boolean equals(Object o) {
