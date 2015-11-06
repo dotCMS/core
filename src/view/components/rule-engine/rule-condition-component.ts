@@ -1,4 +1,4 @@
-import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault EventEmitter, Inject} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault, EventEmitter, Inject} from 'angular2/angular2';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
