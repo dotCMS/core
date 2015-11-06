@@ -1,6 +1,6 @@
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
 
-import {SetSessionValueAction} from './actionlets/set-session-value-actionlet/set-session-value-action'
+import {SetSessionValueAction} from './action-types/set-session-value-action/set-session-value-action'
 
 import {ActionModel} from "../../../api/rule-engine/Action";
 import {ActionTypesProvider} from "../../../api/rule-engine/ActionType";

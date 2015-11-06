@@ -87,9 +87,9 @@ export class SetSessionValueAction {
     this.setSessionValueInputTextModel.placeholder = "Enter a value"
   }
 
-  set action(action:ActionModel){
+  set action(action:ActionModel) {
     this.params = {}
-    this.paramKeys.forEach((key:string)=>{
+    this.paramKeys.forEach((key:string)=> {
       this.params[key] = action.getParameter(key)
     })
 
@@ -102,7 +102,11 @@ export class SetSessionValueAction {
     this.params[key] = value
     this.configChange.next({type: 'actionParameterChanged', target: this, params: this.params})
 
-    if(key == 'sessionKey') this.setSessionKeyInputTextModel.value = value
-    if(key == 'sessionValue') this.setSessionValueInputTextModel.value = value
+    if (key == 'sessionKey') {
+      this.setSessionKeyInputTextModel.value = value
+    }
+    if (key == 'sessionValue') {
+      this.setSessionValueInputTextModel.value = value
+    }
   }
 }
