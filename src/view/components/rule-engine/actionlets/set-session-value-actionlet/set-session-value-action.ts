@@ -48,11 +48,15 @@ import {InputText, InputTextModel} from '../../../semantic/elements/input-text/i
 @View({
   directives: [NgFor, InputText],
   template: `<div flex="grow" layout="row" layout-align="space-around-center">
-  <cw-input-text flex
+  <cw-input-text
+      flex
+      class="cw-input"
       (change)="updateParamValue('sessionKey', $event)"
       [model]="setSessionKeyInputTextModel">
   </cw-input-text>
-  <cw-input-text flex
+  <cw-input-text
+      flex
+      class="cw-input"
       (change)="updateParamValue('sessionValue', $event)"
       [model]="setSessionValueInputTextModel">
   </cw-input-text>

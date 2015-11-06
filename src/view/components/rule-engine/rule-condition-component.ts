@@ -25,7 +25,7 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-  <div flex="60" class="cw-condition-row-main">
+  <div flex="65" layout-fill class="cw-condition-row-main">
     <cw-request-header-conditionlet
         class="cw-condition-component"
         *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"

@@ -57,6 +57,9 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
       min-width: 15em;
     }
   }
+  .cw-rule-name-input {
+    margin-right: 1em;
+  }
 
   > .cw-header {
     background-color: $background-primary;
@@ -84,7 +87,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 
   .cw-input {
-    height: 2em;
     margin: 0 2em 0 2em;
     &cw-toggle-input {
       margin-right: 1em;
@@ -244,7 +246,10 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   max-width: 200em;
   width: 100%;
   .cw-input {
-    margin: 0 1em
+    margin: 0 1em;
+    &:last-child {
+      margin-right:0
+    }
   }
 }
 
