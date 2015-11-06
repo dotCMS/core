@@ -80,7 +80,7 @@ var fireOn = [
       This rule sets the following action(s)
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
-      <div flex layout="row" layout-align="space-between-center" *ng-for="var action of actions; var i=index">
+      <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ng-for="var action of actions; var i=index">
         <div flex layout="row" layout-align="start-center">
           <rule-action flex [action]="action"></rule-action>
         </div>

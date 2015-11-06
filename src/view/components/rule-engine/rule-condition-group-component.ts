@@ -20,8 +20,8 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 })
 @View({
   template: `<div flex layout="column" layout-align="center-start" class="cw-rule-group">
-  <div flex="0" layout="row" layout-align="start-center">
-    <div flex layout="row" layout-align="start-center" class="cw-header" *ng-if="groupIndex === 0">
+  <div flex="0" layout-fill layout="row" layout-align="start-center">
+    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex === 0">
       This rule fires when the following conditions are met:
     </div>
     <div flex layout="row" layout-align="start-center" class="cw-header" *ng-if="groupIndex !== 0">
