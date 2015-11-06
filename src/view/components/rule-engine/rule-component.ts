@@ -45,6 +45,7 @@ var fireOn = [
     <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ng-if="!hidden">
       <i flex="none" class="caret icon cw-rule-caret" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
+                      class="cw-rule-name-input"
                      (change)="handleRuleNameChange($event.target.value)"
                      (focus)="collapsed = false"
                      (click)="$event.stopPropagation()"

@@ -22,7 +22,10 @@ export class InputTextModel {
     this.placeholder = placeholder
     this.value = value
     this.disabled = disabled
-    this.icon = icon
+    this.icon = icon || ''
+    if(!this.icon.includes(' ') && this.icon.length > 0){
+      this.icon = (this.icon + ' icon').trim()
+    }
   }
 
   validate(value:string){ };
@@ -41,7 +44,7 @@ export class InputTextModel {
   template: `
 <div class="ui fluid input" [ng-class]="{disabled: model.disabled, error: errorMessage, icon: model.icon}">
   <input type="text" [name]="model.name" [value]="model.value" [placeholder]="model.placeholder" (change)="inputChange($event)">
-  <i [ng-class]="model.icon + ' icon'"></i>
+  <i [ng-class]="model.icon" *ng-if="model.icon"></i>
   <div class="ui small red message" *ng-if="errorMessage">{{errorMessage}}</div>
 </div>
   `,

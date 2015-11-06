@@ -123,11 +123,19 @@ export class RequestHeaderConditionletModel {
 @View({
   directives: [NgFor, Dropdown, InputText],
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
-  <cw-input-dropdown flex="40"  class="cw-input" [model]="headerKeyDropdown" (change)="handleHeaderKeyChange($event)"></cw-input-dropdown>
-  <cw-input-dropdown flex="initial" class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
-  <cw-input-text flex="30"
-      (change)="handleCompareToChange($event)"
-      [model]="requestHeaderInputTextModel">
+  <cw-input-dropdown flex="40"
+                     class="cw-input"
+                     [model]="headerKeyDropdown"
+                     (change)="handleHeaderKeyChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex="initial"
+                     class="cw-input cw-comparator-selector"
+                     [model]="comparatorDropdown"
+                     (change)="handleComparatorChange($event)"></cw-input-dropdown>
+  <cw-input-text flex="grow"
+                 layout-fill
+                 class="cw-input"
+                 (change)="handleCompareToChange($event)"
+                 [model]="requestHeaderInputTextModel">
   </cw-input-text>
 </div>`
 })

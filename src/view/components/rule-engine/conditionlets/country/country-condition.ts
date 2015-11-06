@@ -33,11 +33,18 @@ export class CountryConditionModel {
 })
 @View({
   directives: [NgFor, Dropdown],
-  template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component">
+  template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <!-- Spacer-->
   <div flex="40" class="cw-input">&nbsp;</div>
-  <cw-input-dropdown flex="initial"  class="cw-input cw-comparator-selector" [model]="comparatorDropdown" (change)="handleComparatorChange($event)"></cw-input-dropdown>
-  <cw-input-dropdown flex="30" class="cw-input" [model]="countryDropdown" (change)="handleCountryChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex="initial"
+                     class="cw-input cw-comparator-selector"
+                     [model]="comparatorDropdown"
+                     (change)="handleComparatorChange($event)"></cw-input-dropdown>
+  <cw-input-dropdown flex
+                     layout-fill
+                     class="cw-input"
+                     [model]="countryDropdown"
+                     (change)="handleCountryChange($event)"></cw-input-dropdown>
 
 </div>
   `
