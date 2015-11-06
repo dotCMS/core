@@ -1,8 +1,7 @@
 import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
 
-import {BrowserConditionlet} from './conditionlets/browser-conditionlet/browser-conditionlet'
-import {RequestHeaderConditionlet} from './conditionlets/request-header-conditionlet/request-header-conditionlet'
-import {CountryCondition} from './conditionlets/country/country-condition'
+import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
+import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 
@@ -26,13 +25,13 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
   <div flex="65" layout-fill class="cw-condition-row-main">
-    <cw-request-header-conditionlet
+    <cw-request-header-condition
         class="cw-condition-component"
         *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
         [comparator-value]="condition.comparison"
         [parameter-values]="parameterValues"
         (change)="conditionChanged($event)">
-    </cw-request-header-conditionlet>
+    </cw-request-header-condition>
     <cw-country-condition
         class="cw-condition-component"
         *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
@@ -54,9 +53,8 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
 </div>
 `,
   directives: [NgIf, NgFor,
-    RequestHeaderConditionlet,
+    RequestHeaderCondition,
     CountryCondition,
-    BrowserConditionlet,
     Dropdown
   ]
 })

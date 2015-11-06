@@ -1,34 +1,34 @@
 
 import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
-import {RequestHeaderConditionlet} from './request-header-conditionlet';
+import {RequestHeaderCondition} from './request-header-condition';
 
 @Component({
-  selector: 'cw-request-header-conditionlet-demo'
+  selector: 'cw-request-header-demo'
 })
 @View({
-  directives: [RequestHeaderConditionlet],
+  directives: [RequestHeaderCondition],
   template: `
     <div class="panel panel-default">
       <div class="panel-heading">1) No values set.</div>
       <div class="panel-body">
-          <cw-request-header-conditionlet></cw-request-header-conditionlet>
+          <cw-request-header-condition></cw-request-header-condition>
       </div>
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">2) With initial value set for header-key</div>
       <div class="panel-body">
-        <cw-request-header-conditionlet header-key-value="User-Agent"></cw-request-header-conditionlet>
+        <cw-request-header-condition header-key-value="User-Agent"></cw-request-header-condition>
       </div>
     </div>
     <div class="panel panel-default">
       <div class="panel-heading">3) With initial value set for header-key and comparator-value</div>
       <div class="panel-body">
         <div class="row">
-          <cw-request-header-conditionlet class="col-sm-12" 
+          <cw-request-header-condition class="col-sm-12"
           [header-key-value]="demo['3'].headerKeyValue"
           [comparator-value]="demo['3'].comparatorValue"
           (change)="updateConditionlet(3, $event)"
-          ></cw-request-header-conditionlet>
+          ></cw-request-header-condition>
         </div>
         <div class="row">
           <div class="col-sm-4">{{demo['3'].headerKeyValue}}</div><div class="col-sm-3">{{demo['3'].comparatorValue}}</div><div class="col-sm-4">{{demo['3'].comparisonValues}}</div>
@@ -39,12 +39,12 @@ import {RequestHeaderConditionlet} from './request-header-conditionlet';
       <div class="panel-heading">4) With initial value set for all values.</div>
         <div class="panel-body">
         <div class="row">
-          <cw-request-header-conditionlet class="col-sm-12" 
+          <cw-request-header-condition class="col-sm-12"
           [header-key-value]="demo['4'].headerKeyValue"
           [comparator-value]="demo['4'].comparatorValue"
           [comparison-values]="demo['4'].comparisonValues"
           (change)="updateConditionlet(4, $event)"
-          ></cw-request-header-conditionlet>
+          ></cw-request-header-condition>
         </div>
         <div class="row">
           <div class="col-sm-4">{{demo['4'].headerKeyValue}}</div><div class="col-sm-3">{{demo['4'].comparatorValue}}</div><div class="col-sm-4">{{demo['4'].comparisonValues}}</div>

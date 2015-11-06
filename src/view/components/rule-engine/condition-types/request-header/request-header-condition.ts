@@ -11,7 +11,7 @@
  *
  * ## POSIX Utility Argument Syntax (http://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html)
  * ```
- * cw-request-header-conditionlet [-n][-h header_key] [-c comparator] [comparison_values...]
+ * cw-request-header [-n][-h header_key] [-c comparator] [comparison_values...]
  *   -n                      Negate the match.
  *   -h                      The exact key to search for. Case sensitive.
  *   -e                      Exists. Only verify that the header exists on the Request. The value may be empty or nonsensical.
@@ -94,7 +94,7 @@ let commonRequestHeaders = [
 ]
 
 
-export class RequestHeaderConditionletModel {
+export class RequestHeaderConditionModel {
   parameterKeys:Array<string> = ['headerKeyValue', 'compareTo']
   headerKeyValue:string
   comparatorValue:string
@@ -106,13 +106,13 @@ export class RequestHeaderConditionletModel {
     this.compareTo = compareTo
   }
 
-  clone():RequestHeaderConditionletModel {
-    return new RequestHeaderConditionletModel(this.headerKeyValue, this.comparatorValue, this.compareTo)
+  clone():RequestHeaderConditionModel {
+    return new RequestHeaderConditionModel(this.headerKeyValue, this.comparatorValue, this.compareTo)
   }
 }
 
 @Component({
-  selector: 'cw-request-header-conditionlet',
+  selector: 'cw-request-header-condition',
   properties: [
     "headerKeyValue", "comparatorValue", "parameterValues"
   ],
@@ -139,7 +139,7 @@ export class RequestHeaderConditionletModel {
   </cw-input-text>
 </div>`
 })
-export class RequestHeaderConditionlet {
+export class RequestHeaderCondition {
   // @todo populate the comparisons options from the server.
   comparisonOptions:Array<DropdownOption> = [
     new DropdownOption("exists", "exists", "Exists"),
@@ -150,7 +150,7 @@ export class RequestHeaderConditionlet {
     new DropdownOption("contains", "contains", "Contains"),
     new DropdownOption("regex", "regex", "Regex")];
 
-  value:RequestHeaderConditionletModel;
+  value:RequestHeaderConditionModel;
 
   change:EventEmitter;
   private headerKeyDropdown:DropdownModel
@@ -161,7 +161,7 @@ export class RequestHeaderConditionlet {
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('parameterValues') parameterValues:Array<string>) {
-    this.value = new RequestHeaderConditionletModel(headerKeyValue, comparatorValue)
+    this.value = new RequestHeaderConditionModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
     this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
 
