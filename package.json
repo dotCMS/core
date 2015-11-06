@@ -48,7 +48,8 @@
     "itest": "gulp serve --open=/build/integration-tests.html",
     "idemo": "gulp serve --open=/build/integration-demo.html",
     "build": "gulp package",
-    "publish": "gulp publish"
+    "publish": "gulp publish",
+    "publish-snapshot": "gulp publish-snapshot"
   },
   "dependencies": {
     "angular2": "2.0.0-alpha.44",
