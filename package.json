@@ -53,6 +53,7 @@
   },
   "dependencies": {
     "angular2": "2.0.0-alpha.44",
+    "core-js": "^1.2.5",
     "jquery": "2.1.4",
     "systemjs": "0.19.2",
     "whatwg-fetch": "^0.9.0"
