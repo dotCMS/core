@@ -6,14 +6,14 @@ import 'whatwg-fetch';
 var fetch = window ? window['fetch'] : top['fetch']
 
 export class RestDataStore extends DataStore {
-  authHeader: string
+  authHeader:string
 
-  constructor(){
+  constructor() {
     super()
     console.log("Creating datastore")
   }
 
-  setItem(path:string, entity:any, isNew:boolean=false) {
+  setItem(path:string, entity:any, isNew:boolean = false) {
     path = this.checkPath(path)
     entity = Check.exists(entity, "Cannot save empty values. Did you mean to remove?")
     return this.remoteSet(path, entity, isNew).then((response) => {
@@ -138,21 +138,27 @@ export class RestDataStore extends DataStore {
   }
 
   setAuth(username:string, password:string) {
-    this.authHeader = 'Basic ' + btoa(username + ':' + password)
+    if (username && password) {
+      this.authHeader = 'Basic ' + btoa(username + ':' + password)
+    }
   }
 
   remoteSet(path, entity, create = false) {
     let url = this.pathToUrl(path)
     console.log("Saving entity to: ", url)
+    let headers:any = {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    };
+    if (this.authHeader) {
+      headers.Authorization = this.authHeader
+    }
+
 
     return fetch(url, {
       method: create ? "post" : "put",
       credentials: 'same-origin',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': this.authHeader
-      },
+      headers: headers,
       body: JSON.stringify(entity)
     }).then(this.checkStatus)
         .then(this.transformValidResponse)

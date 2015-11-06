@@ -6,8 +6,10 @@ export class UserModel {
   locale: string
 
   constructor(){
-    this.username = 'admin@dotcms.com'
-    this.password = 'admin'
+    if(top.location.port && top.location.port >= 9000) {
+      this.username = 'admin@dotcms.com'
+      this.password = 'admin'
+    }
     this.locale = 'en-US' // default to 'en-US'
     try{
       let url = top.document.location.search.substring(1)
