@@ -5,19 +5,37 @@ import {ApiRoot} from "../persistence/ApiRoot";
 
 // @todo ggranum: Remove this and code that defers to it once we either add an 'enabled' field to conditionlet types,
 // or we have implemented all the conditionlet types we intend to release with.
-var ENABLED_CONDITION_TYPE_IDS = {
-  UsersBrowserHeaderConditionlet: true,
-  UsersCountryConditionlet: true
+var DISABLED_CONDITION_TYPE_IDS = {
+  //UsersCountryConditionlet: false,
+  //UsersBrowserHeaderConditionlet: false,
+  //UsersContinentConditionlet: true, // comment out to prove we don't need to know its name.
+  UsersIpAddressConditionlet: true,
+  UsersVisitedUrlConditionlet: true,
+  UsersCityConditionlet: true,
+  UsersTimeConditionlet: true,
+  UsersLandingPageUrlConditionlet: true,
+  UsersPlatformConditionlet: true,
+  UsersLanguageConditionlet: true,
+  UsersPageVisitsConditionlet: true,
+  MockTrueConditionlet: true,
+  UsersUrlParameterConditionlet: true,
+  UsersReferringUrlConditionlet: true,
+  UsersCurrentUrlConditionlet: true,
+  UsersHostConditionlet: true,
+  UsersStateConditionlet: true,
+  UsersSiteVisitsConditionlet: true,
+  UsersDateTimeConditionlet: true,
+  UsersOperatingSystemConditionlet: true,
+  UsersLogInConditionlet: true,
+  UsersBrowserConditionlet: true
 }
-
-
 export class ConditionTypeModel {
 
   private _id:string
   i18nKey:string
   comparisons:Array<string>
 
-  constructor(id:string = 'NoSelection', i18nKey:string = null, type:any=null) {
+  constructor(id:string = 'NoSelection', i18nKey:string = null, type:any = null) {
     this._id = id;
     this.i18nKey = i18nKey;
 
@@ -36,6 +54,7 @@ export class ConditionTypeModel {
   set id(value:string) {
     this._id = (value && value.length) ? value : 'NoSelection'
   }
+
   rhsValues(parameters:any):any {
     let map = {}
     if (parameters) {
@@ -68,7 +87,7 @@ export class ConditionTypesProvider {
       this.ref.once('value', (snap) => {
         let types = snap['val']()
         Object.keys(types).forEach((key) => {
-          if (ENABLED_CONDITION_TYPE_IDS[key]) {
+          if (DISABLED_CONDITION_TYPE_IDS[key] !== true) {
             let conditionType = types[key]
             let typeModel = new ConditionTypeModel(key, types[key])
             Object.assign(typeModel, conditionType)

@@ -1,5 +1,6 @@
-import {Attribute, Component, Directive, View, NgFor, NgIf, EventEmitter, Inject} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault EventEmitter, Inject} from 'angular2/angular2';
 
+import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
 import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
@@ -18,28 +19,40 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
   template: `<div flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
   <div flex="30" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
-        <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
-          {{condition.operator}}
-        </button>
+      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
+        {{condition.operator}}
+      </button>
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-  <div flex="65" layout-fill class="cw-condition-row-main">
-    <cw-request-header-condition
-        class="cw-condition-component"
-        *ng-if="condition.conditionType?.id == 'UsersBrowserHeaderConditionlet'"
-        [comparator-value]="condition.comparison"
-        [parameter-values]="parameterValues"
-        (change)="conditionChanged($event)">
-    </cw-request-header-condition>
-    <cw-country-condition
-        class="cw-condition-component"
-        *ng-if="condition.conditionType?.id == 'UsersCountryConditionlet'"
-        [comparator-value]="condition.comparison"
-        [parameter-values]="parameterValues"
-        (change)="conditionChanged($event)">
-    </cw-country-condition>
-    <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'"></div>
+  <div flex="65" layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.id">
+    <template [ng-switch-when]="'UsersBrowserHeaderConditionlet'">
+      <cw-request-header-condition
+          class="cw-condition-component"
+          [comparator-value]="condition.comparison"
+          [parameter-values]="parameterValues"
+          (change)="conditionChanged($event)">
+      </cw-request-header-condition>
+    </template>
+    <template [ng-switch-when]="'UsersCountryConditionlet'">
+      <cw-country-condition
+          class="cw-condition-component"
+          [comparator-value]="condition.comparison"
+          [parameter-values]="parameterValues"
+          (change)="conditionChanged($event)">
+      </cw-country-condition>
+
+    </template>
+    <template [ng-switch-when]="'NoSelection'">
+      <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'"></div>
+    </template>
+    <template ng-switch-default>
+      <cw-serverside-condition class="cw-condition-component"
+                               [comparator-value]="condition.comparison"
+                               [parameter-values]="parameterValues"
+                               (change)="conditionChanged($event)">
+      </cw-serverside-condition>
+    </template>
   </div>
   <div flex="5" layout="row" layout-align="end-center">
     <div flex class="cw-btn-group cw-condition-buttons">
@@ -52,10 +65,12 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
   </div>
 </div>
 `,
-  directives: [NgIf, NgFor,
+  directives: [NgIf, NgFor, NgSwitch, NgSwitchWhen, NgSwitchDefault,
+    ServersideCondition,
     RequestHeaderCondition,
     CountryCondition,
-    Dropdown
+    Dropdown,
+
   ]
 })
 export class ConditionComponent {
@@ -79,7 +94,7 @@ export class ConditionComponent {
 
     typesProvider.promise.then(()=> {
       let opts = []
-      typesProvider.ary.forEach((type)=>{
+      typesProvider.ary.forEach((type)=> {
         opts.push(new DropdownOption(type.id))
       })
       this.conditionTypesDropdown.addOptions(opts)
@@ -88,7 +103,7 @@ export class ConditionComponent {
 
   set condition(condition:ConditionModel) {
     this._condition = condition
-    if(this._condition.conditionType){
+    if (this._condition.conditionType) {
       this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
     }
 
@@ -96,7 +111,7 @@ export class ConditionComponent {
       if (event.target.isValid() && event.target.isPersisted()) {
         this.conditionServce.save(event.target)
       }
-      if(this._condition.conditionType){
+      if (this._condition.conditionType) {
         this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
       }
 
@@ -108,7 +123,7 @@ export class ConditionComponent {
     return this._condition;
   }
 
-  handleConditionTypeChange(event){
+  handleConditionTypeChange(event) {
     this.condition.conditionType = this.typesProvider.getType(event.target.model.selected[0])
     this.condition.clearParameters()
   }
@@ -123,9 +138,9 @@ export class ConditionComponent {
 
 
   conditionChanged(event) {
-    if(event.type == 'comparisonChange'){
+    if (event.type == 'comparisonChange') {
       this.condition.comparison = event.value
-    } else if(event.type == 'parameterValueChange'){
+    } else if (event.type == 'parameterValueChange') {
       event.value.forEach((param)=> {
         this.condition.setParameter(param.key, param.value)
       })
