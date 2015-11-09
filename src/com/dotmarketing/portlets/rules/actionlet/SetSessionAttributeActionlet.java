@@ -7,9 +7,6 @@ import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,7 +20,9 @@ import java.util.Map;
  */
 public class SetSessionAttributeActionlet extends RuleActionlet{
 
-	private static final String[] PARAMS = new String[]{"sessionKey","sessionValue"};
+	private static final ActionletParameterWrapper[] PARAMS = new ActionletParameterWrapper[]{
+			new ActionletParameterWrapper("sessionKey",ActionletParameterWrapper.DataType.TEXT),
+			new ActionletParameterWrapper("sessionValue")};
 
     public SetSessionAttributeActionlet(){
         super(SetSessionAttributeActionlet.class.getSimpleName(), PARAMS);
