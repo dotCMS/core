@@ -49,7 +49,7 @@ public class RedisProvider extends CacheProvider {
         int writePort = Config.getIntProperty("redis.server.write.port",
                 Config.getIntProperty("redis.server.port", Protocol.DEFAULT_PORT));
 
-        int timeout = Config.getIntProperty("redis.server.timeout", Protocol.DEFAULT_TIMEOUT);
+        int timeout = Config.getIntProperty("redis.server.timeout", 100);
         int maxClients = Config.getIntProperty("redis.pool.max.clients", 100);
         int maxIdle = Config.getIntProperty("redis.pool.max.idle", 20);
         int minIdle = Config.getIntProperty("redis.pool.min.idle", 5);
