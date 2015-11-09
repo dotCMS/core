@@ -12,8 +12,8 @@ import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 import {ActionTypesProvider} from '../../api/rule-engine/ActionType';
-import {ConditionTypeModel, ConditionTypesProvider} from '../../api/rule-engine/ConditionTypes';
 import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
+import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 
 
 import {ActionService} from '../../api/rule-engine/Action';
@@ -24,9 +24,10 @@ import {CwChangeEvent} from '../../api/util/CwEvent';
 var injector = Injector.resolveAndCreate([ApiRoot,
   UserModel,
   RuleService,
-  ConditionGroupService,
   ActionService,
+  ConditionTypeService,
   ConditionService,
+  ConditionGroupService,
   new Provider(DataStore, {useClass: RestDataStore})
 ])
 
@@ -104,7 +105,6 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
 
 
     var firstPass = conditionGroupService.onAdd.subscribe((conditionGroup:ConditionGroupModel) => {
-      //noinspection TypeScriptUnresolvedFunction
       firstPass.unsubscribe() // don't want to run THIS watcher twice.
       expect(ruleUnderTest.groups[conditionGroup.key]).toBeDefined("Expected group to be on the rule." )
       ruleService.save(ruleUnderTest, () => {

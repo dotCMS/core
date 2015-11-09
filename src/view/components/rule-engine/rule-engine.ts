@@ -6,7 +6,6 @@ import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} fr
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase';
 import {ActionTypesProvider} from '../../../api/rule-engine/ActionType';
-import {ConditionTypesProvider} from '../../../api/rule-engine/ConditionTypes';
 import {UserModel} from "../../../api/auth/UserModel";
 import {I18NCountryProvider} from '../../../api/system/locale/I18NCountryProvider'
 
@@ -19,6 +18,7 @@ import {RestDataStore} from "../../../api/persistence/RestDataStore";
 import {DataStore} from "../../../api/persistence/DataStore";
 import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 import {ConditionService} from "../../../api/rule-engine/Condition";
+import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 
 
 
@@ -128,13 +128,13 @@ export class RuleEngineApp {
 
     let app = bootstrap(RuleEngineComponent, [ApiRoot,
       ActionTypesProvider,
-      ConditionTypesProvider,
       UserModel,
       I18NCountryProvider,
       RuleService,
       ActionService,
       ConditionGroupService,
       ConditionService,
+      ConditionTypeService,
       new Provider(DataStore, {useClass: RestDataStore})
     ])
     app.then((appRef) => {

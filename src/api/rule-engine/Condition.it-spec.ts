@@ -12,8 +12,8 @@ import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 import {ActionTypesProvider} from '../../api/rule-engine/ActionType';
-import {ConditionTypeModel, ConditionTypesProvider} from '../../api/rule-engine/ConditionTypes';
 import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
+import {ConditionTypeService, ConditionTypeModel} from '../../api/rule-engine/ConditionType';
 
 
 import {ActionService} from '../../api/rule-engine/Action';
@@ -21,13 +21,11 @@ import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/
 import {CwChangeEvent} from '../../api/util/CwEvent';
 
 var injector = Injector.resolveAndCreate([ApiRoot,
-  //ConditionTypesProvider,
-  //ActionTypesProvider,
   UserModel,
-  //I18NCountryProvider,
   RuleService,
-  ConditionService,
   ActionService,
+  ConditionTypeService,
+  ConditionService,
   ConditionGroupService,
   new Provider(DataStore, {useClass: RestDataStore})
 ])

@@ -7,8 +7,7 @@ import {ConditionService, ConditionModel} from "../../../api/rule-engine/Conditi
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 
 import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
-import {ConditionTypesProvider} from "../../../api/rule-engine/ConditionTypes";
-import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
+import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine/ConditionType";
 
 
 @Component({
@@ -25,7 +24,7 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-  <div flex="65" layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.id">
+  <div flex="65" layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
     <template [ng-switch-when]="'UsersBrowserHeaderConditionlet'">
       <cw-request-header-condition
           class="cw-condition-component"
@@ -48,8 +47,7 @@ import {ConditionTypeModel} from "../../../api/rule-engine/ConditionTypes";
     </template>
     <template ng-switch-default>
       <cw-serverside-condition class="cw-condition-component"
-                               [comparator-value]="condition.comparison"
-                               [parameter-values]="parameterValues"
+                               [model]="condition"
                                (change)="conditionChanged($event)">
       </cw-serverside-condition>
     </template>
@@ -78,12 +76,12 @@ export class ConditionComponent {
   _condition:ConditionModel
   parameterValues:any
   conditionTypesDropdown:DropdownModel
-  typesProvider:ConditionTypesProvider
-  private conditionServce:ConditionService;
+  typeService:ConditionTypeService
+  private _conditionService:ConditionService;
 
-  constructor(@Inject(ConditionTypesProvider) typesProvider:ConditionTypesProvider, @Inject(ConditionService) conditionServce:ConditionService) {
-    this.conditionServce = conditionServce;
-    this.typesProvider = typesProvider
+  constructor(@Inject(ConditionTypeService) typeService:ConditionTypeService, @Inject(ConditionService) conditionService:ConditionService) {
+    this._conditionService = conditionService;
+    this.typeService = typeService
 
     this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition")
     let condition = new ConditionModel()
@@ -92,27 +90,24 @@ export class ConditionComponent {
     this.parameterValues = {}
     this.index = 0
 
-    typesProvider.promise.then(()=> {
-      let opts = []
-      typesProvider.ary.forEach((type)=> {
-        opts.push(new DropdownOption(type.id))
-      })
-      this.conditionTypesDropdown.addOptions(opts)
+    typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
+      this.conditionTypesDropdown.addOptions([new DropdownOption(conditionType.key, conditionType)])
     })
+    typeService.list()
   }
 
   set condition(condition:ConditionModel) {
     this._condition = condition
     if (this._condition.conditionType) {
-      this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
+      this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
     }
 
     this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
       if (event.target.isValid() && event.target.isPersisted()) {
-        this.conditionServce.save(event.target)
+        this._conditionService.save(event.target)
       }
       if (this._condition.conditionType) {
-        this.conditionTypesDropdown.selected = [this._condition.conditionType.id]
+        this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
       }
 
     })
@@ -124,7 +119,7 @@ export class ConditionComponent {
   }
 
   handleConditionTypeChange(event) {
-    this.condition.conditionType = this.typesProvider.getType(event.target.model.selected[0])
+    this.condition.conditionType = event.target.value
     this.condition.clearParameters()
   }
 
@@ -133,7 +128,7 @@ export class ConditionComponent {
   }
 
   removeCondition() {
-    this.conditionServce.remove(this._condition)
+    this._conditionService.remove(this._condition)
   }
 
 
