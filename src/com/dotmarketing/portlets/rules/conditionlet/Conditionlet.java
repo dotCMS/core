@@ -1,19 +1,14 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
-import com.liferay.portal.language.LanguageException;
-import com.liferay.portal.language.LanguageUtil;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public abstract class Conditionlet implements Serializable {
 
@@ -45,30 +40,6 @@ public abstract class Conditionlet implements Serializable {
     public final String getName() {
         return this.name;
     }
-
-    /**
-     * This method looks for the name in the language.properties
-     * file using property "com.my.classname.name" If that is not there it will return the value
-     * set in the getName() method.
-     *
-     * @return the name in the language.properties, if exists, value of getName() if not.
-     */
-    public String getLocalizedName() {
-        String val;
-        try {
-            String key = this.getClass().getCanonicalName() + ".name";
-            val = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(), PublicCompanyFactory.getDefaultCompany().getLocale(), key);
-            if(val == null || key.equals(val)) {
-                val = getName();
-            }
-        } catch (LanguageException e) {
-            Logger.error(this.getClass(), e.getMessage(), e);
-            val = getName();
-        }
-        return val;
-    }
-
-
 
     /**
      * Returns a Map object whoose keys are the operators' names and values are the operators' labels (for presentation)
