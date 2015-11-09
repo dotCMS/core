@@ -6,10 +6,7 @@ import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeseri
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 import com.dotcms.rest.validation.constraints.Operator;
-
 import java.util.Map;
-
-import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
 
 @JsonDeserialize(builder = RestCondition.Builder.class)
 public final class RestCondition extends Validated {
@@ -75,7 +72,7 @@ public final class RestCondition extends Validated {
         }
 
         public Builder comparison(String comparison) {
-            this.comparison = comparison.toLowerCase();
+            this.comparison = comparison;
             return this;
         }
 
