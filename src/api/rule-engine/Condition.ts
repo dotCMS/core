@@ -2,12 +2,13 @@ import {Inject, EventEmitter} from 'angular2/angular2';
 //import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 import {RuleModel} from "./Rule";
-import {ConditionTypeModel} from "./ConditionTypes";
+import {ConditionTypeModel} from "./ConditionType";
 import {CwModel} from "../util/CwModel";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {ConditionGroupModel} from "./ConditionGroup";
 import {CwChangeEvent} from "../util/CwEvent";
+import {ConditionTypeService} from "./ConditionType";
 
 
 let noop = (...arg:any[])=> {
@@ -113,7 +114,7 @@ export class ConditionModel extends CwModel {
   isValid() {
     let valid = !!this._owningGroup
     valid = valid && this._owningGroup.isValid()
-    valid = valid && this._conditionType && this._conditionType.id && this._conditionType.id != 'NoSelection'
+    valid = valid && this._conditionType && this._conditionType.key && this._conditionType.key != 'NoSelection'
     return valid
   }
 }
@@ -123,12 +124,14 @@ export class ConditionService {
   private _added:EventEmitter
   onRemove:Rx.Observable<ConditionModel>
   onAdd:Rx.Observable<ConditionModel>
-  private apiRoot;
-  private ref;
+  private _apiRoot;
+  private _ref;
+  private _conditionTypeService:ConditionTypeService
 
-  constructor(@Inject(ApiRoot) apiRoot) {
-    this.ref = apiRoot.defaultSite.child('ruleengine/conditions')
-    this.apiRoot = apiRoot
+  constructor(@Inject(ApiRoot) apiRoot, @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService) {
+    this._apiRoot = apiRoot
+    this._conditionTypeService = conditionTypeService
+    this._ref = apiRoot.defaultSite.child('ruleengine/conditions')
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
     let onAdd = Rx.Observable.from(this._added.toRx())
@@ -137,18 +140,21 @@ export class ConditionService {
     this.onRemove = onRemove.share()
   }
 
-  static fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
+  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
     let val:any = snapshot.val()
     let ra = new ConditionModel(snapshot.key())
     ra.name = val.name;
     ra.owningGroup = group
-    ra.conditionType = new ConditionTypeModel(val.conditionlet, null)
     ra.comparison = val.comparison
     ra.priority = val.priority
     ra.operator = val.operator
     Object.keys(val.values).forEach((key)=> {
       let x = val.values[key]
       ra.setParameter(key, x.value, x.priority)
+    })
+    this._conditionTypeService.get(val.conditionlet, (type)=> {
+      console.log('yay:', type)
+      ra.conditionType = type
     })
     return ra
   }
@@ -158,7 +164,7 @@ export class ConditionService {
     json.id = condition.key
     json.name = condition.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningGroup = condition.owningGroup.key
-    json.conditionlet = condition.conditionType.id
+    json.conditionlet = condition.conditionType.key
     json.comparison = condition.comparison
     json.priority = condition.priority
     json.operator = condition.operator
@@ -176,9 +182,9 @@ export class ConditionService {
 
   addConditionsFromConditionGroup(group:ConditionGroupModel) {
     Object.keys(group.conditions).forEach((conditionId)=> {
-      let cRef = this.ref.child(conditionId)
+      let cRef = this._ref.child(conditionId)
       cRef.once('value', (conditionSnap)=> {
-        this._added.next(ConditionService.fromSnapshot(group, conditionSnap))
+        this._added.next(this.fromSnapshot(group, conditionSnap))
       })
     })
   }
@@ -201,8 +207,8 @@ export class ConditionService {
   }
 
   get(group:ConditionGroupModel, key:string, cb:Function = null) {
-        this.ref.child(key).once('value', (conditionSnap)=> {
-      let model = ConditionService.fromSnapshot(group, conditionSnap);
+    this._ref.child(key).once('value', (conditionSnap)=> {
+      let model = this.fromSnapshot(group, conditionSnap);
       this._added.next(model)
       cb(model)
     })
@@ -214,7 +220,7 @@ export class ConditionService {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionService.toJson(model)
-    this.ref.push(json, (result)=> {
+    this._ref.push(json, (result)=> {
       model.key = result.key()
       this._added.next(model)
       cb(model)
@@ -230,7 +236,7 @@ export class ConditionService {
       this.add(model, cb)
     } else {
       let json = ConditionService.toJson(model)
-      this.ref.child(model.key).set(json, (result)=> {
+      this._ref.child(model.key).set(json, (result)=> {
         cb(model)
       })
     }
@@ -238,7 +244,7 @@ export class ConditionService {
 
   remove(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "remove", model)
-    this.ref.child(model.key).remove(()=> {
+    this._ref.child(model.key).remove(()=> {
       this._removed.next(model)
       cb(model)
     })

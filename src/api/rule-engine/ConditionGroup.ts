@@ -2,7 +2,6 @@ import {Inject, EventEmitter} from 'angular2/angular2';
 //import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 import {RuleModel} from "./Rule";
-import {ConditionTypeModel, ConditionTypesProvider} from "./ConditionTypes";
 import {ConditionService, ConditionModel} from "./Condition";
 import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";

@@ -24,10 +24,10 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
     <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex === 0">
       This rule fires when the following conditions are met:
     </div>
-    <div flex layout="row" layout-align="start-center" class="cw-header" *ng-if="groupIndex !== 0">
+    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
-          <div (click)="toggleGroupOperator()">{{group.operator}}</div>
+          <div >{{group.operator}}</div>
         </button>
       </div>
       <span flex class="cw-header-text">when the following condition(s) are met:</span>

@@ -1,4 +1,4 @@
-import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector} from 'angular2/angular2';
 
 //import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
@@ -6,7 +6,6 @@ import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} fr
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase';
 import {ActionTypesProvider} from '../../../api/rule-engine/ActionType';
-import {ConditionTypesProvider} from '../../../api/rule-engine/ConditionTypes';
 import {UserModel} from "../../../api/auth/UserModel";
 import {I18NCountryProvider} from '../../../api/system/locale/I18NCountryProvider'
 
@@ -18,6 +17,7 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {RestDataStore} from "../../../api/persistence/RestDataStore";
 import {DataStore} from "../../../api/persistence/DataStore";
 import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
+import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ConditionService} from "../../../api/rule-engine/Condition";
 
 
@@ -53,7 +53,8 @@ import {ConditionService} from "../../../api/rule-engine/Condition";
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(@Inject(RuleService) ruleService:RuleService) {
+    constructor(@Inject(ConditionTypeService) conditionTypeService:ConditionTypeService, @Inject(RuleService) ruleService:RuleService) {
+      conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []
@@ -128,15 +129,17 @@ export class RuleEngineApp {
 
     let app = bootstrap(RuleEngineComponent, [ApiRoot,
       ActionTypesProvider,
-      ConditionTypesProvider,
       UserModel,
       I18NCountryProvider,
       RuleService,
       ActionService,
       ConditionGroupService,
       ConditionService,
+      ConditionTypeService,
       new Provider(DataStore, {useClass: RestDataStore})
     ])
+
+
     app.then((appRef) => {
       console.log("Bootstrapped App: ", appRef)
     }).catch((e) => {

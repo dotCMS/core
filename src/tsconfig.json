@@ -12,6 +12,7 @@
   },
   "files": [
     "index.ts",
+    "api/rule-engine/ConditionType.it-spec.ts",
     "api/rule-engine/Action.it-spec.ts",
     "api/rule-engine/Condition.it-spec.ts",
     "api/rule-engine/ConditionGroup.it-spec.ts",
