@@ -43,7 +43,7 @@ import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine
 
     </template>
     <template [ng-switch-when]="'NoSelection'">
-      <div class="cw-condition-component" *ng-if="condition.conditionType.id == 'NoSelection'"></div>
+      <div class="cw-condition-component"></div>
     </template>
     <template ng-switch-default>
       <cw-serverside-condition class="cw-condition-component"
@@ -90,10 +90,10 @@ export class ConditionComponent {
     this.parameterValues = {}
     this.index = 0
 
+    /* Note that 'typeService.list()' was called earlier, and the following observer relies on that fact. */
     typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
       this.conditionTypesDropdown.addOptions([new DropdownOption(conditionType.key, conditionType)])
     })
-    typeService.list()
   }
 
   set condition(condition:ConditionModel) {
@@ -107,6 +107,7 @@ export class ConditionComponent {
         this._conditionService.save(event.target)
       }
       if (this._condition.conditionType) {
+        debugger
         this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
       }
 
@@ -119,7 +120,7 @@ export class ConditionComponent {
   }
 
   handleConditionTypeChange(event) {
-    this.condition.conditionType = event.target.value
+    this.condition.conditionType = event.target.model.selectedValues()[0]
     this.condition.clearParameters()
   }
 

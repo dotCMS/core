@@ -60,6 +60,16 @@ export class DropdownModel {
     this._optionChange.next({type: 'add', target: this, value: options})
   }
 
+  selectedValues():Array<any>{
+    return this.selected.map((selectedId)=>{
+      var ddOpt = this.options.filter((opt)=>{ return (opt.id == selectedId) })[0]
+      if(ddOpt){
+        // if not, then 'selected' is a value that isn't in the list!
+        return ddOpt.value
+      }
+    })
+  }
+
 
 }
 

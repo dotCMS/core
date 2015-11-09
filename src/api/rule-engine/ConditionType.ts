@@ -17,7 +17,7 @@ export class ConditionTypeModel extends CwModel {
   comparisons:Array<string>
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, comparisons:Array<any> = []) {
-    super(key)
+    super(key ? key : 'NoSelection')
     this.i18nKey = i18nKey ? i18nKey : key;
     this.comparisons = comparisons || []
   }
@@ -70,9 +70,10 @@ export class ConditionTypeService {
     this._apiRoot = apiRoot
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
-    this.onAdd = Rx.Observable.from(this._added.toRx()).shareReplay()
+    this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
     this.onRefresh = Rx.Observable.from(this._refreshed.toRx()).share()
     this._map = {}
+    this.onAdd.connect()
   }
 
   static fromSnapshot(snapshot:EntitySnapshot):ConditionTypeModel {
@@ -109,15 +110,18 @@ export class ConditionTypeService {
     return this.onAdd
   }
 
-  get(key:string, cb:Function = noop, refresh:boolean = false) {
+  get(key:string, cb:Function = noop) {
     let cachedValue = this._map[key]
-    if (cachedValue && refresh !== true) {
+    if (cachedValue ) {
       cb(cachedValue)
     } else {
-      this._ref.child(key).once('value', (conditionSnap)=> {
-        let model = ConditionTypeService.fromSnapshot(conditionSnap);
-        this._entryReceived(model)
-        cb(model)
+      /* There is no direct endpoint to get conditions by key. So we'll fake it a bit, and just wait for a call to
+      'list' to trigger the observer. */
+      var sub = this.onAdd.subscribe((type)=>{
+        if(type.key == key){
+          cb(type)
+          sub.unsubscribe()
+        }
       })
     }
   }

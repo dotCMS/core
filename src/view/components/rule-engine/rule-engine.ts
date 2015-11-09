@@ -1,4 +1,4 @@
-import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector} from 'angular2/angular2';
 
 //import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
@@ -17,8 +17,8 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {RestDataStore} from "../../../api/persistence/RestDataStore";
 import {DataStore} from "../../../api/persistence/DataStore";
 import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
-import {ConditionService} from "../../../api/rule-engine/Condition";
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
+import {ConditionService} from "../../../api/rule-engine/Condition";
 
 
 
@@ -53,7 +53,8 @@ import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(@Inject(RuleService) ruleService:RuleService) {
+    constructor(@Inject(ConditionTypeService) conditionTypeService:ConditionTypeService, @Inject(RuleService) ruleService:RuleService) {
+      conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []
@@ -137,6 +138,8 @@ export class RuleEngineApp {
       ConditionTypeService,
       new Provider(DataStore, {useClass: RestDataStore})
     ])
+
+
     app.then((appRef) => {
       console.log("Bootstrapped App: ", appRef)
     }).catch((e) => {
