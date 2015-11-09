@@ -12,7 +12,7 @@ export class UserModel {
     }
     this.locale = 'en-US' // default to 'en-US'
     try{
-      let url = top.document.location.search.substring(1)
+      let url = window.location.search.substring(1)
       this.locale = this.checkQueryForUrl(url)
     } catch(e){
       console.log("Could not set locale from URL.")
