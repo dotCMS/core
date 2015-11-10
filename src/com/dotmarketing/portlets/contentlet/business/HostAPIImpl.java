@@ -889,7 +889,7 @@ public class HostAPIImpl implements HostAPI {
 				host.setProperty(key, list.get(0).get(key));
 			}
 		}
-		host.setProperty(Contentlet.MOD_DATE_KEY, new Date());//We don't really need this value for the system host but to avoid parsing that field....
+		host.setProperty(Contentlet.MOD_DATE_KEY, new Date());//We don't really need this value for the system host but to avoid problems casting that field....
 
 		return host;
 	}
