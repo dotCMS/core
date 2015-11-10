@@ -153,7 +153,6 @@ export class ConditionService {
       ra.setParameter(key, x.value, x.priority)
     })
     this._conditionTypeService.get(val.conditionlet, (type)=> {
-      console.log('yay:', type)
       ra.conditionType = type
     })
     return ra

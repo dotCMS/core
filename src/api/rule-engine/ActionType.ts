@@ -1,162 +1,110 @@
-import {Inject} from 'angular2/angular2';
-import {EntityMeta} from "../persistence/EntityBase";
+import {Inject, EventEmitter} from 'angular2/angular2';
+//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+
 import {ApiRoot} from "../persistence/ApiRoot";
+import {CwModel} from "../util/CwModel";
+import {EntitySnapshot} from "../persistence/EntityBase";
+import {CwChangeEvent} from "../util/CwEvent";
 
 
-export class ActionTypeModel {
-  id:string;
-  i18nKey:string;
-
-
-  constructor(id:string = 'NoSelection', i18nKey:string = null) {
-    this.id = id;
-    this.i18nKey = i18nKey;
-  }
-
-  clone():ActionTypeModel {
-    throw new Error("Extending classes must implement their own clone method and should not call super.")
-  }
-
-
+let noop = (...arg:any[])=> {
 }
 
-export class ActionConfigModel {
-  actionTypeId:string;
+interface ActionTypeParameter {
+  key:string
+  dataType:string,
+  i18nKey:string
+  priority:number
+}
 
+export class ActionTypeModel extends CwModel {
+  i18nKey:string
+  parameters:{[key:string]:ActionTypeParameter}
 
-  constructor(actionTypeId:string) {
-    this.actionTypeId = actionTypeId;
+  constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:{[key:string]:ActionTypeParameter} = {}) {
+    super(key ? key : 'NoSelection')
+    this.i18nKey = i18nKey ? i18nKey : key;
+    this.parameters = parameters ? parameters : {}
   }
 
-  clone():ActionConfigModel {
-    throw new Error("Extending classes must implement their own clone method and should not call super.")
-  }
-
-
-  out():any {
-    return {}
+  isValid() {
+    return this.isPersisted() && !!this.i18nKey
   }
 }
 
-
-export class SetSessionValueActionModel extends ActionConfigModel {
-  sessionKey:string;
-  sessionValue:string;
-
-  constructor(parameters:Object = {}) {
-    super("SetSessionAttributeActionlet")
-    this.sessionKey = ''
-    this.sessionValue = ''
-    Object.keys(parameters).forEach((paramId) => {
-      let param = parameters[paramId]
-      switch (param.key) {
-        case 'sessionValue':
-        {
-          this.sessionValue = param.value || ''
-          break
-        }
-        case 'sessionKey':
-        {
-          this.sessionKey = param.value || ''
-          break
-        }
-      }
-
-    })
-  }
-
-  clone():SetSessionValueActionModel {
-    var model = new SetSessionValueActionModel()
-    model.sessionKey = this.sessionKey
-    model.sessionValue = this.sessionValue
-    return model
-  }
-
-  out():any {
-    return {
-      sessionKey: {
-        id: 'sessionKey',
-        key: 'sessionKey',
-        value: this.sessionKey
-      }, sessionValue: {
-        id: 'sessionValue',
-        key: 'sessionValue',
-        value: this.sessionValue
-      }
-    }
-  }
+var DISABLED_ACTION_TYPE_IDS = {
+  TestActionlet: true, // comment out to prove we don't need to know its name.
+  CountRequestsActionlet: true
 }
 
-export class ActionModelOld {
-  id:string;
-  actionConfig:ActionConfigModel;
-  priority:number;
-  owningRuleId:string;
-  name:string;
-
-
-  constructor(id = null, actionConfig = null) {
-    this.id = id;
-    this.actionConfig = actionConfig;
-    this.priority = 0;
-  }
-
-  setActionType(actionType:ActionTypeModel, parameters:any = {}) {
-    if (actionType.id === 'SetSessionAttributeActionlet') {
-      this.actionConfig = new SetSessionValueActionModel(parameters);
-    } else {
-      this.actionConfig = new ActionConfigModel(actionType.id);
-    }
-  }
-
-  out():any {
-    return {
-      id: this.id,
-      actionlet: this.actionConfig.actionTypeId,
-      priority: this.priority,
-      name: this.name,
-      owningRule: this.owningRuleId,
-      parameters: this.actionConfig.out(),
-    }
-  }
-
-  clone():ActionModelOld {
-    return new ActionModelOld(this.id, this.actionConfig.clone())
-  }
-}
-
-
-export class ActionTypesProvider {
-  actionsRef:EntityMeta
-  ary:Array<any>
-  map:Map<string,ActionTypeModel>
-  promise:Promise<any>
+export class ActionTypeService {
+  private _added:EventEmitter
+  private _refreshed:EventEmitter
+  onAdd:Rx.Observable<ActionTypeModel>
+  onRefresh:Rx.Observable<ActionTypeModel>
+  private _apiRoot;
+  private _ref;
+  private _map:{[key:string]: ActionTypeModel}
 
   constructor(@Inject(ApiRoot) apiRoot) {
-    this.map = new Map<string, ActionTypeModel>()
-    this.ary = []
-    this.actionsRef = apiRoot.root.child('system/ruleengine/actionlets')
-    this.init();
-
+    this._ref = apiRoot.root.child('system/ruleengine/actionlets')
+    this._apiRoot = apiRoot
+    this._added = new EventEmitter()
+    this._refreshed = new EventEmitter()
+    this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
+    this.onRefresh = Rx.Observable.from(this._refreshed.toRx()).share()
+    this._map = {}
+    this.onAdd.connect()
   }
 
-  init() {
-    this.promise = new Promise((resolve, reject) => {
-      this.actionsRef.once('value', (snap) => {
-        let actionlets = snap['val']()
-        let results = (Object.keys(actionlets).map((key) => {
-          let actionType = actionlets[key]
-          this.map.set(key, new ActionTypeModel(key, actionType.i18nKey))
-          return actionlets[key]
-        }))
+  static fromSnapshot(snapshot:EntitySnapshot):ActionTypeModel {
+    let val:any = snapshot.val()
+    return new ActionTypeModel(snapshot.key(), val.i18nKey, val.parameters)
+  }
 
-        Array.prototype.push.apply(this.ary, results);
-        resolve(this);
+  private _entryReceived(entry:ActionTypeModel) {
+    let isRefresh = this._map[entry.key] != null
+    this._map[entry.key] = entry
+    if (isRefresh) {
+      this._refreshed.next(entry)
+    }
+    else {
+      this._added.next(entry)
+    }
+  }
+
+
+  list(cb:Function = noop):Rx.Observable<ActionTypeModel> {
+    this._ref.once('value', (snap:EntitySnapshot) => {
+      let types = snap.val()
+      let result = []
+      Object.keys(types).forEach((key) => {
+        if (DISABLED_ACTION_TYPE_IDS[key] !== true) {
+          let actionType = snap.child(key)
+          let typeModel = ActionTypeService.fromSnapshot(actionType)
+          this._entryReceived(typeModel)
+          result.push(typeModel)
+        }
       })
-    });
+      cb(result)
+    })
+    return this.onAdd
   }
 
-  getType(id:string):ActionTypeModel {
-    return this.map.get(id);
+  get(key:string, cb:Function = noop) {
+    let cachedValue = this._map[key]
+    if (cachedValue ) {
+      cb(cachedValue)
+    } else {
+      /* There is no direct endpoint to get conditions by key. So we'll fake it a bit, and just wait for a call to
+       'list' to trigger the observer. */
+      var sub = this.onAdd.subscribe((type)=>{
+        if(type.key == key){
+          cb(type)
+          sub.unsubscribe()
+        }
+      })
+    }
   }
+
 }

@@ -5,7 +5,6 @@ import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, In
 
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase';
-import {ActionTypesProvider} from '../../../api/rule-engine/ActionType';
 import {UserModel} from "../../../api/auth/UserModel";
 import {I18NCountryProvider} from '../../../api/system/locale/I18NCountryProvider'
 
@@ -19,6 +18,8 @@ import {DataStore} from "../../../api/persistence/DataStore";
 import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ConditionService} from "../../../api/rule-engine/Condition";
+import {I18nService} from "../../../api/system/locale/I18n";
+import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 
 
 
@@ -53,7 +54,11 @@ import {ConditionService} from "../../../api/rule-engine/Condition";
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(@Inject(ConditionTypeService) conditionTypeService:ConditionTypeService, @Inject(RuleService) ruleService:RuleService) {
+    constructor(
+        @Inject(ActionTypeService) actionTypeService:ActionTypeService,
+        @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
+        @Inject(RuleService) ruleService:RuleService) {
+      actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.ruleService = ruleService;
       this.filterText = ""
@@ -128,7 +133,8 @@ export class RuleEngineApp {
   static main() {
 
     let app = bootstrap(RuleEngineComponent, [ApiRoot,
-      ActionTypesProvider,
+      I18nService,
+      ActionTypeService,
       UserModel,
       I18NCountryProvider,
       RuleService,

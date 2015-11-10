@@ -129,7 +129,7 @@ export class RestDataStore extends DataStore {
 
   pathToUrl(path) {
     if (!path.startsWith('http')) {
-      debugger
+      throw new Error("Path must be fully qualified URL.")
     }
     if (path.endsWith('/')) {
       path = path.substring(0, path.length - 1)

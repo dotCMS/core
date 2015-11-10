@@ -107,7 +107,6 @@ export class ConditionComponent {
         this._conditionService.save(event.target)
       }
       if (this._condition.conditionType) {
-        debugger
         this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
       }
 

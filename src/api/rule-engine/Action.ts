@@ -6,6 +6,7 @@ import {CwModel} from "../util/CwModel";
 import {RuleModel} from "./Rule";
 import {ActionTypeModel} from "./ActionType";
 import {EntitySnapshot} from "../persistence/EntityBase";
+import {ActionTypeService} from "./ActionType";
 
 interface ActionModelParameter {
   key:string
@@ -32,7 +33,7 @@ export class ActionModel extends CwModel {
     this._changed('parameters')
   }
 
-  getParameter(key:string):any {
+  getParameter(key:string):string {
     let v:any = ''
     if (this.parameters[key]) {
       v = this.parameters[key].value
@@ -75,7 +76,7 @@ export class ActionModel extends CwModel {
   isValid() {
     let valid = !!this._owningRule
     valid = valid && this._owningRule.isValid()
-    valid = valid && this._actionType && this._actionType.id && this._actionType.id != 'NoSelection'
+    valid = valid && this._actionType && this._actionType.key && this._actionType.key != 'NoSelection'
     return valid
   }
 }
@@ -87,8 +88,10 @@ export class ActionService {
   onAdd:Rx.Observable<ActionModel>
   private apiRoot;
   private ref;
+  private _typeService:ActionTypeService
 
-  constructor(@Inject(ApiRoot) apiRoot) {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ActionTypeService) typeService:ActionTypeService) {
+    this._typeService = typeService
     this.ref = apiRoot.defaultSite.child('ruleengine/actions')
     this.apiRoot = apiRoot
     this._added = new EventEmitter()
@@ -105,12 +108,14 @@ export class ActionService {
     ra.name = val.name;
     ra.owningRule = rule
     ra.actionType = new ActionTypeModel(val.actionlet)
-    if (val.parameters) {
-      Object.keys(val.parameters).forEach((paramKey)=> {
-        let param = val.parameters[paramKey]
-        ra.setParameter(param.key, param.value)
-      })
-    }
+
+    Object.keys(val.parameters).forEach((key)=> {
+      let param = val.parameters[key]
+      ra.setParameter(key, param.value)
+    })
+    this._typeService.get(val.actionlet, (type)=> {
+      ra.actionType = type
+    })
     return ra
   }
 
@@ -118,7 +123,7 @@ export class ActionService {
     let json:any = {}
     json.name = action.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningRule = action.owningRule.key
-    json.actionlet = action.actionType.id
+    json.actionlet = action.actionType.key
     json.priority = action.priority
     json.parameters = action.parameters
     return json

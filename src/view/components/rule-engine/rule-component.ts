@@ -182,7 +182,6 @@ class RuleComponent {
   }
 
   toggleCollapsed() {
-    console.log('eh?', this.collapsed)
     this.collapsed = !this.collapsed
   }
 
