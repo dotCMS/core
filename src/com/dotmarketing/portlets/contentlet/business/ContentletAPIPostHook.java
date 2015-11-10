@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -129,6 +128,27 @@ public interface ContentletAPIPostHook {
 	 * @return
 	 */
 	public void findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException;
+
+    /**
+     * Gets a list of Contentlets from a given parent host, retrieves the
+     * working version of content. The difference between this method and the
+     * other one is that the user can specify which content type want to include
+     * and exclude. NOTE: If the parameters includingContentTypes and
+     * excludingContentTypes are empty if will return all the contentlets.
+     * 
+     * @param parentHost
+     * @param includingContentTypes
+     *            this is a list of content types that you would like to include
+     *            in the results
+     * @param excludingContentTypes
+     *            this is a list of content types that you would like to exclude
+     *            in the results
+     * @param user
+     * @param respectFrontendRoles
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Makes a copy of a contentlet. 

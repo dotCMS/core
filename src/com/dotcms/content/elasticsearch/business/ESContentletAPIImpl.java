@@ -307,6 +307,28 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
     }
 
+    public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        try {
+            StringBuilder query = new StringBuilder();
+            query.append("+conHost:").append(parentHost.getIdentifier()).append(" +working:true");
+
+            // Including content types
+            if(includingContentTypes != null && !includingContentTypes.isEmpty()) {
+                query.append(" +structureType:(").append(StringUtils.join(includingContentTypes, " ")).append(")");
+            }
+
+            // Excluding content types
+            if(excludingContentTypes != null && !excludingContentTypes.isEmpty()) {
+                query.append(" -structureType:(").append(StringUtils.join(excludingContentTypes, " ")).append(")");
+            }
+
+            return perAPI.filterCollection(search(query.toString(), -1, 0, null , user, respectFrontendRoles), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        } catch (Exception e) {
+            Logger.error(this.getClass(), e.getMessage(), e);
+            throw new DotRuntimeException(e.getMessage(), e);
+        }
+    }
+
     public void publish(Contentlet contentlet, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException, DotStateException {
 
         boolean localTransaction = false;
@@ -4635,8 +4657,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private String generateCopySuffix(Contentlet contentlet, Host host, Folder folder) throws DotDataException, DotStateException, DotSecurityException {
         String assetNameSuffix = Strings.EMPTY;
 
-        if(host!=null && contentlet.getHost()!=null && !contentlet.getHost().equals(host.getIdentifier())) {
-            // if different host we really don't need to
+        // if different host we really don't need to
+        if(((host != null && contentlet.getHost() != null) && !contentlet.getHost().equalsIgnoreCase(host.getIdentifier())) || 
+                ((folder != null && contentlet.getHost() != null) && !folder.getHostId().equalsIgnoreCase(contentlet.getHost()))) {
             return assetNameSuffix;
         }
 
