@@ -17,8 +17,8 @@ export class CwModel {
   constructor(key:string = null) {
     this._change = new EventEmitter()
     this._validityChange = new EventEmitter()
-    this.onChange = Rx.Observable.from(this._change.toRx()).debounceTime(100).share()
-    this.onValidityChange = Rx.Observable.from(this._validityChange.toRx()).debounceTime(100).share()
+    this.onChange = Rx.Observable.from(this._change.toRx()).debounceTime(200).share()
+    this.onValidityChange = Rx.Observable.from(this._validityChange.toRx()).debounceTime(200).share()
     this._key = key
     this.valid = this.isValid()
   }
