@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.*;
@@ -35,7 +36,7 @@ import java.util.*;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
-public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
+public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService, RuleActionletOSGIService {
 
     private final PermissionAPI perAPI;
     private final RulesFactory rulesFactory;
@@ -44,6 +45,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
     private static final Map<String, RuleActionlet> actionletMap = Maps.newHashMap();
 
     private static final List<Class> conditionletOSGIclasses = new ArrayList<Class>();
+    private static final List<Class> actionletOSGIclasses = new ArrayList<Class>();
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
                          .add(UsersBrowserConditionlet.class)
@@ -79,6 +81,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         perAPI = APILocator.getPermissionAPI();
         rulesFactory = FactoryLocator.getRulesFactory();
         refreshConditionletsMap();
+        refreshActionletsMap();
         initActionletMap();
     }
 
@@ -688,9 +691,14 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
                 Logger.error(RulesAPIImpl.class, e.getMessage(), e);
             }
         }
+
         return instances;
     }
 
+    /**
+     * Loads the list of contentlets including OSGi ones.
+     * @return
+     */
     private List<RuleActionlet> getCustomActionlets() {
         List<RuleActionlet> instances = Lists.newArrayList();
         String customClassesStr = Config.getStringProperty(WebKeys.RULES_ACTIONLET_CLASSES, null, false);
@@ -706,6 +714,17 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
                 }
             }
         }
+        // includes OSGi actionlet
+        for(Class<RuleActionlet> a : actionletOSGIclasses) {
+            try {
+            	instances.add(a.newInstance());
+            } catch (InstantiationException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
+            } catch (IllegalAccessException e) {
+                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
+            }
+        }
+
         return instances;
     }
 
@@ -721,6 +740,10 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         return new ArrayList<>(actionletMap.values());
     }
 
+    /**
+     * Returns an Actionlet (RuleAction) from the map
+     * @param actionletId
+     */
     public RuleActionlet findActionlet(String actionletId) throws DotDataException, DotSecurityException {
         return actionletMap.get(actionletId);
     }
@@ -731,6 +754,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
             BundleContext context = HostActivator.instance().getBundleContext();
             Hashtable<String, String> props = new Hashtable<String, String>();
             context.registerService(ConditionletOSGIService.class.getName(), this, props);
+            context.registerService(RuleActionletOSGIService.class.getName(), this, props);
         }
     }
 
@@ -759,4 +783,46 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService {
         conditionletMap.remove(conditionletName);
         refreshConditionletsMap();
     }
+
+    @Override
+    public String addRuleActionlet(Class actionletClass){
+    	actionletOSGIclasses.add(actionletClass);
+    	refreshActionletsMap();
+    	return actionletClass.getCanonicalName();
+    }
+
+    @Override
+    public void removeRuleActionlet(String actionletName) {
+        RuleActionlet actionlet = actionletMap.get(actionletName);
+        actionletOSGIclasses.remove(actionlet.getClass());
+        actionletMap.remove(actionletName);
+        refreshActionletsMap();
+    }
+
+    private void refreshActionletsMap() {
+        synchronized (actionletMap) {
+        	actionletMap.clear();
+            //Get the OSGi ones.
+            List<RuleActionlet> actionlets = Lists.newArrayList(getCustomActionlets());
+            //Get the default ones.
+            actionlets.addAll(getDefaultActionlets(new ArrayList<RuleActionlet>()));
+
+			for (RuleActionlet actionlet : actionlets) {
+                try {
+                    Class<? extends RuleActionlet> clazz = actionlet.getClass();
+                    RuleActionlet instance = clazz.newInstance();
+                    String id = instance.getId();
+                    if(!actionletMap.containsKey(id)){
+                    	actionletMap.putIfAbsent(id, instance);
+                    }
+                    else {
+                        Logger.info(RulesAPIImpl.class, "Actionlet with name '" + clazz.getSimpleName() + "' already registered.");
+                    }
+                } catch (InstantiationException | IllegalAccessException e) {
+                    Logger.error(RulesAPIImpl.class, e.getMessage(), e);
+                }
+            }
+        }
+    }
+
 }

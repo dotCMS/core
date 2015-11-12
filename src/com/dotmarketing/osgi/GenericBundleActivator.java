@@ -16,6 +16,8 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
@@ -71,9 +73,11 @@ public abstract class GenericBundleActivator implements BundleActivator {
     private WorkflowAPIOsgiService workflowOsgiService;
     private CacheOSGIService cacheOSGIService;
     private ConditionletOSGIService conditionletOSGIService;
+    private RuleActionletOSGIService actionletOSGIService;
     private Collection<ToolInfo> viewTools;
     private Collection<WorkFlowActionlet> actionlets;
     private Collection<Conditionlet> conditionlets;
+    private Collection<RuleActionlet> ruleActionlets;
     private Collection<Class<CacheProvider>> cacheProviders;
     private Map<String, String> jobs;
     private Collection<ActionConfig> actions;
@@ -231,6 +235,31 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
         //Getting the service to register our Actionlet.
         ServiceReference serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+        if ( serviceRefSelected == null ) {
+
+            //Forcing the loading of the Rule Conditionlet Service.
+            RulesAPI rulesAPI = APILocator.getRulesAPI();
+            if ( rulesAPI != null ) {
+
+                serviceRefSelected = context.getServiceReference( ConditionletOSGIService.class.getName() );
+                if ( serviceRefSelected == null ) {
+                    //Forcing the registration of our required services
+                    rulesAPI.registerBundleService();
+                }
+            }
+        }
+    }
+
+    /**
+     * Is possible on certain scenarios to have our Rule Conditionlet without initialization, or most probably a Rule Conditionlet without
+     * set our required services, so we need to force things a little bit here, and register those services if it is necessary.
+     *
+     * @param context
+     */
+    private void forceRuleActionletServiceLoading ( BundleContext context ) {
+
+        //Getting the service to register our Actionlet.
+        ServiceReference serviceRefSelected = context.getServiceReference( RuleActionletOSGIService.class.getName() );
         if ( serviceRefSelected == null ) {
 
             //Forcing the loading of the Rule Conditionlet Service.
@@ -685,6 +714,30 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Register a Rules Engine RuleActionlet service
+     *
+     * @param context
+     * @param actionlet
+     */
+    @SuppressWarnings ("unchecked")
+    protected void registerRuleActionlet ( BundleContext context, RuleActionlet actionlet) {
+
+        //Getting the service to register our Actionlet
+        ServiceReference serviceRefSelected = context.getServiceReference( RuleActionletOSGIService.class.getName() );
+        if ( serviceRefSelected == null ) {
+            return;
+        }
+
+        if ( ruleActionlets == null ) {
+        	ruleActionlets = new ArrayList<RuleActionlet>();
+        }
+
+        this.actionletOSGIService = (RuleActionletOSGIService) context.getService( serviceRefSelected );
+        this.actionletOSGIService.addRuleActionlet(actionlet.getClass());
+        ruleActionlets.add( actionlet );
+    }
+
+    /**
      * Register a given CacheProvider implementation for a given region
      *
      * @param context
@@ -794,6 +847,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         unregisterActionlets();
         unregisterCacheProviders();
         unregisterConditionlets();
+        unregisterRuleActionlets();
         unregisterViewToolServices();
         unregisterPreHooks();
         unregisterPostHooks();
@@ -871,6 +925,20 @@ public abstract class GenericBundleActivator implements BundleActivator {
 
                 this.conditionletOSGIService.removeConditionlet(conditionlet.getClass().getSimpleName());
                 Logger.info( this, "Removed Rules Conditionlet: " + conditionlet.getClass().getSimpleName());
+            }
+        }
+    }
+
+    /**
+     * Unregister the registered Rules Actionlets services
+     */
+    protected void unregisterRuleActionlets() {
+
+        if ( this.actionletOSGIService != null && actionletOSGIService != null ) {
+            for ( RuleActionlet actionlet : ruleActionlets ) {
+
+                this.actionletOSGIService.removeRuleActionlet(actionlet.getClass().getSimpleName());
+                Logger.info( this, "Removed Rules Actionlet: " + actionlet.getClass().getSimpleName());
             }
         }
     }

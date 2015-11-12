@@ -1,11 +1,16 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public abstract class RuleActionlet implements Serializable {
 
@@ -13,11 +18,21 @@ public abstract class RuleActionlet implements Serializable {
 
     private final String id;
     private final String name;
+    private final List<ActionletParameterWrapper> parameters;
 
     public RuleActionlet(String name) {
         this.name = name;
         this.id = this.getClass().getSimpleName();
+        this.parameters = new ArrayList<ActionletParameterWrapper>();
     }
+
+
+    public RuleActionlet(String name, ActionletParameterWrapper[] parametersArray) {
+        this.name = name;
+        this.id = this.getClass().getSimpleName();
+        this.parameters = new ArrayList<ActionletParameterWrapper>(Arrays.asList(parametersArray));
+    }
+
 
     /**
      * The unique type id for this Actionlet implementation.
@@ -41,10 +56,30 @@ public abstract class RuleActionlet implements Serializable {
     }
 
 	/**
-	 * returns the list of parameters that are accepted by the implementing actionlet
+	 * returns the map of parameters that are accepted by the implementing actionlet
 	 * @return
 	 */
-//	public abstract List<WorkflowActionletParameter> getParameters();
+    public Map<String, Map<String,String>> getMappedParameters(){
+    	Map<String, Map<String,String>> mappedValues = new HashMap<String, Map<String,String>>();
+    	if(!parameters.isEmpty()){
+    		for(ActionletParameterWrapper parameter: parameters){
+    			mappedValues.put(parameter.getKey(), parameter.toMappedValues());
+    		}
+    	}
+    	return mappedValues;
+    }
+
+    public List<ActionletParameterWrapper> getParameters(){
+    	return parameters;
+    }
+
+
+    /**
+     * returns true if the actionlet does not recieve parameters
+     */
+    public boolean hasParameters(){
+    	return parameters.isEmpty();
+    }
 
 	/**
 	 * if this is set, the all subsequent actionlets will not be fired.  This is true when executing both the
@@ -57,7 +92,7 @@ public abstract class RuleActionlet implements Serializable {
 	/**
 	 * Action that gets executed when the owner {@link com.dotmarketing.portlets.rules.conditionlet.Conditionlet} evaluates to true
 	 */
-	public abstract void executeAction(HttpServletRequest request, Map<String, RuleActionParameter> params);
+	public abstract void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params);
 
     @Override
     public boolean equals(Object o) {

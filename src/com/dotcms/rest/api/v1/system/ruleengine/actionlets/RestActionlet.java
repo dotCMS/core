@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
+import java.util.Map;
+
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
@@ -15,10 +17,13 @@ public final class RestActionlet extends Validated {
 
     public final String i18nKey;
 
+    public final Map<String,Map<String,String>> parameters;
+
     private RestActionlet(Builder builder) {
         id = builder.id;
         name = builder.name;
         i18nKey = builder.i18nKey;
+        parameters = builder.parameters;
         checkValid();
     }
 
@@ -26,6 +31,7 @@ public final class RestActionlet extends Validated {
         @JsonProperty private String id;
         @JsonProperty private String name;
         @JsonProperty private String i18nKey;
+        @JsonProperty private Map<String,Map<String,String>> parameters;
 
         public Builder() {}
 
@@ -39,6 +45,11 @@ public final class RestActionlet extends Validated {
             return this;
         }
 
+        public Builder parameters(Map<String,Map<String,String>> parameters) {
+            this.parameters = parameters;
+            return this;
+        }
+
         public Builder i18nKey(String i18nKey) {
             this.i18nKey = i18nKey;
             return this;
@@ -48,6 +59,7 @@ public final class RestActionlet extends Validated {
             id = copy.id;
             name = copy.name;
             i18nKey = copy.i18nKey;
+            parameters = copy.parameters;
             return this;
         }
 
