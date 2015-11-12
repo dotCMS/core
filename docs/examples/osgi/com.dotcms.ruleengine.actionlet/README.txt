@@ -2,12 +2,12 @@
 README
 ------
 
-This bundle plugin is an example of how to add dotcms Rule Engine Conditionlet classes with our bundle plugin.
+This bundle plugin is an example of how to add dotcms Rule Engine Actionlet classes with our bundle plugin.
 
 How to build this example
 -------------------------
 
-To install all you need to do is build the JAR. to do this run 
+To install all you need to do is build the JAR. to do this run
 ./gradlew jar
 This will build a jar in the build/libs directory
 
@@ -16,14 +16,14 @@ This will build a jar in the build/libs directory
 Copy the bundle jar file inside the Felix OSGI container (dotCMS/felix/load).
         OR
 Upload the bundle jar file using the dotCMS UI (CMS Admin->Dynamic Plugins->Upload Plugin).
-	
+
 2. To uninstall this bundle:
 
 Remove the bundle jar file from the Felix OSGI container (dotCMS/felix/load).
         OR
 Undeploy the bundle using the dotCMS UI (CMS Admin->Dynamic Plugins->Undeploy).
 
-How to add a Conditionlet OSGI plugin
+How to add a Actionlet OSGI plugin
 ---------------------------------
 
 --
@@ -40,7 +40,7 @@ Bundle-Name: The name of your bundle
 
 Bundle-SymbolicName: A short an unique name for the bundle
 
-Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.ruleengine.conditionlet.Activator)
+Bundle-Activator: Package and name of your Activator class (example: com.dotmarketing.osgi.ruleengine.Actionlet.Activator)
 
 DynamicImport-Package: *
     Dynamically add required imports the plugin may need without add them explicitly
@@ -65,14 +65,14 @@ a plugin can Import the packages to use them inside the OSGI blundle.
 --
 --
 --
-com.dotmarketing.osgi.ruleengine.conditionlet.MyConditionlet
+com.dotmarketing.osgi.ruleengine.Actionlet.SampleOSGiRuleActionlet
 -----------------------------------------------
 
-Implementation of a Conditionlet object.
+Implementation of a Actionlet object.
 
 --
 Activator
 ---------
 
 This bundle activator extends from com.dotmarketing.osgi.GenericBundleActivator and implements BundleActivator.start().
-This activator will allow you to register the Conditionlet object using the GenericBundleActivator.registerConditionlet method
+This activator will allow you to register the Actionlet object using the GenericBundleActivator.registerActionlet method
