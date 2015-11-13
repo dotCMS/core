@@ -1788,6 +1788,15 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
+        try {
+            distAPI.refreshContentUnderFolderPath(hostId, folderPath);
+        } catch ( DotDataException e ) {
+            Logger.error(this, e.getMessage(), e);
+            throw new DotReindexStateException("Unable to complete reindex", e);
+        }
+    }
+
     public void unpublish(Contentlet contentlet, User user,boolean respectFrontendRoles) throws DotDataException,DotSecurityException, DotContentletStateException {
         if(contentlet.getInode().equals(""))
             throw new DotContentletStateException(CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT);
