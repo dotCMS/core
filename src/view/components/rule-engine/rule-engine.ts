@@ -87,10 +87,11 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
         this.ruleStub = null
       } else {
         this.rules.push(rule)
-        rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
-          this.handleRuleChange(event)
-        })
       }
+
+      rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
+        this.handleRuleChange(event)
+      })
     }
 
     handleRuleChange(event:CwChangeEvent<RuleModel>) {
@@ -119,7 +120,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
     addRule() {
       this.ruleStub = new RuleModel()
       this.rules.push(this.ruleStub)
-      this.stubWatch = this.ruleStub.onValidityChange.subscribe((event) => {
+      this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
         if (event.target.valid) {
           this.ruleService.save(this.ruleStub)
         }
