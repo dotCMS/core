@@ -106,6 +106,8 @@ export class ConditionTypeService {
         }
       })
       cb(result)
+    }, (e)=> {
+      debugger
     })
     return this.onAdd
   }

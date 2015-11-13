@@ -87,6 +87,8 @@ export class ActionTypeService {
         }
       })
       cb(result)
+    }, (e)=> {
+      debugger
     })
     return this.onAdd
   }

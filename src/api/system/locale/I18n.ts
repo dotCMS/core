@@ -50,10 +50,12 @@ export class I18nService {
   }
 
   get(locale:string, key:string, cb:Function) {
-    let key = key.replace(/\./g, '/')
+    key = key.replace(/\./g, '/')
     this.ref.child(locale).child(key).once('value', (snap) => {
       let rsrcModel = I18nService.fromSnapshot(locale, key, snap)
       cb(rsrcModel)
+    }, (e)=> {
+      debugger
     })
   }
 

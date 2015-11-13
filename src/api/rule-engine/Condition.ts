@@ -184,6 +184,8 @@ export class ConditionService {
       let cRef = this._ref.child(conditionId)
       cRef.once('value', (conditionSnap)=> {
         this._added.next(this.fromSnapshot(group, conditionSnap))
+      }, (e)=> {
+        debugger
       })
     })
   }
@@ -210,6 +212,8 @@ export class ConditionService {
       let model = this.fromSnapshot(group, conditionSnap);
       this._added.next(model)
       cb(model)
+    }, (e)=> {
+      debugger
     })
   }
 
@@ -219,7 +223,10 @@ export class ConditionService {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionService.toJson(model)
-    this._ref.push(json, (result)=> {
+    this._ref.push(json, (e, result)=> {
+      if(e){
+        debugger
+      }
       model.key = result.key()
       this._added.next(model)
       cb(model)

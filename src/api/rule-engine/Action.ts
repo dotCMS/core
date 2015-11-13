@@ -13,7 +13,8 @@ interface ActionModelParameter {
   value:any
 }
 
-let noop = (...arg:any[])=> {}
+let noop = (...arg:any[])=> {
+}
 
 export class ActionModel extends CwModel {
   private _name:string
@@ -51,8 +52,15 @@ export class ActionModel extends CwModel {
   }
 
   set actionType(value:ActionTypeModel) {
-    this._actionType = value;
-    this._changed('actionType')
+    if (value !== this._actionType) {
+      this._actionType = value;
+      Object.keys(this._actionType.parameters).forEach((key)=> {
+        if(this.getParameter(key) === undefined) {
+          this.setParameter(key, "")
+        }
+      })
+      this._changed('actionType')
+    }
   }
 
   get owningRule():RuleModel {
@@ -142,11 +150,13 @@ export class ActionService {
     })
   }
 
-  get(rule:RuleModel, key:string, cb:Function=noop) {
+  get(rule:RuleModel, key:string, cb:Function = noop) {
     this.ref.child(key).once('value', (actionSnap:EntitySnapshot)=> {
       let model = this._fromSnapshot(rule, actionSnap)
       this._added.next(model)
       cb(model)
+    }, (e)=> {
+      debugger
     })
   }
 
@@ -154,14 +164,18 @@ export class ActionService {
     console.log("api.rule-engine.ActionService", "add", model)
 
     let json = this._toJson(model)
-    this.ref.push(json, (result)=> {
-      model.key = result.key()
-      this._added.next(model)
-      cb(model)
+    this.ref.push(json, (e, result) => {
+      if (e) {
+        cb(model, e)
+      } else {
+        model.key = result.key()
+        this._added.next(model)
+        cb(model)
+      }
     })
   }
 
-  save(model:ActionModel,cb:Function = noop ) {
+  save(model:ActionModel, cb:Function = noop) {
     console.log("api.rule-engine.ActionService", "save", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on model, and should provide the info needed to make the user aware of the fix.")
@@ -171,7 +185,10 @@ export class ActionService {
     }
     else {
       let json = this._toJson(model)
-      this.ref.child(model.key).set(json, (result)=>{
+      this.ref.child(model.key).set(json, (e, result)=> {
+        if (e) {
+          debugger
+        }
         cb(model)
       })
     }
