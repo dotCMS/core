@@ -25,6 +25,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
@@ -204,6 +205,7 @@ public class ActionResource {
     private String createRuleActionInternal(RestRuleAction restRuleAction, User user) {
         try {
             RuleAction action = actionTransform.restToApp(restRuleAction);
+            validateActionInstance(action);
             rulesAPI.saveRuleAction(action, user, false);
             return action.getId();
         } catch (DotDataException e) {
@@ -220,7 +222,9 @@ public class ActionResource {
                 throw new NotFoundException("Rule Action with id '%s' not found: ", ruleActionId);
             }
             actionTransform.applyRestToApp(restRuleAction, ruleAction);
+            validateActionInstance(ruleAction);
             ruleAction.setId(ruleActionId);
+
             rulesAPI.saveRuleAction(ruleAction, user, false);
             return ruleAction.getId();
         } catch (DotDataException e) {
@@ -228,5 +232,13 @@ public class ActionResource {
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
+    }
+
+    private void validateActionInstance(RuleAction ruleAction) throws DotDataException, DotSecurityException {
+        RuleActionlet actionlet = rulesAPI.findActionlet(ruleAction.getActionlet());
+        if(actionlet == null){
+            throw new NotFoundException("Actionlet with id '%s' not found: ", ruleAction.getActionlet());
+        }
+        actionlet.validateActionInstanceInternal(ruleAction);
     }
 }

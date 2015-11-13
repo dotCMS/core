@@ -1,11 +1,20 @@
-apply plugin: 'application'
 apply plugin: 'osgi'
-apply plugin: 'war'
-apply plugin: 'eclipse'
+apply plugin: 'java'
 
-sourceCompatibility = '1.8'
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.6'
+}
+
 version = '0.1'
 
+/* This plugin uses Java 1.8 */
+sourceCompatibility = '1.8'
+
+
+configurations {
+    provided
+    provided.extendsFrom(compile)
+}
 
 repositories {
 	maven {
@@ -14,11 +23,34 @@ repositories {
 }
 
 dependencies {
-	compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
-	compile (group: 'com.dotcms', name: 'dotcms', version: '3.5'){
-		transitive = true
-	}
-	providedCompile "javax.servlet:servlet-api:2.5"
+    compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
+    compile(group: 'com.dotcms', name: 'dotcms', version: '3.5') {
+        transitive = true
+    }
+    /* Specifying an alternate configuration (see above 'configurations') keeps servlet-api.jar from being added to our own output Jar. */
+    provided "javax.servlet:servlet-api:2.5"
+
+    testCompile 'org.mockito:mockito-core:2.0.31-beta'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile('org.testng:testng:6.9.6') {
+        exclude(group: 'org.hamcrest')
+
+    }
+
+}
+
+/* To compile we must add the additional configuration we created to our classpaths. */
+sourceSets {
+    main.compileClasspath += configurations.provided;
+    test.compileClasspath += configurations.provided;
+    test.runtimeClasspath += configurations.provided;
+}
+
+test {
+    // enable Te¡stNG support (default is JUnit)
+    useTestNG()
+    /* enabling standard streams allows us to see test failures and related stack traces in the console. */
+    testLogging.showStandardStreams = true
 }
 
 jar {
@@ -33,7 +65,4 @@ jar {
     }
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.8'
-}
-
+jar.dependsOn test

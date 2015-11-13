@@ -73,7 +73,13 @@ public class CMSFilter implements Filter {
 		}
 
         // lets fire the request scoped rules
-        rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+        if(!uri.startsWith("/api/notification/")) {
+            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+            if(response.isCommitted()){
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                return;
+            }
+        }
 		
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;

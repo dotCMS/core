@@ -2,10 +2,11 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
-
+import java.util.Map;
 
 public class RuleAction implements Serializable {
 
@@ -73,6 +74,14 @@ public class RuleAction implements Serializable {
 
     public void setParameters(List<RuleActionParameter> parameters) {
         this.parameters = parameters;
+    }
+
+    public Map<String, RuleActionParameter> getParameterMap(){
+        Map<String, RuleActionParameter> params = Maps.newHashMap();
+        for (RuleActionParameter param : parameters) {
+            params.put(param.getKey(), param);
+        }
+        return params;
     }
 
     @JsonIgnore

@@ -59,6 +59,11 @@ public class RulesEngine {
                         RuleActionlet actionlet = APILocator.getRulesAPI().findActionlet(action.getActionlet());
                         Map<String, RuleActionParameter> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
                         actionlet.executeAction(req, res, params);
+                        if(res.isCommitted()) {
+                            Logger.debug(RulesEngine.class, "Action '" + actionlet.getId() + "' has fulfilled the request and committed the response: ");
+                            /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                            return;
+                        }
                     }
                 }
             }

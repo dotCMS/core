@@ -12,7 +12,7 @@ public class Activator extends GenericBundleActivator {
         initializeServices( bundleContext );
 
         //Registering the Conditionlet
-        registerRuleActionlet( bundleContext, new SampleOSGiRuleActionlet() );
+        registerRuleActionlet( bundleContext, new SendRedirectActionlet() );
     }
 
     @Override

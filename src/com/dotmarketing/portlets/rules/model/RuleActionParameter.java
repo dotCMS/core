@@ -14,7 +14,16 @@ public class RuleActionParameter implements Serializable {
 	private String ruleActionId;
 	private String key;
 	private String value;
-	public String getId() {
+
+    public RuleActionParameter() {
+    }
+
+    public RuleActionParameter(String key, String value) {
+        this.key = key;
+        this.value = value;
+    }
+
+    public String getId() {
 		return id;
 	}
 	public void setId(String id) {
@@ -33,19 +42,14 @@ public class RuleActionParameter implements Serializable {
 		this.key = key;
 	}
 	public String getValue() {
-		if(UtilMethods.isSet(value)){
-			return value;
-		}
-		else{
-			return null;
-		}
+		return value;
 	}
 	public void setValue(String value) {
 		this.value = value;
 	}
 	@JsonIgnore
 	public boolean isNew(){
-		return !UtilMethods.isSet(id);
+		return id == null;
 		
 	}
 	@Override

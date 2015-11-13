@@ -3,8 +3,6 @@ package com.dotmarketing.osgi.ruleengine.conditionlet;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.GenericBundleActivator;
 
-import com.dotmarketing.osgi.ruleengine.conditionlet.UsersContinentConditionlet;
-
 public class Activator extends GenericBundleActivator {
 
     @Override
