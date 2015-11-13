@@ -55,7 +55,7 @@ export class CountryCondition {
 
   comparisonOptions:Array<DropdownOption> = [
       new DropdownOption("is", "is", "Is"),
-      new DropdownOption("is not", "is not", "Is Not")  ];
+      new DropdownOption("isNot", "isNot", "Is Not")  ];
 
   countries:Array<any>
 
