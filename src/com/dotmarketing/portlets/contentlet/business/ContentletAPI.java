@@ -796,6 +796,15 @@ public interface ContentletAPI {
 	 * @throws DotReindexStateException
 	 */
 	public void refreshContentUnderFolder(Folder folder)throws DotReindexStateException;
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotReindexStateException
+	 */
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException;
 	
 	/**
 	 * Get all the files relates to the contentlet

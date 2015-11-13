@@ -1191,7 +1191,16 @@ public interface ContentletAPIPreHook {
 	 * @throws DotReindexStateException
 	 */
 	public boolean refreshContentUnderFolder(Folder folder)throws DotReindexStateException;
-	
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotReindexStateException
+	 */
+	public boolean refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException;
+
 	/**
 	 * Will update contents that reference the given folder to point to it's parent folder, if it's a top folder it will set folder to be SYSTEM_FOLDER
 	 * @param folder

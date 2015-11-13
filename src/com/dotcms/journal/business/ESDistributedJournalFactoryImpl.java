@@ -543,6 +543,21 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     }
 
     @Override
+    protected void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotDataException {
+        final String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+
+                           " SELECT distinct identifier.id, identifier.id, ?, ? " +
+                           " FROM contentlet join identifier ON contentlet.identifier=identifier.id "+
+                           " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
+        DotConnect dc = new DotConnect();
+        dc.setSQL(sql);
+        dc.addParam(REINDEX_JOURNAL_PRIORITY_CONTENT_REINDEX);
+        dc.addParam(REINDEX_ACTION_REINDEX_OBJECT);
+        dc.addParam(hostId);
+        dc.addParam(folderPath+"%");
+        dc.loadResult();
+    }
+
+    @Override
     protected void refreshContentUnderHost(Host host) throws DotDataException {
         String sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "+
                 " SELECT id, id, ?, ? " +

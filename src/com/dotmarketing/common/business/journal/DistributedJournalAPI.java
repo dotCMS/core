@@ -166,5 +166,14 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	public void refreshContentUnderFolder(Folder folder) throws DotDataException;
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotDataException
+	 */
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
 	
 }

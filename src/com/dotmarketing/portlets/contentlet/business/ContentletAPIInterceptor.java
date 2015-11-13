@@ -2178,6 +2178,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		}
 	}
 
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
+
+		for ( ContentletAPIPreHook pre : preHooks ) {
+			boolean preResult = pre.refreshContentUnderFolderPath(hostId, folderPath);
+			if ( !preResult ) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.refreshContentUnderFolderPath(hostId, folderPath);
+		for ( ContentletAPIPostHook post : postHooks ) {
+			post.refreshContentUnderFolderPath(hostId, folderPath);
+		}
+	}
+
 	public void removeFolderReferences(Folder folder) throws DotDataException, DotSecurityException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.removeFolderReferences(folder);

@@ -108,7 +108,11 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 	}	
 	
 	public void refreshContentUnderFolder(Folder folder) throws DotDataException {
-		distFac.refreshContentUnderFolder(folder);		
+		distFac.refreshContentUnderFolder(folder);
+	}
+
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException {
+		distFac.refreshContentUnderFolderPath(hostId, folderPath);
 	}
 
     public void deleteReindexEntryForServer(List<IndexJournal<T>> recordsToDelete) throws DotDataException {

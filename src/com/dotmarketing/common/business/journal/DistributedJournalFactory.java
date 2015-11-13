@@ -161,5 +161,14 @@ public abstract class DistributedJournalFactory<T> {
 	 * @throws DotDataException
 	 */
 	protected abstract void refreshContentUnderFolder(Folder folder) throws DotDataException;
-    
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotDataException
+	 */
+	protected abstract void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
+
 }
