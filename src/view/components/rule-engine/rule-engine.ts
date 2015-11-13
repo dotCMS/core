@@ -87,10 +87,11 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
         this.ruleStub = null
       } else {
         this.rules.push(rule)
-        rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
-          this.handleRuleChange(event)
-        })
       }
+
+      rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
+        this.handleRuleChange(event)
+      })
     }
 
     handleRuleChange(event:CwChangeEvent<RuleModel>) {
