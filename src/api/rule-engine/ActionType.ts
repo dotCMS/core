@@ -5,6 +5,8 @@ import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
+import {I18nService} from "../system/locale/I18n";
+import {I18nResourceModel, Internationalized} from "../system/locale/I18n";
 
 
 let noop = (...arg:any[])=> {
@@ -17,14 +19,30 @@ interface ActionTypeParameter {
   priority:number
 }
 
-export class ActionTypeModel extends CwModel {
+export class ActionTypeModel extends CwModel implements Internationalized {
+
   i18nKey:string
   parameters:{[key:string]:ActionTypeParameter}
+
+  private _i18n:I18nResourceModel
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:{[key:string]:ActionTypeParameter} = {}) {
     super(key ? key : 'NoSelection')
     this.i18nKey = i18nKey ? i18nKey : key;
     this.parameters = parameters ? parameters : {}
+  }
+
+  getMessage(key:string):string{
+    return this._i18n ? this._i18n.getMessage(key) : this[key]
+  }
+
+  get i18n():I18nResourceModel {
+    return this._i18n;
+  }
+
+  set i18n(value:I18nResourceModel) {
+    this._i18n = value;
+    this._changed('i18n')
   }
 
   isValid() {
@@ -45,10 +63,12 @@ export class ActionTypeService {
   private _apiRoot;
   private _ref;
   private _map:{[key:string]: ActionTypeModel}
+  private _rsrcService:I18nService;
 
-  constructor(@Inject(ApiRoot) apiRoot) {
+  constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
     this._ref = apiRoot.root.child('system/ruleengine/actionlets')
     this._apiRoot = apiRoot
+    this._rsrcService = rsrcService;
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
     this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
@@ -57,9 +77,13 @@ export class ActionTypeService {
     this.onAdd.connect()
   }
 
-  static fromSnapshot(snapshot:EntitySnapshot):ActionTypeModel {
+  fromSnapshot(snapshot:EntitySnapshot):ActionTypeModel {
     let val:any = snapshot.val()
-    return new ActionTypeModel(snapshot.key(), val.i18nKey, val.parameters)
+    let model = new ActionTypeModel(snapshot.key(), val.i18nKey, val.parameters)
+    this._rsrcService.get("en-US", model.i18nKey, (result)=>{
+      model.i18n = result;
+    })
+    return model
   }
 
   private _entryReceived(entry:ActionTypeModel) {
@@ -81,7 +105,7 @@ export class ActionTypeService {
       Object.keys(types).forEach((key) => {
         if (DISABLED_ACTION_TYPE_IDS[key] !== true) {
           let actionType = snap.child(key)
-          let typeModel = ActionTypeService.fromSnapshot(actionType)
+          let typeModel = this.fromSnapshot(actionType)
           this._entryReceived(typeModel)
           result.push(typeModel)
         }

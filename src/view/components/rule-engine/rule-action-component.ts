@@ -53,10 +53,7 @@ export class RuleActionComponent {
     this.action = action;
 
     typeService.onAdd.subscribe((actionType:ActionTypeModel) => {
-        msgService.get('en-US', 'com.dotmarketing.osgi.ruleengine', (magic)=>{
-          console.log("Resource Received: ", magic)
-        })
-        this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.i18nKey)])
+      this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.getMessage('name'))])
     })
   }
 

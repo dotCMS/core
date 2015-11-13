@@ -8,14 +8,18 @@ import {EntityMeta} from "../../persistence/EntityBase";
 import {ApiRoot} from "../../persistence/ApiRoot";
 import {CwModel} from "../../util/CwModel";
 
+let noop = (...arg:any[])=> {
+}
 
-export class I18nResourceModel {
+export interface Internationalized {
+  getMessage(key:string):string
+}
+
+export class I18nResourceModel implements Internationalized {
 
   private _locale:string
   private _key:string
   private _messages:any
-
-
 
   constructor(locale:string, key:string = null, messaegs:any={}) {
     this._locale = locale
@@ -35,6 +39,22 @@ export class I18nResourceModel {
     return this._messages;
   }
 
+  getMessage(key:string):string {
+    let parts:Array<string> = key.split(".");
+    let val = this._messages
+    let result = null
+    if(parts && parts.length > 0){
+      for(let i = 0, L = parts.length; i < L; ++i){
+        val = val[parts[i]]
+        if(!val){
+          break
+        }
+      }
+      result = val;
+    }
+    return result
+  }
+
 
 }
 
@@ -49,7 +69,7 @@ export class I18nService {
     return new I18nResourceModel(locale, key, snapshot.val())
   }
 
-  get(locale:string, key:string, cb:Function) {
+  get(locale:string, key:string, cb:Function=noop) {
     key = key.replace(/\./g, '/')
     this.ref.child(locale).child(key).once('value', (snap) => {
       let rsrcModel = I18nService.fromSnapshot(locale, key, snap)

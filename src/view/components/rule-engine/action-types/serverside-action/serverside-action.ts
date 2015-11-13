@@ -40,7 +40,6 @@ export class ServersideAction {
     let paramDefs = this._model.actionType.parameters
     Object.keys(paramDefs).forEach((paramKey)=> {
       let paramDef = paramDefs[paramKey]
-      console.log("Action Parameter Definition: ", paramKey, paramDef)
       this._inputs.push(new InputTextModel(paramKey, paramDef.i18nKey, this._model.getParameter(paramKey)))
     })
   }
