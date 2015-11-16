@@ -137,7 +137,7 @@ export class ConditionGroupService {
     let json = ConditionGroupService._toJson(model)
     this.ref.child(model.owningRule.key).child('conditionGroups').push(json, (e, result)=> {
       if(e){
-        debugger
+        throw e;
       }
       model.key = result.key()
       this._added.next(model)

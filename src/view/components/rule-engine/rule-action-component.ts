@@ -14,17 +14,17 @@ import {I18nService} from "../../../api/system/locale/I18n";
 })
 @View({
   template: `<div flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
-  <div flex="30" layout="row" layout-align="end-center" class="cw-row-start-area">
+  <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <cw-input-dropdown class="cw-action-type-dropdown" [model]="actionTypesDropdown" (change)="handleActionTypeChange($event)"></cw-input-dropdown>
   </div>
 
 
-  <cw-serverside-action flex="60"
+  <cw-serverside-action flex layout-fill
                         [model]="action"
                         (config-change)="actionConfigChanged($event)">
 
   </cw-serverside-action>
-  <div flex="5" class="cw-btn-group">
+  <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
     <div class="ui basic icon buttons">
       <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!_action.isPersisted()">
         <i class="trash icon"></i>

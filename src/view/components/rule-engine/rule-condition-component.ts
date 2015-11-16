@@ -16,7 +16,7 @@ import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine
 })
 @View({
   template: `<div flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
-  <div flex="30" layout="row" layout-align="end-center" class="cw-row-start-area">
+  <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
       <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
         {{condition.operator}}
@@ -24,7 +24,7 @@ import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
-  <div flex="65" layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
+  <div flex layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
     <template [ng-switch-when]="'UsersBrowserHeaderConditionlet'">
       <cw-request-header-condition
           class="cw-condition-component"
@@ -52,13 +52,11 @@ import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine
       </cw-serverside-condition>
     </template>
   </div>
-  <div flex="5" layout="row" layout-align="end-center">
-    <div flex class="cw-btn-group cw-condition-buttons">
+  <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
       <div class="ui basic icon buttons">
         <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
           <i class="trash icon"></i>
         </button>
-      </div>
     </div>
   </div>
 </div>
