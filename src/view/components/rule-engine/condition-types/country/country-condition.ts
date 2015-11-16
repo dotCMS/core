@@ -35,7 +35,7 @@ export class CountryConditionModel {
   directives: [NgFor, Dropdown],
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <!-- Spacer-->
-  <div flex="40" class="cw-input">&nbsp;</div>
+  <div flex="40" class="cw-input-placeholder">&nbsp;</div>
   <cw-input-dropdown flex="initial"
                      class="cw-input cw-comparator-selector"
                      [model]="comparatorDropdown"

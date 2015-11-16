@@ -51,12 +51,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   border: 1px solid $background-primary;
   border-radius: .5em;
 
-  div {
-    .cw-action-type-dropdown, .cw-condition-type-dropdown {
-      max-width: 15em;
-      min-width: 15em;
-    }
-  }
   .cw-rule-name-input {
     margin-right: 1em;
   }
@@ -77,8 +71,8 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   .cw-fire-on-label {
     font-weight: bold;
     margin-right: .5em;
-    min-width:4em;
-    max-width:4em;
+    min-width: 4em;
+    max-width: 4em;
   }
 
   .cw-fire-on-dropdown {
@@ -86,16 +80,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     max-width: 12em;
   }
 
-  .cw-input {
-    margin: 0 2em 0 2em;
-    &cw-toggle-input {
-      margin-right: 1em;
-    }
-  }
-
-  cw-toggle-input.cw-input {
-    margin-top: .75em;
-  }
 
   .cw-btn-group {
     padding-right: 1em;
@@ -125,20 +109,57 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     max-width: 10em;
   }
 
-  .cw-condition-type-dropdown, .cw-action-type-dropdown {
-    max-width: 18em;
-    min-width: 18em;
+  div {
+    .cw-condition-type-dropdown, .cw-action-type-dropdown {
+      max-width: 18em;
+      min-width: 18em;
+    }
   }
 
   div .cw-row-start-area {
-    max-width: 20em;
-    min-width: 20em;
+    max-width: 23em;
+    min-width: 23em;
     margin-right: 2em;
+  }
+
+  .cw-input, .cw-input-placeholder {
+    margin: 0 1em;
+    &cw-toggle-input {
+      margin-right: 1em;
+    }
+    &:first-child {
+      margin-left: 0
+    }
+    &:last-child {
+      margin-right: 0
+    }
+  }
+
+  cw-toggle-input.cw-input {
+    margin-top: .75em;
+  }
+
+  .cw-input-placeholder {
+    border-radius: .5em;
+    background-image: -webkit-gradient(
+            linear,
+            left top,
+            left bottom,
+            color-stop(0, rgb(227, 227, 227)),
+            color-stop(0.5, rgb(142, 142, 142)),
+            color-stop(1, rgb(227, 227, 227))
+    );
+    background-image: -o-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
+    background-image: -moz-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
+    background-image: -webkit-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
+    background-image: -ms-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
+    background-image: linear-gradient(to bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
   }
 
   .cw-condition-row, .cw-action-row {
     margin-bottom: .5em;
   }
+
 
 }
 
@@ -180,8 +201,7 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   min-width: 4em;
   max-width: 4em;
   padding: .5em 0 .5em 0;
-  border-radius: 0;
-
+  border-radius: .5em;
 }
 
 .cw-rule-actions, .cw-conditions {
@@ -240,17 +260,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
 .cw-condition-buttons {
   width: 3em;
   max-width: 3em;
-}
-
-.cw-condition-component {
-  max-width: 200em;
-  width: 100%;
-  .cw-input {
-    margin: 0 1em;
-    &:last-child {
-      margin-right:0
-    }
-  }
 }
 
 .cw-clause-selector {

@@ -225,7 +225,7 @@ export class ConditionService {
     let json = ConditionService.toJson(model)
     this._ref.push(json, (e, result)=> {
       if(e){
-        debugger
+        throw e;
       }
       model.key = result.key()
       this._added.next(model)
