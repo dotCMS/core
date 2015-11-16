@@ -21,11 +21,15 @@ import {ConditionGroupService, ConditionGroupModel} from "../../api/rule-engine/
 import {ConditionService} from "../../api/rule-engine/Condition";
 
 import {CwChangeEvent} from "../../api/util/CwEvent";
+import {ActionTypeService} from "./ActionType";
+import {I18nService} from "../system/locale/I18n";
 
 var injector = Injector.resolveAndCreate([ApiRoot,
+  I18nService,
   UserModel,
   RuleService,
   ActionService,
+  ActionTypeService,
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,
@@ -154,6 +158,7 @@ describe('Integration.api.rule-engine.ActionService', function () {
         actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
           // updatedAction and clientAction SHOULD NOT be the same instance object.
           updatedAction['abc123'] = 100
+          debugger
           expect(clientAction['abc123']).toBeUndefined()
           expect(clientAction.getParameter(key)).toBe(value, "ClientAction param value should still be set.")
           expect(updatedAction.getParameter(key)).toBe(value, "Action refreshed from server should have the correct param value.")

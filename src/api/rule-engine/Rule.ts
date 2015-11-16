@@ -8,8 +8,7 @@ import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ActionService} from "./Action";
-import {ActionModel} from "./Action";
+import {ActionService, ActionModel} from "./Action";
 
 
 export class RuleModel extends CwModel {
