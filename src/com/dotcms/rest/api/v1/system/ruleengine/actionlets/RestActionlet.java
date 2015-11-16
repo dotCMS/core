@@ -4,7 +4,6 @@ import java.util.Map;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
 @JsonDeserialize(builder = RestActionlet.Builder.class)
@@ -12,16 +11,12 @@ public final class RestActionlet extends Validated {
 
     public final String id;
 
-    @NotNull
-    public final String name;
-
     public final String i18nKey;
 
     public final Map<String,Map<String,String>> parameters;
 
     private RestActionlet(Builder builder) {
         id = builder.id;
-        name = builder.name;
         i18nKey = builder.i18nKey;
         parameters = builder.parameters;
         checkValid();
@@ -29,7 +24,6 @@ public final class RestActionlet extends Validated {
 
     public static final class Builder {
         @JsonProperty private String id;
-        @JsonProperty private String name;
         @JsonProperty private String i18nKey;
         @JsonProperty private Map<String,Map<String,String>> parameters;
 
@@ -37,11 +31,6 @@ public final class RestActionlet extends Validated {
 
         public Builder id(String id) {
             this.id = id;
-            return this;
-        }
-
-        public Builder name(String name) {
-            this.name = name;
             return this;
         }
 
@@ -57,7 +46,6 @@ public final class RestActionlet extends Validated {
 
         public Builder from(RestActionlet copy) {
             id = copy.id;
-            name = copy.name;
             i18nKey = copy.i18nKey;
             parameters = copy.parameters;
             return this;

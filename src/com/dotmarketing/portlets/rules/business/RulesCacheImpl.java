@@ -189,6 +189,7 @@ public class RulesCacheImpl extends RulesCache {
 
         this.cache.remove(condition.getId(), CONDITIONS_CACHE);
         this.cache.remove(condition.getConditionGroup(), CONDITION_GROUP_CONDITIONS_CACHE);
+        this.cache.remove(condition.getConditionGroup(), CONDITION_GROUPS_CACHE);
     }
 
     @Override

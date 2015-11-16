@@ -1,17 +1,19 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotmarketing.business.*;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONIgnore;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class Rule implements Permissionable, Serializable {
 
@@ -209,6 +211,7 @@ public class Rule implements Permissionable, Serializable {
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res) throws DotDataException {
         boolean result = true;
 
+        /* @todo ggranum: this logic fails for a three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified. */
         for (ConditionGroup group : getGroups()) {
             if(group.getOperator()== Condition.Operator.AND) {
                 result = result && group.evaluate(req, res);

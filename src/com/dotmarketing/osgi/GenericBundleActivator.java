@@ -628,6 +628,28 @@ public abstract class GenericBundleActivator implements BundleActivator {
     }
 
     /**
+     * Register a Rules Engine RuleActionlet service
+     */
+    @SuppressWarnings("unchecked")
+    protected void registerRuleActionlet(BundleContext context, RuleActionlet actionlet) {
+
+        //Getting the service to register our Actionlet
+        ServiceReference serviceRefSelected = context.getServiceReference(RuleActionletOSGIService.class.getName());
+        if(serviceRefSelected == null) {
+            return;
+        }
+
+        if(ruleActionlets == null) {
+            ruleActionlets = new ArrayList<>();
+        }
+
+        this.actionletOSGIService = (RuleActionletOSGIService)context.getService(serviceRefSelected);
+        this.actionletOSGIService.addRuleActionlet(actionlet.getClass());
+        ruleActionlets.add(actionlet);
+        registerBundleResourceMessages(context);
+    }
+
+    /**
      * Register a Rules Engine Conditionlet service
      *
      * @param context
@@ -643,7 +665,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
 
         if ( conditionlets == null ) {
-            conditionlets = new ArrayList<Conditionlet>();
+            conditionlets = new ArrayList<>();
         }
 
         this.conditionletOSGIService = (ConditionletOSGIService) context.getService( serviceRefSelected );
@@ -651,7 +673,10 @@ public abstract class GenericBundleActivator implements BundleActivator {
         conditionlets.add( conditionlet );
 
         Logger.info( this, "Added Rule Conditionlet: " + conditionlet.getName() );
+        registerBundleResourceMessages(context);
+    }
 
+    private void registerBundleResourceMessages(BundleContext context) {
         //Register Language under /resources/messages folder.
         Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
         while( langFiles.hasMoreElements() ){
@@ -674,7 +699,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                 String countryCode = languageCountry.split(languageFileDelimiter)[1];
 
                 URL file = context.getBundle().getEntry(langFile);
-                Map<String, String> generalKeysToAdd = new HashMap<String, String>();
+                Map<String, String> generalKeysToAdd = new HashMap<>();
 
                 try {
                     BufferedReader in = new BufferedReader(new InputStreamReader(file.openStream()));
@@ -699,9 +724,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
                     if(UtilMethods.isSet(languageObject.getLanguageCode())){
 
                         APILocator.getLanguageAPI().saveLanguageKeys(languageObject,
-                            generalKeysToAdd,
-                            new HashMap<String, String>(),
-                            new HashSet<String>());
+                                                                     generalKeysToAdd, new HashMap<>(), new HashSet<>());
                     } else {
                         Logger.warn(this.getClass(), "Country and Language do not exist: " + languageCountry);
                     }
@@ -713,29 +736,6 @@ public abstract class GenericBundleActivator implements BundleActivator {
         }
     }
 
-    /**
-     * Register a Rules Engine RuleActionlet service
-     *
-     * @param context
-     * @param actionlet
-     */
-    @SuppressWarnings ("unchecked")
-    protected void registerRuleActionlet ( BundleContext context, RuleActionlet actionlet) {
-
-        //Getting the service to register our Actionlet
-        ServiceReference serviceRefSelected = context.getServiceReference( RuleActionletOSGIService.class.getName() );
-        if ( serviceRefSelected == null ) {
-            return;
-        }
-
-        if ( ruleActionlets == null ) {
-        	ruleActionlets = new ArrayList<RuleActionlet>();
-        }
-
-        this.actionletOSGIService = (RuleActionletOSGIService) context.getService( serviceRefSelected );
-        this.actionletOSGIService.addRuleActionlet(actionlet.getClass());
-        ruleActionlets.add( actionlet );
-    }
 
     /**
      * Register a given CacheProvider implementation for a given region

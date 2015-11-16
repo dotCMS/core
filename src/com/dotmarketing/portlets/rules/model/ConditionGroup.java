@@ -89,6 +89,7 @@ public class ConditionGroup implements Serializable {
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         boolean result = true;
 
+        /* @todo ggranum: This also fails for ( A AND B OR C)*/
         for (Condition condition : getConditions()) {
             if(condition.getOperator()== Condition.Operator.AND) {
                 result = result && condition.evaluate(req, res);

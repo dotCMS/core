@@ -1,9 +1,13 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -20,25 +24,36 @@ import java.util.Map;
  */
 public class SetSessionAttributeActionlet extends RuleActionlet{
 
-	private static final ActionletParameterWrapper[] PARAMS = new ActionletParameterWrapper[]{
-			new ActionletParameterWrapper("sessionKey",ActionletParameterWrapper.DataType.TEXT),
-			new ActionletParameterWrapper("sessionValue")};
+    private static final String SESSION_VALUE = "sessionValue";
+    private static final String SESSION_KEY = "sessionKey";
+    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
+			new ActionParameterDefinition(SESSION_KEY, DataType.TEXT),
+			new ActionParameterDefinition(SESSION_VALUE)
+    );
 
     public SetSessionAttributeActionlet(){
         super(SetSessionAttributeActionlet.class.getSimpleName(), PARAMS);
     }
 
     @Override
+    public void validateActionInstance(RuleAction actionInstance) throws InvalidActionInstanceException {
+        Map<String, RuleActionParameter> params = actionInstance.getParameterMap();
+        RuleActionParameter keyParam = Preconditions.checkNotNull(params.get(SESSION_KEY), "SetSessionAttributeActionlet requires sessionKey parameter.");
+        RuleActionParameter valueParam = Preconditions.checkNotNull(params.get(SESSION_VALUE), "SetSessionAttributeActionlet requires sessionValue parameter.");
+        Preconditions.checkArgument(StringUtils.isNotBlank(keyParam.getValue()), "SetSessionAttributeActionlet requires valid sessionKey.");
+    }
+
+    @Override
     public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
+        String key = params.get(SESSION_KEY).getValue();
+        String value = params.get(SESSION_VALUE).getValue();
+        if(value == null){
+            request.getSession().removeAttribute(key);
+        } else{
+            request.getSession().setAttribute(key, value);
 
-        String sessionKeyParam = params.get("sessionKey").getValue();
-        String sessionValueParam = params.get("sessionValue").getValue();
-
-        if(UtilMethods.isSet(sessionKeyParam) && UtilMethods.isSet(sessionValueParam)){
-            request.getSession().setAttribute(sessionKeyParam, sessionValueParam);
-        } else {
-            Logger.error(this.getClass(),
-                    "Error trying to execute SetSessionAttributeActionlet, sessionKey or sessionValue are not set");
         }
     }
+
+
 }
