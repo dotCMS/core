@@ -26,7 +26,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
   </cw-serverside-action>
   <div flex="5" class="cw-btn-group">
     <div class="ui basic icon buttons">
-      <button class="ui button" aria-label="Delete Action" (click)="removeAction()">
+      <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!_action.isPersisted()">
         <i class="trash icon"></i>
       </button>
     </div>

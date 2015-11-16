@@ -63,7 +63,7 @@ var fireOn = [
           <button class="ui button" aria-label="Delete Rule" (click)="removeRule()">
             <i class="trash icon"></i>
           </button>
-          <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()">
+          <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -115,9 +115,11 @@ class RuleComponent {
   private groupService:ConditionGroupService
 
   private actionStub:ActionModel
-  private actionStubWatch:Rx.Subscription
+  private actionStubWatch: Rx.Subscription
   private ruleNameInputTextModel:InputTextModel
   private fireOnDropdown:DropdownModel
+  private _groupStub:ConditionGroupModel;
+  private _groupStubWatch: Rx.Subscription;
 
 
   constructor(elementRef:ElementRef,
@@ -133,7 +135,7 @@ class RuleComponent {
     this.actions = []
 
     this.hidden = false
-    this.collapsed = false
+    this.collapsed = true
 
     this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOn)
 
@@ -175,6 +177,9 @@ class RuleComponent {
       if(Object.keys(rule.actions).length === 0){
         this.addAction()
       }
+      if(Object.keys(rule.groups).length === 0){
+        this.addGroup()
+      }
 
     }
   }
@@ -196,11 +201,19 @@ class RuleComponent {
   }
 
   addGroup() {
-    let group = new ConditionGroupModel()
-    group.owningRule = this._rule
-    group.priority = 10
-    group.operator = 'AND'
-    this.groupService.add(group)
+
+    this._groupStub = new ConditionGroupModel()
+    this._groupStub.priority = 10
+    this._groupStub.operator = 'AND'
+    this._groupStub.owningRule = this.rule
+    this.groups.push(this._groupStub)
+    this._groupStubWatch = this._groupStub.onChange.subscribe((vcEvent:CwChangeEvent<ConditionGroupModel>)=> {
+      if (vcEvent.target.valid) {
+        this.groupService.add(this._groupStub)
+      }
+    })
+
+
   }
 
   addAction() {
@@ -244,7 +257,12 @@ class RuleComponent {
 
   handleGroupAdd(group:ConditionGroupModel) {
     if (group.owningRule.key === this.rule.key) {
-      this.groups.push(group)
+      if (group == this._groupStub) {
+        this._groupStub = null
+        this._groupStubWatch.unsubscribe()
+      } else if (this.groups.indexOf(group) == -1) {
+        this.groups.push(group)
+      }
     }
   }
 
