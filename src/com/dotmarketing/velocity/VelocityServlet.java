@@ -388,6 +388,11 @@ public abstract class VelocityServlet extends HttpServlet {
 	    try {
 
             rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+            if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                Logger.debug(VelocityServlet.class, "An EVERY_PAGE RuleEngine Action has committed the response.");
+                return;
+            }
 
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
@@ -445,6 +450,11 @@ public abstract class VelocityServlet extends HttpServlet {
     			response.addCookie(idCookie);
 
                 rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
+                if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                    Logger.debug(VelocityServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
+                    return;
+                }
     		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
@@ -455,6 +465,11 @@ public abstract class VelocityServlet extends HttpServlet {
                 response.addCookie(cookie);
 
                 rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+                if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                    Logger.debug(VelocityServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
+                    return;
+                }
             }
 
     
