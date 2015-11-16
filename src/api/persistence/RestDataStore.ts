@@ -17,7 +17,10 @@ export class RestDataStore extends DataStore {
     path = this.checkPath(path)
     entity = Check.exists(entity, "Cannot save empty values. Did you mean to remove?")
     return this.remoteSet(path, entity, isNew).then((response) => {
-      if (isNew === true) {
+      if( response.isError){
+        response.entity = entity // restore the original, entity
+      }
+      else if (isNew === true) {
         path = path + '/' + response.entity.id
       } else {
         path = path.substring(0, path.lastIndexOf('/') + 1) + response.entity.id
@@ -51,7 +54,7 @@ export class RestDataStore extends DataStore {
         'Content-Type': 'application/json',
         'Authorization': this.authHeader
       }
-    }).catch(this.checkStatus).then(this.checkStatus).then(this.transformValidResponse)
+    }).catch(this.checkStatus).then(this.checkStatus).then(this.transformResponse)
   }
 
 
@@ -66,28 +69,30 @@ export class RestDataStore extends DataStore {
         'Content-Type': 'application/json',
         'Authorization': this.authHeader
       }
-    }).then(this.checkStatus).then(this.transformValidResponse).catch((e)=> {
+    }).then(this.checkStatus).then(this.transformResponse).catch((e)=> {
       console.log("Delete operation resulted in an error: ", e)
     })
   }
 
 
-  transformValidResponse(response) {
-    let result = {
+  transformResponse(response) {
+    let result:any = {
       path: null,
       key: null,
       status: response.status || {},
       headers: response.headers || {},
-      entity: {}
-    }
-    if (response.body) {
-
+      entity: {},
+      isError: false
     }
     let path = response.url
     result.path = path.substring(path.indexOf('/', 8)) // http://foo.com/thisIsThePathWeMean
     result.key = path.substring(path.lastIndexOf('/') + 1);
     let contentType = response.headers.get('Content-Type')
-    if (contentType && contentType.toLowerCase().includes('json')) {
+    if(response.hasError === true){
+      result.isError = true
+      result.error = response.error
+    }
+    else if (contentType && contentType.toLowerCase().includes('json')) {
       return response.json().then((json) => {
         if (json) {
           result.entity = json
@@ -97,9 +102,8 @@ export class RestDataStore extends DataStore {
         console.log('Error parsing response:', e)
         throw e
       });
-    } else {
-      return new Promise((resolve) => resolve(result))
     }
+    return new Promise((resolve) => resolve(result))
 
   }
 
@@ -121,7 +125,8 @@ export class RestDataStore extends DataStore {
     }
     if (error) {
       console.log("Status error: ", error)
-      throw error
+      response.error = error
+      response.hasError = true
     }
     return response
   }
@@ -154,16 +159,14 @@ export class RestDataStore extends DataStore {
       headers.Authorization = this.authHeader
     }
 
-
     return fetch(url, {
       method: create ? "post" : "put",
       credentials: 'same-origin',
       headers: headers,
       body: JSON.stringify(entity)
     }).then(this.checkStatus)
-        .then(this.transformValidResponse)
+        .then(this.transformResponse)
         .then((result)=> {
-          console.log(result)
           return result
         })
         .catch((e)=> {

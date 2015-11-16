@@ -8,8 +8,7 @@ import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ActionService} from "./Action";
-import {ActionModel} from "./Action";
+import {ActionService, ActionModel} from "./Action";
 
 
 export class RuleModel extends CwModel {
@@ -165,6 +164,8 @@ export class RuleService {
     this.ref.child(key).once('value', (snap) => {
       let rule = RuleService.fromSnapshot(key, snap)
       cb(rule)
+    }, (e)=> {
+      debugger
     })
   }
 
@@ -175,21 +176,23 @@ export class RuleService {
         let rule = RuleService.fromSnapshot(key, snap.child(key))
         this._added.next(rule)
       })
+    }, (e)=> {
+      debugger
     })
     return this.onAdd
   }
 
   add(rule:RuleModel, cb:Function = null) {
-    this.ref.push(RuleService.toJson(rule), (resultSnapshot) => {
+    this.ref.push(RuleService.toJson(rule), (e, resultSnapshot) => {
+      if(e){
+        debugger
+      }
       rule.snapshot = resultSnapshot
       rule.key = resultSnapshot.key()
       this._added.next(rule)
       if (cb) {
         cb(rule)
       }
-    }).catch((e)=> {
-      console.log("Error pushing new rule: ", e)
-      throw e
     })
   }
 

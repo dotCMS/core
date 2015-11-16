@@ -18,11 +18,15 @@ import {ConditionTypeService, ConditionTypeModel} from '../../api/rule-engine/Co
 import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/ConditionGroup';
 import {CwChangeEvent} from '../../api/util/CwEvent';
+import {ActionTypeService} from "./ActionType";
+import {I18nService} from "../system/locale/I18n";
 
 var injector = Injector.resolveAndCreate([ApiRoot,
+  I18nService,
   UserModel,
   RuleService,
   ActionService,
+  ActionTypeService,
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,
@@ -175,7 +179,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
         })
       })
     })
-
   })
 
   it("Can update condition parameter values on existing condition.", function(done){

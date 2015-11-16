@@ -18,12 +18,16 @@ import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/ConditionGroup';
 import {CwChangeEvent} from '../../api/util/CwEvent';
+import {ActionTypeService} from "./ActionType";
+import {I18nService} from "../system/locale/I18n";
 
 
 var injector = Injector.resolveAndCreate([ApiRoot,
+  I18nService,
   UserModel,
   RuleService,
   ActionService,
+  ActionTypeService,
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,

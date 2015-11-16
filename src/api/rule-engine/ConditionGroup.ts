@@ -135,7 +135,10 @@ export class ConditionGroupService {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionGroupService._toJson(model)
-    this.ref.child(model.owningRule.key).child('conditionGroups').push(json, (result)=> {
+    this.ref.child(model.owningRule.key).child('conditionGroups').push(json, (e, result)=> {
+      if(e){
+        debugger
+      }
       model.key = result.key()
       this._added.next(model)
       if (cb) {

@@ -16,11 +16,9 @@ import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engi
 
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
-import {Dropdown} from "../semantic/modules/dropdown/dropdown";
 
 var rsrc = {
   fireOn: {
-
     EVERY_PAGE: 'Every Page',
     ONCE_PER_VISIT: 'Once per visit',
     ONCE_PER_VISITOR: 'Once per visitor',

@@ -6,6 +6,7 @@ import {ActionModel} from "../../../api/rule-engine/Action";
 import {ActionTypeService, ActionTypeModel} from "../../../api/rule-engine/ActionType";
 import {ActionService} from "../../../api/rule-engine/Action";
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
+import {I18nService} from "../../../api/system/locale/I18n";
 
 @Component({
   selector: 'rule-action',
@@ -39,8 +40,10 @@ export class RuleActionComponent {
 
   private typeService:ActionTypeService
   private actionService:ActionService;
+  private _msgService:I18nService;
 
-  constructor( typeService:ActionTypeService, actionService:ActionService){
+  constructor( msgService:I18nService, typeService:ActionTypeService, actionService:ActionService){
+    this._msgService = msgService;
     this.actionService = actionService;
     this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action", [], [])
 
@@ -50,7 +53,7 @@ export class RuleActionComponent {
     this.action = action;
 
     typeService.onAdd.subscribe((actionType:ActionTypeModel) => {
-        this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.i18nKey)])
+      this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.getMessage('name'))])
     })
   }
 

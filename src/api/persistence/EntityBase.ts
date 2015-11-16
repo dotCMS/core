@@ -3,8 +3,13 @@ import  {Check} from '../validation/Check'
 import {ApiRoot} from "./ApiRoot";
 
 
+let pushSetEmptyFn = function (a:Error=null, b:any=null) {
+}
+
 let emptyFn = function (a:any=null) {
 }
+
+
 
 let Dispatcher = {
   queries: new Set(),
@@ -148,14 +153,17 @@ export class EntityMeta {
    * @param onComplete
    * @returns {*}
    */
-  set(data, onComplete = emptyFn) {
+  set(data, onComplete = pushSetEmptyFn) {
     if (data === null) {
       return this.remove(onComplete)
     }
     let prom = ApiRoot.instance().dataStore.setItem(this.path, data)
-    prom.then(() => {
+    prom.then((response) => {
       Dispatcher.notify(this.path, "change", new EntitySnapshot(this.toString(), data))
-      onComplete()
+      if(response.isError){
+        debugger
+      }
+      onComplete(null, response )
     }).catch((e) => onComplete(e))
     return prom
   }
@@ -166,32 +174,39 @@ export class EntityMeta {
    * @param onComplete
    * @returns {*}
    */
-  update(data, onComplete = emptyFn) {
+  update(data, onComplete = pushSetEmptyFn) {
     return this.set(data, onComplete)
   }
 
-  remove(onComplete = emptyFn) {
+  remove(onComplete = pushSetEmptyFn) {
     let prom = ApiRoot.instance().dataStore.removeItem(this.path)
-    prom.then(() => {
+    prom.then((response) => {
+      if(response.isError){
+        debugger
+      }
       Dispatcher.notify(this.path, 'removed', this.latestSnapshot)
-      onComplete()
+      onComplete(null, response)
     }).catch((e) => onComplete(e))
     return prom
   }
 
-  push(data, onComplete = emptyFn) {
+  push(data, onComplete = pushSetEmptyFn) {
     return ApiRoot.instance().dataStore.setItem(this.path, data, true)
         .then((result) => {
-          console.log("Push succeeded, creating snapshot")
-          let snap = new EntitySnapshot(result.path, data)
-          let childMeta = new EntityMeta(result.path);
-          childMeta.latestSnapshot = snap
-          onComplete(snap)
-          return snap
+          if(result.isError){
+            onComplete(result.error, result)
+          }
+          else {
+            console.log("Push succeeded, creating snapshot")
+            let snap = new EntitySnapshot(result.path, data)
+            let childMeta = new EntityMeta(result.path);
+            childMeta.latestSnapshot = snap
+            onComplete(null, snap)
+            return snap
+          }
         }).catch((e) => {
           console.log('Error creating snapshot', e)
           onComplete(e)
-          throw e
         })
   }
 
@@ -229,7 +244,7 @@ export class EntityMeta {
     }
   }
 
-  on(eventType, callback, failureCallback = emptyFn) {
+  on(eventType, callback, failureCallback = pushSetEmptyFn) {
     switch (eventType) {
       case 'value':
         return this.onValue(callback)
