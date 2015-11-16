@@ -60,7 +60,7 @@ export class ActionTypeService {
   private _refreshed:EventEmitter
   onAdd:Rx.Observable<ActionTypeModel>
   onRefresh:Rx.Observable<ActionTypeModel>
-  private _apiRoot;
+  private _apiRoot:ApiRoot;
   private _ref;
   private _map:{[key:string]: ActionTypeModel}
   private _rsrcService:I18nService;
@@ -80,7 +80,7 @@ export class ActionTypeService {
   fromSnapshot(snapshot:EntitySnapshot):ActionTypeModel {
     let val:any = snapshot.val()
     let model = new ActionTypeModel(snapshot.key(), val.i18nKey, val.parameters)
-    this._rsrcService.get("en-US", model.i18nKey, (result)=>{
+    this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (result)=>{
       model.i18n = result;
     })
     return model
