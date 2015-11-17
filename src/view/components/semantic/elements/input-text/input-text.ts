@@ -23,7 +23,7 @@ export class InputTextModel {
     this.value = value
     this.disabled = disabled
     this.icon = icon || ''
-    if(!this.icon.includes(' ') && this.icon.length > 0){
+    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
       this.icon = (this.icon + ' icon').trim()
     }
   }
