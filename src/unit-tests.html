@@ -5,16 +5,31 @@
   <script src="../node_modules/jasmine-core/lib/jasmine-core/jasmine.js"></script>
   <script src="../node_modules/jasmine-core/lib/jasmine-core/jasmine-html.js"></script>
   <script src="../node_modules/jasmine-core/lib/jasmine-core/boot.js"></script>
-  <script src="../jspm_packages/system.src.js"></script>
-  <script src="../config.js"></script>
 
 </head>
 <body>
+
+<script src="thirdparty/system/dist/system.src.js"></script>
+<script src="thirdparty/angular2/bundles/angular2.dev.js"></script>
+<script src="thirdparty/angular2/node_modules/@reactivex/rxjs/dist/global/Rx.js"></script>
+
 <script>
+
+
+  System.config({
+    paths: {
+
+    },
+    packages: {
+      'api': {defaultExtension: 'js'},
+      'view': {defaultExtension: 'js'}
+    },
+    map: {
+      "whatwg-fetch": "thirdparty/whatwg-fetch/fetch.js"
+    }
+  });
   Promise.all([
-    System.import('es6-shim'),
-    System.import('zone.js'),
-    System.import('reflect-metadata'),
+    System.import('api/persistence/ApiRoot.spec'),
     System.import('api/persistence/LocalDataStore.spec'),
     System.import('api/rule-engine/Rule.spec'),
     System.import('api/rule-engine/Action.spec'),

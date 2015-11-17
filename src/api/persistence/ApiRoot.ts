@@ -20,8 +20,15 @@ export class ApiRoot {
     this.dataStore = dataStore;
     dataStore.setAuth(authUser.username, authUser.password)
     try {
-      let url = this.checkQueryForUrl(document.location.search.substring(1))
-      this.setBaseUrl(url) // if null, just uses the base of the current URL
+      let query = document.location.search.substring(1);
+      let siteId = ApiRoot.parseQueryParam(query, "realmId");
+      if(siteId){
+        this.defaultSiteId = siteId
+        console.log('Site Id set to ', this.defaultSiteId)
+      }
+      let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
+      console.log('Proxy server Base URL set to ', baseUrl)
+      this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
       this.resourceRef = this.root.child('system/i18n')
     } catch (e) {
       console.log("Could not set baseUrl automatically.")
@@ -29,21 +36,20 @@ export class ApiRoot {
     instanceOfApiRoot = this;
   }
 
-  checkQueryForUrl(locationQuery:string):string{
-    let queryBaseUrl = null;
-    if (locationQuery && locationQuery.length) {
-      let q = locationQuery
-      let token = 'baseUrl='
-      let idx = q.indexOf(token)
-      if (idx >= 0) {
-        let end = q.indexOf('&', idx)
-        end = end != -1 ? end : q.length
-        queryBaseUrl = q.substring(idx + token.length, end)
-        console.log('Proxy server Base URL set to ', queryBaseUrl)
-      }
+  static parseQueryParam(query:string, token:string):string {
+    let idx = -1;
+    let result = null
+    token = token + '='
+    if(query && query.length){
+      idx = query.indexOf(token)
     }
-    return queryBaseUrl
-  }
+    if (idx >= 0) {
+      let end = query.indexOf('&', idx)
+      end = end != -1 ? end : query.length
+      result = query.substring(idx + token.length, end)
+    }
+    return result;
+  };
 
   setBaseUrl(url=null){
     if(url === null){
