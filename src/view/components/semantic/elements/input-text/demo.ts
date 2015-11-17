@@ -85,7 +85,7 @@ class App {
   initDemoIcon() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.icon = "circular search link"
+    model.icon = "icon circular search link"
     model.placeholder = "Icon"
 
     this.demoIcon = model;
