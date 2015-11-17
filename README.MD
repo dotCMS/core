@@ -19,18 +19,23 @@ and Angular 2 alpha 44 for framework and scaffolding (templating, dependency inj
 
 ## To Run:
 
+The general steps are as follows:
   * Checkout this repo
-  * Update Node to at least v0.12.x and NPM to 2.14.x
-  * Install global NPM hooks
+  * Update [Node JS](https://nodejs.org/en/download/) to at least v0.12.x and NPM to 2.14.x
+  * Install global NPM hooks: Typescript Compiler and [Karma Command Line Interface](http://karma-runner.github.io/0.13/intro/installation.html)
   * Run NPM Install
   * Run a server
   
+On a mac you should be able to get by with these commands, once you've installed/updated npm  
 ```Shell
 git clone git@github.com:dotCMS/core-web.git
 npm -g install typescript@^1.6.2
+npm -g install karma-cli
 npm install
 npm run itest
 ```
+
+If `npm install` fails, do try at least one additional time. Occasionally npm has issues due to dependency order... or something like that. 
 
 To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests,
 and will start a server on http://localhost:9000 that by default will proxy all ReST requests to http://localhost:8080, which is where you should
