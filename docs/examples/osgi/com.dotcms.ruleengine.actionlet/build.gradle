@@ -47,7 +47,7 @@ sourceSets {
 }
 
 test {
-    // enable Te¡stNG support (default is JUnit)
+    // enable TestNG support (default is JUnit)
     useTestNG()
     /* enabling standard streams allows us to see test failures and related stack traces in the console. */
     testLogging.showStandardStreams = true
