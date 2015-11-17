@@ -57,7 +57,7 @@ export class RuleActionComponent {
     this.action = action;
 
     typeService.onAdd.subscribe((actionType:ActionTypeModel) => {
-      this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.getMessage('name'))])
+      this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.rsrc.name)])
     })
   }
 
