@@ -24,12 +24,18 @@ export class ActionTypeModel extends CwModel implements Internationalized {
   i18nKey:string
   parameters:{[key:string]:ActionTypeParameter}
 
+  rsrc: {
+    name:string
+  }
   private _i18n:I18nResourceModel
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:{[key:string]:ActionTypeParameter} = {}) {
     super(key ? key : 'NoSelection')
     this.i18nKey = i18nKey ? i18nKey : key;
     this.parameters = parameters ? parameters : {}
+    this.rsrc = {
+      name: this.i18nKey
+    }
   }
 
   getMessage(key:string):string{
@@ -80,9 +86,7 @@ export class ActionTypeService {
   fromSnapshot(snapshot:EntitySnapshot):ActionTypeModel {
     let val:any = snapshot.val()
     let model = new ActionTypeModel(snapshot.key(), val.i18nKey, val.parameters)
-    this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (result)=>{
-      model.i18n = result;
-    })
+
     return model
   }
 
@@ -101,16 +105,25 @@ export class ActionTypeService {
   list(cb:Function = noop):Rx.Observable<ActionTypeModel> {
     this._ref.once('value', (snap:EntitySnapshot) => {
       let types = snap.val()
-      let result = []
+      let actionTypes = []
       Object.keys(types).forEach((key) => {
         if (DISABLED_ACTION_TYPE_IDS[key] !== true) {
           let actionType = snap.child(key)
-          let typeModel = this.fromSnapshot(actionType)
-          this._entryReceived(typeModel)
-          result.push(typeModel)
+          let model = this.fromSnapshot(actionType)
+          this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (rsrcResult:I18nResourceModel)=>{
+            if (rsrcResult && rsrcResult.getMessage('name')) {
+              model.i18n = rsrcResult;
+              model.rsrc.name = rsrcResult.getMessage('name')
+            } else{
+              model.rsrc.name = model.i18nKey
+            }
+            this._entryReceived(model)
+            actionTypes.push(model)
+          })
+
         }
       })
-      cb(result)
+      cb(actionTypes)
     }, (e)=> {
       throw e;
     })
