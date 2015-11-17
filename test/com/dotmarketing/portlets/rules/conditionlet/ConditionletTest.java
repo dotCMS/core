@@ -1179,8 +1179,8 @@ public class ConditionletTest extends TestBase {
 	}
 
 	@Test
-	public void testUsersBrowserHeader() {
-		Conditionlet headerConditionlet = new UsersBrowserHeaderConditionlet();
+	public void testRequestHeader() {
+		Conditionlet headerConditionlet = new RequestHeaderConditionlet();
 		// Conditionlet has the input field
 		Collection<ConditionletInput> inputCollection = headerConditionlet
 				.getInputs(null);
