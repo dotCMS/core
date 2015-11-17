@@ -165,7 +165,7 @@ export class RuleService {
       let rule = RuleService.fromSnapshot(key, snap)
       cb(rule)
     }, (e)=> {
-      debugger
+      throw e
     })
   }
 
@@ -177,7 +177,7 @@ export class RuleService {
         this._added.next(rule)
       })
     }, (e)=> {
-      debugger
+      throw e
     })
     return this.onAdd
   }
@@ -185,7 +185,7 @@ export class RuleService {
   add(rule:RuleModel, cb:Function = null) {
     this.ref.push(RuleService.toJson(rule), (e, resultSnapshot) => {
       if(e){
-        debugger
+        throw e
       }
       rule.snapshot = resultSnapshot
       rule.key = resultSnapshot.key()

@@ -185,7 +185,7 @@ export class ConditionService {
       cRef.once('value', (conditionSnap)=> {
         this._added.next(this.fromSnapshot(group, conditionSnap))
       }, (e)=> {
-        debugger
+        throw e
       })
     })
   }
@@ -213,7 +213,7 @@ export class ConditionService {
       this._added.next(model)
       cb(model)
     }, (e)=> {
-      debugger
+      throw e
     })
   }
 

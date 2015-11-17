@@ -158,7 +158,6 @@ describe('Integration.api.rule-engine.ActionService', function () {
         actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
           // updatedAction and clientAction SHOULD NOT be the same instance object.
           updatedAction['abc123'] = 100
-          debugger
           expect(clientAction['abc123']).toBeUndefined()
           expect(clientAction.getParameter(key)).toBe(value, "ClientAction param value should still be set.")
           expect(updatedAction.getParameter(key)).toBe(value, "Action refreshed from server should have the correct param value.")
