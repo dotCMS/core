@@ -15,7 +15,11 @@ import {I18nService} from "../../../api/system/locale/I18n";
 @View({
   template: `<div flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
-    <cw-input-dropdown class="cw-action-type-dropdown" [model]="actionTypesDropdown" (change)="handleActionTypeChange($event)"></cw-input-dropdown>
+    <cw-input-dropdown
+      class="cw-action-type-dropdown"
+      [model]="actionTypesDropdown"
+      (change)="handleActionTypeChange($event)">
+      </cw-input-dropdown>
   </div>
 
 
@@ -45,7 +49,7 @@ export class RuleActionComponent {
   constructor( msgService:I18nService, typeService:ActionTypeService, actionService:ActionService){
     this._msgService = msgService;
     this.actionService = actionService;
-    this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action", [], [])
+    this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action")
 
     this.typeService = typeService
     let action  = new ActionModel()

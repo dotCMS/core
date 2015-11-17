@@ -34,7 +34,7 @@ export class I18NCountryProvider {
         this.names.sort()
         resolve(this);
       }, (e)=> {
-        debugger
+        throw e
       })
     });
   }

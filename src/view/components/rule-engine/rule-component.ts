@@ -38,10 +38,10 @@ var fireOn = [
   properties: ["rule", "hidden"]
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden">
+  template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
     <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ng-if="!hidden">
-      <i flex="none" class="caret icon cw-rule-caret" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
+      <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
                       class="cw-rule-name-input"
                      (change)="handleRuleNameChange($event.target.value)"

@@ -75,7 +75,7 @@ export class I18nService {
       let rsrcModel = I18nService.fromSnapshot(locale, key, snap)
       cb(rsrcModel)
     }, (e)=> {
-      debugger
+      throw e
     })
   }
 

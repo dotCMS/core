@@ -161,7 +161,7 @@ export class EntityMeta {
     prom.then((response) => {
       Dispatcher.notify(this.path, "change", new EntitySnapshot(this.toString(), data))
       if(response.isError){
-        debugger
+        throw response.error
       }
       onComplete(null, response )
     }).catch((e) => onComplete(e))
@@ -182,7 +182,7 @@ export class EntityMeta {
     let prom = ApiRoot.instance().dataStore.removeItem(this.path)
     prom.then((response) => {
       if(response.isError){
-        debugger
+        throw response.error
       }
       Dispatcher.notify(this.path, 'removed', this.latestSnapshot)
       onComplete(null, response)

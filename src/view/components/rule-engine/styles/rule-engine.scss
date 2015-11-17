@@ -8,30 +8,6 @@ $text-emphasis: #fc7e1c;
 $warn: #c85a6a;
 $primary-one: #209021;
 
-.buttonRow-left a:hover {
-  background: #e5f4fa;
-}
-
-.workflowActionLink:hover {
-  background: #e5f4fa;
-}
-
-.account-flyout a:hover {
-  background: #e5f4fa;
-}
-
-tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div {
-  background: #e5f4fa !important;
-}
-
-.listingTable tr.selected {
-  background-color: #e5f4fa;
-}
-
-.actionTable tr.active {
-  background-color: #e5f4fa;
-}
-
 .cw-rule-engine {
   > .cw-header {
     padding: 1em 2em 2em 2em;
@@ -44,6 +20,10 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
 
 .cw-hidden {
   display: none !important;
+}
+
+.cw-rule.cw-disabled *, .cw-rule.cw-disabled .ui input {
+  color: rgba(179, 179, 179, 0.7);
 }
 
 .cw-rule {
@@ -63,9 +43,9 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   }
 
   .cw-rule-caret {
-    min-width: 2em;
-    max-width: 2em;
-    margin-left: 1em;
+    min-width: 1.25em;
+    max-width: 1.25em;
+    margin-left: .5em;
   }
 
   .cw-fire-on-label {
@@ -79,7 +59,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
     min-width: 12em;
     max-width: 12em;
   }
-
 
   .cw-btn-group {
     padding-right: 1em;
@@ -159,7 +138,6 @@ tr.alternate_2:hover, tr.alternate_1:hover, .divalt_1:hover, .divalt_1:hover div
   .cw-condition-row, .cw-action-row {
     margin-bottom: .5em;
   }
-
 
 }
 

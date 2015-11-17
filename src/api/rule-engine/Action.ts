@@ -156,7 +156,7 @@ export class ActionService {
       this._added.next(model)
       cb(model)
     }, (e)=> {
-      debugger
+      throw e
     })
   }
 
@@ -187,7 +187,7 @@ export class ActionService {
       let json = this._toJson(model)
       this.ref.child(model.key).set(json, (e, result)=> {
         if (e) {
-          debugger
+          throw e
         }
         cb(model)
       })
