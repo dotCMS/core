@@ -1,3 +1,4 @@
+<%@page import="com.dotmarketing.business.Layout"%>
 <%@page import="com.dotmarketing.beans.Host"%>
 <%@page import="java.util.List"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -67,6 +68,10 @@
 		boolean canManageHosts = false;
 		String _hostManagerUrl = null;
 	
+		if(layouts ==null){
+			List<Layout> userHasLayouts = (List<Layout>) APILocator.getLayoutAPI().loadLayoutsForUser(user);
+			layouts = userHasLayouts.toArray(new Layout[userHasLayouts.size()]);
+		}
 		// if we have a host, get the url for the browser
 		for (int i = 0; i < layouts.length; i++) {
 			List<String> portletIDs = layouts[i].getPortletIds();
