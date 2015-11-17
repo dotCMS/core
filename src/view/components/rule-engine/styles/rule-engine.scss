@@ -22,10 +22,6 @@ $primary-one: #209021;
   display: none !important;
 }
 
-.cw-rule.cw-disabled *, .cw-rule.cw-disabled .ui input {
-  color: rgba(179, 179, 179, 0.7);
-}
-
 .cw-rule {
   margin: 0 2em 2em 2em;
   border: 1px solid $background-primary;
@@ -116,23 +112,6 @@ $primary-one: #209021;
 
   cw-toggle-input.cw-input {
     margin-top: .75em;
-  }
-
-  .cw-input-placeholder {
-    border-radius: .5em;
-    background-image: -webkit-gradient(
-            linear,
-            left top,
-            left bottom,
-            color-stop(0, rgb(227, 227, 227)),
-            color-stop(0.5, rgb(142, 142, 142)),
-            color-stop(1, rgb(227, 227, 227))
-    );
-    background-image: -o-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
-    background-image: -moz-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
-    background-image: -webkit-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
-    background-image: -ms-linear-gradient(bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
-    background-image: linear-gradient(to bottom, rgb(227, 227, 227) 0%, rgb(142, 142, 142) 50%, rgb(227, 227, 227) 100%);
   }
 
   .cw-condition-row, .cw-action-row {

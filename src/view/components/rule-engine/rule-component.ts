@@ -60,7 +60,7 @@ var fireOn = [
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button" aria-label="Delete Rule" (click)="removeRule()">
+          <button class="ui button" aria-label="Delete Rule" (click)="removeRule($event)">
             <i class="trash icon"></i>
           </button>
           <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()" [disabled]="!rule.isPersisted()">
@@ -152,7 +152,8 @@ class RuleComponent {
     if (!this.rule.isPersisted()) {
       var el:Element = this.elementRef.nativeElement
       window.setTimeout(function () {
-        var els = el.getElementsByClassName('cw-name')
+        var els = el.getElementsByClassName('cw-rule-name-input')
+        els = els[0] ? els[0].getElementsByTagName('input') : []
         if (els[0]) {
           els[0]['focus']();
         }
@@ -179,6 +180,9 @@ class RuleComponent {
       }
       if (Object.keys(rule.groups).length === 0) {
         this.addGroup()
+      }
+      if(this.rule.name == ''){
+        this.collapsed = false
       }
 
     }
@@ -285,8 +289,9 @@ class RuleComponent {
     throw err
   }
 
-  removeRule() {
-    if (confirm('Are you sure you want delete this rule?')) {
+  removeRule(event:Event) {
+    if ((event.altKey && event.shiftKey) || confirm('Are you sure you want delete this rule?')) {
+      event.stopPropagation()
       this.ruleService.remove(this.rule)
     }
   }
