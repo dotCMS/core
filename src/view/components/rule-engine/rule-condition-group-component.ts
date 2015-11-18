@@ -64,25 +64,25 @@ export class ConditionGroupComponent {
   private conditionStub:ConditionModel
   private conditionStubWatch:Rx.Subscription<CwChangeEvent<any>>
   private apiRoot:ApiRoot
-  private groupService:ConditionGroupService;
-  private conditionService:ConditionService;
+  private _groupService:ConditionGroupService;
+  private _conditionService:ConditionService;
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
               @Inject(ConditionGroupService) groupService:ConditionGroupService,
               @Inject(ConditionService) conditionService:ConditionService) {
     this.apiRoot = apiRoot
-    this.groupService = groupService;
-    this.conditionService = conditionService;
+    this._groupService = groupService;
+    this._conditionService = conditionService;
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
-    this.conditionService.onAdd.subscribe((conditionModel) => {
+    this._conditionService.onAdd.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
         this.handleAddCondition(conditionModel)
 
       }
     })
-    this.conditionService.onRemove.subscribe((conditionModel) => {
+    this._conditionService.onRemove.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
         this.handleRemoveCondition(conditionModel)
       }
@@ -95,8 +95,14 @@ export class ConditionGroupComponent {
     if (groupKeys.length == 0) {
       this.addCondition()
     } else {
-      this.conditionService.listForGroup(group)
+      this._conditionService.listForGroup(group)
     }
+
+    this._group.onChange.subscribe((event:CwChangeEvent<ConditionGroupModel>)=> {
+      if (event.target.isValid() && event.target.isPersisted()) {
+        this._groupService.save(event.target)
+      }
+    })
   }
 
   get group() {
@@ -119,7 +125,7 @@ export class ConditionGroupComponent {
     //noinspection TypeScriptUnresolvedVariable
     this.conditionStubWatch = condition.onChange.subscribe((self)=> {
       if (condition.isValid()) {
-        this.conditionService.add(condition)
+        this._conditionService.add(condition)
       }
     })
     this.conditions.push(this.conditionStub)
@@ -135,7 +141,7 @@ export class ConditionGroupComponent {
       return aryModel.key != conditionModel.key
     })
     if (this.conditions.length === 0) {
-      this.groupService.remove(this.group)
+      this._groupService.remove(this.group)
     }
   }
 
