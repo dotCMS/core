@@ -205,15 +205,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
 
             }
 
-            dc.setSQL("SELECT COUNT(*) AS results FROM " + getIntegrityType().getResultsTableName());
-			long totalResults = 0;
-			if (DbConnectionFactory.isOracle()) {
-				BigDecimal lang = (BigDecimal) dc.loadObjectResults().get(0).get("results");
-				totalResults = new Long(lang.toPlainString());
-			} else {
-				totalResults = (Long) dc.loadObjectResults().get(0).get("results");
-			}
-			return totalResults > 0;
+            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName()) > 0;
         } catch (Exception e) {
             throw new Exception("Error running the Folders Integrity Check", e);
         }
