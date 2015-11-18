@@ -104,6 +104,7 @@ export class ConditionModel extends CwModel {
 
   set operator(value:string) {
     this._operator = value;
+    this._changed('operator')
   }
 
   _changed(key:string) {
