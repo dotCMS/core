@@ -252,6 +252,9 @@ class RuleComponent {
     this.actions = this.actions.filter((aryAction)=> {
       return aryAction.key != action.key
     })
+    if (this.actions.length === 0) {
+      this.addAction()
+    }
   }
 
   handleActionRemoveError(err:any) {
@@ -285,6 +288,9 @@ class RuleComponent {
     this.groups = this.groups.filter((aryGroup)=> {
       return aryGroup.key != group.key
     })
+    if (this.groups.length === 0) {
+      this.addGroup()
+    }
   }
 
   handleGroupRemoveError(err:any) {
