@@ -206,7 +206,7 @@ class RuleComponent {
 
   addGroup() {
     this._groupStub = new ConditionGroupModel()
-    this._groupStub.priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 0
+    this._groupStub.priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 1
     this._groupStub.operator = 'AND'
     this._groupStub.owningRule = this.rule
     this.groups.push(this._groupStub)

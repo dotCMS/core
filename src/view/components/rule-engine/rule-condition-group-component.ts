@@ -112,7 +112,7 @@ export class ConditionGroupComponent {
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
     let condition = new ConditionModel()
-    condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 0
+    condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 1
     condition.name = "Condition. " + new Date().toISOString()
     condition.owningGroup = this._group
     condition.comparison = 'is'
