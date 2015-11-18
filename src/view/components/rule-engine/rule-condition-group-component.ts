@@ -58,7 +58,7 @@ export class ConditionGroupComponent {
   groupIndex:number
   _group:ConditionGroupModel
   rule:RuleModel
-  conditions:Array<ConditionModel>;
+  _conditions:Array<ConditionModel>;
   groupCollapsed:boolean
 
   private conditionStub:ConditionModel
@@ -74,7 +74,7 @@ export class ConditionGroupComponent {
     this._groupService = groupService;
     this._conditionService = conditionService;
     this.groupCollapsed = false
-    this.conditions = []
+    this._conditions = []
     this.groupIndex = 0
     this._conditionService.onAdd.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
@@ -109,10 +109,23 @@ export class ConditionGroupComponent {
     return this._group;
   }
 
+  get conditions() {
+    var unsortConditions = this._conditions
+    return unsortConditions.sort(function (a, b) {
+      if (a.priority > b.priority) {
+        return 1;
+      }
+      if (a.priority < b.priority) {
+        return -1;
+      }
+      return 0;
+    });
+  }
+
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
     let condition = new ConditionModel()
-    condition.priority = 10
+    condition.priority = this.conditions.length
     condition.name = "Condition. " + new Date().toISOString()
     condition.owningGroup = this._group
     condition.comparison = 'is'
