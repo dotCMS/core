@@ -270,13 +270,7 @@ class RuleComponent {
       } else if (this.groups.indexOf(group) == -1) {
         this.groups.push(group)
         this.groups.sort(function (a, b) {
-          if (a.priority > b.priority) {
-            return 1;
-          }
-          if (a.priority < b.priority) {
-            return -1;
-          }
-          return 0;
+          return a.priority - b.priority;
         });
       }
     }

@@ -153,13 +153,7 @@ export class ConditionGroupComponent {
     } else{
       this.conditions.push(conditionModel)
       this.conditions.sort(function (a, b) {
-        if (a.priority > b.priority) {
-          return 1;
-        }
-        if (a.priority < b.priority) {
-          return -1;
-        }
-        return 0;
+        return a.priority - b.priority;
       });
     }
   }
