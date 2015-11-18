@@ -58,7 +58,7 @@ export class ConditionGroupComponent {
   groupIndex:number
   _group:ConditionGroupModel
   rule:RuleModel
-  _conditions:Array<ConditionModel>;
+  conditions:Array<ConditionModel>;
   groupCollapsed:boolean
 
   private conditionStub:ConditionModel
@@ -74,7 +74,7 @@ export class ConditionGroupComponent {
     this._groupService = groupService;
     this._conditionService = conditionService;
     this.groupCollapsed = false
-    this._conditions = []
+    this.conditions = []
     this.groupIndex = 0
     this._conditionService.onAdd.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
@@ -109,23 +109,10 @@ export class ConditionGroupComponent {
     return this._group;
   }
 
-  get conditions() {
-    var unsortConditions = this._conditions
-    return unsortConditions.sort(function (a, b) {
-      if (a.priority > b.priority) {
-        return 1;
-      }
-      if (a.priority < b.priority) {
-        return -1;
-      }
-      return 0;
-    });
-  }
-
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
     let condition = new ConditionModel()
-    condition.priority = this.conditions.length
+    condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 0
     condition.name = "Condition. " + new Date().toISOString()
     condition.owningGroup = this._group
     condition.comparison = 'is'
@@ -165,6 +152,15 @@ export class ConditionGroupComponent {
       this.conditionStubWatch.unsubscribe()
     } else{
       this.conditions.push(conditionModel)
+      this.conditions.sort(function (a, b) {
+        if (a.priority > b.priority) {
+          return 1;
+        }
+        if (a.priority < b.priority) {
+          return -1;
+        }
+        return 0;
+      });
     }
   }
 }
