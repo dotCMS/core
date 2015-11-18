@@ -118,8 +118,28 @@ function checkReindexation () {
 	CMSMaintenanceAjax.getReindexationProgress(checkReindexationCallback);
 }
 
+/** Stops de re-indexation process and clears the database table that contains 
+    the remaining non re-indexed records. */
 function stopReIndexing(){
 	CMSMaintenanceAjax.stopReindexation(checkReindexationCallback);
+}
+
+/** Stops de re-indexation process and clears the database table that contains 
+    the remaining non re-indexed records. Moreover, switches the current index 
+    to point to the new one. */
+function stopReIndexingAndSwitchover() {
+	CMSMaintenanceAjax.stopReindexationAndSwitchover(checkReindexationCallback);
+}
+
+/** Downloads the main information of the records that could not be re-indexed 
+    as a .CSV file*/
+function downloadFailedAsCsv() {
+	var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
+    href += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
+    href += "<portlet:param name='cmd' value='export-failed-as-csv' />";      
+    href += "<portlet:param name='referer' value='<%= java.net.URLDecoder.decode(referer, "UTF-8") %>' />";       
+    href += "</portlet:actionURL>";
+    window.location.href=href;
 }
 
 function optimizeCallback() {
@@ -1503,6 +1523,12 @@ dd.leftdl {
                         <td colspan="2" align="center">
                             <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
+                            </button>
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexingAndSwitchover();">
+                                <%= LanguageUtil.get(pageContext,"Stop-Reindexation-And-Make-Active") %>
+                            </button>
+                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="downloadFailedAsCsv();">
+                                <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-CSV") %>
                             </button>
                         </td>
                     </tr>
