@@ -206,7 +206,7 @@ class RuleComponent {
 
   addGroup() {
     this._groupStub = new ConditionGroupModel()
-    this._groupStub.priority = 10
+    this._groupStub.priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 0
     this._groupStub.operator = 'AND'
     this._groupStub.owningRule = this.rule
     this.groups.push(this._groupStub)
@@ -269,6 +269,15 @@ class RuleComponent {
         }
       } else if (this.groups.indexOf(group) == -1) {
         this.groups.push(group)
+        this.groups.sort(function (a, b) {
+          if (a.priority > b.priority) {
+            return 1;
+          }
+          if (a.priority < b.priority) {
+            return -1;
+          }
+          return 0;
+        });
       }
     }
   }
