@@ -1,4 +1,3 @@
-
 import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
 //import * as Rx from '../../../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
@@ -11,6 +10,20 @@ import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, Temp
  */
 
 var $ = window['$']
+
+const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
+  8: 'backspace',
+  188: 'comma',
+  46: 'deleteKey',
+  13: 'enter',
+  27: 'escape',
+  33: 'pageUp',
+  34: 'pageDown',
+  37: 'leftArrow',
+  38: 'upArrow',
+  39: 'rightArrow',
+  40: 'downArrow',
+}
 
 /**
  *
@@ -179,9 +192,26 @@ export class Dropdown {
     }
 
     var el = this.elementRef.nativeElement
-    $(el).children('.ui.dropdown').dropdown(config)
+    var $dropdown = $(el).children('.ui.dropdown');
+    $dropdown.dropdown(config)
+    this._applyArrowNavFix($dropdown);
 
   }
+
+  /**
+   * Fixes an issue with up and down arrows triggering a search in the dropdown, which auto selects the first result
+   * after a short buffering period.
+   * @param $dropdown The JQuery dropdown element, after calling #.dropdown(config).
+   * @private
+   */
+  private _applyArrowNavFix($dropdown) {
+    let $searchField = $dropdown.children('input.search')
+    $searchField.on('keyup', (event)=> {
+      if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
+        event.stopPropagation()
+      }
+    })
+  };
 
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element
@@ -235,7 +265,7 @@ export class Dropdown {
    * @param searchValue
    */
   onNoResults(searchValue) {
-    console.log('onNoResults', searchValue)
+
   }
 
   /**

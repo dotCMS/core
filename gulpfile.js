@@ -137,7 +137,7 @@ var project = {
   watch: function () {
     console.log("You will need to run 'npm run tsc' in a separate console window to watch ts files.")
     gulp.watch('./src/**/*.html', ['compile-templates']);
-    gulp.watch('./src/**/*.js', ['compile-js']);
+    gulp.watch('./src/**/*.js', ['compile-templates']);
     return gulp.watch('./src/**/*.scss', ['compile-styles']);
   },
 
@@ -188,7 +188,7 @@ var project = {
           console.log('Started connect web server on ' + config.appHost)
           if (config.args.open) {
             var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
-            console.log('Opening default browser to ' + openTo, config.args)
+            console.log('Opening default browser to ' + openTo)
             open(config.appHost + openTo)
           }
           else {

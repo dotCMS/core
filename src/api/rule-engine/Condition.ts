@@ -113,7 +113,7 @@ export class ConditionModel extends CwModel {
 
   isValid() {
     let valid = !!this._owningGroup
-    valid = valid && this._owningGroup.isValid()
+    valid = valid && this._owningGroup.isValid() && this._owningGroup.isPersisted()
     valid = valid && this._conditionType && this._conditionType.key && this._conditionType.key != 'NoSelection'
     return valid
   }

@@ -40,7 +40,7 @@ export class ConditionGroupModel extends CwModel {
 
   isValid() {
     let valid = !!this._owningRule
-    valid = valid && this._owningRule.isValid()
+    valid = valid && this._owningRule.isValid() && this._owningRule.isPersisted()
     valid = valid && this.operator && (this.operator === 'AND' || this.operator === 'OR')
     return valid
   }
