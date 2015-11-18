@@ -870,15 +870,28 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 	            dc.addParam(languageId);
 	            dc.loadResult();
 	        } else {
-	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-	                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
-	            dc.addParam(newHtmlPageIdentifier);
-	            dc.addParam(languageId);
-	            dc.addParam(remoteWorkingInode);
-	            dc.addParam(oldHtmlPageIdentifier);
-	            dc.addParam(localWorkingInode);
-	            dc.addParam(languageId);
-	            dc.loadResult();
+	        	if(UtilMethods.isSet(localWorkingInode) && UtilMethods.isSet(localLiveInode) && localWorkingInode.equals(localLiveInode)){
+					dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+							+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+					dc.addParam(newHtmlPageIdentifier);
+					dc.addParam(languageId);
+					dc.addParam(remoteWorkingInode);
+					dc.addParam(remoteWorkingInode);
+					dc.addParam(oldHtmlPageIdentifier);
+					dc.addParam(localWorkingInode);
+					dc.addParam(languageId);
+					dc.loadResult();
+				}else{
+		        	dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+		                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+		            dc.addParam(newHtmlPageIdentifier);
+		            dc.addParam(languageId);
+		            dc.addParam(remoteWorkingInode);
+		            dc.addParam(oldHtmlPageIdentifier);
+		            dc.addParam(localWorkingInode);
+		            dc.addParam(languageId);
+		            dc.loadResult();
+		        }
 	        }
 	        // Remove the live_inode references from Contentlet_version_info
 	        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
