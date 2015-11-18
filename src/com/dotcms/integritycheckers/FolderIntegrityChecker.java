@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -205,7 +206,14 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
             }
 
             dc.setSQL("SELECT COUNT(*) AS results FROM " + getIntegrityType().getResultsTableName());
-            return (Long) dc.loadObjectResults().get(0).get("results") > 0;
+			long totalResults = 0;
+			if (DbConnectionFactory.isOracle()) {
+				BigDecimal lang = (BigDecimal) dc.loadObjectResults().get(0).get("results");
+				totalResults = new Long(lang.toPlainString());
+			} else {
+				totalResults = (Long) dc.loadObjectResults().get(0).get("results");
+			}
+			return totalResults > 0;
         } catch (Exception e) {
             throw new Exception("Error running the Folders Integrity Check", e);
         }
