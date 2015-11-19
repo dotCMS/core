@@ -684,7 +684,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
             String langFile = (String)langFiles.nextElement();
 
             //We need to verify file is a language file.
-            String languageFilePrefix = "messages" + File.separator + "Language_";
+            String languageFilePrefix = "messages/Language_";
             String languageFileSuffix = ".properties";
             String languageFileDelimiter = "-";
 
