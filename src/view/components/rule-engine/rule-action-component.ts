@@ -63,7 +63,7 @@ export class RuleActionComponent {
 
   set action(action:ActionModel){
     this._action = action
-    if(this._action.actionType){
+    if(this._action.actionType && this._action.actionType.key != 'NoSelection'){
       this.actionTypesDropdown.selected = [this._action.actionType.key]
     }
     action.onChange.subscribe((self)=>{

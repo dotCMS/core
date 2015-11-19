@@ -104,7 +104,7 @@ export class ConditionComponent {
       if (event.target.isValid() && event.target.isPersisted()) {
         this._conditionService.save(event.target)
       }
-      if (this._condition.conditionType) {
+      if (this._condition.conditionType && this._condition.conditionType.key != 'NoSelection') {
         this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
       }
 

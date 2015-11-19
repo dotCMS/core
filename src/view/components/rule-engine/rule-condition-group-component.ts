@@ -124,12 +124,23 @@ export class ConditionGroupComponent {
     this.conditionStub = condition
     //noinspection TypeScriptUnresolvedVariable
     this.conditionStubWatch = condition.onChange.subscribe((self)=> {
-      if (condition.isValid()) {
-        this._conditionService.add(condition)
+      if(this.group.isValid()){
+        if (this._group.isPersisted()) {
+          this._addCondition(condition)
+        } else {
+          this._groupService.add(this._group, ()=> {
+            this._addCondition(condition)
+          })
+        }
       }
     })
     this.conditions.push(this.conditionStub)
+  }
 
+  _addCondition(condition:ConditionModel){
+    if (condition.isValid()) {
+      this._conditionService.add(condition)
+    }
   }
 
   toggleGroupOperator() {
