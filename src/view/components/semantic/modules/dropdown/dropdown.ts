@@ -12,11 +12,8 @@ import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, Temp
 var $ = window['$']
 
 const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
-  8: 'backspace',
-  188: 'comma',
-  46: 'deleteKey',
+
   13: 'enter',
-  27: 'escape',
   33: 'pageUp',
   34: 'pageDown',
   37: 'leftArrow',
