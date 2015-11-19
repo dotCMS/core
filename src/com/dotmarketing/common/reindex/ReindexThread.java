@@ -123,19 +123,6 @@ public class ReindexThread extends Thread {
 			if ( failedAttemptsCount == 10 ) {//We just want to create one notification error
 
 				try {
-					//System user
-					/*User systemUser = APILocator.getUserAPI().getSystemUser();
-
-					//Error message
-					String languageKey = "notification.reindexing.error";
-					String errorMessage = LanguageUtil.get(systemUser, languageKey);
-					//If the indexing is running when the system starts for the first time the language resources could be not available
-					if ( errorMessage.equals(languageKey) ) {
-						errorMessage = "An error has occurred during the indexing process, please check your logs and retry later";
-					}
-
-					//Add a notification to the back-end
-					APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());*/
 					String languageKey = "notification.reindexing.error";
 					String defaultMsg = "An error has occurred during the indexing process, please check your logs and retry later";
 					sendNotification(languageKey, null, defaultMsg);
@@ -226,63 +213,6 @@ public class ReindexThread extends Thread {
 					    fillRemoteQ();
 					
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
-					    /*Connection conn=DbConnectionFactory.getDataSource().getConnection();
-					    try{
-					        conn.setAutoCommit(false);
-    					    lockCluster(conn);
-    					    
-    					    // we double check again. Only one node will enter this critical region
-    					    // then others will enter just to see that the switchover is done
-    					    if(ESReindexationProcessStatus.inFullReindexation(conn)) {
-    					        if(jAPI.recordsLeftToIndexForServer(conn)==0) {
-    					            Logger.info(this, "Running Reindex Switchover");
-    					            
-    					            // wait a bit while all records gets flushed to index
-                                    Thread.sleep(2000L);
-                                    
-    					            indexAPI.fullReindexSwitchover(conn);
-
-									try {
-
-										//Reset the failed attempts count
-										failedAttemptsCount = 0;
-
-										//System user
-										User systemUser = APILocator.getUserAPI().getSystemUser();
-
-										//Success message
-										String successMessage = LanguageUtil.get(systemUser.getLocale(), "notification.reindexing.success");
-
-										//Add a notification to the back-end
-										//APILocator.getNotificationAPI().generateNotification(successMessage, NotificationLevel.INFO, systemUser.getUserId());
-										sendNotification("notification.reindexing.success", null, null);
-									} catch ( DotDataException | LanguageException e ) {
-										Logger.error(this, "Error creating a system notification for a successfully indexing process.", e);
-									}
-
-									// wait a bit while elasticsearch flushes it state
-    	                            Thread.sleep(2000L);
-    					        }
-    					    }
-					    
-					    }finally{
-					        try {
-					            unlockCluster(conn);
-					        }
-					        finally {
-					            try {
-					                conn.commit();
-					            }
-					            catch(Exception ex) {
-					                Logger.warn(this, ex.getMessage(), ex);
-					                conn.rollback();
-					            }
-					            finally {
-					                conn.close();
-					            }
-					        }
-					        this.notifiedFailingRecords.clear();
-					    }*/
 						// The re-indexation process has finished successfully
 						reindexSwitchover(false);
 						sendNotification("notification.reindexing.success", null, null);
@@ -349,7 +279,6 @@ public class ReindexThread extends Thread {
 								// The total number of re-tries minus 1 will
 								// indicate the last opportunity of a record to
 								// be re-indexed.
-								//int totalAttempts = (DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + DistributedJournalFactory.RETRY_FAILED_INDEX_TIMES) - 1;
 								int totalAttempts = (DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + DistributedJournalFactory.RETRY_FAILED_INDEX_TIMES);
 								String identToIndex = idx.getIdentToIndex();
 								if (!this.notifiedFailingRecords.contains(identToIndex) && idx.getPriority() >= totalAttempts) {
@@ -712,8 +641,6 @@ public class ReindexThread extends Thread {
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-//	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
-//                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
 	    
 	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
 	    
@@ -730,15 +657,7 @@ public class ReindexThread extends Thread {
         		inodes.add(liveInode);
         	}
         }
-        // ========================================================
-        String id = idx.getIdentToIndex();
-        // ========================================================
         for(String inode : inodes) {
-        	// ========================================================
-        	if (id.equalsIgnoreCase("007e042a-3ef7-4e3a-895d-76ae595b4f9f") || id.equalsIgnoreCase("27615708-d2e1-403f-bb7b-3dc07ae02a79")) {
-        		inode = "123123";
-        	}
-        	// ========================================================
             Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
                     (com.dotmarketing.portlets.contentlet.business.Contentlet)
                         HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
@@ -887,33 +806,24 @@ public class ReindexThread extends Thread {
 	 *             The established pauses to switch to the new index failed.
 	 */
 	private void reindexSwitchover(boolean forceSwitch) throws SQLException, DotDataException, InterruptedException {
-		// ========================================================
 		Connection conn = DbConnectionFactory.getDataSource().getConnection();
 		try {
 			conn.setAutoCommit(false);
 			lockCluster(conn);
-
-			// we double check again. Only one node will enter this critical
-			// region
-			// then others will enter just to see that the switchover is done
+			// We double check again. Only one node will enter this critical
+			// region, then others will enter just to see that the switchover is
+			// done
 			if (ESReindexationProcessStatus.inFullReindexation(conn)) {
 				if (forceSwitch || jAPI.recordsLeftToIndexForServer(conn) == 0) {
 					Logger.info(this, "Running Reindex Switchover");
-
-					// wait a bit while all records gets flushed to index
+					// Wait a bit while all records gets flushed to index
 					Thread.sleep(2000L);
-
 					indexAPI.fullReindexSwitchover(conn);
 					failedAttemptsCount = 0;
-
-					// wait a bit while elasticsearch flushes it state
+					// Wait a bit while elasticsearch flushes it state
 					Thread.sleep(2000L);
 				}
 			}
-			// HibernateUtil.startTransaction();
-			// pause();
-			// APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
-			// HibernateUtil.commitTransaction();
 		} finally {
 			try {
 				unlockCluster(conn);
@@ -931,8 +841,6 @@ public class ReindexThread extends Thread {
 				}
 			}
 			this.notifiedFailingRecords.clear();
-			// ========================================================
-			// unpause();
 		}
 	}
 

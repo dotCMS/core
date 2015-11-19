@@ -220,7 +220,6 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
     protected void resetServerForReindexEntry ( List<IndexJournal<T>> recordsToModify ) throws DotDataException {
         DotConnect dc = new DotConnect();
         int totalAttempts = REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + RETRY_FAILED_INDEX_TIMES;
-        //StringBuilder sql = new StringBuilder().append("UPDATE dist_reindex_journal SET serverid=NULL, priority = CASE WHEN priority < " + REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + " THEN " + REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + " ELSE priority + 1 END where id in (");
 		StringBuilder sql = new StringBuilder()
 				.append("UPDATE dist_reindex_journal SET serverid=NULL, priority = CASE WHEN priority < ")
 				.append(REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT).append(" THEN ")
@@ -234,19 +233,11 @@ public class ESDistributedJournalFactoryImpl<T> extends DistributedJournalFactor
         }
         sql.append(") AND priority <= " + totalAttempts);
         dc.setSQL(sql.toString());
-		/*StringBuilder updatePriority = new StringBuilder()
-				//.append("UPDATE dist_reindex_journal SET priority = priority + 1 where priority < "
-				.append("UPDATE dist_reindex_journal SET priority = CASE WHEN priority < " + REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + " THEN " + REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + " ELSE priority + 1 where priority < "
-						+ (REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + RETRY_FAILED_INDEX_TIMES) + " AND id IN (")
-				.append(identifiers).append(")");*/
         Connection con = null;
         try {
             con = DbConnectionFactory.getDataSource().getConnection();
             con.setAutoCommit(true);
             dc.loadResult(con);
-            /*dc.setSQL(updatePriority.toString());
-            con.setAutoCommit(true);
-            dc.loadResult(con);*/
         } catch ( SQLException e ) {
             try {
                 if ( con != null ) {

@@ -66,7 +66,10 @@ public class Task03165ModifyLoadRecordsToIndex extends AbstractJDBCStartupTask {
 						+ "END;\n"
 						+ "#\n";
 	
-	private final String MSSQL_SCRIPT = "CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT, @priority_level INT)\n"
+	private final String MSSQL_SCRIPT = "IF EXISTS (SELECT * FROM sys.objects WHERE type = 'P' AND name = 'load_records_to_index')\n"
+							+ "DROP PROCEDURE load_records_to_index;\n"
+						+ "GO\n"
+						+ "CREATE PROCEDURE load_records_to_index(@server_id VARCHAR(100), @records_to_fetch INT, @priority_level INT)\n"
 						+ "AS\n"
 						+ "BEGIN\n"
 							+ "WITH cte AS (\n"
