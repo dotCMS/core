@@ -119,7 +119,6 @@ class RuleComponent {
   private ruleNameInputTextModel:InputTextModel
   private fireOnDropdown:DropdownModel
   private _groupStub:ConditionGroupModel;
-  private _groupStubWatch:Rx.Subscription;
 
 
   constructor(elementRef:ElementRef,
@@ -210,15 +209,7 @@ class RuleComponent {
     this._groupStub.operator = 'AND'
     this._groupStub.owningRule = this.rule
     this.groups.push(this._groupStub)
-    if (this.rule.valid) {
-      this.groupService.add(this._groupStub)
-    } else {
-      this._groupStubWatch = this._groupStub.onChange.subscribe((vcEvent:CwChangeEvent<ConditionGroupModel>)=> {
-        if (vcEvent.target.valid) {
-          this.groupService.add(this._groupStub)
-        }
-      })
-    }
+    /* Groups are persisted when a Condition is added to them. */
   }
 
   addAction() {
@@ -267,9 +258,7 @@ class RuleComponent {
     if (group.owningRule.key === this.rule.key) {
       if (group == this._groupStub) {
         this._groupStub = null
-        if (this._groupStubWatch) {
-          this._groupStubWatch.unsubscribe()
-        }
+
       } else if (this.groups.indexOf(group) == -1) {
         this.groups.push(group)
         this.groups.sort(function (a, b) {
