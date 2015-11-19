@@ -1021,14 +1021,17 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				for (Map<String, Object> row : failedRecords) {
 					StringBuilder entry = new StringBuilder();
 					String id = null;
+					String priority = null;
 					if (DbConnectionFactory.isOracle()) {
 						BigDecimal rowVal = (BigDecimal) row.get("id");
 						id = new Long(rowVal.toPlainString()).toString();
+						rowVal = (BigDecimal) row.get("priority");
+						priority = new Long(rowVal.toPlainString()).toString();
 					} else {
 						Long rowVal = (Long) row.get("id");
 						id = rowVal.toString();
+						priority = String.valueOf((Integer) row.get("priority"));
 					}
-					String priority = String.valueOf((Integer) row.get("priority"));
 					entry.append(id).append(", ");
 					entry.append(row.get("ident_to_index").toString()).append(", ");
 					entry.append(row.get("inode_to_index").toString()).append(", ");
@@ -1039,8 +1042,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			} else {
 				Logger.debug(this, "Re-index table contained zero failed records. The CSV file will not be created.");
 			}
-		} catch (IOException | DotDataException e) {
-			Logger.error(this, "CSV file with the remaining non-indexed records could not be created.", e);
+		} catch (Exception e) {
+			Logger.error(this, "Download of CSV file with remaining non-indexed records failed.", e);
 		} finally {
 			pr.flush();
 			pr.close();

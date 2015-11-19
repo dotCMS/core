@@ -128,6 +128,8 @@ function stopReIndexing(){
     the remaining non re-indexed records. Moreover, switches the current index 
     to point to the new one. */
 function stopReIndexingAndSwitchover() {
+	dijit.byId('stopReindexAndSwitch').set('label', '<%= LanguageUtil.get(pageContext,"Switching-To-New-Index") %>');
+	dijit.byId('stopReindexAndSwitch').set('disabled', true);
 	CMSMaintenanceAjax.stopReindexationAndSwitchover(checkReindexationCallback);
 }
 
@@ -1524,10 +1526,10 @@ dd.leftdl {
                             <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexing();">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="stopReIndexingAndSwitchover();">
+                            <button dojoType="dijit.form.Button"  iconClass="resolveIcon" id="stopReindexAndSwitch" onClick="stopReIndexingAndSwitchover();">
                                 <%= LanguageUtil.get(pageContext,"Stop-Reindexation-And-Make-Active") %>
                             </button>
-                            <button dojoType="dijit.form.Button"  iconClass="reindexIcon" onClick="downloadFailedAsCsv();">
+                            <button dojoType="dijit.form.Button"  iconClass="downloadIcon" onClick="downloadFailedAsCsv();">
                                 <%= LanguageUtil.get(pageContext,"Download-Failed-Records-As-CSV") %>
                             </button>
                         </td>
