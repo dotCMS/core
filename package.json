@@ -27,30 +27,36 @@
     "karma": "^0.13.x",
     "karma-chrome-launcher": "^0.2.x",
     "karma-jasmine": "^0.3.x",
-    "karma-jspm": "^2.0.x",
     "karma-junit-reporter": "^0.3.8",
     "live-server": "^0.8.2",
     "merge2": "^0.3.6",
     "minimist": "^1.1.1",
     "node-zip": "^1.1.1",
     "open": "0.0.5",
+    "protractor": "^2.5.0",
     "proxy-middleware": "^0.14.x",
+    "selenium-webdriver": "^2.47.0",
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "~0.6.3",
     "typescript": "^1.6.2"
   },
   "scripts": {
+    "postinstall": "./node_modules/protractor/bin/webdriver-manager update",
+
     "tsc": "tsc -p src -w",
     "tsc-no": "tsc -p src",
     "start": "live-server--port=8180 --open=src",
     "test": "live-server --port=8280 --open=build/unit-tests.html",
     "dev": "gulp serve --open=/build/index.html",
     "itest": "gulp serve --open=/build/integration-tests.html",
+    "e2e": "./node_modules/protractor/bin/protractor protractor.conf.js || true",
     "idemo": "gulp serve --open=/build/integration-demo.html",
     "build": "gulp package",
     "publish": "gulp publish",
-    "publish-snapshot": "gulp publish-snapshot"
+    "publish-snapshot": "gulp publish-snapshot",
+    "webdriver-update": "./node_modules/protractor/bin/webdriver-manager update",
+    "webdriver-start": "./node_modules/protractor/bin/webdriver-manager start"
   },
   "dependencies": {
     "angular2": "2.0.0-alpha.44",

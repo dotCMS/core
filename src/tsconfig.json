@@ -26,6 +26,9 @@
     "api/rule-engine/Condition.it-spec.ts",
     "api/rule-engine/ConditionGroup.it-spec.ts",
 
+
+    "view/components/rule-engine/rule-engine.e2e.ts",
+
     "view/components/semantic/elements/input-text/demo.ts",
     "view/components/semantic/elements/input-text/index.ts",
     "view/components/semantic/modules/dropdown/index.ts"
