@@ -3,7 +3,13 @@ package com.dotmarketing.common.reindex;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESClient;
@@ -17,6 +23,7 @@ import com.dotcms.repackage.org.elasticsearch.client.Client;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI;
+import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.business.journal.IndexJournal;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -32,11 +39,54 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
+/**
+ * This thread is in charge of re-indexing the contenlet information placed in
+ * the {@code dist_reindex_journal} table. This process is constantly checking
+ * the existence of any record in the table and will add its information to the
+ * Elastic index.
+ * <p>
+ * The records added to the table will have a priority level set by the
+ * {@link DistributedJournalFactory#REINDEX_JOURNAL_PRIORITY_NEWINDEX} constant.
+ * During the process, all the "correct" contents will be processed and
+ * re-indexed first. All the "bad" records (contents that could not be
+ * re-indexed) will be set a different priority level specified by the
+ * {@link DistributedJournalFactory#REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT}
+ * constant and will be given more opportunities to be re-indexed after all of
+ * the correct contents have already been processed.
+ * </p>
+ * <p>
+ * The number of times the bad contents can re-try the re-index process is
+ * specified by the {@link DistributedJournalFactory#RETRY_FAILED_INDEX_TIMES}
+ * property, which can be customized through the
+ * {@code dotmarketing-config.properties} file. If a content cannot be
+ * re-indexed after all the specified attempts, a notification will be sent to
+ * the Notification Bar indicating the Identifier of the bad contentlet. This
+ * way users can keep track of the failed records and check the logs to get more
+ * information about the failure.
+ * </p>
+ * <p>
+ * The reasons why a content cannot be re-indexed can be, for example:
+ * <ul>
+ * <li>Incorrect data format in the contentlet's data, such as malformed JSON
+ * data.</li>
+ * <li>Association to orphaned data, such as being associated to an Inode that
+ * does not exist in the system.</li>
+ * <li>A Content Page, in which one or more of its parent folders do not exist
+ * in the system anymore.</li>
+ * </ul>
+ * </p>
+ * 
+ * @author root
+ * @version 3.3
+ * @since Mar 22, 2012
+ *
+ */
 public class ReindexThread extends Thread {
 
 	private static final ContentletIndexAPI indexAPI = APILocator.getContentletIndexAPI();
     private final LinkedList<IndexJournal<String>> remoteQ = new LinkedList<IndexJournal<String>>();
     private final LinkedList<IndexJournal<String>> remoteDelQ = new LinkedList<IndexJournal<String>>();
+    private final CopyOnWriteArrayList<String> notifiedFailingRecords = new CopyOnWriteArrayList<String>();
 	private final DistributedJournalAPI<String> jAPI = APILocator.getDistributedJournalAPI();
 
 	private static ReindexThread instance;
@@ -73,19 +123,9 @@ public class ReindexThread extends Thread {
 			if ( failedAttemptsCount == 10 ) {//We just want to create one notification error
 
 				try {
-					//System user
-					User systemUser = APILocator.getUserAPI().getSystemUser();
-
-					//Error message
 					String languageKey = "notification.reindexing.error";
-					String errorMessage = LanguageUtil.get(systemUser, languageKey);
-					//If the indexing is running when the system starts for the first time the language resources could be not available
-					if ( errorMessage.equals(languageKey) ) {
-						errorMessage = "An error has occurred during the indexing process, please check your logs and retry later";
-					}
-
-					//Add a notification to the back-end
-					APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());
+					String defaultMsg = "An error has occurred during the indexing process, please check your logs and retry later";
+					sendNotification(languageKey, null, defaultMsg);
 				} catch ( DotDataException | LanguageException e ) {
 					Logger.error(this, "Error creating a system notification informing about problems in the indexing process.", e);
 				}
@@ -140,8 +180,15 @@ public class ReindexThread extends Thread {
 	
 	private boolean die=false;
 
+	/**
+	 * This method is constantly verifying the existence of records in the
+	 * {@code dist_reindex_journal} table. If a record is found, then it must be
+	 * added to the Elastic index. If that's not possible, a notification
+	 * containing the content identifier will be sent to the user via the
+	 * Notifications API to take care of the problem as soon as possible.
+	 */
 	public void run() {
-
+		this.notifiedFailingRecords.clear();
 		while (!die) {
 
 			if (start && !work) {
@@ -166,62 +213,15 @@ public class ReindexThread extends Thread {
 					    fillRemoteQ();
 					
 					if(remoteQ.size()==0 && ESReindexationProcessStatus.inFullReindexation() && jAPI.recordsLeftToIndexForServer()==0) {
-					    Connection conn=DbConnectionFactory.getDataSource().getConnection();
-					    try{
-					        conn.setAutoCommit(false);
-    					    lockCluster(conn);
-    					    
-    					    // we double check again. Only one node will enter this critical region
-    					    // then others will enter just to see that the switchover is done
-    					    if(ESReindexationProcessStatus.inFullReindexation(conn)) {
-    					        if(jAPI.recordsLeftToIndexForServer(conn)==0) {
-    					            Logger.info(this, "Running Reindex Switchover");
-    					            
-    					            // wait a bit while all records gets flushed to index
-                                    Thread.sleep(2000L);
-                                    
-    					            indexAPI.fullReindexSwitchover(conn);
-
-									try {
-
-										//Reset the failed attempts count
-										failedAttemptsCount = 0;
-
-										//System user
-										User systemUser = APILocator.getUserAPI().getSystemUser();
-
-										//Success message
-										String successMessage = LanguageUtil.get(systemUser.getLocale(), "notification.reindexing.success");
-
-										//Add a notification to the back-end
-										APILocator.getNotificationAPI().generateNotification(successMessage, NotificationLevel.INFO, systemUser.getUserId());
-									} catch ( DotDataException | LanguageException e ) {
-										Logger.error(this, "Error creating a system notification for a successfully indexing process.", e);
-									}
-
-									// wait a bit while elasticsearch flushes it state
-    	                            Thread.sleep(2000L);
-    					        }
-    					    }
-					    
-					    }finally{
-					        try {
-					            unlockCluster(conn);
-					        }
-					        finally {
-					            try {
-					                conn.commit();
-					            }
-					            catch(Exception ex) {
-					                Logger.warn(this, ex.getMessage(), ex);
-					                conn.rollback();
-					            }
-					            finally {
-					                conn.close();
-					            }
-					        }
-					    }
-					}    
+						// The re-indexation process has finished successfully
+						reindexSwitchover(false);
+						sendNotification("notification.reindexing.success", null, null);
+					} else if (remoteQ.size() == 0 && ESReindexationProcessStatus.inFullReindexation()
+							&& jAPI.recordsLeftToIndexForServer() > 0) {
+						// Fill the re-index queue with failed records now after
+						// all the "good" records have been processed
+						fillRemoteQ(true);
+					}
 					
 					if(!remoteDelQ.isEmpty()) {
 					    synchronized(remoteDelQ) {
@@ -275,6 +275,21 @@ public class ReindexThread extends Thread {
 									jAPI.resetServerForReindexEntry(failedRecords);
 								} catch ( DotDataException dataException ) {
 									Logger.error(this, "Error adding back failed records to reindex queue", dataException);
+								}
+								// The total number of re-tries minus 1 will
+								// indicate the last opportunity of a record to
+								// be re-indexed.
+								int totalAttempts = (DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT + DistributedJournalFactory.RETRY_FAILED_INDEX_TIMES);
+								String identToIndex = idx.getIdentToIndex();
+								if (!this.notifiedFailingRecords.contains(identToIndex) && idx.getPriority() >= totalAttempts) {
+									// The record was not able to be re-indexed,
+									// so a notification will be generated and
+									// the record will not be processed anymore
+									String msg = "Could not re-index record with the Identifier '"
+											+ identToIndex
+											+ "'. The record is in a bad state or can be associated to orphaned records. You can try running the Fix Assets Inconsistencies tool and re-start the reindex.";
+									sendNotification("notification.reindexing.error.processrecord", new Object[] { identToIndex }, msg);
+									this.notifiedFailingRecords.add(identToIndex);
 								}
 
 								try {
@@ -605,9 +620,13 @@ public class ReindexThread extends Thread {
 	}
 
 	private void fillRemoteQ() throws DotDataException {
+	    fillRemoteQ(false);
+	}
+	
+	private void fillRemoteQ (boolean includeFailedRecords) throws DotDataException {
 	    try {
 	        HibernateUtil.startTransaction();
-	        remoteQ.addAll(jAPI.findContentReindexEntriesToReindex());
+	        remoteQ.addAll(jAPI.findContentReindexEntriesToReindex(includeFailedRecords));
 	        HibernateUtil.commitTransaction();
 	    }
 	    catch(Exception ex) {
@@ -622,8 +641,6 @@ public class ReindexThread extends Thread {
 	private void writeDocumentToIndex(BulkRequestBuilder bulk, IndexJournal<String> idx) throws DotDataException, DotSecurityException {
 	    Logger.debug(this, "Indexing document "+idx.getIdentToIndex());
 	    System.setProperty("IN_FULL_REINDEX", "true");
-//	    String sql = "select distinct inode from contentlet join contentlet_version_info " +
-//                " on (inode=live_inode or inode=working_inode) and contentlet.identifier=?";
 	    
 	    String sql = "select working_inode,live_inode from contentlet_version_info where identifier=?";
 	    
@@ -640,9 +657,7 @@ public class ReindexThread extends Thread {
         		inodes.add(liveInode);
         	}
         }
-        
         for(String inode : inodes) {
-        				
             Contentlet con = FactoryLocator.getContentletFactory().convertFatContentletToContentlet(
                     (com.dotmarketing.portlets.contentlet.business.Contentlet)
                         HibernateUtil.load(com.dotmarketing.portlets.contentlet.business.Contentlet.class, inode));
@@ -678,11 +693,35 @@ public class ReindexThread extends Thread {
 	public void stopFullReindexation() throws DotDataException {
 	    HibernateUtil.startTransaction();
 	    pause();
-	    remoteQ.clear();
+	    this.remoteQ.clear();
+	    this.notifiedFailingRecords.clear();
 	    APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
 	    indexAPI.fullReindexAbort();
 	    unpause();
 	    HibernateUtil.commitTransaction();
+	}
+
+	/**
+	 * Stops the current re-indexation process and switches the current index to
+	 * the new one. The main goal of this method is to allow users to switch to
+	 * the new index even if one or more contents could not be re-indexed.
+	 * <p>
+	 * This is very useful because the new index can be created and used
+	 * immediately. The user can have the new re-indexed content available and
+	 * then work on the conflicting contents, which can be either fixed or
+	 * removed from the database.
+	 * </p>
+	 * 
+	 * @throws SQLException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotDataException
+	 *             The process to switch to the new failed.
+	 * @throws InterruptedException
+	 *             The established pauses to switch to the new index failed.
+	 */
+	public void stopFullReindexationAndSwitchover() throws SQLException, DotDataException, InterruptedException {
+		this.remoteQ.clear();
+		reindexSwitchover(true);
 	}
 
 	/**
@@ -712,4 +751,97 @@ public class ReindexThread extends Thread {
 	public void setReindexSleepDuringIndexTime(int reindexSleepDuringIndexTime) {
 		this.reindexSleepDuringIndexTime = reindexSleepDuringIndexTime;
 	}
+
+	/**
+	 * Generates a new notification displayed at the top left side of the
+	 * back-end page in dotCMS. This utility method allows you to send reports
+	 * to the user regarding the operations performed during the re-index,
+	 * whether they succeeded or failed.
+	 * 
+	 * @param key
+	 *            - The message key that should be present in the language
+	 *            properties files.
+	 * @param msgParams
+	 *            - The parameters, if any, that will replace potential
+	 *            placeholders in the message. E.g.: "This is {0} test."
+	 * @param defaultMsg
+	 *            - If set, the default message in case the key does not exist
+	 *            in the properties file. Otherwise, the message key will be
+	 *            returned.
+	 * @throws DotDataException
+	 *             The notification could not be posted to the system.
+	 * @throws LanguageException
+	 *             The language properties could not be retrieved.
+	 */
+	private void sendNotification(String key, Object[] msgParams, String defaultMsg) throws DotDataException,
+			LanguageException {
+		User systemUser = APILocator.getUserAPI().getSystemUser();
+		String errorMessage = LanguageUtil.get(systemUser, key);
+		if (UtilMethods.isSet(defaultMsg) && errorMessage.equals(key)) {
+			errorMessage = defaultMsg;
+		}
+		if (msgParams != null && msgParams.length > 0) {
+			MessageFormat fmt = new MessageFormat(errorMessage);
+			errorMessage = fmt.format(msgParams);
+		}
+		APILocator.getNotificationAPI().generateNotification(errorMessage, NotificationLevel.ERROR, systemUser.getUserId());
+	}
+
+	/**
+	 * Switches the current index structure to the new re-indexed data. This
+	 * method also allows users to switch to the new re-indexed data even if
+	 * there are still remaining contents in the {@code dist_reindex_journal}
+	 * table.
+	 * 
+	 * @param forceSwitch
+	 *            - If {@code true}, the new index will be used, even if there
+	 *            are contents that could not be processed. Otherwise, set to
+	 *            {@code false} and the index switch will only happen if ALL
+	 *            contents were re-indexed.
+	 * @throws SQLException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotDataException
+	 *             The process to switch to the new failed.
+	 * @throws InterruptedException
+	 *             The established pauses to switch to the new index failed.
+	 */
+	private void reindexSwitchover(boolean forceSwitch) throws SQLException, DotDataException, InterruptedException {
+		Connection conn = DbConnectionFactory.getDataSource().getConnection();
+		try {
+			conn.setAutoCommit(false);
+			lockCluster(conn);
+			// We double check again. Only one node will enter this critical
+			// region, then others will enter just to see that the switchover is
+			// done
+			if (ESReindexationProcessStatus.inFullReindexation(conn)) {
+				if (forceSwitch || jAPI.recordsLeftToIndexForServer(conn) == 0) {
+					Logger.info(this, "Running Reindex Switchover");
+					// Wait a bit while all records gets flushed to index
+					Thread.sleep(2000L);
+					indexAPI.fullReindexSwitchover(conn);
+					failedAttemptsCount = 0;
+					// Wait a bit while elasticsearch flushes it state
+					Thread.sleep(2000L);
+				}
+			}
+		} finally {
+			try {
+				unlockCluster(conn);
+			} finally {
+				try {
+					conn.commit();
+					if (forceSwitch) {
+						APILocator.getDistributedJournalAPI().cleanDistReindexJournal();
+					}
+				} catch (Exception ex) {
+					Logger.warn(this, ex.getMessage(), ex);
+					conn.rollback();
+				} finally {
+					conn.close();
+				}
+			}
+			this.notifiedFailingRecords.clear();
+		}
+	}
+
 }

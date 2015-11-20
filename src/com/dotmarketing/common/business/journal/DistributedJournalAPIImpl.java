@@ -54,6 +54,10 @@ public class DistributedJournalAPIImpl<T> implements DistributedJournalAPI<T> {
 		return distFac.findContentReindexEntriesToReindex();
 	}
 	
+	public List<IndexJournal<T>> findContentReindexEntriesToReindex(boolean includeFailedRecords) throws DotDataException {
+		return distFac.findContentReindexEntriesToReindex(includeFailedRecords);
+	}
+	
 	public void processJournalEntries() throws DotDataException {
 		distFac.processJournalEntries();
 	}
