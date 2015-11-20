@@ -16,6 +16,7 @@ import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
+import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.*;
@@ -74,6 +75,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService, RuleActi
             ImmutableList.<Class<? extends RuleActionlet>>builder()
                     .add(CountRequestsActionlet.class)
                     .add(SetSessionAttributeActionlet.class)
+                    .add(SetRequestAttributeActionlet.class)
                     .add(TestActionlet.class)
                     .build();
 
