@@ -60,8 +60,9 @@ public class UserAjax {
 	private static final String USER_TYPE_VALUE = "user";
 	private static final String ROLE_TYPE_VALUE = "role";
 
-	public Map<String, Object> getUserById(String userId) throws DotDataException,DotSecurityException {
-
+	public Map<String, Object> getUserById(String userId) throws DotDataException,DotSecurityException, PortalException, SystemException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserProxyAPI uProxyWebAPI = APILocator.getUserProxyAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -126,15 +127,17 @@ public class UserAjax {
 	 */
 	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
-		User modUser = getUser();
+        //auth
+		User modUser = getLoggedInUser();
 		String date = DateUtil.getCurrentDate();
-		
+		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		UserProxyAPI uProxyWebAPI = APILocator.getUserProxyAPI();
+		WebContext ctx = WebContextFactory.get();
+		HttpServletRequest request = ctx.getHttpServletRequest();
+
 		ActivityLogger.logInfo(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Adding User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
 
 		boolean localTransaction = false;
 		Map<String, Object> resultMap = null;
@@ -223,7 +226,8 @@ public class UserAjax {
 	public Map<String, Object> updateUser(String userId, String newUserID, String firstName, String lastName, String email, String password) throws DotRuntimeException, PortalException, SystemException,
 		DotDataException, DotSecurityException {
 		Map<String, Object> resultMap = null;
-		User modUser = getUser();
+		//auth
+		User modUser = getLoggedInUser();
 		String date = DateUtil.getCurrentDate();
 	
 		ActivityLogger.logInfo(getClass(), "Updating User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -297,8 +301,10 @@ public class UserAjax {
 
 	}
 
-	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException {
-		User modUser = getUser();
+	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException, DotSecurityException {
+		
+		//auth
+		User modUser = getLoggedInUser();
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -337,6 +343,8 @@ public class UserAjax {
 	}
 
 	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
+		//auth
+		User modUser = getLoggedInUser();
 		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
 		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -367,16 +375,8 @@ public class UserAjax {
 	}
 
 	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws Exception {
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || !(APILocator.getPortletAPI().hasUserAdminRights(loggedInUser) || userId.equals(loggedInUser.getUserId()))) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserRolesValues by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
+		//auth
+		User modUser = getLoggedInUser();
 
 		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
 		if(UtilMethods.isSet(userId)){
@@ -406,10 +406,11 @@ public class UserAjax {
 	public void updateUserRoles (String userId, List<String> roleIds) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		String date = DateUtil.getCurrentDate();
-		User currentUser = getUser();
+		//auth
+		User modUser = getLoggedInUser();
 
-		ActivityLogger.logInfo(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
-		AdminLogger.log(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+		ActivityLogger.logInfo(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
+		AdminLogger.log(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
 
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -428,8 +429,8 @@ public class UserAjax {
 					try {
 						roleAPI.removeRoleFromUser(r, user);
 					} catch(DotDataException | DotStateException e) {
-						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+						ActivityLogger.logInfo(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+						AdminLogger.log(getClass(), "Error Removing User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 						throw e;
 					}
 				}
@@ -449,24 +450,25 @@ public class UserAjax {
 				try {
 					roleAPI.addRoleToUser(r, user);
 				} catch(DotDataException e) {
-					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 					throw e;
 				} catch(DotStateException e) {
-					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
-					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					ActivityLogger.logInfo(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
+					AdminLogger.log(getClass(), "Error Adding User Role", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; RoleID: " + r.getId() + "; Date:" + date );
 					throw e;
 				}
 			}
 		}
 
-		ActivityLogger.logInfo(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
-		AdminLogger.log(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + currentUser.getUserId() + "; Date:" + date );
+		ActivityLogger.logInfo(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
+		AdminLogger.log(getClass(), "User Roles Modified", "User Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
 
 	}
 
-	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException {
-
+	public List<Map<String, String>> loadUserAddresses(String userId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -504,8 +506,9 @@ public class UserAjax {
 	}
 
 	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
-			String zip, String country, String phone, String fax, String cell) throws DotDataException {
-
+			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -566,8 +569,9 @@ public class UserAjax {
 	}
 
 	public Map<String, String> saveUserAddress(String userId, String addressId, String addressDescription, String street1, String street2, String city, String state,
-			String zip, String country, String phone, String fax, String cell) throws DotDataException {
-
+			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -626,7 +630,9 @@ public class UserAjax {
 
 	}
 
-	public String deleteAddress(String userId, String addressId) throws DotDataException {
+	public String deleteAddress(String userId, String addressId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -654,8 +660,9 @@ public class UserAjax {
 	}
 
 	public void saveUserAddittionalInfo(String userId, boolean active, String prefix, String suffix, String title, String company, String website, String[] additionalVars)
-	 	throws DotDataException {
-
+	 	throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserAPI uAPI = APILocator.getUserAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -686,7 +693,7 @@ public class UserAjax {
 			uAPI.save(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 			uProxyAPI.saveUserProxy(up, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 
-			User modUser = getUser();
+
 			String date = DateUtil.getCurrentDate();
 
 			ActivityLogger.logInfo(getClass(), "Updating User Additional Info. 'Is User Enabled' was set to: " + active , "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -714,16 +721,9 @@ public class UserAjax {
 	}
 
 	public Map<String, Object> getRoleById(String roleId) throws Exception {
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
+		//auth
+		User modUser = getLoggedInUser();
 
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
 
 		RoleAPI api = APILocator.getRoleAPI();
 		Role role;
@@ -746,17 +746,8 @@ public class UserAjax {
 
 	public Map<String, Object> getUsersAndRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
 
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
-
+		//auth
+		User modUser = getLoggedInUser();
 		int start = 0;
 		if(params.containsKey("start"))
 			start = Integer.parseInt((String)params.get("start"));
@@ -788,16 +779,8 @@ public class UserAjax {
 
 	public Map<String, Object> getRolesList(String assetInode, String permission, Map<String, String> params) throws Exception {
 
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getRoleById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
+		//auth
+		User modUser = getLoggedInUser();
 
 		int start = 0;
 		if(params.containsKey("start"))
@@ -832,16 +815,8 @@ public class UserAjax {
 
 	public Map<String, Object> getUsersList(String assetInode, String permission, Map<String, String> params) throws Exception {
 
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUsersList by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
+		//auth
+		User modUser = getLoggedInUser();
 
 		int start = 0;
 		if(params.containsKey("start"))
@@ -868,17 +843,8 @@ public class UserAjax {
 
 	public List getUsersList2(String assetInode, String permission, Map<String, String> params) throws Exception {
 
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUsersList2 by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
-
+		//auth
+		User modUser = getLoggedInUser();
 		int start = 0;
 		if(params.containsKey("start"))
 			start = Integer.parseInt((String)params.get("start"));
@@ -1187,17 +1153,8 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 
 	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-	    UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-        WebContext ctx = WebContextFactory.get();
-        HttpServletRequest request = ctx.getHttpServletRequest();
-
-        // lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || APILocator.getLayoutAPI().loadLayoutsForUser(loggedInUser).isEmpty()) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call hasUserRoles by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-            throw new DotSecurityException("not authorized");
-        }
-
+		//auth
+		User modUser = getLoggedInUser();
 		User user;
 		try {
 			user = APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
@@ -1218,6 +1175,8 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 	}
 
 	public List<Map<String, Object>> getUserCategories(String userId) throws PortalException, SystemException, DotDataException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -1236,6 +1195,9 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 	}
 
 	public void updateUserCategories(String userId, String[] categories) throws PortalException, SystemException, DotSecurityException, DotDataException {
+		//auth
+		User modUser = getLoggedInUser();
+		
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -1266,6 +1228,8 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 	}
 
 	public void updateUserLocale(String userId, String timeZoneId, String languageId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		//auth
+		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -1282,7 +1246,8 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 	}
 
 	public void disableUserClicktracking(String userId, boolean disabled) throws PortalException, SystemException, DotSecurityException, DotDataException {
-
+		//auth
+		User modUser = getLoggedInUser();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -1677,11 +1642,21 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 
 	}
 
-	private User getUser() throws PortalException, SystemException {
+	private User getLoggedInUser() throws PortalException, SystemException, DotSecurityException {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-		return user;
+		User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+	    // lock down to users with access to Users portlet
+		String remoteIp = request.getRemoteHost();
+		String userId = "[not logged in]";
+		if(loggedInUser!=null && loggedInUser.getUserId()!=null){
+			userId = loggedInUser.getUserId();
+		}
+        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+        	SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+ userId+ " from " + remoteIp);
+        	throw new DotSecurityException("not authorized");
+        }
+        return loggedInUser;
 	}
 
 }
