@@ -72,15 +72,7 @@ public class CMSFilter implements Filter {
 			return;
 		}
 
-        // lets fire the request scoped rules
-        if(!uri.startsWith("/api/notification/")) {
-            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-            if(response.isCommitted()){
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                return;
-            }
-        }
-		
+
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;
 		
@@ -189,6 +181,18 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
+		
+		// fire every_request rules
+		if(iAm == IAm.FILE || iAm== IAm.PAGE || rewrite.startsWith("/contentAsset/")){
+            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+            if(response.isCommitted()){
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                return;
+            }
+		}
+		
+		
+		
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
