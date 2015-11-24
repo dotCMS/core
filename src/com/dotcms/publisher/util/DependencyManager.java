@@ -534,6 +534,9 @@ public class DependencyManager {
 				}
 			}
 
+			//Process the pages we found
+			setHTMLPagesDependencies(idsToWork);
+
 		} catch (DotSecurityException e) {
 			Logger.error(this, e.getMessage(), e);
 		} catch (DotDataException e) {
