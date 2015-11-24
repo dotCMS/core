@@ -250,7 +250,7 @@ public class Task00815WorkFlowTablesChanges implements StartupTask{
 		  try {
 			conn = DbConnectionFactory.getConnection();
 			  if (DbConnectionFactory.isMySql())
-				 dc.executeStatement("SET storage_engine=INNODB", conn);
+				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", conn);
 			  if (DbConnectionFactory.isMsSql())
 			     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 			  workflowTaskChanges();
