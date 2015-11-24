@@ -51,12 +51,14 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.portlets.user.ajax.UserAjax;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.quartz.job.CascadePermissionsJob;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -208,7 +210,7 @@ public class RoleAjax {
 		HttpServletRequest request = ctx.getHttpServletRequest();
 		UserAPI uAPI = APILocator.getUserAPI();
 		Role role = roleAPI.loadRoleById(roleId);
-		User modUser = getUser();
+		User modUser = getAdminUser();
 		String modUserID = modUser != null ? modUser.getUserId() : "";
 		String roleName = role != null ? role.getName() : "";
 		for (String userId : userIds) {
@@ -235,7 +237,7 @@ public class RoleAjax {
 		Role role = roleAPI.loadRoleById(roleId);
 		User user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
 
-		User modUser = getUser();
+		User modUser = getAdminUser();
 		String date = DateUtil.getCurrentDate();
 		ActivityLogger.logInfo(getClass(), "Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
 		AdminLogger.log(getClass(), "Adding Role: " +role.getName() + " to User: " + user.getUserId() , "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -260,11 +262,11 @@ public class RoleAjax {
 
 
 	public Map<String, Object> addNewRole (String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
-			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException  {
+			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException  {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
+		User user = getAdminUser();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = new Role();
@@ -280,7 +282,7 @@ public class RoleAjax {
 			role.setParent(parentRole.getId());
 		}
 
-		User user = getUser();
+
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Adding Role", "Date: " + date + "; "+ "User:" + user.getUserId());
@@ -308,11 +310,11 @@ public class RoleAjax {
 	}
 
 	public Map<String, Object> updateRole (String roleId, String roleName, String roleKey, String parentRoleId, boolean canEditUsers, boolean canEditPermissions,
-			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException {
+			boolean canEditLayouts,	String description) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		
+		User user = getAdminUser();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = roleAPI.loadRoleById(roleId);
@@ -330,7 +332,7 @@ public class RoleAjax {
 			role.setParent(role.getId());
 		}
 
-		User user = getUser();
+
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Modifying Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
@@ -361,7 +363,7 @@ public class RoleAjax {
 	public boolean deleteRole (String roleId) throws DotDataException, DotStateException, DotSecurityException, SystemException, PortalException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
-		User user = getUser();
+		User user = getAdminUser();
 		String date = DateUtil.getCurrentDate();		
 
 		ActivityLogger.logInfo(getClass(), "Deleting Role", "Date: " + date + "; "+ "User:" + user.getUserId() + "; RoleID: " + role.getId() );
@@ -383,18 +385,28 @@ public class RoleAjax {
 		
 	}
 
-	private User getUser() throws PortalException, SystemException {
+	private User getAdminUser() throws PortalException, SystemException, DotSecurityException {
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
-		User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-		return user;
+		User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+	    // lock down to users with access to Users portlet
+		String remoteIp = request.getRemoteHost();
+		String userId = "[not logged in]";
+		if(loggedInUser!=null && loggedInUser.getUserId()!=null){
+			userId = loggedInUser.getUserId();
+		}
+        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+        	SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+ userId+ " from " + remoteIp);
+        	throw new DotSecurityException("not authorized");
+        }
+        return loggedInUser;
 	}
 
-	public void lockRole (String roleId) throws DotDataException, PortalException, SystemException {
+	public void lockRole (String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
 
-		User user = getUser();
+		User user = getAdminUser();
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Locking Role", "Date: " + date + "; " + "User:" + user.getUserId() + "; RoleID: " + role.getId() );
@@ -413,12 +425,12 @@ public class RoleAjax {
 
 	}
 
-	public void unlockRole (String roleId) throws DotDataException, PortalException, SystemException {
+	public void unlockRole (String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		Role role = roleAPI.loadRoleById(roleId);
 
-		User user = getUser();
+		User user = getAdminUser();
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Unlocking Role", "Date:" + date + "; "+ "User:" + user.getUserId() + "; RoleID:" + role.getId() );
@@ -469,12 +481,12 @@ public class RoleAjax {
 
 	}
 
-	public void saveRoleLayouts(String roleId, String[] layoutIds) throws DotDataException {
+	public void saveRoleLayouts(String roleId, String[] layoutIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
-
+		User user = getAdminUser();
 		List<Layout> layouts = layoutAPI.loadLayoutsForRole(role);
 
 		//Looking for removed layouts
@@ -543,8 +555,8 @@ public class RoleAjax {
 		return listOfPortletsInfo;
 	}
 
-	public Map<String, Object> addNewLayout(String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
-
+	public Map<String, Object> addNewLayout(String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout newLayout = new Layout();
 		newLayout.setName(layoutName);
@@ -561,8 +573,8 @@ public class RoleAjax {
 	}
 
 
-	public void updateLayout(String layoutId, String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException {
-
+	public void updateLayout(String layoutId, String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
 		Layout layout = layoutAPI.findLayout(layoutId);
@@ -574,8 +586,8 @@ public class RoleAjax {
 		layoutAPI.setPortletIdsToLayout(layout, portletIds);
 
 	}
-	public void deleteLayout(String layoutId) throws DotDataException {
-
+	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
@@ -680,7 +692,7 @@ public class RoleAjax {
 	}
 
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
-
+		User user = getAdminUser();
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 
 		UserAPI userAPI = APILocator.getUserAPI();
