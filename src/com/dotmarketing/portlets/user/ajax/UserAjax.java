@@ -72,14 +72,8 @@ public class UserAjax {
 
 		User user = null;
 		try {
-		    // lock down to users with access to Users portlet
-	        User loggedInUser=uWebAPI.getLoggedInUser(request);
-	        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
-	            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
-	            throw new DotSecurityException("not authorized");
-	        }
 
-			user = uAPI.loadUserById(userId,uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+			user = uAPI.loadUserById(userId,modUser, !uWebAPI.isLoggedToBackend(request));
 
 			Map<String, Object> aRecord = user.toMap();
 			aRecord.put("id", user.getUserId());
@@ -89,7 +83,7 @@ public class UserAjax {
 			aRecord.put("lastName", user.getLastName());
 			aRecord.put("emailaddress", user.getEmailAddress());
 
-			UserProxy up = uProxyWebAPI.getUserProxy(user, uWebAPI.getSystemUser(), !uWebAPI.isLoggedToBackend(request));
+			UserProxy up = uProxyWebAPI.getUserProxy(user, modUser, !uWebAPI.isLoggedToBackend(request));
 			aRecord.putAll(up.getMap());
 
 			return aRecord;
@@ -128,7 +122,7 @@ public class UserAjax {
 	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
         //auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 		String date = DateUtil.getCurrentDate();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		UserProxyAPI uProxyWebAPI = APILocator.getUserProxyAPI();
@@ -243,7 +237,7 @@ public class UserAjax {
 			PermissionAPI perAPI = APILocator.getPermissionAPI();
 			UserProxyAPI upAPI = APILocator.getUserProxyAPI();
 			User userToSave;
-			User loggedInUser = uWebAPI.getLoggedInUser(request);
+
 
 			try {
 				userToSave = (User)uAPI.loadUserById(userId,uAPI.getSystemUser(),false).clone();
@@ -268,10 +262,10 @@ public class UserAjax {
 				reauthenticationRequired = true;
 			}
 
-			if(userToSave.getUserId().equalsIgnoreCase(loggedInUser.getUserId())){
-				uAPI.save(userToSave, uAPI.getSystemUser(), validatePassword, !uWebAPI.isLoggedToBackend(request));
-			}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,uAPI.getSystemUser(), false), PermissionAPI.PERMISSION_EDIT,loggedInUser, false)){
-				uAPI.save(userToSave, loggedInUser, validatePassword, !uWebAPI.isLoggedToBackend(request));
+			if(userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())){
+				uAPI.save(userToSave, uAPI.getSystemUser(), validatePassword, false);
+			}else if(perAPI.doesUserHavePermission(upAPI.getUserProxy(userToSave,modUser, false), PermissionAPI.PERMISSION_EDIT,modUser, false)){
+				uAPI.save(userToSave, modUser, validatePassword, !uWebAPI.isLoggedToBackend(request));
 			}else{
 				throw new DotSecurityException("User doesn't have permission to save the user which is trying to be saved");
 			}
@@ -304,7 +298,7 @@ public class UserAjax {
 	public boolean deleteUser (String userId) throws DotHibernateException, PortalException, SystemException, DotSecurityException {
 		
 		//auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 		String date = DateUtil.getCurrentDate();
 
 		ActivityLogger.logInfo(getClass(), "Deleting User", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -344,7 +338,7 @@ public class UserAjax {
 
 	public List<Map<String, Object>> getUserRoles (String userId) throws Exception {
 		//auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 		List<Map<String, Object>> roleMaps = new ArrayList<Map<String,Object>>();
 		Role userRole = APILocator.getRoleAPI().loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
@@ -352,9 +346,9 @@ public class UserAjax {
         HttpServletRequest request = ctx.getHttpServletRequest();
 
 		// lock down to users with access to Users portlet
-        User loggedInUser=uWebAPI.getLoggedInUser(request);
-        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
-            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserRoles by user "+loggedInUser!=null?loggedInUser.getUserId():"[not logged in]");
+
+        if(modUser==null || !APILocator.getPortletAPI().hasUserAdminRights(modUser)) {
+            SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserRoles by user "+modUser!=null?modUser.getUserId():"[not logged in]");
             throw new DotSecurityException("not authorized");
         }
 
@@ -376,7 +370,7 @@ public class UserAjax {
 
 	public Map<String, Boolean> getUserRolesValues (String userId, String hostIdentifier) throws Exception {
 		//auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 
 		Map<String, Boolean> userPerms = new HashMap<String,Boolean>();
 		if(UtilMethods.isSet(userId)){
@@ -407,7 +401,7 @@ public class UserAjax {
 
 		String date = DateUtil.getCurrentDate();
 		//auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 
 		ActivityLogger.logInfo(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
 		AdminLogger.log(getClass(), "Modifying User Roles", "User Beign Modified:" + userId + "; "+ "Modificator User:" + modUser.getUserId() + "; Date:" + date );
@@ -478,8 +472,8 @@ public class UserAjax {
 		List<Address> userAddresses = new ArrayList<Address>();
 		try {
 			if(UtilMethods.isSet(userId)){
-				user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-				userAddresses = uAPI.loadUserAddresses(user, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+				user = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
+				userAddresses = uAPI.loadUserAddresses(user, modUser, !uWebAPI.isLoggedToBackend(request));
 			}
 		} catch (NoSuchUserException e) {
 			Logger.error(this, e.getMessage(), e);
@@ -508,7 +502,7 @@ public class UserAjax {
 	public Map<String, String> addNewUserAddress(String userId, String addressDescription, String street1, String street2, String city, String state,
 			String zip, String country, String phone, String fax, String cell) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		//auth
-		User modUser = getLoggedInUser();
+		User modUser = getAdminUser();
 		UserAPI uAPI = APILocator.getUserAPI();
 		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
 		WebContext ctx = WebContextFactory.get();
@@ -579,17 +573,11 @@ public class UserAjax {
 
 		User user = null;
 		try {
-			user = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			user = uAPI.loadUserById(userId, modUser, false);
 		} catch (NoSuchUserException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		} catch (DotRuntimeException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (PortalException e) {
-			Logger.error(this, e.getMessage(), e);
-			throw new DotDataException(e.getMessage(), e);
-		} catch (SystemException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
 		} catch (DotSecurityException e) {
@@ -640,8 +628,8 @@ public class UserAjax {
 
 		Address ad;
 		try {
-			ad = uAPI.loadAddressById(addressId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-			uAPI.deleteAddress(ad, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			ad = uAPI.loadAddressById(addressId, modUser, !uWebAPI.isLoggedToBackend(request));
+			uAPI.deleteAddress(ad, modUser, !uWebAPI.isLoggedToBackend(request));
 		} catch (DotRuntimeException e) {
 			Logger.error(this, e.getMessage(), e);
 			throw new DotDataException(e.getMessage(), e);
@@ -672,11 +660,11 @@ public class UserAjax {
 			User user = uAPI.loadUserById(userId,uWebAPI.getLoggedInUser(request),false);
 
 			UserProxyAPI uProxyAPI = APILocator.getUserProxyAPI();
-			User u = uAPI.loadUserById(userId, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
-			UserProxy up = uProxyAPI.getUserProxy(u, uWebAPI.getLoggedInUser(request), !uWebAPI.isLoggedToBackend(request));
+			User u = uAPI.loadUserById(userId, modUser, !uWebAPI.isLoggedToBackend(request));
+			UserProxy up = uProxyAPI.getUserProxy(u, modUser, !uWebAPI.isLoggedToBackend(request));
 
 
-			if(!active && u.getUserId().equals(uWebAPI.getLoggedInUser(request).getUserId())){
+			if(!active && u.getUserId().equals(modUser.getUserId())){
 				throw new DotRuntimeException(LanguageUtil.get(uWebAPI.getLoggedInUser(request),"deactivate-your-own-user-error"));
 			}
 
@@ -1652,11 +1640,24 @@ private Map<String, Object> processRoleList(String query, int start, int limit, 
 		if(loggedInUser!=null && loggedInUser.getUserId()!=null){
 			userId = loggedInUser.getUserId();
 		}
-        if(loggedInUser==null || !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+        if(loggedInUser==null) {
         	SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getUserById by user "+ userId+ " from " + remoteIp);
         	throw new DotSecurityException("not authorized");
         }
         return loggedInUser;
 	}
 
+	private User getAdminUser() throws PortalException, SystemException, DotSecurityException {
+		User loggedInUser = getLoggedInUser();
+		String remoteIp = WebContextFactory.get().getHttpServletRequest().getRemoteHost();
+        if( !APILocator.getPortletAPI().hasUserAdminRights(loggedInUser)) {
+        	SecurityLogger.logInfo(UserAjax.class, "unauthorized attempt to call getAdminUser by user "+ loggedInUser.getUserId()+ " from " + remoteIp);
+        	throw new DotSecurityException("not authorized");
+        }
+        return loggedInUser;
+	}
+	
+	
+	
+	
 }
