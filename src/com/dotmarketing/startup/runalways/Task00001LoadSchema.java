@@ -83,6 +83,9 @@ public class Task00001LoadSchema implements StartupTask {
 				}catch (Exception e) {
 					Logger.fatal(this.getClass(), "Error: " + e.getMessage() + "while trying to execute " + token + " proccessed "
 							+ processedStatementCount + " statements", e);
+					if (br != null) {
+						br.close();
+					}
 					throw new DotDataException(e.getMessage(),e);
 				}
 			}
