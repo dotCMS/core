@@ -74,7 +74,7 @@ public class Task00001LoadSchema implements StartupTask {
 			DotConnect dc = new DotConnect();
 			java.sql.Connection con = DbConnectionFactory.getConnection();
 			if(DbConnectionFactory.isMySql()){
-				dc.executeStatement("SET storage_engine=INNODB", con);
+				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", con);
 			}
 			for (String token : tokens) {
 				++processedStatementCount;
