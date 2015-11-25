@@ -43,8 +43,9 @@ public class UsersCountryConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String INPUT_ID = "country";
-	private static final String CONDITIONLET_NAME = "User's Country";
+    private static final String I18N_BASE = "api.system.ruleengine.conditionlet.VisitorCountry";
+
+    private static final String INPUT_ID = "country";
 
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
@@ -61,7 +62,7 @@ public class UsersCountryConditionlet extends Conditionlet {
 
     @VisibleForTesting
     protected UsersCountryConditionlet(GeoIp2CityDbUtil geoIp2Util) {
-        super(CONDITIONLET_NAME);
+        super(I18N_BASE);
         this.geoIp2Util = geoIp2Util;
     }
 

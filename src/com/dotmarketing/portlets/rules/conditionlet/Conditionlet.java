@@ -12,12 +12,12 @@ import javax.servlet.http.HttpServletResponse;
 
 public abstract class Conditionlet implements Serializable {
 
-    private static final long serialVersionUID = -8179010054316951177L;
+    private static final long serialVersionUID = 1L;
 
-    private final String name;
+    private final String i18nKey;
 
-    protected Conditionlet(String name) {
-        this.name = name;
+    protected Conditionlet(String i18nKey) {
+        this.i18nKey = i18nKey;
     }
 
     /**
@@ -37,8 +37,8 @@ public abstract class Conditionlet implements Serializable {
      * @return the name of this Conditionlet
      */
     @NotNull
-    public final String getName() {
-        return this.name;
+    public final String getI18nKey() {
+        return this.i18nKey;
     }
 
     /**

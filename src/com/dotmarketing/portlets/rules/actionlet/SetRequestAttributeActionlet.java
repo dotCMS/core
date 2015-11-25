@@ -15,7 +15,7 @@ import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 
 /**
  * Actionlet to add Key/Value to the Request.
- * The exact names that had to be set in params are: requestnKey and requestValue.
+ * The exact names that had to be set in params are: requestKey and requestValue.
  *
  * @author Oscar Arrieta
  * @version 1.0
@@ -23,7 +23,10 @@ import com.dotmarketing.portlets.rules.model.RuleActionParameter;
  *
  */
 public class SetRequestAttributeActionlet extends RuleActionlet{
-    private static final String REQUEST_KEY = "requestnKey";
+
+    private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetRequestAttribute";
+
+    private static final String REQUEST_KEY = "requestKey";
     private static final String REQUEST_VALUE = "requestValue";
 
     private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
@@ -32,7 +35,7 @@ public class SetRequestAttributeActionlet extends RuleActionlet{
     );
 
     public SetRequestAttributeActionlet(){
-        super(SetRequestAttributeActionlet.class.getSimpleName(), PARAMS);
+        super(I18N_BASE, PARAMS);
     }
 
     @Override

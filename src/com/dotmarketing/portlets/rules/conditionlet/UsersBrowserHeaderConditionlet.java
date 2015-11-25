@@ -34,10 +34,10 @@ import com.dotmarketing.util.UtilMethods;
 public class UsersBrowserHeaderConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
+	private static final String I18N_BASE = "api.system.ruleengine.conditionlet.RequestHeader";
 
 	private static final String INPUT1_ID = "browser-header";
 	private static final String INPUT2_ID = "header-value";
-	private static final String CONDITIONLET_NAME = "User's Browser Header";
 
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
@@ -50,7 +50,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersBrowserHeaderConditionlet() {
-		super(CONDITIONLET_NAME);
+		super(I18N_BASE);
 	}
 
 	@Override
