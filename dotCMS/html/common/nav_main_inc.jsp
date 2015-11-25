@@ -142,8 +142,10 @@ dojo.require("dojo.hash");
                         if(dojo.hash()  ){
 	                        var hashValue = decodeURIComponent(dojo.hash());
 	                        var portletId = hashValue.split("/api/portlet/")[1];
-	                        portletId = portletId.substring(0, portletId.indexOf("/"));
-	                        dotAjaxNav.show(hashValue, portletTabMap[portletId]);
+	                        if(portletId){
+		                        portletId = portletId.substring(0, portletId.indexOf("/"));
+		                        dotAjaxNav.show(hashValue, portletTabMap[portletId]);
+	                        }
                         }
                 },
 
