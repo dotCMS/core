@@ -5,6 +5,7 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory.WebContextBuilder;
@@ -42,14 +43,29 @@ public class DwrAuthenticationUtil {
 	 * 
 	 * @param requestAttrs
 	 *            - A simple {@link Map} containing the attributes that will be
-	 *            set in the {@link HttpServletRequest} object.
+	 *            set in the {@link HttpServletRequest} object. Can be
+	 *            {@code null} if not required.
+	 * @param sessionAttrs
+	 *            - A simple {@link Map} containing the attributes that will be
+	 *            set in the {@link HttpSession} object. Can be {@code null} if
+	 *            not required.
 	 */
-	public void setupWebContext(Map<String, Object> requestAttrs) {
+	public void setupWebContext(Map<String, Object> requestAttrs, Map<String, Object> sessionAttrs) {
 		final HttpServletRequest req = ServletTestRunner.localRequest.get();
 		final HttpServletResponse res = ServletTestRunner.localResponse.get();
-		Set<String> keySet = requestAttrs.keySet();
-		for (String key : keySet) {
-			req.setAttribute(key, requestAttrs.get(key));
+		HttpSession session = req.getSession(true);
+		Set<String> keySet = null;
+		if (requestAttrs != null && !requestAttrs.isEmpty()) {
+			keySet = requestAttrs.keySet();
+			for (String key : keySet) {
+				req.setAttribute(key, requestAttrs.get(key));
+			}
+		}
+		if (sessionAttrs != null && !sessionAttrs.isEmpty()) {
+			keySet = sessionAttrs.keySet();
+			for (String key : keySet) {
+				session.setAttribute(key, sessionAttrs.get(key));
+			}
 		}
 		this.container = new DefaultContainer();
 		this.webContextBuilder = new DefaultWebContextBuilder();

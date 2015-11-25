@@ -81,10 +81,10 @@ public class PermissionAPITest extends TestBase {
         tt.setBody("<html><head></head><body>en empty template just for test</body></html>");
         APILocator.getTemplateAPI().saveTemplate(tt, host, sysuser, false);
         // User authentication through DWR is required for RoleAjax class
-        Map<String, Object> reqAttrs = new HashMap<String, Object>();
-        reqAttrs.put("USER_ID", "admin@dotcms.com");
-        dwrAuthentication = new DwrAuthenticationUtil();
-        dwrAuthentication.setupWebContext(reqAttrs);
+		Map<String, Object> sessionAttrs = new HashMap<String, Object>();
+		sessionAttrs.put("USER_ID", "dotcms.org.1");
+		dwrAuthentication = new DwrAuthenticationUtil();
+		dwrAuthentication.setupWebContext(null, sessionAttrs);
     }
 
     @AfterClass
