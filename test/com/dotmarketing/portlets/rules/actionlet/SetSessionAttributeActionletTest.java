@@ -53,7 +53,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         createRule(Rule.FireOn.EVERY_REQUEST, firstTime);
 
         makeRequest(
-                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
+                "http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis(),
                 "JSESSIONID=" + request.getSession().getId());
 
         String firstTimeRequest = (String)request.getSession().getAttribute("time");
@@ -63,7 +63,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         updateRuleActionParam(secondTime);
 
         makeRequest(
-                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
+                "http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis(),
                 "JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");
