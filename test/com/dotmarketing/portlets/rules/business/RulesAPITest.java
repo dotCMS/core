@@ -53,11 +53,11 @@ public class RulesAPITest extends TestBase {
 		createRule(Rule.FireOn.EVERY_REQUEST);
 
 		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+				"http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis());
 		Integer count = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
 		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+				"http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis());
 		Integer newCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
 		assertTrue(newCount > count);
