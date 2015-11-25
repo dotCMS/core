@@ -1,4 +1,3 @@
-
 import {Inject, EventEmitter} from 'angular2/angular2';
 //import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
@@ -9,6 +8,8 @@ import {EntitySnapshot} from "../persistence/EntityBase";
 import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {ActionService, ActionModel} from "./Action";
+import {I18nService, I18nResourceModel} from "../system/locale/I18n";
+import {DevUtil} from "../util/DevUtil";
 
 
 export class RuleModel extends CwModel {
@@ -82,24 +83,93 @@ export class RuleModel extends CwModel {
   }
 
 }
-
+const RULE_DEFAULT_RSRC = {
+  inputs: {
+    filter: {
+      placeholder: "Start typing to filter rules...",
+      tip: "Show only the rules that match your filter."
+    },
+    fireOn: {
+      label: "Fire On",
+      options: {
+        EveryPage: "Every Page",
+        OncePerVisit: "Once per Visit",
+        OncePerVisitor: "Once per visitor",
+        EveryRequest: "Every Request"
+      }
+    },
+    addRule: {
+      label: "Add Rule",
+      tip: "Create a new rule"
+    },
+    onOff: {
+      tip: "Prevent or allow this rule to execute",
+      on: {
+        label: "On"
+      },
+      off: {
+        label: "Off"
+      }
+    },
+    name: {
+      placeholder: "Describe the rule"
+    },
+    group: {
+      whenConditions: {
+        label: "This rule fires when the following conditions are met:",
+      },
+      whenFurtherConditions: {
+        label: "when the following condition(s) are met:"
+      },
+      andOr: {
+        and: {label: "AND",},
+        or: {label: "OR",}
+      }
+    },
+    condition: {
+      andOr: {
+        and: {label: "AND",},
+        or: {label: "OR",}
+      },
+      type:{
+        placeholder: "Select a Condition"
+      }
+    },
+    action: {
+      firesActions: "This rule sets the following action(s)",
+      type:{
+        placeholder: "Select an Action"
+      }
+    }
+  }
+}
+const RULE_I18N_BASE_KEY = 'api.sites.ruleengine.rules';
 export class RuleService {
   ref:EntityMeta
-  _removed:EventEmitter
-  _added:EventEmitter
   onRemove:Rx.Observable<RuleModel>
   onAdd:Rx.Observable<RuleModel>
+  onResourceUpdate:Rx.Observable<RuleModel>
+
+  rsrc:any = RULE_DEFAULT_RSRC
+
+  private _removed:EventEmitter
+  private _added:EventEmitter
+  private _rsrcService:I18nService;
+
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
               @Inject(ActionService) actionService:ActionService,
-              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
+              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService,
+              @Inject(I18nService) rsrcService:I18nService) {
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
+    this._rsrcService = rsrcService
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
     let onAdd = Rx.Observable.from(this._added.toRx())
     let onRemove = Rx.Observable.from(this._removed.toRx())
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
+    this.onResourceUpdate = Rx.Observable.create().share()
 
     actionService.onAdd.subscribe((actionModel:ActionModel) => {
       if (!actionModel.owningRule.actions[actionModel.key]) {
@@ -126,6 +196,14 @@ export class RuleService {
         delete groupModel.owningRule.groups[groupModel.key]
       }
     })
+
+    this.onResourceUpdate = Rx.Observable.create((observer) => {
+      rsrcService.get(apiRoot.authUser.locale, RULE_I18N_BASE_KEY, (i18n:I18nResourceModel)=> {
+        this.rsrc = i18n.messages
+        observer.next(i18n.messages)
+      })
+    }).publishReplay()
+    this.onResourceUpdate.connect()
   }
 
 
@@ -151,7 +229,7 @@ export class RuleService {
     rule.priority = val.priority
     rule.actions = val.ruleActions
     let groups = snapshot.child('conditionGroups')
-    if(groups.exists()){
+    if (groups.exists()) {
       groups.forEach((groupSnap) => {
         rule.addGroup(ConditionGroupService._fromSnapshot(rule, groupSnap))
       })
@@ -184,7 +262,7 @@ export class RuleService {
 
   add(rule:RuleModel, cb:Function = null) {
     this.ref.push(RuleService.toJson(rule), (e, resultSnapshot) => {
-      if(e){
+      if (e) {
         throw e
       }
       rule.snapshot = resultSnapshot
@@ -204,7 +282,7 @@ export class RuleService {
       this.add(rule, cb)
     } else {
       this.ref.child(rule.key).set(RuleService.toJson(rule), ()=> {
-        if(cb){
+        if (cb) {
           cb(rule)
         }
       })

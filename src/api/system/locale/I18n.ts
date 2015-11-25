@@ -21,10 +21,10 @@ export class I18nResourceModel implements Internationalized {
   private _key:string
   private _messages:any
 
-  constructor(locale:string, key:string = null, messaegs:any={}) {
+  constructor(locale:string, key:string = null, messages:any={}) {
     this._locale = locale
     this._key = key
-    this._messages = messaegs
+    this._messages = messages
   }
 
   get locale():string {

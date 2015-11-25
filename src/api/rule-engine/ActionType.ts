@@ -2,11 +2,10 @@ import {Inject, EventEmitter} from 'angular2/angular2';
 //import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel} from "../util/CwModel";
+import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
-import {I18nService} from "../system/locale/I18n";
-import {I18nResourceModel, Internationalized} from "../system/locale/I18n";
+import {I18nService, I18nResourceModel, Internationalized} from "../system/locale/I18n";
 
 
 let noop = (...arg:any[])=> {
@@ -19,36 +18,13 @@ interface ActionTypeParameter {
   priority:number
 }
 
-export class ActionTypeModel extends CwModel implements Internationalized {
+export class ActionTypeModel extends CwI18nModel {
 
-  i18nKey:string
   parameters:{[key:string]:ActionTypeParameter}
 
-  rsrc: {
-    name:string
-  }
-  private _i18n:I18nResourceModel
-
   constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:{[key:string]:ActionTypeParameter} = {}) {
-    super(key ? key : 'NoSelection')
-    this.i18nKey = i18nKey ? i18nKey : key;
+    super(key ? key : 'NoSelection', i18nKey, { name: i18nKey })
     this.parameters = parameters ? parameters : {}
-    this.rsrc = {
-      name: this.i18nKey
-    }
-  }
-
-  getMessage(key:string):string{
-    return this._i18n ? this._i18n.getMessage(key) : this[key]
-  }
-
-  get i18n():I18nResourceModel {
-    return this._i18n;
-  }
-
-  set i18n(value:I18nResourceModel) {
-    this._i18n = value;
-    this._changed('i18n')
   }
 
   isValid() {
@@ -111,16 +87,12 @@ export class ActionTypeService {
           let actionType = snap.child(key)
           let model = this.fromSnapshot(actionType)
           this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (rsrcResult:I18nResourceModel)=>{
-            if (rsrcResult && rsrcResult.getMessage('name')) {
+            if (rsrcResult) {
               model.i18n = rsrcResult;
-              model.rsrc.name = rsrcResult.getMessage('name')
-            } else{
-              model.rsrc.name = model.i18nKey
             }
             this._entryReceived(model)
             actionTypes.push(model)
           })
-
         }
       })
       cb(actionTypes)

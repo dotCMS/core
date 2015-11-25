@@ -10,25 +10,9 @@
     "suppressImplicitAnyIndexErrors":true,
     "outDir": "../build/"
   },
-  "files": [
-    "index.ts",
-
-    "api/persistence/ApiRoot.spec.ts",
-    "api/persistence/LocalDataStore.spec.ts",
-    "api/rule-engine/Rule.spec.ts",
-    "api/rule-engine/Action.spec.ts",
-    "api/validation/Check.spec.ts",
-
-    "api/system/locale/I18n.it-spec.ts",
-    "api/rule-engine/Rule.it-spec.ts",
-    "api/rule-engine/ConditionType.it-spec.ts",
-    "api/rule-engine/Action.it-spec.ts",
-    "api/rule-engine/Condition.it-spec.ts",
-    "api/rule-engine/ConditionGroup.it-spec.ts",
-
-    "view/components/semantic/elements/input-text/demo.ts",
-    "view/components/semantic/elements/input-text/index.ts",
-    "view/components/semantic/modules/dropdown/index.ts"
-
+  "exclude": [
+    "node_modules",
+    "thirdparty",
+    "typings"
   ]
 }

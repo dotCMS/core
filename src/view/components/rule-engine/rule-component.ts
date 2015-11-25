@@ -26,12 +26,6 @@ var rsrc = {
   }
 }
 
-var fireOn = [
-  new DropdownOption('EVERY_PAGE', 'EVERY_PAGE', 'Every Page'),
-  new DropdownOption('ONCE_PER_VISIT', 'ONCE_PER_VISIT', 'Once per visit'),
-  new DropdownOption('ONCE_PER_VISITOR', 'ONCE_PER_VISITOR', 'Once per visitor'),
-  new DropdownOption('EVERY_REQUEST', 'EVERY_REQUEST', 'Every Request'),
-]
 
 @Component({
   selector: 'rule',
@@ -49,11 +43,13 @@ var fireOn = [
                      (click)="$event.stopPropagation()"
                      [model]="ruleNameInputTextModel">
       </cw-input-text>
-      <span class="cw-fire-on-label">Fire On:</span>
+      <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
       <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ng-if="!hidden">
       <cw-toggle-input class="cw-input"
+                        [on-text]="rsrc.inputs.onOff.on.label"
+                        [off-text]="rsrc.inputs.onOff.off.label"
                        [value]="rule.enabled"
                        (toggle)="rule.enabled = $event.target.value"
                        (click)="$event.stopPropagation()">
@@ -76,7 +72,7 @@ var fireOn = [
                      [group]="group"
                      [group-index]="i"></condition-group>
     <div flex layout="column" layout-align="center-start" class="cw-action-separator">
-      This rule sets the following action(s)
+      {{rsrc.inputs.action.firesActions}}
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
       <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ng-for="var action of actions; var i=index">
@@ -110,6 +106,7 @@ class RuleComponent {
   collapsed:boolean
 
   elementRef:ElementRef
+  rsrc:any
   private ruleService:RuleService
   private actionService:ActionService
   private groupService:ConditionGroupService
@@ -125,6 +122,10 @@ class RuleComponent {
               @Inject(RuleService) ruleService:RuleService,
               @Inject(ActionService) actionService:ActionService,
               @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
+    this.rsrc = ruleService.rsrc
+    ruleService.onResourceUpdate.subscribe((messages)=>{
+      this.rsrc = messages
+    })
     this.elementRef = elementRef
     this.actionService = actionService
     this.ruleService = ruleService;
@@ -136,10 +137,17 @@ class RuleComponent {
     this.hidden = false
     this.collapsed = true
 
-    this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOn)
+
+    var fireOnOptions = [
+      new DropdownOption('EVERY_PAGE', 'EVERY_PAGE', this.rsrc.inputs.fireOn.options.EveryPage),
+      new DropdownOption('ONCE_PER_VISIT', 'ONCE_PER_VISIT', this.rsrc.inputs.fireOn.options.OncePerVisit),
+      new DropdownOption('ONCE_PER_VISITOR', 'ONCE_PER_VISITOR', this.rsrc.inputs.fireOn.options.OncePerVisitor),
+      new DropdownOption('EVERY_REQUEST', 'EVERY_REQUEST', this.rsrc.inputs.fireOn.options.EveryRequest),
+    ]
+    this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOnOptions)
 
     this.ruleNameInputTextModel = new InputTextModel()
-    this.ruleNameInputTextModel.placeholder = "Describe the rule"
+    this.ruleNameInputTextModel.placeholder = this.rsrc.inputs.name.placeholder
     this.ruleNameInputTextModel.validate = (newValue:string)=> {
       if (!newValue) {
         throw new Error("Required Field")

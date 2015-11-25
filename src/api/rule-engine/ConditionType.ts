@@ -2,23 +2,21 @@ import {Inject, EventEmitter} from 'angular2/angular2';
 //import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel} from "../util/CwModel";
+import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
-
+import {I18nService, I18nResourceModel} from "../system/locale/I18n";
 
 let noop = (...arg:any[])=> {
 }
 
-export class ConditionTypeModel extends CwModel {
-
+export class ConditionTypeModel extends CwI18nModel {
 
   i18nKey:string
   comparisons:Array<string>
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, comparisons:Array<any> = []) {
-    super(key ? key : 'NoSelection')
-    this.i18nKey = i18nKey ? i18nKey : key;
+    super(key ? key : 'NoSelection', i18nKey, {name: i18nKey})
     this.comparisons = comparisons || []
   }
 
@@ -64,10 +62,13 @@ export class ConditionTypeService {
   private _apiRoot;
   private _ref;
   private _map:{[key:string]: ConditionTypeModel}
+  private _rsrcService:I18nService;
 
-  constructor(@Inject(ApiRoot) apiRoot) {
-    this._ref = apiRoot.root.child('system/ruleengine/conditionlets')
+  constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
     this._apiRoot = apiRoot
+    this._rsrcService = rsrcService
+    this._ref = apiRoot.root.child('system/ruleengine/conditionlets')
+
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
     this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
@@ -96,16 +97,21 @@ export class ConditionTypeService {
   list(cb:Function = noop):Rx.Observable<ConditionTypeModel> {
     this._ref.once('value', (snap:EntitySnapshot) => {
       let types = snap.val()
-      let result = []
+      let conditionTypes = []
       Object.keys(types).forEach((key) => {
         if (DISABLED_CONDITION_TYPE_IDS[key] !== true) {
           let conditionType = snap.child(key)
-          let typeModel = ConditionTypeService.fromSnapshot(conditionType)
-          this._entryReceived(typeModel)
-          result.push(typeModel)
+          let model = ConditionTypeService.fromSnapshot(conditionType)
+          this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (rsrcResult:I18nResourceModel)=>{
+            if (rsrcResult) {
+              model.i18n = rsrcResult;
+            }
+            this._entryReceived(model)
+            conditionTypes.push(model)
+          })
         }
       })
-      cb(result)
+      cb(conditionTypes)
     }, (e)=> {
       throw e
     })

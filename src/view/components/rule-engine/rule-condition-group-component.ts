@@ -9,6 +9,7 @@ import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engi
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {RuleModel} from "../../../api/rule-engine/Rule";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
+import {RuleService} from "../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'condition-group',
@@ -22,7 +23,7 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
   template: `<div flex layout="column" layout-align="center-start" class="cw-rule-group">
   <div flex="0" layout-fill layout="row" layout-align="start-center">
     <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex === 0">
-      This rule fires when the following conditions are met:
+      {{rsrc.inputs.group.whenConditions.label}}
     </div>
     <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex !== 0">
       <div class="ui basic icon buttons">
@@ -30,7 +31,7 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
           <div >{{group.operator}}</div>
         </button>
       </div>
-      <span flex class="cw-header-text">when the following condition(s) are met:</span>
+      <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
     </div>
   </div>
   <div flex layout-fill layout="column" layout-align="start-start" class="cw-conditions">
@@ -60,6 +61,7 @@ export class ConditionGroupComponent {
   rule:RuleModel
   conditions:Array<ConditionModel>;
   groupCollapsed:boolean
+  rsrc:any
 
   private conditionStub:ConditionModel
   private conditionStubWatch:Rx.Subscription<CwChangeEvent<any>>
@@ -68,6 +70,7 @@ export class ConditionGroupComponent {
   private _conditionService:ConditionService;
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
+              @Inject(RuleService) ruleService:RuleService,
               @Inject(ConditionGroupService) groupService:ConditionGroupService,
               @Inject(ConditionService) conditionService:ConditionService) {
     this.apiRoot = apiRoot
@@ -76,6 +79,13 @@ export class ConditionGroupComponent {
     this.groupCollapsed = false
     this.conditions = []
     this.groupIndex = 0
+
+    this.rsrc = ruleService.rsrc
+    ruleService.onResourceUpdate.subscribe((messages)=>{
+      this.rsrc = messages
+    })
+
+
     this._conditionService.onAdd.subscribe((conditionModel) => {
       if (conditionModel.owningGroup.key == this._group.key) {
         this.handleAddCondition(conditionModel)

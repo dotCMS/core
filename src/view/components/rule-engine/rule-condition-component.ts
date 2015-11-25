@@ -1,4 +1,4 @@
-import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault, EventEmitter, Inject} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault, EventEmitter} from 'angular2/angular2';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
@@ -8,6 +8,7 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 
 import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
 import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine/ConditionType";
+import {RuleService} from "../../../api/rule-engine/Rule";
 
 
 @Component({
@@ -77,11 +78,18 @@ export class ConditionComponent {
   typeService:ConditionTypeService
   private _conditionService:ConditionService;
 
-  constructor(@Inject(ConditionTypeService) typeService:ConditionTypeService, @Inject(ConditionService) conditionService:ConditionService) {
+  constructor(ruleService:RuleService,
+              typeService:ConditionTypeService,
+              conditionService:ConditionService) {
     this._conditionService = conditionService;
     this.typeService = typeService
 
     this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition")
+
+    ruleService.onResourceUpdate.subscribe((messages)=> {
+      this.conditionTypesDropdown.placeholder = messages.inputs.condition.type.placeholder
+    })
+
     let condition = new ConditionModel()
     condition.conditionType = new ConditionTypeModel()
     this.condition = condition
@@ -90,7 +98,7 @@ export class ConditionComponent {
 
     /* Note that 'typeService.list()' was called earlier, and the following observer relies on that fact. */
     typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
-      this.conditionTypesDropdown.addOptions([new DropdownOption(conditionType.key, conditionType)])
+      this.conditionTypesDropdown.addOptions([new DropdownOption(conditionType.key, conditionType, conditionType.rsrc.name)])
     })
   }
 

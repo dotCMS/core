@@ -34,11 +34,11 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   <div flex layout="row" layout-align="space-between center" class="cw-header">
     <div flex layout="row" layout-align="space-between center" class="ui icon input">
       <i class="filter icon"></i>
-      <input type="text" placeholder="Start typing to filter rules..." [value]="filterText" (keyup)="filterText = $event.target.value">
+      <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
     </div>
     <div flex="2"></div>
-    <button  class="ui button cw-button-add" aria-label="Create a new Rule" (click)="addRule()" [disabled]="ruleStub != null">
-      <i class="plus icon" aria-hidden="true"></i>Add Rule
+    <button  class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
+      <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
     </button>
   </div>
   <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
@@ -50,6 +50,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   export class RuleEngineComponent {
     rules:RuleModel[];
     filterText:string;
+    rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
@@ -60,6 +61,10 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
         @Inject(RuleService) ruleService:RuleService) {
       actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
+      this.rsrc = ruleService.rsrc
+      ruleService.onResourceUpdate.subscribe((messages)=>{
+        this.rsrc = messages
+      })
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []

@@ -13,7 +13,7 @@
  * a accurate error messages, while not forcing users to add each validation into the chain themselves.
  *
  */
-class LazyVerify {
+export class LazyVerify {
   static exists(value) {
     return !(value === null || value === undefined)
   }
@@ -125,7 +125,7 @@ class LazyVerify {
 
 }
 
-class Verify extends LazyVerify {
+export class Verify extends LazyVerify {
 
   static isString(value, allowEmpty = false) {
     return (!LazyVerify.exists(value)) ? allowEmpty === true : LazyVerify.isString(value);
@@ -164,5 +164,4 @@ class Verify extends LazyVerify {
   }
 }
 
-export {LazyVerify, Verify}
 
