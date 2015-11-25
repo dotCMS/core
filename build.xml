@@ -941,7 +941,7 @@
             <fileset dir="libs/buildlibs/">
                 <include name="mail.jar"/>
                 <include name="sqljdbc41.jar"/>
-                <include name="mysql-connector-java-5.1.33-bin.jar"/>
+                <include name="mysql-connector-java-5.1.37-bin.jar"/>
                 <include name="postgresql-9.0-801.jdbc3.jar"/>
                 <include name="ojdbc5.jar"/>
                 <include name="jtds-1.2.2.jar"/>
