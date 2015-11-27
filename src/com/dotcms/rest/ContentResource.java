@@ -1008,12 +1008,12 @@ public class ContentResource extends WebResource {
 	protected void processXML(Contentlet contentlet, InputStream inputStream) throws IOException, DotSecurityException {
 		
 		
-		String input = IOUtils.toString(inputStream, "UTF-8").trim().toUpperCase();
+		String input = IOUtils.toString(inputStream, "UTF-8");
 		// deal with XXE or SSRF security vunerabilities in XML docs
 		// besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
 		// Mingle Card 512
-		
-		if(!input.contains("<!DOCTYPE") || input.contains("<!ENTITY") || input.startsWith("<?XML")){
+		String upper = input.trim().toUpperCase();
+		if(upper.contains("<!DOCTYPE") || upper.contains("<!ENTITY") || upper.startsWith("<?XML")){
 			throw new DotSecurityException("Invalid XML");
 		}
 		XStream xstream=new XStream(new DomDriver());
