@@ -1011,7 +1011,8 @@ public class ContentResource extends WebResource {
 		String input = IOUtils.toString(inputStream, "UTF-8").trim().toUpperCase();
 		// deal with XXE or SSRF security vunerabilities in XML docs
 		// besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
-		// Card 512
+		// Mingle Card 512
+		
 		if(!input.contains("<!DOCTYPE") || input.contains("<!ENTITY") || input.startsWith("<?XML")){
 			throw new DotSecurityException("Invalid XML");
 		}
