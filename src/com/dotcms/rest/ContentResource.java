@@ -43,6 +43,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.db.HibernateUtil;
@@ -63,6 +64,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
@@ -692,6 +694,9 @@ public class ContentResource extends WebResource {
 				try {
 					processXML(contentlet, part.getEntityAs(InputStream.class));
 				} catch (Exception e) {
+					if(e instanceof DotSecurityException){
+						SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentletResource from " + request.getRemoteAddr());
+					}
 					Logger.error( this.getClass(), "Error processing Stream", e );
 
 					Response.ResponseBuilder responseBuilder = Response.status( HttpStatus.SC_INTERNAL_SERVER_ERROR );
@@ -784,7 +789,13 @@ public class ContentResource extends WebResource {
 				processJSON(contentlet, request.getInputStream());
 			}
 			else if(request.getContentType().startsWith(MediaType.APPLICATION_XML)) {
-				processXML(contentlet, request.getInputStream());
+				try{
+					processXML(contentlet, request.getInputStream());
+				}
+				catch(DotSecurityException se){
+					SecurityLogger.logInfo(this.getClass(), "Invalid XML POSTED to ContentletResource from " + request.getRemoteAddr());
+					throw new DotSecurityException("");
+				}
 			}
 			else if(request.getContentType().startsWith(MediaType.APPLICATION_FORM_URLENCODED)) {
 				if(method.equals("PUT")){
@@ -994,7 +1005,16 @@ public class ContentResource extends WebResource {
 	}
 
 	@SuppressWarnings("unchecked")
-	protected void processXML(Contentlet contentlet, InputStream input) {
+	protected void processXML(Contentlet contentlet, InputStream inputStream) throws IOException, DotSecurityException {
+		
+		
+		String input = IOUtils.toString(inputStream, "UTF-8").trim().toUpperCase();
+		// deal with XXE or SSRF security vunerabilities in XML docs
+		// besides, we do not expect a fully formed xml doc - only an xml doc that can be transformed into a java.util.Map
+		// Card 512
+		if(!input.contains("<!DOCTYPE") || input.contains("<!ENTITY") || input.startsWith("<?XML")){
+			throw new DotSecurityException("Invalid XML");
+		}
 		XStream xstream=new XStream(new DomDriver());
 		xstream.alias("content", Map.class);
 		xstream.registerConverter(new MapEntryConverter());
