@@ -135,10 +135,29 @@ var project = {
   },
 
   watch: function () {
-    console.log("You will need to run 'npm run tsc' in a separate console window to watch ts files.")
-    gulp.watch('./src/**/*.html', ['compile-templates']);
-    gulp.watch('./src/**/*.js', ['compile-templates']);
-    return gulp.watch('./src/**/*.scss', ['compile-styles']);
+
+    project.watchTs()
+
+
+    gulp.watch('./src/**/*.html', ['compile-templates'])
+    gulp.watch('./src/**/*.js', ['compile-templates'])
+    return gulp.watch('./src/**/*.scss', ['compile-styles'])
+  },
+
+  watchTs: function(){
+    var spawn = require('child_process').spawn
+    var tsc = spawn('npm', ['run', 'tsc'])
+    tsc.stdout.on('data', function (data) {
+      console.log('tsc: ' + data)
+    })
+
+    tsc.stderr.on('data', function (data) {
+      console.log('tsc: ' + data)
+    })
+
+    tsc.on('close', function (code) {
+      console.log('tsc process exited with code ' + code)
+    })
   },
 
   /**
@@ -460,7 +479,7 @@ gulp.task('compile', [], function (done) {
   project.compile(done)
 })
 
-gulp.task('watch', ['compile'], function () {
+gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates'], function () {
   return project.watch()
 });
 
