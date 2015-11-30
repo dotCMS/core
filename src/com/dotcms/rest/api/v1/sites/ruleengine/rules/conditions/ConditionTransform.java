@@ -5,7 +5,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ConditionTransform {
-    private final ConditionValueTransform conditionValueTransform = new ConditionValueTransform();
+    private final ParameterModelTransform parameterModelTransform = new ParameterModelTransform();
 
     public Condition restToApp(RestCondition rest) {
         Condition app = new Condition();
@@ -21,7 +21,7 @@ public class ConditionTransform {
         app.setPriority(rest.priority);
         if(rest.values!=null)
         app.setValues(rest.values.values().stream()
-                .map(conditionValueTransform.toApp)
+                .map(parameterModelTransform.toApp)
                 .collect(Collectors.toList()));
         return app;
     }
@@ -46,7 +46,7 @@ public class ConditionTransform {
                 .operator(app.getOperator().name())
                 .priority(app.getPriority())
                 .values(app.getValues().stream()
-                           .map(conditionValueTransform.toRest)
+                           .map(parameterModelTransform.toRest)
                            .collect(Collectors.toMap(restCondition -> restCondition.key, Function.identity())))
                 .build();
 

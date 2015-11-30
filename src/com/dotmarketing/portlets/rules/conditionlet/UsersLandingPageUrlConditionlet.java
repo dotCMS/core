@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -16,10 +20,10 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.beans.Clickstream;
 import com.dotmarketing.beans.ClickstreamRequest;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the URL of the first page
@@ -41,7 +45,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 05-13-2015
  *
  */
-public class UsersLandingPageUrlConditionlet extends Conditionlet {
+public class UsersLandingPageUrlConditionlet extends Conditionlet<UsersLandingPageUrlConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -59,46 +63,14 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersLandingPageUrlConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorsLandingPage", ImmutableSet.<Comparison>of(IS,
+                                                                                              Comparison.IS_NOT,
+                                                                                              Comparison.STARTS_WITH,
+                                                                                              Comparison.ENDS_WITH,
+                                                                                              Comparison.CONTAINS,
+                                                                                              Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
-					"Ends With"));
-			this.comparisons
-					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -145,71 +117,73 @@ public class UsersLandingPageUrlConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
-			return false;
-		}
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String conditionletValue = values.get(0).getValue();
-		inputValues
-				.add(new ConditionletInputValue(INPUT_ID, conditionletValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		Clickstream clickstream = (Clickstream) request.getSession(true)
-				.getAttribute("clickstream");
-		if (clickstream == null) {
-			return false;
-		}
-		String firstUrl = null;
-		List<ClickstreamRequest> clickstreamRequests = clickstream
-				.getClickstreamRequests();
-		if (clickstreamRequests != null && clickstreamRequests.size() > 0) {
-			firstUrl = clickstreamRequests.get(0).getRequestURI();
-		}
-		if (!UtilMethods.isSet(firstUrl)) {
-			return false;
-		}
-		if (!comparison.getId().equals(COMPARISON_REGEX)) {
-			firstUrl = firstUrl.toLowerCase();
-			conditionletValue = conditionletValue.toLowerCase();
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (firstUrl.equalsIgnoreCase(conditionletValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			if (!firstUrl.equalsIgnoreCase(conditionletValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-			if (firstUrl.startsWith(conditionletValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-			if (firstUrl.endsWith(conditionletValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-			if (firstUrl.contains(conditionletValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(conditionletValue);
-			Matcher matcher = pattern.matcher(firstUrl);
-			if (matcher.find()) {
-				return true;
-			}
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		String conditionletValue = values.get(0).getValue();
+//		inputValues
+//				.add(new ConditionletInputValue(INPUT_ID, conditionletValue));
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		Clickstream clickstream = (Clickstream) request.getSession(true)
+//				.getAttribute("clickstream");
+//		if (clickstream == null) {
+//			return false;
+//		}
+//		String firstUrl = null;
+//		List<ClickstreamRequest> clickstreamRequests = clickstream
+//				.getClickstreamRequests();
+//		if (clickstreamRequests != null && clickstreamRequests.size() > 0) {
+//			firstUrl = clickstreamRequests.get(0).getRequestURI();
+//		}
+//		if (!UtilMethods.isSet(firstUrl)) {
+//			return false;
+//		}
+//		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+//			firstUrl = firstUrl.toLowerCase();
+//			conditionletValue = conditionletValue.toLowerCase();
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			if (firstUrl.equalsIgnoreCase(conditionletValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			if (!firstUrl.equalsIgnoreCase(conditionletValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+//			if (firstUrl.startsWith(conditionletValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+//			if (firstUrl.endsWith(conditionletValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+//			if (firstUrl.contains(conditionletValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+//			Pattern pattern = Pattern.compile(conditionletValue);
+//			Matcher matcher = pattern.matcher(firstUrl);
+//			if (matcher.find()) {
+//				return true;
+//			}
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.rules.conditionlet;
+package com.dotmarketing.portlets.rules;
 
 import java.util.List;
 

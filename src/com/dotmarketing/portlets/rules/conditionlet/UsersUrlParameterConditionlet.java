@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -16,9 +20,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow dotCMS users to check the value of a specific
@@ -33,7 +38,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 05-12-2015
  *
  */
-public class UsersUrlParameterConditionlet extends Conditionlet {
+public class UsersUrlParameterConditionlet extends Conditionlet<UsersUrlParameterConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -52,46 +57,14 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersUrlParameterConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.RequestUrlParameter", ImmutableSet.<Comparison>of(IS,
+                                                                                              Comparison.IS_NOT,
+                                                                                              Comparison.STARTS_WITH,
+                                                                                              Comparison.ENDS_WITH,
+                                                                                              Comparison.CONTAINS,
+                                                                                              Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
-					"Ends With"));
-			this.comparisons
-					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -146,63 +119,67 @@ public class UsersUrlParameterConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() < 2
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		Map<String, String> conditionletValues = new HashMap<String, String>();
-		String inputValue1 = values.get(0).getValue();
-		String inputValue2 = values.get(1).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
-		conditionletValues.put(INPUT1_ID, inputValue1);
-		inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
-		conditionletValues.put(INPUT2_ID, inputValue2);
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		String urlParamValue = HttpRequestDataUtil.getUrlParameterValue(
-				request, inputValue1);
-		if (!UtilMethods.isSet(urlParamValue)) {
-			return false;
-		}
-		if (!comparison.getId().equals(COMPARISON_REGEX)) {
-			urlParamValue = urlParamValue.toLowerCase();
-			inputValue2 = inputValue2.toLowerCase();
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (urlParamValue.equalsIgnoreCase(inputValue2)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			if (!urlParamValue.equalsIgnoreCase(inputValue2)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-			if (urlParamValue.startsWith(inputValue2)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-			if (urlParamValue.endsWith(inputValue2)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-			if (urlParamValue.contains(inputValue2)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(inputValue2);
-			Matcher matcher = pattern.matcher(urlParamValue);
-			if (matcher.find()) {
-				return true;
-			}
-		}
+	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		Map<String, String> conditionletValues = new HashMap<String, String>();
+//		String inputValue1 = values.get(0).getValue();
+//		String inputValue2 = values.get(1).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
+//		conditionletValues.put(INPUT1_ID, inputValue1);
+//		inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
+//		conditionletValues.put(INPUT2_ID, inputValue2);
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		String urlParamValue = HttpRequestDataUtil.getUrlParameterValue(
+//				request, inputValue1);
+//		if (!UtilMethods.isSet(urlParamValue)) {
+//			return false;
+//		}
+//		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+//			urlParamValue = urlParamValue.toLowerCase();
+//			inputValue2 = inputValue2.toLowerCase();
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			if (urlParamValue.equalsIgnoreCase(inputValue2)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			if (!urlParamValue.equalsIgnoreCase(inputValue2)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+//			if (urlParamValue.startsWith(inputValue2)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+//			if (urlParamValue.endsWith(inputValue2)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+//			if (urlParamValue.contains(inputValue2)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+//			Pattern pattern = Pattern.compile(inputValue2);
+//			Matcher matcher = pattern.matcher(urlParamValue);
+//			if (matcher.find()) {
+//				return true;
+//			}
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

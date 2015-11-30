@@ -1,8 +1,13 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
@@ -19,9 +24,11 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.EQUAL;
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow dotCMS users to check the client's current time
@@ -42,70 +49,24 @@ import com.dotmarketing.util.UtilMethods;
  * @since 05-13-2015
  *
  */
-public class UsersTimeConditionlet extends Conditionlet {
+public class UsersTimeConditionlet extends Conditionlet<UsersTimeConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT1_ID = "time1";
 	private static final String INPUT2_ID = "time2";
-	private static final String CONDITIONLET_NAME = "User's Time";
 
-	private static final String COMPARISON_GREATER_THAN = "greater";
-	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
-	private static final String COMPARISON_EQUAL_TO = "equal";
-	private static final String COMPARISON_LOWER_THAN = "lower";
-	private static final String COMPARISON_LOWER_THAN_OR_EQUAL_TO = "lowerOrEqual";
-	private static final String COMPARISON_BETWEEN = "between";
-
-	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValuesType1 = null;
 	private Map<String, ConditionletInput> inputValuesType2 = null;
 
 	public UsersTimeConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorsLocalTime", ImmutableSet.<Comparison>of(EQUAL,
+                                                                                              Comparison.LESS_THAN,
+                                                                                              Comparison.GREATER_THAN,
+                                                                                              Comparison.LESS_THAN_OR_EQUAL,
+                                                                                              Comparison.GREATER_THAN_OR_EQUAL,
+                                                                                              Comparison.BETWEEN));
 	}
-
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_GREATER_THAN,
-					"Is Greater Than"));
-			this.comparisons.add(new Comparison(
-					COMPARISON_GREATER_THAN_OR_EQUAL_TO,
-					"Is Greater Than or Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_EQUAL_TO,
-					"Is Equal To"));
-			this.comparisons.add(new Comparison(
-					COMPARISON_LOWER_THAN_OR_EQUAL_TO,
-					"Is Lower Than or Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
-					"Is Lower Than"));
-			this.comparisons.add(new Comparison(COMPARISON_BETWEEN,
-					"Is Between"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -125,78 +86,71 @@ public class UsersTimeConditionlet extends Conditionlet {
 
 	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
-		if (this.inputValuesType1 == null) {
-			this.inputValuesType1 = new LinkedHashMap<String, ConditionletInput>();
-			ConditionletInput inputField1 = new ConditionletInput();
-			// Set field #1 configuration
-			inputField1.setId(INPUT1_ID);
-			inputField1.setUserInputAllowed(true);
-			inputField1.setMultipleSelectionAllowed(false);
-			inputField1.setMinNum(1);
-			this.inputValuesType1.put(inputField1.getId(), inputField1);
-		}
-		if (comparisonId.equalsIgnoreCase(COMPARISON_BETWEEN)) {
-			if (this.inputValuesType2 == null) {
-				this.inputValuesType2 = new LinkedHashMap<String, ConditionletInput>();
-				this.inputValuesType2.put(INPUT1_ID,
-						inputValuesType1.get(INPUT1_ID));
-				// Set field #2 configuration
-				ConditionletInput inputField2 = new ConditionletInput();
-				inputField2.setId(INPUT2_ID);
-				inputField2.setUserInputAllowed(true);
-				inputField2.setMultipleSelectionAllowed(false);
-				inputField2.setMinNum(1);
-				this.inputValuesType2.put(inputField2.getId(), inputField2);
-			}
-			return this.inputValuesType2.values();
-		}
-		return this.inputValuesType1.values();
-	}
+//		if (this.inputValuesType1 == null) {
+//			this.inputValuesType1 = new LinkedHashMap<String, ConditionletInput>();
+//			ConditionletInput inputField1 = new ConditionletInput();
+//			// Set field #1 configuration
+//			inputField1.setId(INPUT1_ID);
+//			inputField1.setUserInputAllowed(true);
+//			inputField1.setMultipleSelectionAllowed(false);
+//			inputField1.setMinNum(1);
+//			this.inputValuesType1.put(inputField1.getId(), inputField1);
+//		}
+//		if (comparisonId.equalsIgnoreCase(COMPARISON_BETWEEN)) {
+//			if (this.inputValuesType2 == null) {
+//				this.inputValuesType2 = new LinkedHashMap<String, ConditionletInput>();
+//				this.inputValuesType2.put(INPUT1_ID,
+//						inputValuesType1.get(INPUT1_ID));
+//				// Set field #2 configuration
+//				ConditionletInput inputField2 = new ConditionletInput();
+//				inputField2.setId(INPUT2_ID);
+//				inputField2.setUserInputAllowed(true);
+//				inputField2.setMultipleSelectionAllowed(false);
+//				inputField2.setMinNum(1);
+//				this.inputValuesType2.put(inputField2.getId(), inputField2);
+//			}
+//			return this.inputValuesType2.values();
+//		}
+		return Lists.newArrayList();
+    }
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values)
-				|| values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)
-				|| (comparisonId.equals(COMPARISON_BETWEEN) && values.size() < 2)) {
-			return false;
-		}
-		long clientDateTime = 0;
-		try {
-			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-			String ipAddress = address.getHostAddress();
-			// TODO: Remove
-			ipAddress = "170.123.234.133";
-			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(
-					ipAddress);
-			clientDateTime = date.getTime().getTime();
-		} catch (IOException | GeoIp2Exception e) {
-			Logger.error(
-					this,
-					"Could not retrieved a valid date from request: "
-							+ request.getRequestURL());
-		}
-		if (clientDateTime == 0) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		Map<String, String> conditionletValues = new HashMap<String, String>();
-		String inputValue1 = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
-		conditionletValues.put(INPUT1_ID, inputValue1);
-		if (comparisonId.equals(COMPARISON_BETWEEN)) {
-			String inputValue2 = values.get(1).getValue();
-			inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
-			conditionletValues.put(INPUT2_ID, inputValue2);
-		}
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		return compareTime(comparison, clientDateTime, conditionletValues);
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        long clientDateTime = 0;
+//		try {
+//			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+//			String ipAddress = address.getHostAddress();
+//			// TODO: Remove
+//			ipAddress = "170.123.234.133";
+//			Calendar date = GeoIp2CityDbUtil.getInstance().getDateTime(
+//					ipAddress);
+//			clientDateTime = date.getTime().getTime();
+//		} catch (IOException | GeoIp2Exception e) {
+//			Logger.error(
+//					this,
+//					"Could not retrieved a valid date from request: "
+//							+ request.getRequestURL());
+//		}
+//		if (clientDateTime == 0) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		Map<String, String> conditionletValues = new HashMap<String, String>();
+//		String inputValue1 = values.get(0).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT1_ID, inputValue1));
+//		conditionletValues.put(INPUT1_ID, inputValue1);
+//		if (comparison == Comparison.BETWEEN) {
+//			String inputValue2 = values.get(1).getValue();
+//			inputValues.add(new ConditionletInputValue(INPUT2_ID, inputValue2));
+//			conditionletValues.put(INPUT2_ID, inputValue2);
+//		}
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		return compareTime(comparison, clientDateTime, conditionletValues);
+        return false;
 	}
 
 	/**
@@ -214,40 +168,39 @@ public class UsersTimeConditionlet extends Conditionlet {
 	 * @return If the client's time matches the specified comparison, returns
 	 *         {@code true}. Otherwise, returns {@code false}.
 	 */
-	private boolean compareTime(Comparison comparison, long clientDateTime,
-			Map<String, String> conditionletValues) {
-		int clientTime = getTimeFromDate(clientDateTime);
-		int conditionletTime1 = getTimeFromDate(Long.valueOf(conditionletValues
-				.get(INPUT1_ID)));
-		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-			if (clientTime > conditionletTime1) {
-				return true;
-			}
-		} else if (comparison.getId().equals(
-				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-			if (clientTime >= conditionletTime1) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
-			if (clientTime == conditionletTime1) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-			if (clientTime <= conditionletTime1) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
-			if (clientTime <= conditionletTime1) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_BETWEEN)) {
-			int conditionletTime2 = getTimeFromDate(Long
-					.valueOf(conditionletValues.get(INPUT2_ID)));
-			if (clientTime >= conditionletTime1
-					&& clientTime <= conditionletTime2) {
-				return true;
-			}
-		}
+	private boolean compareTime(Comparison comparison, long clientDateTime, Map<String, String> conditionletValues) {
+//		int clientTime = getTimeFromDate(clientDateTime);
+//		int conditionletTime1 = getTimeFromDate(Long.valueOf(conditionletValues
+//				.get(INPUT1_ID)));
+//		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+//			if (clientTime > conditionletTime1) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(
+//				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+//			if (clientTime >= conditionletTime1) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
+//			if (clientTime == conditionletTime1) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+//			if (clientTime <= conditionletTime1) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
+//			if (clientTime <= conditionletTime1) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_BETWEEN)) {
+//			int conditionletTime2 = getTimeFromDate(Long
+//					.valueOf(conditionletValues.get(INPUT2_ID)));
+//			if (clientTime >= conditionletTime1
+//					&& clientTime <= conditionletTime2) {
+//				return true;
+//			}
+//		}
 		return false;
 	}
 
@@ -272,5 +225,16 @@ public class UsersTimeConditionlet extends Conditionlet {
 		String timeAsStr = "" + hour + (minute < 10 ? "0" + minute : minute);
 		return Integer.parseInt(timeAsStr);
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

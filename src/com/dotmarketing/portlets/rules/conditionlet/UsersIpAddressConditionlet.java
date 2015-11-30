@@ -1,8 +1,12 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -17,9 +21,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the IP address of the user
@@ -35,7 +40,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-21-2015
  *
  */
-public class UsersIpAddressConditionlet extends Conditionlet {
+public class UsersIpAddressConditionlet extends Conditionlet<UsersIpAddressConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -52,45 +57,13 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersIpAddressConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorIpAddress", ImmutableSet.<Comparison>of(IS,
+                                                                                              Comparison.IS_NOT,
+                                                                                              Comparison.STARTS_WITH,
+                                                                                              Comparison.NETMASK,
+                                                                                              Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_NETMASK,
-					"Matches Netmask"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -139,57 +112,62 @@ public class UsersIpAddressConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		String ipAddress = null;
-		try {
-			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-			ipAddress = address.getHostAddress();
-		} catch (UnknownHostException e) {
-			Logger.error(this,
-					"Could not retrieved a valid IP address from request: "
-							+ request.getRequestURL());
-		}
-		if (!UtilMethods.isSet(ipAddress)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (ipAddress.equals(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
-			if (!ipAddress.equals(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
-			if (ipAddress.startsWith(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().startsWith(COMPARISON_NETMASK)) {
-			if (HttpRequestDataUtil.isIpMatchingNetmask(ipAddress, inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(inputValue);
-			Matcher matcher = pattern.matcher(ipAddress);
-			if (matcher.find()) {
-				return true;
-			}
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        String ipAddress = null;
+//		try {
+//			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+//			ipAddress = address.getHostAddress();
+//		} catch (UnknownHostException e) {
+//			Logger.error(this,
+//					"Could not retrieved a valid IP address from request: "
+//							+ request.getRequestURL());
+//		}
+//		if (!UtilMethods.isSet(ipAddress)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		String inputValue = values.get(0).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			if (ipAddress.equals(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().startsWith(COMPARISON_ISNOT)) {
+//			if (!ipAddress.equals(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().startsWith(COMPARISON_STARTSWITH)) {
+//			if (ipAddress.startsWith(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().startsWith(COMPARISON_NETMASK)) {
+//			if (HttpRequestDataUtil.isIpMatchingNetmask(ipAddress, inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().endsWith(COMPARISON_REGEX)) {
+//			Pattern pattern = Pattern.compile(inputValue);
+//			Matcher matcher = pattern.matcher(ipAddress);
+//			if (matcher.find()) {
+//				return true;
+//			}
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -64,7 +64,7 @@ public class ConditionGroup implements Serializable {
             try {
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
-                Logger.error(this, "Unable to get conditions for group: " + id);
+                throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
         return conditions;
@@ -86,11 +86,11 @@ public class ConditionGroup implements Serializable {
         }
     }
 
-    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
         boolean result = true;
 
         /* @todo ggranum: This also fails for ( A AND B OR C)*/
-        for (Condition condition : getConditions()) {
+        for (Condition condition : conditions) {
             if(condition.getOperator()== Condition.Operator.AND) {
                 result = result && condition.evaluate(req, res);
             } else {
@@ -101,7 +101,8 @@ public class ConditionGroup implements Serializable {
 
         return result;
     }
-	@Override
+
+    @Override
 	public String toString() {
 		return "ConditionGroup [id=" + id + ", ruleId=" + ruleId
 				+ ", operator=" + operator + ", modDate=" + modDate

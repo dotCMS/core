@@ -8,7 +8,6 @@ public class ComparisonTransform implements RestTransform<Comparison, RestCompar
 
     private final Function<Comparison, RestComparison> toRest = (app) -> new RestComparison.Builder()
                    .id(app.getId())
-                   .label(app.getLabel())
                    .build();
 
     @Override

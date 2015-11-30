@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -12,8 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the language a user has set
@@ -28,12 +33,11 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-17-2015
  *
  */
-public class UsersLanguageConditionlet extends Conditionlet {
+public class UsersLanguageConditionlet extends Conditionlet<UsersLanguageConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "language";
-	private static final String CONDITIONLET_NAME = "User's Language";
 
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
@@ -42,38 +46,10 @@ public class UsersLanguageConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersLanguageConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorsLanguage", ImmutableSet.<Comparison>of(IS,
+                                                                                              Comparison.IS_NOT));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -167,43 +143,47 @@ public class UsersLanguageConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		String language = WebAPILocator.getLanguageWebAPI()
-				.getLanguage(request).getLanguageCode();
-		if (!UtilMethods.isSet(language)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
-					.getValue()));
-		}
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			for (ConditionValue value : values) {
-				if (value.getValue().equalsIgnoreCase(language)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			for (ConditionValue value : values) {
-				if (value.getValue().equalsIgnoreCase(language)) {
-					return false;
-				}
-			}
-			return true;
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        String language = WebAPILocator.getLanguageWebAPI()
+//				.getLanguage(request).getLanguageCode();
+//		if (!UtilMethods.isSet(language)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		for (ParameterModel value : values) {
+//			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+//					.getValue()));
+//		}
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			for (ParameterModel value : values) {
+//				if (value.getValue().equalsIgnoreCase(language)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			for (ParameterModel value : values) {
+//				if (value.getValue().equalsIgnoreCase(language)) {
+//					return false;
+//				}
+//			}
+//			return true;
+//		}
 		return false;
 	}
 
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 }

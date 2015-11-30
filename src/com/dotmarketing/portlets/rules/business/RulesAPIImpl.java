@@ -23,10 +23,9 @@ import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -42,7 +41,7 @@ public class RulesAPIImpl implements RulesAPI {
     private final PermissionAPI perAPI;
     private final RulesFactory rulesFactory;
 
-    private static final Map<String, Conditionlet> conditionletMap = Maps.newHashMap();
+    private static final Map<String, Conditionlet<?>> conditionletMap = Maps.newHashMap();
     private static final Map<String, RuleActionlet> actionletMap = Maps.newHashMap();
 
     private static final List<Class> conditionletOSGIclasses = new ArrayList<Class>();
@@ -108,7 +107,9 @@ public class RulesAPIImpl implements RulesAPI {
             return new HashSet<>();
         }
 
-        return new HashSet<>(perAPI.filterCollection(new ArrayList<>(rulesFactory.getRulesByHost(host, fireOn)), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user));
+        ArrayList<Rule> rules = new ArrayList<>(rulesFactory.getRulesByHost(host, fireOn));
+        List<Rule> allowedRules = perAPI.filterCollection(rules, PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
+        return new HashSet<>(allowedRules);
     }
 
     public List<Rule> getRulesByNameFilter(String nameFilter, User user, boolean respectFrontendRoles) {
@@ -310,19 +311,19 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
     @Override
-    public ConditionValue getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public ParameterModel getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(id)) {
             return null;
         }
 
-        ConditionValue value = rulesFactory.getConditionValueById(id);
+        ParameterModel value = rulesFactory.getConditionValueById(id);
 
         if(!UtilMethods.isSet(value)) {
             Logger.info(this, "There is no Condition Value with the given id: " + id);
             return null;
         }
 
-        Condition condition = rulesFactory.getConditionById(value.getConditionId());
+        Condition condition = rulesFactory.getConditionById(value.getOwnerId());
 
         if(condition==null) {
             Logger.info(this, "There is no condition associated with the given Condition Value: " + id);
@@ -387,13 +388,13 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.saveCondition(condition);
     }
 
-    public void saveConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        conditionValue = checkNotNull(conditionValue, "Condition Value is required.");
+    public void saveConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        parameterModel = checkNotNull(parameterModel, "Condition Value is required.");
 
-        Condition condition = Preconditions.checkNotNull(getConditionById(conditionValue.getConditionId(), user, true),
-                DotRuntimeException.class,
-                "Invalid Condition specified: %s",
-                conditionValue.getConditionId());
+        Condition condition = Preconditions.checkNotNull(getConditionById(parameterModel.getOwnerId(), user, true),
+                                                         DotRuntimeException.class,
+                                                         "Invalid Condition specified: %s",
+                                                         parameterModel.getOwnerId());
 
         ConditionGroup group = Preconditions.checkNotNull(getConditionGroupById(condition.getConditionGroup(), user, true),
                 DotRuntimeException.class,
@@ -406,7 +407,7 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot save rule: " + rule.getId() + " or its conditions ");
         }
 
-        rulesFactory.saveConditionValue(conditionValue);
+        rulesFactory.saveConditionValue(parameterModel);
     }
 
     public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -457,12 +458,12 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteCondition(condition);
     }
 
-    public void deleteConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        if(!UtilMethods.isSet(conditionValue)) {
+    public void deleteConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        if(!UtilMethods.isSet(parameterModel)) {
             return;
         }
 
-        Condition condition = getConditionById(conditionValue.getConditionId(), user, false);
+        Condition condition = getConditionById(parameterModel.getOwnerId(), user, false);
 
         ConditionGroup group = getConditionGroupById(condition.getConditionGroup(), user, false);
 
@@ -477,7 +478,7 @@ public class RulesAPIImpl implements RulesAPI {
             throw new DotSecurityException("User " + user + " cannot delete rule: " + rule.getId() + " or its conditions ");
         }
 
-        rulesFactory.deleteConditionValue(conditionValue);
+        rulesFactory.deleteConditionValue(parameterModel);
 
     }
 
@@ -550,7 +551,7 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteRuleAction(ruleAction);
     }
 
-    public Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public Map<String, ParameterModel> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
         String ruleId = action.getRuleId();
 
@@ -571,19 +572,19 @@ public class RulesAPIImpl implements RulesAPI {
         return rulesFactory.getRuleActionParameters(action);
     }
 
-    public RuleActionParameter getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+    public ParameterModel getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
         if(!UtilMethods.isSet(id)) {
             return null;
         }
 
-        RuleActionParameter parameter = rulesFactory.getRuleActionParameterById(id);
+        ParameterModel parameter = rulesFactory.getRuleActionParameterById(id);
 
         if(!UtilMethods.isSet(parameter)) {
             Logger.info(this, "There is no RuleAction Parameter with the given id: " + id);
             return null;
         }
 
-        RuleAction action = rulesFactory.getRuleActionById(parameter.getRuleActionId());
+        RuleAction action = rulesFactory.getRuleActionById(parameter.getOwnerId());
 
         if(action==null) {
             Logger.info(this, "There is no RuleAction associated with the given RuleAction Parameter: " + id);
@@ -730,7 +731,7 @@ public class RulesAPIImpl implements RulesAPI {
         return instances;
     }
 
-    public List<Conditionlet> findConditionlets() throws DotDataException, DotSecurityException {
+    public List<Conditionlet<?>> findConditionlets() throws DotDataException, DotSecurityException {
         return new ArrayList<>(conditionletMap.values());
     }
 

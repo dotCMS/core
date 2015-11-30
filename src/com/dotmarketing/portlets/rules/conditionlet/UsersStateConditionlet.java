@@ -1,8 +1,12 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -16,9 +20,10 @@ import javax.servlet.http.HttpServletResponse;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the state/province/region a
@@ -39,7 +44,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-13-2015
  *
  */
-public class UsersStateConditionlet extends Conditionlet {
+public class UsersStateConditionlet extends Conditionlet<UsersStateConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -53,38 +58,10 @@ public class UsersStateConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersStateConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorsStateProvince", ImmutableSet.<Comparison>of(IS, Comparison.IS_NOT));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-		}
-		return this.comparisons;
-	}
 
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -183,52 +160,57 @@ public class UsersStateConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-		String state = null;
-		try {
-			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-			String ipAddress = address.getHostAddress();
-			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
-		} catch (IOException | GeoIp2Exception e) {
-			Logger.error(this,
-					"An error occurred when retrieving the IP address from request: "
-							+ request.getRequestURL());
-		}
-		if (!UtilMethods.isSet(state)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
-					.getValue()));
-		}
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			for (ConditionValue value : values) {
-				if (value.getValue().equals(state)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			for (ConditionValue value : values) {
-				if (value.getValue().equals(state)) {
-					return false;
-				}
-			}
-			return true;
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
+//		String state = null;
+//		try {
+//			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+//			String ipAddress = address.getHostAddress();
+//			state = geoIp2Util.getSubdivisionIsoCode(ipAddress);
+//		} catch (IOException | GeoIp2Exception e) {
+//			Logger.error(this,
+//					"An error occurred when retrieving the IP address from request: "
+//							+ request.getRequestURL());
+//		}
+//		if (!UtilMethods.isSet(state)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		for (ParameterModel value : values) {
+//			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+//					.getValue()));
+//		}
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			for (ParameterModel value : values) {
+//				if (value.getValue().equals(state)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			for (ParameterModel value : values) {
+//				if (value.getValue().equals(state)) {
+//					return false;
+//				}
+//			}
+//			return true;
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

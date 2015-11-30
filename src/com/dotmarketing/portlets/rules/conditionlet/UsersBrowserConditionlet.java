@@ -1,23 +1,21 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.Logger;
 import java.util.Collection;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the browser name a user
@@ -51,81 +49,36 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-21-2015
  *
  */
-public class UsersBrowserConditionlet extends Conditionlet {
+public class UsersBrowserConditionlet extends Conditionlet<UsersBrowserConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "browser";
 	private static final String CONDITIONLET_NAME = "User's Browser";
 
-	private static final String COMPARISON_IS = "is";
-	private static final String COMPARISON_ISNOT = "isNot";
-	private static final String COMPARISON_STARTSWITH = "startsWith";
-	private static final String COMPARISON_ENDSWITH = "endsWith";
-	private static final String COMPARISON_CONTAINS = "contains";
-	private static final String COMPARISON_REGEX = "regex";
-
-	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersBrowserConditionlet() {
-		super(CONDITIONLET_NAME);
+		super(CONDITIONLET_NAME, ImmutableSet.of(IS,
+                                                     Comparison.IS_NOT,
+                                                     Comparison.STARTS_WITH,
+                                                     Comparison.ENDS_WITH,
+                                                     Comparison.CONTAINS,
+                                                     Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
-					"Ends With"));
-			this.comparisons
-					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
 
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			// Validate all available input fields
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
-	protected ValidationResult validate(Comparison comparison,
-			ConditionletInputValue inputValue) {
+	protected ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
 		String inputId = inputValue.getConditionletInputId();
-		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
-			String comparisonId = comparison.getId();
-			if (comparisonId.equals(COMPARISON_IS)
-					|| comparisonId.equals(COMPARISON_ISNOT)
-					|| comparisonId.equals(COMPARISON_STARTSWITH)
-					|| comparisonId.equals(COMPARISON_ENDSWITH)
-					|| comparisonId.equals(COMPARISON_CONTAINS)) {
-				if (UtilMethods.isSet(selectedValue)) {
+			if (comparison == IS
+					|| comparison == Comparison.IS_NOT
+					|| comparison == Comparison.STARTS_WITH
+					|| comparison == Comparison.ENDS_WITH
+					|| comparison == Comparison.CONTAINS) {
 					validationResult.setValid(true);
-				}
-			} else if (comparisonId.equals(COMPARISON_REGEX)) {
+			} else if (comparison == Comparison.REGEX) {
 				try {
 					Pattern.compile(selectedValue);
 					validationResult.setValid(true);
@@ -134,14 +87,11 @@ public class UsersBrowserConditionlet extends Conditionlet {
 				}
 			}
 			if (!validationResult.isValid()) {
-				validationResult.setErrorMessage("Invalid value for input '"
-						+ inputId + "': '" + selectedValue + "'");
+				validationResult.setErrorMessage("Invalid value for input '%s': '%s'", inputId, selectedValue);
 			}
-		}
 		return validationResult;
 	}
 
-	@Override
 	public Collection<ConditionletInput> getInputs(String comparisonId) {
 		if (this.inputValues == null) {
 			ConditionletInput inputField = new ConditionletInput();
@@ -156,62 +106,65 @@ public class UsersBrowserConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				&& !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		String userAgentInfo = request.getHeader("User-Agent");
-		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-		String browserName = null;
-		if (agent != null && agent.getBrowser() != null) {
-			browserName = agent.getBrowser().getName();
-		}
-		if (!UtilMethods.isSet(browserName)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (!comparison.getId().equals(COMPARISON_REGEX)) {
-			inputValue = inputValue.toLowerCase();
-			browserName = browserName.toLowerCase();
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (browserName.equals(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			if (!browserName.equals(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-			if (browserName.startsWith(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-			if (browserName.endsWith(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-			if (browserName.contains(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(inputValue);
-			Matcher matcher = pattern.matcher(browserName);
-			if (matcher.find()) {
-				return true;
-			}
-		}
+	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//		String userAgentInfo = request.getHeader("User-Agent");
+//		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
+//		String browserName = null;
+//		if (agent != null && agent.getBrowser() != null) {
+//			browserName = agent.getBrowser().getName();
+//		}
+//		if (!UtilMethods.isSet(browserName)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		String inputValue = values.get(0).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (comparison != Comparison.REGEX) {
+//			inputValue = inputValue.toLowerCase();
+//			browserName = browserName.toLowerCase();
+//		}
+//        if(comparison == Comparison.IS) {
+//            if(browserName.equals(inputValue)) {
+//                return true;
+//            }
+//        } else if(comparison == Comparison.IS_NOT) {
+//            if(!browserName.equals(inputValue)) {
+//                return true;
+//            }
+//        } else if(comparison == Comparison.STARTS_WITH) {
+//            if(browserName.startsWith(inputValue)) {
+//                return true;
+//            }
+//        } else if(comparison == Comparison.ENDS_WITH) {
+//            if(browserName.endsWith(inputValue)) {
+//                return true;
+//            }
+//        } else if(comparison == Comparison.CONTAINS) {
+//            if(browserName.contains(inputValue)) {
+//                return true;
+//            }
+//        } else if(comparison == Comparison.REGEX) {
+//            Pattern pattern = Pattern.compile(inputValue);
+//            Matcher matcher = pattern.matcher(browserName);
+//            if(matcher.find()) {
+//                return true;
+//            }
+//        }
 		return false;
 	}
 
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 }

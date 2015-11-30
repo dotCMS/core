@@ -123,7 +123,7 @@ public class UsersCountryConditionletFTest extends TestBase {
             // Ip address from Venezuela
             when(req.getHeader("X-Forwarded-For")).thenReturn("186.95.98.200");
 
-            assertTrue(myRule.evaluate(req, res));
+            assertTrue(myRule.evaluate(req, res, myRule.getGroups()));
 
 
             // DELETE condition

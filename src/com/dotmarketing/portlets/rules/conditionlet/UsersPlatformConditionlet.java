@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -12,8 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.repackage.eu.bitwalker.useragentutils.UserAgent;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check the platform a user request
@@ -38,61 +43,25 @@ import com.dotmarketing.util.UtilMethods;
  * @since 05-05-2015
  *
  */
-public class UsersPlatformConditionlet extends Conditionlet {
+public class UsersPlatformConditionlet extends Conditionlet<UsersPlatformConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "platform";
-	private static final String CONDITIONLET_NAME = "User's Platform";
 
-	private static final String COMPARISON_IS = "is";
-	private static final String COMPARISON_ISNOT = "isNot";
-
-	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
     public UsersPlatformConditionlet() {
-        super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.VisitorsDeviceType", ImmutableSet.<Comparison>of(IS, Comparison.IS_NOT));
     }
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
-	protected ValidationResult validate(Comparison comparison,
-			ConditionletInputValue inputValue) {
+	protected ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
 			String selectedValue = inputValue.getValue();
 			String comparisonId = comparison.getId();
-			if (this.inputValues == null
-					|| this.inputValues.get(inputId) == null) {
+			if (this.inputValues == null || this.inputValues.get(inputId) == null) {
 				getInputs(comparisonId);
 			}
 			ConditionletInput inputField = this.inputValues.get(inputId);
@@ -120,63 +89,66 @@ public class UsersPlatformConditionlet extends Conditionlet {
 			inputField.setMultipleSelectionAllowed(true);
 			inputField.setDefaultValue("");
 			inputField.setMinNum(1);
-			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
+			Set<EntryOption> options = new LinkedHashSet<>();
 			options.add(new EntryOption("Computer", "Computer"));
 			options.add(new EntryOption("Mobile", "Mobile Device"));
 			options.add(new EntryOption("Tablet", "Tablet"));
 			options.add(new EntryOption("Wearable computer", "Wearable Device"));
-			options.add(new EntryOption("Digital media receiver",
-					"Digital Media Receiver"));
+			options.add(new EntryOption("Digital media receiver", "Digital Media Receiver"));
 			options.add(new EntryOption("Game console", "Game Console"));
 			inputField.setData(options);
-			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
+			this.inputValues = new LinkedHashMap<>();
 			this.inputValues.put(inputField.getId(), inputField);
 		}
 		return this.inputValues.values();
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		String userAgentInfo = request.getHeader("User-Agent");
-		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
-		String platform = null;
-		if (agent != null && agent.getOperatingSystem() != null) {
-			platform = agent.getOperatingSystem().getDeviceType().getName();
-		}
-		if (!UtilMethods.isSet(platform)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		for (ConditionValue value : values) {
-			inputValues.add(new ConditionletInputValue(INPUT_ID, value
-					.getValue()));
-		}
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			for (ConditionletInputValue input : inputValues) {
-				if (input.getValue().equalsIgnoreCase(platform)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			for (ConditionletInputValue input : inputValues) {
-				if (input.getValue().equalsIgnoreCase(platform)) {
-					return false;
-				}
-			}
-			return true;
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//      String userAgentInfo = request.getHeader("User-Agent");
+//		UserAgent agent = UserAgent.parseUserAgentString(userAgentInfo);
+//		String platform = null;
+//		if (agent != null && agent.getOperatingSystem() != null) {
+//			platform = agent.getOperatingSystem().getDeviceType().getName();
+//		}
+//		if (!UtilMethods.isSet(platform)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		for (ParameterModel value : values) {
+//			inputValues.add(new ConditionletInputValue(INPUT_ID, value
+//					.getValue()));
+//		}
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			for (ConditionletInputValue input : inputValues) {
+//				if (input.getValue().equalsIgnoreCase(platform)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			for (ConditionletInputValue input : inputValues) {
+//				if (input.getValue().equalsIgnoreCase(platform)) {
+//					return false;
+//				}
+//			}
+//			return true;
+//		}
 		return false;
 	}
 
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 }

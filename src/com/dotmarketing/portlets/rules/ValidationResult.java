@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.rules.conditionlet;
+package com.dotmarketing.portlets.rules;
 
 import java.util.List;
 
@@ -18,6 +18,10 @@ public class ValidationResult {
 
     public String getErrorMessage() {
         return errorMessage;
+    }
+
+    public void setErrorMessage(String message, String... messageArgs) {
+       this.setErrorMessage(String.format(message == null ? "" : message, (String[])messageArgs));
     }
 
     public void setErrorMessage(String errorMessage) {

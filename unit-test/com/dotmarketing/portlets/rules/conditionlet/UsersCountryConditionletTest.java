@@ -4,7 +4,7 @@ import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.unittest.TestUtil;
 import com.dotcms.util.GeoIp2CityDbUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -35,17 +35,17 @@ public class UsersCountryConditionletTest {
     public Object[][] noConditionCases() {
         List<CountryConditionletCase> data = Lists.newArrayList();
 
-        data.add(new CountryConditionletCase("Empty ConditionValue list should evaluate to false.", "is", Lists.<ConditionValue>newArrayList()));
-        data.add(new CountryConditionletCase("Null ConditionValue list should evaluate to false.", "is", null));
-        List<ConditionValue> list = Lists.newArrayList();
-        list.add(new ConditionValue());
+        data.add(new CountryConditionletCase("Empty parameter list should evaluate to false.", "is", Lists.<ParameterModel>newArrayList()));
+        data.add(new CountryConditionletCase("Null parameter list should evaluate to false.", "is", null));
+        List<ParameterModel> list = Lists.newArrayList();
+        list.add(new ParameterModel());
         data.add(new CountryConditionletCase("Empty comparison should trigger false evaluation.", "", list));
         data.add(new CountryConditionletCase("Null comparison should trigger false evaluation.", null, list));
 
         return TestUtil.toCaseArray(data);
     }
 
-    @Test(groups = {"unit"}, dataProvider = "noConditionCases")
+    @Test( dataProvider = "noConditionCases")
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing(CountryConditionletCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(false));
     }
@@ -73,26 +73,26 @@ public class UsersCountryConditionletTest {
     }
 
     private boolean runCase(CountryConditionletCase aCase) {
-        return conditionlet.evaluate(aCase.request, aCase.response, aCase.comparisonId, aCase.values);
+        return conditionlet.evaluate(aCase.request, aCase.response, conditionlet.instanceFrom(aCase.comparison, aCase.values));
     }
 
     private class CountryConditionletCase {
 
         private final HttpServletRequest request;
         private final HttpServletResponse response;
-        private final String comparisonId;
-        private final List<ConditionValue> values;
+        private final Comparison comparison;
+        private final List<ParameterModel> values;
         private final String testDescription;
 
         public CountryConditionletCase(String testDescription, String comparisonId) {
-            this(testDescription, comparisonId, Lists.<ConditionValue>newArrayList());
+            this(testDescription, comparisonId, Lists.<ParameterModel>newArrayList());
         }
 
-        public CountryConditionletCase(String testDescription, String comparisonId, List<ConditionValue> values) {
+        public CountryConditionletCase(String testDescription, String comparisonId, List<ParameterModel> values) {
             this.testDescription = testDescription;
             this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
-            this.comparisonId = comparisonId;
+            this.comparison = Comparison.get(comparisonId);
             this.values = values;
         }
 
@@ -107,7 +107,7 @@ public class UsersCountryConditionletTest {
         }
 
         CountryConditionletCase withIsoCode(String isoCode) {
-            ConditionValue value = new ConditionValue();
+            ParameterModel value = new ParameterModel();
             value.setKey("isoCode");
             value.setValue(isoCode);
             values.add(value);

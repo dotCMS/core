@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -21,12 +25,13 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow CMS users to check whether a user has already
@@ -42,12 +47,11 @@ import com.liferay.portal.SystemException;
  * @since 04-23-2015
  *
  */
-public class UsersVisitedUrlConditionlet extends Conditionlet {
+public class UsersVisitedUrlConditionlet extends Conditionlet<UsersVisitedUrlConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "has-visited-url";
-	private static final String CONDITIONLET_NAME = "User's Visited URL";
 
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
@@ -60,46 +64,14 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	private Map<String, ConditionletInput> inputValues = null;
 
     public UsersVisitedUrlConditionlet() {
-        super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.HasVisitedUrl", ImmutableSet.<Comparison>of(IS,
+                                                                                            Comparison.IS_NOT,
+                                                                                            Comparison.STARTS_WITH,
+                                                                                            Comparison.ENDS_WITH,
+                                                                                            Comparison.CONTAINS,
+                                                                                            Comparison.REGEX));
     }
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
-					"Ends With"));
-			this.comparisons
-					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -146,22 +118,17 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		return checkVisitedUrls(request, inputValue, comparison);
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		String inputValue = values.get(0).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		return checkVisitedUrls(request, inputValue, comparison);
+        return false;
 	}
 
 	/**
@@ -255,49 +222,60 @@ public class UsersVisitedUrlConditionlet extends Conditionlet {
 	 */
 	private boolean validateUrl(Collection<String> urlList, String inputValue,
 			Comparison comparison) {
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			for (String urlInSession : urlList) {
-				if (urlInSession.equalsIgnoreCase(inputValue)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			boolean found = false;
-			for (String urlInSession : urlList) {
-				if (urlInSession.equalsIgnoreCase(inputValue)) {
-					found = true;
-					break;
-				}
-			}
-			return !found;
-		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-			for (String urlInSession : urlList) {
-				if (urlInSession.startsWith(inputValue)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-			for (String urlInSession : urlList) {
-				if (urlInSession.endsWith(inputValue)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-			for (String urlInSession : urlList) {
-				if (urlInSession.contains(inputValue)) {
-					return true;
-				}
-			}
-		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-			for (String urlInSession : urlList) {
-				Pattern pattern = Pattern.compile(inputValue);
-				Matcher matcher = pattern.matcher(urlInSession);
-				if (matcher.find()) {
-					return true;
-				}
-			}
-		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			for (String urlInSession : urlList) {
+//				if (urlInSession.equalsIgnoreCase(inputValue)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			boolean found = false;
+//			for (String urlInSession : urlList) {
+//				if (urlInSession.equalsIgnoreCase(inputValue)) {
+//					found = true;
+//					break;
+//				}
+//			}
+//			return !found;
+//		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+//			for (String urlInSession : urlList) {
+//				if (urlInSession.startsWith(inputValue)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+//			for (String urlInSession : urlList) {
+//				if (urlInSession.endsWith(inputValue)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+//			for (String urlInSession : urlList) {
+//				if (urlInSession.contains(inputValue)) {
+//					return true;
+//				}
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+//			for (String urlInSession : urlList) {
+//				Pattern pattern = Pattern.compile(inputValue);
+//				Matcher matcher = pattern.matcher(urlInSession);
+//				if (matcher.find()) {
+//					return true;
+//				}
+//			}
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

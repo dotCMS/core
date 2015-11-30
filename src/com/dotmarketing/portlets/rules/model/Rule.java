@@ -6,6 +6,7 @@ import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONIgnore;
 import java.io.Serializable;
@@ -129,11 +130,11 @@ public class Rule implements Permissionable, Serializable {
     }
 
     public List<ConditionGroup> getGroups() {
-        if(groups==null) {
+        if(groups == null) {
             try {
                 groups = FactoryLocator.getRulesFactory().getConditionGroupsByRule(id);
             } catch (DotDataException e) {
-                Logger.error(this, "Unable to get condition groups for rule: " + id, e);
+                throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
         return groups;
@@ -208,22 +209,34 @@ public class Rule implements Permissionable, Serializable {
     }
     // End Permissionable methods
 
-    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) throws DotDataException {
+    /**
+     * Evaluate the Rule conditions.
+     *
+     * A list of condition groups will be evaluated as a single logical group; precisely as if the results of each group's evaluation were placed into a
+     * corresponding 'if()' statement in any C based programming language.
+     *
+     * A || B && C          ==>  A || ( B && C )
+     * A && B || C && D     ==> ( A && B ) || ( C && D )
+     *
+     */
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<ConditionGroup> groups) {
+        /**
+         *  @todo ggranum: this logic fails for three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified.
+         *  The correct logic cannot be implemented without a stack.
+         **/
         boolean result = true;
-
-        /* @todo ggranum: this logic fails for a three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified. */
-        for (ConditionGroup group : getGroups()) {
-            if(group.getOperator()== Condition.Operator.AND) {
-                result = result && group.evaluate(req, res);
+        for (ConditionGroup group : groups) {
+            boolean groupResult = group.evaluate(req, res, group.getConditions());
+            if(group.getOperator() == Condition.Operator.AND) {
+                result = result && groupResult;
             } else {
-                result = result || group.evaluate(req, res);
+                result = result || groupResult;
             }
 
             if(!result) return false;
         }
 
         return result;
-
     }
 
     @Override

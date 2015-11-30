@@ -7,7 +7,7 @@ import java.util.stream.Collectors;
 
 public class ConditionletTransform {
 
-    private final Function<Conditionlet, RestConditionlet> toRest = (app) -> {
+    private final Function<Conditionlet<?>, RestConditionlet> toRest = (app) -> {
         ComparisonTransform comparisonTransform = new ComparisonTransform();
         RestConditionlet rest = new RestConditionlet.Builder()
                                         .id(app.getId())
@@ -29,7 +29,7 @@ public class ConditionletTransform {
         return toRest.apply(c);
     }
 
-    public Function<Conditionlet, RestConditionlet> appToRestFn() {
+    public Function<Conditionlet<?>, RestConditionlet> appToRestFn() {
         return toRest;
     }
 }

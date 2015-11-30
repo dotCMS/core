@@ -1,12 +1,16 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.beust.jcommander.internal.Sets;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,32 +61,15 @@ public class ConditionletOSGIFTest {
         public void stop(BundleContext bundleContext) throws Exception {
             unregisterConditionlets();
         }
-
     }
 
-    public static class UsersContinentConditionlet extends Conditionlet {
+
+    public static class UsersContinentConditionlet extends Conditionlet<Instance> {
 
         private static final long serialVersionUID = 1L;
 
         public UsersContinentConditionlet() {
-            super("User's Continent");
-        }
-
-        @Override
-        public Set<Comparison> getComparisons() {
-            return null;
-        }
-
-        @Override
-        public ValidationResults validate(Comparison comparison,
-                                          Set<ConditionletInputValue> inputValues) {
-            return null;
-        }
-
-        @Override
-        protected ValidationResult validate(Comparison comparison,
-                                            ConditionletInputValue inputValue) {
-            return null;
+            super("User's Continent", Sets.newHashSet());
         }
 
         @Override
@@ -91,13 +78,17 @@ public class ConditionletOSGIFTest {
         }
 
         @Override
-        public boolean evaluate(HttpServletRequest request,
-                                HttpServletResponse response,
-                                String comparisonId,
-                                List<ConditionValue> values) {
+        public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
             return false;
         }
 
+        @Override
+        public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+            return null;
+        }
+
     }
+
+    protected static class Instance implements RuleComponentInstance{}
 
 }

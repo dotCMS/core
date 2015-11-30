@@ -1,7 +1,11 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,12 +23,15 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
+
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow dotCMS users to check the number of pages that a
@@ -34,73 +41,32 @@ import com.liferay.portal.SystemException;
  * mechanisms, and a single text field to enter the number of visits to take
  * into account. The user session has a {@link Map} object holding the URLs that
  * the user has visited per site.
- * 
+ *
  * @author Jose Castro
  * @version 1.0
  * @since 05-11-2015
  *
  */
-public class UsersPageVisitsConditionlet extends Conditionlet {
+public class UsersPageVisitsConditionlet extends Conditionlet<UsersPageVisitsConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	private static final String INPUT_ID = "number-visited-pages";
 	private static final String CONDITIONLET_NAME = "User's Visited Pages";
 
-	private static final String COMPARISON_GREATER_THAN = "greater";
-	private static final String COMPARISON_GREATER_THAN_OR_EQUAL_TO = "greaterOrEqual";
-	private static final String COMPARISON_EQUAL_TO = "equal";
-	private static final String COMPARISON_LOWER_THAN = "lower";
-	private static final String COMPARISON_LOWER_THAN_OR_EQUAL_TO = "lowerOrEqual";
-
-	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersPageVisitsConditionlet() {
-		super(CONDITIONLET_NAME);
+		super(CONDITIONLET_NAME, ImmutableSet.<Comparison>of(IS,
+                                                     Comparison.IS_NOT,
+                                                     Comparison.STARTS_WITH,
+                                                     Comparison.ENDS_WITH,
+                                                     Comparison.CONTAINS,
+                                                     Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_GREATER_THAN,
-					"Is Greater Than"));
-			this.comparisons.add(new Comparison(
-					COMPARISON_GREATER_THAN_OR_EQUAL_TO,
-					"Is Greater Than or Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_EQUAL_TO,
-					"Is Equal To"));
-			this.comparisons.add(new Comparison(
-					COMPARISON_LOWER_THAN_OR_EQUAL_TO,
-					"Is Lower Than or Equal To"));
-			this.comparisons.add(new Comparison(COMPARISON_LOWER_THAN,
-					"Is Lower Than"));
-		}
-		return this.comparisons;
-	}
 
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
-	protected ValidationResult validate(Comparison comparison,
-			ConditionletInputValue inputValue) {
+	protected ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
 		String inputId = inputValue.getConditionletInputId();
 		if (UtilMethods.isSet(inputId)) {
@@ -128,53 +94,51 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 		return this.inputValues.values();
 	}
 
-	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		int visitedPages = getTotalVisitedPages(request);
-		int conditionletInput = Integer.parseInt(inputValue);
-		if (comparison.getId().equals(COMPARISON_GREATER_THAN)) {
-			if (visitedPages > conditionletInput) {
-				return true;
-			}
-		} else if (comparison.getId().equals(
-				COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
-			if (visitedPages >= conditionletInput) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_EQUAL_TO)) {
-			if (visitedPages == conditionletInput) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
-			if (visitedPages <= conditionletInput) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_LOWER_THAN)) {
-			if (visitedPages < conditionletInput) {
-				return true;
-			}
-		}
-		return false;
-	}
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    @Override
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+//        Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//        String inputValue = values.get(0).getValue();
+//        inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
+//        ValidationResults validationResults = validate(comparison, inputValues);
+//        if(validationResults.hasErrors()) {
+//            return false;
+//        }
+//        int visitedPages = getTotalVisitedPages(request);
+//        int conditionletInput = Integer.parseInt(inputValue);
+//        if(comparison.getId().equals(COMPARISON_GREATER_THAN)) {
+//            if(visitedPages > conditionletInput) {
+//                return true;
+//            }
+//        } else if(comparison.getId().equals(
+//            COMPARISON_GREATER_THAN_OR_EQUAL_TO)) {
+//            if(visitedPages >= conditionletInput) {
+//                return true;
+//            }
+//        } else if(comparison.getId().equals(COMPARISON_EQUAL_TO)) {
+//            if(visitedPages == conditionletInput) {
+//                return true;
+//            }
+//        } else if(comparison.getId().equals(COMPARISON_LOWER_THAN_OR_EQUAL_TO)) {
+//            if(visitedPages <= conditionletInput) {
+//                return true;
+//            }
+//        } else if(comparison.getId().equals(COMPARISON_LOWER_THAN)) {
+//            if(visitedPages < conditionletInput) {
+//                return true;
+//            }
+//        }
+        return false;
+    }
 
 	/**
 	 * Retrieves the number of pages that the user has visited in its current
 	 * session under a specific site (host).
-	 * 
+	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
 	 * @return The number of visited pages.
@@ -215,7 +179,7 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 	/**
 	 * Returns the ID of the site (host) based on the {@code HttpServletRequest}
 	 * object.
-	 * 
+	 *
 	 * @param request
 	 *            - The {@code HttpServletRequest} object.
 	 * @return The ID of the site, or {@code null} if an error occurred when
@@ -235,5 +199,11 @@ public class UsersPageVisitsConditionlet extends Conditionlet {
 		}
 		return null;
 	}
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

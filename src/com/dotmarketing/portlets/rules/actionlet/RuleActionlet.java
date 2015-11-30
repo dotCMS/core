@@ -1,22 +1,20 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotmarketing.portlets.rules.RuleComponentDefinition;
+import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public abstract class RuleActionlet implements Serializable {
+public abstract class RuleActionlet extends RuleComponentDefinition {
 
     private static final long serialVersionUID = 1L;
 
-    private final String id;
-    private final String i18nKey;
     private final List<ActionParameterDefinition> parameters;
 
     public RuleActionlet(String i18nKey) {
@@ -24,23 +22,8 @@ public abstract class RuleActionlet implements Serializable {
     }
 
     public RuleActionlet(String i18nKey, List<ActionParameterDefinition> parameterDefinitions) {
-        this.i18nKey = i18nKey;
-        this.id = this.getClass().getSimpleName();
+        super(i18nKey);
         this.parameters = parameterDefinitions;
-    }
-
-    /**
-     * The unique type id for this Actionlet implementation.
-     *
-     * @return a unique id for this Actionlet type
-     */
-    @NotNull
-    public final String getId() {
-        return this.id;
-    }
-
-    public String getI18nKey(){
-        return this.i18nKey;
     }
 
     public List<ActionParameterDefinition> getParameters(){
@@ -52,7 +35,7 @@ public abstract class RuleActionlet implements Serializable {
      * Note that for performance reasons you should typically assume that the provided parameters are valid, rather than calling the
      * {@link #getI18nKey()} method again.
 	 */
-	public abstract void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params);
+	public abstract void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, ParameterModel> params);
 
     /**
      * Override this method to provide validations beyond that which the RuleActionParameter's are capable of on their own. For example,

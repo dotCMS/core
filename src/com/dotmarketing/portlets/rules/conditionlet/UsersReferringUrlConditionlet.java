@@ -1,6 +1,10 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import java.util.ArrayList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.ValidationResult;
+import com.dotmarketing.portlets.rules.ValidationResults;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -15,9 +19,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.util.HttpRequestDataUtil;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
  * This conditionlet will allow dotCMS users to check the referring URL where
@@ -33,7 +38,7 @@ import com.dotmarketing.util.UtilMethods;
  * @since 04-22-2015
  *
  */
-public class UsersReferringUrlConditionlet extends Conditionlet {
+public class UsersReferringUrlConditionlet extends Conditionlet<UsersReferringUrlConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
@@ -47,50 +52,17 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 	private static final String COMPARISON_CONTAINS = "contains";
 	private static final String COMPARISON_REGEX = "regex";
 
-	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
 	public UsersReferringUrlConditionlet() {
-		super(CONDITIONLET_NAME);
+        super("api.ruleengine.system.conditionlet.ReferringUrl", ImmutableSet.<Comparison>of(IS,
+                                                                                              Comparison.IS_NOT,
+                                                                                              Comparison.STARTS_WITH,
+                                                                                              Comparison.ENDS_WITH,
+                                                                                              Comparison.CONTAINS,
+                                                                                              Comparison.REGEX));
 	}
 
-	@Override
-	public Set<Comparison> getComparisons() {
-		if (this.comparisons == null) {
-			this.comparisons = new LinkedHashSet<Comparison>();
-			this.comparisons.add(new Comparison(COMPARISON_IS, "Is"));
-			this.comparisons.add(new Comparison(COMPARISON_ISNOT, "Is Not"));
-			this.comparisons.add(new Comparison(COMPARISON_STARTSWITH,
-					"Starts With"));
-			this.comparisons.add(new Comparison(COMPARISON_ENDSWITH,
-					"Ends With"));
-			this.comparisons
-					.add(new Comparison(COMPARISON_CONTAINS, "Contains"));
-			this.comparisons.add(new Comparison(COMPARISON_REGEX,
-					"Matches Regular Expression"));
-		}
-		return this.comparisons;
-	}
-
-	@Override
-	public ValidationResults validate(Comparison comparison,
-			Set<ConditionletInputValue> inputValues) {
-		ValidationResults results = new ValidationResults();
-		if (UtilMethods.isSet(inputValues) && comparison != null) {
-			List<ValidationResult> resultList = new ArrayList<ValidationResult>();
-			for (ConditionletInputValue inputValue : inputValues) {
-				ValidationResult validation = validate(comparison, inputValue);
-				if (!validation.isValid()) {
-					resultList.add(validation);
-					results.setErrors(true);
-				}
-			}
-			results.setResults(resultList);
-		}
-		return results;
-	}
-
-	@Override
 	protected ValidationResult validate(Comparison comparison,
 			ConditionletInputValue inputValue) {
 		ValidationResult validationResult = new ValidationResult();
@@ -137,57 +109,62 @@ public class UsersReferringUrlConditionlet extends Conditionlet {
 	}
 
 	@Override
-	public boolean evaluate(HttpServletRequest request,
-			HttpServletResponse response, String comparisonId,
-			List<ConditionValue> values) {
-		if (!UtilMethods.isSet(values) || values.size() == 0
-				|| !UtilMethods.isSet(comparisonId)) {
-			return false;
-		}
-		String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
-		if (!UtilMethods.isSet(referrerUrl)) {
-			return false;
-		}
-		Comparison comparison = getComparisonById(comparisonId);
-		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String inputValue = values.get(0).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-		ValidationResults validationResults = validate(comparison, inputValues);
-		if (validationResults.hasErrors()) {
-			return false;
-		}
-		if (!comparison.getId().equals(COMPARISON_REGEX)) {
-			referrerUrl = referrerUrl.toLowerCase();
-			inputValue = inputValue.toLowerCase();
-		}
-		if (comparison.getId().equals(COMPARISON_IS)) {
-			if (referrerUrl.equalsIgnoreCase(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-			if (!referrerUrl.equalsIgnoreCase(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-			if (referrerUrl.startsWith(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-			if (referrerUrl.endsWith(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-			if (referrerUrl.contains(inputValue)) {
-				return true;
-			}
-		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-			Pattern pattern = Pattern.compile(inputValue);
-			Matcher matcher = pattern.matcher(referrerUrl);
-			if (matcher.find()) {
-				return true;
-			}
-		}
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+//        String referrerUrl = HttpRequestDataUtil.getReferrerUrl(request);
+//		if (!UtilMethods.isSet(referrerUrl)) {
+//			return false;
+//		}
+//		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
+//		String inputValue = values.get(0).getValue();
+//		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
+//		ValidationResults validationResults = validate(comparison, inputValues);
+//		if (validationResults.hasErrors()) {
+//			return false;
+//		}
+//		if (!comparison.getId().equals(COMPARISON_REGEX)) {
+//			referrerUrl = referrerUrl.toLowerCase();
+//			inputValue = inputValue.toLowerCase();
+//		}
+//		if (comparison.getId().equals(COMPARISON_IS)) {
+//			if (referrerUrl.equalsIgnoreCase(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
+//			if (!referrerUrl.equalsIgnoreCase(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
+//			if (referrerUrl.startsWith(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
+//			if (referrerUrl.endsWith(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
+//			if (referrerUrl.contains(inputValue)) {
+//				return true;
+//			}
+//		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
+//			Pattern pattern = Pattern.compile(inputValue);
+//			Matcher matcher = pattern.matcher(referrerUrl);
+//			if (matcher.find()) {
+//				return true;
+//			}
+//		}
 		return false;
 	}
+
+    @Override
+    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        return new Instance(comparison, values);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        private Instance(Comparison comparison, List<ParameterModel> values) {
+        }
+    }
 
 }

@@ -4,10 +4,11 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -46,8 +47,8 @@ public class RulesEngine {
             for (Rule rule : rules) {
                 boolean result = false;
                 try {
-                    result = rule.evaluate(req, res);
-                } catch (DotDataException e) {
+                    result = rule.evaluate(req, res, rule.getGroups());
+                } catch (RuleEngineException e) {
                     Logger.error(RulesEngine.class, "Rule could not be evaluated. Rule Id: " + rule.getId(), e);
                 }
 
@@ -57,7 +58,7 @@ public class RulesEngine {
 
                     for (RuleAction action : actions) {
                         RuleActionlet actionlet = APILocator.getRulesAPI().findActionlet(action.getActionlet());
-                        Map<String, RuleActionParameter> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
+                        Map<String, ParameterModel> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
                         actionlet.executeAction(req, res, params);
                     }
                 }

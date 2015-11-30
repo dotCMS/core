@@ -4,6 +4,8 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.conditionlet.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.util.Logger;
 
@@ -33,7 +35,7 @@ public class Condition implements Serializable {
     private String conditionletId;
     private String conditionGroup;
     private String comparison;
-    private List<ConditionValue> values;
+    private List<ParameterModel> values;
     private Date modDate;
     private Operator operator;
     private int priority;
@@ -79,11 +81,11 @@ public class Condition implements Serializable {
         this.comparison = comparison;
     }
 
-    public List<ConditionValue> getValues() {
+    public List<ParameterModel> getValues() {
         return values;
     }
 
-    public void setValues(List<ConditionValue> values) {
+    public void setValues(List<ParameterModel> values) {
         this.values = values;
     }
 
@@ -124,8 +126,14 @@ public class Condition implements Serializable {
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
-        return getConditionlet().evaluate(req, res, getComparison(), getValues());
+        //noinspection unchecked
+        return getConditionlet().evaluate(req, res, this);
     }
+
+    public RuleComponentInstance getComponentInstance(){
+        return getConditionlet().instanceFrom(Comparison.get(getComparison()), getValues());
+    }
+
 	@Override
 	public String toString() {
 		return "Condition [id=" + id + ", name=" + name

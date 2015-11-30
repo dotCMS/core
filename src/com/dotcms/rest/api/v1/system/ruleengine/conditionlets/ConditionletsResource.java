@@ -64,86 +64,86 @@ public class ConditionletsResource {
         return Response.ok(getConditionletsInternal()).build();
     }
 
-    /**
-     * <p>Returns a JSON with the Comparisons of a given contentlet.
-     * <br>Each Comparisons node contains the id and label
-     * <p>
-     * Usage: /conditionlets/{id}/comparisons
-     */
-    @GET
-    @Path("/conditionlets/{id}/comparisons")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
-        User user = getUser(request);
+//    /**
+//     * <p>Returns a JSON with the Comparisons of a given contentlet.
+//     * <br>Each Comparisons node contains the id and label
+//     * <p>
+//     * Usage: /conditionlets/{id}/comparisons
+//     */
+//    @GET
+//    @Path("/conditionlets/{id}/comparisons")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
+//        User user = getUser(request);
+//
+//        JSONObject jsonComparisons = new JSONObject();
+//
+//        if(!UtilMethods.isSet(conditionletId)) {
+//            return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
+//        }
+//
+//        try {
+//            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
+//
+//            if(!UtilMethods.isSet(conditionlet)) {
+//                return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
+//            }
+//
+//            Set<Comparison> comparisons = conditionlet.getComparisons();
+//
+//            for (Comparison comparison : comparisons) {
+//                JSONObject comparisonJSON = new JSONObject();
+//                comparisonJSON.put("name", comparison.getLabel());
+//                jsonComparisons.put(comparison.getId(), comparisonJSON);
+//            }
+//
+//            return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
+//        } catch (DotDataException | DotSecurityException e) {
+//            Logger.error(this, "Error getting Conditionlet Comparisons", e);
+//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+//        }
+//    }
 
-        JSONObject jsonComparisons = new JSONObject();
-
-        if(!UtilMethods.isSet(conditionletId)) {
-            return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
-        }
-
-        try {
-            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
-
-            if(!UtilMethods.isSet(conditionlet)) {
-                return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
-            }
-
-            Set<Comparison> comparisons = conditionlet.getComparisons();
-
-            for (Comparison comparison : comparisons) {
-                JSONObject comparisonJSON = new JSONObject();
-                comparisonJSON.put("name", comparison.getLabel());
-                jsonComparisons.put(comparison.getId(), comparisonJSON);
-            }
-
-            return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Conditionlet Comparisons", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
-    }
-
-    /**
-     * <p>Returns a JSON with the Comparisons of a given contentlet.
-     * <br>Each Comparisons node contains the id and label
-     * <p>
-     * Usage: /conditionlets/{id}/comparisons/{comparison}/inputs
-     */
-    @GET
-    @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response listConditionletInputs(
-                                                  @Context HttpServletRequest request,
-                                                  @PathParam("id") String conditionletId,
-                                                  @PathParam("comparison") String comparison) throws JSONException {
-        User user = getUser(request);
-
-        com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
-
-        if(!UtilMethods.isSet(conditionletId) || !UtilMethods.isSet(comparison)) {
-            return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
-        }
-
-        try {
-            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
-
-            if(!UtilMethods.isSet(conditionlet)) {
-                return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
-            }
-
-            jsonInputs.addAll(conditionlet.getInputs(comparison));
-
-            return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
-        } catch (DotDataException | DotSecurityException e) {
-            Logger.error(this, "Error getting Conditionlet Inputs", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
-    }
+//    /**
+//     * <p>Returns a JSON with the Comparisons of a given contentlet.
+//     * <br>Each Comparisons node contains the id and label
+//     * <p>
+//     * Usage: /conditionlets/{id}/comparisons/{comparison}/inputs
+//     */
+//    @GET
+//    @Path("/conditionlets/{id}/comparisons/{comparison}/inputs")
+//    @Produces(MediaType.APPLICATION_JSON)
+//    public Response listConditionletInputs(
+//                                                  @Context HttpServletRequest request,
+//                                                  @PathParam("id") String conditionletId,
+//                                                  @PathParam("comparison") String comparison) throws JSONException {
+//        User user = getUser(request);
+//
+//        com.dotmarketing.util.json.JSONArray jsonInputs = new com.dotmarketing.util.json.JSONArray();
+//
+//        if(!UtilMethods.isSet(conditionletId) || !UtilMethods.isSet(comparison)) {
+//            return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
+//        }
+//
+//        try {
+//            Conditionlet conditionlet = rulesAPI.findConditionlet(conditionletId);
+//
+//            if(!UtilMethods.isSet(conditionlet)) {
+//                return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
+//            }
+//
+//            jsonInputs.addAll(conditionlet.getInputs(comparison));
+//
+//            return Response.ok(jsonInputs.toString(), MediaType.APPLICATION_JSON).build();
+//        } catch (DotDataException | DotSecurityException e) {
+//            Logger.error(this, "Error getting Conditionlet Inputs", e);
+//            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+//        }
+//    }
 
     private Map<String, RestConditionlet> getConditionletsInternal() {
         try {
-            List<Conditionlet> conditionlets = rulesAPI.findConditionlets();
+            List<Conditionlet<?>> conditionlets = rulesAPI.findConditionlets();
             return conditionlets
                            .stream()
                            .map(new ConditionletTransform().appToRestFn())
