@@ -50,19 +50,12 @@ import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
   `
 })
 export class InputToggle {
-  get offText():string {
-    return this._offText;
-  }
-
-  set offText(value:string) {
-    this._offText = value;
-  }
   _value:boolean
   onText:string
-  private _offText:string
+  offText:string
   toggle:EventEmitter
 
-  constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('_offText') offText:string) {
+  constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
     this.value = (value !== 'false')
     this.onText = onText || 'On'
     this.offText = offText || 'Off'
