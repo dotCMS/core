@@ -11,7 +11,7 @@ public class ConditionletTransform {
         ComparisonTransform comparisonTransform = new ComparisonTransform();
         RestConditionlet rest = new RestConditionlet.Builder()
                                         .id(app.getId())
-                                        .name(app.getName())
+                                        .i18nKey(app.getI18nKey())
                                         .comparisons(app.getComparisons()
                                                         .stream()
                                                         .map(comparisonTransform.appToRestFn())

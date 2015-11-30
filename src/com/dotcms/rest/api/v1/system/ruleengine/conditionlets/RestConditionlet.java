@@ -16,7 +16,7 @@ public final class RestConditionlet extends Validated {
     public final String id;
 
     @NotNull
-    public final String name;
+    public final String i18nKey;
 
     @NotNull
     @Size(min = 0, max = 100)
@@ -24,7 +24,7 @@ public final class RestConditionlet extends Validated {
 
     private RestConditionlet(Builder builder) {
         id = builder.id;
-        name = builder.name;
+        i18nKey = builder.i18nKey;
         comparisons = ImmutableList.copyOf(builder.comparisons);
         checkValid();
     }
@@ -32,7 +32,7 @@ public final class RestConditionlet extends Validated {
     public static final class Builder  {
 
         private String id;
-        private String name;
+        private String i18nKey;
         private List<RestComparison> comparisons;
 
         public Builder() {
@@ -43,8 +43,8 @@ public final class RestConditionlet extends Validated {
             return this;
         }
 
-        public Builder name(String name) {
-            this.name = name;
+        public Builder i18nKey(String i18nKey) {
+            this.i18nKey = i18nKey;
             return this;
         }
 
@@ -55,7 +55,7 @@ public final class RestConditionlet extends Validated {
 
         public Builder from(RestConditionlet copy) {
             id = copy.id;
-            name = copy.name;
+            i18nKey = copy.i18nKey;
             comparisons = copy.comparisons;
             return this;
         }

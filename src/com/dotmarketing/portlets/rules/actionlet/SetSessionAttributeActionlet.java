@@ -24,6 +24,8 @@ import java.util.Map;
  */
 public class SetSessionAttributeActionlet extends RuleActionlet{
 
+    private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetSessionAttribute";
+
     private static final String SESSION_VALUE = "sessionValue";
     private static final String SESSION_KEY = "sessionKey";
     private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
@@ -32,7 +34,7 @@ public class SetSessionAttributeActionlet extends RuleActionlet{
     );
 
     public SetSessionAttributeActionlet(){
-        super(SetSessionAttributeActionlet.class.getSimpleName(), PARAMS);
+        super(I18N_BASE, PARAMS);
     }
 
     @Override

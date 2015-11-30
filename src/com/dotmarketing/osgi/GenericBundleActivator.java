@@ -672,7 +672,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         this.conditionletOSGIService.addConditionlet(conditionlet.getClass());
         conditionlets.add( conditionlet );
 
-        Logger.info( this, "Added Rule Conditionlet: " + conditionlet.getName() );
+        Logger.info( this, "Added Rule Conditionlet: " + conditionlet.getId() );
         registerBundleResourceMessages(context);
     }
 

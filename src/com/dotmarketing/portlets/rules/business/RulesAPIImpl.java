@@ -69,7 +69,6 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService, RuleActi
                          .add(UsersTimeConditionlet.class)
                          .add(UsersUrlParameterConditionlet.class)
                          .add(UsersVisitedUrlConditionlet.class)
-                         .add(MockTrueConditionlet.class)
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
             ImmutableList.<Class<? extends RuleActionlet>>builder()

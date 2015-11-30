@@ -55,9 +55,7 @@ public class UsersContinentConditionlet extends Conditionlet {
 
     private static final String INPUT_ID = "country";
 
-    private static final String CONDITIONLET_NAME_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.name";
-    private static final String CONDITIONLET_IS_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.comparison.is";
-    private static final String CONDITIONLET_ISNOT_KEY = "com.dotmarketing.osgi.ruleengine.conditionlet.comparison.isnot";
+    private static final String I18N_BASE = "com.dotmarketing.osgi.ruleengine.conditionlet";
     private static final String CONDITIONLET_COUNTRY_AFRICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.africa";
     private static final String CONDITIONLET_COUNTRY_ANTARCTICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.antarctica";
     private static final String CONDITIONLET_COUNTRY_ASIA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.asia";
@@ -81,7 +79,7 @@ public class UsersContinentConditionlet extends Conditionlet {
 
     @VisibleForTesting
     protected UsersContinentConditionlet(GeoIp2CityDbUtil geoIp2Util) {
-        super(CONDITIONLET_NAME_KEY);
+        super(I18N_BASE);
         this.geoIp2Util = geoIp2Util;
     }
 
@@ -89,8 +87,8 @@ public class UsersContinentConditionlet extends Conditionlet {
     public Set<Comparison> getComparisons() {
         if (this.comparisons == null) {
             this.comparisons = new LinkedHashSet<Comparison>();
-            this.comparisons.add(new Comparison(COMPARISON_IS, CONDITIONLET_IS_KEY));
-            this.comparisons.add(new Comparison(COMPARISON_ISNOT, CONDITIONLET_ISNOT_KEY));
+            this.comparisons.add(new Comparison(COMPARISON_IS));
+            this.comparisons.add(new Comparison(COMPARISON_ISNOT));
         }
         return this.comparisons;
     }
