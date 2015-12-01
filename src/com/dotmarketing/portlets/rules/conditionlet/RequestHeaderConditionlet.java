@@ -31,12 +31,12 @@ import com.dotmarketing.util.UtilMethods;
  * @since 05-13-2015
  *
  */
-public class UsersBrowserHeaderConditionlet extends Conditionlet {
+public class RequestHeaderConditionlet extends Conditionlet {
 
 	private static final long serialVersionUID = 1L;
 	private static final String I18N_BASE = "api.system.ruleengine.conditionlet.RequestHeader";
 
-	private static final String INPUT1_ID = "browser-header";
+	private static final String INPUT1_ID = "request-header";
 	private static final String INPUT2_ID = "header-value";
 
 	private static final String COMPARISON_IS = "is";
@@ -49,7 +49,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet {
 	private LinkedHashSet<Comparison> comparisons = null;
 	private Map<String, ConditionletInput> inputValues = null;
 
-	public UsersBrowserHeaderConditionlet() {
+	public RequestHeaderConditionlet() {
 		super(I18N_BASE);
 	}
 

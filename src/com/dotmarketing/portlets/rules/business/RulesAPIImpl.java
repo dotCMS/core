@@ -26,7 +26,6 @@ import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -50,7 +49,7 @@ public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService, RuleActi
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
                          .add(UsersBrowserConditionlet.class)
-                         .add(UsersBrowserHeaderConditionlet.class)
+                         .add(RequestHeaderConditionlet.class)
                          .add(UsersCityConditionlet.class)
                          .add(UsersCountryConditionlet.class)
                          .add(UsersCurrentUrlConditionlet.class)
