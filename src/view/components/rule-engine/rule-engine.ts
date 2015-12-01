@@ -93,7 +93,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
       } else {
         this.rules.push(rule)
         this.rules.sort(function (a, b) {
-          return a.priority - b.priority;
+          return b.priority - a.priority;
         });
       }
 
