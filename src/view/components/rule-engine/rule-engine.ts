@@ -92,6 +92,9 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
         this.ruleStub = null
       } else {
         this.rules.push(rule)
+        this.rules.sort(function (a, b) {
+          return a.priority - b.priority;
+        });
       }
 
       rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
@@ -124,6 +127,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 
     addRule() {
       this.ruleStub = new RuleModel()
+      this.ruleStub.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
       this.rules.unshift(this.ruleStub)
       this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
         if (event.target.valid) {
