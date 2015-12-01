@@ -586,6 +586,10 @@ public class ReindexThread extends Thread {
 	public synchronized static void createThread() {
 		if (instance == null) {
 			instance = new ReindexThread();
+			instance.sleep = Config.getIntProperty("reindex.thread.sleep", 100);
+			instance.delay = Config.getIntProperty("reindex.thread.delay", 7500);
+			instance.delayOnError = Config.getIntProperty("reindex.thread.delayonerror", 500);
+			instance.reindexSleepDuringIndex = Config.getBooleanProperty("reindex.thread.reindexsleepduringindex", false);
 			instance.start();
 			int i = Config.getIntProperty("REINDEX_SLEEP_DURING_INDEX", 0);
 			if(i>0){
