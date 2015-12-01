@@ -93,11 +93,11 @@ public class ReindexThread extends Thread {
 
 	private boolean start = false;
 	private boolean work = false;
-	private int sleep = 100;
-	private int delay = 7500;
-	private int delayOnError = 500;
+	private int sleep = Config.getIntProperty("reindex.thread.sleep", 100);
+	private int delay = Config.getIntProperty("reindex.thread.delay", 7500);
+	private int delayOnError = Config.getIntProperty("reindex.thread.delayonerror", 500);
 	private int failedAttemptsCount = 0;
-	private boolean reindexSleepDuringIndex = false;
+	private boolean reindexSleepDuringIndex = Config.getBooleanProperty("reindex.thread.reindexsleepduringindex", false);
 	private int reindexSleepDuringIndexTime = 0;
 
 	private void finish() {
