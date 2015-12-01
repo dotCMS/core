@@ -6,15 +6,9 @@ import java.io.Serializable;
 /**
  * @author Geoff M. Granum
  */
-public abstract class DataType implements Serializable {
+public abstract class DataType {
 
-    public static final DataType TEXT = new TextType();
-    public static final DataType NUMERIC = new NumericType();
-
-    private static final long serialVersionUID = 1L;
     private final String id;
-
-
 
     public DataType(String id) {
         this.id = id;

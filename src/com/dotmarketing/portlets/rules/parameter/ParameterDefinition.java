@@ -1,7 +1,9 @@
 package com.dotmarketing.portlets.rules.parameter;
 
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
 
 public class ParameterDefinition {
 
@@ -10,7 +12,7 @@ public class ParameterDefinition {
     private final DataType dataType;
 
     public ParameterDefinition(String key) {
-        this(key, DataType.TEXT, "");
+        this(key, new TextType(), "");
     }
 
     public ParameterDefinition(String key, DataType dataType) {
@@ -26,9 +28,12 @@ public class ParameterDefinition {
         }
         this.key = key;
         this.defaultValue = defaultValue == null ? "" : defaultValue;
-        this.dataType = datatype == null ? DataType.TEXT : datatype;
+        this.dataType = datatype;
     }
 
+    public ParameterDefinition(String headerNameKey, DataType dataType, DropdownInput input) {
+
+    }
 
     public String getKey() {
         return key;

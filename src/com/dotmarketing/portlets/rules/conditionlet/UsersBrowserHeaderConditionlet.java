@@ -4,6 +4,12 @@ import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.ValidationResult;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.EnumerationConstraint;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -12,14 +18,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.*;
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.conditionlet.Comparison.IS;
 
 /**
@@ -42,6 +45,69 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet<UsersBrowserHea
     public static final String HEADER_VALUE_KEY = "header-value";
 
     private Map<String, ConditionletInput> inputValues = null;
+
+    static {
+        String[] KNOWN_HEADERS = {
+            "Accept",
+            "Accept-Charset",
+            "Accept-Encoding",
+            "Accept-Language",
+            "Accept-Datetime",
+            "Authorization",
+            "Cache-Control",
+            "Connection",
+            "Cookie",
+            "Content-Length",
+            "Content-MD5",
+            "Content-Type",
+            "Date",
+            "Expect",
+            "From",
+            "Host",
+            "If-Match",
+            "If-Modified-Since",
+            "If-Modified-Since",
+            "If-None-Match",
+            "If-Range",
+            "If-Unmodified-Since",
+            "If-Unmodified-Since",
+            "Max-Forwards",
+            "Origin",
+            "Pragma",
+            "Proxy-Authorization",
+            "Proxy-Authorization",
+            "Range",
+            "Referer",
+            "TE",
+            "User-Agent",
+            "Upgrade",
+            "Via",
+            "Warning",
+            "X-Requested-With",
+            "DNT",
+            "X-Forwarded-For",
+            "X-Forwarded-Host",
+            "Front-End-Https",
+            "X-Http-Method-Override",
+            "X-Http-Method-Override",
+            "X-ATT-DeviceId",
+            "X-Wap-Profile",
+            "Proxy-Connection",
+            "X-UIDH",
+            "X-Csrf-Token"
+        };
+        ParameterDefinition headerKey = new ParameterDefinition(
+            HEADER_NAME_KEY,
+            new TextType.Builder()
+                .i18nKey("text")
+                .minLength(0)
+                .maxLength(255)
+                .defaultValue("Accept")
+                .build(),
+            new DropdownInput.Builder()
+                .build()
+        );
+    }
 
     public UsersBrowserHeaderConditionlet() {
         super("api.ruleengine.system.conditionlet.RequestHeader", ImmutableSet.of(IS,
@@ -111,53 +177,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet<UsersBrowserHea
             inputField.setDefaultValue("");
             inputField.setMinNum(1);
             Set<EntryOption> options = new LinkedHashSet<>();
-            options.add(new EntryOption("Accept", "Accept"));
-            options.add(new EntryOption("Accept-Charset", "Accept-Charset"));
-            options.add(new EntryOption("Accept-Encoding", "Accept-Encoding"));
-            options.add(new EntryOption("Accept-Language", "Accept-Language"));
-            options.add(new EntryOption("Accept-Datetime", "Accept-Datetime"));
-            options.add(new EntryOption("Authorization", "Authorization"));
-            options.add(new EntryOption("Cache-Control", "Cache-Control"));
-            options.add(new EntryOption("Connection", "Connection"));
-            options.add(new EntryOption("Cookie", "Cookie"));
-            options.add(new EntryOption("Content-Length", "Content-Length"));
-            options.add(new EntryOption("Content-MD5", "Content-MD5"));
-            options.add(new EntryOption("Content-Type", "Content-Type"));
-            options.add(new EntryOption("Date", "Date"));
-            options.add(new EntryOption("Expect", "Expect"));
-            options.add(new EntryOption("From", "From"));
-            options.add(new EntryOption("Host", "Host"));
-            options.add(new EntryOption("If-Match", "If-Match"));
-            options.add(new EntryOption("If-Modified-Since",
-                                        "If-Modified-Since"));
-            options.add(new EntryOption("If-None-Match", "If-None-Match"));
-            options.add(new EntryOption("If-Range", "If-Range"));
-            options.add(new EntryOption("If-Unmodified-Since",
-                                        "If-Unmodified-Since"));
-            options.add(new EntryOption("Max-Forwards", "Max-Forwards"));
-            options.add(new EntryOption("Origin", "Origin"));
-            options.add(new EntryOption("Pragma", "Pragma"));
-            options.add(new EntryOption("Proxy-Authorization",
-                                        "Proxy-Authorization"));
-            options.add(new EntryOption("Range", "Range"));
-            options.add(new EntryOption("Referer", "Referer"));
-            options.add(new EntryOption("TE", "TE"));
-            options.add(new EntryOption("User-Agent", "User-Agent"));
-            options.add(new EntryOption("Upgrade", "Upgrade"));
-            options.add(new EntryOption("Via", "Via"));
-            options.add(new EntryOption("Warning", "Warning"));
-            options.add(new EntryOption("X-Requested-With", "X-Requested-With"));
-            options.add(new EntryOption("DNT", "DNT"));
-            options.add(new EntryOption("X-Forwarded-For", "X-Forwarded-For"));
-            options.add(new EntryOption("X-Forwarded-Host", "X-Forwarded-Host"));
-            options.add(new EntryOption("Front-End-Https", "Front-End-Https"));
-            options.add(new EntryOption("X-Http-Method-Override",
-                                        "X-Http-Method-Override"));
-            options.add(new EntryOption("X-ATT-DeviceId", "X-ATT-DeviceId"));
-            options.add(new EntryOption("X-Wap-Profile", "X-Wap-Profile"));
-            options.add(new EntryOption("Proxy-Connection", "Proxy-Connection"));
-            options.add(new EntryOption("X-UIDH", "X-UIDH"));
-            options.add(new EntryOption("X-Csrf-Token", "X-Csrf-Token"));
+
             inputField.setData(options);
             this.inputValues.put(inputField.getId(), inputField);
             // Set field #2 configuration and available options

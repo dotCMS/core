@@ -1,18 +1,19 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.parameter.type.comparison.Comparison;
-import java.util.List;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.EnumerationConstraint;
 
 /**
  * @author Geoff M. Granum
  */
-public class TextType extends DataType implements Comparison.Is<String>, Comparison.IsNot<String> {
-
-    private static final long serialVersionUID = 1L;
+public class TextType extends DataType {
 
     public TextType() {
         super("text");
+    }
+
+    public TextType(Builder builder) {
+        super(builder.i18nKey);
+
     }
 
     @Override
@@ -21,19 +22,41 @@ public class TextType extends DataType implements Comparison.Is<String>, Compari
         // we'll add length validations and such eventually.
     }
 
-    @Override
-    public boolean is(String actual, ParameterModel specified) {
-        return false;
-    }
+    public static class Builder {
 
-    @Override
-    public boolean isNot(String actual, ParameterModel specified) {
-        return false;
-    }
+        private String i18nKey;
+        private int minLength;
+        private int maxLength;
+        private String defaultValue;
 
-    @Override
-    public boolean perform(String id, List<ParameterModel> params) {
-        return false;
+        public Builder i18nKey(String i18nKey) {
+            this.i18nKey = i18nKey;
+            return this;
+        }
+
+
+        public TextType build() {
+            return new TextType(this);
+        }
+
+        public Builder minLength(int minLength) {
+            this.minLength = minLength;
+            return this;
+        }
+
+        public Builder maxLength(int maxLength) {
+            this.maxLength = maxLength;
+            return this;
+        }
+
+        public Builder defaultValue(String defaultValue) {
+            this.defaultValue = defaultValue;
+            return this;
+        }
+
+        public Builder constrainedBy(EnumerationConstraint build) {
+            return this;
+        }
     }
 }
  
