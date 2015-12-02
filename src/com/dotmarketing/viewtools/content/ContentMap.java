@@ -401,7 +401,7 @@ public class ContentMap {
 	/**
 	 * Returns the {@link Contentlet} object this map is associated to.
 	 * 
-	 * @return The {@link Contentlet} object. 
+	 * @return The {@link Contentlet} object.
 	 */
 	public Contentlet getContentObject() {
 		return this.content;

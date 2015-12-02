@@ -16,6 +16,7 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
@@ -54,6 +55,7 @@ public interface PermissionAPI {
 		put("STRUCTURES", Structure.class.getCanonicalName());
 		put("CONTENTLETS", Contentlet.class.getCanonicalName());
 		put("CATEGORY", Category.class.getCanonicalName());
+		put("RULES", Rule.class.getCanonicalName());
    }};
 
    public enum PermissionableType {
@@ -66,7 +68,8 @@ public interface PermissionAPI {
 	   TEMPLATE_LAYOUTS(Template.TEMPLATE_LAYOUTS_CANONICAL_NAME),
 	   STRUCTURES(Structure.class.getCanonicalName()),
 	   CONTENTLETS(Contentlet.class.getCanonicalName()),
-	   CATEGORY(Category.class.getCanonicalName());
+	   CATEGORY(Category.class.getCanonicalName()),
+	   RULES(Rule.class.getCanonicalName());
 
 	   
 	   

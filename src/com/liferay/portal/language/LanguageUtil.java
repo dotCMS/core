@@ -22,24 +22,14 @@
 
 package com.liferay.portal.language;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import javax.servlet.jsp.PageContext;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.taglib.TagUtils;
 import com.dotcms.repackage.org.apache.struts.util.MessageResources;
-
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.CollectionFactory;
@@ -47,6 +37,15 @@ import com.liferay.util.GetterUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.StringUtil;
 import com.liferay.util.Time;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * <a href="LanguageUtil.java.html"><b><i>View Source</i></b></a>
@@ -110,33 +109,47 @@ public class LanguageUtil {
 	
 		return value;
 	}
-	
-	
-	
-	
-	public static String get(String companyId, Locale locale, String key)
-		throws LanguageException {
 
-		String value = null;
-		Logger.debug(LanguageUtil.class, key);
-		try {
-			MessageResources resources = (MessageResources)WebAppPool.get(
-				companyId, Globals.MESSAGES_KEY);
-			
-			if (resources != null)
-				value = resources.getMessage(locale, key);
-		}
-		catch (Exception e) {
-			throw new LanguageException(e);
-		}
+    public static String get(String companyId, Locale locale, String key) throws LanguageException {
+        Optional<String> optValue = getOpt(companyId, locale, key);
+        if(!optValue.isPresent()) {
+            Logger.warn(LanguageUtil.class, key);
+        }
+        return optValue.orElse(key);
+    }
 
-		if (value == null) {
-			Logger.debug(LanguageUtil.class, key);
-			value = key;
-		}
+    /**
+     * A slight variation on getOpt({defaultCompany}, Locale, String) that will return optional.empty even in the
+     * event of an exception, rather than declaring a checked exception that doesn't actually seem to ever actually
+     * be thrown, except in the event of some odd server error well beyond our control.
+     */
+    public static MultiMessageResources getMessagesForDefaultCompany(Locale locale, String key) {
+        return (MultiMessageResources)WebAppPool.get(PublicCompanyFactory.getDefaultCompanyId(), Globals.MESSAGES_KEY);
+    }
 
-		return value;
-	}
+    public static Locale getDefaultCompanyLocale(){
+        return PublicCompanyFactory.getDefaultCompany().getLocale();
+    }
+
+    public static Optional<String> getOpt(String companyId, Locale locale, String key) throws LanguageException {
+        Optional<String> value = Optional.empty();
+        Logger.debug(LanguageUtil.class, key);
+        try {
+            MessageResources resources = (MessageResources)WebAppPool.get(companyId, Globals.MESSAGES_KEY);
+
+            if(resources != null) {
+                value = Optional.ofNullable(resources.getMessage(locale, key));
+            }
+        } catch (Exception e) {
+            throw new LanguageException(e);
+        }
+
+        if(!value.isPresent()) {
+            Logger.warn(LanguageUtil.class, key);
+        }
+
+        return value;
+    }
 
 	public static String get(PageContext pageContext, String key)
 		throws LanguageException {
@@ -478,4 +491,5 @@ public class LanguageUtil {
 	private Map _localesByLanguageCode;
 	private Map _charEncodings;
 
+    private static class MessageResult {}
 }

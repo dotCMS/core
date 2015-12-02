@@ -1,7 +1,7 @@
 package com.dotcms.rest;
 
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.osgi.framework.Bundle;
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
@@ -9,8 +9,8 @@ import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.osgi.framework.Bundle;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
@@ -20,17 +20,20 @@ import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * @author Jonathan Gamba
  *         Date: 28/05/14
  */
 @Path ("/osgi")
-public class OSGIResource extends WebResource {
+public class OSGIResource  {
 
     List<String> systemBundles = Arrays.asList(
             "org.apache.felix.http.bundle",
@@ -42,6 +45,8 @@ public class OSGIResource extends WebResource {
             "com.dotcms.repackage.org.apache.felix.gogo.runtime",
             "org.osgi.core"
     );
+
+    private final WebResource webResource = new WebResource();
 
     /**
      * This method returns a list of all bundles installed in the OSGi environment at the time of the call to this method.
@@ -56,7 +61,7 @@ public class OSGIResource extends WebResource {
     @Produces (MediaType.APPLICATION_JSON)
     public Response getInstalledBundles ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

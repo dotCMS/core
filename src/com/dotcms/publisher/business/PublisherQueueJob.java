@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
+import com.dotcms.rest.RestClientBuilder;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.StatefulJob;
@@ -18,13 +21,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PublisherUtil;
-import com.dotcms.publisher.util.TrustFactory;
 import com.dotcms.publishing.DotPublishingException;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.dotcms.repackage.com.sun.jersey.client.urlconnection.HTTPSProperties;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -173,17 +170,13 @@ public class PublisherQueueJob implements StatefulJob {
      * @throws DotDataException If fails retrieving end points
      */
     private void updateAuditStatus () throws DotPublisherException, DotDataException {
-		ClientConfig clientConfig = new DefaultClientConfig();
-		if (Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-			TrustFactory tFactory = new TrustFactory();
-			clientConfig.getProperties()
-				.put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
-		}
-        Client client = Client.create(clientConfig);
+
+        Client client = RestClientBuilder.newClient();
         List<PublishAuditStatus> pendingBundleAudits = pubAuditAPI.getPendingPublishAuditStatus();
         // For each bundle
         for (PublishAuditStatus bundleAudit : pendingBundleAudits) {
         	PublishAuditHistory localHistory = bundleAudit.getStatusPojo();
+
 
 			//There is no need to keep checking after MAX_NUM_TRIES.
 			if (localHistory.getNumTries() <= (MAX_NUM_TRIES + 1)){
@@ -196,15 +189,15 @@ public class PublisherQueueJob implements StatefulJob {
 					for (String endpointID : endpointsGroup.keySet()) {
 						PublishingEndPoint targetEndpoint = endpointAPI.findEndPointById(endpointID);
 						if (targetEndpoint != null && !targetEndpoint.isSending()) {
-							WebResource webResource = client.resource(targetEndpoint.toURL() + "/api/auditPublishing");
+							WebTarget webTarget = client.target(targetEndpoint.toURL() + "/api/auditPublishing");
 							try {
 								// Try to get the status of the remote endpoints to
 								// update the local history
 								PublishAuditHistory remoteHistory =
 										PublishAuditHistory.getObjectFromString(
-												webResource
+												webTarget
 														.path("get")
-														.path(bundleAudit.getBundleId()).get(String.class));
+														.path(bundleAudit.getBundleId()).request().get(String.class));
 								if (remoteHistory != null) {
 									endpointTrackingMap.putAll(remoteHistory
 											.getEndpointsMap());

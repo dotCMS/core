@@ -40,122 +40,117 @@
 
 package com.dotcms.rest.servlet;
 
+import com.dotcms.repackage.com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.dotcms.repackage.javax.ws.rs.core.Application;
+import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
+import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
+import com.dotcms.rest.api.CorsFilter;
+import com.dotcms.rest.api.MyObjectMapperProvider;
+import com.dotcms.rest.config.DotRestApplication;
+import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
+import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
+import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Logger;
 import java.io.IOException;
-
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.dotcms.repackage.javax.ws.rs.core.Application;
-
-import com.dotmarketing.business.DotStateException;
-import com.dotcms.repackage.com.sun.jersey.spi.container.servlet.ServletContainer;
-
-
 
 public class ReloadableServletContainer extends HttpServlet implements Filter {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 1L;
 
+    private static ServletContainer container = null;
 
+    private static ServletConfig servletConfig;
 
-	@Override
-	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-		container.doFilter(req, res, chain);
+    public ReloadableServletContainer() {
+        this(new DotRestApplication());
+    }
 
-	}
+    public ReloadableServletContainer(Class<? extends Application> appClass) {
+        container = new ServletContainer(createResourceConfig(appClass));
+    }
 
-	private static ServletContainer container = null;
+    public ReloadableServletContainer(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
+    }
 
-	private static FilterConfig filterConfig;
-	private static ServletConfig servletConfig;
+    // GenericServlet
 
+    @Override
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
+        container.doFilter(req, res, chain);
+    }
 
-	public ReloadableServletContainer() {
-		container = new ServletContainer();
-	}
+    @Override
+    public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
+        try {
+            container.service(req, res);
+        } catch (ServletException | IOException e) {
+            Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
+            throw e;
+        }
+    }
 
+    @Override
+    public void init(ServletConfig config) throws ServletException {
+        servletConfig = config;
+        container.init(config);
+    }
 
+    public static void reload(Application app) {
+        container = new ServletContainer(createResourceConfig(app));
+        try {
+            container.init(servletConfig);
+        } catch (ServletException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+    }
 
-	public ReloadableServletContainer(Class<? extends Application> appClass) {
-		container = new ServletContainer(appClass);
-	}
+    /**
+     * Destroy this Servlet or Filter.
+     */
+    @Override
+    public void destroy() {
+        if(container != null) {
+            container.destroy();
+        }
+    }
 
-	public ReloadableServletContainer(Application app) {
-		container = new ServletContainer(app);
-	}
+    public void init(FilterConfig filterConfig) throws ServletException {
+        container.init(filterConfig);
+    }
 
-	// GenericServlet
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        container.service(req, res);
+    }
 
+    private static ResourceConfig createResourceConfig(Application app) {
+        return configureResourceConfig(ResourceConfig.forApplication(app));
+    }
 
+    private static ResourceConfig createResourceConfig(Class<? extends Application> appClass) {
+        return configureResourceConfig(ResourceConfig.forApplicationClass(appClass));
+    }
 
-	public ServletContext getServletContext() {
-		if (filterConfig != null)
-			return filterConfig.getServletContext();
-
-		return this.getServletContext();
-	}
-
-	@Override
-	protected void service(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-		container.service(req,res);
-	}
-
-
-
-	@Override
-	public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
-
-		container.service(req,res);
-	}
-
-
-
-	@Override
-	public void init(ServletConfig config) throws ServletException {
-		servletConfig = config;
-		container.init(config);
-	}
-
-
-
-
-	public static void reload(Application app) {
-		container = new ServletContainer(app);
-		try {
-			container.init(servletConfig);
-		} catch (ServletException e) {
-			throw new DotStateException(e.getMessage(), e);
-		}
-	}
-
-	/**
-	 * Destroy this Servlet or Filter.
-	 * 
-	 */
-	@Override
-	public void destroy() {
-		if (container != null) {
-			container.destroy();
-		}
-	}
-
-	// Filter
-
-	public void init(FilterConfig filterConfig) throws ServletException {
-		filterConfig = filterConfig;
-		container.init(filterConfig);
-
-	}
-
+    private static ResourceConfig configureResourceConfig(ResourceConfig config) {
+        return config
+                .register(CorsFilter.class)
+                .register(MyObjectMapperProvider.class)
+                .register(JacksonJaxbJsonProvider.class)
+                .register(InvalidFormatExceptionMapper.class)
+                .register(JsonParseExceptionMapper.class);
+    }
 }

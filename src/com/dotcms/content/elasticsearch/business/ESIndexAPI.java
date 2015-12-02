@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.elasticsearch.common.collect.ImmutableOpenMap;
 import com.dotcms.repackage.org.elasticsearch.common.hppc.cursors.ObjectCursor;
 import com.dotmarketing.util.*;
 import org.apache.tools.zip.ZipEntry;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.ActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;

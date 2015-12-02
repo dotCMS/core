@@ -20,11 +20,9 @@ import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.collections.CollectionUtils;
 import com.dotcms.repackage.org.apache.commons.lang.time.FastDateFormat;
-import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
-import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
 import com.dotcms.repackage.org.elasticsearch.action.ListenableActionFuture;
 import com.dotcms.repackage.org.elasticsearch.action.admin.cluster.state.ClusterStateRequest;
@@ -592,7 +590,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
             }
         }
 	}
-	public String toJsonString(Map<String, Object> map) throws JsonGenerationException, JsonMappingException, IOException{
+	public String toJsonString(Map<String, Object> map) throws IOException{
 		return mapper.writeValueAsString(map);
 	}
 	public List<String> dependenciesLeftToReindex(Contentlet con) throws DotStateException, DotDataException, DotSecurityException {

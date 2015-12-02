@@ -3,8 +3,8 @@ package com.dotmarketing.portlets.workflows.model;
 import java.io.Serializable;
 import java.util.Date;
 
-import com.dotcms.repackage.org.codehaus.jackson.annotate.JsonIgnore;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.util.UtilMethods;
 
 public class WorkflowStep implements Serializable {

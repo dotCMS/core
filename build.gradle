@@ -1,65 +1,70 @@
+task wrapper(type: Wrapper) {
+    gradleVersion = '2.6'
+}
+
+//noinspection GroovyAssignabilityCheck
 configurations {
     compile
-    antLibs
-    ext.dotcmsFolder = "dotCMS"
-    ext.libsFolder = "dotCMS/WEB-INF/lib"
-    ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
+    provided
+    plugins
+    felix
+    starterContent
+    coreWeb
+    tomcatLibs
 }
-//Import and apply the dependencies from the dependencies scripts
-apply from: "$rootDir/dependencies.gradle"
+
+configurations.all({
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
+})
 
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-task copyToLib {
-
-    sync {
-        from configurations.compile
-        into configurations.felixFolder
-
-        include '**/dot.org.apache.felix.bundlerepository*.jar'
-        include '**/dot.org.apache.felix.fileinstall*.jar'
-        include '**/dot.org.apache.felix.gogo.*.jar'
-        include '**/dot.org.apache.felix.http.bundle*.jar'
-    }
-
-    sync {
-        from configurations.compile
-        into configurations.libsFolder
-
-        exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-        exclude '**/dot.org.apache.felix.fileinstall*.jar'
-        exclude '**/dot.org.apache.felix.gogo.*.jar'
-        exclude '**/*.zip'
-    }
-
-    copy {
-        from configurations.compile
-        into configurations.dotcmsFolder
-
-        include '**/starter*.zip'
-        rename ( /starter(.+)\.zip/, "starter.zip" )
-    }
-}
-copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
-
-dependencies { 
-    antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
-    antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
+task cleanPre3_5_Files(type: Delete) {
+    delete "${project.projectDir}/dotCMS/WEB-INF/lib",
+            "${project.projectDir}/dotCMS/WEB-INF/classes",
+            "${project.projectDir}/dotCMS/WEB-INF/felix/bundle",
+            "${project.projectDir}/dotCMS/starter.zip",
+            "${project.projectDir}/dotCMS/html/js/_rulesengine"
 }
 
-ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
-configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
+task 'clean-tinymce-gz'(type: Delete){
+    description = "Removes all generated .gz pre-compressed files by tinymce_gzip.jsp"
+    delete fileTree("${project.projectDir}/dotCMS/html/js/tinymce/js/tinymce/").include("**/*.gz")
+}
 
-//Move the dependencies to the WEB-INF/lib folder
-tasks.copyToLib.execute()
+task listProperties() {
+    description = 'Write out all the project properties at info log level.'
+    doLast {
+        logger.info("Project properties for ':${project.name}'")
+        project.ext.properties.sort().each { k, v -> logger.info "\t$k\n\t\t$v" }
+    }
+}
 
-ant.importBuild 'build.xml'
+def usePre3_5Build(){
+    logger.info("Building with pre3.5 Ant build system.")
+    //Import and apply the dependencies from the dependencies scripts
+    apply from: "$rootDir/build-pre3_5-ant.gradle"
+    clean.dependsOn cleanPre3_5_Files
+}
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
+def usePureGradleBuild(){
+    logger.info("Building with incubating Gradle build: ")
+    apply from: "${rootDir}/core.gradle"
+    clean.dependsOn cleanPre3_5_Files
+}
+def useNewHotness = project.hasProperty('useNewBuild') ? project['useNewBuild'] != 'false' : project['use-pre-3_5-build'] == 'false'
+if(useNewHotness){
+    usePureGradleBuild()
+} else {
+    usePre3_5Build()
+    clean.dependsOn('clean-tinymce-gz')
 }
 
 defaultTasks 'help', 'tasks'
+

@@ -26,17 +26,16 @@ import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.dotcms.repackage.com.sun.jersey.client.urlconnection.HTTPSProperties;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
-import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import com.dotcms.rest.RestClientBuilder;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
@@ -88,12 +87,8 @@ public class PushPublisher extends Publisher {
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(config.getId());
 
-			ClientConfig cc = new DefaultClientConfig();
 
-			if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-				cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
-            }
-			Client client = Client.create(cc);
+			Client client = RestClientBuilder.newClient();
 
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
@@ -142,15 +137,11 @@ public class PushPublisher extends Publisher {
 	        			form.field("ENDPOINT_ID", endpoint.getId());
 	        			form.bodyPart(new FileDataBodyPart("bundle", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
+                        WebTarget webTarget = client.target(endpoint.toURL()+"/api/bundlePublisher/publish");
 
-	        			//Sending bundle to endpoint
-	        			WebResource resource = client.resource(endpoint.toURL()+"/api/bundlePublisher/publish");
+                        Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
 
-	        			ClientResponse response =
-	        					resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-
-
-	        			if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK)
+	        			if(response.getStatus() == HttpStatus.SC_OK)
 	        			{
 	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 	        				detail.setInfo("Everything ok");
@@ -161,7 +152,7 @@ public class PushPublisher extends Publisher {
 		        			}
 	        				detail.setStatus(PublishAuditStatus.Status.FAILED_TO_SENT.getCode());
 	        				detail.setInfo(
-	        						"Returned "+response.getClientResponseStatus().getStatusCode()+ " status code " +
+	        						"Returned "+response.getStatus()+ " status code " +
 	        								"for the endpoint "+endpoint.getId()+ "with address "+endpoint.getAddress());
 	        				failedEnvironment |= true;
 

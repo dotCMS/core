@@ -49,6 +49,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
@@ -766,6 +767,10 @@ public class RoleAjax {
 		if(permissions.get("categories") != null) {
 			int permission = Integer.parseInt(permissions.get("categories"));
 			permissionsToSave.add(new Permission(Category.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
+		}
+        if(permissions.get("rules") != null) {
+			int permission = Integer.parseInt(permissions.get("rules"));
+			permissionsToSave.add(new Permission(Rule.class.getCanonicalName(), permissionable.getPermissionId(), roleId, permission, true));
 		}
 
 

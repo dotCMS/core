@@ -1,5 +1,7 @@
 package com.dotmarketing.util;
 
+import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
+import com.dotmarketing.db.DbConnectionFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -8,9 +10,6 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
-import com.dotcms.repackage.org.apache.commons.configuration.PropertiesConfiguration;
-import com.dotmarketing.db.DbConnectionFactory;
 
 public class Config {
 
@@ -49,7 +48,7 @@ public class Config {
 
         if ( classLoader == null ) {
             classLoader = Thread.currentThread().getContextClassLoader();
-            Logger.info( Config.class, "Initializing properties reader." );
+            Logger.info(Config.class, "Initializing properties reader.");
         }
 
         //dotmarketing config file
@@ -168,31 +167,45 @@ public class Config {
 	    	_loadProperties();
 	    }
 	}
+
+	public static String getStringProperty(String name, String defValue) {
+		return getStringProperty(name, defValue, true);
+	}
+
 	/**
 	 * Returns a string property
-	 * @param name The name of the property to locate.
+	 *
+	 * @param name     The name of the property to locate.
 	 * @param defValue Value to return if property is not found.
-	 * @return The value of the property.  If property is found more than once, all the occurrences will be concatenated (with a comma separating each element).
+	 * @param forceDefaultToString If the provided default value should be returned as a string, even when null (marshals literal null to "null").
+	 * @return The value of the property.  If property is found more than once, all the occurrences will be concatenated (with a comma separating each
+	 * element).
 	 */
-	public static String getStringProperty(String name,String defValue) {
-		_refreshProperties ();
-        if ( props == null ) {
-            return defValue;
-        }
-        String[] propsArr = props.getStringArray(name);
-	    StringBuilder property = new StringBuilder ();
-	    int i = 0;
-	    if ((propsArr !=null) &&(propsArr.length>0)) {
-	        for (String propItem : propsArr) {
-	            if (i > 0)
-	    			property.append(",");
-	            property.append(propItem);
-	            i++;
-	        }
-	    } else {
-	    	property.append(defValue);
-	    }
-	    return property.toString();
+	public static String getStringProperty(String name, String defValue, boolean forceDefaultToString) {
+		_refreshProperties();
+		String result = defValue;
+
+		if(props != null) {
+			String[] propsArr = props.getStringArray(name);
+			StringBuilder property = new StringBuilder();
+			int i = 0;
+			if(propsArr != null && propsArr.length > 0) {
+				for (String propItem : propsArr) {
+					if(i > 0) {
+						property.append(",");
+					}
+					property.append(propItem);
+					i++;
+				}
+				result = property.toString();
+			} else if(forceDefaultToString) {
+				result = String.valueOf(defValue);
+			}
+		} else {
+			// default is not forced to string here for historical reasons. Presumably props is never actually null.
+			result = defValue;
+		}
+		return result;
 	}
 
 	/**

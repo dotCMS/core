@@ -28,6 +28,7 @@ import com.dotmarketing.startup.runalways.Task00004LoadStarter;
 import com.dotmarketing.startup.runalways.Task00005LoadFixassets;
 import com.dotmarketing.startup.runalways.Task00006CreateSystemLayout;
 import com.dotmarketing.startup.runalways.Task00007RemoveSitesearchQuartzJob;
+
 import com.dotmarketing.startup.runonce.*;
 
 
@@ -137,7 +138,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03150LoweCaseURLOnVirtualLinksTable.class);
 		ret.add(Task03160PublishingPushedAssetsTable.class);
 		ret.add(Task03165ModifyLoadRecordsToIndex.class);
-
+		ret.add(Task03500RulesEngineDataModel.class);
         return ret;
     }
 

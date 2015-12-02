@@ -13,9 +13,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.commons.logging.LogFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -25,6 +23,8 @@ import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.business.RulesEngine;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -40,6 +40,8 @@ public class CMSFilter implements Filter {
 	String ASSET_PATH = null;
 
 	CmsUrlUtil urlUtil = CmsUrlUtil.getInstance();
+
+    private RulesEngine rulesEngine;
 
 
 	enum IAm{
@@ -69,7 +71,8 @@ public class CMSFilter implements Filter {
 			response.sendRedirect(xssRedirect);
 			return;
 		}
-		
+
+
 		
 		IAm iAm = IAm.NOTHING_IN_THE_CMS;
 		
@@ -178,6 +181,18 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
+		
+		// fire every_request rules
+		if(iAm == IAm.FILE || iAm== IAm.PAGE || rewrite.startsWith("/contentAsset/")){
+            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+            if(response.isCommitted()){
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                return;
+            }
+		}
+		
+		
+		
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
@@ -220,6 +235,7 @@ public class CMSFilter implements Filter {
 	
 	public void init(FilterConfig config) throws ServletException {
 		this.ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
+        rulesEngine = new RulesEngine();
 
 	}
 	@Deprecated

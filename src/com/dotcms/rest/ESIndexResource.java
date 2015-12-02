@@ -1,13 +1,11 @@
 package com.dotcms.rest;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.dotcms.content.elasticsearch.business.DotIndexException;
+import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
+import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.com.google.gson.Gson;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.DELETE;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -21,11 +19,8 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
-import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ESContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
-import com.dotcms.content.elasticsearch.business.IndiciesAPI.IndiciesInfo;
-import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,14 +29,20 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.repackage.com.google.gson.Gson;
-import com.dotcms.repackage.com.sun.jersey.core.header.FormDataContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 @Path("/esindex")
-public class ESIndexResource extends WebResource {
+public class ESIndexResource {
+
+    private final WebResource webResource = new WebResource();
+
     protected InitDataObject auth(String params,HttpServletRequest request) throws DotSecurityException, DotDataException {
-        InitDataObject init=init(params,true,request,true);
+        InitDataObject init= webResource.init(params, true, request, true, null);
         if(!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("EXT_CMS_MAINTENANCE", init.getUser()))
             throw new DotSecurityException("unauthorized");
         return init;

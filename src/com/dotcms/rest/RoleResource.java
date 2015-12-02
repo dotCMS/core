@@ -1,5 +1,12 @@
 package com.dotcms.rest;
 
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
+import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
+import com.dotcms.repackage.javax.ws.rs.core.Context;
+import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -10,24 +17,18 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
-import javax.servlet.http.HttpServletRequest;
-import com.dotcms.repackage.javax.ws.rs.GET;
-import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
-import com.dotcms.repackage.javax.ws.rs.Produces;
-import com.dotcms.repackage.javax.ws.rs.core.CacheControl;
-import com.dotcms.repackage.javax.ws.rs.core.Context;
-import com.dotcms.repackage.javax.ws.rs.core.Response;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/role")
-public class RoleResource extends WebResource {
+public class RoleResource {
 
-	/**
+    private final WebResource webResource = new WebResource();
+
+    /**
 	 * <p>Returns a JSON representation of the Role with the given id, including its first level children.
 	 * <br>The role node contains: id, name, locked, children.
 	 * <br>- id: id of the role
@@ -56,7 +57,7 @@ public class RoleResource extends WebResource {
 	 * @throws DotStateException
 	 * @throws DotDataException
 	 * @throws DotSecurityException
-	 * @throws JSONException 
+	 * @throws JSONException
 	 */
 
 	@GET
@@ -64,7 +65,8 @@ public class RoleResource extends WebResource {
 	@Produces("application/json")
 	public Response loadChildren(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init(params, true, request, true);
+
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -73,7 +75,7 @@ public class RoleResource extends WebResource {
 		String roleId = paramsMap.get("id");
 
 		RoleAPI roleAPI = APILocator.getRoleAPI();
-		
+
 		CacheControl cc = new CacheControl();
         cc.setNoCache( true );
 
@@ -83,7 +85,7 @@ public class RoleResource extends WebResource {
 			jsonRoleObject.put("id", "root");
 			jsonRoleObject.put("name", "Roles");
 			jsonRoleObject.put("top", "true");
-			
+
 			List<Role> rootRoles = roleAPI.findRootRoles();
 			JSONArray jsonChildren = new JSONArray();
 
@@ -94,26 +96,26 @@ public class RoleResource extends WebResource {
 				jsonRoleChildObject.put("name", r.getName());
 				jsonRoleChildObject.put("locked", r.isLocked());
 				jsonRoleChildObject.put("children", true);
-				
+
 				jsonChildren.add(jsonRoleChildObject);
 			}
 			//In order to add a JsonArray to a JsonObject
 			//we need to specify that is an object (API bug)
 			jsonRoleObject.put("children", (Object)jsonChildren);
 			jsonRoles.add(jsonRoleObject);
-			
+
 			return responseResource.response(jsonRoles.toString(), cc);
-			
+
 		} else {  // Loads Children Roles of given Role ID
 			Role role = roleAPI.loadRoleById(roleId);
-			
+
 			JSONObject jsonRoleObject = new JSONObject();
 			jsonRoleObject.put("id", role.getId());
 			jsonRoleObject.put("name", role.getName());
 			jsonRoleObject.put("locked", role.isLocked());
 
 			JSONArray jsonChildren = new JSONArray();
-			
+
 			List<String> children = role.getRoleChildren();
 			if(children != null) {
 				for(String childId : children) {
@@ -125,14 +127,14 @@ public class RoleResource extends WebResource {
 					jsonRoleChildObject.put("name", r.getName());
 					jsonRoleChildObject.put("locked", r.isLocked());
 					jsonRoleChildObject.put("children", true);
-					
+
 					jsonChildren.add(jsonRoleChildObject);
-				}					
+				}
 			}
 			//In order to add a JsonArray to a JsonObject
 			//we need to specify that is an object (API bug)
 			jsonRoleObject.put("children", (Object)jsonChildren);
-			
+
 			return responseResource.response(jsonRoleObject.toString(), cc);
 		}
     }
@@ -153,14 +155,14 @@ public class RoleResource extends WebResource {
 	 * @param params a string containing the URL parameters
 	 * @return
 	 * @throws DotDataException
-	 * @throws JSONException 
+	 * @throws JSONException
 	 */
 
 	@GET
 	@Path("/loadbyid/{params:.*}")
 	@Produces("application/json")
 	public Response loadById(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
-		InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -216,7 +218,7 @@ public class RoleResource extends WebResource {
 	 * @param params
 	 * @return
 	 * @throws DotDataException
-	 * @throws JSONException 
+	 * @throws JSONException
 	 */
 
 	@GET
@@ -224,7 +226,7 @@ public class RoleResource extends WebResource {
 	@Produces("application/json")
 	@SuppressWarnings("unchecked")
 	public Response loadByName(@Context HttpServletRequest request, @PathParam("params") String params) throws DotDataException, JSONException {
-		InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -272,17 +274,17 @@ public class RoleResource extends WebResource {
 		JSONObject jsonObject = new JSONObject();
 		jsonObject.put("identifier", "id");
 		jsonObject.put("label", "name");
-		
+
 		JSONArray jsonItems = new JSONArray();
-		
+
 		JSONObject jsonItemsObject = new JSONObject();
 		jsonItemsObject.put("id", "root");
 		jsonItemsObject.put("name", "Roles");
 		jsonItemsObject.put("top", true);
 		jsonItemsObject.put("children", (Object)buildFilteredJsonTree(resultTree));
-		
+
 		jsonItems.add(jsonItemsObject);
-		
+
 		jsonObject.put("items", (Object)jsonItems);
 
         return responseResource.response(jsonObject.toString());
@@ -316,20 +318,20 @@ public class RoleResource extends WebResource {
 	@SuppressWarnings("unchecked")
 	private JSONArray buildFilteredJsonTree(LinkedHashMap<String, Object> map) throws DotDataException, JSONException {
 		JSONArray jsonChildren = new JSONArray();
-		
+
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 
 		if(map != null) {
 			for (String key : map.keySet()) {
 				Role r = roleAPI.loadRoleById(key);
-				
+
 				JSONObject jsonObject = new JSONObject();
 				jsonObject.put("id", r.getId().replace('-', '_'));
 				jsonObject.put("name", r.getName());
 				jsonObject.put("locked", r.isLocked());
-				
+
 				LinkedHashMap<String, Object> children = (LinkedHashMap<String, Object>) map.get(key);
-				
+
 				jsonObject.put("children", (Object)buildFilteredJsonTree(children));
 				jsonChildren.add(jsonObject);
 			}

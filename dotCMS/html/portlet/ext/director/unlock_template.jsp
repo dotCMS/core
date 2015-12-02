@@ -1,12 +1,12 @@
 <%@ include file="/html/portlet/ext/director/init.jsp" %>
 <%@ page import="com.dotmarketing.portlets.templates.model.Template" %>
 <%@ page import="com.dotmarketing.factories.InodeFactory" %>
-<%@ page import="com.dotmarketing.portlets.htmlpages.model.HTMLPage" %>
+<%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.dotmarketing.util.InodeUtils" %>
 
 <% 
-HTMLPage htmlPage = (HTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
+IHTMLPage htmlPage = (IHTMLPage) request.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_EDIT);
 Template template =(Template) request.getAttribute(com.dotmarketing.util.WebKeys.TEMPLATE_EDIT);
 
 String referer = (request.getParameter("referer") != null ) ? java.net.URLDecoder.decode(request.getParameter("referer"),"UTF-8") : "";

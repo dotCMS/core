@@ -1,32 +1,31 @@
 package com.dotcms.rest;
 
-import java.util.Map;
-
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonProcessingException;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.JsonNode;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.node.ObjectNode;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.PUT;
 import com.dotcms.repackage.javax.ws.rs.Path;
-import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
-import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This method takes a contentlet and fires a workflow action on it. It requires
@@ -37,57 +36,51 @@ import com.liferay.portal.model.User;
  *
  */
 @Path("/workflow")
-public class WorkflowResource extends WebResource {
+public class WorkflowResource {
 
-	@PUT
+    private final WebResource webResource = new WebResource();
+
+    @PUT
 	@Path("/fire/{params:.*}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response fireWorkflow(@Context HttpServletRequest request, JSONObject json) throws DotDataException, DotSecurityException,
-			JSONException {
+	public Response fireWorkflow(@Context HttpServletRequest request,
+			String json) throws JsonProcessingException, IOException,
+			DotContentletStateException, DotDataException, DotSecurityException {
+		ObjectMapper mapper = new ObjectMapper();
+		JsonNode jsonParams = mapper.readTree(json);
 		String callback = null, 
 				language = null, 
 				id = null, 
 				inode = null, 
 				wfAction = null, 
 				wfAssign = null, 
-				wfPublishDate = null, 
-				wfExpireDate = null, 
-				wfComments = null,
-				whereToSend =null,
-				forcePush=null;
+				wfComments = null;
 
-		InitDataObject initData = init(null, true, request, false);
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
-		if (json.has(RESTParams.CALLBACK.getValue()))
-			callback = json.getString(RESTParams.CALLBACK.getValue());
-
-		if (json.has(RESTParams.LANGUAGE.getValue()))
-			language = json.getString(RESTParams.LANGUAGE.getValue());
-
-		if (json.has(RESTParams.ID.getValue()))
-			id = json.getString(RESTParams.ID.getValue());
-
-		if (json.has(RESTParams.INODE.getValue()))
-			inode = json.getString(RESTParams.INODE.getValue());
-
-		if (json.has("wfAction"))
-			wfAction = json.getString("wfAction");
-
-		if (json.has("wfAssign"))
-			wfAssign = json.getString("wfAssign");
-
-		if (json.has("wfComments"))
-			wfComments = json.getString("wfComments");
-
-		
-		if (json.has("wfPublishDate"))
-			wfPublishDate = json.getString("wfPublishDate");
-
-		if (json.has("wfExpireDate"))
-			wfExpireDate = json.getString("wfExpireDate");
-		
-		JSONObject jo = new JSONObject();
+		if (jsonParams.has(RESTParams.CALLBACK.getValue())) {
+			callback = jsonParams.get(RESTParams.CALLBACK.getValue()).asText();
+		}
+		if (jsonParams.has(RESTParams.LANGUAGE.getValue())) {
+			language = jsonParams.get(RESTParams.LANGUAGE.getValue()).asText();
+		}
+		if (jsonParams.has(RESTParams.ID.getValue())) {
+			id = jsonParams.get(RESTParams.ID.getValue()).asText();
+		}
+		if (jsonParams.has(RESTParams.INODE.getValue())) {
+			inode = jsonParams.get(RESTParams.INODE.getValue()).asText();
+		}
+		if (jsonParams.has("wfAction")) {
+			wfAction = jsonParams.get("wfAction").asText();
+		}
+		if (jsonParams.has("wfAssign")) {
+			wfAssign = jsonParams.get("wfAssign").asText();
+		}
+		if (jsonParams.has("wfComments")) {
+			wfComments = jsonParams.get("wfComments").asText();
+		}
+		ObjectNode jsonResponse = JsonNodeFactory.instance.objectNode();
 		User user = initData.getUser();
 
 		long lang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
@@ -104,10 +97,10 @@ public class WorkflowResource extends WebResource {
 				.findContentletByIdentifier(id, false, lang, user, false);
 
 		if (contentlet == null || contentlet.getIdentifier() == null) {
-			jo.append("message", "contentlet not found");
-			jo.append("return", 404);
+			jsonResponse.put("message", "contentlet not found");
+			jsonResponse.put("return", 404);
 			Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_NOT_FOUND);
-			return responseBuilder.entity(jo).build();
+			return responseBuilder.entity(jsonResponse).build();
 		}
 
 		WorkflowAPI wapi = APILocator.getWorkflowAPI();
@@ -119,11 +112,11 @@ public class WorkflowResource extends WebResource {
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
-			jo.append("message", "error:" + e.getMessage());
-			jo.append("return", 500);
+			jsonResponse.put("message", "error:" + e.getMessage());
+			jsonResponse.put("return", 500);
 
 			Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_FAILED_DEPENDENCY);
-			return responseBuilder.entity(jo).build();
+			return responseBuilder.entity(jsonResponse).build();
 
 		}
 
@@ -144,39 +137,39 @@ public class WorkflowResource extends WebResource {
 				wapi.fireWorkflowNoCheckin(contentlet, user);
 			}
 			if (UtilMethods.isSet(callback)) {
-				jo.put("callback", callback);
+				jsonResponse.put("callback", callback);
 			}
-			jo.put("inode", contentlet.getInode());
-			jo.put("id", contentlet.getIdentifier());
-			jo.put("message", "workflow action fired");
+			jsonResponse.put("inode", contentlet.getInode());
+			jsonResponse.put("id", contentlet.getIdentifier());
+			jsonResponse.put("message", "workflow action fired");
 			try{
-				jo.put("locked", contentlet.isLocked());
-				jo.put("live", contentlet.isLive());
-				jo.put("archived", contentlet.isArchived());
+				jsonResponse.put("locked", contentlet.isLocked());
+				jsonResponse.put("live", contentlet.isLive());
+				jsonResponse.put("archived", contentlet.isArchived());
 			}
 			catch(NullPointerException npe){
 				Logger.debug(this.getClass(), npe.getMessage(), npe);
 			}
-			jo.put("return", 200);
+			jsonResponse.put("return", 200);
 			
 			
 			
 		} catch (Exception e) {
 			if (UtilMethods.isSet(callback)) {
-				jo.put("callback", callback);
+				jsonResponse.put("callback", callback);
 			}
-			jo.put("inode", contentlet.getInode());
-			jo.put("id", contentlet.getIdentifier());
+			jsonResponse.put("inode", contentlet.getInode());
+			jsonResponse.put("id", contentlet.getIdentifier());
 			Logger.error(this.getClass(), e.getMessage(), e);
-			jo.put("message", "workflow action error" + e.getMessage());
-			jo.put("return", 500);
+			jsonResponse.put("message", "workflow action error" + e.getMessage());
+			jsonResponse.put("return", 500);
 			Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_BAD_REQUEST);
-			return responseBuilder.entity(jo).build();
+			return responseBuilder.entity(jsonResponse).build();
 		}
 
 		Response.ResponseBuilder responseBuilder = Response.status(HttpStatus.SC_OK);
-		return responseBuilder.entity(jo).build();
-
+		return responseBuilder.entity(jsonResponse).build();
+		
 	}
 
 	class WorkFlowExecutor {

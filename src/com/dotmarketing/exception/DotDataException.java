@@ -1,5 +1,8 @@
 package com.dotmarketing.exception;
 
+/**
+ * @todo remove the setMessage method, replace uses with 'throw new WhateverException(message, oldException)'
+ */
 public class DotDataException extends Exception {
 
 	/**
@@ -13,8 +16,8 @@ public class DotDataException extends Exception {
 		this.message = message;
 	}
 	public DotDataException(String message, Exception e) {
+        super(message, e);
 		this.message = message;
-		super.initCause(e);
 	}
 	/**
 	 * @return the message

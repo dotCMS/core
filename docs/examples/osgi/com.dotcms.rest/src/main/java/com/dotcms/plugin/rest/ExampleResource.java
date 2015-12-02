@@ -21,12 +21,14 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 @Path("/example")
-public class ExampleResource extends WebResource {
+public class ExampleResource  {
+
+    private final WebResource webResource = new WebResource();
 
 	@PUT
 	public Response doPut(@Context HttpServletRequest request, @PathParam("params") String params) throws URISyntaxException {
 
-		InitDataObject auth = init(null, true, request, false);
+		InitDataObject auth = webResource.init(true, request, false);
 		CacheControl cc = new CacheControl();
 		cc.setNoCache(true);
 		User user = auth.getUser();
@@ -37,7 +39,7 @@ public class ExampleResource extends WebResource {
 
 	@POST
 	public Response doPost(@Context HttpServletRequest request, @PathParam("params") String params) throws URISyntaxException {
-		InitDataObject auth = init(null, true, request, false);
+		InitDataObject auth = webResource.init(true, request, false);
 		User user = auth.getUser();
 		String username = (user != null) ? user.getFullName() : " unknown ";
 		CacheControl cc = new CacheControl();
@@ -61,7 +63,7 @@ public class ExampleResource extends WebResource {
 	public Response loadJson(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException,
 			DotDataException, DotSecurityException {
 		// force authentication
-		InitDataObject auth = init(null, true, request, true);
+		InitDataObject auth = webResource.init(true, request, true);
 		User user = auth.getUser();
 		String username = (user != null) ? user.getFullName() : " unknown ";
 		CacheControl cc = new CacheControl();
@@ -74,7 +76,7 @@ public class ExampleResource extends WebResource {
 	@GET
 	public Response loadRoot(@Context HttpServletRequest request, @PathParam("params") String params) throws DotStateException,
 			DotDataException, DotSecurityException {
-		InitDataObject auth = init(null, true, request, false);
+		InitDataObject auth = webResource.init(true, request, false);
 		User user = auth.getUser();
 		String username = (user != null) ? user.getFullName() : " unknown ";
 		CacheControl cc = new CacheControl();

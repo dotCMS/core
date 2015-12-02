@@ -11,6 +11,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeSet;
 
+import com.dotcms.repackage.org.apache.commons.lang.WordUtils;
+import com.dotmarketing.portlets.rules.model.Rule;
 import org.apache.velocity.tools.view.ImportSupport;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import org.apache.velocity.tools.view.tools.ImportTool;
@@ -67,7 +69,7 @@ import com.dotmarketing.util.Logger;
  * @author JSON.org
  * @version 2010-05-17
  */
-public class JSONObject  {
+public class JSONObject extends com.dotcms.repackage.org.codehaus.jettison.json.JSONObject  {
 	
     /**
      * JSONObject.NULL is equivalent to the value that JavaScript calls null,
@@ -272,7 +274,7 @@ public class JSONObject  {
         for (int i = 0; i < names.length; i += 1) {
             String name = names[i];
             try {
-                putOpt(name, c.getField(name).get(object));
+                putOpt(name, c.getMethod("get" + WordUtils.capitalize(name)).invoke(object));
             } catch (Exception ignore) {
             }
         }
@@ -893,7 +895,7 @@ public class JSONObject  {
         for (int i = 0; i < methods.length; i += 1) {
             try {
                 Method method = methods[i];
-                if (Modifier.isPublic(method.getModifiers())) {
+                if (Modifier.isPublic(method.getModifiers()) && !method.isAnnotationPresent(JSONIgnore.class)) {
                     String name = method.getName();
                     String key = "";
                     if (name.startsWith("get")) {
@@ -1510,7 +1512,7 @@ public class JSONObject  {
                      object instanceof Short  || object instanceof Integer   ||
                      object instanceof Long   || object instanceof Boolean   || 
                      object instanceof Float  || object instanceof Double    ||
-                     object instanceof String) {
+                     object instanceof String || object.getClass().isEnum()) {
                  return object;
              }
              
@@ -1523,6 +1525,7 @@ public class JSONObject  {
              if (object instanceof Map) {
                  return new JSONObject((Map)object);
              }
+
              Package objectPackage = object.getClass().getPackage();
              String objectPackageName = ( objectPackage != null ? objectPackage.getName() : "" );
              if (objectPackageName.startsWith("java.") ||

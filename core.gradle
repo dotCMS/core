@@ -1,0 +1,317 @@
+apply plugin: 'idea'
+apply plugin: 'java'
+apply plugin: 'war'
+apply from: "${project.projectDir}/dependencies.gradle"
+apply from: "${project.projectDir}/core-build-support-tasks.gradle"
+
+dependencies {
+
+    testCompile 'org.mockito:mockito-core:2.0.28-beta'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile('org.testng:testng:6.9.6') {
+        exclude(group: 'org.hamcrest')
+
+    }
+
+}
+
+//noinspection GroovyAssignabilityCheck
+sourceSets {
+    //noinspection GroovyAssignabilityCheck
+    main {
+        java {
+            srcDir 'src'
+        }
+        resources {
+            srcDirs'src', 'src-conf'
+        }
+    }
+    test {
+        java {
+            srcDirs 'test', 'unit-test'
+        }
+        resources {
+            srcDir 'test'
+        }
+    }
+}
+
+//noinspection GroovyAssignabilityCheck
+sourceSets {
+    main.compileClasspath += configurations.felix + configurations.provided;
+
+    test.compileClasspath += configurations.felix + configurations.provided;
+    test.runtimeClasspath += configurations.felix + configurations.provided;
+}
+
+idea {
+    module {
+        scopes.PROVIDED.plus += [configurations.provided, configurations.felix]
+    }
+}
+
+task cleanIntelliJOutputDir(type: Delete) {
+    delete "${rootProject.rootDir}/out"
+}
+clean.dependsOn cleanIntelliJOutputDir
+
+compileJava.options.debugOptions.debugLevel = "source,lines,vars"
+[compileJava, compileTestJava, javadoc]*.options.collect { options ->
+    options.encoding = 'UTF-8'
+}
+
+[compileJava, compileTestJava]*.options.collect { options ->
+    options.debug = true
+    options.warnings = true
+    options.deprecation = true
+}
+
+//noinspection GroovyAssignabilityCheck
+test {
+    // enable TestNG support (default is JUnit)
+    useTestNG()
+    workingDir "${rootProject.rootDir}"
+    testLogging.showStandardStreams = true
+}
+
+javadoc.classpath = sourceSets.main.compileClasspath;
+javadoc.options({
+    addStringOption('tag', 'todo')
+})
+
+/**
+ * The Jar task has been 'destandardized' in order to produce the same artifact structure as the pre-3.5 builds.
+ */
+//noinspection GroovyAssignabilityCheck
+jar {
+    archiveName = "dotcms_${project.'dotcms.release.version'}_${project.'dotcms.release.build'}.jar"
+    baseName = "dotcms"
+    version = "${project.'dotcms.release.version'}"
+    includeEmptyDirs = false
+    exclude 'xhtml'
+    exclude 'diff'
+    include '**/*.class'
+    include '**/Seq*.sql'
+    include '**/*.hbm.xml'
+
+    from("src") {
+        include 'org/apache/velocity/runtime/defaults/*.properties'
+    }
+    into('/')
+
+    from("src/com/liferay/portal/util") {
+        include 'build.properties'
+        filter { String line ->
+            def outLine = line
+            if(line.startsWith('#')) {
+                outLine = '#' + new Date().format('EEE, dd MMM yyyy HH:mm:ss Z')
+            } else if(line.startsWith('dotcms.release.build=')) {
+                outLine = 'dotcms.release.build=' + project.'dotcms.release.build'
+            } else if(line.startsWith('dotcms.release.date=')) {
+                outLine = 'dotcms.release.date=' + project.'dotcms.release.date'
+            }
+            logger.debug("build.properties ==> $outLine")
+            return outLine;
+        }
+        into('com/liferay/portal/util')
+    }
+    manifest {
+        attributes(
+                'Implementation-Version': "${project.'dotcms.release.version'}_${project.'dotcms.release.build'}",
+                'Created-By': "${project.'java.runtime.version'} (${project.'java.specification.vendor'})"
+        )
+    }
+}
+
+task transformToStandardWebLayout(type: Copy) {
+    description = 'Copy this project into a standard webapp directory layout in the build directory. For entertainment purposes only.'
+    into "${rootProject.'assembleDir'}/mvn-layout"
+    from(fileTree('src').include('**/*.java')) {
+        into 'src/main/java'
+    }
+    from(fileTree('src').exclude('**/*.java')) {
+        into 'src/main/resources'
+    }
+    from(fileTree('src-conf')) {
+        into 'src/main/resources'
+    }
+    from(fileTree('dotCMS')) {
+        into 'src/main/webapp/'
+    }
+    from(fileTree('extra/tomcat')) {
+        into 'src/main/webapp/META-INF'
+    }
+    from(fileTree('test').include('**/*.java')) {
+        into 'src/test/java'
+    }
+    from(fileTree('test').exclude('**/*.java')) {
+        into 'src/test/resources'
+    }
+    from(fileTree('plugins').include('plugins.xml')) {
+        into 'src/main/webapp/META-INF'
+    }
+}
+
+
+task _copyTomcatContextXml(type: Copy) {
+    from "${project.rootDir}/extra/tomcat"
+    into "${sourceSets.main.output.resourcesDir}/META-INF"
+    include '**/*.*'
+}
+
+task _copyPluginsXml(type: Copy) {
+    from "${project.rootDir}/plugins"
+    into "${sourceSets.main.output.resourcesDir}/"
+    include 'plugins.xml'
+}
+
+processResources.dependsOn _copyPluginsXml
+
+task assembleStarterContent(type: Copy) {
+    from configurations.starterContent
+    into("${project.'assembleDir'}/war")
+    rename 'starter-(.+).zip', 'starter.zip'
+}
+
+task assembleFelixLibs(type: Sync) {
+    from configurations.felix
+    into("${project.'assembleDir'}/war/WEB-INF/felix/bundle")
+}
+task assembleCoreWeb(type: Sync) {
+    into "${project.'assembleDir'}/war/html/js/_rulesengine"
+    from(zipTree(configurations.coreWeb.files[0]))
+}
+
+//noinspection GroovyAssignabilityCheck
+war {
+    webAppDirName = 'dotCMS'
+    baseName = 'dotcms'
+    version = "${project.'dotcms.release.version'}"
+    from "${project.'assembleDir'}/war"
+    classpath = project.configurations.runtime - project.configurations.providedRuntime + project.files("src-conf")
+    webInf {
+        from jar
+        into 'lib'
+
+    } // adds a file-set to the WEB-INF dir.
+    webInf {
+        from project.files("plugins/plugins.xml")
+        into 'classes'
+    }
+
+    metaInf {
+        from "${project.rootDir}/extra/tomcat"
+        include '**/*.*'
+    }
+
+}
+war.dependsOn assembleFelixLibs, assembleCoreWeb, jar
+war.mustRunAfter assembleStarterContent
+
+task warWithStarterContent(dependsOn: [assembleStarterContent, war])
+
+
+task assembleTomcatConfig(type: Copy) {
+    from configurations.tomcatLibs
+    into "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}/lib"
+}
+assembleTomcatConfig.mustRunAfter pullTomcat
+
+
+task assembleDist(dependsOn: [assembleDistBinaries,
+                              assembleAutoUpdater,
+                              assemblePlugins,
+                              assembleDocs,
+                              pullTomcat,
+                              assembleTomcatConfig]) {}
+
+
+task distZip(type: Zip, dependsOn: [assembleDist, war]) {
+    archiveName = "dotcms_${project.'dotcms.release.version'}.zip"
+    destinationDir = file("${project.distsDir}")
+    from "${project.'assembleDir'}/dist"
+    exclude "**/.git"
+    into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
+        with war
+    })
+}
+
+task distTar(type: Tar, dependsOn: [assembleDist, assembleStarterContent, war]) {
+    archiveName = "dotcms_${project.'dotcms.release.version'}.tar.gz"
+    compression = 'gzip'
+    destinationDir = file("${project.distsDir}")
+    from("${project.'assembleDir'}/dist")
+    include "**/**"
+    exclude "**/.git"
+    from(fileTree("${project.'assembleDir'}/dist").include('**/*.sh')) {
+        fileMode 0755
+    }
+    into("dotserver/tomcat-${project.'tomcat.version'}/webapps/ROOT", {
+        with war
+    })
+}
+
+task createUpdateDistribution(dependsOn: [distZip]) {}
+
+/**
+ * Full distribution is just an update distribution plus the starter content and a tar bundle.
+ */
+task createDistribution(dependsOn: [test, createUpdateDistribution, distTar]) {}
+
+
+task _copyTomcat(type:Sync){
+    description "Internal task: Copy the cloned tomcat repo to tomcat.home ('${project.'tomcat.home'}')"
+    onlyIf {
+        !file("${project.'tomcat.home'}").exists()
+    }
+    from "${project.'assembleDir'}/dist/dotserver/tomcat-${project.'tomcat.version'}"
+    into "${project.'tomcat.home'}"
+}
+_copyTomcat.mustRunAfter pullTomcat
+
+
+task configureTomcat(type: Copy) {
+    description 'Configures the tomcat installation located at ${tomcat.home} for use with DotCMS'
+    from configurations.tomcatLibs
+    into "${project.'tomcat.home'}/lib"
+}
+configureTomcat.mustRunAfter _copyTomcat
+
+task installTomcat(dependsOn:[pullTomcat, _copyTomcat, configureTomcat]){
+    onlyIf {
+        !file("${project.'tomcat.home'}").exists()
+    }
+}
+task explodeWar(type:Sync, dependsOn:[assembleDist, war]){
+    into "${project.buildDir}/exploded"
+    with war
+}
+
+task deployBaseApp(type: Copy, dependsOn: [war]) {
+    description "Build war and deploy it to the configured webapp. This will overwrite files in the webap.appDir, but it will not delete any existing files."
+    into "${project.'webapp.appDir'}"
+    with war
+}
+deployBaseApp.mustRunAfter installTomcat
+
+task deploy(dependsOn: [assembleStarterContent, deployBaseApp]) {
+    description = "Build war with starter content and deploy it to the configured webapp."
+}
+
+task cleanJsp(type: Delete) {
+    description "Removes all compiled jsp files from the target instance."
+    file("${project.'webapp.jspDir'}").listFiles().each({ f ->
+        delete f
+    })
+}
+
+task undeploy(type: Delete) {
+    description "Removes all content from the 'webapp.appDir' folder (${project.'webapp.appDir'}"
+    file("${project.'webapp.appDir'}").listFiles().each({f ->
+        delete f
+    })
+}
+deployBaseApp.mustRunAfter clean, undeploy, cleanJsp
+
+
+apply from: "${project.projectDir}/core-build-task-mappings.gradle"

@@ -41,6 +41,7 @@ import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.quartz.job.ResetPermissionsJob;
@@ -267,6 +268,11 @@ public class PermissionAjax {
 				if(categoriesPermissions != null) {
 					newSetOfPermissions.add(new Permission(Category.class.getCanonicalName(), asset.getPermissionId(), roleId,
 							Integer.parseInt(categoriesPermissions), true));
+				}
+                String rulesPermissions = permission.get("rulesPermissions");
+				if(rulesPermissions != null) {
+					newSetOfPermissions.add(new Permission(Rule.class.getCanonicalName(), asset.getPermissionId(), roleId,
+							Integer.parseInt(rulesPermissions), true));
 				}
 			}
 

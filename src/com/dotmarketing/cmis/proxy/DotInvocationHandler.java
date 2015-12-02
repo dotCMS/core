@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.Cookie;
+import javax.servlet.ServletOutputStream;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -19,10 +20,10 @@ import com.liferay.portal.model.User;
 //http://jira.dotmarketing.net/browse/DOTCMS-3392
 public class DotInvocationHandler implements InvocationHandler{
     private final Map map;
-    
-    public DotInvocationHandler(Map map) {
-        this.map=map;
-    }
+
+	public DotInvocationHandler(Map map) {
+		this.map=map;
+	}
     
 	public Object invoke(Object proxy, Method method, Object[] args)
 			throws Throwable {
@@ -74,6 +75,10 @@ public class DotInvocationHandler implements InvocationHandler{
 		
 		if(methodName.equalsIgnoreCase("getServerPort")){	
 			return new Integer(80);
+		}
+
+		if(methodName.equalsIgnoreCase("getCharacterEncoding")){
+			return new String("UTF-8");
 		}
 		
 		if((methodName.equalsIgnoreCase("put") 

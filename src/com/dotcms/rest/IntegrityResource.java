@@ -19,16 +19,6 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotcms.publisher.integrity.IntegrityDataGeneratorThread;
 import com.dotcms.publisher.pusher.PushPublisher;
-import com.dotcms.publisher.util.TrustFactory;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.ClientHandlerException;
-import com.dotcms.repackage.com.sun.jersey.api.client.ClientResponse;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.ClientConfig;
-import com.dotcms.repackage.com.sun.jersey.api.client.config.DefaultClientConfig;
-import com.dotcms.repackage.com.sun.jersey.client.urlconnection.HTTPSProperties;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataParam;
-import com.dotcms.repackage.com.sun.jersey.multipart.file.FileDataBodyPart;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -36,17 +26,22 @@ import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.WebApplicationException;
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.Entity;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.StreamingOutput;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -57,10 +52,22 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 
 @Path("/integrity")
-public class IntegrityResource extends WebResource {
+public class IntegrityResource {
+
+    private final WebResource webResource = new WebResource();
 
     public enum ProcessStatus {
         PROCESSING, ERROR, FINISHED, NO_CONFLICTS, CANCELED
@@ -215,7 +222,7 @@ public class IntegrityResource extends WebResource {
     @Path("/checkintegrity/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     public Response checkIntegrity(@Context HttpServletRequest request, @PathParam("params") String params)  {
-        InitDataObject initData = init(params, true, request, true);
+        InitDataObject initData = webResource.init(params, true, request, true, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
 
@@ -258,7 +265,7 @@ public class IntegrityResource extends WebResource {
             //Setting the process status
             setStatus( request, endpointId, ProcessStatus.PROCESSING );
 
-            final Client client = getRESTClient();
+            final Client client = RestClientBuilder.newClient();
 
             final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
             final String authToken = PushPublisher.retriveKeyString(PublicEncryptionFactory.decryptString(endpoint.getAuthKey().toString()));
@@ -268,13 +275,12 @@ public class IntegrityResource extends WebResource {
 
             //Sending bundle to endpoint
             String url = endpoint.toURL()+"/api/integrity/generateintegritydata/";
-            com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+            WebTarget webTarget = client.target(url);
 
-            ClientResponse response =
-                    resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
+            Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
 
-            if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
-                final String integrityDataRequestID = response.getEntity(String.class);
+            if(response.getStatus() == HttpStatus.SC_OK) {
+                final String integrityDataRequestID = response.readEntity(String.class);
 
                 Thread integrityDataRequestChecker = new Thread() {
                     public void run(){
@@ -284,20 +290,25 @@ public class IntegrityResource extends WebResource {
                         form.field("REQUEST_ID",integrityDataRequestID);
 
                         String url = endpoint.toURL()+"/api/integrity/getintegritydata/";
-                        com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+                        WebTarget webTarget = client.target(url);
 
                         boolean processing = true;
 
                         while(processing) {
 
-                            ClientResponse response = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
-                            if ( response.getClientResponseStatus() != null && response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK ) {
+                            Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
+
+                            if ( response.getStatus() == HttpStatus.SC_OK ) {
 
                                 processing = false;
 
-                                try (InputStream zipFile = response.getEntityInputStream()) {
-                                	final String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
-                                	IntegrityUtil.unzipFile(zipFile, outputDir);
+                                InputStream zipFile = response.readEntity(InputStream.class);
+                                String outputDir = ConfigUtils.getIntegrityPath() + File.separator + endpoint.getId();
+
+                                try {
+
+                                    IntegrityUtil.unzipFile(zipFile, outputDir);
+
                                 } catch(Exception e) {
 
                                     //Special handling if the thread was interrupted
@@ -369,15 +380,17 @@ public class IntegrityResource extends WebResource {
                                     //Setting the process status
                                     setStatus( session, endpointId, ProcessStatus.NO_CONFLICTS, noConflictMessage );
                                 }
-                            } else if ( response.getClientResponseStatus() == null && response.getStatus() == HttpStatus.SC_PROCESSING ) {
+
+                            } else if ( response.getStatus() == HttpStatus.SC_PROCESSING ) {
+
                                 continue;
-                            } else if ( response.getClientResponseStatus() == null && response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
+                            } else if ( response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
                                 processing = false;
                                 //Setting the process status
                                 setStatus( session, endpointId, ProcessStatus.CANCELED, null );
                             } else {
                                 setStatus( session, endpointId, ProcessStatus.ERROR, null );
-                                Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpointId + "]." );
+                                Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to retrieve the Integrity data from the Endpoint [" + endpointId + "]." );
                                 processing = false;
                             }
                         }
@@ -388,14 +401,14 @@ public class IntegrityResource extends WebResource {
                 integrityDataRequestChecker.start();
                 addThreadToSession( session, integrityDataRequestChecker, endpointId, integrityDataRequestID );
 
-            } else if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_UNAUTHORIZED ) {
+            } else if ( response.getStatus() == HttpStatus.SC_UNAUTHORIZED ) {
                 setStatus( session, endpointId, ProcessStatus.ERROR, null );
                 Logger.error( this.getClass(), "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id: " + endpointId );
                 return response( "Response indicating Not Authorized received from Endpoint. Please check Auth Token. Endpoint Id:" + endpointId, true );
             } else {
                 setStatus( session, endpointId, ProcessStatus.ERROR, null );
-                Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId );
-                return response( "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId, true );
+                Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId );
+                return response( "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to connect with the Integrity API on the Endpoint. Endpoint Id: " + endpointId, true );
             }
 
             jsonResponse.put( "success", true );
@@ -437,7 +450,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -484,19 +497,19 @@ public class IntegrityResource extends WebResource {
                     form.field( "REQUEST_ID", integrityDataRequestId );
 
                     //Prepare the connection
-                    Client client = getRESTClient();
+                    Client client = RestClientBuilder.newClient();
                     String url = endpoint.toURL() + "/api/integrity/cancelIntegrityProcessOnEndpoint/";
-                    com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource( url );
+                    WebTarget webTarget = client.target(url);
 
                     //Execute the call
-                    ClientResponse response = resource.type( MediaType.MULTIPART_FORM_DATA ).post( ClientResponse.class, form );
+                    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
 
-                    if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK ) {
+                    if ( response.getStatus() == HttpStatus.SC_OK ) {
                         //Nothing to do here, we found no process to cancel
-                    } else if ( response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_RESET_CONTENT ) {
+                    } else if ( response.getStatus() == HttpStatus.SC_RESET_CONTENT ) {
                         //Expected return status if a cancel was made on the end point server
                     } else {
-                        Logger.error( this.getClass(), "Response indicating a " + response.getClientResponseStatus().getReasonPhrase() + " (" + response.getClientResponseStatus().getStatusCode() + ") Error trying to interrupt the running process on the Endpoint [ " + endpointId + "]." );
+                        Logger.error( this.getClass(), "Response indicating a " + response.getStatusInfo().getReasonPhrase() + " (" + response.getStatus() + ") Error trying to interrupt the running process on the Endpoint [ " + endpointId + "]." );
                     }
 
                     //Interrupt the Thread process
@@ -605,7 +618,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -681,7 +694,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -794,7 +807,7 @@ public class IntegrityResource extends WebResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -907,7 +920,7 @@ public class IntegrityResource extends WebResource {
     @Produces (MediaType.APPLICATION_JSON)
     public Response fixConflicts ( @Context final HttpServletRequest request, @PathParam ("params") String params ) throws JSONException {
 
-        InitDataObject initData = init( params, true, request, true );
+        InitDataObject initData = webResource.init(params, true, request, true, null);
         Map<String, String> paramsMap = initData.getParamsMap();
         JSONObject jsonResponse = new JSONObject();
 
@@ -958,7 +971,7 @@ public class IntegrityResource extends WebResource {
             } else  if(whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, IntegrityType.valueOf(type.toUpperCase()));
 
-                final Client client = getRESTClient();
+                final Client client = RestClientBuilder.newClient();
 
                 PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
                 String outputPath = ConfigUtils.getIntegrityPath() + File.separator + endpointId;
@@ -972,12 +985,15 @@ public class IntegrityResource extends WebResource {
                 form.field("TYPE", type);
                 form.bodyPart(new FileDataBodyPart("DATA_TO_FIX", bundle, MediaType.MULTIPART_FORM_DATA_TYPE));
 
+                //                    WebTarget webTarget = client.target(url);
+//
+//                    Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
+
                 String url = endpoint.toURL()+"/api/integrity/fixconflictsfromremote/";
-                com.dotcms.repackage.com.sun.jersey.api.client.WebResource resource = client.resource(url);
+                WebTarget webTarget = client.target(url);
+                Response response = webTarget.request(MediaType.APPLICATION_JSON_TYPE).post(Entity.entity(form, form.getMediaType()));
 
-                ClientResponse response = resource.type(MediaType.MULTIPART_FORM_DATA).post(ClientResponse.class, form);
-
-                if(response.getClientResponseStatus().getStatusCode() == HttpStatus.SC_OK) {
+                if(response.getStatus() == HttpStatus.SC_OK) {
                     jsonResponse.put( "success", true );
                     jsonResponse.put( "message", "Fix Conflicts Process successfully started at Remote." );
 
@@ -993,12 +1009,7 @@ public class IntegrityResource extends WebResource {
                 return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' has an invalid value.").build();
             }
 
-        }  catch(ClientHandlerException e) {
-        	Logger.error( this.getClass(), "Error fixing "+type+" conflicts for End Point server: [" + endpointId + "]", e );
-        	return response( "Error fixing conflicts for endpoint: " + endpointId + ". Connection Refused. "
-        			+ "Remote Server seems to be down, or not acepting requests.", true );
-
-        } catch ( Exception e ) {
+        }   catch ( Exception e ) {
         	try {
                 HibernateUtil.rollbackTransaction();
             } catch (DotHibernateException e1) {
@@ -1018,17 +1029,6 @@ public class IntegrityResource extends WebResource {
 		}
 
         return response( jsonResponse.toString(), false );
-    }
-
-    private Client getRESTClient() {
-        TrustFactory tFactory = new TrustFactory();
-        ClientConfig cc = new DefaultClientConfig();
-
-        if(Config.getStringProperty("TRUSTSTORE_PATH") != null && !Config.getStringProperty("TRUSTSTORE_PATH").trim().equals("")) {
-            cc.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES, new HTTPSProperties(tFactory.getHostnameVerifier(), tFactory.getSSLContext()));
-        }
-        final Client client = Client.create(cc);
-        return client;
     }
 
     /**

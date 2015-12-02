@@ -14,8 +14,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 
 import com.dotmarketing.beans.Host;
@@ -50,7 +50,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 			user = uWebAPI.getLoggedInUser(request);
 
 			ObjectMapper mapper = new ObjectMapper();
-			mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 			TagAPI tagAPI = APILocator.getTagAPI();
 
 			String termFilter = "";

@@ -6,6 +6,8 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotcms.repackage.javax.ws.rs.client.Client;
+import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.org.junit.Before;
 import com.dotcms.repackage.org.junit.Test;
 
@@ -18,31 +20,30 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-import com.dotcms.repackage.com.sun.jersey.api.client.Client;
-import com.dotcms.repackage.com.sun.jersey.api.client.WebResource;
 
 public class RoleResourceTest extends TestBase  {
 
 	private Client client;
-	private WebResource webResource;
+	private WebTarget webTarget;
 	private HttpServletRequest request;
 	private String serverName;
 	private Integer serverPort;
 
 	@Before
 	public void init() {
-		client = Client.create();
+		client = RestClientBuilder.newClient();
 		request = ServletTestRunner.localRequest.get();
 		serverName = request.getServerName();
 		serverPort = request.getServerPort();
-		webResource = client.resource("http://"+serverName+":"+serverPort+"/api/role");
-	}
+        webTarget = client.target("http://"+serverName+":"+serverPort+"/api/role");
+
+    }
 
 	@Test
 	public void testWellFormedJSONloadChildren() {
 
 		// loadchildren - root roles
-		String response = webResource.path("/loadchildren/user/admin@dotcms.com/password/admin").get(String.class);
+		String response = webTarget.path("/loadchildren/user/admin@dotcms.com/password/admin").request().get(String.class);
 		assertTrue(isValidJSONArray(response));
 
 		// loadchildren - role with children
@@ -61,7 +62,7 @@ public class RoleResourceTest extends TestBase  {
 					break;
 				}
 			}
-			response = webResource.path("/loadchildren/user/admin@dotcms.com/password/admin/id/"+roleWithChildren.getId()).get(String.class);
+			response = webTarget.path("/loadchildren/user/admin@dotcms.com/password/admin/id/"+roleWithChildren.getId()).request().get(String.class);
 			assertTrue(isValidJSONObject(response));
 		}
 
@@ -77,13 +78,13 @@ public class RoleResourceTest extends TestBase  {
 			Logger.warn(this.getClass(), "Could not validate well-formed JSON in api/role/loadbyid. Error loading role", e);
 		}
 
-		String response = webResource.path("/loadbyid/user/admin@dotcms.com/password/admin/id/"+intranet.getId()).get(String.class);
+		String response = webTarget.path("/loadbyid/user/admin@dotcms.com/password/admin/id/"+intranet.getId()).request().get(String.class);
 		assertTrue(isValidJSONObject(response));
 	}
 
 	@Test
 	public void testWellFormedJSONloadByName() {
-		String response = webResource.path("/loadbyname/user/admin@dotcms.com/password/admin/name/admin").get(String.class);
+		String response = webTarget.path("/loadbyname/user/admin@dotcms.com/password/admin/name/admin").request().get(String.class);
 		assertTrue(isValidJSONObject(response));
 	}
 

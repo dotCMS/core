@@ -12,10 +12,9 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import com.dotcms.repackage.org.codehaus.jackson.JsonGenerationException;
-import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.org.codehaus.jackson.map.JsonMappingException;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
+import com.dotcms.repackage.com.fasterxml.jackson.core.JsonGenerationException;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -161,9 +160,9 @@ public class WfStepAjax extends WfBaseAction {
 	}
 	
 	
-	private String stepsToJson(List<WorkflowStep> steps) throws JsonGenerationException, JsonMappingException, IOException{
+	private String stepsToJson(List<WorkflowStep> steps) throws IOException{
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Map<String,Object> m = new LinkedHashMap<String, Object>();
         
         List<Map<String,Object>> list = new ArrayList<Map<String,Object>>();
@@ -179,7 +178,7 @@ public class WfStepAjax extends WfBaseAction {
         m.put("identifier", "id");
         m.put("label", "name");
         m.put("items", list);
-		return mapper.defaultPrettyPrintingWriter().writeValueAsString(m);
+		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(m);
 	}
 	
 	

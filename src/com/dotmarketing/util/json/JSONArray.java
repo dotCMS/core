@@ -58,7 +58,7 @@ import java.util.Map;
  * @author JSON.org
  * @version 2009-04-14
  */
-public class JSONArray implements List<Object>{
+public class JSONArray extends com.dotcms.repackage.org.codehaus.jettison.json.JSONArray {
 
 
     /**

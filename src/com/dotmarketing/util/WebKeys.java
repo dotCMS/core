@@ -20,6 +20,7 @@ public final class WebKeys {
 	public static final String IMAGE_TOOL_CLIPBOARD = "_imageToolClipboard";
 	public static final String IMAGE_TOOL_SAVE_FILES = "_imageToolSaveFile";
 	public static final String LONG_LIVED_DOTCMS_ID_COOKIE = "dmid";
+	public static final String ONCE_PER_VISIT_COOKIE = "opvc";
 
 	public static final String DIRECTOR_URL = "com.dotmarketing.preview.DirectorURL";
 	public static final String VIEW_FOLDERS_URL = "com.dotmarketing.preview.ViewFolderURL";
@@ -352,8 +353,10 @@ public final class WebKeys {
     public static final String WORKFLOW_SEARCHER = "com.dotmarketing.workflowtasks.WORKFLOW_SEARCHER";
     public static enum WorkflowStatuses { OPEN, RESOLVED, CANCELLED };
 
-
-
+    // RULES ENGIGE
+    public static final String RULES_CONDITIONLET_CLASSES = "RULES_CONDITIONLET_CLASSES";
+    public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
+    public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
 
 	//ADMIN CONTROL
     public static final String ADMIN_CONTROL_TOP = "com.dotmarketing.admin.control.top";

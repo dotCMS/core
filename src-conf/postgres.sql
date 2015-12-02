@@ -15,8 +15,8 @@ create table ABContact (
 	homePhone varchar(100) null,
 	homeFax varchar(100) null,
 	homeCell varchar(100) null,
-	homePager varchar(100) null,
 	homeTollFree varchar(100) null,
+	homePager varchar(100) null,
 	homeEmailAddress varchar(100) null,
 	businessCompany varchar(100) null,
 	businessStreet varchar(100) null,
@@ -3330,3 +3330,24 @@ create table cluster_server_action(
 	time_out_seconds bigint not null,
 	PRIMARY KEY (server_action_id)
 );
+
+-- Rules Engine
+create table dot_rule(id varchar(36) primary key,name varchar(255) not null,fire_on varchar(20),short_circuit boolean default false,host varchar(36) not null,folder varchar(36) not null,priority int default 0,enabled boolean default false,mod_date timestamp,unique (name, host));
+create table rule_condition_group(id varchar(36) primary key,rule_id varchar(36) references dot_rule(id),operator varchar(10) not null,priority int default 0,mod_date timestamp);
+create table rule_condition(id varchar(36) primary key,name varchar(255) not null,conditionlet text not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar(36) not null,operator varchar(10) not null,priority int default 0,mod_date timestamp);
+create table rule_condition_value (id varchar(36) primary key,condition_id varchar(36) references rule_condition(id), paramkey varchar(255) not null, value text,priority int default 0);
+create table rule_action (id varchar(36) primary key,name varchar(255) not null,rule_id varchar(36) references dot_rule(id),priority int default 0,actionlet text not null,mod_date timestamp);
+create table rule_action_pars(id varchar(36) primary key,rule_action_id varchar(36) references rule_action(id), paramkey varchar(255) not null,value text);
+create index idx_rules_fire_on on dot_rule (fire_on);
+
+CREATE TABLE analytic_summary_user_visits (
+    user_id VARCHAR(255) NOT NULL,
+    host_id VARCHAR(36) NOT NULL,
+    visits INT8 NOT NULL,
+    last_start_date TIMESTAMP NOT NULL,
+    PRIMARY KEY (user_id, host_id),
+    UNIQUE (user_id, host_id)
+);           
+CREATE INDEX idx_analytic_summary_user_visits_1 ON analytic_summary_user_visits (user_id);
+CREATE INDEX idx_analytic_summary_user_visits_2 ON analytic_summary_user_visits (host_id);
+CREATE INDEX idx_analytic_summary_user_visits_3 ON analytic_summary_user_visits (last_start_date);

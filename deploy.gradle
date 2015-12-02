@@ -90,6 +90,16 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
+configurations {
+    compile
+    provided
+    plugins
+    felix
+    starterContent
+    coreWeb
+    tomcatLibs
+}
+
 ext {
     releaseRepository = "http://repo.dotcms.com/artifactory/libs-release-local"
     snapshotRepository = "http://repo.dotcms.com/artifactory/libs-snapshot-local"

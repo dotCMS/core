@@ -1,14 +1,5 @@
 package com.dotcms.rest.elasticsearch;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -19,13 +10,13 @@ import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
 import com.dotcms.rest.BaseRestPortlet;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResourceResponse;
+import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
@@ -36,19 +27,26 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 @Path("/es")
 public class ESContentResourcePortlet extends BaseRestPortlet {
 
 	ContentletAPI esapi = APILocator.getContentletAPI();
+    private final WebResource webResource = new WebResource();
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
 	public Response search(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
 
-		InitDataObject initData = init(null, true, request, false);
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		HttpSession session = request.getSession();
 
@@ -64,7 +62,6 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 
 		User user = initData.getUser();
 
-		ObjectMapper mapper = new ObjectMapper();
 		try {
 			
 
@@ -132,7 +129,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response searchRaw(@Context HttpServletRequest request) {
 
-		InitDataObject initData = init(null, true, request, false);
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		HttpSession session = request.getSession();
 

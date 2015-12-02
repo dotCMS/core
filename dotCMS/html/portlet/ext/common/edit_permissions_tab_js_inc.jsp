@@ -18,6 +18,7 @@
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.portlets.categories.model.Category"%>
 <%@ page import="com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage" %>
+<%@ page import="com.dotmarketing.portlets.rules.model.Rule" %>
 
 <%if(!Config.getBooleanProperty("ENABLE_LEGACY_FILE_SUPPORT",false)) {%>
 <style>
@@ -83,6 +84,7 @@
 	var structureWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Structure")) %>';
 	var noPermissionsSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-permissions-saved")) %>';
 	var categoriesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Category")) %>';
+	var rulesWillInheritMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Rules")) %>';
 
 	//HTML Templates
 	var inheritedSourcesTemplate = '<span class="${icon}"></span> ${path}';
@@ -119,6 +121,7 @@
 	var contentClassName = '<%= Contentlet.class.getCanonicalName() %>';
 	var structureClassName = '<%= Structure.class.getCanonicalName() %>';
 	var categoryClassName = '<%= Category.class.getCanonicalName() %>';
+	var rulesClassName = '<%= Rule.class.getCanonicalName() %>';
 
 	var dijits = [];
 
@@ -403,6 +406,7 @@
 				rolePermission.contentPermission = retrievePermissionChecks(role.id, 'content');
 				rolePermission.structurePermission = retrievePermissionChecks(role.id, 'structure');
 				rolePermission.categoriesPermissions = retrievePermissionChecks(role.id, 'categories');
+				rolePermission.rulesPermissions = retrievePermissionChecks(role.id, 'rules');
 			}
 
 			dojo.forEach(rolePermission, function(value){
@@ -452,6 +456,7 @@
 		destroyCheckboxes(getPermissionCheckboxDijits('content', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('structure', role.roleId))
 		destroyCheckboxes(getPermissionCheckboxDijits('categories', role.roleId))
+		destroyCheckboxes(getPermissionCheckboxDijits('rules', role.roleId))
 
 		var containerPane = dijit.byId('permissionsAccordionPane-' + role.roleId);
 		accordionContainer.removeChild(containerPane);
@@ -484,7 +489,8 @@
 					rolePermission.linksPermission |
 					rolePermission.contentPermission |
 					rolePermission.structurePermission |
-					rolePermission.categoriesPermissions ) == 0) {
+					rolePermission.categoriesPermissions |
+					rolePermission.rulesPermissions ) == 0) {
 				rolesRemoved.push(rolePermission);
 			}
 
@@ -580,7 +586,7 @@
                 return true;
         }
 
-        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structure','content','categories'];
+        types=['hosts','folders','containers','templates','template-layouts','pages','files','links','structure','content','categories','rules'];
 
         for(var i=0;i<types.length;i++)
             if(changedType(item,types[i]))
@@ -752,6 +758,7 @@
 			enableCheckboxes(getPermissionCheckboxDijits('content', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('structure', role.id))
 			enableCheckboxes(getPermissionCheckboxDijits('categories', role.id))
+			enableCheckboxes(getPermissionCheckboxDijits('rules', role.id))
 		});
 		dojo.style('permissionsTabFt', { display: '' });
 		dojo.style('inheritingFrom', { display: 'none' });
@@ -891,6 +898,7 @@
 		fillTemplatePermissionOptions(role, permissions, contentClassName, 'content');
 		fillTemplatePermissionOptions(role, permissions, structureClassName, 'structure');
 		fillTemplatePermissionOptions(role, permissions, categoryClassName, 'categories');
+		fillTemplatePermissionOptions(role, permissions, rulesClassName, 'rules');
 
 		role["view-permission-style"] = '';
 		role["add-children-permission-style"] = '';
@@ -948,6 +956,7 @@
 		role.permissionsOnChildren2=permissionsOnChildrenMsg2;
 		role.structureWillInherit = structureWillInheritMsg;
 		role.categoriesWillInherit = categoriesWillInheritMsg;
+		role.rulesWillInherit = rulesWillInheritMsg;
 	}
 
 	function fillTemplatePermissionOptions (role, permissions, permissionType, assetType) {

@@ -1,6 +1,10 @@
 package com;
 
 
+import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
+import com.dotmarketing.portlets.rules.business.RulesAPITest;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -18,6 +22,11 @@ import com.dotcms.repackage.org.junit.runners.Suite;
 import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
+import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
+import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
 import com.dotmarketing.business.IdentifierAPITest;
 import com.dotmarketing.business.LanguageAPITest;
 import com.dotmarketing.business.PermissionAPITest;
@@ -35,6 +44,7 @@ import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
+import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
@@ -74,7 +84,7 @@ import com.dotmarketing.webdav.WebDavTest;
     ESIndexSpeedTest.class,
     PluginMergerTest.class,
     WebDavTest.class,
-    ContentResourceTest.class,
+    ContentResourceTest.class, //Needs Enterprise License
     RoleAPITest.class,
     LanguageAPITest.class,
     FolderAPITest.class,
@@ -92,7 +102,16 @@ import com.dotmarketing.webdav.WebDavTest;
     ContentletAjaxTest.class,
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
-    RemotePublishAjaxActionTest.class //Needs Enterprise License
+    RulesAPITest.class,
+    RuleResourceFTest.class,
+    ConditionGroupResourceFTest.class,
+    ConditionResourceFTest.class,
+    RemotePublishAjaxActionTest.class, //Needs Enterprise License
+    ConditionletTest.class,
+    ActionletResourceFTest.class,
+    SetSessionAttributeActionletTest.class,
+    UsersCountryConditionletFTest.class,
+    ActionResourceFTest.class
 })
 public class AllTestsSuite {
 

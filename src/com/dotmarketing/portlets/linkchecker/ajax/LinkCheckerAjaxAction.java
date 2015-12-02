@@ -12,6 +12,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
@@ -20,7 +21,6 @@ import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 
 import com.dotcms.enterprise.linkchecker.LinkCheckerJob;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;

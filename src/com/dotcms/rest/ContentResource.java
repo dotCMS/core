@@ -1,26 +1,12 @@
 package com.dotcms.rest;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.Part;
-
+import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
+import com.dotcms.repackage.com.thoughtworks.xstream.converters.UnmarshallingContext;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamReader;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -38,6 +24,9 @@ import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONArray;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONObject;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.BodyPart;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.ContentDisposition;
+import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -68,19 +57,27 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.viewtools.content.util.ContentUtils;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.com.sun.jersey.core.header.ContentDisposition;
-import com.dotcms.repackage.com.sun.jersey.multipart.BodyPart;
-import com.dotcms.repackage.com.sun.jersey.multipart.FormDataMultiPart;
-import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.Converter;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.MarshallingContext;
-import com.dotcms.repackage.com.thoughtworks.xstream.converters.UnmarshallingContext;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamReader;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.HierarchicalStreamWriter;
-import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 @Path("/content")
-public class ContentResource extends WebResource {
+public class ContentResource {
 	private static final String RELATIONSHIP_KEY = "__##relationships##__";
 
 	private static final String IP_ADDRESS = "ipAddress";
@@ -90,8 +87,10 @@ public class ContentResource extends WebResource {
 	private static final String REFERER = "referer";
 	private static final String REQUEST_METHOD = "requestMethod";
 	private static final String ACCEPT_LANGUAGE = "acceptLanguage";
-	
-	/**
+
+    private final WebResource webResource = new WebResource();
+
+    /**
 	 * performs a call to APILocator.getContentletAPI().searchIndex() with the
 	 * specified parameters.
 	 * Example call using curl:
@@ -116,7 +115,7 @@ public class ContentResource extends WebResource {
 			@PathParam ("type") String type,
 			@PathParam ("callback") String callback) throws DotSecurityException, DotDataException, JSONException {
 
-		InitDataObject initData = init(null, true, request, false);
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		Map<String, String> paramsMap = new HashMap<String, String>();
 		paramsMap.put( "type", type );
@@ -155,7 +154,7 @@ public class ContentResource extends WebResource {
 			@PathParam ("type") String type,
 			@PathParam ("callback") String callback ) throws DotDataException, DotSecurityException {
 
-		InitDataObject initData = init( null, true, request, false );
+        InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		Map<String, String> paramsMap = new HashMap<String, String>();
 		paramsMap.put( "type", type );
@@ -173,7 +172,8 @@ public class ContentResource extends WebResource {
 
 	public Response lockContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
 
-		InitDataObject initData = init(params, true, request, false);
+
+        InitDataObject initData = webResource.init(params, true, request, false, null);
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
 		String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -242,7 +242,7 @@ public class ContentResource extends WebResource {
 	@Produces (MediaType.APPLICATION_JSON)
 	public Response canLockContent(@Context HttpServletRequest request,  @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
 
-		InitDataObject initData = init(params, true, request, false);
+        InitDataObject initData = webResource.init(params, true, request, false, null);
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
 		String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -323,7 +323,7 @@ public class ContentResource extends WebResource {
 
 	public Response unlockContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) throws DotDataException, DotSecurityException, JSONException {
 
-		InitDataObject initData = init(params, true, request, false);
+        InitDataObject initData = webResource.init(params, true, request, false, null);
 		Map<String, String> paramsMap = initData.getParamsMap();
 		String callback = paramsMap.get(RESTParams.CALLBACK.getValue());
 		String language = paramsMap.get(RESTParams.LANGUAGE.getValue());
@@ -392,7 +392,7 @@ public class ContentResource extends WebResource {
 	@Produces(MediaType.TEXT_PLAIN)
 	public Response getContent(@Context HttpServletRequest request, @Context HttpServletResponse response, @PathParam("params") String params) {
 
-		InitDataObject initData = init(params, true, request, false);
+        InitDataObject initData = webResource.init(params, true, request, false, null);
 		//Creating an utility response object
 		ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
@@ -659,8 +659,8 @@ public class ContentResource extends WebResource {
 	
 	private Response multipartPUTandPOST(HttpServletRequest request, HttpServletResponse response,
 			FormDataMultiPart multipart, String params, String method) throws URISyntaxException{
-		
-		InitDataObject init=init(params,true,request,false);
+
+        InitDataObject init= webResource.init(params, true, request, false, null);
 		User user=init.getUser();
 		Contentlet contentlet=new Contentlet();
 		setRequestMetadata(contentlet, request);
@@ -779,7 +779,7 @@ public class ContentResource extends WebResource {
 	}
 	
 	private Response singlePUTandPOST(HttpServletRequest request, HttpServletResponse response, String params, String method) throws URISyntaxException {
-		InitDataObject init=init(params,true,request,false);
+        InitDataObject init= webResource.init(params, true, request, false, null);
 
 		Contentlet contentlet=new Contentlet();
 		setRequestMetadata(contentlet, request);
@@ -960,14 +960,14 @@ public class ContentResource extends WebResource {
 					
 					result = getXMLContentIds(contentlet);
 					return Response.ok(result,MediaType.APPLICATION_XML)
-							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/xml"))
+							.location(new URI("content/inode/"+contentlet.getInode()+"/type/xml"))
 							.header("inode", contentlet.getInode())
 							.header("identifier", contentlet.getIdentifier())
 							.status(Status.OK).build();
 				} else if("text".equals(type)){
 					
 					return Response.ok("inode:"+contentlet.getInode()+",identifier:"+contentlet.getIdentifier(),MediaType.TEXT_PLAIN)
-							.location(new URI("/content/inode/"+contentlet.getInode()+"/type/text"))
+							.location(new URI("content/inode/"+contentlet.getInode()+"/type/text"))
 							.header("inode", contentlet.getInode())
 							.header("identifier", contentlet.getIdentifier())
 							.status(Status.OK).build();
@@ -979,14 +979,14 @@ public class ContentResource extends WebResource {
 
 						String callback = init.getParamsMap().get(RESTParams.CALLBACK.getValue());
 						return Response.ok(callback+"("+result+")","application/javascript")
-								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
+								.location(new URI("content/inode/"+contentlet.getInode()+"/type/jsonp/callback/"+callback))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
 					}else{
 
 						return Response.ok(result,MediaType.APPLICATION_JSON)
-								.location(new URI("/content/inode/"+contentlet.getInode()+"/type/json"))
+								.location(new URI("content/inode/"+contentlet.getInode()+"/type/json"))
 								.header("inode", contentlet.getInode())
 								.header("identifier", contentlet.getIdentifier())
 								.status(Status.OK).build();
@@ -997,7 +997,7 @@ public class ContentResource extends WebResource {
 				return Response.serverError().build();
 			}
 		}else {
-			return Response.seeOther(new URI("/content/inode/"+contentlet.getInode()))
+			return Response.seeOther(new URI("content/inode/"+contentlet.getInode()))
 					.header("inode", contentlet.getInode())
 					.header("identifier", contentlet.getIdentifier())
 					.status(Status.OK).build();
@@ -1210,15 +1210,7 @@ public class ContentResource extends WebResource {
 
 	@SuppressWarnings("unchecked")
 	protected void processJSON(Contentlet contentlet, InputStream input) throws JSONException, IOException {
-		HashMap<String,Object> map=new HashMap<String,Object>();
-		JSONObject obj=new JSONObject(IOUtils.toString(input));
-		Iterator<String> keys = obj.keys();
-		while(keys.hasNext()) {
-			String key=keys.next();
-			Object value=obj.get(key);
-			map.put(key, value.toString());
-		}
-		processMap(contentlet,map);
+		processMap(contentlet, webResource.processJSON(input));
 	}
 	
 	private void setRequestMetadata(Contentlet contentlet, HttpServletRequest request) {

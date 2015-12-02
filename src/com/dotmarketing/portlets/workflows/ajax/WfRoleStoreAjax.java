@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.workflows.ajax;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
+import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -11,8 +13,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import com.dotcms.repackage.org.codehaus.jackson.map.DeserializationConfig.Feature;
-import com.dotcms.repackage.org.codehaus.jackson.map.ObjectMapper;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -174,7 +174,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
     private String rolesToJson ( List<Role> roles, boolean includeFake ) throws IOException, DotDataException, LanguageException {
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure( Feature.FAIL_ON_UNKNOWN_PROPERTIES, false );
+        mapper.configure( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false );
         Map<String, Object> m = new LinkedHashMap<String, Object>();
 
         List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
@@ -223,7 +223,7 @@ public class WfRoleStoreAjax extends WfBaseAction {
         m.put( "label", "name" );
         m.put( "items", list );
 
-        return mapper.defaultPrettyPrintingWriter().writeValueAsString( m );
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString( m );
     }
 
 }

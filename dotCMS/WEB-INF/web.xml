@@ -630,8 +630,8 @@
 		  com.dotcms.rest.servlet.ReloadableServletContainer
 		</servlet-class>
 		<init-param>
-		  <param-name>com.dotcms.repackage.javax.ws.rs.Application</param-name>
-		  <param-value>com.dotcms.rest.config.DotRestApplication</param-value>
+			<param-name>jersey.config.server.mediaTypeMappings</param-name>
+			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
@@ -649,7 +649,7 @@
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
  <!-- END SERVLETS -->
-    <!-- TEST FRAMEWORK SERVLETS -->
+    <!-- TEST FRAMEWORK SERVLETS -->                                            
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>

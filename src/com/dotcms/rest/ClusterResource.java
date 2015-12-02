@@ -10,7 +10,12 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.cluster.action.NodeStatusServerAction;
 import com.dotcms.enterprise.cluster.action.ServerAction;
 import com.dotcms.enterprise.cluster.action.model.ServerActionBean;
-import com.dotcms.repackage.javax.ws.rs.*;
+import com.dotcms.repackage.javax.ws.rs.Consumes;
+import com.dotcms.repackage.javax.ws.rs.GET;
+import com.dotcms.repackage.javax.ws.rs.POST;
+import com.dotcms.repackage.javax.ws.rs.Path;
+import com.dotcms.repackage.javax.ws.rs.PathParam;
+import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
@@ -38,18 +43,23 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 
 @Path("/cluster")
-public class ClusterResource extends WebResource {
+public class ClusterResource {
 
-	 /**
+    private final WebResource webResource = new WebResource();
+
+    /**
      * Returns a Map of the Cache Cluster Status
      *
      * @param request
@@ -65,7 +75,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getCacheClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "9" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
 		// JGroups Cache
@@ -113,7 +123,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getNodesInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false, "9");
+        InitDataObject initData = webResource.init( params, true, request, false, "9");
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
         
         ServerAPI serverAPI = APILocator.getServerAPI();
@@ -260,7 +270,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getESClusterStatus ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "9" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         AdminClient client=null;
@@ -308,7 +318,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getNodeInfo ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
 		String remoteServerID = paramsMap.get("id");
@@ -421,7 +431,7 @@ public class ClusterResource extends WebResource {
     @Produces ("application/json")
     public Response getESConfigProperties ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
 
-        InitDataObject initData = init( params, true, request, false, "9" );
+        InitDataObject initData = webResource.init( params, true, request, false, "9" );
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
 
         JSONObject jsonNode = new JSONObject();
@@ -456,7 +466,7 @@ public class ClusterResource extends WebResource {
     @Path ("/wirenode/{params:.*}")
     @Produces ("application/json")
     public Response wireNode ( @Context HttpServletRequest request, @PathParam ("params") String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
-        InitDataObject initData = init( params, true, request, true, "9" );
+        InitDataObject initData = webResource.init( params, true, request, true, "9" );
 
         JSONObject jsonNode = new JSONObject();
 
@@ -508,7 +518,7 @@ public class ClusterResource extends WebResource {
     @Path("/licenseRepoStatus")
     @Produces("application/json")
     public Response getLicenseRepoStatus(@Context HttpServletRequest request, @PathParam ("params") String params) throws DotDataException, JSONException {
-        init( params, true, request, true );
+        webResource.init(params, true, request, true, null);
 
         JSONObject json=new JSONObject();
         json.put("total", LicenseUtil.getLicenseRepoTotal());
@@ -525,7 +535,7 @@ public class ClusterResource extends WebResource {
     @POST
     @Path("/remove/{params:.*}")
     public Response removeFromCluster(@Context HttpServletRequest request, @PathParam("params") String params) {
-        InitDataObject initData = init(params, true, request, true, "9");
+        InitDataObject initData = webResource.init(params, true, request, true, "9");
         String serverId = initData.getParamsMap().get("serverid");
         try {
         	HibernateUtil.startTransaction();

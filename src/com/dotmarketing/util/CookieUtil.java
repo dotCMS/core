@@ -18,4 +18,16 @@ public class CookieUtil {
 
 	}
 
+    public static Cookie createOncePerVisitCookie() {
+        // set id cookie
+        Cookie idCookie = new Cookie(
+                com.dotmarketing.util.WebKeys.ONCE_PER_VISIT_COOKIE,
+                UUIDGenerator.generateUuid());
+        idCookie.setPath("/");
+        idCookie.setMaxAge(-1);
+
+        return idCookie;
+
+    }
+
 }
