@@ -44,7 +44,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
     <div class="cw-filter-links">
       <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">All ({{rules.length}})</button>
       <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">Active ({{activeRules}}/{{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">Inactive ({{inactiveRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">Inactive ({{rules.length-activeRules}}/{{rules.length}})</button>
     </div>
   </div>
 
@@ -59,7 +59,6 @@ import {CwFilter} from "../../../api/util/CwFilter"
     filterText:string
     status:string
     activeRules:number
-    inactiveRules:number
     rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
@@ -151,13 +150,9 @@ import {CwFilter} from "../../../api/util/CwFilter"
 
     getFilteredRulesStatus() {
     	this.activeRules = 0;
-    	this.inactiveRules = 0;
     	for (var i = 0;  i < this.rules.length ; i++){
     		if (this.rules[i].enabled){
     			this.activeRules++;
-    		}
-    		else{
-    			this.inactiveRules++;
     		}
     	}
     }
