@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 import com.dotcms.rest.api.RestTransform;
 import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -19,12 +19,10 @@ public class ActionletTransform implements RestTransform<RuleActionlet, RestActi
     /**
      * @todo ggranum: This method needs to be replaced with a RestActionPararmeterDefinition type, and possibly a container (plural form) as well.
      */
-    private static Map<String, Map<String, String>> remapParameters(List<ActionParameterDefinition> parameters) {
-        Map<String, Map<String, String>> mappedValues = new HashMap<>();
-        if(!parameters.isEmpty()) {
-            for (ActionParameterDefinition parameter : parameters) {
-                mappedValues.put(parameter.getKey(), parameter.toMappedValues());
-            }
+    private static Map<String, RestActionParamDefinition> remapParameters(List<ActionParameterDefinition> parameters) {
+        Map<String, RestActionParamDefinition> mappedValues = new LinkedHashMap<>();
+        for (ActionParameterDefinition parameter : parameters) {
+            mappedValues.put(parameter.getKey(), new RestActionParamDefinition(parameter.getDefaultValue(), parameter.getDataType()));
         }
         return mappedValues;
     }
