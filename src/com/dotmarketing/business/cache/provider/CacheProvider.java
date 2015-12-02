@@ -60,6 +60,13 @@ public abstract class CacheProvider implements Serializable {
     public abstract void init () throws Exception;
 
     /**
+     * Checks if the provider was initialized
+     *
+     * @throws Exception
+     */
+    public abstract boolean isInitialized () throws Exception;
+
+    /**
      * Adds the given content to the given region and for the given key
      *
      * @param group

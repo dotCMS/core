@@ -875,8 +875,9 @@ public class IntegrityResource {
                 return Response.status(HttpStatus.SC_UNAUTHORIZED).build();
             }
 
+            HibernateUtil.startTransaction();
             integrityUtil.fixConflicts(dataToFix, requesterEndPoint.getId(), IntegrityType.valueOf(type.toUpperCase()) );
-
+            HibernateUtil.commitTransaction();
         } catch ( Exception e ) {
             try {
                 HibernateUtil.rollbackTransaction();

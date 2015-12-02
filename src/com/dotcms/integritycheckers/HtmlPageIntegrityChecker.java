@@ -10,6 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -136,11 +137,8 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
             checkPages(endpointId, IntegrityType.HTMLPAGES);
             checkPages(endpointId, IntegrityType.CONTENTPAGES);
 
-            // Legacy HTML pages and contentlet pages share the same result
-            // table
-            dc.setSQL("select * from " + getIntegrityType().getResultsTableName());
-            List<Map<String, Object>> results = dc.loadObjectResults();
-            return !results.isEmpty();
+            // Legacy HTML pages and contentlet pages share the same result table
+            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName()) > 0;
         } catch (Exception e) {
             throw new Exception("Error running the HTML Pages Integrity Check", e);
         }
@@ -165,39 +163,51 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
      *             An error occurred when interacting with the database.
      * @throws DotSecurityException
      *             The current user does not have permission to perform this
-     *             ation.
+     *             action.
      */
     @Override
     public void executeFix(final String endpointId) throws DotDataException, DotSecurityException {
-        DotConnect dc = new DotConnect();
         // Get the information of the IR.
+        DotConnect dc = new DotConnect();
         dc.setSQL("SELECT " + getIntegrityType().getFirstDisplayColumnLabel() + ", local_identifier, remote_identifier, local_working_inode, remote_working_inode, local_live_inode, remote_live_inode, language_id FROM "
-                + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ?");
+                + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ? ORDER BY " + getIntegrityType().getFirstDisplayColumnLabel());
         dc.addParam(endpointId);
         List<Map<String, Object>> results = dc.loadObjectResults();
-        Map<String, Integer> versionCount = new HashMap<String, Integer>();
+
+        // We need to load the map with the affected identifiers, inodes and languages
+        Map<String, AffectedIdentifierInfoBucket> affectedIdentifiers = new HashMap<String, AffectedIdentifierInfoBucket>();
         for (Map<String, Object> result : results) {
-            String oldIdentifier = (String) result.get("local_identifier");
-            
-            Integer counter = versionCount.get(oldIdentifier);
-            if(counter == null) {
-                versionCount.put(oldIdentifier, 1);
+            final String oldIdentifier = (String) result.get("local_identifier");
+            final Long languageId = (Long) (DbConnectionFactory.isOracle() ? ((BigDecimal) result.get("language_id")).longValue() : (Long) result.get("language_id"));
+
+            AffectedIdentifierInfoBucket identifierAffected = affectedIdentifiers.get(oldIdentifier);
+            if(identifierAffected == null) {
+                affectedIdentifiers.put(oldIdentifier, AffectedIdentifierInfoBucket.build((String) result.get("remote_identifier")).addAffectedLanguage(languageId, (String) result.get("remote_live_inode"), (String) result.get("remote_working_inode")));
             } else {
-                versionCount.put(oldIdentifier, counter + 1);
+                identifierAffected.addAffectedLanguage(languageId, (String) result.get("remote_live_inode"), (String) result.get("remote_working_inode"));
             }
         }
+
         for (Map<String, Object> result : results) {
-            String oldIdentifier = (String) result.get("local_identifier");
+            final String oldIdentifier = (String) result.get("local_identifier");
+
             Identifier identifier = APILocator.getIdentifierAPI().find(oldIdentifier);
-            if ("htmlpage".equals(identifier.getAssetType())) {
+            if (Identifier.ASSET_TYPE_HTML_PAGE.equals(identifier.getAssetType())) {
                 fixLegacyPageConflicts(result);
             } else {
-                int counter = versionCount.get(oldIdentifier);
-                boolean fixAllVersions = counter == 1 ? true : false;
-                verifyAndFixConflict(result, fixAllVersions);
+                AffectedIdentifierInfoBucket affectedIdentifier = affectedIdentifiers.get(oldIdentifier);
+                boolean fixAllVersions = affectedIdentifier.getCounter() == 1 ? true : false;
+
+                // Verify and fix conflicts when page was moved
+                if(affectedIdentifier.needsToCheckPossibleConflicts()) {
+                    // We need to solved conflict once per affected identifier
+                    checkAndFixIdentifierConflicts(affectedIdentifier);
+                }
+
+                fixContentPageConflicts(result, fixAllVersions);
                 if (!fixAllVersions) {
                     // Decrease version counter if greater than 1
-                    versionCount.put(oldIdentifier, counter - 1);
+                    affectedIdentifier.decrementCounter();
                 }
             }
         }
@@ -428,171 +438,167 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         dc.loadResult();
     }
 
-	/**
-	 * Before starting to fix the reported Integrity Checker conflicts, dotCMS
-	 * has to make sure that the new information is unique in the system. This
-	 * method checks that the new values that will be set for the Identifier,
-	 * the working Inode and the live Inode <b>DO NOT EXIST</b> in the database
-	 * of the specified end point.
-	 * <p>
-	 * If they do, it means that the page was previously fixed by the Integrity
-	 * Checker, and then moved to another folder or had its URL changed.
-	 * Therefore, the Integrity Checker didn't detect it and generates errors if
-	 * this situation is not solved before moving on.
-	 * </p>
-	 * 
-	 * @param pageData
-	 *            - The information that will be used to solve the integrity
-	 *            conflict. Its Identifier and Inodes might exist already, so
-	 *            the Integrity Checker must handle that first.
-	 * @param fixAllVersions
-	 *            - If <code>true</code>, the page only has 1 language and ALL
-	 *            existing records of the local page will have their Identifier
-	 *            and Inodes replaced to fix the conflict.
-	 * @throws DotDataException
-	 *             An error occurred when running one of the SQL queries.
-	 * @throws DotSecurityException
-	 *             The specified user does not have permissions to perform the
-	 *             selected action.
-	 */
-	private void verifyAndFixConflict(Map<String, Object> pageData,
-			boolean fixAllVersions) throws DotDataException,
-			DotSecurityException {
-		String conflictingIdentifier = (String) pageData.get("remote_identifier");
-		String conflictingWorkingInode = (String) pageData.get("remote_working_inode");
-		String conflictingLiveInode = (String) pageData.get("remote_live_inode");
-		Long languageId = (Long) pageData.get("language_id");
-		DotConnect dc = new DotConnect();
-		// Get the data of the existing page that has the identifier that MUST
+    /**
+     * Before starting to fix the reported Integrity Checker conflicts, dotCMS
+     * has to make sure that the new information is unique in the system. This
+     * method checks that the new values that will be set for the Identifier,
+     * the working Inode and the live Inode <b>DO NOT EXIST</b> in the database
+     * of the specified end point.
+     * <p>
+     * If they do, it means that the page was previously fixed by the Integrity
+     * Checker, and then moved to another folder or had its URL changed.
+     * Therefore, the Integrity Checker didn't detect it and generates errors if
+     * this situation is not solved before moving on.
+     * </p>
+     * 
+     * @param affectedIdentifier
+     *            The information that will be used to solve the integrity
+     *            conflict. Its Identifier and Inodes might exist already, so
+     *            the Integrity Checker must handle that first. This object
+     *            contains the list of the languages and inodes affected, for
+     *            the specific identifier
+     * @throws DotDataException
+     *             An error occurred when running one of the SQL queries.
+     * @throws DotSecurityException
+     *             The specified user does not have permissions to perform the
+     *             selected action.
+     */
+    private void checkAndFixIdentifierConflicts(AffectedIdentifierInfoBucket affectedIdentifier) throws DotDataException, DotSecurityException {
+
+        // Get the data of the existing page that has the identifier that MUST
 		// be changed before fixing the reported conflict(s)
+		DotConnect dc = new DotConnect();
 		StringBuilder query = new StringBuilder();
 		query.append(
 				"SELECT cvi.working_inode, cvi.live_inode, cvi.lang, i.parent_path, i.asset_name ")
 				.append("FROM contentlet_version_info cvi INNER JOIN identifier i ON cvi.identifier = i.id ")
 				.append("WHERE cvi.identifier = ?");
 		dc.setSQL(query.toString());
-		dc.addParam(conflictingIdentifier);
+		dc.addParam(affectedIdentifier.getAffectedIdentifier());
 		List<Map<String, Object>> conflictingPages = dc.loadObjectResults();
 		if (conflictingPages != null && !conflictingPages.isEmpty()) {
 			if (conflictingPages.size() > 1) {
-				orderConflictingPages(conflictingPages, languageId);
+			    // Add in-front of the list languages affected
+			    conflictingPages = getOrderedConflictingPages(conflictingPages, affectedIdentifier);
 			}
 			// Fix previous conflicts before fixing the reported problems
-			updateConflictingPageIds(conflictingPages, conflictingIdentifier,
-					conflictingWorkingInode, conflictingLiveInode, languageId);
-		}
-		fixContentPageConflicts(pageData, fixAllVersions);
-	}
-
-	/**
-	 * Utility method that places the main conflicting page version as the first
-	 * record based on the language ID, so that the integrity fix process takes
-	 * it first.
-	 * 
-	 * @param conflictingPages
-	 *            - The list of conflicting pages.
-	 * @param languageId
-	 *            - The language ID of the main conflicting page.
-	 */
-	private void orderConflictingPages(
-			List<Map<String, Object>> conflictingPages, Long languageId) {
-		int index = 0;
-		for (Map<String, Object> pageInfo : conflictingPages) {
-			Long language = (Long) pageInfo.get("lang");
-			if (languageId == language) {
-				break;
-			} else {
-				index++;
-			}
-		}
-		if (index > 0) {
-			Map<String, Object> pageData = conflictingPages.get(index);
-			conflictingPages.remove(index);
-			conflictingPages.add(0, pageData);
+			updateConflictingPageIds(conflictingPages, affectedIdentifier);
 		}
 	}
 
-	/**
-	 * Takes all the different versions (i.e., languages) of the page containing
-	 * the Identifier and Inodes that must be replaced and gets the data ready
-	 * to perform the change. Depending on the amount of information that must
-	 * be changed, this method takes two steps:
-	 * <ol>
-	 * <li>If the page version info needs to have its <b>Identifier and Inodes
-	 * updated</b>, the page needs to go through a special integrity fix
-	 * process, which is slightly different from the common one. In the new one,
-	 * we need to specify different working and live Inodes to get the version
-	 * info from (since we'll be fixing an older version of the page), but we
-	 * <b>WILL NOT</b> be adding a new version info, as we always do. Then, just
-	 * run the re-index on the page and flush the respective caches.</li>
-	 * <li>If the page version info needs to have its <b>Identifier updated
-	 * ONLY</b>, the page just needs to be re-indexed and also flush the
-	 * respective caches. This approach happens when the page has more than one
-	 * language, which also means all the required information has been added by
-	 * the first step.</li>
-	 * </ol>
-	 * 
-	 * @param pageLanguages
-	 *            - The different versions (languages) of the page whose
-	 *            Identifier and Inodes must be updated.
-	 * @param identifierToChange
-	 *            - The Identifier that must be replaced.
-	 * @param workingInodeToChange
-	 *            - The working Inode that must be replaced.
-	 * @param liveInodeToChange
-	 *            - The live Inode that must be replaced.
-	 * @param existingLanguageId
-	 *            - The page language associated to the working/live Inode that
-	 *            must be replaced.
-	 * @throws DotDataException
-	 *             An error occurred when running one of the SQL queries.
-	 * @throws DotSecurityException
-	 *             The specified user does not have permissions to perform the
-	 *             selected action.
-	 */
-	private void updateConflictingPageIds(List<Map<String, Object>> pageLanguages,
-			String identifierToChange, String workingInodeToChange,
-			String liveInodeToChange, Long existingLanguageId) throws DotDataException,
-			DotSecurityException {
-		int versionCounter = pageLanguages.size();
-		// New Identifier that will be set for the conflicting page
-		String newIdentifier = UUIDGenerator.generateUuid();
+    /**
+     * Utility method that places the main conflicting page version as the first
+     * record based on the language ID, so that the integrity fix process takes
+     * it first.
+     * 
+     * @param conflictingPages
+     *            - The list of conflicting pages.
+     * @param languageId
+     *            - The language ID of the main conflicting page.
+     * @return ordered list of conflicting pages
+     *             The first elements of the list MUST be those with conflicts
+     *  
+     */
+    private List<Map<String, Object>> getOrderedConflictingPages(List<Map<String, Object>> conflictingPages, AffectedIdentifierInfoBucket conflictIdentifierInfo) {
+        LinkedList<Map<String, Object>> orderedConflictingPages = new LinkedList<Map<String, Object>>();
+
+        for (Map<String, Object> pageInfo : conflictingPages) {
+            final Long languageId = DbConnectionFactory.isOracle() ? ((BigDecimal) pageInfo.get("lang")).longValue() : (Long) pageInfo.get("lang");
+
+            if(conflictIdentifierInfo.isLanguageAffected(languageId)) {
+                // We need to add to the begging of the list those languages that has conflicts
+                orderedConflictingPages.addFirst(pageInfo);
+            } else {
+                orderedConflictingPages.addLast(pageInfo);
+            }
+        }
+
+        return orderedConflictingPages;
+    }
+
+    /**
+     * Takes all the different versions (i.e., languages) of the page containing
+     * the Identifier and Inodes that must be replaced and gets the data ready
+     * to perform the change. Depending on the amount of information that must
+     * be changed, this method takes two steps:
+     * <ol>
+     * <li>If the page version info needs to have its <b>Identifier and Inodes
+     * updated</b>, the page needs to go through a special integrity fix
+     * process, which is slightly different from the common one. In the new one,
+     * we need to specify different working and live Inodes to get the version
+     * info from (since we'll be fixing an older version of the page), but we
+     * <b>WILL NOT</b> be adding a new version info, as we always do. Then, just
+     * run the re-index on the page and flush the respective caches.</li>
+     * <li>If the page version info needs to have its <b>Identifier updated
+     * ONLY</b>, the page just needs to be re-indexed and also flush the
+     * respective caches. This approach happens when the page has more than one
+     * language, which also means all the required information has been added by
+     * the first step.</li>
+     * </ol>
+     * 
+     * @param pageLanguages
+     *            - The different versions (languages) of the page whose
+     *            Identifier and Inodes must be updated.
+     * @param affectedIdentifier
+     *            It contains the affected identifier with the following
+     *            information:
+     *            <ul>
+     *            <li>The identifier that must be replaced.</li>
+     *            <li>The working Inode that must be replaced.</li>
+     *            <li>The live Inode that must be replaced.</li>
+     *            <li>The page language associated to the working/live Inode
+     *            that must be replaced.</li>
+     *            </ul>
+     * @throws DotDataException
+     *             An error occurred when running one of the SQL queries.
+     * @throws DotSecurityException
+     *             The specified user does not have permissions to perform the
+     *             selected action.
+     */
+    private void updateConflictingPageIds(List<Map<String, Object>> pageLanguages,
+            AffectedIdentifierInfoBucket affectedIdentifier) throws DotDataException, DotSecurityException {
+        // New Identifier that will be set for the conflicting page
+        final String newIdentifier = UUIDGenerator.generateUuid();
+        final String identifierToChange = affectedIdentifier.getAffectedIdentifier();
+
+        int versionCounter = pageLanguages.size();
+
 		for (Map<String, Object> pageInfo : pageLanguages) {
-			boolean fixAllVersions = versionCounter == 1 ? true : false;
-			String existingParentPath = (String) pageInfo.get("parent_path");
-			String existingAssetName = (String) pageInfo.get("asset_name");
+			final boolean fixAllVersions = versionCounter == 1 ? true : false;
+			final String existingParentPath = (String) pageInfo.get("parent_path");
+			final String existingAssetName = (String) pageInfo.get("asset_name");
+
 			// Current working and live inodes for the existing page used to 
 			// re-index the page after changing its data
-			String workingInode = (String) pageInfo.get("working_inode");
-			String liveInode = (String) pageInfo.get("live_inode");
-			Long languageId = (Long) pageInfo.get("lang");
-			if (languageId == existingLanguageId) {
-				// New Inodes that will be set for the existing page
-				String newWorkingInode = UUIDGenerator.generateUuid();
-				String newLiveInode = newWorkingInode;
-				if (!workingInodeToChange.equalsIgnoreCase(liveInodeToChange)) {
-					newLiveInode = UUIDGenerator.generateUuid();
-				}
+			final String workingInode = (String) pageInfo.get("working_inode");
+			final String liveInode = (String) pageInfo.get("live_inode");
+			final Long languageId = DbConnectionFactory.isOracle() ? ((BigDecimal) pageInfo.get("lang")).longValue() : (Long) pageInfo.get("lang");
+
+			if (affectedIdentifier.isLanguageAffected(languageId)) {
+			    // Language was affected so we need to fix it
+			    final String liveInodeToChange = affectedIdentifier.getLiveAffectedInode(languageId);
+			    final String workingInodeToChange = affectedIdentifier.getWorkingAffectedInode(languageId);
+
+                // New Inodes that will be set for the existing page
+				final String newWorkingInode = UUIDGenerator.generateUuid();
+				final String newLiveInode = (!workingInodeToChange.equalsIgnoreCase(liveInodeToChange)) ? UUIDGenerator.generateUuid() : newWorkingInode;
+
 				Map<String, Object> existingPageData = new HashMap<String, Object>();
 				existingPageData.put("local_identifier", identifierToChange);
 				existingPageData.put("remote_identifier", newIdentifier);
-				existingPageData.put(getIntegrityType()
-						.getFirstDisplayColumnLabel(), existingParentPath
-						+ existingAssetName);
+				existingPageData.put(getIntegrityType().getFirstDisplayColumnLabel(), existingParentPath + existingAssetName);
 				existingPageData.put("local_working_inode", workingInodeToChange);
 				existingPageData.put("local_live_inode", liveInodeToChange);
 				existingPageData.put("remote_working_inode", newWorkingInode);
 				existingPageData.put("remote_live_inode", newLiveInode);
-				existingPageData.put("language_id",
-						new Long(pageInfo.get("lang").toString()));
-				boolean addNewVersionInfo = false;
-				if (workingInode.equalsIgnoreCase(workingInodeToChange)
-						&& liveInode.equalsIgnoreCase(liveInodeToChange)) {
-					addNewVersionInfo = true;
-				}
+				// Important: We need to change the language to prevent errors with Oracle
+				existingPageData.put("language_id", DbConnectionFactory.isOracle() ? new BigDecimal(languageId) : languageId);
+
+				boolean addNewVersionInfo = (workingInode.equalsIgnoreCase(workingInodeToChange) && liveInode.equalsIgnoreCase(liveInodeToChange)) ? true : false;
 				fixContentPageConflicts(existingPageData, fixAllVersions,
 						addNewVersionInfo, workingInode, liveInode);
 			} else {
+			    // We don't need to change anything just reindex.
 				reindexExistingPage(identifierToChange, existingAssetName,
 						newIdentifier, workingInode, liveInode, languageId,
 						fixAllVersions);
@@ -800,15 +806,13 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         List<Map<String, Object>> results = dc.loadObjectResults();
         if (results == null || results.size() == 0) {
             dc.setSQL("INSERT INTO identifier(id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date) "
-                    + "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date "
-                    + "FROM identifier WHERE id = ?");
+                    + "SELECT ? , parent_path, 'TEMP_CONTENTPAGE_NAME', host_inode, asset_type, syspublish_date, sysexpire_date FROM identifier WHERE id = ?");
             dc.addParam(newHtmlPageIdentifier);
             dc.addParam(oldHtmlPageIdentifier);
             dc.loadResult();
         }
         // Insert the new working Inode record
-        dc.setSQL("INSERT INTO inode(inode, owner, idate, type) " + "SELECT ?, owner, idate, type "
-                + "FROM inode i WHERE i.inode = ?");
+        dc.setSQL("INSERT INTO inode(inode, owner, idate, type) SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?");
         dc.addParam(remoteWorkingInode);
         dc.addParam(localWorkingInode);
         dc.loadResult();
@@ -816,7 +820,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         if (!remoteWorkingInode.equals(remoteLiveInode) && UtilMethods.isSet(remoteLiveInode)
                 && UtilMethods.isSet(localLiveInode)) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type) "
-                    + "SELECT ?, owner, idate, type " + "FROM inode i WHERE i.inode = ?");
+                    + "SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?");
             dc.addParam(remoteLiveInode);
             dc.addParam(localLiveInode);
             dc.loadResult();
@@ -855,8 +859,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
         	// Insert the new Contentlet_version_info record with the new Inode
 	        if (UtilMethods.isSet(remoteLiveInode) && UtilMethods.isSet(localLiveInode)) {
 	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-	                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts "
-	                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+	                    + "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
 	            dc.addParam(newHtmlPageIdentifier);
 	            dc.addParam(languageId);
 	            dc.addParam(remoteWorkingInode);
@@ -866,16 +869,28 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 	            dc.addParam(languageId);
 	            dc.loadResult();
 	        } else {
-	            dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
-	                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts "
-	                    + "FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
-	            dc.addParam(newHtmlPageIdentifier);
-	            dc.addParam(languageId);
-	            dc.addParam(remoteWorkingInode);
-	            dc.addParam(oldHtmlPageIdentifier);
-	            dc.addParam(localWorkingInode);
-	            dc.addParam(languageId);
-	            dc.loadResult();
+	        	if(UtilMethods.isSet(localWorkingInode) && UtilMethods.isSet(localLiveInode) && localWorkingInode.equals(localLiveInode)){
+					dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+							+ "SELECT ?, ?, ?, ?, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+					dc.addParam(newHtmlPageIdentifier);
+					dc.addParam(languageId);
+					dc.addParam(remoteWorkingInode);
+					dc.addParam(remoteWorkingInode);
+					dc.addParam(oldHtmlPageIdentifier);
+					dc.addParam(localWorkingInode);
+					dc.addParam(languageId);
+					dc.loadResult();
+				}else{
+		        	dc.setSQL("INSERT INTO contentlet_version_info(identifier, lang, working_inode, live_inode, deleted, locked_by, locked_on, version_ts) "
+		                    + "SELECT ?, ?, ?, live_inode, deleted, locked_by, locked_on, version_ts FROM contentlet_version_info WHERE identifier = ? AND working_inode = ? AND lang = ?");
+		            dc.addParam(newHtmlPageIdentifier);
+		            dc.addParam(languageId);
+		            dc.addParam(remoteWorkingInode);
+		            dc.addParam(oldHtmlPageIdentifier);
+		            dc.addParam(localWorkingInode);
+		            dc.addParam(languageId);
+		            dc.loadResult();
+		        }
 	        }
 	        // Remove the live_inode references from Contentlet_version_info
 	        dc.setSQL("DELETE FROM contentlet_version_info WHERE identifier = ? AND lang = ? AND working_inode = ?");
@@ -1074,6 +1089,7 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 			indexAPI.removeContentFromIndex(oldLivePage);
 		}
 		// Clear cache entries of ALL versions of the Contentlet too
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(identifier);
 		CacheLocator.getContentletCache().remove(localWorkingInode);
 		CacheLocator.getIdentifierCache().removeFromCacheByInode(
 				localWorkingInode);
@@ -1100,4 +1116,88 @@ public class HtmlPageIntegrityChecker extends AbstractIntegrityChecker {
 		}
 	}
 
+    /**
+     * This private class is used to stored information related with the identifier that has a conflict.
+     * to fix conflicts when a page is moved in the receiver
+     *
+     */
+    private static class AffectedIdentifierInfoBucket {
+        private final String affectedIdentifier;
+        private int counter = 0;
+        // key = language id // value = affected working and live inodes
+        private final HashMap<Long, AffectedContentletVersion> affectedContentletVersions = new HashMap<Long, AffectedContentletVersion>();
+
+        static AffectedIdentifierInfoBucket build(final String affectedIdentifier) {
+            return new AffectedIdentifierInfoBucket(affectedIdentifier);
+        }
+
+        private AffectedIdentifierInfoBucket(final String affectedIdentifier) {
+            this.affectedIdentifier = affectedIdentifier;
+        }
+
+        public boolean isLanguageAffected(Long languageId) {
+            if (languageId != null) {
+                return affectedContentletVersions.get(languageId) != null;
+            }
+
+            return false;
+        }
+
+        public boolean needsToCheckPossibleConflicts() {
+            return affectedContentletVersions.size() == counter;
+        }
+
+        public AffectedIdentifierInfoBucket addAffectedLanguage(final Long language,
+                final String affectedLiveInode, final String affectedWorkingInode) {
+            if (language != null) {
+                this.counter++;
+                this.affectedContentletVersions.put(language, new AffectedContentletVersion(affectedLiveInode, affectedWorkingInode));
+            }
+
+            return this;
+        }
+
+        public AffectedIdentifierInfoBucket decrementCounter() {
+            counter--;
+            return this;
+        }
+
+        public String getAffectedIdentifier() {
+            return affectedIdentifier;
+        }
+
+        public int getCounter() {
+            return counter;
+        }
+        
+        public String getWorkingAffectedInode(Long languageId) {
+            return this.affectedContentletVersions.get(languageId).getAffectedWorkingInode();
+        }
+        
+        public String getLiveAffectedInode(Long languageId) {
+            return this.affectedContentletVersions.get(languageId).getAffectedLiveInode();
+        }
+
+        /**
+         * This class was made to store working and live inodes that may cause
+         * conflicts
+         */
+        private class AffectedContentletVersion {
+            private final String workingInode;
+            private final String liveInode;
+
+            AffectedContentletVersion(final String liveInode, final String workingInode) {
+                this.workingInode = workingInode;
+                this.liveInode = liveInode;
+            }
+
+            public String getAffectedLiveInode() {
+                return liveInode;
+            }
+
+            public String getAffectedWorkingInode() {
+                return workingInode;
+            }
+        }
+    }
 }

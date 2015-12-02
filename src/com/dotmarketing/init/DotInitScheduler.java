@@ -501,6 +501,10 @@ public class DotInitScheduler {
 						sched.deleteJob("DashboardJobImpl", "dotcms_jobs");
 						job = new JobDetail("DashboardJobImpl", "dotcms_jobs", DashboardProxy.getDashboardJobImplClass());
 						isNew = true;
+					}catch(IllegalArgumentException e){
+						//Only enter here in case of "Job class must implement the Job interface." exception after version migration 
+						job = new JobDetail("DashboardJobImpl", "dotcms_jobs", DashboardProxy.getDashboardJobImplClass());
+						isNew = false;						
 					}
 					calendar = GregorianCalendar.getInstance();
 				    trigger = new CronTrigger("trigger15", "group15", "DashboardJobImpl", "dotcms_jobs", calendar.getTime(), null,Config.getStringProperty("DASHBOARD_POPULATE_TABLES_CRON_EXPRESSION"));

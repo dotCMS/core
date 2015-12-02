@@ -156,6 +156,21 @@ public interface ContentletAPI {
 	public List<Contentlet> findContentletsByHost(Host parentHost, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
+	 * Gets a list of Contentlets from a given parent host, retrieves the working version of content. The difference between this method and the other one
+	 * is that the user can specify which content type want to include and exclude.
+	 * NOTE: If the parameters includingContentTypes and excludingContentTypes are empty if will return all the contentlets.
+	 * @param parentHost
+	 * @param includingContentTypes this is a list of content types that you would like to include in the results
+	 * @param excludingContentTypes this is a list of content types that you would like to exclude in the results
+	 * @param user
+	 * @param respectFrontendRoles
+	 * @return list of contentlets
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public List<Contentlet> findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
 	 * Copies a contentlet, including all its fields including binary files, image and file fields are pointers and the are preserved as the are
 	 * so if source contentlet points to image A and resulting new contentlet will point to same image A as well, also copies source permissions.
 	 * 
@@ -781,6 +796,15 @@ public interface ContentletAPI {
 	 * @throws DotReindexStateException
 	 */
 	public void refreshContentUnderFolder(Folder folder)throws DotReindexStateException;
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotReindexStateException
+	 */
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException;
 	
 	/**
 	 * Get all the files relates to the contentlet

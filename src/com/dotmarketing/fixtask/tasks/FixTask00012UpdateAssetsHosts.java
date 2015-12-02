@@ -231,7 +231,7 @@ public class FixTask00012UpdateAssetsHosts implements FixTask {
 			java.io.File _writing = null;
 			
 			if (!new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes").exists()) {
-				new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdir();
+				new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes").mkdirs();
 			}
 			
 			_writing = new java.io.File(ConfigUtils.getBackupPath()+File.separator+"fixes");

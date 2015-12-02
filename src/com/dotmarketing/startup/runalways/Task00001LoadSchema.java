@@ -74,7 +74,7 @@ public class Task00001LoadSchema implements StartupTask {
 			DotConnect dc = new DotConnect();
 			java.sql.Connection con = DbConnectionFactory.getConnection();
 			if(DbConnectionFactory.isMySql()){
-				dc.executeStatement("SET storage_engine=INNODB", con);
+				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", con);
 			}
 			for (String token : tokens) {
 				++processedStatementCount;
@@ -83,6 +83,9 @@ public class Task00001LoadSchema implements StartupTask {
 				}catch (Exception e) {
 					Logger.fatal(this.getClass(), "Error: " + e.getMessage() + "while trying to execute " + token + " proccessed "
 							+ processedStatementCount + " statements", e);
+					if (br != null) {
+						br.close();
+					}
 					throw new DotDataException(e.getMessage(),e);
 				}
 			}

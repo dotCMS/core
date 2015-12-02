@@ -40,6 +40,23 @@ public interface DistributedJournalAPI<T> {
 	public List<IndexJournal<T>> findContentReindexEntriesToReindex() throws DotDataException;
 	
 	/**
+	 * Will return only the re-index entries for the specific server the code is
+	 * executed on. This method will also delete all entries from the table that
+	 * are returned in the select. Also, this method will allow to retrieve
+	 * records with a priority that indicates they could not be re-indexed.
+	 * 
+	 * @param includeFailedRecords
+	 *            - If {@code true}, this method will only retrieve records that
+	 *            tried to be re-indexed at least once and failed. If
+	 *            {@code false}, ONLY the records that haven't been processed
+	 *            will be returned.
+	 * @return The list of records that will be re-indexed.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 */
+	public List<IndexJournal<T>> findContentReindexEntriesToReindex(boolean includeFailedRecords) throws DotDataException;
+	
+	/**
 	 * Moves/process records from the dist_process table to the dist_journal table for all servers
 	 * @throws DotDataException
 	 */
@@ -166,5 +183,14 @@ public interface DistributedJournalAPI<T> {
 	 * @throws DotDataException
 	 */
 	public void refreshContentUnderFolder(Folder folder) throws DotDataException;
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotDataException
+	 */
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
 	
 }

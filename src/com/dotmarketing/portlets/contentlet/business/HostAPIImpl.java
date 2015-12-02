@@ -856,11 +856,13 @@ public class HostAPIImpl implements HostAPI {
 		if (!UtilMethods.isSet(id))
 			return null;
 
+		String languageIdColumn = "language_id";
+
 		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
 
 		StringBuilder sql = new StringBuilder();
-		sql.append("SELECT inode");
+		sql.append("SELECT inode," + languageIdColumn);
 		for (Field field: fields) {
 			if (APILocator.getFieldAPI().valueSettable(field) && !field.getFieldType().equals(Field.FieldType.BINARY.toString())) {
 				sql.append(", " + field.getVelocityVarName());
@@ -881,8 +883,13 @@ public class HostAPIImpl implements HostAPI {
 		Host host = new Host();
 
 		for (String key: list.get(0).keySet()) {
-			host.setProperty(key, list.get(0).get(key));
+			if ( key.equals(languageIdColumn) ) {
+				host.setProperty(Contentlet.LANGUAGEID_KEY, list.get(0).get(key));
+			} else {
+				host.setProperty(key, list.get(0).get(key));
+			}
 		}
+		host.setProperty(Contentlet.MOD_DATE_KEY, new Date());//We don't really need this value for the system host but to avoid problems casting that field....
 
 		return host;
 	}

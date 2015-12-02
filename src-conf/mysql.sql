@@ -2546,7 +2546,7 @@ alter table structure modify column velocity_var_name varchar(255) not null;
 alter table structure add constraint unique_struct_vel_var_name unique (velocity_var_name);
 
 DROP PROCEDURE IF EXISTS load_records_to_index;
-CREATE PROCEDURE load_records_to_index(IN server_id VARCHAR(100), IN records_to_fetch INT)
+CREATE PROCEDURE load_records_to_index(IN server_id VARCHAR(100), IN records_to_fetch INT, IN priority_level INT)
 BEGIN
 DECLARE v_id BIGINT;
 DECLARE v_inode_to_index VARCHAR(100);
@@ -2557,7 +2557,7 @@ DECLARE v_time_entered TIMESTAMP;
 DECLARE v_index_val VARCHAR(325);
 DECLARE v_dist_action INT;
 DECLARE cursor_end BOOL DEFAULT FALSE;
-DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' ORDER BY priority ASC LIMIT 50 FOR UPDATE;
+DECLARE cur1 CURSOR FOR SELECT * FROM dist_reindex_journal WHERE serverid IS NULL or serverid='' AND priority <= priority_level ORDER BY priority ASC LIMIT records_to_fetch FOR UPDATE;
 DECLARE CONTINUE HANDLER FOR NOT FOUND SET cursor_end:=TRUE;
 
 DROP TEMPORARY TABLE IF EXISTS tmp_records_reindex;
@@ -2985,9 +2985,6 @@ alter table link_version_info       add constraint FK_link_ver_info_lockedby    
 ALTER TABLE tag ALTER COLUMN host_id set default 'SYSTEM_HOST';
 alter table tag add constraint tag_tagname_host unique (tagname, host_id);
 alter table tag_inode add constraint fk_tag_inode_tagid foreign key (tag_id) references tag (tag_id);
-
-alter table tag modify user_id varchar(9999);
-alter table tag modify user_id longtext;
 
 -- ****** Indicies Data Storage *******
 create table indicies (

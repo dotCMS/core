@@ -153,6 +153,14 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   for ( Structure s : sts ) {
                                       if ( s.getInode().equals( identifier ) ) {
                                           st = s;
+                                          type = "structure";
+                                      }
+                                  }
+                                  if ( UtilMethods.isSet( st ) ) {
+                                      if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
+                                          //Generate and append the error message
+                                          appendPermissionError( errorsList, user, "Structure", st.getName(), st.getIdentifier() );
+                                          continue;
                                       }
                                   }
                                   Folder folder;
@@ -162,23 +170,14 @@ public class PublisherAPIImpl extends PublisherAPI{
                                    *
                                    */
                                   // check if it is a category
-                                  if ( CATEGORY.equals( identifier ) ) {
+                                  if ( !UtilMethods.isSet(type) && CATEGORY.equals( identifier ) ) {
                                       type = "category";
-                                  } else if ( UtilMethods.isSet( st ) ) {
-                                      if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
-                                          //Generate and append the error message
-                                          appendPermissionError( errorsList, user, "Structure", st.getName(), st.getIdentifier() );
-                                          continue;
-                                      }
-
-                                      type = "structure";
-                                  }
-                                  // Check if it is a language
-                                  if(APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
+                                  } // check if it is a language
+                                  else if(!UtilMethods.isSet(type) && APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
                                       type = Language.ASSET_TYPE;
                                   }
                                   // check if it is a folder
-                                  else if ( UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
+                                  else if ( !UtilMethods.isSet(type) && UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                           //Generate and append the error message
                                           appendPermissionError( errorsList, user, "Folder", folder.getName(), folder.getIdentifier() );
