@@ -1265,7 +1265,7 @@ public class Task00785DataModelChanges implements StartupTask  {
 		try {
 		    DbConnectionFactory.getConnection().setAutoCommit(true);
 		  if (DbConnectionFactory.isMySql())
-			 dc.executeStatement("SET storage_engine=INNODB");
+			 dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB");
 		  if (DbConnectionFactory.isMsSql())
 		     dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED");
 

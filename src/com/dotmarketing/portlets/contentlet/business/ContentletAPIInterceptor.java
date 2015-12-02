@@ -851,6 +851,29 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+    public List<Contentlet> findContentletsByHost(Host parentHost,
+            List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user,
+            boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            boolean preResult = pre.findContentletsByHost(parentHost, includingContentTypes,
+                    excludingContentTypes, user, respectFrontendRoles);
+            if (!preResult) {
+                Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+                throw new DotRuntimeException("The following prehook failed "
+                        + pre.getClass().getName());
+            }
+        }
+
+        List<Contentlet> c = conAPI.findContentletsByHost(parentHost, includingContentTypes,
+                excludingContentTypes, user, respectFrontendRoles);
+
+        for (ContentletAPIPostHook post : postHooks) {
+            post.findContentletsByHost(parentHost, includingContentTypes,
+                    excludingContentTypes, user, respectFrontendRoles);
+        }
+        return c;
+    }
+
 	/* (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPI#findContentletsByIdentifiers(java.lang.String[], boolean, long, com.liferay.portal.model.User, boolean)
 	 */
@@ -2152,6 +2175,21 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		conAPI.refreshContentUnderFolder(folder);
 		for(ContentletAPIPostHook post : postHooks){
 			post.refreshContentUnderFolder(folder);
+		}
+	}
+
+	public void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
+
+		for ( ContentletAPIPreHook pre : preHooks ) {
+			boolean preResult = pre.refreshContentUnderFolderPath(hostId, folderPath);
+			if ( !preResult ) {
+				Logger.error(this, "The following prehook failed " + pre.getClass().getName());
+				throw new DotRuntimeException("The following prehook failed " + pre.getClass().getName());
+			}
+		}
+		conAPI.refreshContentUnderFolderPath(hostId, folderPath);
+		for ( ContentletAPIPostHook post : postHooks ) {
+			post.refreshContentUnderFolderPath(hostId, folderPath);
 		}
 	}
 

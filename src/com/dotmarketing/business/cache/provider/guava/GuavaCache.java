@@ -21,6 +21,8 @@ public class GuavaCache extends CacheProvider {
 
     private static final long serialVersionUID = 1348649382678659786L;
 
+    private Boolean isInitialized = false;
+
     static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
     static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
     static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
@@ -65,6 +67,12 @@ public class GuavaCache extends CacheProvider {
             }
         }
 
+        isInitialized = true;
+    }
+
+    @Override
+    public boolean isInitialized () throws Exception {
+        return isInitialized;
     }
 
     @Override
@@ -198,7 +206,8 @@ public class GuavaCache extends CacheProvider {
 
     @Override
     public void shutdown () {
-
+        Logger.info(this.getClass(), "===== Calling shutdown [" + getName() + "].");
+        isInitialized = false;
     }
 
     private Cache<String, Object> getCache ( String cacheName ) {

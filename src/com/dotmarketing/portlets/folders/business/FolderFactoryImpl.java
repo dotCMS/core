@@ -624,6 +624,7 @@ public class FolderFactoryImpl extends FolderFactory {
         }
         CacheLocator.getNavToolCache().removeNavByPath( folderId.getHostId(), folderId.getParentPath() );
         fc.removeFolder( folder, folderId );
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(folderId.getId());
 
 		User systemUser = APILocator.getUserAPI().getSystemUser();
 		boolean contains = false;

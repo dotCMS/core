@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.Comparator;
 import java.util.List;
 
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -18,8 +19,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.TaskLocatorUtil;
-
-import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Collections;
 
 public class StartupTasksExecutor {
 
@@ -50,10 +49,6 @@ public class StartupTasksExecutor {
 	private String msSelect = "SELECT max(db_version) AS db_version FROM db_version";
 	private String h2Select = "SELECT max(db_version) AS db_version FROM db_version";
 
-//	private String pgSelect = "SELECT * FROM db_version ORDER BY db_version DESC LIMIT 1;";
-//	private String mySelect = "SELECT * FROM db_version ORDER BY db_version DESC LIMIT 1;";
-//	private String oraSelect = "SELECT * FROM db_version WHERE rownum<=1 ORDER BY db_version DESC";
-	
 	private String lock;
 	private String commit;
 	private String create;
@@ -155,7 +150,7 @@ public class StartupTasksExecutor {
 			try {
 				conn.rollback();
 				if(DbConnectionFactory.isMySql()){
-					s.execute("SET storage_engine=INNODB");
+					s.execute("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB");
 				}
 				s.execute(create);
 				if(update==null) {

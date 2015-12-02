@@ -24,9 +24,7 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.*;
 
 /**
- * The Guava cache administrator uses Google's Guave code
- * under the covers and gets it's startup params from the dotmarketing-config.properties
- * on a put where the non legacy one will not.
+ * Cache administrator that uses the CacheProviders infrastructure (Cache chains)
  *
  * @author Jason Tesser
  * @version 1.6.5

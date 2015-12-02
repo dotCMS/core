@@ -6,8 +6,8 @@ import java.util.List;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.business.journal.DistributedJournalAPI.DateType;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 
 /**
  * 
@@ -18,6 +18,9 @@ public abstract class DistributedJournalFactory<T> {
 
 	public static final int JOURNAL_TYPE_CONTENTENTINDEX = 1;
 	public static final int JOURNAL_TYPE_CACHE = 2;
+	
+	public static final int RETRY_FAILED_INDEX_TIMES = Config.getIntProperty("RETRY_FAILED_INDEX_TIMES", 5);
+	public static final int REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT = 40;
 	public static final int REINDEX_JOURNAL_PRIORITY_NEWINDEX = 30;
 	public static final int REINDEX_JOURNAL_PRIORITY_STRUCTURE_REINDEX = 20;
 	public static final int REINDEX_JOURNAL_PRIORITY_CONTENT_CAN_WAIT_REINDEX = 15;
@@ -52,6 +55,23 @@ public abstract class DistributedJournalFactory<T> {
 	 * @throws DotDataException
 	 */
 	protected abstract List<IndexJournal<T>> findContentReindexEntriesToReindex () throws DotDataException;
+	
+	/**
+	 * Will return only the re-index entries for the specific server the code is
+	 * executed on. This method will also delete all entries from the table that
+	 * are returned in the select. Also, this method will allow to retrieve
+	 * records with a priority that indicates they could not be re-indexed.
+	 * 
+	 * @param includeFailedRecords
+	 *            - If {@code true}, this method will only retrieve records that
+	 *            tried to be re-indexed at least once and failed. If
+	 *            {@code false}, ONLY the records that haven't been processed
+	 *            will be returned.
+	 * @return The list of records that will be re-indexed.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 */
+	protected abstract List<IndexJournal<T>> findContentReindexEntriesToReindex (boolean includeFailedRecords) throws DotDataException;
 	
 	/**
 	 * Will delete all content reindex entries for a specific serverId less then the id passed in 
@@ -161,5 +181,14 @@ public abstract class DistributedJournalFactory<T> {
 	 * @throws DotDataException
 	 */
 	protected abstract void refreshContentUnderFolder(Folder folder) throws DotDataException;
-    
+
+	/**
+	 * Reindexes content under a given folder path
+	 *
+	 * @param hostId
+	 * @param folderPath
+	 * @throws DotDataException
+	 */
+	protected abstract void refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotDataException;
+
 }

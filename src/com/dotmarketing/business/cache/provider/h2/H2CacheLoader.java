@@ -24,6 +24,8 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 
 	private static final long serialVersionUID = 5285667050052706116L;
 
+	private Boolean isInitialized = false;
+
 	static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
 	static final String LIVE_CACHE_PREFIX = CacheProviderAPI.LIVE_CACHE_PREFIX;
 	static final String WORKING_CACHE_PREFIX = CacheProviderAPI.WORKING_CACHE_PREFIX;
@@ -83,6 +85,13 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 
 		create();
+
+		isInitialized = true;
+	}
+
+	@Override
+	public boolean isInitialized () throws Exception {
+		return isInitialized;
 	}
 
 	@Override
@@ -229,6 +238,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 	@Override
 	public void shutdown () {
 		destroy();
+		isInitialized = false;
 	}
 	
 	public void resetCannotCacheCache(){
@@ -448,7 +458,7 @@ public class H2CacheLoader extends CacheProvider implements CacheLoader {
 		}
 		fqn = Fqn.fromString(fqn.toString().toLowerCase());
 		if (fqn.toString().length() > 255) {
-			Logger.error(this.getClass(), "Key exceeded 255 characters [" + fqn.toString() + "]");
+			Logger.warn(this.getClass(), "Key exceeded 255 characters [" + fqn.toString() + "]");
 			return;
 		}
 

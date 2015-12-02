@@ -313,7 +313,7 @@ public class IntegrityUtil {
                 return new ArrayList<Map<String, Object>>();
             }
 
-            dc.setSQL("select * from " + resultsTableName + " where endpoint_id = ?");
+            dc.setSQL("select * from " + resultsTableName + " where endpoint_id = ? ORDER BY " + type.getFirstDisplayColumnLabel());
             dc.addParam(endpointId);
 
             return dc.loadObjectResults();

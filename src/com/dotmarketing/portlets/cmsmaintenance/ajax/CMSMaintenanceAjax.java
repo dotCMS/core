@@ -124,6 +124,26 @@ public class CMSMaintenanceAjax {
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
 
+	/**
+	 * Stops the re-indexation process and switches over to the new index data.
+	 * This is useful when there only a few contents that could not be
+	 * re-indexed and can be either fixed or deleted in the future.
+	 * 
+	 * @return A {@link Map} containing status information after switching to
+	 *         the new index.
+	 * @throws SQLException
+	 *             An error occurred when interacting with the database.
+	 * @throws DotDataException
+	 *             The process to switch to the new failed.
+	 * @throws InterruptedException
+	 *             The established pauses to switch to the new index failed.
+	 */
+	public Map stopReindexationAndSwitchover() throws DotDataException, SQLException, InterruptedException {
+		validateUser();
+		ReindexThread.getInstance().stopFullReindexationAndSwitchover();
+		return ESReindexationProcessStatus.getProcessIndexationMap();
+	}
+
     public String cleanReindexStructure(String inode) throws DotDataException {
     	validateUser();
     	Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(inode);

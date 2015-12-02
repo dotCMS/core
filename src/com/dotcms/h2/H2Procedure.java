@@ -9,7 +9,7 @@ import java.sql.Types;
 import org.h2.tools.SimpleResultSet;
 
 public class H2Procedure {
-    public static ResultSet loadRecordsToIndex(Connection conn, String serverId, int records) throws SQLException {
+    public static ResultSet loadRecordsToIndex(Connection conn, String serverId, int records, int priorityLevel) throws SQLException {
         
         SimpleResultSet ret=new SimpleResultSet();
         ret.addColumn("id", Types.INTEGER, 10, 0);
@@ -20,8 +20,9 @@ public class H2Procedure {
         PreparedStatement update=conn.prepareStatement("UPDATE dist_reindex_journal SET serverid=? WHERE id=?");
         
         PreparedStatement smt=conn.prepareStatement("SELECT * FROM dist_reindex_journal "
-                + "WHERE serverid IS NULL ORDER BY priority ASC LIMIT ? FOR UPDATE");
-        smt.setInt(1, records);
+                + "WHERE serverid IS NULL AND priority <= ? ORDER BY priority ASC LIMIT ? FOR UPDATE");
+        smt.setInt(1, priorityLevel);
+        smt.setInt(2, records);
         ResultSet rs=smt.executeQuery();
         
         while(rs.next()) {
