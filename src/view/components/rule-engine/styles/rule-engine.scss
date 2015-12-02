@@ -22,6 +22,21 @@ $primary-one: #209021;
   display: none !important;
 }
 
+.cw-button-link.ui.basic.black.button {
+    box-shadow: none !important;
+}
+
+.cw-button-link.ui.basic.black.button {
+  &:focus, &:hover, &:active {
+    box-shadow: none !important;
+    background-color: inherit;
+  }
+}
+
+.cw-filter-links {
+  //margin-left: .25em;
+}
+
 .cw-rule {
   margin: 0 2em 2em 2em;
   border: 1px solid $background-primary;

@@ -20,8 +20,7 @@ import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ConditionService} from "../../../api/rule-engine/Condition";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
-
-
+import {CwFilter} from "../../../api/util/CwFilter"
 
   /**
    *
@@ -31,23 +30,25 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   })
   @View({
     template: `<div flex layout="column" class="cw-rule-engine">
-  <div flex layout="row" layout-align="space-between center" class="cw-header">
+  <div flex layout="column" layout-align="start start" class="cw-header">
+  <div flex layout="row" layout-align="space-between center">
     <div flex layout="row" layout-align="space-between center" class="ui icon input">
       <i class="filter icon"></i>
       <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
     </div>
     <div flex="2"></div>
-    <button  class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
+    <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
       <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
     </button>
   </div>
-  <div>
-  <p>Show:</p>
-  <a href="#" (click)="changeFilterStatus('ALL')">All ({{rules.length}})</a>
-  <a href="#" (click)="changeFilterStatus('ACTIVE')">Active ({{activeRules}}/{{rules.length}}) </a>
-  <a href="#" (click)="changeFilterStatus('INACTIVE')">Inactive ({{inactiveRules}}/{{rules.length}}) </a>
+    <div class="cw-filter-links">
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">All ({{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">Active ({{activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">Inactive ({{inactiveRules}}/{{rules.length}})</button>
+    </div>
   </div>
-  <rule flex layout="row" *ng-for="var r of filteredRules()" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
+
+  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="isFiltered(r)"></rule>
 </div>
 
 `,
@@ -55,29 +56,28 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   })
   export class RuleEngineComponent {
     rules:RuleModel[];
-    filterText:string;
-  	status:string;
-	activeRules:number;
-	inactiveRules:number;
+    filterText:string
+    status:string
+    activeRules:number
+    inactiveRules:number
     rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(
-        @Inject(ActionTypeService) actionTypeService:ActionTypeService,
-        @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
-        @Inject(RuleService) ruleService:RuleService) {
+    constructor(@Inject(ActionTypeService) actionTypeService:ActionTypeService,
+                @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
+                @Inject(RuleService) ruleService:RuleService) {
       actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.rsrc = ruleService.rsrc
-      ruleService.onResourceUpdate.subscribe((messages)=>{
+      ruleService.onResourceUpdate.subscribe((messages)=> {
         this.rsrc = messages
       })
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []
-      this.status = "ALL"
+      this.status = null
       this.ruleService.onAdd.subscribe(
           (rule:RuleModel) => {
             this.handleAdd(rule)
@@ -146,7 +146,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
           this.ruleService.save(this.ruleStub)
         }
       })
-      this.changeFilterStatus('ALL')
+      this.changeFilterStatus(null)
     }
 
     getFilteredRulesStatus() {
@@ -162,13 +162,62 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
     	}
     }
 
-    filteredRules(){
-    	return this.rules.filter((element) => this.status == 'ALL' || (this.status == 'ACTIVE' &&  element.enabled) ||  (this.status == 'INACTIVE' &&  !element.enabled))
+
+    setFieldFilter(field:string, value:string=null){
+      // remove old status
+      var re = new RegExp(field + ':[\\w]*')
+      this.filterText = this.filterText.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
+      if(value !== null) {
+        this.filterText = field + ':' + value + ' ' + this.filterText
+      }
     }
 
-    changeFilterStatus(newStatus:string){
-    	this.status = newStatus;
+    isFilteringField(field:string, value:any=null):boolean{
+      let isFiltering
+      if(value === null){
+        var re = new RegExp(field + ':[\\w]*')
+        isFiltering =  this.filterText.match(re) != null
+      } else{
+        isFiltering = this.filterText.indexOf(field + ':' + value) >= 0
+      }
+      return isFiltering
     }
+
+    isFiltered(rule:RuleModel):boolean {
+      let isFiltered = false
+      if (this.filterText != '') {
+        let filter = this.filterText
+
+        let re = /([\w]*[:][\w]*)/
+        let matches = this.filterText.match(re);
+        if (matches != null) {
+          // 'match' is now an array of the field filters.
+          matches.forEach(match => {
+            let terms = match.split(':')
+            filter = filter.replace(match, '');
+            if (!isFiltered) {
+              let fieldName = terms[0]
+              let fieldValue = terms[1]
+              console.log('YAR match', match, fieldName, fieldValue)
+              let hasField = rule.hasOwnProperty(fieldName) || rule.hasOwnProperty('_' + fieldName)
+              if (hasField) {
+                try {
+                  isFiltered = (rule[fieldName] !== fieldValue && rule[fieldName] !== CwFilter.transformValue(fieldValue))
+                } catch (e) {
+                  console.log("Error while trying to check a field value while filtering.", e)
+                }
+              }
+            }
+          })
+        }
+        filter = filter.trim().toLowerCase()
+        if(filter){
+          isFiltered = isFiltered || !(rule.name.toLowerCase().indexOf(filter) >= 0 )
+        }
+      }
+      return isFiltered
+    }
+
 
   }
 
