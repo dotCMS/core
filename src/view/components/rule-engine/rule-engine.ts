@@ -41,7 +41,13 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
       <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
     </button>
   </div>
-  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
+  <div>
+  <p>Show:</p>
+  <a href="#" (click)="changeFilterStatus('ALL')">All ({{rules.length}})</a>
+  <a href="#" (click)="changeFilterStatus('ACTIVE')">Active ({{activeRules}}/{{rules.length}}) </a>
+  <a href="#" (click)="changeFilterStatus('INACTIVE')">Inactive ({{inactiveRules}}/{{rules.length}}) </a>
+  </div>
+  <rule flex layout="row" *ng-for="var r of filteredRules()" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
 </div>
 
 `,
@@ -50,6 +56,9 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   export class RuleEngineComponent {
     rules:RuleModel[];
     filterText:string;
+  	status:string;
+	activeRules:number;
+	inactiveRules:number;
     rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
@@ -68,6 +77,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []
+      this.status = "ALL"
       this.ruleService.onAdd.subscribe(
           (rule:RuleModel) => {
             this.handleAdd(rule)
@@ -100,19 +110,21 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
       rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
         this.handleRuleChange(event)
       })
+      this.getFilteredRulesStatus()
     }
 
     handleRuleChange(event:CwChangeEvent<RuleModel>) {
       if (event.target.valid) {
         this.ruleService.save(event.target)
       }
+      this.getFilteredRulesStatus()
     }
 
     handleRemove(rule:RuleModel) {
       this.rules = this.rules.filter((arrayRule) => {
         return arrayRule.key !== rule.key
       })
-
+      this.getFilteredRulesStatus()
       // @todo ggranum: we're leaking Subscribers here, sadly. Might cause issues for long running edit sessions.
     }
 
@@ -134,6 +146,28 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
           this.ruleService.save(this.ruleStub)
         }
       })
+      this.changeFilterStatus('ALL')
+    }
+
+    getFilteredRulesStatus() {
+    	this.activeRules = 0;
+    	this.inactiveRules = 0;
+    	for (var i = 0;  i < this.rules.length ; i++){
+    		if (this.rules[i].enabled){
+    			this.activeRules++;
+    		}
+    		else{
+    			this.inactiveRules++;
+    		}
+    	}
+    }
+
+    filteredRules(){
+    	return this.rules.filter((element) => this.status == 'ALL' || (this.status == 'ACTIVE' &&  element.enabled) ||  (this.status == 'INACTIVE' &&  !element.enabled))
+    }
+
+    changeFilterStatus(newStatus:string){
+    	this.status = newStatus;
     }
 
   }
