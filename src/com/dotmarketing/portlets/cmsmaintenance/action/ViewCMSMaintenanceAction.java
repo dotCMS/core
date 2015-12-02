@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -36,6 +37,7 @@ import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
@@ -50,7 +52,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.common.business.journal.DistributedJournalFactory;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -98,6 +102,7 @@ import com.liferay.util.servlet.UploadPortletRequest;
  * (Cache controll, search and replace, import/export content )
  *
  * @author Oswaldo
+ * @version 3.3
  *
  */
 public class ViewCMSMaintenanceAction extends DotPortletAction {
@@ -223,6 +228,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 				message = "message.cmsmaintenance.cache.deletefiles";
 			}
+		} // Download the records that could not be re-indexed in a CSV file
+		else if (cmd.equals("export-failed-as-csv")) {
+			ActionResponseImpl resImpl = (ActionResponseImpl) res;
+			HttpServletResponse response = resImpl.getHttpServletResponse();
+			downloadRemainingRecordsAsCsv(response);
 		} //Manage all the search and replace Task
 		else if(cmd.equals("searchandreplace")){
 			Logger.info(this, "Running Search & Replace");
@@ -325,7 +335,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		String referer = req.getParameter("referer");
 		setForward(req,referer);
 	}
-
 
 	private void _flush(String cacheName)throws Exception{
 			try{
@@ -981,9 +990,64 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 
 	}
 
-
-
-
-
+	/**
+	 * Retrieves the basic information of the contents in the
+	 * {@code dist_reindex_journal} table that could not be re-indexed and sends
+	 * it back to the user as a CSV file. This way users can keep track of them
+	 * and check the logs to get more information about the failure.
+	 * 
+	 * @param response
+	 *            - The {@link HttpServletResponse} object that allows to send
+	 *            the CSV file to the user.
+	 */
+	private void downloadRemainingRecordsAsCsv(HttpServletResponse response) {
+		String fileName = "failed_reindex_records" + new java.util.Date().getTime();
+		String[] fileColumns = new String[] { "ID", "Identifier To Index", "Inode To Index", "Priority" };
+		PrintWriter pr = null;
+		try {
+			response.setContentType("application/octet-stream; charset=UTF-8");
+			response.setHeader("Content-Disposition", "attachment; filename=\"" + fileName + ".csv\"");
+			pr = response.getWriter();
+			pr.print(StringUtils.join(fileColumns, ","));
+			pr.print("\r\n");
+			DotConnect dc = new DotConnect();
+			StringBuilder sql = new StringBuilder();
+			sql.append("SELECT drj.id, drj.ident_to_index, drj.inode_to_index, drj.priority ")
+					.append("FROM dist_reindex_journal drj WHERE drj.priority >= ")
+					.append(DistributedJournalFactory.REINDEX_JOURNAL_PRIORITY_FAILED_FIRST_ATTEMPT);
+			dc.setSQL(sql.toString());
+			List<Map<String, Object>> failedRecords = dc.loadObjectResults();
+			if (!failedRecords.isEmpty()) {
+				for (Map<String, Object> row : failedRecords) {
+					StringBuilder entry = new StringBuilder();
+					String id = null;
+					String priority = null;
+					if (DbConnectionFactory.isOracle()) {
+						BigDecimal rowVal = (BigDecimal) row.get("id");
+						id = new Long(rowVal.toPlainString()).toString();
+						rowVal = (BigDecimal) row.get("priority");
+						priority = new Long(rowVal.toPlainString()).toString();
+					} else {
+						Long rowVal = (Long) row.get("id");
+						id = rowVal.toString();
+						priority = String.valueOf((Integer) row.get("priority"));
+					}
+					entry.append(id).append(", ");
+					entry.append(row.get("ident_to_index").toString()).append(", ");
+					entry.append(row.get("inode_to_index").toString()).append(", ");
+					entry.append(priority);
+					pr.print(entry.toString());
+					pr.print("\r\n");
+				}
+			} else {
+				Logger.debug(this, "Re-index table contained zero failed records. The CSV file will not be created.");
+			}
+		} catch (Exception e) {
+			Logger.error(this, "Download of CSV file with remaining non-indexed records failed.", e);
+		} finally {
+			pr.flush();
+			pr.close();
+		}
+	}
 
 }

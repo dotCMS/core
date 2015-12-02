@@ -305,7 +305,7 @@ public class BinaryExporterServlet extends HttpServlet {
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
                 // Temporal files should be allowed any time
                 if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
-                    if (!content.isLive() && respectFrontendRoles) {
+                    if (!APILocator.getVersionableAPI().hasLiveVersion(content) && respectFrontendRoles) {
                         Logger.debug(this, "Content " + fieldVarName + " is not publish, with inode: "
                                 + content.getInode());
                         resp.sendError(404);

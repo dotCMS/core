@@ -1,5 +1,6 @@
 package com.dotmarketing.common.db;
 
+import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.org.apache.commons.collections.map.LRUMap;
-
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -902,5 +902,29 @@ public class DotConnect {
             return false;
         }
     }
+
+	/**
+	 * Returns the number of records that exist in the specified table. This
+	 * method is useful given that different databases return the count value as
+	 * different Java objects (e.g., {@code BigDecimal} for Oracle, and
+	 * {@code Long} for other databases).
+	 * 
+	 * @param tableName
+	 *            - The name of the database table.
+	 * @return The number of records in the specified table.
+	 * @throws DotDataException
+	 *             An error occurred when interacting with the database.
+	 */
+	public Long getRecordCount(String tableName) throws DotDataException {
+		Long recordCount = 0L;
+		setSQL("SELECT COUNT(*) AS count FROM " + tableName);
+		if (DbConnectionFactory.isOracle()) {
+			BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
+			recordCount = new Long(result.toPlainString());
+		} else {
+			recordCount = (Long) loadObjectResults().get(0).get("count");
+		}
+		return recordCount;
+	}
 
 }

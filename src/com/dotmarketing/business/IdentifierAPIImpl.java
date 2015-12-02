@@ -115,7 +115,7 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 
 	public Identifier save(Identifier id) throws DotDataException, DotStateException {
 		Identifier ident = ifac.saveIdentifier(id);
-		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(id.getId());
+		CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(ident.getId());
 		return ident;
 	}
 

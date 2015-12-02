@@ -246,6 +246,7 @@ public class PushPublisher extends Publisher {
         boolean buildUsers = false;
         boolean buildCategories = false;
         boolean buildOSGIBundle = false;
+        boolean buildLanguages = false;
         boolean buildAsset = false;
         List<Class> list = new ArrayList<Class>();
         for ( PublishQueueElement element : config.getAssets() ) {
@@ -255,6 +256,8 @@ public class PushPublisher extends Publisher {
                 buildOSGIBundle = true;
             } else if ( element.getType().equals( "user" ) ) {
                 buildUsers = true;
+            } else if (element.getType().equals("language")) {
+            	buildLanguages = true;
             } else {
                 buildAsset = true;
             }
@@ -275,6 +278,12 @@ public class PushPublisher extends Publisher {
             list.add( OSGIBundler.class );
         }
 
+        if (!buildAsset && buildLanguages) {
+        	list.add(DependencyBundler.class);
+        	list.add(LanguageVariablesBundler.class);
+            list.add(LanguageBundler.class);
+        }
+        
         if ( buildAsset ) {
             list.add( DependencyBundler.class );
             list.add( HostBundler.class );

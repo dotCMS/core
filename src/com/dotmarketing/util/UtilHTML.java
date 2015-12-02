@@ -38,7 +38,7 @@ public class UtilHTML {
 	public static String getStatusIcons(Versionable v) throws DotStateException, DotDataException, DotSecurityException{
 		StringBuffer buf = new StringBuffer();
 
-		if(v.isWorking() && !v.isArchived()) {
+		if(v.isWorking() && !v.isArchived() && !v.isLive()) {
 		    buf.append("<span class='workingIcon'></span>");
 		}
 
@@ -46,10 +46,10 @@ public class UtilHTML {
 		    buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
 		    buf.append("<span class='archivedIcon'></span>");
 		} else {
-		    if(v.isLive() && !v.isWorking()) {
+		    if(v.isLive() && v.isWorking()) {
 		        buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
 		        buf.append("<span class='liveIcon'></span>");
-		    } else if(v.isLive()) {
+		    } else if(APILocator.getVersionableAPI().hasLiveVersion(v)) {
 		        buf.append("<span class='liveIcon'></span>");
 		    } else {
 		        buf.append("<span class='greyDotIcon' style='opacity:.4'></span>");
@@ -67,12 +67,19 @@ public class UtilHTML {
 		if(v.isWorking()){
 			buf.append("<span class='workingIcon'></span>");
 		}
+		else{
+			buf.append("<span class='greyDotIcon' style='opacity:.2'></span>");
+		}
 		if(v.isLive()){
 			buf.append("<span class='liveIcon'></span>");
 		}
-		if(v.isArchived()){
-            buf.append("<span class='archivedIcon'></span>");
-        }
+		else if(v.isArchived()){
+	            buf.append("<span class='archivedIcon'></span>");
+	    }
+		else{
+			buf.append("<span class='greyDotIcon' style='opacity:.2'></span>");
+		}
+
 
 		return buf.toString();
 	}

@@ -171,7 +171,7 @@ public abstract class AbstractJDBCStartupTask implements StartupTask {
             conn.setAutoCommit(false);
 		    
 			if(DbConnectionFactory.isMySql()){
-				dc.executeStatement("SET storage_engine=INNODB", conn);
+				dc.executeStatement("SET " + DbConnectionFactory.getMySQLStorageEngine() + "=INNODB", conn);
 			}else if(DbConnectionFactory.isMsSql()){
 				dc.executeStatement("SET TRANSACTION ISOLATION LEVEL READ COMMITTED;", conn);
 			}

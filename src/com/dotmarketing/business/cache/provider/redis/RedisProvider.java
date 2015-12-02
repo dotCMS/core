@@ -19,6 +19,8 @@ public class RedisProvider extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
 
+    private Boolean isInitialized = false;
+
     //Global Map of contents that could not be added to this cache
     private static Map<String, String> cannotCacheCache = Collections.synchronizedMap(new LRUMap(1000));
 
@@ -47,7 +49,7 @@ public class RedisProvider extends CacheProvider {
         int writePort = Config.getIntProperty("redis.server.write.port",
                 Config.getIntProperty("redis.server.port", Protocol.DEFAULT_PORT));
 
-        int timeout = Config.getIntProperty("redis.server.timeout", Protocol.DEFAULT_TIMEOUT);
+        int timeout = Config.getIntProperty("redis.server.timeout", 100);
         int maxClients = Config.getIntProperty("redis.pool.max.clients", 100);
         int maxIdle = Config.getIntProperty("redis.pool.max.idle", 20);
         int minIdle = Config.getIntProperty("redis.pool.min.idle", 5);
@@ -86,7 +88,13 @@ public class RedisProvider extends CacheProvider {
             Logger.info(this.getClass(), "***\t [" + getName() + "] -- Slave [" + readHost + ":" + readPort + "].");
         }
 
+        isInitialized = true;
         Logger.info(this.getClass(), "*** Initialized Cache Provider [" + getName() + "].");
+    }
+
+    @Override
+    public boolean isInitialized () throws Exception {
+        return isInitialized;
     }
 
     @Override
@@ -274,9 +282,11 @@ public class RedisProvider extends CacheProvider {
 
                 }
 
-                String[] groupKeys = keysToDelete.toArray(new String[keysToDelete.size()]);
-                //If something missing to be delete it
-                jedis.del(groupKeys);
+                if ( keysToDelete.size() > 0 ) {
+                    String[] groupKeys = keysToDelete.toArray(new String[keysToDelete.size()]);
+                    //If something missing to be delete it
+                    jedis.del(groupKeys);
+                }
                 break;
             }
 
@@ -402,6 +412,8 @@ public class RedisProvider extends CacheProvider {
         Logger.info(this.getClass(), "*** Destroying [" + getName() + "] pool.");
         writePool.destroy();
         readPool.destroy();
+
+        isInitialized = false;
     }
 
     /**

@@ -467,17 +467,36 @@ public class IdentifierFactoryImpl extends IdentifierFactory {
 		return check404(id);
 	}
 
-	protected Identifier saveIdentifier(Identifier identifier) throws DotDataException {
+	protected Identifier saveIdentifier(Identifier id) throws DotDataException {
+		Identifier loadedObject = id;
+		if ( id != null && UtilMethods.isSet(id.getId()) ) {
+
+			/*
+			Load it from the db in order to avoid:
+			NonUniqueObjectException: a different object with the same identifier value was already associated with the session
+			 */
+			loadedObject = loadFromDb(id.getId());
+
+			//Copy the changed properties back
+			loadedObject.setAssetName(id.getAssetName());
+			loadedObject.setAssetType(id.getAssetType());
+			loadedObject.setParentPath(id.getParentPath());
+			loadedObject.setHostId(id.getHostId());
+			loadedObject.setOwner(id.getOwner());
+			loadedObject.setSysExpireDate(id.getSysExpireDate());
+			loadedObject.setSysPublishDate(id.getSysPublishDate());
+		}
+		
 		try {
-			HibernateUtil.saveOrUpdate(identifier);
-			
-			ic.removeFromCacheByIdentifier(identifier.getId());
-			ic.removeFromCacheByURI(identifier.getHostId(), identifier.getURI());
+			HibernateUtil.saveOrUpdate(loadedObject);
 		} catch (DotHibernateException e) {
 			Logger.error(IdentifierFactoryImpl.class, "saveIdentifier failed:" + e, e);
 			throw new DotDataException(e.toString());
 		}
-		return identifier;
+		ic.removeFromCacheByIdentifier(loadedObject.getId());
+		ic.removeFromCacheByURI(loadedObject.getHostId(), loadedObject.getURI());
+		id=null;
+		return loadedObject;
 	}
 
 	protected void deleteIdentifier(Identifier ident) throws DotDataException {

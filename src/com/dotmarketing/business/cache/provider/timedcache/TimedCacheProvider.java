@@ -29,6 +29,9 @@ public class TimedCacheProvider extends CacheProvider {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+
+	private Boolean isInitialized = false;
+
 	private final ConcurrentHashMap<String, Cache<String, Object>> groups = new ConcurrentHashMap<>();
 
 	static final String DEFAULT_CACHE = CacheProviderAPI.DEFAULT_CACHE;
@@ -71,6 +74,13 @@ public class TimedCacheProvider extends CacheProvider {
 				}
 			}
 		}
+
+		isInitialized = true;
+	}
+
+	@Override
+	public boolean isInitialized () throws Exception {
+		return isInitialized;
 	}
 
 	@Override
@@ -188,8 +198,8 @@ public class TimedCacheProvider extends CacheProvider {
 
 	@Override
 	public void shutdown() {
-		Logger.info(this.getClass(), "===== Calling shutdown [" + getName()
-				+ "].");
+		Logger.info(this.getClass(), "===== Calling shutdown [" + getName()+ "].");
+		isInitialized = false;
 	}
 
 	private String cacheKey(String group, String key) {

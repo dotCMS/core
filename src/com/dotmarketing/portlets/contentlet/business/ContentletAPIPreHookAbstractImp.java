@@ -435,6 +435,10 @@ public abstract class ContentletAPIPreHookAbstractImp implements ContentletAPIPr
 		return true;
 	}
 
+	public boolean refreshContentUnderFolderPath ( String hostId, String folderPath ) throws DotReindexStateException {
+		return true;
+	}
+
 	public boolean refreshContentUnderHost(Host host) throws DotReindexStateException {
 		return true;
 	}
