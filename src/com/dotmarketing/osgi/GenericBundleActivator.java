@@ -16,6 +16,7 @@ import com.dotcms.repackage.org.tuckey.web.filters.urlrewrite.Rule;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Interceptor;
 import com.dotmarketing.business.cache.CacheOSGIService;
+import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.filters.DotUrlRewriteFilter;
@@ -43,6 +44,7 @@ import com.liferay.portal.model.Portlet;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.Http;
 import com.liferay.util.SimpleCachePool;
+
 import org.apache.velocity.tools.view.PrimitiveToolboxManager;
 import org.apache.velocity.tools.view.ToolInfo;
 import org.apache.velocity.tools.view.servlet.ServletToolboxManager;
