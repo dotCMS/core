@@ -4,16 +4,17 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
 import com.dotmarketing.portlets.rules.model.*;
 import com.liferay.portal.model.User;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public interface RulesAPI {
+public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIService{
 
     /**
      *

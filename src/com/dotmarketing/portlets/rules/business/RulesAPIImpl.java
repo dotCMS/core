@@ -27,7 +27,6 @@ import com.dotmarketing.portlets.rules.model.ConditionValue;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPIOsgiService;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -38,7 +37,7 @@ import java.util.*;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
-public class RulesAPIImpl implements RulesAPI, ConditionletOSGIService, RuleActionletOSGIService {
+public class RulesAPIImpl implements RulesAPI {
 
     private final PermissionAPI perAPI;
     private final RulesFactory rulesFactory;

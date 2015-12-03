@@ -1,33 +1,27 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import java.util.List;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * Actionlet to add Key/Value to the Request.
  * The exact names that had to be set in params are: requestKey and requestValue.
- *
- * @author Oscar Arrieta
- * @version 1.0
- * @since 09-22-2015
  *
  */
 public class SetRequestAttributeActionlet extends RuleActionlet{
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetRequestAttribute";
 
-    private static final String REQUEST_KEY = "requestKey";
-    private static final String REQUEST_VALUE = "requestValue";
+    public static final String REQUEST_KEY = "requestKey";
+    public static final String REQUEST_VALUE = "requestValue";
 
     private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
 			new ActionParameterDefinition(REQUEST_KEY, DataType.TEXT),
@@ -50,12 +44,7 @@ public class SetRequestAttributeActionlet extends RuleActionlet{
     public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
         String key = params.get(REQUEST_KEY).getValue();
         String value = params.get(REQUEST_VALUE).getValue();
-        if(value == null){
-            request.removeAttribute(key);
-        } else{
-            request.setAttribute(key, value);
-
-        }
+        request.setAttribute(key, value);
     }
 
 

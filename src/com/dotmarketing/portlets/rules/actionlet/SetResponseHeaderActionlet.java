@@ -24,8 +24,8 @@ public class SetResponseHeaderActionlet extends RuleActionlet{
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetResponseHeader";
 
-    private static final String HEADER_KEY = "headerKey";
-    private static final String HEADER_VALUE = "headerValue";
+    public static final String HEADER_KEY = "headerKey";
+    public static final String HEADER_VALUE = "headerValue";
     private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
 			new ActionParameterDefinition(HEADER_KEY, DataType.TEXT),
 			new ActionParameterDefinition(HEADER_VALUE)

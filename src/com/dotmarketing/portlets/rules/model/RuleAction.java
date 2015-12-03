@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import java.io.Serializable;
 import java.util.Date;
@@ -18,7 +19,7 @@ public class RuleAction implements Serializable {
     private int priority;
     private String actionlet;
     private Date modDate;
-    private List<RuleActionParameter> parameters;
+    private List<RuleActionParameter> parameters = Lists.newArrayList();
 
     public String getId() {
         return id;
@@ -74,6 +75,10 @@ public class RuleAction implements Serializable {
 
     public void setParameters(List<RuleActionParameter> parameters) {
         this.parameters = parameters;
+    }
+
+    public void addParameter(RuleActionParameter parameter){
+        this.parameters.add(parameter);
     }
 
     public Map<String, RuleActionParameter> getParameterMap(){
