@@ -26,8 +26,8 @@ public class SetSessionAttributeActionlet extends RuleActionlet{
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetSessionAttribute";
 
-    private static final String SESSION_VALUE = "sessionValue";
     private static final String SESSION_KEY = "sessionKey";
+    private static final String SESSION_VALUE = "sessionValue";
     private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
 			new ActionParameterDefinition(SESSION_KEY, DataType.TEXT),
 			new ActionParameterDefinition(SESSION_VALUE)
