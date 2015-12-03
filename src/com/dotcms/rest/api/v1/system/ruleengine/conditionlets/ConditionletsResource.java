@@ -76,7 +76,7 @@ public class ConditionletsResource {
     public Response listComparisons(@Context HttpServletRequest request, @PathParam("id") String conditionletId) throws JSONException {
         User user = getUser(request);
 
-        JSONObject jsonComparisons = new JSONObject();
+        com.dotmarketing.util.json.JSONArray jsonComparisons = new com.dotmarketing.util.json.JSONArray();
 
         if(!UtilMethods.isSet(conditionletId)) {
             return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
@@ -89,13 +89,7 @@ public class ConditionletsResource {
                 return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
             }
 
-            Set<Comparison> comparisons = conditionlet.getComparisons();
-
-            for (Comparison comparison : comparisons) {
-                JSONObject comparisonJSON = new JSONObject();
-                comparisonJSON.put("name", comparison.getLabel());
-                jsonComparisons.put(comparison.getId(), comparisonJSON);
-            }
+            jsonComparisons.addAll(conditionlet.getComparisons());
 
             return Response.ok(jsonComparisons.toString(), MediaType.APPLICATION_JSON).build();
         } catch (DotDataException | DotSecurityException e) {
