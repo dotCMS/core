@@ -344,6 +344,8 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 #menu ul.dropdown li.dotCMS_ES_SEARCH_PORTLET a span, .elasticsearchIcon{background: url(/html/images/icons/elasticsearch.png) no-repeat;width:18px;height:18px;-o-object-fit: contain;display:inline-block;vertical-align:top;}
 
 #menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+#menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+
 
 /* Action Panel */
 .actionPanelPage {position: relative;}
