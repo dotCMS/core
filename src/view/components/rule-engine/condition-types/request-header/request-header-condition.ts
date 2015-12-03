@@ -50,9 +50,10 @@
  * --------------------------
  */
 
-import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
+import {Inject, Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
 import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
+import {ComparisonService, ComparisonModel, ComparisonsModel} from "../../../../../api/system/ruleengine/conditionlets/Comparisons";
 
 /**
  * @todo: Consider populating these from the server
@@ -140,15 +141,6 @@ export class RequestHeaderConditionModel {
 </div>`
 })
 export class RequestHeaderCondition {
-  // @todo populate the comparisons options from the server.
-  comparisonOptions:Array<DropdownOption> = [
-    new DropdownOption("exists", "exists", "Exists"),
-    new DropdownOption("is", "is", "Is"),
-    new DropdownOption("is not", "is not", "Is Not"),
-    new DropdownOption("startsWith", "startsWith", "Starts With"),
-    new DropdownOption("endsWith", "endsWith", "Ends With"),
-    new DropdownOption("contains", "contains", "Contains"),
-    new DropdownOption("regex", "regex", "Regex")];
 
   value:RequestHeaderConditionModel;
 
@@ -158,12 +150,15 @@ export class RequestHeaderCondition {
 
   private requestHeaderInputTextModel: InputTextModel
 
+  private _comparisonsService:ComparisonService;
+
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
-              @Attribute('parameterValues') parameterValues:Array<string>) {
+              @Attribute('parameterValues') parameterValues:Array<string>,
+              @Inject(ComparisonService) comparisonService:ComparisonService) {
     this.value = new RequestHeaderConditionModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
-    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], [])
 
     let headerKeyOptions = []
     commonRequestHeaders.forEach((name)=> {
@@ -173,6 +168,18 @@ export class RequestHeaderCondition {
 
     this.requestHeaderInputTextModel = new InputTextModel()
     this.requestHeaderInputTextModel.placeholder = "Enter a value"
+
+    this._comparisonsService = comparisonService
+    this._comparisonsService.get('RequestHeaderConditionlet', (comparisonsResult:ComparisonsModel)=>{
+      if (comparisonsResult) {
+        var comparisons = comparisonsResult.comparisons
+        let comparisonsOptions = []
+        comparisons.forEach((comparison)=> {
+          comparisonsOptions.push(new DropdownOption(comparison.id, comparison.id, comparison.label))
+        })
+        this.comparatorDropdown.addOptions(comparisonsOptions)
+      }
+    })
   }
 
   set headerKeyValue(value:string) {
