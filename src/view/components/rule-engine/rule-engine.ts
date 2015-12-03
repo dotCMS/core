@@ -42,9 +42,9 @@ import {CwFilter} from "../../../api/util/CwFilter"
     </button>
   </div>
     <div class="cw-filter-links">
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">All ({{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">Active ({{activeRules}}/{{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">Inactive ({{rules.length-activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status.all}} ({{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status.active}} ({{activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
     </div>
   </div>
 
@@ -178,42 +178,9 @@ import {CwFilter} from "../../../api/util/CwFilter"
       return isFiltering
     }
 
-    isFiltered(rule:RuleModel):boolean {
-      let isFiltered = false
-      if (this.filterText != '') {
-        let filter = this.filterText
-
-        let re = /([\w]*[:][\w]*)/
-        let matches = this.filterText.match(re);
-        if (matches != null) {
-          // 'match' is now an array of the field filters.
-          matches.forEach(match => {
-            let terms = match.split(':')
-            filter = filter.replace(match, '');
-            if (!isFiltered) {
-              let fieldName = terms[0]
-              let fieldValue = terms[1]
-              console.log('YAR match', match, fieldName, fieldValue)
-              let hasField = rule.hasOwnProperty(fieldName) || rule.hasOwnProperty('_' + fieldName)
-              if (hasField) {
-                try {
-                  isFiltered = (rule[fieldName] !== fieldValue && rule[fieldName] !== CwFilter.transformValue(fieldValue))
-                } catch (e) {
-                  console.log("Error while trying to check a field value while filtering.", e)
-                }
-              }
-            }
-          })
-        }
-        filter = filter.trim().toLowerCase()
-        if(filter){
-          isFiltered = isFiltered || !(rule.name.toLowerCase().indexOf(filter) >= 0 )
-        }
-      }
-      return isFiltered
+    isFiltered(rule:RuleModel){
+        return CwFilter.isFiltered(rule,this.filterText)
     }
-
-
   }
 
 
