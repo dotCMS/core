@@ -230,7 +230,6 @@ public class RequestHeaderConditionlet extends Conditionlet {
         String selectedHeader = selectedHeaderCV.getValue();
         String headerValue = headerValueCV.getValue();
 
-        inputValues.add(new ConditionletInputValue(INPUT1_ID, selectedHeader));
 		inputValues.add(new ConditionletInputValue(INPUT2_ID, headerValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
