@@ -36,8 +36,8 @@ public class RequestHeaderConditionlet extends Conditionlet {
 	private static final long serialVersionUID = 1L;
 	private static final String I18N_BASE = "api.system.ruleengine.conditionlet.RequestHeader";
 
-	private static final String INPUT1_ID = "request-header";
-	private static final String INPUT2_ID = "header-value";
+	private static final String INPUT1_ID = "headerKeyValue";
+	private static final String INPUT2_ID = "compareTo";
 
 	private static final String COMPARISON_IS = "is";
 	private static final String COMPARISON_ISNOT = "isNot";
@@ -220,9 +220,17 @@ public class RequestHeaderConditionlet extends Conditionlet {
 		}
 		Comparison comparison = getComparisonById(comparisonId);
 		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-		String selectedHeader = values.get(0).getValue();
-		String headerValue = values.get(1).getValue();
-		inputValues.add(new ConditionletInputValue(INPUT1_ID, selectedHeader));
+        ConditionValue selectedHeaderCV = ConditionValue.findByKey(values, INPUT1_ID);
+        ConditionValue headerValueCV = ConditionValue.findByKey(values, INPUT2_ID);
+
+        if(!UtilMethods.isSet(selectedHeaderCV) || !UtilMethods.isSet(headerValueCV)){
+            return false;
+        }
+
+        String selectedHeader = selectedHeaderCV.getValue();
+        String headerValue = headerValueCV.getValue();
+
+        inputValues.add(new ConditionletInputValue(INPUT1_ID, selectedHeader));
 		inputValues.add(new ConditionletInputValue(INPUT2_ID, headerValue));
 		ValidationResults validationResults = validate(comparison, inputValues);
 		if (validationResults.hasErrors()) {
