@@ -8,31 +8,27 @@ describe('Unit.api.util.CwFilter', function () {
 
   // filtering (hiding)
 
-  it("An object with foo='' should BE filtered out for filter='foo: ' (empty vs string value)", function(){
-    expect(CwFilter.isFiltered({foo:null},'foo:null')).toEqual(true);
-  })
-
-  it("An object with foo=true should BE filtered out for filter='foo:false' (diff values)", function(){
+  it("An object with foo=true should be filtered out for filter='foo:false' (diff values)", function(){
     expect(CwFilter.isFiltered({foo:true},'foo:false')).toEqual(true);
   })
 
-  it("An object with name='test' should BE filtered out for filter='tes*' (no wildcards allowed)", function(){
+  it("An object with name='test' should be filtered out for filter='tes*' (no wildcards allowed)", function(){
     expect(CwFilter.isFiltered({foo:'enabled', name:'test'},'tes*')).toEqual(true);
   })
 
-  it("An object with foo=null should BE filtered out for filter='foo:null' (null value vs string value)", function(){
+  it("An object with foo=null should be filtered out for filter='foo:null' (null value vs string value)", function(){
     expect(CwFilter.isFiltered({foo:null},'foo:null')).toEqual(true);
   })
 
-  it("An object with foo='enabled' should BE filtered out for filter='foo:true' (diff values)", function(){
+  it("An object with foo='enabled' should be filtered out for filter='foo:true' (diff values)", function(){
     expect(CwFilter.isFiltered({foo:'enabled'},'foo:true')).toEqual(true);
   })
 
-  it("An object with foo='enabled' and name='test' should BE filtered out for filter='foo:enabled sample' (property + name)", function(){
+  it("An object with foo='enabled' and name='test' should be filtered out for filter='foo:enabled sample' (property + name)", function(){
     expect(CwFilter.isFiltered({foo:'enabled', name:'test'},'foo:enabled sample')).toEqual(true);
   })
 
-  it("An object with foo='enabled' and bar='foo' and name='test' should BE filtered out for filter='foo:enabled bar:foobar tes' (multiple property + name)", function(){
+  it("An object with foo='enabled' and bar='foo' and name='test' should be filtered out for filter='foo:enabled bar:foobar tes' (multiple property + name)", function(){
     expect(CwFilter.isFiltered({foo:'enabled', bar:'foo', name:'test'},'foo:enabled bar:foobar tes')).toEqual(true);
   })
 
@@ -50,7 +46,7 @@ describe('Unit.api.util.CwFilter', function () {
     expect(CwFilter.isFiltered({foo:'enabled', name:'test'},'es')).toEqual(false);
   })
 
-  it("An object with name='test' should BE filtered out for filter='TEst' (name case insensitive)", function(){
+  it("An object with name='test' should be filtered out for filter='TEst' (name case insensitive)", function(){
     expect(CwFilter.isFiltered({foo:'enabled', name:'test'},'TEst')).toEqual(false);
   })
 

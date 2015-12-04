@@ -24,7 +24,6 @@ static transformValue(fieldValue:any):any{
         let filter = filterText
         let re = /([\w]*[:][\w]*)/g
         let matches = filterText.match(re);
-        console.log("LOGGY matches",matches)
         if (matches != null) {
           // 'match' is now an array of the field filters.
           matches.forEach(match => {
