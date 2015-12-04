@@ -92,6 +92,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
             this.handleRemoveError(err)
           })
       this.ruleService.list()
+      this.getFilteredRulesStatus()
     }
 
     handleAdd(rule:RuleModel) {
