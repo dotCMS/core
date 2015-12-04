@@ -123,7 +123,7 @@ export class RequestHeaderCondition {
     this.value = new RequestHeaderConditionModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
     this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], [])
-    this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], [])
+    this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], [], true)
 
     this.requestHeaderInputTextModel = new InputTextModel()
     this.requestHeaderInputTextModel.placeholder = "Enter a value"
