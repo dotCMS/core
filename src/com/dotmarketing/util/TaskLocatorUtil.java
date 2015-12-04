@@ -139,6 +139,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03160PublishingPushedAssetsTable.class);
 		ret.add(Task03165ModifyLoadRecordsToIndex.class);
 		ret.add(Task03500RulesEngineDataModel.class);
+		ret.add(Task03505PublishingQueueAuditTable.class);
         return ret;
     }
 
