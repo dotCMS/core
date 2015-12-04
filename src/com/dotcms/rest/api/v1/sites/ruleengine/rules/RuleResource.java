@@ -16,6 +16,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -31,11 +32,13 @@ import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -72,6 +75,7 @@ public class RuleResource {
     @GET
     @JSONP
     @Path("/rules")
+    @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -94,6 +98,7 @@ public class RuleResource {
     @GET
     @JSONP
     @Path("/rules/{ruleId}")
+    @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public RestRule self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
@@ -112,6 +117,7 @@ public class RuleResource {
     @POST
     @JSONP
     @Path("/rules")
+    
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Consumes(MediaType.APPLICATION_JSON)
     public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestRule restRule) {
