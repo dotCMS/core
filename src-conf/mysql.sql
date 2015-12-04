@@ -3031,7 +3031,7 @@ type VARCHAR(256), bundle_id VARCHAR(256) , target text);
 CREATE TABLE IF NOT EXISTS publishing_queue_audit (
 	bundle_id VARCHAR(36) PRIMARY KEY NOT NULL,
 	status INTEGER,
-	status_pojo text,
+	status_pojo LONGTEXT,
 	status_updated DATETIME,
 	create_date DATETIME);
 
