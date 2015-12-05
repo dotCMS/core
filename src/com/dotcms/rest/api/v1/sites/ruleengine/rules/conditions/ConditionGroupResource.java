@@ -15,6 +15,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -28,11 +29,13 @@ import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -63,6 +66,7 @@ public class ConditionGroupResource  {
     }
 
     @GET
+    @NoCache
     @Path("/rules/{ruleId}/conditionGroups")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId)
@@ -81,6 +85,7 @@ public class ConditionGroupResource  {
     }
 
     @GET
+    @NoCache
     @Path("/rules/{ruleId}/conditionGroups/{groupId}")
     @Produces(MediaType.APPLICATION_JSON)
     public RestConditionGroup self(@Context HttpServletRequest request,
