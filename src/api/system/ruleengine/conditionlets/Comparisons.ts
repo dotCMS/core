@@ -8,39 +8,19 @@ import {CwModel} from "../../../util/CwModel";
 let noop = (...arg:any[])=> {
 }
 
-export class ComparisonModel {
-
-    private _id:string
-    private _label:string
-
-    constructor(id:string, label:string) {
-        this._id = id;
-        this._label = label;
-    }
-
-    get id():string {
-        return this._id;
-    }
-
-    get label():string {
-        return this._label;
-    }
-
-}
-
 export class ComparisonsModel {
 
-    private _comparisons:any[]
+    private _comparisons:{}
 
     constructor(comparisons:any) {
-        this._comparisons = []
+        this._comparisons = {}
 
         comparisons.forEach((comparison)=> {
-            this._comparisons.push(new ComparisonModel(comparison.id, comparison.label))
+            this._comparisons[comparison.id] = comparison.label
         })
     }
 
-    get comparisons():any[] {
+    get comparisons():{} {
         return this._comparisons
     }
 }
@@ -53,7 +33,7 @@ export class ComparisonService {
         this.ref = apiRoot.root.child('system/ruleengine/conditionlets/')
     }
 
-    static fromSnapshot(snapshot:EntitySnapshot):ComparisonModel {
+    static fromSnapshot(snapshot:EntitySnapshot):ComparisonsModel {
         return new ComparisonsModel(snapshot.val()[0])
     }
 

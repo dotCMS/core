@@ -53,8 +53,8 @@
 import {Inject, Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
 import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
-import {ComparisonService, ComparisonModel, ComparisonsModel} from "../../../../../api/system/ruleengine/conditionlets/Comparisons";
-import {InputService, InputModel, InputsModel} from "../../../../../api/system/ruleengine/conditionlets/Inputs";
+import {ComparisonService, ComparisonsModel} from "../../../../../api/system/ruleengine/conditionlets/Comparisons";
+import {InputService, InputsModel} from "../../../../../api/system/ruleengine/conditionlets/Inputs";
 
 
 export class RequestHeaderConditionModel {
@@ -133,9 +133,9 @@ export class RequestHeaderCondition {
       if (comparisonsResult) {
         var comparisons = comparisonsResult.comparisons
         let comparisonsOptions = []
-        comparisons.forEach((comparison)=> {
-          comparisonsOptions.push(new DropdownOption(comparison.id, comparison.id, comparison.label))
-        })
+        for (var key in comparisons){
+          comparisonsOptions.push(new DropdownOption(key, key, comparisons[key]))
+        }
         this.comparatorDropdown.addOptions(comparisonsOptions)
       }
     })
@@ -145,9 +145,9 @@ export class RequestHeaderCondition {
       if (inputsResult) {
         var inputs = inputsResult.inputs
         let inputsOptions = []
-        inputs.forEach((input)=> {
-          inputsOptions.push(new DropdownOption(input.id, input.id, input.label))
-        })
+        for (var key in inputs){
+          inputsOptions.push(new DropdownOption(key, key, inputs[key]))
+        }
         this.headerKeyDropdown.addOptions(inputsOptions)
       }
     })

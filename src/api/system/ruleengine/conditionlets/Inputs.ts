@@ -8,39 +8,19 @@ import {CwModel} from "../../../util/CwModel";
 let noop = (...arg:any[])=> {
 }
 
-export class InputModel {
-
-    private _id:string
-    private _label:string
-
-    constructor(id:string, label:string) {
-        this._id = id;
-        this._label = label;
-    }
-
-    get id():string {
-        return this._id;
-    }
-
-    get label():string {
-        return this._label;
-    }
-
-}
-
 export class InputsModel {
 
-    private _inputs:any[]
+    private _inputs: {}
 
     constructor(inputs:any) {
-        this._inputs = []
+        this._inputs = { }
 
         inputs.forEach((input)=> {
-            this.inputs.push(new InputModel(input.id, input.label))
+            this._inputs[input.id] = input.label
         })
     }
 
-    get inputs():any[] {
+    get inputs():{} {
         return this._inputs
     }
 }
@@ -53,7 +33,7 @@ export class InputService {
         this.ref = apiRoot.root.child('system/ruleengine/conditionlets/')
     }
 
-    static fromSnapshot(snapshot:EntitySnapshot):InputModel {
+    static fromSnapshot(snapshot:EntitySnapshot):InputsModel {
         return new InputsModel(snapshot.val()[0][0].data)
     }
 
