@@ -50,7 +50,7 @@ public class RulesAPIImpl implements RulesAPI {
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
                          .add(UsersBrowserConditionlet.class)
-                         .add(UsersBrowserHeaderConditionlet.class)
+                         .add(RequestHeaderConditionlet.class)
                          .add(UsersCityConditionlet.class)
                          .add(UsersCountryConditionlet.class)
                          .add(UsersCurrentUrlConditionlet.class)
