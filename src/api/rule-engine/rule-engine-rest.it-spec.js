@@ -30,7 +30,7 @@ describe('Integration.api.rule-engine.ReST.RuleApi', function () {
   it('provides a list of all available Conditionlet types', function (done) {
     Store.getItem(remoteApiRootRef + 'system/ruleengine/conditionlets').then((conditionlets) => {
       expect(conditionlets).toBeDefined()
-      let headerConditionlet = conditionlets["UsersBrowserHeaderConditionlet"]
+      let headerConditionlet = conditionlets["RequestHeaderConditionlet"]
       expect(headerConditionlet).toBeDefined()
 
       let count = Object.keys(conditionlets).length

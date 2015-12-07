@@ -49,11 +49,14 @@ export class DropdownModel {
   settings:{ maxSelections?: number }
   private _optionChange:EventEmitter
   onOptionChange:Rx.Observable<any>
+  allowAdditions: boolean
+
 
   constructor(name:string = null,
               placeholder:string = '',
               selected:Array<string> = [],
-              options:Array<DropdownOption> = []) {
+              options:Array<DropdownOption> = [],
+              allowAdditions:boolean = false) {
     this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     this.placeholder = placeholder
     this.selected = selected
@@ -61,6 +64,7 @@ export class DropdownModel {
     this.settings = {}
     this._optionChange = new EventEmitter()
     this.onOptionChange = Rx.Observable.from(this._optionChange.toRx()).share()
+    this.allowAdditions = allowAdditions
   }
 
   addOptions(options:Array<DropdownOption>) {
@@ -158,6 +162,8 @@ export class Dropdown {
   initDropdown() {
     var self = this;
     let config:any = {
+      allowAdditions: this.model.allowAdditions,
+
       onChange: (value, text, $choice)=> {
         return this.onChange(value, text, $choice)
       },
