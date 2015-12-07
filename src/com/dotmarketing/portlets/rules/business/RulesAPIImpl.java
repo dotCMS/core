@@ -621,7 +621,7 @@ public class RulesAPIImpl implements RulesAPI {
                     else {
                         Logger.info(RulesAPIImpl.class, "Conditionlet with name '" + clazz.getSimpleName() + "' already registered.");
                     }
-                } catch (InstantiationException | IllegalAccessException e) {
+                } catch (Exception | java.lang.NoClassDefFoundError e) {
                     Logger.error(RulesAPIImpl.class, e.getMessage(), e);
                 }
             }
@@ -635,11 +635,9 @@ public class RulesAPIImpl implements RulesAPI {
         for (Class<Conditionlet> z : conditionletOSGIclasses) {
             try {
                 customConditionlets.add(z.newInstance());
-            } catch (InstantiationException e) {
+            } catch (Exception | java.lang.NoClassDefFoundError e) {
                 Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-            } catch (IllegalAccessException e) {
-                Logger.error(RulesAPIImpl.class, e.getMessage(), e);
-            }
+            } 
         }
 
         return customConditionlets;
@@ -651,7 +649,7 @@ public class RulesAPIImpl implements RulesAPI {
         for (Class<? extends Conditionlet> z : defaultConditionletClasses) {
             try {
                 instances.add(z.newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (Exception | java.lang.NoClassDefFoundError e) {
                 Logger.error(RulesAPIImpl.class, e.getMessage(), e);
             }
         }
@@ -689,7 +687,7 @@ public class RulesAPIImpl implements RulesAPI {
         for (Class<? extends RuleActionlet> z : defaultActionletClasses) {
             try {
                 instances.add(z.newInstance());
-            } catch (InstantiationException | IllegalAccessException e) {
+            } catch (Exception | java.lang.NoClassDefFoundError e) {
                 Logger.error(RulesAPIImpl.class, e.getMessage(), e);
             }
         }
@@ -711,7 +709,7 @@ public class RulesAPIImpl implements RulesAPI {
                 try {
                     RuleActionlet e1 = (RuleActionlet)Class.forName(className.trim()).newInstance();
                     instances.add(e1);
-                } catch (Exception e1) {
+                } catch (Exception | java.lang.NoClassDefFoundError e1) {
                     Logger.error(RulesAPIImpl.class, "Error instantiating class '" + className + "' " + e1.getMessage(), e1);
                 }
             }
