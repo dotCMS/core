@@ -54,6 +54,28 @@ public class PasswordTrackerLocalManagerImpl
 		PasswordTrackerUtil.removeByUserId(userId);
 	}
 
+	/**
+	 * Performs the password validation of a user on different levels. The
+	 * configuration of the properties is located in the
+	 * {@code portal.properties} file. This method takes into account the
+	 * following aspects:
+	 * <ul>
+	 * <li><b>Password validation:</b> The password MUST meet a defined set of
+	 * special characters for it to be valid. These policies are enforced by a
+	 * RegEx.</li>
+	 * <li><b>Password Recycling:</b> If the password recycling policy is
+	 * enabled, users will not be able to reuse their passwords before a given
+	 * number of days.</li>
+	 * </ul>
+	 * 
+	 * @param userId
+	 *            - The ID of the user setting its password.
+	 * @param password
+	 *            - The password to be set.
+	 * @return If the password meets all the security policies, returns
+	 *         {@code true}. Otherwise, returns {@code false} and the respective
+	 *         error messages will be set.
+	 */
 	public boolean isValidPassword(String userId, String password)
 		throws PortalException, SystemException {
 		RegExpToolkit regExpToolkit = new RegExpToolkit();
@@ -61,8 +83,8 @@ public class PasswordTrackerLocalManagerImpl
 		boolean successful = true;
 		// Validate character rules
 		if (!regExpToolkit.validate(password)) {
-			this.validationErrorsList
-					.add("The password does not meet the portal security policies.");
+			this.validationErrorsList.add(regExpToolkit
+					.getErrorMessageFromConfig(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN_ERROR));
 			successful = false;
 		}
 		// Validate recycling
@@ -78,8 +100,8 @@ public class PasswordTrackerLocalManagerImpl
 						.getTime() + Time.DAY * passwordsRecycle);
 				if (recycleDate.after(now)) {
 					if (passwordTracker.getPassword().equals(newEncPwd)) {
-						this.validationErrorsList
-								.add("The password has been used lately and cannot be recycled.");
+						this.validationErrorsList.add(regExpToolkit
+								.getErrorMessageFromConfig(PropsUtil.PASSWORDS_RECYCLE_ERROR));
 						successful = false;
 					}
 				}
