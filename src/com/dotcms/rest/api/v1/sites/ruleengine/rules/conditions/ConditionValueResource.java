@@ -8,6 +8,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -24,6 +25,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -58,6 +60,7 @@ public class ConditionValueResource {
     }
 
     @GET
+    @NoCache
     @Path("/conditions/{conditionId}/conditionValues")
     @Produces(MediaType.APPLICATION_JSON)
     public Response list(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("conditionId") String conditionId)
@@ -84,6 +87,7 @@ public class ConditionValueResource {
      * Usage: /conditions/
      */
     @GET
+    @NoCache
     @Path("/conditions/{conditionId}/conditionValues/{valueId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response self(@Context HttpServletRequest request,
