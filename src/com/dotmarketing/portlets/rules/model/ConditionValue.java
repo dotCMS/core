@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class ConditionValue implements Serializable {
 
@@ -58,5 +59,20 @@ public class ConditionValue implements Serializable {
 				+ ", value=" + value + ", priority=" + priority + "]";
 	}
 
+    /**
+     * Util method to find a ConditionValue by its key.
+     *
+     * @param conditionValues List of conditionValues where we want to find.
+     * @param key Value that we want to search.
+     * @return
+     */
+    public static ConditionValue findByKey(List<ConditionValue> conditionValues, String key){
+        for(ConditionValue conditionValue : conditionValues) {
+            if(conditionValue.getKey().equals(key)) {
+                return conditionValue;
+            }
+        }
+        return null;
+    }
 
 }
