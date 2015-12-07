@@ -59,8 +59,8 @@ public class SendRedirectActionletTest {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         actionlet.executeAction(null, response, params);
 
-        Mockito.verify(response).sendRedirect(url);
-
+        Mockito.verify(response).setStatus(301);
+        Mockito.verify(response).setHeader("Location",url);
 
     }
 

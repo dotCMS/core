@@ -52,7 +52,14 @@ public class SendRedirectActionlet extends RuleActionlet {
     @Override
     public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
         try {
-            response.sendRedirect(params.get(INPUT_URL_KEY).getValue());
+        	
+   
+            
+            response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
+            response.setHeader("Location", params.get(INPUT_URL_KEY).getValue());
+            
+            response.flushBuffer();
+            
         } catch (IOException e) {
             Logger.error(SendRedirectActionlet.class, "Error executing Redirect Actionlet.", e);
         }
