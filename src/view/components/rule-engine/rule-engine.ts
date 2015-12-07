@@ -20,8 +20,7 @@ import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ConditionService} from "../../../api/rule-engine/Condition";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
-
-
+import {CwFilter} from "../../../api/util/CwFilter"
 
   /**
    *
@@ -31,17 +30,25 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   })
   @View({
     template: `<div flex layout="column" class="cw-rule-engine">
-  <div flex layout="row" layout-align="space-between center" class="cw-header">
+  <div flex layout="column" layout-align="start start" class="cw-header">
+  <div flex layout="row" layout-align="space-between center">
     <div flex layout="row" layout-align="space-between center" class="ui icon input">
       <i class="filter icon"></i>
       <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
     </div>
     <div flex="2"></div>
-    <button  class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
+    <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
       <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
     </button>
   </div>
-  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="!(filterText == '' || r.name.toLowerCase().includes(filterText?.toLowerCase()))"></rule>
+    <div class="cw-filter-links">
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status.all}} ({{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status.active}} ({{activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
+    </div>
+  </div>
+
+  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="isFiltered(r)"></rule>
 </div>
 
 `,
@@ -49,25 +56,27 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
   })
   export class RuleEngineComponent {
     rules:RuleModel[];
-    filterText:string;
+    filterText:string
+    status:string
+    activeRules:number
     rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(
-        @Inject(ActionTypeService) actionTypeService:ActionTypeService,
-        @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
-        @Inject(RuleService) ruleService:RuleService) {
+    constructor(@Inject(ActionTypeService) actionTypeService:ActionTypeService,
+                @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
+                @Inject(RuleService) ruleService:RuleService) {
       actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.rsrc = ruleService.rsrc
-      ruleService.onResourceUpdate.subscribe((messages)=>{
+      ruleService.onResourceUpdate.subscribe((messages)=> {
         this.rsrc = messages
       })
       this.ruleService = ruleService;
       this.filterText = ""
       this.rules = []
+      this.status = null
       this.ruleService.onAdd.subscribe(
           (rule:RuleModel) => {
             this.handleAdd(rule)
@@ -83,6 +92,7 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
             this.handleRemoveError(err)
           })
       this.ruleService.list()
+      this.getFilteredRulesStatus()
     }
 
     handleAdd(rule:RuleModel) {
@@ -100,19 +110,21 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
       rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
         this.handleRuleChange(event)
       })
+      this.getFilteredRulesStatus()
     }
 
     handleRuleChange(event:CwChangeEvent<RuleModel>) {
       if (event.target.valid) {
         this.ruleService.save(event.target)
       }
+      this.getFilteredRulesStatus()
     }
 
     handleRemove(rule:RuleModel) {
       this.rules = this.rules.filter((arrayRule) => {
         return arrayRule.key !== rule.key
       })
-
+      this.getFilteredRulesStatus()
       // @todo ggranum: we're leaking Subscribers here, sadly. Might cause issues for long running edit sessions.
     }
 
@@ -134,8 +146,42 @@ import {ActionTypeService} from "../../../api/rule-engine/ActionType";
           this.ruleService.save(this.ruleStub)
         }
       })
+      this.changeFilterStatus(null)
     }
 
+    getFilteredRulesStatus() {
+    	this.activeRules = 0;
+    	for (var i = 0;  i < this.rules.length ; i++){
+    		if (this.rules[i].enabled){
+    			this.activeRules++;
+    		}
+    	}
+    }
+
+
+    setFieldFilter(field:string, value:string=null){
+      // remove old status
+      var re = new RegExp(field + ':[\\w]*')
+      this.filterText = this.filterText.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
+      if(value !== null) {
+        this.filterText = field + ':' + value + ' ' + this.filterText
+      }
+    }
+
+    isFilteringField(field:string, value:any=null):boolean{
+      let isFiltering
+      if(value === null){
+        var re = new RegExp(field + ':[\\w]*')
+        isFiltering =  this.filterText.match(re) != null
+      } else{
+        isFiltering = this.filterText.indexOf(field + ':' + value) >= 0
+      }
+      return isFiltering
+    }
+
+    isFiltered(rule:RuleModel){
+        return CwFilter.isFiltered(rule,this.filterText)
+    }
   }
 
 
