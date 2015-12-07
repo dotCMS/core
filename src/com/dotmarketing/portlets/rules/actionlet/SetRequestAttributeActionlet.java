@@ -1,18 +1,16 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
-import java.util.List;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import java.util.Map;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
-import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
 
 /**
  * Actionlet to add Key/Value to the Request.
@@ -21,22 +19,18 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
  * @author Oscar Arrieta
  * @version 1.0
  * @since 09-22-2015
- *
  */
-public class SetRequestAttributeActionlet extends RuleActionlet{
+public class SetRequestAttributeActionlet extends RuleActionlet {
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetRequestAttribute";
 
-    private static final String REQUEST_KEY = "requestKey";
-    private static final String REQUEST_VALUE = "requestValue";
+    public static final String REQUEST_KEY = "requestKey";
+    public static final String REQUEST_VALUE = "requestValue";
 
-    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
-			new ActionParameterDefinition(REQUEST_KEY, DataType.TEXT),
-			new ActionParameterDefinition(REQUEST_VALUE)
-    );
-
-    public SetRequestAttributeActionlet(){
-        super(I18N_BASE, PARAMS);
+    public SetRequestAttributeActionlet() {
+        super(I18N_BASE,
+              new ParameterDefinition<>(REQUEST_KEY, new TextInput<>(new TextType()), 1),
+              new ParameterDefinition<>(REQUEST_VALUE, new TextInput<>(new TextType()), 2));
     }
 
     @Override
@@ -53,6 +47,4 @@ public class SetRequestAttributeActionlet extends RuleActionlet{
         String value = params.get(REQUEST_VALUE).getValue();
         request.setAttribute(key, value);
     }
-
-
 }

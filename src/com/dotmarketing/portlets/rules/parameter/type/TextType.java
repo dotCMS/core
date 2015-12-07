@@ -1,62 +1,67 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotmarketing.portlets.rules.parameter.type.constraint.EnumerationConstraint;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.portlets.rules.parameter.comparison.MatcherCheck;
+import org.hamcrest.Matchers;
 
 /**
  * @author Geoff M. Granum
  */
 public class TextType extends DataType {
 
+    private int minLength = 0;
+    private int maxLength = 255;
+    private String defaultValue = "";
+
     public TextType() {
         super("text");
     }
 
-    public TextType(Builder builder) {
-        super(builder.i18nKey);
+    public TextType(String id) {
+        super(id);
+    }
 
+    public int getMinLength() {
+        return minLength;
+    }
+
+    public int getMaxLength() {
+        return maxLength;
+    }
+
+    public String getDefaultValue() {
+        return defaultValue;
+    }
+
+    public TextType minLength(int minLength) {
+        this.minLength = minLength;
+        return this;
+    }
+
+    public TextType maxLength(int maxLength) {
+        this.maxLength = maxLength;
+        return this;
+    }
+
+    public TextType defaultValue(String defaultValue){
+        this.defaultValue = defaultValue;
+        return this;
+    }
+
+    public String convert(String value){
+        return value;
     }
 
     @Override
     public void checkValid(String value) {
-        // noop. If you got here, the string is valid. Yes, even if it's null.
-        // we'll add length validations and such eventually.
+        if(minLength != 0){
+            MatcherCheck.checkThat(value, Matchers.notNullValue());
+        }
     }
 
-    public static class Builder {
-
-        private String i18nKey;
-        private int minLength;
-        private int maxLength;
-        private String defaultValue;
-
-        public Builder i18nKey(String i18nKey) {
-            this.i18nKey = i18nKey;
-            return this;
-        }
-
-
-        public TextType build() {
-            return new TextType(this);
-        }
-
-        public Builder minLength(int minLength) {
-            this.minLength = minLength;
-            return this;
-        }
-
-        public Builder maxLength(int maxLength) {
-            this.maxLength = maxLength;
-            return this;
-        }
-
-        public Builder defaultValue(String defaultValue) {
-            this.defaultValue = defaultValue;
-            return this;
-        }
-
-        public Builder constrainedBy(EnumerationConstraint build) {
-            return this;
-        }
+    @Override
+    public TextType restrict(Comparison restriction) {
+        return (TextType)super.restrict(restriction);
     }
 }
  

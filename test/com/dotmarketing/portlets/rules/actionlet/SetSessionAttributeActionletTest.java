@@ -9,7 +9,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
-import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
@@ -235,20 +234,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
 
         ruleId = rule.getId();
 
-        ConditionGroup group = new ConditionGroup();
-        group.setRuleId(rule.getId());
-        group.setOperator(Condition.Operator.AND);
 
-        rulesAPI.saveConditionGroup(group, user, false);
-
-        Condition condition = new Condition();
-        condition.setName("testCondition");
-        condition.setConditionGroup(group.getId());
-        condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
-        condition.setOperator(Condition.Operator.AND);
-        condition.setComparison("is");
-
-        rulesAPI.saveCondition(condition, user, false);
 
         RuleAction action = new RuleAction();
         action.setActionlet(SetSessionAttributeActionlet.class.getSimpleName());

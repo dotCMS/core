@@ -21,7 +21,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
+//import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -199,7 +199,7 @@ public class RulesAPITest extends TestBase {
 		Condition condition = new Condition();
 		condition.setName("testCondition");
 		condition.setConditionGroup(group.getId());
-		condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
+//		condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
 		condition.setOperator(Condition.Operator.AND);
 		condition.setComparison("is");
 

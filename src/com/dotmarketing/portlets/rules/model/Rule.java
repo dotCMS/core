@@ -8,7 +8,6 @@ import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.json.JSONIgnore;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -56,7 +55,7 @@ public class Rule implements Permissionable, Serializable {
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
 
-    @JSONIgnore
+    
     public String getId() {
         return id;
     }
@@ -168,19 +167,19 @@ public class Rule implements Permissionable, Serializable {
     }
     // Beginning Permissionable methods
 
-    @JSONIgnore
+    
     public String getPermissionId() {
         return this.getId();
     }
 
-    @JSONIgnore
+    
     public String getOwner() {
         return null;
     }
 
     public void setOwner(String owner) {}
 
-    @JSONIgnore
+    
     public List<PermissionSummary> acceptedPermissions() {
         List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
         accepted.add(new PermissionSummary("use",
@@ -188,22 +187,22 @@ public class Rule implements Permissionable, Serializable {
         return accepted;
     }
 
-    @JSONIgnore
+    
     public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
         return null;
     }
 
-    @JSONIgnore
+    
     public Permissionable getParentPermissionable() throws DotDataException {
         return null;
     }
 
-    @JSONIgnore
+    
     public String getPermissionType() {
         return this.getClass().getCanonicalName();
     }
 
-    @JSONIgnore
+    
     public boolean isParentPermissionable() {
         return false;
     }
@@ -254,7 +253,7 @@ public class Rule implements Permissionable, Serializable {
         return result;
     }
 
-    @JSONIgnore
+    
     @Override
     public String toString() {
         return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn

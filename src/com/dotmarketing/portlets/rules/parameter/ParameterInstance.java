@@ -25,6 +25,6 @@ public class ParameterInstance {
     }
 
     public void checkValid() {
-        this.definition.getDataType().checkValid(getValue());
+        this.definition.getInputType().getDataType().checkValid(getValue());
     }
 }

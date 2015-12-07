@@ -1,14 +1,17 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.conditionlet.Comparison;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.util.Logger;
 
+import com.dotmarketing.util.Parameter;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
@@ -85,6 +88,14 @@ public class Condition implements Serializable {
         return values;
     }
 
+    public Map<String, ParameterModel> getParameters() {
+        Map<String, ParameterModel> p = Maps.newLinkedHashMap();
+        for (ParameterModel value : values) {
+            p.put(value.getKey(), value);
+        }
+        return p;
+    }
+
     public void setValues(List<ParameterModel> values) {
         this.values = values;
     }
@@ -131,7 +142,8 @@ public class Condition implements Serializable {
     }
 
     public RuleComponentInstance getComponentInstance(){
-        return getConditionlet().instanceFrom(Comparison.get(getComparison()), getValues());
+//        return getConditionlet().instanceFrom(Comparison.get(getComparison()), getValues());
+        return null;
     }
 
 	@Override

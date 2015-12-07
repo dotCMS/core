@@ -12,6 +12,11 @@ public class NumericType extends DataType {
     }
 
     @Override
+    public Object convert(String from) {
+        return null;
+    }
+
+    @Override
     public void checkValid(String value) {
         if(StringUtils.isNotBlank(value)) {
             try {

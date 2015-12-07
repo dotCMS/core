@@ -1,14 +1,16 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
 import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 
-import java.util.List;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -28,13 +30,11 @@ public class SetSessionAttributeActionlet extends RuleActionlet {
 
     private static final String SESSION_VALUE = "sessionValue";
     private static final String SESSION_KEY = "sessionKey";
-    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
-        new ActionParameterDefinition(SESSION_KEY, DataType.TEXT),
-        new ActionParameterDefinition(SESSION_VALUE)
-    );
 
     public SetSessionAttributeActionlet() {
-        super(I18N_BASE, PARAMS);
+        super(I18N_BASE, new ParameterDefinition<>(SESSION_KEY, new TextInput<>(new TextType()), 1),
+              new ParameterDefinition<>(SESSION_VALUE, new TextInput<>(new TextType()), 2)
+        );
     }
 
     @Override

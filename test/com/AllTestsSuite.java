@@ -1,9 +1,9 @@
 package com;
 
 
-import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
+//import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPITest;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
+//import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
@@ -23,7 +23,7 @@ import com.dotcms.rest.ContentResourceTest;
 import com.dotcms.rest.RoleResourceTest;
 import com.dotcms.rest.WebResourceTest;
 import com.dotcms.rest.api.v1.sites.rules.ConditionGroupResourceFTest;
-import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
+//import com.dotcms.rest.api.v1.sites.rules.ConditionResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.RuleResourceFTest;
 import com.dotcms.rest.api.v1.system.ruleengine.ActionletResourceFTest;
 import com.dotcms.rest.api.v1.sites.rules.ActionResourceFTest;
@@ -106,13 +106,13 @@ import com.dotmarketing.webdav.WebDavTest;
     RulesAPITest.class,
     RuleResourceFTest.class,
     ConditionGroupResourceFTest.class,
-    ConditionResourceFTest.class,
+//    ConditionResourceFTest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
-    ConditionletTest.class,
+//    ConditionletTest.class,
     ActionletResourceFTest.class,
     SetSessionAttributeActionletTest.class,
     SetResponseHeaderActionletFTest.class,
-    UsersCountryConditionletFTest.class,
+//    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class
 })
 public class AllTestsSuite {

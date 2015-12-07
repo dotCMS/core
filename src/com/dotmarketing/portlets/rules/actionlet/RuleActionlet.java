@@ -5,8 +5,7 @@ import com.dotmarketing.portlets.rules.RuleComponentDefinition;
 import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import java.util.ArrayList;
-import java.util.List;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,20 +14,10 @@ public abstract class RuleActionlet extends RuleComponentDefinition {
 
     private static final long serialVersionUID = 1L;
 
-    private final List<ActionParameterDefinition> parameters;
-
-    public RuleActionlet(String i18nKey) {
-        this(i18nKey, new ArrayList<>());
+    public RuleActionlet(String i18nKey, ParameterDefinition... parameterDefinitions) {
+        super(i18nKey, parameterDefinitions);
     }
 
-    public RuleActionlet(String i18nKey, List<ActionParameterDefinition> parameterDefinitions) {
-        super(i18nKey);
-        this.parameters = parameterDefinitions;
-    }
-
-    public List<ActionParameterDefinition> getParameters(){
-    	return parameters;
-    }
 
 	/**
 	 * This method is called if the owning Rule's conditions {@link com.dotmarketing.portlets.rules.conditionlet.Conditionlet} evaluate to true.

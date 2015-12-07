@@ -8,17 +8,15 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.ValidationResult;
-import com.dotmarketing.portlets.rules.ValidationResults;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.util.Logger;
 
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-
 
 public class ConditionletOSGIFTest {
 
@@ -39,7 +37,7 @@ public class ConditionletOSGIFTest {
             Assert.assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
         } catch(Exception e) {
-            Logger.error(ConditionletOSGIFTest.class, "Error starting/stoping ConditionletActivator", e);
+            Logger.error(ConditionletOSGIFTest.class, "Error starting/stopping ConditionletActivator", e);
             throw e;
         }
 
@@ -69,12 +67,7 @@ public class ConditionletOSGIFTest {
         private static final long serialVersionUID = 1L;
 
         public UsersContinentConditionlet() {
-            super("User's Continent", Sets.newHashSet());
-        }
-
-        @Override
-        public Collection<ConditionletInput> getInputs(String comparisonId) {
-            return null;
+            super("User's Continent");
         }
 
         @Override
@@ -83,7 +76,7 @@ public class ConditionletOSGIFTest {
         }
 
         @Override
-        public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
+        public Instance instanceFrom( Map<String, ParameterModel> values) {
             return null;
         }
 

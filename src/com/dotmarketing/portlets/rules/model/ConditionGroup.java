@@ -80,10 +80,8 @@ public class ConditionGroup implements Serializable {
         }
     }
 
-    public void removeCondition(Condition condition) {
-        if(conditions!=null) {
-            conditions.remove(condition);
-        }
+    public void checkValid(HttpServletRequest req){
+
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
