@@ -453,6 +453,7 @@ public class RulesAPIImpl implements RulesAPI {
         // delete the condition values
         rulesFactory.deleteConditionValues(condition);
 
+        
         // delete the condition
         rulesFactory.deleteCondition(condition);
     }
