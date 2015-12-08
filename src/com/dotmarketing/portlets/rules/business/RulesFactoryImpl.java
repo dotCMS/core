@@ -794,6 +794,14 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.DELETE_CONDITION_VALUES_BY_CONDITION);
         db.addParam(condition.getId());
         db.loadResult();
+        cache.removeCondition(condition);
+        ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+        cache.removeConditionGroup(group);
+        Rule rule  = getRuleById(group.getRuleId());
+        cache.removeRule(rule);
+        
+        
+        
     }
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
