@@ -23,7 +23,11 @@
 package com.liferay.portal.pwd;
 
 import com.dotcms.repackage.org.apache.oro.text.perl.Perl5Util;
-
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.language.LanguageException;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.PwdGenerator;
 
@@ -35,6 +39,8 @@ import com.liferay.util.PwdGenerator;
  */
 public class RegExpToolkit extends BasicToolkit {
 
+	private String _pattern;
+	
     public RegExpToolkit () {
         _pattern = PropsUtil.get( PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN );
     }
@@ -49,6 +55,38 @@ public class RegExpToolkit extends BasicToolkit {
         return util.match( _pattern, password );
     }
 
-    private String _pattern;
+	/**
+	 * Retrieves an error message from the {@code portal.properties} file based
+	 * on a message key. This {@code portal.properties} file will reference a
+	 * message key that <b>MUST BE</b> located in the
+	 * {@code Language.properties} files containing the respective error message
+	 * users will see. The main goal of this method is to provide users feedback
+	 * related to, for example:
+	 * <ul>
+	 * <li>The password not meeting the required security policies.</li>
+	 * <li>The password not being able to use because it cannot be recycled yet.
+	 * </li>
+	 * <li>The password not allowed when it is a word from the dictionary.</li>
+	 * <li>Etc.</li>
+	 * </ul>
+	 * 
+	 * @param msgKey
+	 *            - The message key to the internationalized error message.
+	 * @return The error message users will see explaining their respective
+	 *         error.
+	 */
+	public String getErrorMessageFromConfig(String msgKey) {
+		String messageKey = PropsUtil.get(msgKey);
+		String msg = null;
+		try {
+			User systemUser = APILocator.getUserAPI().getSystemUser();
+			msg = LanguageUtil.get(systemUser, messageKey);
+		} catch (DotDataException e) {
+			msg = messageKey;
+		} catch (LanguageException e) {
+			msg = messageKey;
+		}
+		return msg;
+	}
 
 }

@@ -161,7 +161,9 @@ public class PropsUtil {
 	public static final String PASSWORDS_TOOLKIT = "passwords.toolkit";
 
 	public static final String PASSWORDS_REGEXPTOOLKIT_PATTERN = "passwords.regexptoolkit.pattern";
-
+	
+	public static final String PASSWORDS_REGEXPTOOLKIT_PATTERN_ERROR = "passwords.regexptoolkit.pattern.error";
+	
 	public static final String PASSWORDS_ALLOW_DICTIONARY_WORD = "passwords.allow.dictionary.word";
 
 	public static final String PASSWORDS_CHANGE_ON_FIRST_USE = "passwords.change.on.first.use";
@@ -169,6 +171,8 @@ public class PropsUtil {
 	public static final String PASSWORDS_LIFESPAN = "passwords.lifespan";
 
 	public static final String PASSWORDS_RECYCLE = "passwords.recycle";
+	
+	public static final String PASSWORDS_RECYCLE_ERROR = "passwords.recycle.error";
 
 	// Captcha
 
