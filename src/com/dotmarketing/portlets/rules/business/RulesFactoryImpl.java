@@ -800,8 +800,6 @@ public class RulesFactoryImpl implements RulesFactory {
         Rule rule  = getRuleById(group.getRuleId());
         cache.removeRule(rule);
         
-        
-        
     }
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
