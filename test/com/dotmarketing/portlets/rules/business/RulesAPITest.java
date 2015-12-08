@@ -171,6 +171,8 @@ public class RulesAPITest extends TestBase {
 
 	private void createRule(Rule.FireOn fireOn) throws Exception {
 		RulesAPI rulesAPI = APILocator.getRulesAPI();
+        rulesAPI.addConditionlet(MockTrueConditionlet.class);
+
 		User user = APILocator.getUserAPI().getSystemUser();
 
 		HostAPI hostAPI = APILocator.getHostAPI();
