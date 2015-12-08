@@ -161,7 +161,6 @@ public class MailingListsSubscribeAction extends DispatchAction {
 			user.setEmailAddress(form.getEmailAddress());
 			user.setFirstName(form.getName() == null ? "" : form.getName());
 			user.setLastName(form.getLastName() == null ? "" : form.getLastName());
-			user.setPasswordEncrypted(true);
 			user.setPassword(PublicEncryptionFactory.getRandomEncryptedPassword());
 			user.setComments("");
 			user.setGreeting("Welcome, " + user.getFullName() + "!");
