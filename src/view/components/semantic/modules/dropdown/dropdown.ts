@@ -1,4 +1,9 @@
 import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
+import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
+import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
+import {CwComponent} from "../../../../../api/util/CwComponent";
+import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
+import {ParameterModel} from "../../../../../api/rule-engine/Condition";
 //import * as Rx from '../../../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
 /**
@@ -41,7 +46,7 @@ export class DropdownOption {
     }
   }
 }
-export class DropdownModel {
+export class DropdownModel extends CwComponent {
   name:string
   placeholder:string
   selected:Array<string>
@@ -57,6 +62,7 @@ export class DropdownModel {
               selected:Array<string> = [],
               options:Array<DropdownOption> = [],
               allowAdditions:boolean = false) {
+    super()
     this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     this.placeholder = placeholder
     this.selected = selected
@@ -65,6 +71,19 @@ export class DropdownModel {
     this._optionChange = new EventEmitter()
     this.onOptionChange = Rx.Observable.from(this._optionChange.toRx()).share()
     this.allowAdditions = allowAdditions
+  }
+
+  static fromParameter(param:ParameterModel, paramDef:ParameterDefinition):DropdownModel {
+    let ddm
+    let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
+    let opts = []
+    let options = inputType.options;
+    Object.keys(options).forEach((key:any)=>{
+      let option = options[key]
+      opts.push(new DropdownOption(key, option.value))
+    })
+    console.log("DD-PARAM:", param.key, param.value, param )
+    return new DropdownModel(param.key, inputType.placeholder, [param.value], opts)
   }
 
   addOptions(options:Array<DropdownOption>) {

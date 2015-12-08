@@ -172,8 +172,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
           // updatedCondition and clientCondition SHOULD NOT be the same instance object.
           updatedCondition['abc123'] = 100
           expect(clientCondition['abc123']).toBeUndefined()
-          expect(clientCondition.getParameter(key)).toBe(value, "ClientCondition param value should still be set.")
-          expect(updatedCondition.getParameter(key)).toBe(value, "Condition refreshed from server should have the correct param value.")
+          expect(clientCondition.getParameterValue(key)).toBe(value, "ClientCondition param value should still be set.")
+          expect(updatedCondition.getParameterValue(key)).toBe(value, "Condition refreshed from server should have the correct param value.")
           expect(Object.keys(updatedCondition.parameters).length).toEqual(1, "The old keys should have been removed.")
           done()
         })
@@ -195,8 +195,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
       clientCondition.setParameter(param1.key, param1.v2)
       conditionService.save(clientCondition, (savedCondition)=>{
         conditionService.get(clientCondition.owningGroup, clientCondition.key, (updatedCondition)=>{
-          expect(updatedCondition.getParameter(param1.key)).toBe(param1.v2, "Condition refreshed from server should have the correct param value.")
-          expect(updatedCondition.getParameter(param2.key)).toBe(param2.v1, "Condition refreshed from server should have the correct param value.")
+          expect(updatedCondition.getParameterValue(param1.key)).toBe(param1.v2, "Condition refreshed from server should have the correct param value.")
+          expect(updatedCondition.getParameterValue(param2.key)).toBe(param2.v1, "Condition refreshed from server should have the correct param value.")
           expect(Object.keys(updatedCondition.parameters).length).toEqual(2)
           done()
 

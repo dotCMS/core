@@ -94,7 +94,7 @@ export class ConditionGroupService {
 
   static _toJson(conditionGroup:ConditionGroupModel):any {
     let json:any = {}
-    json.id = conditionGroup.key
+    json.type = conditionGroup.key
     json.operator = conditionGroup.operator
     json.priority = conditionGroup.priority
     json.conditions = conditionGroup.conditions

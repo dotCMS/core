@@ -26,7 +26,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
   <div flex layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
-    <template [ng-switch-when]="'RequestHeaderConditionlet'">
+    <template [ng-switch-when]="'XXRequestHeaderConditionlet'">
       <cw-request-header-condition
           class="cw-condition-component"
           [comparator-value]="condition.comparison"
@@ -34,7 +34,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
           (change)="conditionChanged($event)">
       </cw-request-header-condition>
     </template>
-    <template [ng-switch-when]="'UsersCountryConditionlet'">
+    <template [ng-switch-when]="'XUsersCountryConditionlet'">
       <cw-country-condition
           class="cw-condition-component"
           [comparator-value]="condition.comparison"
@@ -140,7 +140,7 @@ export class ConditionComponent {
 
   conditionChanged(event) {
     if (event.type == 'comparisonChange') {
-      this.condition.comparison = event.value
+      this.condition.setParameter('comparison', event.value);
     } else if (event.type == 'parameterValueChange') {
       event.value.forEach((param)=> {
         this.condition.setParameter(param.key, param.value)

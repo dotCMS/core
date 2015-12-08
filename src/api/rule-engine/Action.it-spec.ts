@@ -160,7 +160,7 @@ describe('Integration.api.rule-engine.ActionService', function () {
           updatedAction['abc123'] = 100
           expect(clientAction['abc123']).toBeUndefined()
           expect(clientAction.getParameter(key)).toBe(value, "ClientAction param value should still be set.")
-          expect(updatedAction.getParameter(key)).toBe(value, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(key)).toBe(value, "Action refreshed from server should have the correct param value.")
           expect(Object.keys(updatedAction.parameters).length).toEqual(1, "The old keys should have been removed.")
           done()
 
@@ -186,8 +186,8 @@ describe('Integration.api.rule-engine.ActionService', function () {
       clientAction.setParameter(param1.key, param1.v2)
       actionService.save(clientAction, (savedAction)=>{
         actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
-          expect(updatedAction.getParameter(param1.key)).toBe(param1.v2, "Action refreshed from server should have the correct param value.")
-          expect(updatedAction.getParameter(param2.key)).toBe(param2.v1, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(param1.key)).toBe(param1.v2, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(param2.key)).toBe(param2.v1, "Action refreshed from server should have the correct param value.")
           expect(Object.keys(updatedAction.parameters).length).toEqual(2, "The old keys should have been removed.")
           done()
 

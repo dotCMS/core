@@ -9,14 +9,15 @@ import {EntitySnapshot} from "../persistence/EntityBase";
 import {ConditionGroupModel} from "./ConditionGroup";
 import {CwChangeEvent} from "../util/CwEvent";
 import {ConditionTypeService} from "./ConditionType";
+import {ParameterDefinition} from "../util/CwInputModel";
 
 
 let noop = (...arg:any[])=> {
 }
 
-interface ConditionModelParameter {
+export interface ParameterModel {
   key:string
-  value:any
+  value:string
   priority:number
 }
 
@@ -28,27 +29,56 @@ export class ConditionModel extends CwModel {
   private _operator:string
   private _owningGroup:ConditionGroupModel
   private _conditionType:ConditionTypeModel
-  private _parameters:{[key:string]: ConditionModelParameter}
+  private _parameters:{[key:string]: ParameterModel}
+  private _parameterDefs:{[key:string]: ParameterDefinition}
 
-  constructor(key:string = null) {
+  constructor(key:string = null, conditionType:ConditionTypeModel) {
     super(key)
-    this._conditionType = new ConditionTypeModel('', '')
-    this.comparison = 'is'
+    this._conditionType = conditionType
     this.operator = 'AND'
     this.priority = 1
     this._parameters = {}
+    this._parameterDefs = {}
   }
+  setParameterDef(key:string, paramDef:ParameterDefinition) {
+    this._parameterDefs[key] = paramDef
+    let defVal = paramDef.defaultValue
+    if(defVal === ''){
+      defVal = null // components won't show placeholders as they treat empty string as a real value.
+    }
+    this._parameters[key] = {key: key, value: defVal, priority: paramDef.priority}
+    console.log("Foo:", key, paramDef.defaultValue==null)
 
+  }
   setParameter(key:string, value:any, priority:number = 1) {
+    if(this._parameterDefs[key] === undefined){
+      console.log("Unsupported parameter: ", key)
+      return;
+    }
     let existing = this._parameters[key]
     this._parameters[key] = {key: key, value: value, priority: priority}
     this._changed('parameters')
   }
 
-  getParameter(key:string):any {
+  getParameter(key:string):ParameterModel {
+    let v:any = ''
+    if (this.parameters[key] !== undefined) {
+      v = this.parameters[key]
+    }
+    return v
+  }
+  getParameterValue(key:string):string {
     let v:any = ''
     if (this.parameters[key] !== undefined) {
       v = this.parameters[key].value
+    }
+    return v
+  }
+
+  getParameterDef(key:string):ParameterDefinition {
+    let v:any = ''
+    if (this._parameterDefs[key] !== undefined) {
+      v = this._parameterDefs[key]
     }
     return v
   }
@@ -58,9 +88,14 @@ export class ConditionModel extends CwModel {
     this._changed('parameters')
   }
 
-  get parameters():{[key:string]: ConditionModelParameter} {
+  get parameterDefs():{[key:string]: ParameterDefinition} {
+    return this._parameterDefs
+  }
+
+  get parameters():{[key:string]: ParameterModel} {
     return this._parameters
   }
+
 
   get conditionType():ConditionTypeModel {
     return this._conditionType;
@@ -91,11 +126,6 @@ export class ConditionModel extends CwModel {
 
   get comparison():string {
     return this._comparison;
-  }
-
-  set comparison(value:string) {
-    this._comparison = value;
-    this._changed('comparison')
   }
 
   get operator():string {
@@ -141,22 +171,30 @@ export class ConditionService {
     this.onRemove = onRemove.share()
   }
 
-  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
+  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot, cb:Function=noop) {
     let val:any = snapshot.val()
-    let ra = new ConditionModel(snapshot.key())
-    ra.name = val.name;
-    ra.owningGroup = group
-    ra.comparison = val.comparison
-    ra.priority = val.priority
-    ra.operator = val.operator
-    Object.keys(val.values).forEach((key)=> {
-      let x = val.values[key]
-      ra.setParameter(key, x.value, x.priority)
+
+    this._conditionTypeService.get(val.conditionlet, (type:ConditionTypeModel)=> {
+      try {
+        let ra = new ConditionModel(snapshot.key(), type)
+        ra.name = val.name;
+        ra.owningGroup = group
+        ra.priority = val.priority
+        ra.operator = val.operator
+        Object.keys(type.parameters).forEach((key)=> {
+          let x = type.parameters[key]
+          ra.setParameterDef(key, ParameterDefinition.fromJson(x))
+        })
+        Object.keys(val.values).forEach((key)=> {
+          let x = val.values[key]
+          ra.setParameter(key, x.value, x.priority)
+        })
+        cb(ra)
+      } catch (e) {
+        console.log("Error reading Condition.", e)
+        throw e;
+      }
     })
-    this._conditionTypeService.get(val.conditionlet, (type)=> {
-      ra.conditionType = type
-    })
-    return ra
   }
 
   static toJson(condition:ConditionModel):any {
@@ -165,7 +203,6 @@ export class ConditionService {
     json.name = condition.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningGroup = condition.owningGroup.key
     json.conditionlet = condition.conditionType.key
-    json.comparison = condition.comparison
     json.priority = condition.priority
     json.operator = condition.operator
     json.values = condition.parameters
@@ -184,7 +221,9 @@ export class ConditionService {
     Object.keys(group.conditions).forEach((conditionId)=> {
       let cRef = this._ref.child(conditionId)
       cRef.once('value', (conditionSnap)=> {
-        this._added.next(this.fromSnapshot(group, conditionSnap))
+        this.fromSnapshot(group, conditionSnap, (model)=>{
+          this._added.next(model)
+        })
       }, (e)=> {
         throw e
       })
@@ -210,9 +249,11 @@ export class ConditionService {
 
   get(group:ConditionGroupModel, key:string, cb:Function = null) {
     this._ref.child(key).once('value', (conditionSnap)=> {
-      let model = this.fromSnapshot(group, conditionSnap);
-      this._added.next(model)
-      cb(model)
+      let model = this.fromSnapshot(group, conditionSnap, (model) => {
+        this._added.next(model)
+        cb(model)
+      });
+
     }, (e)=> {
       throw e
     })

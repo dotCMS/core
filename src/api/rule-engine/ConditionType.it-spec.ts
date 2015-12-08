@@ -13,9 +13,11 @@ import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 
 import {ConditionTypeService, ConditionTypeModel} from '../../api/rule-engine/ConditionType';
 import {CwChangeEvent} from '../../api/util/CwEvent';
+import {I18nService} from "../system/locale/I18n";
 
-
-var injector = Injector.resolveAndCreate([ApiRoot,
+var injector = Injector.resolveAndCreate([
+  ApiRoot,
+  I18nService,
   UserModel,
   ConditionTypeService,
   new Provider(DataStore, {useClass: RestDataStore})

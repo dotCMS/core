@@ -22,7 +22,8 @@ import {CwChangeEvent} from '../../api/util/CwEvent';
 import {I18nService} from "../system/locale/I18n";
 
 
-var injector = Injector.resolveAndCreate([ApiRoot,
+var injector = Injector.resolveAndCreate([
+  ApiRoot,
   I18nService,
   UserModel,
   RuleService,

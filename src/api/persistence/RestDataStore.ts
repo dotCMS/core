@@ -21,9 +21,9 @@ export class RestDataStore extends DataStore {
         response.entity = entity // restore the original, entity
       }
       else if (isNew === true) {
-        path = path + '/' + response.entity.id
+        path = path + '/' + response.entity.type
       } else {
-        path = path.substring(0, path.lastIndexOf('/') + 1) + response.entity.id
+        path = path.substring(0, path.lastIndexOf('/') + 1) + response.entity.type
       }
       response['path'] = path
       return response

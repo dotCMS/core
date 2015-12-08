@@ -90,7 +90,7 @@ export class CountryCondition {
       this.countries = tempCountries
       this.countryDropdown.addOptions(opts)
       if (this.value.isoCode === 'NoSelection') {
-        this.value.isoCode = this.countries[0].id
+        this.value.isoCode = this.countries[0].type
       }
     })
 

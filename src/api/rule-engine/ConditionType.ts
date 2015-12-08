@@ -6,22 +6,27 @@ import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService, I18nResourceModel} from "../system/locale/I18n";
+import {ParameterDefinition} from "../util/CwInputModel";
 
 let noop = (...arg:any[])=> {
 }
 
+
+
+
+
 export class ConditionTypeModel extends CwI18nModel {
 
   i18nKey:string
-  comparisons:Array<string>
+  parameters:{ [key:string]:ParameterDefinition}
 
-  constructor(key:string = 'NoSelection', i18nKey:string = null, comparisons:Array<any> = []) {
+  constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:any = {}) {
     super(key ? key : 'NoSelection', i18nKey, {name: i18nKey})
-    this.comparisons = comparisons || []
+    this.parameters = parameters
   }
 
   isValid() {
-    return this.isPersisted() && !!this.i18nKey && this.comparisons && this.comparisons.length > 0
+    return this.isPersisted() && !!this.i18nKey && this.parameters
   }
 
 }
@@ -85,12 +90,25 @@ export class ConditionTypeService {
 
   fromSnapshot(snapshot:EntitySnapshot):ConditionTypeModel {
     let val:any = snapshot.val()
-    let comparisons = []
-    val.comparisons.forEach((comparison:any) => {
+    /**
+     *
+     * let val:any = snapshot.val()
+     let comparisons = []
+     val.comparisons.forEach((comparison:any) => {
       comparison.label = this.comparisonRsrc[comparison.id]
       comparison.label = comparison.label ? comparison.label : comparison.id
     })
-    return new ConditionTypeModel(snapshot.key(), val.i18nKey, comparisons);
+     return new ConditionTypeModel(snapshot.key(), val.i18nKey, comparisons);
+     *
+     */
+
+
+
+
+
+
+
+    return new ConditionTypeModel(snapshot.key(), val.i18nKey, val.parameterDefinitions)
   }
 
   private _entryReceived(entry:ConditionTypeModel) {

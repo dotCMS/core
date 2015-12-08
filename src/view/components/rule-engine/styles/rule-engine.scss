@@ -120,8 +120,14 @@ $primary-one: #209021;
     &:first-child {
       margin-left: 0
     }
+    &.cw-first {
+      margin-left:0
+    }
     &:last-child {
       margin-right: 0
+    }
+    &.cw-last {
+      margin-right:0
     }
   }
 
@@ -166,6 +172,10 @@ $primary-one: #209021;
     }
 
   }
+}
+
+.cw-last {
+  margin-right:0;
 }
 
 .ui.basic.button.cw-button-toggle-operator {

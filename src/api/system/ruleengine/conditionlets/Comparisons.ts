@@ -16,7 +16,7 @@ export class ComparisonsModel {
         this._comparisons = {}
 
         comparisons.forEach((comparison)=> {
-            this._comparisons[comparison.id] = comparison.label
+            this._comparisons[comparison.type] = comparison.label
         })
     }
 

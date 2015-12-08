@@ -1,23 +1,28 @@
 import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
+import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
+import {CwComponent} from "../../../../../api/util/CwComponent";
+import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
+import {ParameterModel} from "../../../../../api/rule-engine/Condition";
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
  */
 
-export class InputTextModel {
+export class InputTextModel extends CwComponent {
   name:string
   placeholder:string
   value:string
   disabled:string
   icon:string
 
+
   constructor(name:string = null,
               placeholder:string = '',
               value:string = null,
               disabled:string = null,
               icon:string = '') {
-
+    super()
     this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     this.placeholder = placeholder
     this.value = value
@@ -29,6 +34,12 @@ export class InputTextModel {
   }
 
   validate(value:string){ };
+
+  static fromParameter(param:ParameterModel, paramDef:ParameterDefinition):InputTextModel {
+    let itm = new InputTextModel(param.key, paramDef.inputType.placeholder, param.value)
+    console.log("PARAM:", param.key, param.value, param )
+    return itm
+  }
 }
 
 @Component({
@@ -76,7 +87,7 @@ export class InputText {
   inputChange(event){
     try {
       this.errorMessage = null
-
+      event.value = event.target.value
       this._model.value = event.target.value
 
       //Check if the validate function exists in this model.
