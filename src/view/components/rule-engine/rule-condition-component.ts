@@ -126,7 +126,6 @@ export class ConditionComponent {
 
   handleConditionTypeChange(event) {
     this.condition.conditionType = event.target.model.selectedValues()[0]
-    this.condition.clearParameters()
   }
 
   toggleOperator() {
@@ -139,9 +138,7 @@ export class ConditionComponent {
 
 
   conditionChanged(event) {
-    if (event.type == 'comparisonChange') {
-      this.condition.setParameter('comparison', event.value);
-    } else if (event.type == 'parameterValueChange') {
+    if (event.type == 'parameterValueChange') {
       event.value.forEach((param)=> {
         this.condition.setParameter(param.key, param.value)
       })

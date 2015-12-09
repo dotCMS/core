@@ -45,7 +45,7 @@ export class CwModel {
   }
 
   _changed(type:string) {
-    this._checkValid()
+    //this._checkValid()
     this._change.next({ type: type, target: this})
   }
 

@@ -32,24 +32,20 @@ export class ConditionModel extends CwModel {
   private _parameters:{[key:string]: ParameterModel}
   private _parameterDefs:{[key:string]: ParameterDefinition}
 
-  constructor(key:string = null, conditionType:ConditionTypeModel) {
+  constructor(key:string, conditionType:ConditionTypeModel) {
     super(key)
-    this._conditionType = conditionType
-    this.operator = 'AND'
-    this.priority = 1
     this._parameters = {}
     this._parameterDefs = {}
+    this.operator = 'AND'
+    this.priority = 1
+    if(conditionType != null) {
+      this.conditionType = conditionType
+    }
   }
   setParameterDef(key:string, paramDef:ParameterDefinition) {
     this._parameterDefs[key] = paramDef
-    let defVal = paramDef.defaultValue
-    if(defVal === ''){
-      defVal = null // components won't show placeholders as they treat empty string as a real value.
-    }
-    this._parameters[key] = {key: key, value: defVal, priority: paramDef.priority}
-    console.log("Foo:", key, paramDef.defaultValue==null)
-
   }
+
   setParameter(key:string, value:any, priority:number = 1) {
     if(this._parameterDefs[key] === undefined){
       console.log("Unsupported parameter: ", key)
@@ -83,11 +79,6 @@ export class ConditionModel extends CwModel {
     return v
   }
 
-  clearParameters() {
-    this._parameters = {}
-    this._changed('parameters')
-  }
-
   get parameterDefs():{[key:string]: ParameterDefinition} {
     return this._parameterDefs
   }
@@ -101,8 +92,15 @@ export class ConditionModel extends CwModel {
     return this._conditionType;
   }
 
-  set conditionType(value:ConditionTypeModel) {
-    this._conditionType = value;
+  set conditionType(type:ConditionTypeModel) {
+    this._conditionType = type;
+    this._parameters = {}
+    Object.keys(type.parameters).forEach((key)=> {
+      let x = type.parameters[key]
+      let paramDef = ParameterDefinition.fromJson(x)
+      this._parameterDefs[key] = paramDef
+      this._parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
+    })
     this._changed('conditionType')
   }
 
@@ -143,9 +141,26 @@ export class ConditionModel extends CwModel {
   }
 
   isValid() {
-    let valid = !!this._owningGroup
+    let valid = !!this.key
+    valid = valid && !!this._owningGroup
     valid = valid && this._owningGroup.isValid() && this._owningGroup.isPersisted()
+    if(this._parameterDefs) {
+      Object.keys(this._parameterDefs).forEach(key=> {
+        let paramDef = this.getParameterDef(key)
+      if(this._parameters[key] == null){
+        debugger
+      }
+        var value = this._parameters[key].value;
+        if(value == ''){
+          debugger
+        }
+        valid = valid && paramDef.inputType.verify(value).valid
+        console.log("validate => key: ", key, "  value: ", value, "  valid: ", valid)
+      })
+    }
     valid = valid && this._conditionType && this._conditionType.key && this._conditionType.key != 'NoSelection'
+    console.log("validate => Result: ", valid)
+
     return valid
   }
 }
@@ -181,10 +196,7 @@ export class ConditionService {
         ra.owningGroup = group
         ra.priority = val.priority
         ra.operator = val.operator
-        Object.keys(type.parameters).forEach((key)=> {
-          let x = type.parameters[key]
-          ra.setParameterDef(key, ParameterDefinition.fromJson(x))
-        })
+
         Object.keys(val.values).forEach((key)=> {
           let x = val.values[key]
           ra.setParameter(key, x.value, x.priority)
@@ -278,6 +290,7 @@ export class ConditionService {
   save(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "save", model)
     if (!model.isValid()) {
+      debugger
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {

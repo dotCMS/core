@@ -1,5 +1,13 @@
 
+import {Verify} from "../validation/Verify";
+export class CwValidationResults{
+  valid:boolean
 
+
+  constructor(valid:boolean) {
+    this.valid = valid;
+  }
+}
 
 export class DataTypeModel {
   type:string
@@ -23,6 +31,12 @@ export class CwInputDefinition {
     this.type = id
     this.name = name
   }
+
+  verify(value:any):CwValidationResults {
+    return new CwValidationResults(true)
+  }
+
+
 
   static registerType(typeId:string, type:Function){
     Registry[typeId] = type
@@ -55,6 +69,17 @@ export class CwTextInputModel extends CwInputDefinition {
     super(id, name);
   }
 
+  verify(value:string):CwValidationResults {
+    let valid = true;
+    if(this.minLength > 0){
+      valid = value != null && value.length >= this.minLength
+    }
+    if(value) {
+      valid = valid && value.length <= this.maxLength
+    }
+    return new CwValidationResults(valid)
+  }
+
   static fromJson(json:any, name:string):CwTextInputModel {
     let m = new CwTextInputModel(json.id, name);
     m.minLength = json.dataType.minLength
@@ -67,17 +92,37 @@ CwInputDefinition.registerType("text", CwTextInputModel)
 export class CwDropdownInputModel extends CwInputDefinition {
   options: {[key:string]: any}
   allowAdditions: boolean
+  minSelections:number = 0
+  maxSelections:number = 1
   selected:Array<any>
 
   constructor(id:string, name:string) {
     super(id, name)
+    this.selected = []
+  }
+
+  verify(selections:any):CwValidationResults {
+    let valid  = true
+    if(Verify.isString(selections)){
+      selections = [selections]
+    }
+    if(this.minSelections > 0){
+      valid = selections != null && selections.length >= this.minSelections
+    }
+    if(selections != null){
+      valid = valid && selections.length <= this.maxSelections
+    }
+    return new CwValidationResults(valid)
   }
 
   static fromJson(json:any, name:string):CwDropdownInputModel {
     let m = new CwDropdownInputModel(json.id, name);
     m.options = json.options
     m.allowAdditions = json.allowAdditions
-    m.selected = [json.dataType.defaultValue]
+    m.minSelections = json.minSelections
+    m.maxSelections = json.maxSelections
+    let defV = json.dataType.defaultValue
+    m.selected = (defV == null || defV === '') ? [] : [defV]
     return m
   }
 }
@@ -98,7 +143,8 @@ export class ParameterDefinition {
 
   static fromJson(json:any):ParameterDefinition{
     let m = new ParameterDefinition
-    m.defaultValue = json.defaultValue
+    let defV = json.defaultValue
+    m.defaultValue = (defV == null || defV === '') ? null : defV
     m.priority = json.priority
     m.key = json.key
     m.inputType = CwInputDefinition.fromJson(json.inputType, m.key)
