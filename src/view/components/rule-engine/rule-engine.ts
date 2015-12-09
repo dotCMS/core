@@ -44,9 +44,9 @@ import {CwFilter} from "../../../api/util/CwFilter"
     </button>
   </div>
     <div class="cw-filter-links">
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status.all}} ({{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status.active}} ({{activeRules}}/{{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status?.all}} ({{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status?.active}} ({{activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status?.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
     </div>
   </div>
 
@@ -148,7 +148,6 @@ import {CwFilter} from "../../../api/util/CwFilter"
           this.ruleService.save(this.ruleStub)
         }
       })
-      this.changeFilterStatus(null)
     }
 
     getFilteredRulesStatus() {
