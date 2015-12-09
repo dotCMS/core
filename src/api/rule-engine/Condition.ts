@@ -42,6 +42,7 @@ export class ConditionModel extends CwModel {
       this.conditionType = conditionType
     }
   }
+
   setParameterDef(key:string, paramDef:ParameterDefinition) {
     this._parameterDefs[key] = paramDef
   }

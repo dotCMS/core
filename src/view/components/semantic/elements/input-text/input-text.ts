@@ -1,8 +1,8 @@
 import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
-import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
-import {CwComponent} from "../../../../../api/util/CwComponent";
-import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
-import {ParameterModel} from "../../../../../api/rule-engine/Condition";
+import {CwTextInputModel} from "api/util/CwInputModel";
+import {CwComponent} from "api/util/CwComponent";
+import {ParameterDefinition} from "api/util/CwInputModel";
+import {ParameterModel} from "api/rule-engine/Condition";
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.

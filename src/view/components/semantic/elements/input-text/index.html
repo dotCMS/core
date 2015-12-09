@@ -17,7 +17,7 @@
 
 <script>
   System.config({
-
+    defaultJSExtensions: false,
     packages: {
       'api': {defaultExtension: 'js'},
       'view': {defaultExtension: 'js'},
@@ -27,7 +27,8 @@
     map: {
       "angular2/angular2": "angular2/angular2",
       "whatwg-fetch": "../../../../../thirdparty/whatwg-fetch/fetch.js",
-      "view": "../../../../../view"
+      "view": "../../../../../view",
+      "api": "../../../../../api"
     }
   });
 
