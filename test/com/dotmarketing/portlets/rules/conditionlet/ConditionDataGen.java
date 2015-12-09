@@ -44,7 +44,7 @@ public class ConditionDataGen {
         return persist(next());
     }
 
-    private Condition persist(Condition next) {
+    public Condition persist(Condition next) {
         try {
             rulesAPI.saveCondition(next, user, false);
         } catch (Exception e) {

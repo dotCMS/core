@@ -87,6 +87,12 @@ public class Condition implements Serializable {
         this.values = values;
     }
 
+    public void addConditionValue(ConditionValue value) {
+        if(values!=null) {
+            values.add(value);
+        }
+    }
+
     public Date getModDate() {
         return modDate;
     }

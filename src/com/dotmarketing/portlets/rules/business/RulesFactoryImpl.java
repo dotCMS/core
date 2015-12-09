@@ -39,7 +39,6 @@ public class RulesFactoryImpl implements RulesFactory {
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
         cache = CacheLocator.getRulesCache();
-//        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
