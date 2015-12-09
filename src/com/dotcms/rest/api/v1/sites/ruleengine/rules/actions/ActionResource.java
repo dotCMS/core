@@ -16,6 +16,7 @@ import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.codehaus.jettison.json.JSONException;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
@@ -29,8 +30,10 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.model.User;
+
 import java.net.URI;
 import java.net.URISyntaxException;
+
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
@@ -64,6 +67,7 @@ public class ActionResource {
      * Usage: GET api/rules-engine/sites/sites/{siteId}/rules/{ruleId}
      */
     @GET
+    @NoCache
     @JSONP
     @Path("/actions/{actionId}")
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})

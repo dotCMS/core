@@ -64,7 +64,7 @@ public class GeoIp2CityDbUtil {
 	private static class SingletonHolder {
 
 		private static GeoIp2CityDbUtil INSTANCE = new GeoIp2CityDbUtil(
-				Config.getStringProperty("GEOIP2_CITY_DATABASE_PATH", ""));
+				Config.getStringProperty("GEOIP2_CITY_DATABASE_PATH_OVERRIDE", Config.CONTEXT.getRealPath("/WEB-INF/geoip2/GeoLite2-City.mmdb")));
 
 	}
 
@@ -89,9 +89,6 @@ public class GeoIp2CityDbUtil {
 	 *             established.
 	 */
 	private GeoIp2CityDbUtil(String databasePath) {
-		if (!databasePath.startsWith("/")) {
-			databasePath = Config.CONTEXT.getRealPath("/" + databasePath);
-		}
 		dbPath = databasePath;
 		File database = new File(databasePath);
 		connectToDatabase(database);
