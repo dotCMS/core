@@ -1194,13 +1194,13 @@ public class ConditionletTest extends TestBase {
 		List<ConditionValue> conditionletValues = new ArrayList<ConditionValue>();
 		ConditionValue value1 = new ConditionValue();
 		value1.setId(inputs.get(0).getId());
-        value1.setKey("isoCode");
+        value1.setKey("headerKeyValue");
 		value1.setPriority(1);
 		value1.setValue("User-Agent");
 		conditionletValues.add(value1);
 		ConditionValue value2 = new ConditionValue();
 		value2.setId(inputs.get(1).getId());
-        value2.setKey("isoCode");
+        value2.setKey("compareTo");
 		value2.setPriority(2);
 		value2.setValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/43.0.2357.65 Safari/537.36");
 		conditionletValues.add(value2);
