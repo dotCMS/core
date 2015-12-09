@@ -166,7 +166,9 @@
 				LanguageUtil.get(pageContext, "Widget"),
 				LanguageUtil.get(pageContext, "Form"),
 				LanguageUtil.get(pageContext, "File"),
-				LanguageUtil.get(pageContext, "HTMLPage")};
+				LanguageUtil.get(pageContext, "HTMLPage"),
+				LanguageUtil.get(pageContext, "Persona"),
+				};
 
 		boolean enterprise = LicenseUtil.getLevel() > 199;
 

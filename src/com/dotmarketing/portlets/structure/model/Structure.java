@@ -35,6 +35,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	public static final int STRUCTURE_TYPE_FORM 		= 3;
 	public static final int STRUCTURE_TYPE_FILEASSET 	= 4;
 	public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
+
 	public static final int STRUCTURE_TYPE_PERSONA		= 6;
 
 	private static final long serialVersionUID = 1L;
@@ -228,6 +229,9 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	}
 	public boolean isHTMLPageAsset() {
 	    return structureType==STRUCTURE_TYPE_HTMLPAGE;
+	}
+	public boolean isPersona(){
+		return structureType==STRUCTURE_TYPE_PERSONA;
 	}
 	public boolean isSystem() {
 		return system;
