@@ -3,6 +3,9 @@ $background-secondary: #dff1f9;
 $background-secondary-alternate: #d4efd5;
 $background-tertiary: #fd7b1d;
 $foreground-tertiary: #ffffff;
+$foreground-disabled: #a4a4a4;
+$foreground-active: #848484;
+
 
 $text-emphasis: #fc7e1c;
 $warn: #c85a6a;
@@ -34,8 +37,24 @@ $primary-one: #209021;
 }
 
 .cw-filter-links {
-  //margin-left: .25em;
+	font-size: .8em;
+	color: $foreground-disabled;
 }
+
+.cw-filter-link{
+	&.active{
+		&:hover{
+			color: $foreground-active;
+		}
+		font-weight: bold;
+		color: $foreground-active;
+	}
+	&:hover{
+		color: $foreground-disabled;
+	}
+  	color: $foreground-disabled;
+}
+
 
 .cw-rule {
   margin: 0 2em 2em 2em;
