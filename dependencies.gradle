@@ -263,7 +263,7 @@ dependencies {
 
 
     compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
-    compile group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
+    coreWeb group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
     provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 }

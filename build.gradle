@@ -7,6 +7,7 @@ configurations {
     provided
     tomcatLibs
     ext.dotcmsFolder = "dotCMS"
+    ext.rulesEngineFolder ="dotCMS/html/js/_rulesengine"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
     ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
 }
@@ -47,7 +48,15 @@ task copyToLib {
         include '**/starter*.zip'
         rename ( /starter(.+)\.zip/, "starter.zip" )
     }
+
+    doLast {
+        copy {
+            from(zipTree(configurations.coreWeb.files.toArray()[0]))
+            into configurations.rulesEngineFolder
+        }
+    }
 }
+
 copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
 
 dependencies { 
