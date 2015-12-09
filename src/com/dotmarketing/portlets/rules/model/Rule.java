@@ -40,7 +40,6 @@ public class Rule implements Permissionable, Serializable {
             return camelCaseName;
         }
 
-
     }
 
     private String id;
@@ -48,14 +47,15 @@ public class Rule implements Permissionable, Serializable {
     private FireOn fireOn = FireOn.EVERY_PAGE;
     private boolean shortCircuit;
     private String host;
-    private String folder="SYSTEM_FOLDER";
+    private String folder = "SYSTEM_FOLDER";
     private int priority;
     private boolean enabled;
     private Date modDate;
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
 
-    
+
+
     public String getId() {
         return id;
     }
@@ -144,13 +144,13 @@ public class Rule implements Permissionable, Serializable {
     }
 
     public void addGroup(ConditionGroup group) {
-        if(groups!=null) {
+        if(groups != null) {
             groups.add(group);
         }
     }
 
     public void removeGroup(ConditionGroup group) {
-        if(groups!=null) {
+        if(groups != null) {
             groups.remove(group);
         }
     }
@@ -167,58 +167,79 @@ public class Rule implements Permissionable, Serializable {
     }
     // Beginning Permissionable methods
 
-    
     public String getPermissionId() {
         return this.getId();
     }
 
-    
     public String getOwner() {
         return null;
     }
 
-    public void setOwner(String owner) {}
+    public void setOwner(String owner) {
+    }
 
-    
     public List<PermissionSummary> acceptedPermissions() {
         List<PermissionSummary> accepted = new ArrayList<PermissionSummary>();
         accepted.add(new PermissionSummary("use",
-                "use-permission-description", PermissionAPI.PERMISSION_USE));
+                                           "use-permission-description", PermissionAPI.PERMISSION_USE));
         return accepted;
     }
 
-    
     public List<RelatedPermissionableGroup> permissionDependencies(int requiredPermission) {
         return null;
     }
 
-    
     public Permissionable getParentPermissionable() throws DotDataException {
         return null;
     }
 
-    
     public String getPermissionType() {
         return this.getClass().getCanonicalName();
     }
 
-    
     public boolean isParentPermissionable() {
         return false;
     }
     // End Permissionable methods
 
+    public void checkValid() {
+        for (ConditionGroup group : getGroups()) {
+            group.checkValid();
+        }
+        for (RuleAction ruleAction : getRuleActions()) {
+            ruleAction.checkValid();
+        }
+    }
+
+    public void evaluate(HttpServletRequest req, HttpServletResponse res) {
+        if(this.evaluateConditions(req, res, getGroups())) {
+            this.evaluateActions(req, res, getRuleActions());
+        }
+    }
+
+    private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {
+        for (RuleAction action : actions) {
+            try {
+                action.evaluate(req, res);
+            } catch (Exception e) {
+                Logger.warn(this.getClass(),
+                            String.format("Rule evaluation failed on action '%s' for rule %s. Skipping any remaining actions.",
+                                          action.getId(),
+                                          this.name), e);
+            }
+        }
+    }
+
     /**
      * Evaluate the Rule conditions.
-     *
+     * <p>
      * A list of condition groups will be evaluated as a single logical group; precisely as if the results of each group's evaluation were placed into a
      * corresponding 'if()' statement in any C based programming language.
-     *
+     * <p>
      * A || B && C          ==>  A || ( B && C )
      * A && B || C && D     ==> ( A && B ) || ( C && D )
-     *
      */
-    public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<ConditionGroup> groups) {
+    public boolean evaluateConditions(HttpServletRequest req, HttpServletResponse res, List<ConditionGroup> groups) {
         /**
          *  @todo ggranum: this logic fails for three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified.
          *  The correct logic cannot be implemented without a stack.
@@ -232,7 +253,7 @@ public class Rule implements Permissionable, Serializable {
                 result = result || groupResult;
             }
 
-            if(!result) return false;
+            if(!result) { return false; }
         }
 
         return result;
@@ -240,10 +261,10 @@ public class Rule implements Permissionable, Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if(o == this) return true;
-        if(!(o instanceof Rule)) return false;
-        String id = ((Rule) o).getId();
-        return id!=null && id.equals(this.id);
+        if(o == this) { return true; }
+        if(!(o instanceof Rule)) { return false; }
+        String id = ((Rule)o).getId();
+        return id != null && id.equals(this.id);
     }
 
     @Override
@@ -253,13 +274,11 @@ public class Rule implements Permissionable, Serializable {
         return result;
     }
 
-    
     @Override
     public String toString() {
         return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
-                + ", shortCircuit=" + shortCircuit + ", host=" + host
-                + ", folder=" + folder + ", priority=" + priority
-                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
+               + ", shortCircuit=" + shortCircuit + ", host=" + host
+               + ", folder=" + folder + ", priority=" + priority
+               + ", enabled=" + enabled + ", modDate=" + modDate + "]";
     }
- 
 }

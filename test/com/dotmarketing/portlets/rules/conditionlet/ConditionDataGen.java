@@ -35,7 +35,7 @@ public class ConditionDataGen {
 //        condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
         condition.setOperator(operator);
         condition.setConditionGroup(groupId);
-        condition.setComparison("is");
+        condition.addParameter("comparison", "is");
 
         return condition;
     }

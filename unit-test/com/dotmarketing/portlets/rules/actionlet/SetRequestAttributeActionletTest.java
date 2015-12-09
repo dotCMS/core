@@ -27,6 +27,22 @@ public class SetRequestAttributeActionletTest {
         assertThat(actionlet.getId(), is("SetRequestAttributeActionlet"));
     }
 
+    /**
+     * Define some test cases for validating the URL. TestNG will run each of these cases as a separate test.
+     * This is a great way to test a large number of allowed inputs... and also helps makes your test count look amazing.
+     */
+    @DataProvider(name = "cases")
+    public Object[][] noConditionCases() {
+
+        return new TestCase[][]{
+            {new TestCase("Null key is not valid", null, "anything", false)},
+            {new TestCase("An empty string for key is invalid", "", "anything", false)},
+            {new TestCase("A single character key is valid", "a", "anything", true)},
+            {new TestCase("A null value is valid", "foo", null, true)},
+            {new TestCase("An empty string value is valid", "foo", "", true)},
+        };
+    }
+
     @Test(dataProvider = "cases")
     public void testValidateParameters(TestCase theCase) throws Exception {
         SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
@@ -38,7 +54,7 @@ public class SetRequestAttributeActionletTest {
         actionInstance.setParameters(list);
         Exception exception = null;
         try {
-            actionlet.validateActionInstance(actionInstance);
+            actionlet.doCheckValid(actionInstance);
         } catch (Exception e) {
             exception = e;
         }
@@ -48,23 +64,7 @@ public class SetRequestAttributeActionletTest {
         assertThat(theCase.msg, exception, theCase.valid ? nullValue() : notNullValue());
     }
 
-    @Test
-    public void testExecuteActionDoesNotValidate() throws Exception {
-        HttpServletRequest request = mock(HttpServletRequest.class);
 
-        String msg = "For performance reasons validation is not performed on execute. Using a null key verifies this, as null key is not allowed.";
-        String keyValue = null;
-        String valueValue = "Anything at all is allowed";
-        Map<String, ParameterModel> params = ImmutableMap.of(
-            REQUEST_KEY, new ParameterModel(REQUEST_KEY, keyValue),
-            REQUEST_VALUE, new ParameterModel(REQUEST_VALUE, valueValue)
-        );
-
-        SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
-        actionlet.executeAction(request, null, params);
-
-        Mockito.verify(request).setAttribute(keyValue, valueValue);
-    }
 
     @Test
     public void testExecuteActionClearsWhenNullValueSent() throws Exception {
@@ -78,24 +78,12 @@ public class SetRequestAttributeActionletTest {
         );
 
         SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
-        actionlet.executeAction(request, null, params);
+        actionlet.evaluate(request, null, new SetRequestAttributeActionlet.Instance(params));
 
         Mockito.verify(request).removeAttribute(keyValue);
     }
 
-    /**
-     * Define some test cases for validating the URL. TestNG will run each of these cases as a separate test.
-     * This is a great way to test a large number of allowed inputs... and also helps makes your test count look amazing.
-     */
-    @DataProvider(name = "cases")
-    public Object[][] noConditionCases() {
 
-        return new TestCase[][]{
-            {new TestCase("Null key is not valid", null, "anything", false)},
-            {new TestCase("A single character key is valid", "a", "anything", true)},
-            {new TestCase("A null value is valid", "foo", null, true)},
-        };
-    }
 
     public static class TestCase {
 
@@ -110,5 +98,11 @@ public class SetRequestAttributeActionletTest {
             this.value = value;
             this.valid = valid;
         }
+
+        @Override
+        public String toString() {
+            return msg;
+        }
     }
+
 }

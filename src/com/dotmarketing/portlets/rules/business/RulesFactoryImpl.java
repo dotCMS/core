@@ -36,8 +36,8 @@ public class RulesFactoryImpl implements RulesFactory {
 
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
-        cache = CacheLocator.getRulesCache();
-//        cache = new NoOpRulesCacheImpl();
+//        cache = CacheLocator.getRulesCache();
+        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
@@ -568,7 +568,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getName());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
-                db.addParam(condition.getComparison());
+                db.addParam("fake-comparison"); // avoiding editing sql statements right now.
                 db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
@@ -583,7 +583,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getName());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
-                db.addParam(condition.getComparison());
+                db.addParam("fake-comparison"); // avoiding editing sql statements right now.
                 db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
@@ -726,7 +726,7 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     private void insertActionParameterValues(RuleAction ruleAction, DotConnect db) throws DotDataException {
-        for (ParameterModel parameter : ruleAction.getParameters()) {
+        for (ParameterModel parameter : ruleAction.getParameters().values()) {
             parameter.setId(UUIDGenerator.generateUuid());
             db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
             db.addParam(parameter.getId());
@@ -887,7 +887,6 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setName(row.get("name").toString());
         c.setConditionletId(row.get("conditionlet").toString());
         c.setConditionGroup(row.get("condition_group").toString());
-        c.setComparison(row.get("comparison").toString());
         c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
         c.setPriority(Integer.parseInt(row.get("priority").toString()));
         c.setModDate((Date) row.get("mod_date"));

@@ -8,6 +8,7 @@ import com.dotcms.repackage.org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.rest.api.Validated;
 
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +33,7 @@ public class RestRuleAction extends Validated {
     @NotBlank
     public final String actionlet;
 
-    public final Map<String, RestRuleActionParameter> parameters;
+    public final Map<String, ParameterModel> parameters;
 
     private RestRuleAction(Builder builder) {
         id = builder.id;
@@ -49,7 +50,7 @@ public class RestRuleAction extends Validated {
         @JsonProperty(required = true) private String name;
         @JsonProperty(required = true) private String owningRule;
         @JsonProperty(required = true) private String actionlet;
-        @JsonProperty private Map<String, RestRuleActionParameter> parameters = new HashMap<>();
+        @JsonProperty private Map<String, ParameterModel> parameters = new HashMap<>();
         @JsonProperty private int priority=0;
 
         public Builder name(String name) {
@@ -77,7 +78,7 @@ public class RestRuleAction extends Validated {
             return this;
         }
 
-        public Builder parameters(Map<String, RestRuleActionParameter> parameters) {
+        public Builder parameters(Map<String, ParameterModel> parameters) {
             this.parameters = parameters;
             return this;
         }

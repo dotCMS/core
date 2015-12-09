@@ -201,7 +201,7 @@ public class RulesAPITest extends TestBase {
 		condition.setConditionGroup(group.getId());
 //		condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
 		condition.setOperator(Condition.Operator.AND);
-		condition.setComparison("is");
+		condition.addParameter("comparison", "is");
 
 		rulesAPI.saveCondition(condition, user, false);
 

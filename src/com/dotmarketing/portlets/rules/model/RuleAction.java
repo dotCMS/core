@@ -4,12 +4,21 @@ import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.RuleComponentModel;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-public class RuleAction implements Serializable {
+public class RuleAction implements RuleComponentModel, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -20,6 +29,8 @@ public class RuleAction implements Serializable {
     private String actionlet;
     private Date modDate;
     private List<ParameterModel> parameters;
+    private RuleActionlet actionDef;
+    private RuleComponentInstance instance;
 
     public String getId() {
         return id;
@@ -69,10 +80,6 @@ public class RuleAction implements Serializable {
         this.modDate = modDate;
     }
 
-    public List<ParameterModel> getParameters() {
-        return parameters;
-    }
-
     public void setParameters(List<ParameterModel> parameters) {
         this.parameters = parameters;
     }
@@ -81,7 +88,7 @@ public class RuleAction implements Serializable {
         this.parameters.add(parameter);
     }
 
-    public Map<String, ParameterModel> getParameterMap(){
+    public Map<String, ParameterModel> getParameters(){
         Map<String, ParameterModel> params = Maps.newHashMap();
         for (ParameterModel param : parameters) {
             params.put(param.getKey(), param);
@@ -89,12 +96,34 @@ public class RuleAction implements Serializable {
         return params;
     }
 
-    @JsonIgnore
+    public void checkValid() {
+        this.instance = getActionDefinition().doCheckValid(this);
+    }
+
+    public final boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
+        //noinspection unchecked
+        return getActionDefinition().doEvaluate(req, res, instance);
+    }
+
+    public RuleActionlet getActionDefinition(){
+        if(actionDef == null) {
+            try {
+                actionDef = APILocator.getRulesAPI().findActionlet(actionlet);
+            } catch (DotDataException | DotSecurityException e) {
+                Logger.error(this, "Unable to load action definition for id: " + actionlet);
+            }
+        }
+
+        return actionDef;
+    }
+
+
 	@Override
 	public String toString() {
 		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
 				+ ", priority=" + priority + ", actionlet=" + actionlet
 				+ ", modDate=" + modDate + "]";
 	}
+
 
 }

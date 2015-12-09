@@ -1,16 +1,18 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
-import java.util.List;
+import java.util.Map;
 
 /**
  * @author Geoff M. Granum
  */
 public class DropdownInput extends TextInput<TextType> {
 
-    private final List<Option> options = Lists.newArrayList();
+    private final Map<String, Option> options = Maps.newLinkedHashMap();
     private boolean allowAdditions = false;
+    private int minSelections = 0;
+    private int maxSelections = 1;
 
     public DropdownInput() {
         super("dropdown", new TextType());
@@ -25,7 +27,7 @@ public class DropdownInput extends TextInput<TextType> {
     }
 
     public DropdownInput option(String optionKey, String optionValue, int priority) {
-        options.add(new Option(optionKey, optionValue, priority));
+        options.put(optionKey, new Option(optionKey, optionValue, priority));
         return this;
     }
 
@@ -38,7 +40,25 @@ public class DropdownInput extends TextInput<TextType> {
         return allowAdditions;
     }
 
-    public List<Option> getOptions() {
+    public DropdownInput minSelections(int minSelections) {
+        this.minSelections = minSelections;
+        return this;
+    }
+
+    public DropdownInput maxSelections(int maxSelections) {
+        this.maxSelections = maxSelections;
+        return this;
+    }
+
+    public int getMinSelections() {
+        return minSelections;
+    }
+
+    public int getMaxSelections() {
+        return maxSelections;
+    }
+
+    public Map<String, Option> getOptions() {
         return options;
     }
 

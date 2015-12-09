@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -46,21 +47,12 @@ public class RulesEngine {
 
             for (Rule rule : rules) {
                 boolean result = false;
+
                 try {
-                    result = rule.evaluate(req, res, rule.getGroups());
+                    rule.checkValid(); // this should actually be done on writing to the DB.
+                    rule.evaluate(req, res);
                 } catch (RuleEngineException e) {
                     Logger.error(RulesEngine.class, "Rule could not be evaluated. Rule Id: " + rule.getId(), e);
-                }
-
-                // Let's execute the actions
-                if(result) {
-                    List<RuleAction> actions = APILocator.getRulesAPI().getRuleActionsByRule(rule.getId(), systemUser, false);
-
-                    for (RuleAction action : actions) {
-                        RuleActionlet actionlet = APILocator.getRulesAPI().findActionlet(action.getActionlet());
-                        Map<String, ParameterModel> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
-                        actionlet.executeAction(req, res, params);
-                    }
                 }
             }
 

@@ -239,6 +239,6 @@ public class ActionResource {
         if(actionlet == null){
             throw new NotFoundException("Actionlet with id '%s' not found: ", ruleAction.getActionlet());
         }
-        actionlet.validateActionInstanceInternal(ruleAction);
+        actionlet.doCheckValid(ruleAction);
     }
 }

@@ -1,18 +1,22 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
-import java.util.Collection;
-import java.util.LinkedHashMap;
+import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -275,23 +279,44 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
             .option("YE")
             .option("ZM")
             .option("ZW"),
-        2,
+        3,
         "Accept"
     );
 
     public UsersCountryConditionlet() {
         super("api.system.ruleengine.conditionlet.VisitorCountry",
-              new ComparisonParameterDefinition(1, IS, IS_NOT),
+              new ComparisonParameterDefinition(2, IS, IS_NOT),
               country);
         this.geoIp2Util = GeoIp2CityDbUtil.getInstance();
     }
 
-
-
+    /**
+     * Instance is guaranteed to be valid.
+     */
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        return true;
+        String requestCountry = lookupCountry(request);
+        return instance.comparison.perform(requestCountry, instance.countryCode);
     }
+
+    private String lookupCountry(HttpServletRequest request) {
+        String country = "unknown";
+        InetAddress address;
+        try {
+            address = HttpRequestDataUtil.getIpAddress(request);
+        } catch (UnknownHostException e) {
+            throw new RuleEvaluationFailedException(e, "Unknown host.");
+        }
+        String ipAddress = address.getHostAddress();
+        try
+        {
+            country = geoIp2Util.getCountryIsoCode(ipAddress);
+        } catch (IOException | GeoIp2Exception e) {
+            Logger.error(this, "Could not look up country for request. Using 'unknown': " + request.getRequestURL());
+        }
+        return country;
+    }
+
 
     @Override
     public Instance instanceFrom(Map<String, ParameterModel> parameters) {

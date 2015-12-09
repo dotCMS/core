@@ -127,7 +127,7 @@ public class RuleTest {
 
     private boolean runCase(TestCase aCase) {
         Rule rule = new Rule();
-        return rule.evaluate(aCase.request, aCase.response, aCase.groups);
+        return rule.evaluateConditions(aCase.request, aCase.response, aCase.groups);
     }
 
     private class TestCase {

@@ -45,6 +45,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet<UsersBrowserHea
         HEADER_NAME_KEY,
         new DropdownInput()
             .allowAdditions()
+            .minSelections(1)
             .option("Accept")
             .option("Accept-Charset")
             .option("Accept-Encoding")

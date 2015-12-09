@@ -9,7 +9,7 @@ public class ConditionletTransform {
         RestConditionlet rest = new RestConditionlet.Builder()
                                         .id(app.getId())
                                         .i18nKey(app.getI18nKey())
-                                        .parameters(app.getParameterDefinitions().values() )
+                                        .parameters(app.getParameterDefinitions() )
                                         .build();
 
         return rest;

@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 
 import java.util.Map;
@@ -31,9 +33,7 @@ public class RuleActionTransform {
         app.setActionlet(rest.actionlet);
         app.setPriority(rest.priority);
         if(rest.parameters!=null)
-            app.setParameters(rest.parameters.values().stream()
-                .map(parameterTransform.toApp)
-                .collect(Collectors.toList()));
+            app.setParameters(Lists.newArrayList(rest.parameters.values()));
         return app;
     }
 
@@ -47,13 +47,11 @@ public class RuleActionTransform {
 
     public final Function<RuleAction, RestRuleAction> toRest = (app) -> {
 
-        Map<String, RestRuleActionParameter> params = null;
+        Map<String, ParameterModel> params = null;
 
         if(app.getParameters()!=null) {
 
-            params = app.getParameters().stream()
-                .map(parameterTransform.toRest)
-                .collect(Collectors.toMap(r -> r.key, Function.identity()));
+            params = app.getParameters();
         }
 
         RestRuleAction rest = new RestRuleAction.Builder()

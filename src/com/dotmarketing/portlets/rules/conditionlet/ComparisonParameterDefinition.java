@@ -22,7 +22,7 @@ public class ComparisonParameterDefinition extends ParameterDefinition<TextType>
     private final Map<String, Comparison> comparisons;
 
     public ComparisonParameterDefinition(int priority, Comparison... comparisons ) {
-        super("comparison", dropdownInput(comparisons), priority);
+        super("comparison", dropdownInput(comparisons).minSelections(1), priority);
         HashMap<String, Comparison> map = Maps.newHashMap();
         for (Comparison comparison : comparisons) {
             map.put(comparison.getId(), comparison);

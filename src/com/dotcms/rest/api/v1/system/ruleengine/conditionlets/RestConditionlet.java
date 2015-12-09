@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.validation.constraints.Size;
 import com.dotcms.rest.api.Validated;
@@ -9,6 +10,7 @@ import com.dotcms.rest.api.Validated;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @JsonDeserialize(builder = RestConditionlet.Builder.class)
 public final class RestConditionlet extends Validated {
@@ -20,12 +22,12 @@ public final class RestConditionlet extends Validated {
 
     @NotNull
     @Size(min = 0, max = 100)
-    public final List<ParameterDefinition> comparisons;
+    public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestConditionlet(Builder builder) {
         id = builder.id;
         i18nKey = builder.i18nKey;
-        comparisons = ImmutableList.copyOf(builder.parameterDefinitions);
+        parameterDefinitions = ImmutableMap.copyOf(builder.parameterDefinitions);
         checkValid();
     }
 
@@ -33,7 +35,7 @@ public final class RestConditionlet extends Validated {
 
         private String id;
         private String i18nKey;
-        private Collection<ParameterDefinition> parameterDefinitions;
+        private Map<String, ParameterDefinition> parameterDefinitions;
 
         public Builder() {
         }
@@ -48,7 +50,7 @@ public final class RestConditionlet extends Validated {
             return this;
         }
 
-        public Builder parameters(Collection<ParameterDefinition> comparisons) {
+        public Builder parameters(Map<String, ParameterDefinition> comparisons) {
             this.parameterDefinitions = comparisons;
             return this;
         }
@@ -56,7 +58,7 @@ public final class RestConditionlet extends Validated {
         public Builder from(RestConditionlet copy) {
             id = copy.id;
             i18nKey = copy.i18nKey;
-            parameterDefinitions = copy.comparisons;
+            parameterDefinitions = copy.parameterDefinitions;
             return this;
         }
 

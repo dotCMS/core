@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.TestBase;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -205,7 +206,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         RuleAction ruleAction = rule.getRuleActions().get(0);
 
         //Updating just the sessionValue RuleActionParameter.
-        List<ParameterModel> parameterModels = ruleAction.getParameters();
+        List<ParameterModel> parameterModels = Lists.newArrayList(ruleAction.getParameters().values());
         for (ParameterModel parameterModel : parameterModels) {
             if (parameterModel.getKey().equals("sessionValue")){
                 parameterModel.setValue(sessionValue);

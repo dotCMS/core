@@ -19,7 +19,6 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
-import com.dotmarketing.portlets.rules.actionlet.TestActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.*;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -51,7 +50,7 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersBrowserConditionlet.class)
                          .add(UsersBrowserHeaderConditionlet.class)
 //                         .add(UsersCityConditionlet.class)
-//                         .add(UsersCountryConditionlet.class)
+                         .add(UsersCountryConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
 //                         .add(UsersDateTimeConditionlet.class)
 //                         .add(UsersHostConditionlet.class)
@@ -75,7 +74,6 @@ public class RulesAPIImpl implements RulesAPI {
                     .add(SetSessionAttributeActionlet.class)
                     .add(SetRequestAttributeActionlet.class)
                     .add(SetResponseHeaderActionlet.class)
-                    .add(TestActionlet.class)
                     .build();
 
     public RulesAPIImpl() {

@@ -80,8 +80,10 @@ public class ConditionGroup implements Serializable {
         }
     }
 
-    public void checkValid(HttpServletRequest req){
-
+    public void checkValid(){
+        for (Condition condition : conditions) {
+            condition.checkValid();
+        }
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {

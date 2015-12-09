@@ -9,8 +9,6 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.EntryOption;
-import com.dotmarketing.portlets.rules.ValidationResult;
-import com.dotmarketing.portlets.rules.ValidationResults;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
 import com.dotmarketing.portlets.rules.conditionlet.Comparison;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletInput;
