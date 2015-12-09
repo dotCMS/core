@@ -55,7 +55,9 @@ import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/compo
 import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
 import {ComparisonService, ComparisonsModel} from "../../../../../api/system/ruleengine/conditionlets/Comparisons";
 import {InputService, InputsModel} from "../../../../../api/system/ruleengine/conditionlets/Inputs";
-
+import {I18nResourceModel} from "../../../../../api/system/locale/I18n";
+import {I18nService} from "../../../../../api/system/locale/I18n";
+import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 
 export class RequestHeaderConditionModel {
   parameterKeys:Array<string> = ['headerKeyValue', 'compareTo']
@@ -105,40 +107,44 @@ export class RequestHeaderConditionModel {
 export class RequestHeaderCondition {
 
   value:RequestHeaderConditionModel;
-
+  comparisons:any = [
+    { id: "is" },
+    { id: "isNot" },
+    { id: "startsWith" },
+    { id: "endsWith" },
+    { id: "contains" },
+    { id: "matches" }]
   change:EventEmitter;
   private headerKeyDropdown:DropdownModel
   private comparatorDropdown:DropdownModel
 
   private requestHeaderInputTextModel: InputTextModel
 
-  private _comparisonsService:ComparisonService;
   private _inputsService:InputService;
 
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('parameterValues') parameterValues:Array<string>,
-              @Inject(ComparisonService) comparisonService:ComparisonService,
+              @Inject apiRoot:ApiRoot,
+              @Inject i18nService:I18nService,
               @Inject(InputService) inputService:InputService) {
     this.value = new RequestHeaderConditionModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();
-    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], [])
+    let opts = []
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", [this.comparisons[0].id], []);
+
+    i18nService.get(apiRoot.authUser.locale, 'api.sites.ruleengine.rules.inputs.comparison', (result:I18nResourceModel)=>{
+      this.comparisons.forEach((comparison:any)=>{
+        opts.push(new DropdownOption(comparison.id, comparison.id, result.messages[comparison.id]))
+      })
+      this.comparatorDropdown.addOptions( opts);
+    })
+
     this.headerKeyDropdown = new DropdownModel("headerKey", "Header Key", [], [], true)
 
     this.requestHeaderInputTextModel = new InputTextModel()
     this.requestHeaderInputTextModel.placeholder = "Enter a value"
 
-    this._comparisonsService = comparisonService
-    this._comparisonsService.get('RequestHeaderConditionlet', (comparisonsResult:ComparisonsModel)=>{
-      if (comparisonsResult) {
-        var comparisons = comparisonsResult.comparisons
-        let comparisonsOptions = []
-        for (var key in comparisons){
-          comparisonsOptions.push(new DropdownOption(key, key, comparisons[key]))
-        }
-        this.comparatorDropdown.addOptions(comparisonsOptions)
-      }
-    })
 
     this._inputsService = inputService
     this._inputsService.get('RequestHeaderConditionlet', 'is', (inputsResult:InputsModel)=>{
