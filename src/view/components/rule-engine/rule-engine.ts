@@ -43,11 +43,11 @@ import {CwFilter} from "../../../api/util/CwFilter"
   </div>
     <div class="cw-filter-links">
       <span>Show:</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc.inputs.filter.status.all}}</a>
+      <a href="javascript:void(0)" [ng-class]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc.inputs.filter.status?.all}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc.inputs.filter.status.active}}</a>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc.inputs.filter.status?.active}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc.inputs.filter.status.inactive}}</a>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc.inputs.filter.status?.inactive}}</a>
     </div>
   </div>
 
@@ -165,14 +165,14 @@ import {CwFilter} from "../../../api/util/CwFilter"
 
     setFieldFilter(field:string, value:string=null){
       // remove old status
-      if(value != null) {
         var re = new RegExp(field + ':[\\w]*')
+        this.filterTextField = this.filterText;
         this.filterTextField = this.filterTextField.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
-        this.filterTextField = field + ':' + value + ' ' + this.filterTextField
+      if(value != null) {
+        this.filterTextField = field + ':' + value + ' ' + this.filterTextField.trim()
         this.filterText = this.filterTextField
       }else{
-        this.filterTextField = '';
-        this.filterText = '';
+        this.filterText = this.filterTextField
       }
     }
 
