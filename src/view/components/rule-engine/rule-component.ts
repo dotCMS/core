@@ -296,7 +296,10 @@ class RuleComponent {
   }
 
   removeRule(event:Event) {
-    if ((event.altKey && event.shiftKey) || confirm('Are you sure you want delete this rule?')) {
+    if ((event.altKey && event.shiftKey)
+        || this.rule.isEmpty()
+        || confirm('Are you sure you want delete this rule?')) {
+
       event.stopPropagation()
       this.ruleService.remove(this.rule)
     }

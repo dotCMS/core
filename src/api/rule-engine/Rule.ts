@@ -82,6 +82,34 @@ export class RuleModel extends CwModel {
     return valid
   }
 
+  hasActions():boolean {
+    var hasActions = false
+
+    if(Object.keys(this.actions).length != 0){
+      hasActions = true;
+    }
+
+    return hasActions
+  }
+
+  hasConditions():boolean {
+    var hasConditions = false
+
+    if(Object.keys(this.groups).length != 0){
+      for (var group in this.groups){
+        if(Object.keys(this.groups[group].conditions).length != 0){
+          hasConditions = true
+        }
+      }
+    }
+
+    return hasConditions
+  }
+
+  isEmpty():boolean {
+    return !this.hasConditions() && !this.hasActions()
+  }
+
 }
 const RULE_DEFAULT_RSRC = {
   inputs: {
