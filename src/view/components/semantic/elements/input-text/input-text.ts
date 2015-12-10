@@ -1,4 +1,4 @@
-import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef, Attribute} from 'angular2/angular2';
+import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
 import {CwTextInputModel} from "api/util/CwInputModel";
 import {CwComponent} from "api/util/CwComponent";
 import {ParameterDefinition} from "api/util/CwInputModel";
@@ -47,7 +47,6 @@ export class InputTextModel extends CwComponent {
 
   properties: [
     'model',
-    'required'
   ], events: [
     "change"
   ]
@@ -55,7 +54,7 @@ export class InputTextModel extends CwComponent {
 @View({
   template: `
 <div class="ui fluid input" [ng-class]="{disabled: model.disabled, error: errorMessage, icon: model.icon}">
-  <input type="text" [required]="required" [name]="model.name" [value]="model.value" [placeholder]="model.placeholder" (change)="inputChange($event)">
+  <input type="text" [name]="model.name" [value]="model.value" [placeholder]="model.placeholder" (change)="inputChange($event)">
   <i [ng-class]="model.icon" *ng-if="model.icon"></i>
   <div class="ui small red message" *ng-if="errorMessage">{{errorMessage}}</div>
 </div>
@@ -67,15 +66,13 @@ export class InputText {
   private _model:InputTextModel
   private errorMessage:String
 
-  required:boolean
   change:EventEmitter
   private elementRef:ElementRef
 
-  constructor(@ElementRef elementRef:ElementRef, @Attribute('required') required:boolean) {
+  constructor(@ElementRef elementRef:ElementRef) {
     this.elementRef = elementRef
     this.change = new EventEmitter()
     this._model = new InputTextModel()
-    this.required = required
     this.errorMessage = null
   }
 

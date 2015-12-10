@@ -1,53 +1,20 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 import {CwChangeEvent} from "./CwEvent";
 import {I18nResourceModel, Internationalized} from "../system/locale/I18n";
 
+
+
 export class CwModel {
-  private _change:EventEmitter
-  private _key:string
-  private _priority:number
 
-  onChange:Rx.Observable<CwChangeEvent<any>>
-  valid:boolean
-
+  key:string
+  priority:number
 
   constructor(key:string = null) {
-    this._change = new EventEmitter()
-    this._validityChange = new EventEmitter()
-    this.onChange = Rx.Observable.from(this._change.toRx()).debounceTime(200).share()
-    this._key = key
-    this.valid = this.isValid()
-  }
-
-  get key():string {
-    return this._key;
-  }
-
-  set key(value:string) {
-    this._key = value;
-    this._changed('key');
-  }
-  get priority():number {
-    return this._priority;
-  }
-
-  set priority(value:number) {
-    this._priority = value;
-    this._changed('priority')
+    this.key = key
   }
 
   isPersisted():boolean {
     return !!this.key
-  }
-
-  _changed(type:string) {
-    this._change.next({ type: type, target: this})
-  }
-
-  _checkValid() {
-    let valid = this.valid
-    this.valid = this.isValid()
   }
 
   /**
@@ -58,6 +25,7 @@ export class CwModel {
     return true
   }
 }
+
 
 
 export class CwI18nModel extends CwModel{
@@ -83,7 +51,6 @@ export class CwI18nModel extends CwModel{
 
   set i18n(value:I18nResourceModel) {
     this._i18n = value;
-    this._changed('i18n')
     Object.assign(this.rsrc, value.messages)
   }
 

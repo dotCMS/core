@@ -17,25 +17,28 @@ let noop = (...arg:any[])=> {
 }
 
 export class ActionModel extends CwModel {
-  private _name:string
-  private _owningRule:RuleModel
-  private _actionType:ActionTypeModel
+  name:string
+  owningRule:RuleModel
+  actionType:ActionTypeModel
   parameters:{ [key: string]: ActionModelParameter }
 
-  constructor(key:string = null) {
+  constructor(key:string, actionType:ActionTypeModel) {
     super(key)
-    this._actionType = new ActionTypeModel('NoSelection', '')
     this.parameters = {}
+    this.actionType = actionType;
+    Object.keys(this.actionType.parameters).forEach((key)=> {
+      if (this.getParameter(key) === undefined) {
+        this.setParameter(key, "")
+      }
+    })
   }
 
   setParameter(key:string, value:any) {
-    let existing = this.parameters[key]
     this.parameters[key] = {key: key, value: value}
-    this._changed('parameters')
   }
 
   getParameter(key:string):string {
-    let v:any = ''
+    let v:any = null
     if (this.parameters[key]) {
       v = this.parameters[key].value
     }
@@ -44,47 +47,14 @@ export class ActionModel extends CwModel {
 
   clearParameters():void {
     this.parameters = {}
-    this._changed('parameters')
   }
 
-  get actionType():ActionTypeModel {
-    return this._actionType;
-  }
 
-  set actionType(value:ActionTypeModel) {
-    if (value !== this._actionType) {
-      this._actionType = value;
-      Object.keys(this._actionType.parameters).forEach((key)=> {
-        if(this.getParameter(key) === undefined) {
-          this.setParameter(key, "")
-        }
-      })
-      this._changed('actionType')
-    }
-  }
-
-  get owningRule():RuleModel {
-    return this._owningRule;
-  }
-
-  set owningRule(value:RuleModel) {
-    this._owningRule = value;
-    this._changed('owningRule')
-  }
-
-  get name():string {
-    return this._name;
-  }
-
-  set name(value:string) {
-    this._name = value;
-    this._changed('name')
-  }
 
   isValid() {
-    let valid = !!this._owningRule
-    valid = valid && this._owningRule.isValid()
-    valid = valid && this._actionType && this._actionType.key && this._actionType.key != 'NoSelection'
+    let valid = !!this.owningRule
+    valid = valid && this.owningRule.isValid()
+    valid = valid && this.actionType && this.actionType.key && this.actionType.key != 'NoSelection'
     return valid
   }
 }

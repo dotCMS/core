@@ -23,38 +23,35 @@ export interface ParameterModel {
 
 export class ConditionModel extends CwModel {
 
-  private _name:string // @todo ggranum: vestigial field, kill on server side.
+  name:string // @todo ggranum: vestigial field, kill on server side.
+  comparison:string
+  operator:string
+  owningGroup:ConditionGroupModel
+  conditionType:ConditionTypeModel
+  parameters:{[key:string]: ParameterModel}
+  parameterDefs:{[key:string]: ParameterDefinition}
 
-  private _comparison:string
-  private _operator:string
-  private _owningGroup:ConditionGroupModel
-  private _conditionType:ConditionTypeModel
-  private _parameters:{[key:string]: ParameterModel}
-  private _parameterDefs:{[key:string]: ParameterDefinition}
-
-  constructor(key:string, conditionType:ConditionTypeModel) {
+  constructor(key:string, type:ConditionTypeModel) {
     super(key)
-    this._parameters = {}
-    this._parameterDefs = {}
+    this.parameters = {}
+    this.parameterDefs = {}
     this.operator = 'AND'
-    this.priority = 1
-    if(conditionType != null) {
-      this.conditionType = conditionType
-    }
-  }
-
-  setParameterDef(key:string, paramDef:ParameterDefinition) {
-    this._parameterDefs[key] = paramDef
+    this.priority = type.priority
+    Object.keys(type.parameters).forEach((key)=> {
+      let x = type.parameters[key]
+      let paramDef = ParameterDefinition.fromJson(x)
+      this.parameterDefs[key] = paramDef
+      this.parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
+    })
   }
 
   setParameter(key:string, value:any, priority:number = 1) {
-    if(this._parameterDefs[key] === undefined){
+    if(this.parameterDefs[key] === undefined){
       console.log("Unsupported parameter: ", key)
       return;
     }
-    let existing = this._parameters[key]
-    this._parameters[key] = {key: key, value: value, priority: priority}
-    this._changed('parameters')
+    let existing = this.parameters[key]
+    this.parameters[key] = {key: key, value: value, priority: priority}
   }
 
   getParameter(key:string):ParameterModel {
@@ -65,7 +62,7 @@ export class ConditionModel extends CwModel {
     return v
   }
   getParameterValue(key:string):string {
-    let v:any = ''
+    let v:any = null
     if (this.parameters[key] !== undefined) {
       v = this.parameters[key].value
     }
@@ -74,85 +71,24 @@ export class ConditionModel extends CwModel {
 
   getParameterDef(key:string):ParameterDefinition {
     let v:any = ''
-    if (this._parameterDefs[key] !== undefined) {
-      v = this._parameterDefs[key]
+    if (this.parameterDefs[key] !== undefined) {
+      v = this.parameterDefs[key]
     }
     return v
   }
 
-  get parameterDefs():{[key:string]: ParameterDefinition} {
-    return this._parameterDefs
-  }
-
-  get parameters():{[key:string]: ParameterModel} {
-    return this._parameters
-  }
-
-
-  get conditionType():ConditionTypeModel {
-    return this._conditionType;
-  }
-
-  set conditionType(type:ConditionTypeModel) {
-    this._conditionType = type;
-    this._parameters = {}
-    Object.keys(type.parameters).forEach((key)=> {
-      let x = type.parameters[key]
-      let paramDef = ParameterDefinition.fromJson(x)
-      this._parameterDefs[key] = paramDef
-      this._parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
-    })
-    this._changed('conditionType')
-  }
-
-  get owningGroup():ConditionGroupModel {
-    return this._owningGroup;
-  }
-
-  set owningGroup(value:ConditionGroupModel) {
-    this._owningGroup = value;
-    this._changed('owningGroup')
-  }
-
-  get name():string {
-    return this._name;
-  }
-
-  set name(value:string) {
-    this._name = value;
-    this._changed('name')
-  }
-
-  get comparison():string {
-    return this._comparison;
-  }
-
-  get operator():string {
-    return this._operator;
-  }
-
-  set operator(value:string) {
-    this._operator = value;
-    this._changed('operator')
-  }
-
-  _changed(key:string) {
-    console.log("api.rule-engine.ConditionModel", "_changed", key)
-    super._changed(key)
-  }
-
   isValid() {
-    let valid = !!this._owningGroup
-    valid = valid && this._owningGroup.isValid() && this._owningGroup.isPersisted()
-    if(this._parameterDefs) {
-      Object.keys(this._parameterDefs).forEach(key=> {
+    let valid = !!this.owningGroup
+    valid = valid && this.owningGroup.isValid() && this.owningGroup.isPersisted()
+    if(this.parameterDefs) {
+      Object.keys(this.parameterDefs).forEach(key=> {
         let paramDef = this.getParameterDef(key)
-        var value = this._parameters[key].value;
+        var value = this.parameters[key].value;
         valid = valid && paramDef.inputType.verify(value).valid
         console.log("validate => key: ", key, "  value: ", value, "  valid: ", valid)
       })
     }
-    valid = valid && this._conditionType && this._conditionType.key && this._conditionType.key != 'NoSelection'
+    valid = valid && this.conditionType && this.conditionType.key && this.conditionType.key != 'NoSelection'
     console.log("validate => Result: ", valid)
 
     return valid

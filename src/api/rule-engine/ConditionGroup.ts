@@ -10,8 +10,8 @@ import {ApiRoot} from "../persistence/ApiRoot";
 
 export class ConditionGroupModel extends CwModel {
 
-  private _owningRule:RuleModel
-  private _operator:string
+  owningRule:RuleModel
+  operator:string
   conditions:{ [key: string]: boolean }
 
   constructor(key:string = null) {
@@ -19,28 +19,9 @@ export class ConditionGroupModel extends CwModel {
     this.conditions = {}
   }
 
-  get owningRule():RuleModel {
-    return this._owningRule;
-  }
-
-  set owningRule(value:RuleModel) {
-    this._owningRule = value;
-    this._changed('owningRule')
-  }
-
-  get operator():string {
-    return this._operator;
-  }
-
-  set operator(value:string) {
-    this._operator = value;
-    this._changed('operator')
-  }
-
-
   isValid() {
-    let valid = !!this._owningRule
-    valid = valid && this._owningRule.isValid() && this._owningRule.isPersisted()
+    let valid = !!this.owningRule
+    valid = valid && this.owningRule.isValid() && this.owningRule.isPersisted()
     valid = valid && this.operator && (this.operator === 'AND' || this.operator === 'OR')
     return valid
   }
@@ -153,6 +134,7 @@ export class ConditionGroupService {
     if(!model.isValid()){
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
+    debugger
     if (!model.isPersisted()) {
       this.add(model, cb)
     } else {

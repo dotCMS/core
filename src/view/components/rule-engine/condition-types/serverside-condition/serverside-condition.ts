@@ -26,7 +26,7 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <template ng-for #input [ng-for-of]="inputs" #islast="last">
     <div *ng-if="input.inputDef.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
-    <cw-input-dropdown *ng-if="input.inputDef.type == 'dropdown'"
+    <cw-input-dropdown widget-loca="type.loc"
                        flex
                        layout-fill
                        class="cw-input"

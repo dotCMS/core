@@ -4,13 +4,29 @@ import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
 
 
 export class Hero {
-  constructor(public id:number,
-              public name:string,
-              public inputname:InputTextModel,
-              public power:string,
-              public alterEgo?:string) {
-    this.inputname = new InputTextModel("inputname", "Input Name")
 
+
+  public id:number
+  public name:string
+  private _inputname:InputTextModel
+  public power:string
+  public alterEgo:string
+
+  constructor(id:number, name:string, inputname:InputTextModel, power:string, alterEgo?:string) {
+    this.id = id;
+    this.name = name;
+    this._inputname = new InputTextModel("inputnamex", "Input Name")
+    this.power = power;
+    this.alterEgo = alterEgo;
+  }
+
+  get inputname():InputTextModel {
+    return this._inputname;
+  }
+
+  set inputname(value:InputTextModel) {
+    this._inputname = value;
+    console.log("Yo! ", value)
   }
 }
 

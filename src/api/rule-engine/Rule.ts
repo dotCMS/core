@@ -14,66 +14,30 @@ import {DevUtil} from "../util/DevUtil";
 
 export class RuleModel extends CwModel {
   snapshot:EntitySnapshot // annoying hack, this should die.
-  private _name:string
-  private _enabled:boolean
-  private _fireOn:string
+  name:string
+  enabled:boolean
+  fireOn:string
 
 
-  private _groups:{ [key: string]: ConditionGroupModel }
+  groups:{ [key: string]: ConditionGroupModel }
   actions:{ [key: string]: boolean }
 
 
   constructor(key:string = null) {
     super(key)
     this.name = ''
-    this._fireOn = 'EVERY_PAGE'
-    this._enabled = false
-    this.valid = this.isValid()
+    this.fireOn = 'EVERY_PAGE'
+    this.enabled = false
     this.actions = {}
-    this._groups = {}
-  }
-
-  get fireOn():string {
-    return this._fireOn;
-  }
-
-  set fireOn(value:string) {
-    this._fireOn = value;
-    this._changed('fireOn');
-  }
-
-
-  get enabled():boolean {
-    return this._enabled;
-  }
-
-  set enabled(value:boolean) {
-    this._enabled = value === true;
-    this._changed('enabled');
-  }
-
-  get name():string {
-    return this._name;
-  }
-
-  set name(value:string) {
-    this._name = value;
-    this._changed('name');
+    this.groups = {}
   }
 
   addGroup(group:ConditionGroupModel) {
-    this._groups[group.key] = group
-    this._changed('addGroup')
+    this.groups[group.key] = group
   }
 
   removeGroup(group:ConditionGroupModel) {
-    delete this._groups[group.key]
-    this._changed('removeGroup')
-  }
-
-  get groups():{ [key: string]: ConditionGroupModel } {
-    // @todo clone this object.
-    return this._groups
+    delete this.groups[group.key]
   }
 
   isValid() {
