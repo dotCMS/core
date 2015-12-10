@@ -222,6 +222,32 @@ public class RulesCacheFTest {
 
     }
 
+    @Test
+    public void testGetRulesByHostFireOnReturnsNullWhenConditionValuesOfCachedRuleOnSameHostIsDeleted() throws Exception {
+
+        Rule rule = ruleDataGen.nextPersisted();
+        rulesToRemove.add(rule);
+
+        ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
+        Condition condition = conditionDataGen.groupId(group.getId()).next();
+        ConditionValue value = conditionValueDataGen.key("key").value("value").next();
+        condition.addConditionValue(value);
+        conditionDataGen.persist(condition);
+
+        // let's add the rule to the cache
+        addRuleToHostFireOnCache(rule);
+
+        // we should get a set with our rule
+        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+
+        // let's delete the condition value
+        FactoryLocator.getRulesFactory().deleteConditionValues(condition);
+
+        // let's check the cache returns null after the update
+        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+
+    }
+
     private void addRuleToHostFireOnCache(Rule rule) {
         Set<Rule> ruleSet = new HashSet<>();
         ruleSet.add(rule);
