@@ -167,15 +167,13 @@ import {CwFilter} from "../../../api/util/CwFilter"
 
     setFieldFilter(field:string, value:string=null){
       // remove old status
-        var re = new RegExp(field + ':[\\w]*')
-        this.filterTextField = this.filterText;
-        this.filterTextField = this.filterTextField.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
+      var re = new RegExp(field + ':[\\w]*')
+      this.filterTextField = this.filterText;
+      this.filterTextField = this.filterTextField.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
       if(value != null) {
         this.filterTextField = field + ':' + value + ' ' + this.filterTextField.trim()
-        this.filterText = this.filterTextField
-      }else{
-        this.filterText = this.filterTextField
       }
+      this.filterText = this.filterTextField
     }
 
     isFilteringField(field:string, value:any=null):boolean{
