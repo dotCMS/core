@@ -5,6 +5,9 @@ import {Dropdown} from "../../../semantic/modules/dropdown/dropdown";
 import {DropdownOption} from "../../../semantic/modules/dropdown/dropdown";
 import {I18NCountryProvider} from "../../../../../api/system/locale/I18NCountryProvider";
 import {DropdownModel} from "../../../semantic/modules/dropdown/dropdown";
+import {I18nService} from "../../../../../api/system/locale/I18n";
+import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
+import {I18nResourceModel} from "../../../../../api/system/locale/I18n";
 
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']
@@ -17,9 +20,6 @@ export class CountryConditionModel {
     this.isoCode = isoCode
   }
 
-  clone():CountryConditionModel {
-    return new CountryConditionModel(this.comparatorValue, this.isoCode)
-  }
 }
 
 @Component({
@@ -53,9 +53,9 @@ export class CountryCondition {
   change:EventEmitter;
 
 
-  comparisonOptions:Array<DropdownOption> = [
-      new DropdownOption("is", "is", "Is"),
-      new DropdownOption("isNot", "isNot", "Is Not")  ];
+  comparisons:any = [
+    { id: "is" },
+    {id: "isNot"} ]
 
   countries:Array<any>
 
@@ -63,11 +63,18 @@ export class CountryCondition {
   private countryDropdown:DropdownModel
   private comparatorDropdown:DropdownModel
 
-  constructor(@Inject(I18NCountryProvider) countryProvider:I18NCountryProvider) {
+  constructor(@Inject apiRoot:ApiRoot, @Inject countryProvider:I18NCountryProvider, @Inject i18nService:I18nService) {
     this.countries = []
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
-    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", ["is"], this.comparisonOptions)
+    let opts = []
+    i18nService.get(apiRoot.authUser.locale, 'api.sites.ruleengine.rules.inputs.comparison', (result:I18nResourceModel)=>{
+      this.comparisons.forEach((comparison:any)=>{
+        opts.push(new DropdownOption(comparison.id, comparison.id, result.messages[comparison.id]))
+      })
+      this.comparatorDropdown.addOptions( opts);
+    })
+    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", [this.comparisons[0].id], []);
     this.countryDropdown = new DropdownModel("country", "Country")
 
     countryProvider.promise.then(()=> {

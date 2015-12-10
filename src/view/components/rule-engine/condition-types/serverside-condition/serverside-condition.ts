@@ -54,7 +54,7 @@ export class ServersideCondition {
     this._model = model;
     let opts = []
     model.conditionType.comparisons.forEach((comparison:any)=>{
-      opts.push(new DropdownOption(comparison.id))
+      opts.push(new DropdownOption(comparison.id, comparison.id, comparison.label))
     })
     this.comparisonDropdown.options = opts
     this.comparisonDropdown.selected = [model.comparison]

@@ -63,11 +63,17 @@ export class ConditionTypeService {
   private _ref;
   private _map:{[key:string]: ConditionTypeModel}
   private _rsrcService:I18nService;
+  private comparisonRsrc;
 
   constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
     this._apiRoot = apiRoot
     this._rsrcService = rsrcService
     this._ref = apiRoot.root.child('system/ruleengine/conditionlets')
+
+    rsrcService.get(apiRoot.authUser.locale, 'api.sites.ruleengine.rules.inputs.comparison', (model:I18nResourceModel)=>{
+      this.comparisonRsrc = model.messages
+    })
+
 
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
@@ -77,9 +83,14 @@ export class ConditionTypeService {
     this.onAdd.connect()
   }
 
-  static fromSnapshot(snapshot:EntitySnapshot):ConditionTypeModel {
+  fromSnapshot(snapshot:EntitySnapshot):ConditionTypeModel {
     let val:any = snapshot.val()
-    return new ConditionTypeModel(snapshot.key(), val.i18nKey, val.comparisons)
+    let comparisons = []
+    val.comparisons.forEach((comparison:any) => {
+      comparison.label = this.comparisonRsrc[comparison.id]
+      comparison.label = comparison.label ? comparison.label : comparison.id
+    })
+    return new ConditionTypeModel(snapshot.key(), val.i18nKey, comparisons);
   }
 
   private _entryReceived(entry:ConditionTypeModel) {
@@ -101,7 +112,7 @@ export class ConditionTypeService {
       Object.keys(types).forEach((key) => {
         if (DISABLED_CONDITION_TYPE_IDS[key] !== true) {
           let conditionType = snap.child(key)
-          let model = ConditionTypeService.fromSnapshot(conditionType)
+          let model = this.fromSnapshot(conditionType)
           this._rsrcService.get(this._apiRoot.authUser.locale, model.i18nKey, (rsrcResult:I18nResourceModel)=>{
             if (rsrcResult) {
               model.i18n = rsrcResult;

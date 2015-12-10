@@ -19,6 +19,8 @@ import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ConditionService} from "../../../api/rule-engine/Condition";
 import {I18nService} from "../../../api/system/locale/I18n";
+import {ComparisonService} from "../../../api/system/ruleengine/conditionlets/Comparisons";
+import {InputService} from "../../../api/system/ruleengine/conditionlets/Inputs";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 import {CwFilter} from "../../../api/util/CwFilter"
 
@@ -198,6 +200,8 @@ export class RuleEngineApp {
 
     let app = bootstrap(RuleEngineComponent, [ApiRoot,
       I18nService,
+      ComparisonService,
+      InputService,
       ActionTypeService,
       UserModel,
       I18NCountryProvider,
