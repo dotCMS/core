@@ -12,9 +12,6 @@ let noop = (...arg:any[])=> {
 }
 
 
-
-
-
 export class ConditionTypeModel extends CwI18nModel {
 
   i18nKey:string
@@ -38,12 +35,12 @@ var DISABLED_CONDITION_TYPE_IDS = {
   //UsersCountryConditionlet: false,
   //UsersBrowserHeaderConditionlet: false,
   //UsersContinentConditionlet: true, // comment out to prove we don't need to know its name.
+  //UsersPlatformConditionlet: true,
   UsersIpAddressConditionlet: true,
   UsersVisitedUrlConditionlet: true,
   UsersCityConditionlet: true,
   UsersTimeConditionlet: true,
   UsersLandingPageUrlConditionlet: true,
-  UsersPlatformConditionlet: true,
   UsersLanguageConditionlet: true,
   UsersPageVisitsConditionlet: true,
   MockTrueConditionlet: true,

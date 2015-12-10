@@ -169,7 +169,6 @@ class RuleComponent {
   }
 
   set rule(rule:RuleModel) {
-
     if (!this.rule || this.rule.key !== rule.key) {
       this._rule = rule
       this.groups = []
@@ -225,7 +224,7 @@ class RuleComponent {
     this.actionStub.owningRule = this.rule
     this.actions.push(this.actionStub)
     this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=> {
-      if (vcEvent.target.valid) {
+      if (vcEvent.target.isValid()) {
         this.actionService.add(this.actionStub)
       }
     })

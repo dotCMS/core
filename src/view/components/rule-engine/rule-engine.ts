@@ -116,7 +116,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
     }
 
     handleRuleChange(event:CwChangeEvent<RuleModel>) {
-      if (event.target.valid) {
+      if (event.target.isValid()) {
         this.ruleService.save(event.target)
       }
       this.getFilteredRulesStatus()
@@ -144,7 +144,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
       this.ruleStub.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
       this.rules.unshift(this.ruleStub)
       this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
-        if (event.target.valid) {
+        if (event.target.isValid()) {
           this.ruleService.save(this.ruleStub)
         }
       })

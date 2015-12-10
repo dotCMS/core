@@ -99,7 +99,6 @@ export class ConditionGroupService {
     json.operator = conditionGroup.operator
     json.priority = conditionGroup.priority
     json.conditions = conditionGroup.conditions
-    debugger
     return json
   }
 

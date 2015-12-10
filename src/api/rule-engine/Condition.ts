@@ -142,19 +142,12 @@ export class ConditionModel extends CwModel {
   }
 
   isValid() {
-    let valid = !!this.key
-    valid = valid && !!this._owningGroup
+    let valid = !!this._owningGroup
     valid = valid && this._owningGroup.isValid() && this._owningGroup.isPersisted()
     if(this._parameterDefs) {
       Object.keys(this._parameterDefs).forEach(key=> {
         let paramDef = this.getParameterDef(key)
-      if(this._parameters[key] == null){
-        debugger
-      }
         var value = this._parameters[key].value;
-        if(value == ''){
-          debugger
-        }
         valid = valid && paramDef.inputType.verify(value).valid
         console.log("validate => key: ", key, "  value: ", value, "  valid: ", valid)
       })
@@ -291,7 +284,6 @@ export class ConditionService {
   save(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "save", model)
     if (!model.isValid()) {
-      debugger
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {

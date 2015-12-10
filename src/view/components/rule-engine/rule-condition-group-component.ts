@@ -121,7 +121,7 @@ export class ConditionGroupComponent {
 
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
-    let condition = new ConditionModel('NoSelection', null)
+    let condition = new ConditionModel(null, null)
     condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 1
     condition.name = "Condition. " + new Date().toISOString()
     condition.owningGroup = this._group
