@@ -1,19 +1,23 @@
 import {bootstrap, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
 import {InputText, InputTextModel} from './input-text'
+import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
 
 
 export class Hero {
   constructor(public id:number,
               public name:string,
+              public inputname:InputTextModel,
               public power:string,
               public alterEgo?:string) {
+    this.inputname = new InputTextModel("inputname", "Input Name")
+
   }
 }
 
 
 @Component({
   selector: 'hero-form',
-  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES],
+  directives: [InputText, CORE_DIRECTIVES, FORM_DIRECTIVES],
   styles: [`
   .ng-valid[required] {
   border-left: 5px solid #42A948; /* green */
@@ -30,6 +34,12 @@ export class Hero {
       <input flex="100" type="text" class="form-control" required [(ng-model)]="model.name" ng-control="name" #name="form" #spy>
       <div flex="100">TODO: remove this: {{spy.className}}</div>
       <div flex="50" [hidden]="name.valid" [class.ui]="!name.valid" class="red basic label">Name is required</div>
+    </div>
+    <div flex="100" layout-wrap  layout="row" class="ui attached segment">
+      <label flex="100" for="name">Text-Input Name</label>
+      <cw-input-text flex="100" required [(ng-model)]="model.inputname" ng-control="inputname" #inputname="form"></cw-input-text>
+      <div flex="100">TODO: remove this: {{spy.className}}</div>
+      <div flex="50" [hidden]="inputname.valid" [class.ui]="!inputname.valid" class="red basic label">Input-Name is required</div>
     </div>
     <div flex="100" layout-wrap layout="row" class="ui attached segment">
       <label flex="100" for="alterEgo">Alter Ego</label>
