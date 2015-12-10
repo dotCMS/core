@@ -297,30 +297,12 @@ class RuleComponent {
 
   removeRule(event:Event) {
     if ((event.altKey && event.shiftKey)
-        || this.isEmpty()
+        || this.rule.isEmpty()
         || confirm('Are you sure you want delete this rule?')) {
 
       event.stopPropagation()
       this.ruleService.remove(this.rule)
     }
-  }
-
-  isEmpty():boolean {
-    //Return TRUE in case Groups and Actions are empty.
-    if(Object.keys(this.rule.groups).length === 0 && Object.keys(this.rule.actions).length === 0){
-      return true
-    }
-    //Return TRUE in case rule has Groups but Group is empty.
-    if(Object.keys(this.rule.groups).length != 0){
-      for (var group in this.rule.groups){
-        if(Object.keys(this.rule.groups[group].conditions).length != 0){
-          return false
-        }
-      }
-      return true
-    }
-    //Return FALSE in case the Rule has Conditions or Groups (with Conditions).
-    return false
   }
 
 }

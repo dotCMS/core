@@ -82,6 +82,24 @@ export class RuleModel extends CwModel {
     return valid
   }
 
+  isEmpty():boolean {
+    //Return TRUE in case Groups and Actions are empty.
+    if(Object.keys(this.groups).length === 0 && Object.keys(this.actions).length === 0){
+      return true
+    }
+    //Return TRUE in case rule has Groups but Group is empty.
+    if(Object.keys(this.groups).length != 0){
+      for (var group in this.groups){
+        if(Object.keys(this.groups[group].conditions).length != 0){
+          return false
+        }
+      }
+      return true
+    }
+    //Return FALSE in case the Rule has Conditions or Groups (with Conditions).
+    return false
+  }
+
 }
 const RULE_DEFAULT_RSRC = {
   inputs: {
