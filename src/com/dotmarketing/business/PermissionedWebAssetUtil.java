@@ -432,7 +432,7 @@ public class PermissionedWebAssetUtil {
 				}
 				roleIdCount++;
 			}
-			if(DbConnectionFactory.isOracle()){
+			if(DbConnectionFactory.isOracle() || DbConnectionFactory.isH2()){
 				permissionRefSQL.append(") and bitand(permission.permission, ").append(requiredTypePermission).append(") > 0 ");
 				individualPermissionSQL.append(") and bitand(permission, ").append(requiredTypePermission).append(") > 0 ");
 			}else{
