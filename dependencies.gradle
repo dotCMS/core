@@ -251,19 +251,19 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.proxy', version:'2.2.0_2'
 
     /*****  Felix libs need to be placed in the WEB-INF/felix/bundle directory. This was previously handled using a pre-build copy task.  *****/
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
-    felix group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.bundlerepository', version:'1.6.6_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.fileinstall', version:'3.1.10_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.command', version:'0.12.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.runtime', version:'0.10.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.gogo.shell', version:'0.10.0_3'
+    compile group: 'com.dotcms.lib', name: 'dot.org.apache.felix.http.bundle', version:'2.2.0_3'
 
     /**** And now the libs we pull in from internal company sources - libs stored in ./plugins, ./bin, ./libs, the starter site, etc. ****/
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
 
-    starterContent group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
+    compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
-    tomcatLibs fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
+    provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')
 }
