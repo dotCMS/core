@@ -13,6 +13,7 @@ import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.UsersBrowserHeaderConditionlet.HEADER_NAME_KEY;
 import static com.dotmarketing.portlets.rules.conditionlet.UsersBrowserHeaderConditionlet.HEADER_VALUE_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -215,7 +216,7 @@ public class UsersBrowserHeaderConditionletTest {
         }
 
         TestCase withComparison(Comparison c){
-            params.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, c.getId()));
+            params.put(COMPARISON_KEY, new ParameterModel(COMPARISON_KEY, c != null ? c.getId() : null));
             return this;
         }
 

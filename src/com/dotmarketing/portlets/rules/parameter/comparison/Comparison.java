@@ -2,12 +2,13 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import java.util.Collection;
 
 public class Comparison<T> {
 
     public static final Comparison<Object> EXISTS = new Exists();
-    public static final Comparison<Comparable<Object>> IS = new Is();
-    public static final Comparison<Comparable<Object>> IS_NOT = new IsNot();
+    public static final Comparison<Comparable> IS = new Is();
+    public static final Comparison<Comparable> IS_NOT = new IsNot();
     public static final Comparison<String> STARTS_WITH = new StartsWith();
     public static final Comparison<String> ENDS_WITH = new EndsWith();
     public static final Comparison<String> CONTAINS = new Contains();
@@ -29,6 +30,15 @@ public class Comparison<T> {
 
     public final String getId() {
         return id;
+    }
+
+    /**
+     * @todo ggranum: This makes more sense than using the multi-arg versions, even though it's not as easy to call and isn't as safe.
+     * Another option might be to add interfaces: 'TwoArgComparison', 'OneArgComparison' etc. Look more closely at Matchers for inspiration?
+     * Using interfaces would help on the client side as well.
+     */
+    public boolean perform(Collection<T> arguments) {
+        throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with a list of arguments.");
     }
 
     public boolean perform(T arg) {

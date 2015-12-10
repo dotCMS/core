@@ -42,7 +42,7 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet<UsersBrowserHea
     public static final String HEADER_VALUE_KEY = "header-value";
 
     private static final ParameterDefinition<TextType> headerKey = new ParameterDefinition<>(
-        HEADER_NAME_KEY,
+        1, HEADER_NAME_KEY,
         new DropdownInput()
             .allowAdditions()
             .minSelections(1)
@@ -93,14 +93,12 @@ public class UsersBrowserHeaderConditionlet extends Conditionlet<UsersBrowserHea
             .option("Proxy-Connection")
             .option("X-UIDH")
             .option("X-Csrf-Token"),
-        1,
         "Accept"
     );
 
     private static final ParameterDefinition<TextType> headerValue = new ParameterDefinition<>(
-        HEADER_VALUE_KEY,
-        new TextInput<>(new TextType()),
-        2
+        2, HEADER_VALUE_KEY,
+        new TextInput<>(new TextType())
     );
 
     public UsersBrowserHeaderConditionlet() {

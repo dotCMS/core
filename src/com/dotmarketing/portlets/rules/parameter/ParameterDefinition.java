@@ -16,10 +16,10 @@ public class ParameterDefinition<T extends DataType> {
     /**
      * Creates a parameter with the key, data type and a default value
      */
-    public ParameterDefinition(String key, Input<T> inputType, int priority) {
-        this(key, inputType, priority, "");
+    public ParameterDefinition(int priority, String key, Input<T> inputType) {
+        this(priority, key, inputType, "");
     }
-    public ParameterDefinition(String key, Input<T> inputType, int priority, String defaultValue) {
+    public ParameterDefinition(int priority, String key, Input<T> inputType, String defaultValue) {
         Preconditions.checkState(StringUtils.isNotBlank(key), "ParameterDefinition requires a valid key.");
         this.key = key;
         this.defaultValue = defaultValue == null ? "" : defaultValue;

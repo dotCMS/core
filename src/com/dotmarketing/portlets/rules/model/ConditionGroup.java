@@ -81,7 +81,7 @@ public class ConditionGroup implements Serializable {
     }
 
     public void checkValid(){
-        for (Condition condition : conditions) {
+        for (Condition condition : getConditions()) {
             condition.checkValid();
         }
     }

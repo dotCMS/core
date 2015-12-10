@@ -15,12 +15,12 @@ public final class RestActionlet extends Validated {
 
     public final String i18nKey;
 
-    public final Map<String, ParameterDefinition> parameters;
+    public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestActionlet(Builder builder) {
         id = builder.id;
         i18nKey = builder.i18nKey;
-        parameters = ImmutableMap.copyOf(builder.parameters);
+        parameterDefinitions = ImmutableMap.copyOf(builder.parameters);
         checkValid();
     }
 
@@ -49,7 +49,7 @@ public final class RestActionlet extends Validated {
         public Builder from(RestActionlet copy) {
             id = copy.id;
             i18nKey = copy.i18nKey;
-            parameters = copy.parameters;
+            parameters = copy.parameterDefinitions;
             return this;
         }
 

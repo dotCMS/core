@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
@@ -16,9 +17,7 @@ import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -46,12 +45,12 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
 
     private static final long serialVersionUID = 1L;
 
-    private static final String COUNTRY_KEY = "country";
+    public static final String COUNTRY_KEY = "country";
 
     private final GeoIp2CityDbUtil geoIp2Util;
 
     private static final ParameterDefinition<TextType> country = new ParameterDefinition<>(
-        COUNTRY_KEY,
+        3, COUNTRY_KEY,
         new DropdownInput()
             .allowAdditions()
             .option("AF")
@@ -279,15 +278,19 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
             .option("YE")
             .option("ZM")
             .option("ZW"),
-        3,
         "Accept"
     );
 
     public UsersCountryConditionlet() {
+        this(GeoIp2CityDbUtil.getInstance());
+    }
+
+    @VisibleForTesting
+    UsersCountryConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.system.ruleengine.conditionlet.VisitorCountry",
               new ComparisonParameterDefinition(2, IS, IS_NOT),
               country);
-        this.geoIp2Util = GeoIp2CityDbUtil.getInstance();
+        this.geoIp2Util = geoIp2Util;
     }
 
     /**
@@ -308,15 +311,13 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
             throw new RuleEvaluationFailedException(e, "Unknown host.");
         }
         String ipAddress = address.getHostAddress();
-        try
-        {
+        try {
             country = geoIp2Util.getCountryIsoCode(ipAddress);
         } catch (IOException | GeoIp2Exception e) {
             Logger.error(this, "Could not look up country for request. Using 'unknown': " + request.getRequestURL());
         }
         return country;
     }
-
 
     @Override
     public Instance instanceFrom(Map<String, ParameterModel> parameters) {
@@ -326,12 +327,13 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
     public static class Instance implements RuleComponentInstance {
 
         private final String countryCode;
-        private final Comparison comparison;
+        private final Comparison<String> comparison;
 
         private Instance(UsersCountryConditionlet definition, Map<String, ParameterModel> parameters) {
             this.countryCode = parameters.get(COUNTRY_KEY).getValue();
             String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
             try {
+                //noinspection unchecked
                 this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {
                 throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",

@@ -5,14 +5,14 @@ import static org.hamcrest.Matchers.equalTo;
 /**
  * @author Geoff M. Granum
  */
-public class Is extends Comparison<Comparable<Object>> {
+public class Is extends Comparison<Comparable> {
 
     public Is() {
         super("is");
     }
 
     @Override
-    public boolean perform(Comparable<Object> left, Comparable<Object> right) {
+    public boolean perform(Comparable left, Comparable right) {
         return MatcherCheck.verifyThat(left, equalTo(right));
     }
 }

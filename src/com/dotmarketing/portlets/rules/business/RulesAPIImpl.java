@@ -47,10 +47,11 @@ public class RulesAPIImpl implements RulesAPI {
     private static final List<Class> actionletOSGIclasses = new ArrayList<Class>();
     private final List<Class<? extends Conditionlet>> defaultConditionletClasses =
             ImmutableList.<Class<? extends Conditionlet>>builder()
-//                         .add(UsersBrowserConditionlet.class)
-                         .add(UsersBrowserHeaderConditionlet.class)
-//                         .add(UsersCityConditionlet.class)
                          .add(UsersCountryConditionlet.class)
+                         .add(UsersBrowserHeaderConditionlet.class)
+                         .add(UsersPlatformConditionlet.class)
+//                         .add(UsersBrowserConditionlet.class)
+//                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
 //                         .add(UsersDateTimeConditionlet.class)
 //                         .add(UsersHostConditionlet.class)
@@ -60,7 +61,6 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersLogInConditionlet.class)
 //                         .add(UsersOperatingSystemConditionlet.class)
 //                         .add(UsersPageVisitsConditionlet.class)
-//                         .add(UsersPlatformConditionlet.class)
 //                         .add(UsersReferringUrlConditionlet.class)
 //                         .add(UsersSiteVisitsConditionlet.class)
 //                         .add(UsersStateConditionlet.class)

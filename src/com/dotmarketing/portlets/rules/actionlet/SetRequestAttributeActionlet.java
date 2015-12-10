@@ -3,9 +3,7 @@ package com.dotmarketing.portlets.rules.actionlet;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
@@ -30,8 +28,8 @@ public class SetRequestAttributeActionlet extends RuleActionlet<SetRequestAttrib
 
     public SetRequestAttributeActionlet() {
         super(I18N_BASE,
-              new ParameterDefinition<>(REQUEST_KEY, new TextInput<>(new TextType()), 1),
-              new ParameterDefinition<>(REQUEST_VALUE, new TextInput<>(new TextType()), 2));
+              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType())),
+              new ParameterDefinition<>(2, REQUEST_VALUE, new TextInput<>(new TextType())));
     }
 
     @Override
