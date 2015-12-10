@@ -44,12 +44,12 @@ import {CwFilter} from "../../../api/util/CwFilter"
     </button>
   </div>
     <div class="cw-filter-links">
-      <span>Show:</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc.inputs.filter.status?.all}}</a>
+      <span>{{rsrc.inputs.filter.status?.show.label}}:</span>
+      <a href="javascript:void(0)" [ng-class]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc.inputs.filter.status?.all.label}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc.inputs.filter.status?.active}}</a>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc.inputs.filter.status?.active.label}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc.inputs.filter.status?.inactive}}</a>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc.inputs.filter.status?.inactive.label}}</a>
     </div>
   </div>
 
