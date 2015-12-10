@@ -1,11 +1,8 @@
 configurations {
     compile
     antLibs
-    felix
-    starterContent
     coreWeb
     provided
-    tomcatLibs
     ext.dotcmsFolder = "dotCMS"
     ext.rulesEngineFolder ="dotCMS/html/js/_rulesengine"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
