@@ -37,22 +37,22 @@ $primary-one: #209021;
 }
 
 .cw-filter-links {
-	font-size: .8em;
-	color: $foreground-disabled;
+    font-size: .8em;
+    color: $foreground-disabled;
 }
 
 .cw-filter-link{
-	&.active{
-		&:hover{
-			color: $foreground-active;
-		}
-		font-weight: bold;
-		color: $foreground-active;
-	}
-	&:hover{
-		color: $foreground-disabled;
-	}
-  	color: $foreground-disabled;
+    &.active{
+        &:hover{
+        	color: $foreground-active;
+        }
+        font-weight: bold;
+        color: $foreground-active;
+    }
+    &:hover{
+        color: $foreground-disabled;
+    }
+    color: $foreground-disabled;
 }
 
 
