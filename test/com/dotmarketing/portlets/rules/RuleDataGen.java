@@ -29,7 +29,7 @@ public class RuleDataGen {
     }
 
     private Rule.FireOn fireOn = Rule.FireOn.EVERY_PAGE;
-    private String name;
+    private String name = "defaultName";
 
     public RuleDataGen() {
     }
@@ -49,7 +49,10 @@ public class RuleDataGen {
     }
 
     public Rule nextPersisted() {
-        Rule rule = next();
+        return persist(next());
+    }
+
+    public Rule persist(Rule rule) {
         try {
             rulesAPI.saveRule(rule, user, false);
         } catch (Exception e) {
