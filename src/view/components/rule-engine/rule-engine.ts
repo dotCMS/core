@@ -1,4 +1,4 @@
-import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector} from 'angular2/angular2';
+import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector, NgClass} from 'angular2/angular2';
 
 //import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
 
@@ -36,7 +36,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
   <div flex layout="row" layout-align="space-between center">
     <div flex layout="row" layout-align="space-between center" class="ui icon input">
       <i class="filter icon"></i>
-      <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
+      <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterTextField" (keyup)="filterText = $event.target.value">
     </div>
     <div flex="2"></div>
     <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
@@ -44,9 +44,12 @@ import {CwFilter} from "../../../api/util/CwFilter"
     </button>
   </div>
     <div class="cw-filter-links">
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status?.all}} ({{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status?.active}} ({{activeRules}}/{{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status?.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
+      <span>Show:</span>
+      <a href="javascript:void(0)" [ng-class]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc.inputs.filter.status?.all}}</a>
+      <span>&#124;</span>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc.inputs.filter.status?.active}}</a>
+      <span>&#124;</span>
+      <a href="javascript:void(0)" [ng-class]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc.inputs.filter.status?.inactive}}</a>
     </div>
   </div>
 
@@ -54,11 +57,12 @@ import {CwFilter} from "../../../api/util/CwFilter"
 </div>
 
 `,
-    directives: [RuleComponent, NgFor, NgIf]
+    directives: [RuleComponent, NgFor, NgIf, NgClass]
   })
   export class RuleEngineComponent {
     rules:RuleModel[];
     filterText:string
+    filterTextField:string
     status:string
     activeRules:number
     rsrc:any
@@ -76,7 +80,8 @@ import {CwFilter} from "../../../api/util/CwFilter"
         this.rsrc = messages
       })
       this.ruleService = ruleService;
-      this.filterText = ""
+      this.filterText ='';
+      this.filterTextField ='';
       this.rules = []
       this.status = null
       this.ruleService.onAdd.subscribe(
@@ -148,6 +153,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
           this.ruleService.save(this.ruleStub)
         }
       })
+      this.setFieldFilter('enabled')
     }
 
     getFilteredRulesStatus() {
@@ -159,14 +165,15 @@ import {CwFilter} from "../../../api/util/CwFilter"
     	}
     }
 
-
     setFieldFilter(field:string, value:string=null){
       // remove old status
       var re = new RegExp(field + ':[\\w]*')
-      this.filterText = this.filterText.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
-      if(value !== null) {
-        this.filterText = field + ':' + value + ' ' + this.filterText
+      this.filterTextField = this.filterText;
+      this.filterTextField = this.filterTextField.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
+      if(value != null) {
+        this.filterTextField = field + ':' + value + ' ' + this.filterTextField.trim()
       }
+      this.filterText = this.filterTextField
     }
 
     isFilteringField(field:string, value:any=null):boolean{
