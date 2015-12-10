@@ -138,16 +138,6 @@ public class Field extends Inode implements Exportable, Importable
     	modDate = new Date();
     }
 
-	public boolean isDependenciesMet() throws DotDependencyException {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public List<Exportable> getDependencies() {
-		List<Exportable> ret =new ArrayList<Exportable>();
-		ret.add(this);
-		return ret;
-	}
 
 
 	public Field (String fieldName, FieldType fieldType, DataType dataType, Structure structure, boolean required, boolean listed, boolean indexed, int sortOrder,boolean fixed, boolean readOnly, boolean searchable) {
@@ -186,44 +176,51 @@ public class Field extends Inode implements Exportable, Importable
 	public String getFieldContentlet() {
 		return fieldContentlet;
 	}
-	public void setFieldContentlet(String fieldContentlet) {
+	public Field setFieldContentlet(String fieldContentlet) {
 		this.fieldContentlet = fieldContentlet;
+		return this;
 	}
 	public String getFieldName() {
 		return fieldName;
 	}
-	public void setFieldName(String fieldName) {
+	public Field setFieldName(String fieldName) {
 		this.fieldName = fieldName;
+		return this;
 	}
 	public String getFieldRelationType() {
 		return fieldRelationType;
 	}
-	public void setFieldRelationType(String fieldRelationType) {
+	public Field setFieldRelationType(String fieldRelationType) {
 		this.fieldRelationType = fieldRelationType;
+		return this;
 	}
 	public String getFieldType() {
 		return fieldType;
 	}
-	public void setFieldType(String fieldType) {
+	public Field setFieldType(String fieldType) {
 		this.fieldType = fieldType;
+		return this;
 	}
 	public boolean isRequired() {
 		return required;
 	}
-	public void setRequired(boolean required) {
+	public Field setRequired(boolean required) {
 		this.required = required;
+		return this;
 	}
 	public int getSortOrder() {
 		return sortOrder;
 	}
-	public void setSortOrder(int sortOrder) {
+	public Field setSortOrder(int sortOrder) {
 		this.sortOrder = sortOrder;
+		return this;
 	}
 	public String getStructureInode() {
 		return structureInode;
 	}
-	public void setStructureInode(String structureInode) {
+	public Field setStructureInode(String structureInode) {
 		this.structureInode = structureInode;
+		return this;
 	}
 	public String getValues() {
 		return values;
@@ -234,14 +231,16 @@ public class Field extends Inode implements Exportable, Importable
 	public String getVelocityVarName() {
 		return velocityVarName;
 	}
-	public void setVelocityVarName(String velocityVarName) {
+	public Field setVelocityVarName(String velocityVarName) {
 		this.velocityVarName = velocityVarName;
+		return this;
 	}
 	public String getRegexCheck() {
 		return regexCheck;
 	}
-	public void setRegexCheck(String regexCheck) {
+	public Field setRegexCheck(String regexCheck) {
 		this.regexCheck = regexCheck;
+		return this;
 	}
 
 	/**
@@ -253,8 +252,9 @@ public class Field extends Inode implements Exportable, Importable
 	/**
 	 * @param defaultValue The defaultValue to set.
 	 */
-	public void setDefaultValue(String defaultValue) {
+	public Field setDefaultValue(String defaultValue) {
 		this.defaultValue = defaultValue;
+		return this;
 	}
 	/**
 	 * @return Returns the hint.
@@ -265,8 +265,9 @@ public class Field extends Inode implements Exportable, Importable
 	/**
 	 * @param hint The hint to set.
 	 */
-	public void setHint(String hint) {
+	public Field setHint(String hint) {
 		this.hint = hint;
+		return this;
 	}
 	public void delete() throws DotHibernateException
 	{
@@ -275,15 +276,17 @@ public class Field extends Inode implements Exportable, Importable
 	public boolean isIndexed() {
 		return indexed;
 	}
-	public void setIndexed(boolean indexed) {
+	public Field setIndexed(boolean indexed) {
 		this.indexed = indexed;
+		return this;
 	}
 
     public boolean isListed() {
         return listed;
     }
-    public void setListed(boolean listed) {
+    public Field setListed(boolean listed) {
         this.listed = listed;
+        return this;
     }
 
 
@@ -291,16 +294,18 @@ public class Field extends Inode implements Exportable, Importable
 		return fixed;
 	}
 
-	public void setFixed(boolean fixed) {
+	public Field setFixed(boolean fixed) {
 		this.fixed = fixed;
+		return this;
 	}
 
 	public boolean isReadOnly() {
 		return readOnly;
 	}
 
-	public void setReadOnly(boolean readOnly) {
+	public Field setReadOnly(boolean readOnly) {
 		this.readOnly = readOnly;
+		return this;
 	}
 
     public Map<String, Object> getMap () {
@@ -332,24 +337,27 @@ public class Field extends Inode implements Exportable, Importable
 		return searchable;
 	}
 
-	public void setSearchable(boolean searchable) {
+	public Field setSearchable(boolean searchable) {
 		this.searchable = searchable;
+		return this;
 	}
 
 	public boolean isUnique() {
 		return unique;
 	}
 
-	public void setUnique(boolean unique) {
+	public Field setUnique(boolean unique) {
 		this.unique = unique;
+		return this;
 	}
 
 	public Date getModDate() {
 		return modDate;
 	}
 
-	public void setModDate(Date modDate) {
+	public Field setModDate(Date modDate) {
 		this.modDate = modDate;
+		return this;
 	}
 
 	@Override
