@@ -225,7 +225,9 @@
            						? "formIcon"
                    						:	(s.getStructureType() ==4)
                    						? "fileIcon"
-                   								: "pageIcon";
+                              			:	(s.getStructureType() ==6)
+                              				? "personaIcon"
+                              					: "pageIcon";
 
 
 
