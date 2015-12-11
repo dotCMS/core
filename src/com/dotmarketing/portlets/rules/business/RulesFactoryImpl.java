@@ -39,7 +39,6 @@ public class RulesFactoryImpl implements RulesFactory {
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
         cache = CacheLocator.getRulesCache();
-//        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
@@ -799,7 +798,6 @@ public class RulesFactoryImpl implements RulesFactory {
         cache.removeConditionGroup(group);
         Rule rule  = getRuleById(group.getRuleId());
         cache.removeRule(rule);
-        
     }
 
     private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
