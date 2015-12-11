@@ -1,36 +1,33 @@
 package com.dotmarketing.portlets.rules.business;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
+import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
+import com.dotmarketing.portlets.rules.conditionlet.*;
+import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
 import static com.dotcms.repackage.org.junit.Assert.*;
-
 
 public class RulesAPITest extends TestBase {
 
@@ -225,7 +222,23 @@ public class RulesAPITest extends TestBase {
 		rulesAPI.saveRuleAction(action, user, false);
 
 	}
-	
+
+	@Test
+	public void testRefreshConditionletsMapNoExceptionWhenErrorInCustomConditionlet() {
+		RulesAPI rulesAPI = new RulesAPIImpl();
+		// addConditionlet calls refreshConditionletsMap under the cover
+		// shouldn't throw error
+		rulesAPI.addConditionlet(ThrowErrorConditionlet.class);
+	}
+
+	@Test
+	public void testRefreshActionletsMapNoExceptionWhenErrorInCustomActionlet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+		RulesAPI rulesAPI = new RulesAPIImpl();
+		// addRuleActionlet calls refreshActionletsMap under the cover
+		// shouldn't throw error
+		rulesAPI.addRuleActionlet(ThrowErrorActionlet.class);
+	}
+
 	@After
     public void deleteRule() throws DotDataException, DotSecurityException {
         if (ruleId != null) {
@@ -234,4 +247,8 @@ public class RulesAPITest extends TestBase {
         }
     }
 
+
 }
+
+
+
