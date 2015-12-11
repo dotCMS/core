@@ -124,10 +124,10 @@ public class UserAPIImpl implements UserAPI {
 		//Role cmsAdminRole = roleAPI.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
 		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
 		try {
-			user = uf.loadUserById("system");
+			user = uf.loadUserById(SYSTEM_USER_ID);
 		} catch (NoSuchUserException e) {
 		    user = createUser("system", "system@dotcmsfakeemail.org");
-            user.setUserId("system");
+            user.setUserId(SYSTEM_USER_ID);
             user.setFirstName("system user");
             user.setLastName("system user");
             user.setCreateDate(new java.util.Date());

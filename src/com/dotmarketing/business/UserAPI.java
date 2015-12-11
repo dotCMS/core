@@ -20,6 +20,9 @@ import com.liferay.portal.model.User;
  */
 public interface UserAPI {
 
+	
+	
+	final static String SYSTEM_USER_ID = "system";
 	/**
 	 * Used to encrypt a User's userid
 	 * @param userId
