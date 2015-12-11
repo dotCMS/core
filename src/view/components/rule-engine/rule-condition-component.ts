@@ -97,7 +97,6 @@ export class ConditionComponent {
     this.condition = condition
     this.parameterValues = {}
     this.index = 0
-    this.conditionOperatorLabel = this.rsrc.inputs.condition.andOr.and.label
 
     /* Note that 'typeService.list()' was called earlier, and the following observer relies on that fact. */
     typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
