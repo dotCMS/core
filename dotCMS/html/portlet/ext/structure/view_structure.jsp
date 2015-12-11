@@ -356,6 +356,8 @@ var deleteLabel = "";
 						<span class="fileIcon"></span>
 				    <% }else if(structure.isHTMLPageAsset()){ %>
 				        <span class="pageIcon"></span>
+				    <% }else if(structure.isPersona()){ %>
+				        <span class="personaIcon"></span>
 					<% }else{ %>
 						<span class="contentIcon"></span>
 					<% } %>
