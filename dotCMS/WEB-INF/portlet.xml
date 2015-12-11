@@ -3508,7 +3508,7 @@
 	<portlet>
 		<portlet-name>PERSONAS_PORTLET</portlet-name>
 		<display-name>Personas</display-name>
-		<portlet-class>com.dotcms.rest.personas.PersonasPortlet</portlet-class>
+		<portlet-class>com.dotcms.rest.personas.PersonasResourcePortlet</portlet-class>
 
 	</portlet>
 

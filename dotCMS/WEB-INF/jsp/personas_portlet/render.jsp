@@ -1,3 +1,4 @@
+<%@page import="com.dotcms.enterprise.personas.business.PersonaAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
@@ -23,7 +24,10 @@
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
 <%@page import="com.dotmarketing.business.CacheLocator"%>
 <%@ include file="/html/common/init.jsp" %>
+<%
 
+Object c = LicenseUtil.getLevel();
+%>
 <%if( LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
 		<div class="subNavCrumbTrail">
@@ -39,6 +43,15 @@
 
 	</div>
 <%return;}%>
+<%
+	String defaultPersonaSt = "";
+	Structure defaultPersona = APILocator.getPersonaAPI().getDefaultPersonaStructure();
+	defaultPersonaSt = defaultPersona.getInode();
+%>
+
+
+
+
 
 <script type='text/javascript' src='/dwr/interface/StructureAjax.js'></script>
 <%@taglib prefix="portlet" uri="/WEB-INF/tld/liferay-portlet.tld"%>
@@ -58,15 +71,11 @@
 		}
 		var personaDialog = new dijit.Dialog({
 			id : "addPersonaDialog",
-			title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "addpersona.dialog")) %>",
+			title: "<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.persona.ui.addpersona.dialog")) %>",
 			style: "width: 420px; height:130px; overflow: auto"
 		});
 		var dialogPersona = getPersonaDialog();
-			<%
-				String defaultPersonaSt = "";
-				Structure defaultPersona = CacheLocator.getContentTypeCache().getStructureByInode(APILocator.getPersonaAPI().getHostDefaultPersonaType(myHost));
-				defaultPersonaSt = defaultPersona.getInode();
-			%>
+
         dialogPersona = dojo.string.substitute(dialogPersona, { stInode:'<%=defaultPersonaSt%>'});
         personaDialog.attr("content", dialogPersona);
         personaDialog.show();
@@ -74,7 +83,7 @@
 
 	function getPersonaDialog(){
         return "<div>"+
-                "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "select.the.type.of.persona.you.wish.to.create")) %>:</div>" +
+                "<div style='margin:8px 5px;'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.persona.ui.select.the.type.of.persona.you.wish.to.create")) %>:</div>" +
                 "<span dojoType='dotcms.dojo.data.StructureReadStore' jsId='personaStructureStore' dojoId='personaStructureStoreDojo' structureType='<%=Structure.STRUCTURE_TYPE_PERSONA%>'></span>"+
                 "<select id='defaultPersonaType' name='defaultPersonaType' dojoType='dijit.form.FilteringSelect' style='width:200px;' store='personaStructureStore' searchDelay='300' pageSize='15' autoComplete='false' ignoreCase='true' labelAttr='name' searchAttr='name'  value='${stInode}' invalidMessage='<%=LanguageUtil.get(pageContext, "Invalid-option-selected")%>'></select>"+
                 "<button dojoType='dijit.form.Button' iconClass='addIcon' id='selectedPersonaButton' onclick='getSelectedPersona();'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "modes.Select")) %></button>" +
@@ -90,11 +99,11 @@
 
 <div class="portlet-wrapper">
 	<div id="PersonaDiv" style="text-align:center;padding:20px;" >
-		<input name="searchPersona" id="searchPersona" type="text" value="Search..." size="40"   dojoType="dijit.form.TextBox"  />
+		<input name="searchPersona" id="searchPersona" type="text" value="<%= LanguageUtil.get(pageContext, "search") %>" size="40"   dojoType="dijit.form.TextBox"  />
 		<input type="checkbox" dojoType="dijit.form.CheckBox" id="hideInactivePersonas" onclick="" >
-	        <%= LanguageUtil.get(pageContext, "hideInactivePersonas") %>
+	        <%= LanguageUtil.get(pageContext, "message.persona.ui.hideInactivePersonas") %>
 		<button type="button" id="addPersona" onClick="addPersona()" dojoType="dijit.form.Button" iconClass="plusIcon" value="Add Persona">
-			<%= LanguageUtil.get(pageContext, "addPersona") %>
+			<%= LanguageUtil.get(pageContext, "message.persona.ui.addPersona") %>
 		</button>
 	</div>
 	<table class="listingTable" style="width:70%;">	
