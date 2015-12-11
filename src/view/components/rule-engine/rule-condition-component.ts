@@ -20,7 +20,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
       <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
-        {{condition.operator}}
+        {{conditionOperatorLabel}}
       </button>
     </div>
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
@@ -77,6 +77,8 @@ export class ConditionComponent {
   conditionTypesDropdown:DropdownModel
   typeService:ConditionTypeService
   private _conditionService:ConditionService;
+  rsrc:any
+  conditionOperatorLabel:string
 
   constructor(ruleService:RuleService,
               typeService:ConditionTypeService,
@@ -84,17 +86,19 @@ export class ConditionComponent {
     this._conditionService = conditionService;
     this.typeService = typeService
 
-    this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition")
-
+    this.rsrc = ruleService.rsrc
     ruleService.onResourceUpdate.subscribe((messages)=> {
-      this.conditionTypesDropdown.placeholder = messages.inputs.condition.type.placeholder
+        this.rsrc = messages
     })
+
+    this.conditionTypesDropdown = new DropdownModel('conditionType', this.rsrc.inputs.condition.type.placeholder)
 
     let condition = new ConditionModel()
     condition.conditionType = new ConditionTypeModel()
     this.condition = condition
     this.parameterValues = {}
     this.index = 0
+    this.conditionOperatorLabel = this.rsrc.inputs.condition.andOr.and.label
 
     /* Note that 'typeService.list()' was called earlier, and the following observer relies on that fact. */
     typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
@@ -118,6 +122,7 @@ export class ConditionComponent {
 
     })
     this.parameterValues = this.condition.parameters
+    this.setOperatorLabel()
   }
 
   get condition() {
@@ -131,6 +136,14 @@ export class ConditionComponent {
 
   toggleOperator() {
     this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
+    this.setOperatorLabel()
+  }
+
+  setOperatorLabel(){
+    if(this.condition.operator=='AND')
+        this.conditionOperatorLabel = this.rsrc.inputs.condition.andOr.and.label
+    else
+        this.conditionOperatorLabel = this.rsrc.inputs.condition.andOr.or.label
   }
 
   removeCondition() {
