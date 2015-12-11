@@ -28,7 +28,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
     <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
-          <div >{{group.operator}}</div>
+          <div >{{operatorLabel(group.operator)}}</div>
         </button>
       </div>
       <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
@@ -155,6 +155,10 @@ export class ConditionGroupComponent {
 
   toggleGroupOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
+  }
+
+  operatorLabel(operator:string):string{
+    return (operator=='AND')? this.rsrc.inputs.group.andOr.and.label : this.rsrc.inputs.group.andOr.or.label;
   }
 
   handleRemoveCondition(conditionModel:ConditionModel) {
