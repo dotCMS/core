@@ -78,7 +78,6 @@ export class ConditionComponent {
   typeService:ConditionTypeService
   private _conditionService:ConditionService;
   rsrc:any
-  conditionOperatorLabel:string
 
   constructor(ruleService:RuleService,
               typeService:ConditionTypeService,
@@ -138,9 +137,7 @@ export class ConditionComponent {
   }
 
   operatorLabel(operator:string):string{
-    if(operator=='AND')
-        return this.rsrc.inputs.condition.andOr.and.label
-    return this.conditionOperatorLabel = this.rsrc.inputs.condition.andOr.or.label
+    return (operator=='AND')? this.rsrc.inputs.condition.andOr.and.label : this.rsrc.inputs.condition.andOr.or.label;
   }
 
   removeCondition() {

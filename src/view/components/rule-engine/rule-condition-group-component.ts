@@ -62,7 +62,6 @@ export class ConditionGroupComponent {
   conditions:Array<ConditionModel>;
   groupCollapsed:boolean
   rsrc:any
-  groupOperatorLabel:string
 
   private conditionStub:ConditionModel
   private conditionStubWatch:Rx.Subscription<CwChangeEvent<any>>
@@ -159,9 +158,7 @@ export class ConditionGroupComponent {
   }
 
   operatorLabel(operator:string):string{
-    if(operator=='AND')
-        return this.groupOperatorLabel = this.rsrc.inputs.group.andOr.and.label
-    return this.groupOperatorLabel = this.rsrc.inputs.group.andOr.or.label
+    return (operator=='AND')? this.rsrc.inputs.group.andOr.and.label : this.rsrc.inputs.group.andOr.or.label;
   }
 
   handleRemoveCondition(conditionModel:ConditionModel) {
