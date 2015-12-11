@@ -3997,10 +3997,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		}
 		try {
 			validateContentlet(contentlet, cats);
+		    if(Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ){
+		    	APILocator.getPersonaAPI().validatePersona(contentlet);
+		    }
 		} catch (DotContentletValidationException ve) {
 			cve = ve;
 			hasError = true;
 		}
+		
+		
+		
 		if (contentRelationships != null) {
 			List<ContentletRelationshipRecords> records = contentRelationships
 					.getRelationshipsRecords();
