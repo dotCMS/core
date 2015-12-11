@@ -63,7 +63,7 @@ export class ConditionTypeService {
   private _ref;
   private _map:{[key:string]: ConditionTypeModel}
   private _rsrcService:I18nService;
-  private comparisonRsrc = [];
+  private comparisonRsrc = {};
 
   constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
     this._apiRoot = apiRoot
