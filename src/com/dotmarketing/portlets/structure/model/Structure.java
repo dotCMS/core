@@ -35,7 +35,6 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	public static final int STRUCTURE_TYPE_FORM 		= 3;
 	public static final int STRUCTURE_TYPE_FILEASSET 	= 4;
 	public static final int STRUCTURE_TYPE_HTMLPAGE     = 5;
-
 	public static final int STRUCTURE_TYPE_PERSONA		= 6;
 
 	private static final long serialVersionUID = 1L;
@@ -56,7 +55,15 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String expireDateVar;
 	private Date modDate;
 
-
+	public List<Exportable> getDependencies() {
+		// TODO Auto-generated method stub
+		List<Exportable> ret =new ArrayList<Exportable>();
+		for(Field f : getFields()){
+			ret.addAll(f.getDependencies());
+		}
+		ret.add(this);
+		return ret;
+	}
 
 
 	public boolean isDependenciesMet() throws DotDependencyException {
@@ -74,18 +81,16 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return pagedetail;
 	}
 
-	public Structure setDetailPage(String pagedetail) {
+	public void setDetailPage(String pagedetail) {
 		this.pagedetail = pagedetail;
-		return this;
 	}
 
 	public String getPagedetail() {
 		return pagedetail;
 	}
 
-	public Structure setPagedetail(String pagedetail) {
+	public void setPagedetail(String pagedetail) {
 		this.pagedetail = pagedetail;
-		return this;
 	}
 
 	public Structure () {
@@ -96,23 +101,20 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	public boolean isDefaultStructure() {
 		return defaultStructure;
 	}
-	public Structure setDefaultStructure(boolean defaultStructure) {
+	public void setDefaultStructure(boolean defaultStructure) {
 		this.defaultStructure = defaultStructure;
-		return this;
 	}
 	public String getDescription() {
 		return description;
 	}
-	public Structure setDescription(String description) {
+	public void setDescription(String description) {
 		this.description = description;
-		return this;
 	}
 	public String getName() {
 		return name;
 	}
-	public Structure setName(String name) {
+	public void setName(String name) {
 		this.name = name;
-		return this;
 	}
 
 	public void delete() throws DotHibernateException, DotDataException
@@ -153,18 +155,16 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return reviewerRole;
 	}
 
-	public Structure setReviewerRole(String reviewerRole) {
+	public void setReviewerRole(String reviewerRole) {
 		this.reviewerRole = reviewerRole;
-		return this;
 	}
 
 	public String getReviewInterval() {
 		return reviewInterval;
 	}
 
-	public Structure setReviewInterval(String reviewInterval) {
+	public void setReviewInterval(String reviewInterval) {
 		this.reviewInterval = reviewInterval;
-		return this;
 	}
 
 	/**
@@ -229,34 +229,28 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	public boolean isHTMLPageAsset() {
 	    return structureType==STRUCTURE_TYPE_HTMLPAGE;
 	}
-	public boolean isPersona(){
-		return structureType==STRUCTURE_TYPE_PERSONA;
-	}
 	public boolean isSystem() {
 		return system;
 	}
 
-	public Structure setSystem(boolean system) {
+	public void setSystem(boolean system) {
 		this.system = system;
-		return this;
 	}
 
 	public boolean isFixed() {
 		return fixed;
 	}
 
-	public Structure setFixed(boolean fixed) {
+	public void setFixed(boolean fixed) {
 		this.fixed = fixed;
-		return this;
 	}
 
 	public int getStructureType() {
 		return structureType;
 	}
 
-	public Structure setStructureType(int structureType) {
+	public void setStructureType(int structureType) {
 		this.structureType = structureType;
-		return this;
 	}
 
 	public Map<String, Object> getMap(){
@@ -302,18 +296,16 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return true;
 	}
 
-	public Structure setVelocityVarName(String velocityVarName) {
+	public void setVelocityVarName(String velocityVarName) {
 		this.velocityVarName = velocityVarName;
-		return this;
 	}
 
 	public String getVelocityVarName() {
 		return velocityVarName;
 	}
 
-	public Structure setUrlMapPattern(String urlMapPattern) {
+	public void setUrlMapPattern(String urlMapPattern) {
 		this.urlMapPattern = urlMapPattern;
-		return this;
 	}
 
 	public String getUrlMapPattern() {
@@ -326,18 +318,16 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return folder;
 	}
 
-	public Structure setFolder(String folder) {
+	public void setFolder(String folder) {
 		this.folder = folder;
-		return this;
 	}
 
 	public String getHost() {
 		return host;
 	}
 
-	public Structure setHost(String host) {
+	public void setHost(String host) {
 		this.host = host;
-		return this;
 	}
 
 	public String toString() {
@@ -350,9 +340,8 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
     }
 
 
-    public Structure setPublishDateVar(String publishDateVar) {
+    public void setPublishDateVar(String publishDateVar) {
         this.publishDateVar = publishDateVar;
-		return this;
     }
 
 
@@ -361,9 +350,8 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
     }
 
 
-    public Structure setExpireDateVar(String expireDateVar) {
+    public void setExpireDateVar(String expireDateVar) {
         this.expireDateVar = expireDateVar;
-		return this;
     }
 
 
@@ -372,9 +360,8 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	}
 
 
-	public Structure setModDate(Date modDate) {
+	public void setModDate(Date modDate) {
 		this.modDate = modDate;
-		return this;
 	}
 
 }
