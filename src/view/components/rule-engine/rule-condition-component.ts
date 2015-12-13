@@ -1,7 +1,6 @@
 import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault, EventEmitter} from 'angular2/angular2';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
-import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
 import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
@@ -26,14 +25,6 @@ import {RuleService} from "../../../api/rule-engine/Rule";
     <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
   </div>
   <div flex layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
-    <template [ng-switch-when]="'XXRequestHeaderConditionlet'">
-      <cw-request-header-condition
-          class="cw-condition-component"
-          [comparator-value]="condition.comparison"
-          [parameter-values]="parameterValues"
-          (change)="conditionChanged($event)">
-      </cw-request-header-condition>
-    </template>
     <template [ng-switch-when]="'XUsersCountryConditionlet'">
       <cw-country-condition
           class="cw-condition-component"
@@ -64,7 +55,6 @@ import {RuleService} from "../../../api/rule-engine/Rule";
 `,
   directives: [NgIf, NgFor, NgSwitch, NgSwitchWhen, NgSwitchDefault,
     ServersideCondition,
-    RequestHeaderCondition,
     CountryCondition,
     Dropdown,
 

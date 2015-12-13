@@ -1,5 +1,5 @@
 
-import {Inject, EventEmitter} from 'angular2/angular2';
+import {Injectable, EventEmitter} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 
 
@@ -57,11 +57,11 @@ export class I18nResourceModel implements Internationalized {
 
 
 }
-
+@Injectable()
 export class I18nService {
   ref:EntityMeta
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot) {
+  constructor(apiRoot:ApiRoot) {
     this.ref = apiRoot.root.child('system/i18n')
   }
 

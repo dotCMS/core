@@ -1,4 +1,4 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
+import {Inject, EventEmitter, Injectable} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -55,7 +55,7 @@ var DISABLED_CONDITION_TYPE_IDS = {
   UsersLogInConditionlet: true,
   UsersBrowserConditionlet: true
 }
-
+@Injectable()
 export class ConditionTypeService {
   private _added:EventEmitter<ConditionTypeModel>
   private _refreshed:EventEmitter<ConditionTypeModel>
@@ -67,7 +67,7 @@ export class ConditionTypeService {
   private _rsrcService:I18nService;
   private comparisonRsrc;
 
-  constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
+  constructor(apiRoot:ApiRoot, rsrcService:I18nService) {
     this._apiRoot = apiRoot
     this._rsrcService = rsrcService
     this._ref = apiRoot.root.child('system/ruleengine/conditionlets')

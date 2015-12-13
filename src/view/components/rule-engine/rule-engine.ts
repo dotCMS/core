@@ -1,4 +1,4 @@
-import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector} from 'angular2/angular2';
+import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Injector} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 
 
@@ -49,7 +49,7 @@ import {CwFilter} from "../../../api/util/CwFilter"
     </div>
   </div>
 
-  <rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="isFiltered(r)"></rule>
+  <!--<rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="isFiltered(r)"></rule>-->
 </div>
 
 `,
@@ -65,16 +65,16 @@ import {CwFilter} from "../../../api/util/CwFilter"
     private ruleStub:RuleModel
     private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(@Inject(ActionTypeService) actionTypeService:ActionTypeService,
-                @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService,
-                @Inject(RuleService) ruleService:RuleService) {
+    constructor(actionTypeService:ActionTypeService,
+                conditionTypeService:ConditionTypeService,
+                ruleService:RuleService) {
       actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
       this.rsrc = ruleService.rsrc
       ruleService.onResourceUpdate.subscribe((messages)=> {
         this.rsrc = messages
       })
-      this.ruleService = ruleService;
+      this.ruleService = ruleService
       this.filterText = ""
       this.rules = []
       this.status = null

@@ -1,5 +1,5 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
-import * as Rx from 'rxjs/Rx.KitchenSink'
+import {Inject, EventEmitter, Injectable} from 'angular2/angular2';
+import {Observable, ConnectableObservable} from 'rxjs/Rx.KitchenSink'
 
 
 
@@ -109,11 +109,12 @@ const RULE_DEFAULT_RSRC = {
   }
 }
 const RULE_I18N_BASE_KEY = 'api.sites.ruleengine.rules';
+@Injectable()
 export class RuleService {
   ref:EntityMeta
-  onRemove:Rx.Observable<RuleModel>
-  onAdd:Rx.Observable<RuleModel>
-  onResourceUpdate:Rx.ConnectableObservable<RuleModel>
+  onRemove:Observable<RuleModel>
+  onAdd:Observable<RuleModel>
+  onResourceUpdate:ConnectableObservable<RuleModel>
 
   rsrc:any = RULE_DEFAULT_RSRC
 
@@ -122,19 +123,19 @@ export class RuleService {
   private _rsrcService:I18nService;
 
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
-              @Inject(ActionService) actionService:ActionService,
-              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService,
-              @Inject(I18nService) rsrcService:I18nService) {
+  constructor(apiRoot:ApiRoot,
+              actionService:ActionService,
+              conditionGroupService:ConditionGroupService,
+              rsrcService:I18nService) {
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
     this._rsrcService = rsrcService
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added)
-    let onRemove = Rx.Observable.from(this._removed)
+    let onAdd = Observable.from(this._added)
+    let onRemove = Observable.from(this._removed)
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
-    this.onResourceUpdate = Rx.Observable.create().share()
+    this.onResourceUpdate = Observable.create().share()
 
     actionService.onAdd.subscribe((actionModel:ActionModel) => {
       if (!actionModel.owningRule.actions[actionModel.key]) {
@@ -162,7 +163,7 @@ export class RuleService {
       }
     })
 
-    this.onResourceUpdate = Rx.Observable.create((observer) => {
+    this.onResourceUpdate = Observable.create((observer) => {
       rsrcService.get(apiRoot.authUser.locale, RULE_I18N_BASE_KEY, (i18n:I18nResourceModel)=> {
         this.rsrc = i18n.messages
         observer.next(i18n.messages)
@@ -212,7 +213,7 @@ export class RuleService {
     })
   }
 
-  list():Rx.Observable<RuleModel> {
+  list():Observable<RuleModel> {
     this.ref.once('value', (snap) => {
       let rules = snap['val']()
       Object.keys(rules).forEach((key) => {

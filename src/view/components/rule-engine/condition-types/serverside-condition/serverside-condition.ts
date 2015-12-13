@@ -1,6 +1,6 @@
 import {Component, View, Attribute, EventEmitter,CORE_DIRECTIVES} from 'angular2/angular2';
 import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
-import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
+import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {ConditionTypeModel} from "../../../../../api/rule-engine/ConditionType";
 import {ConditionModel} from "../../../../../api/rule-engine/Condition";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
@@ -76,7 +76,8 @@ export class ServersideCondition {
   inputModelFromCondition(param:ParameterModel, paramDef:ParameterDefinition):CwComponent {
     let field
     if (paramDef.inputType.type === 'text') {
-      field = InputTextModel.fromParameter(param, paramDef)
+
+      field =  {name:param.key, placeholder: paramDef.key, value: this._model.getParameter(param.key )}
     } else if (paramDef.inputType.type === 'dropdown') {
       field = DropdownModel.fromParameter(param, paramDef)
     }

@@ -1,5 +1,6 @@
+import {Injectable} from 'angular2/angular2';
 
-
+@Injectable()
 export class UserModel {
   username: string
   password: string

@@ -15,7 +15,7 @@ import {EntityMeta} from "../../../api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
-import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
+import {InputText} from "../semantic/elements/input-text/input-text";
 import {ActionTypeModel} from "../../../api/rule-engine/ActionType";
 
 var rsrc = {
@@ -41,7 +41,9 @@ var rsrc = {
                      (change)="handleRuleNameChange($event.target.value)"
                      (focus)="collapsed = false"
                      (click)="$event.stopPropagation()"
-                     [model]="ruleNameInputTextModel">
+                     [name]="ruleNameInputTextModel.name">
+                     [placeholder]="ruleNameInputTextModel.placeholder"
+                     [value]="ruleNameInputTextModel.value">
       </cw-input-text>
       <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
       <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
@@ -113,15 +115,15 @@ class RuleComponent {
 
   private actionStub:ActionModel
   private actionStubWatch:Rx.Subscription<ActionModel>
-  private ruleNameInputTextModel:InputTextModel
+  private ruleNameInputTextModel:any
   private fireOnDropdown:DropdownModel
   private _groupStub:ConditionGroupModel;
 
 
   constructor(elementRef:ElementRef,
-              @Inject(RuleService) ruleService:RuleService,
-              @Inject(ActionService) actionService:ActionService,
-              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
+              ruleService:RuleService,
+              actionService:ActionService,
+              conditionGroupService:ConditionGroupService) {
     this.rsrc = ruleService.rsrc
     ruleService.onResourceUpdate.subscribe((messages)=>{
       this.rsrc = messages
@@ -146,13 +148,12 @@ class RuleComponent {
     ]
     this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOnOptions)
 
-    this.ruleNameInputTextModel = new InputTextModel()
-    this.ruleNameInputTextModel.placeholder = this.rsrc.inputs.name.placeholder
-    this.ruleNameInputTextModel.validate = (newValue:string)=> {
-      if (!newValue) {
-        throw new Error("Required Field")
-      }
-    }
+    this.ruleNameInputTextModel = {placeholder: this.rsrc.inputs.name.placeholder}
+    //this.ruleNameInputTextModel.validate = (newValue:string)=> {
+    //  if (!newValue) {
+    //    throw new Error("Required Field")
+    //  }
+    //}
   }
 
   onInit() {

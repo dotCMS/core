@@ -35,7 +35,7 @@
     "minimist": "^1.1.1",
     "node-zip": "^1.1.1",
     "open": "0.0.5",
-    "protractor": "^2.5.0",
+    "protractor": "^3.0.0",
     "proxy-middleware": "^0.x.x",
     "reflect-metadata": "^0.1.2",
     "rxjs": "^5.0.0-alpha.14",
@@ -44,7 +44,7 @@
     "serve-static": "~1.10.x",
     "through2": "^2.x.x",
     "typescript": "^1.7.3",
-    "zone.js": "^0.5.8"
+    "zone.js": "^0.5.10"
   },
   "scripts": {
     "postinstall": "./node_modules/protractor/bin/webdriver-manager update",
@@ -55,7 +55,7 @@
     "test": "gulp build && gulp serve --open=/build/unit-tests.html",
     "dev": "gulp serve --open=/build/index.html",
     "itest": "gulp serve --open=/build/integration-tests.html",
-    "e2e": "gulp package && ./node_modules/protractor/bin/protractor protractor.conf.js || true",
+    "e2e": "./node_modules/protractor/bin/protractor ./protractor.conf.js || true",
     "idemo": "gulp serve --open=/build/integration-demo.html",
     "build": "gulp package",
     "publish": "gulp publish",

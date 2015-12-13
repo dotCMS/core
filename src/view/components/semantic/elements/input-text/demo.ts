@@ -16,7 +16,6 @@ export class Hero {
     this.power = power;
     this.alterEgo = alterEgo;
     console.log("New Hero", this.inputname,' ==> ', inputname)
-
   }
 
 }

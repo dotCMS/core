@@ -1,6 +1,6 @@
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
 
-import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
+import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {ActionTypeModel} from "../../../../../api/rule-engine/ActionType";
 import {ActionModel} from "../../../../../api/rule-engine/Action";
 
@@ -21,14 +21,16 @@ import {ActionModel} from "../../../../../api/rule-engine/Action";
                  flex
                  class="cw-input"
                  (change)="handleParamValueChange(input.name, $event)"
-                 [model]="input">
+                 [name]="input.name"
+                 [placeholder]="input.i18nKey"
+                 [value]="input.value">
   </cw-input-text>
 </div>`
 })
 export class ServersideAction {
   change:EventEmitter<any>;
   private _model:ActionModel;
-  private _inputs:Array<InputTextModel>
+  private _inputs:Array<any>
 
   constructor() {
     this.change = new EventEmitter();
@@ -40,7 +42,7 @@ export class ServersideAction {
     let paramDefs = this._model.actionType.parameters
     Object.keys(paramDefs).forEach((paramKey)=> {
       let paramDef = paramDefs[paramKey]
-      this._inputs.push(new InputTextModel(paramKey, paramDef.i18nKey, this._model.getParameter(paramKey)))
+      this._inputs.push({name:paramKey, i18nKey: paramDef.i18nKey, value: this._model.getParameter(paramKey )})
     })
   }
 

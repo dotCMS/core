@@ -1,4 +1,4 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
+import {EventEmitter, Injectable} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
@@ -6,7 +6,6 @@ import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService, I18nResourceModel, Internationalized} from "../system/locale/I18n";
-
 
 let noop = (...arg:any[])=> {
 }
@@ -37,6 +36,7 @@ var DISABLED_ACTION_TYPE_IDS = {
   CountRequestsActionlet: true
 }
 
+@Injectable()
 export class ActionTypeService {
   private _added:EventEmitter<ActionTypeModel>
   private _refreshed:EventEmitter<ActionTypeModel>
@@ -47,7 +47,7 @@ export class ActionTypeService {
   private _map:{[key:string]: ActionTypeModel}
   private _rsrcService:I18nService;
 
-  constructor(@Inject(ApiRoot) apiRoot, @Inject(I18nService) rsrcService:I18nService) {
+  constructor( apiRoot:ApiRoot, rsrcService:I18nService) {
     this._ref = apiRoot.root.child('system/ruleengine/actionlets')
     this._apiRoot = apiRoot
     this._rsrcService = rsrcService;
@@ -56,7 +56,6 @@ export class ActionTypeService {
     this.onAdd = Rx.Observable.from(this._added).publishReplay()
     this.onRefresh = Rx.Observable.from(this._refreshed).share()
     this._map = {}
-    debugger
     this.onAdd.connect()
   }
 
@@ -71,13 +70,12 @@ export class ActionTypeService {
     let isRefresh = this._map[entry.key] != null
     this._map[entry.key] = entry
     if (isRefresh) {
-      this._refreshed.next(entry)
+      this._refreshed.emit(entry)
     }
     else {
-      this._added.next(entry)
+      this._added.emit(entry)
     }
   }
-
 
   list(cb:Function = noop):Rx.Observable<ActionTypeModel> {
     this._ref.once('value', (snap:EntitySnapshot) => {

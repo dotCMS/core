@@ -1,10 +1,12 @@
-import {Inject} from 'angular2/angular2';
+import {Injectable} from 'angular2/angular2';
 
 import {EntityMeta} from "./EntityBase";
 import {DataStore} from "./DataStore";
 import {UserModel} from "../auth/UserModel";
 
 var instanceOfApiRoot = null
+
+@Injectable()
 export class ApiRoot {
   // Points to {baseUrl}/api/v1
   root:EntityMeta;
@@ -15,7 +17,7 @@ export class ApiRoot {
   resourceRef: EntityMeta
   dataStore:DataStore;
 
-  constructor(@Inject(UserModel) authUser:UserModel, @Inject(DataStore) dataStore:DataStore){
+  constructor( authUser:UserModel,  dataStore:DataStore){
     this.authUser = authUser
     this.dataStore = dataStore;
     dataStore.setAuth(authUser.username, authUser.password)
