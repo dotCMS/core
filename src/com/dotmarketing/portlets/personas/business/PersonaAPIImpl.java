@@ -181,16 +181,15 @@ public class PersonaAPIImpl implements PersonaAPI {
 		sw.append(" +basetype:6 +languageid:* +(");
 
 		for (Structure s : personaStructs) {
-			sw.append(" " + s.getVelocityVarName() + "." + KEY_TAG_FIELD + ":" + keyTag);
+			sw.append( s.getVelocityVarName() + "." + KEY_TAG_FIELD + ":" + keyTag + " ");
 
 		}
 		sw.append(") ");
 
 		try {
+			
 
-			List<Contentlet> cons = APILocator.getContentletAPI().search(sw.toString(), 1, 0, null,
-					APILocator.getUserAPI().getSystemUser(), false);
-			if (cons.size() > 0) {
+			if (APILocator.getContentletAPI().indexCount(sw.toString(), APILocator.getUserAPI().getSystemUser(), false) > 0) {
 				Language l = APILocator.getLanguageAPI().getLanguage(user.getLanguageId());
 				String message = APILocator.getLanguageAPI().getStringKey(l, "message.persona.error.invalidKeyTagField");
 				message = message.replace("{0}", persona.getKeyTag());

@@ -1,7 +1,7 @@
 <script type="application/javascript">
 
  function camelize(str) {
-	  return str.replace(/[^a-z ]/ig, '')  // Replace everything but letters and spaces.
+	  return str.replace(/[^a-z0-9 ]/ig, '')  // Replace everything but letters and spaces.
 	    .replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, // Find non-words, uppercase letters, leading-word letters, and multiple spaces.
 	      function(match, index) {
 	        return +match === 0 ? "" : match[index === 0 ? 'toUpperCase' : 'toUpperCase']();
