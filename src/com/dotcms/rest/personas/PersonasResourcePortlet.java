@@ -4,7 +4,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.dotcms.enterprise.personas.model.Persona;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.Path;
 import com.dotcms.repackage.javax.ws.rs.PathParam;

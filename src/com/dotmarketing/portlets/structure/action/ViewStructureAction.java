@@ -6,13 +6,14 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.RenderRequest;
 import com.dotcms.repackage.javax.portlet.RenderResponse;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -66,6 +67,11 @@ public class ViewStructureAction extends DotPortletAction {
 		List<Structure> structures = new java.util.ArrayList<Structure>();
 		String tableName = "structure";
 
+		
+		APILocator.getPersonaAPI().createDefaultPersonaStructure();
+		
+		
+		
 		try {
 			String orderby = req.getParameter("orderBy");
 			String direction = req.getParameter("direction");

@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.enterprise.personas.business.PersonaAPI"%>
+<%@page import="com.dotmarketing.portlets.personas.business.PersonaAPI"%>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
