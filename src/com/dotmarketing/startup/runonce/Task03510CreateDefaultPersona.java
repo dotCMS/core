@@ -102,7 +102,6 @@ public class Task03510CreateDefaultPersona extends AbstractJDBCStartupTask {
 		int i=0;
 		for(Field f : fields){
 			f.setInode(defaultPersonaFieldInodes[i++]);
-			f.setSortOrder(i);
 			FieldFactory.saveField(f, f.getInode());
 		}
     }

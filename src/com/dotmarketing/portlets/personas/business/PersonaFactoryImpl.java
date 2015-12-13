@@ -75,7 +75,6 @@ public class PersonaFactoryImpl implements PersonaFactory {
 		int i = 0;
 		for (Field f : fields) {
 			f.setInode(DEFAUTL_PERSONA_FIELD_INODES[i++]);
-			f.setSortOrder(i);
 			FieldFactory.saveField(f, f.getInode());
 		}
 
