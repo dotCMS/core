@@ -1,5 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
 import {Dropdown, DropdownModel, DropdownOption} from './dropdown'
 
@@ -66,8 +64,6 @@ class App {
       new DropdownOption('F', 42, 'Female', 'female')
     ]
     model.options = opts
-
-
     this.demo2 = model;
   }
 

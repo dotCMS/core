@@ -1,5 +1,5 @@
 import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
-//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 
 import {ConditionComponent} from './rule-condition-component';
@@ -22,10 +22,10 @@ import {RuleService} from "../../../api/rule-engine/Rule";
 @View({
   template: `<div flex layout="column" layout-align="center-start" class="cw-rule-group">
   <div flex="0" layout-fill layout="row" layout-align="start-center">
-    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex === 0">
+    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ngIf="groupIndex === 0">
       {{rsrc.inputs.group.whenConditions.label}}
     </div>
-    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ng-if="groupIndex !== 0">
+    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
           <div >{{group.operator}}</div>
@@ -40,7 +40,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
         <rule-condition flex layout-fill layout="row" [condition]="condition" [index]="i"></rule-condition>
       </div>
       <div flex="0" layout="row" layout-align="end-center">
-        <div class="cw-btn-group" *ng-if="i === (conditions.length - 1)">
+        <div class="cw-btn-group" *ngIf="i === (conditions.length - 1)">
           <div class="ui basic icon buttons">
             <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
               <i class="plus icon" aria-hidden="true"></i>
@@ -107,12 +107,12 @@ export class ConditionGroupComponent {
     } else {
       this._conditionService.listForGroup(group)
     }
-
-    this._group.onChange.subscribe((event:CwChangeEvent<ConditionGroupModel>)=> {
-      if (event.target.isValid() && event.target.isPersisted()) {
-        this._groupService.save(event.target)
-      }
-    })
+    // @todo ggranum
+    //this._group.onChange.subscribe((event:CwChangeEvent<ConditionGroupModel>)=> {
+    //  if (event.target.isValid() && event.target.isPersisted()) {
+    //    this._groupService.save(event.target)
+    //  }
+    //})
   }
 
   get group() {
@@ -131,18 +131,19 @@ export class ConditionGroupComponent {
     condition.setParameter('isoCode', '')
 
     this.conditionStub = condition
-    //noinspection TypeScriptUnresolvedVariable
-    this.conditionStubWatch = condition.onChange.subscribe((self)=> {
-      if(this.group.isValid()){
-        if (this._group.isPersisted()) {
-          this._addCondition(condition)
-        } else {
-          this._groupService.add(this._group, ()=> {
-            this._addCondition(condition)
-          })
-        }
-      }
-    })
+
+    // @todo ggranum
+    //this.conditionStubWatch = condition.onChange.subscribe((self)=> {
+    //  if(this.group.isValid()){
+    //    if (this._group.isPersisted()) {
+    //      this._addCondition(condition)
+    //    } else {
+    //      this._groupService.add(this._group, ()=> {
+    //        this._addCondition(condition)
+    //      })
+    //    }
+    //  }
+    //})
     this.conditions.push(this.conditionStub)
   }
 

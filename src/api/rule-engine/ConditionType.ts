@@ -1,5 +1,5 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel, CwI18nModel} from "../util/CwModel";
@@ -22,8 +22,8 @@ export class ConditionTypeModel extends CwI18nModel {
     this.parameters = parameters
   }
 
-  isValid() {
-    return this.isPersisted() && !!this.i18nKey && this.parameters
+  isValid():boolean {
+    return this.isPersisted() && !!this.i18nKey && !!this.parameters
   }
 
 }
@@ -57,9 +57,9 @@ var DISABLED_CONDITION_TYPE_IDS = {
 }
 
 export class ConditionTypeService {
-  private _added:EventEmitter
-  private _refreshed:EventEmitter
-  onAdd:Rx.Observable<ConditionTypeModel>
+  private _added:EventEmitter<ConditionTypeModel>
+  private _refreshed:EventEmitter<ConditionTypeModel>
+  onAdd:Rx.ConnectableObservable<ConditionTypeModel>
   onRefresh:Rx.Observable<ConditionTypeModel>
   private _apiRoot;
   private _ref;
@@ -79,8 +79,8 @@ export class ConditionTypeService {
 
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
-    this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
-    this.onRefresh = Rx.Observable.from(this._refreshed.toRx()).share()
+    this.onAdd = Rx.Observable.from(this._added).publishReplay()
+    this.onRefresh = Rx.Observable.from(this._refreshed).share()
     this._map = {}
     this.onAdd.connect()
   }
@@ -98,8 +98,6 @@ export class ConditionTypeService {
      return new ConditionTypeModel(snapshot.key(), val.i18nKey, comparisons);
      *
      */
-
-
 
 
 

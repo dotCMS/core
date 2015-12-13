@@ -6,7 +6,7 @@ export class UserModel {
   locale: string
 
   constructor(){
-    if(top.location.port && top.location.port >= 9000) {
+    if(top.location.port && Number.parseInt(top.location.port) >= 9000) {
       this.username = 'admin@dotcms.com'
       this.password = 'admin'
     }

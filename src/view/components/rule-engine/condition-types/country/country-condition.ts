@@ -50,7 +50,7 @@ export class CountryConditionModel {
   `
 })
 export class CountryCondition {
-  change:EventEmitter;
+  change:EventEmitter<any>
 
 
   comparisons:any = [
@@ -63,7 +63,7 @@ export class CountryCondition {
   private countryDropdown:DropdownModel
   private comparatorDropdown:DropdownModel
 
-  constructor(@Inject apiRoot:ApiRoot, @Inject countryProvider:I18NCountryProvider, @Inject i18nService:I18nService) {
+  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(I18NCountryProvider) countryProvider:I18NCountryProvider, @Inject(I18nService) i18nService:I18nService) {
     this.countries = []
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()

@@ -19,7 +19,7 @@ import {RuleService} from "../../../api/rule-engine/Rule";
   template: `<div flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
-      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
+      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
         {{condition.operator}}
       </button>
     </div>
@@ -86,13 +86,11 @@ export class ConditionComponent {
 
     this.conditionTypesDropdown = new DropdownModel('conditionType', "Select a Condition")
 
-    ruleService.onResourceUpdate.subscribe((messages)=> {
+    ruleService.onResourceUpdate.subscribe((messages:any)=> {
       this.conditionTypesDropdown.placeholder = messages.inputs.condition.type.placeholder
     })
 
-    let condition = new ConditionModel()
-    condition.conditionType = new ConditionTypeModel()
-    this.condition = condition
+    this.condition = new ConditionModel(null, new ConditionTypeModel())
     this.parameterValues = {}
     this.index = 0
 
@@ -108,15 +106,16 @@ export class ConditionComponent {
       this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
     }
 
-    this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
-      if (event.target.isValid() && event.target.isPersisted()) {
-        this._conditionService.save(event.target)
-      }
-      if (this._condition.conditionType && this._condition.conditionType.key != 'NoSelection') {
-        this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
-      }
+   // @todo ggranum
+    //this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
+    //  if (event.target.isValid() && event.target.isPersisted()) {
+    //    this._conditionService.save(event.target)
+    //  }
+    //  if (this._condition.conditionType && this._condition.conditionType.key != 'NoSelection') {
+    //    this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
+    //  }
+    //})
 
-    })
     this.parameterValues = this.condition.parameters
   }
 

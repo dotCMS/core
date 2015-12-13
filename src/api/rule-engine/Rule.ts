@@ -1,5 +1,6 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
+
 
 
 import {ConditionGroupService, ConditionGroupModel} from "./ConditionGroup";
@@ -112,12 +113,12 @@ export class RuleService {
   ref:EntityMeta
   onRemove:Rx.Observable<RuleModel>
   onAdd:Rx.Observable<RuleModel>
-  onResourceUpdate:Rx.Observable<RuleModel>
+  onResourceUpdate:Rx.ConnectableObservable<RuleModel>
 
   rsrc:any = RULE_DEFAULT_RSRC
 
-  private _removed:EventEmitter
-  private _added:EventEmitter
+  private _removed:EventEmitter<RuleModel>
+  private _added:EventEmitter<RuleModel>
   private _rsrcService:I18nService;
 
 
@@ -129,8 +130,8 @@ export class RuleService {
     this._rsrcService = rsrcService
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added.toRx())
-    let onRemove = Rx.Observable.from(this._removed.toRx())
+    let onAdd = Rx.Observable.from(this._added)
+    let onRemove = Rx.Observable.from(this._removed)
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
     this.onResourceUpdate = Rx.Observable.create().share()

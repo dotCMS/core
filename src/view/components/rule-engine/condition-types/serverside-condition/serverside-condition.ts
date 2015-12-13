@@ -3,14 +3,13 @@ import {Dropdown, DropdownModel, DropdownOption} from '../../../../../view/compo
 import {InputText, InputTextModel} from "../../../semantic/elements/input-text/input-text";
 import {ConditionTypeModel} from "../../../../../api/rule-engine/ConditionType";
 import {ConditionModel} from "../../../../../api/rule-engine/Condition";
-import {ParameterDefinition} from "../../../../../api/rule-engine/ConditionType";
+import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
 import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";
 import {ParameterModel} from "../../../../../api/rule-engine/Condition";
 import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
-
 
 @Component({
   selector: 'cw-serverside-condition',
@@ -25,7 +24,7 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
   directives: [CORE_DIRECTIVES, Dropdown, InputText],
   template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
   <template ng-for #input [ng-for-of]="inputs" #islast="last">
-    <div *ng-if="input.inputDef.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
+    <div *ngIf="input.inputDef.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
     <cw-input-dropdown widget-loca="type.loc"
                        flex
                        layout-fill
@@ -35,7 +34,7 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
                        [model]="input.field"
                        (change)="handleParamValueChange($event, input)"></cw-input-dropdown>
 
-    <cw-input-text *ng-if="input.inputDef.type == 'text'"
+    <cw-input-text *ngIf="input.inputDef.type == 'text'"
                    flex
                    layout-fill
                    class="cw-input"
@@ -49,11 +48,10 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
 })
 export class ServersideCondition {
 
-  _model:ConditionModel;
-  change:EventEmitter;
+  _model:ConditionModel
+  change:EventEmitter<any>
 
   private inputs:Array<{ inputDef:CwInputDefinition, field:any}>
-
 
   constructor() {
     this.change = new EventEmitter();

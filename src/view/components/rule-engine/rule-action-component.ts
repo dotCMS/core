@@ -42,7 +42,6 @@ import {RuleService} from "../../../api/rule-engine/Rule";
 export class RuleActionComponent {
   _action:ActionModel;
   actionTypesDropdown:DropdownModel
-
   private typeService:ActionTypeService
   private actionService:ActionService;
 
@@ -50,14 +49,12 @@ export class RuleActionComponent {
     this.actionService = actionService;
     this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action")
 
-    ruleService.onResourceUpdate.subscribe((messages)=>{
+    ruleService.onResourceUpdate.subscribe((messages:any)=>{
       this.actionTypesDropdown.placeholder = messages.inputs.action.type.placeholder
     })
 
     this.typeService = typeService
-    let action  = new ActionModel()
-    action.actionType = new ActionTypeModel()
-    this.action = action;
+    this.action  = new ActionModel(null, new ActionTypeModel())
 
     typeService.onAdd.subscribe((actionType:ActionTypeModel) => {
       this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.rsrc.name)])
@@ -69,14 +66,15 @@ export class RuleActionComponent {
     if(this._action.actionType && this._action.actionType.key != 'NoSelection'){
       this.actionTypesDropdown.selected = [this._action.actionType.key]
     }
-    action.onChange.subscribe((self)=>{
-      if(action.isValid() && action.isPersisted()){
-        this.actionService.save(action)
-      }
-      if(this._action.actionType){
-        this.actionTypesDropdown.selected = [this._action.actionType.key]
-      }
-    })
+    // @todo ggranum
+    //action.onChange.subscribe((self)=>{
+    //  if(action.isValid() && action.isPersisted()){
+    //    this.actionService.save(action)
+    //  }
+    //  if(this._action.actionType){
+    //    this.actionTypesDropdown.selected = [this._action.actionType.key]
+    //  }
+    //})
   }
 
   get action():ActionModel {

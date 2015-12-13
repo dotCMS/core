@@ -1,5 +1,5 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel, CwI18nModel} from "../util/CwModel";
@@ -38,9 +38,9 @@ var DISABLED_ACTION_TYPE_IDS = {
 }
 
 export class ActionTypeService {
-  private _added:EventEmitter
-  private _refreshed:EventEmitter
-  onAdd:Rx.Observable<ActionTypeModel>
+  private _added:EventEmitter<ActionTypeModel>
+  private _refreshed:EventEmitter<ActionTypeModel>
+  onAdd:Rx.ConnectableObservable<ActionTypeModel>
   onRefresh:Rx.Observable<ActionTypeModel>
   private _apiRoot:ApiRoot;
   private _ref;
@@ -53,9 +53,10 @@ export class ActionTypeService {
     this._rsrcService = rsrcService;
     this._added = new EventEmitter()
     this._refreshed = new EventEmitter()
-    this.onAdd = Rx.Observable.from(this._added.toRx()).publishReplay()
-    this.onRefresh = Rx.Observable.from(this._refreshed.toRx()).share()
+    this.onAdd = Rx.Observable.from(this._added).publishReplay()
+    this.onRefresh = Rx.Observable.from(this._refreshed).share()
     this._map = {}
+    debugger
     this.onAdd.connect()
   }
 

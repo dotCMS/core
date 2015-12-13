@@ -1,7 +1,7 @@
 import {Injector, Provider} from 'angular2/angular2';
 
-import {DataStore} from 'api/persistence/DataStore'
-import {LocalDataStore} from "api/persistence/LocalDataStore";
+import {DataStore} from '../../api/persistence/DataStore'
+import {LocalDataStore} from "../../api/persistence/LocalDataStore";
 
 var injector = Injector.resolveAndCreate([
   new Provider(DataStore, {useClass: LocalDataStore})

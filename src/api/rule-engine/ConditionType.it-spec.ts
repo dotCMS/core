@@ -1,3 +1,5 @@
+import * as Rx from 'rxjs/Rx.KitchenSink'
+
 import {ConditionService, ConditionModel} from '../../api/rule-engine/Condition';
 
 import {Injector, Provider} from 'angular2/angular2';
@@ -26,7 +28,7 @@ var injector = Injector.resolveAndCreate([
 describe('Integration.api.rule-engine.RuleService', function () {
 
   var typeService:ConditionTypeService
-  var subscriptions:Array<Rx.Subscription>
+  var subscriptions:Array<Rx.Subscription<ConditionTypeModel>>
 
   beforeEach(function () {
     subscriptions = []
@@ -35,7 +37,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   });
 
   afterEach(function(){
-    subscriptions.forEach((sub:Rx.Subscription)=>{
+    subscriptions.forEach((sub:Rx.Subscription<ConditionTypeModel>)=>{
       sub.unsubscribe()
     })
   })

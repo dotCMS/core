@@ -1,3 +1,4 @@
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
 import {ConditionService, ConditionModel} from '../../api/rule-engine/Condition';
@@ -32,7 +33,6 @@ var injector = Injector.resolveAndCreate([ApiRoot,
   ConditionGroupService,
   new Provider(DataStore, {useClass: RestDataStore})
 ])
-
 
 describe('Integration.api.rule-engine.ConditionService', function () {
 
@@ -78,9 +78,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   })
 
   it("Can add a new Condition", function(done){
-    var aCondition = new ConditionModel()
+    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
-    aCondition.conditionType = new ConditionTypeModel("UsersCountryConditionlet")
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("sessionKey", "foo")
     aCondition.setParameter("sessionValue", "bar")
@@ -100,9 +99,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   })
 
   it("Is added to the owning rule's list of conditions.", function(done){
-    var aCondition = new ConditionModel()
+    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
-    aCondition.conditionType = new ConditionTypeModel("UsersCountryConditionlet")
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
     aCondition.setParameter("isoCode", "US")
@@ -120,9 +118,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
 
   it("Condition being added to the owning group is persisted to server.", function(done){
-    var aCondition = new ConditionModel()
+    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
-    aCondition.conditionType = new ConditionTypeModel("UsersCountryConditionlet")
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
     aCondition.setParameter("isoCode", "US")
@@ -152,8 +149,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
 
   it("Will add a new condition parameters to an existing condition.", function(done){
-    var clientCondition = new ConditionModel()
-    clientCondition.conditionType = new ConditionTypeModel("UserBrowserHeaderConditionlet")
+    var clientCondition = new ConditionModel(null, new ConditionTypeModel("UserBrowserHeaderConditionlet"))
     clientCondition.owningGroup = groupUnderTest
     clientCondition.setParameter("headerKey", "foo")
     clientCondition.setParameter("headerValue", "bar")
@@ -164,7 +160,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     conditionService.add(clientCondition, (resultCondition)=>{
       // serverCondition is the same instance as resultCondition
       expect(clientCondition.isPersisted()).toBe(true, "Condition is not persisted!")
-      clientCondition.clearParameters()
       clientCondition.setParameter(key, value)
       conditionService.save(clientCondition, (savedCondition)=>{
         // savedCondition is also the same instance as resultCondition
@@ -185,8 +180,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     let param1 = { key: 'sessionKey', v1: 'value1', v2: 'value2'}
     let param2 = { key: 'sessionValue', v1: 'abc123', v2: 'def456'}
 
-    var clientCondition = new ConditionModel()
-    clientCondition.conditionType = new ConditionTypeModel("SetSessionAttributeConditionlet")
+    var clientCondition = new ConditionModel(null, new ConditionTypeModel("SetSessionAttributeConditionlet"))
     clientCondition.owningGroup = groupUnderTest
     clientCondition.setParameter(param1.key, param1.v1)
     clientCondition.setParameter(param2.key, param2.v1)
@@ -206,7 +200,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
   })
 });
-
 
 class Tools {
   static createRule(ruleService:RuleService, cb:Function=null){

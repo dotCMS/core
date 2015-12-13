@@ -1,6 +1,5 @@
 import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Inject, Injector} from 'angular2/angular2';
-
-//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
@@ -109,9 +108,10 @@ import {CwFilter} from "../../../api/util/CwFilter"
         });
       }
 
-      rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
-        this.handleRuleChange(event)
-      })
+      // @todo ggranum
+      //rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
+      //  this.handleRuleChange(event)
+      //})
       this.getFilteredRulesStatus()
     }
 
@@ -143,11 +143,13 @@ import {CwFilter} from "../../../api/util/CwFilter"
       this.ruleStub = new RuleModel()
       this.ruleStub.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
       this.rules.unshift(this.ruleStub)
-      this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
-        if (event.target.isValid()) {
-          this.ruleService.save(this.ruleStub)
-        }
-      })
+
+      // @todo ggranum
+      //this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
+      //  if (event.target.isValid()) {
+      //    this.ruleService.save(this.ruleStub)
+      //  }
+      //})
     }
 
     getFilteredRulesStatus() {

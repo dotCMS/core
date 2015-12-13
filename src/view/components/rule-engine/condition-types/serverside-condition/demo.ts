@@ -1,12 +1,11 @@
-
 import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
-import {RequestHeaderCondition} from './serverside-condition';
+import {ServersideCondition} from './serverside-condition';
 
 @Component({
   selector: 'cw-request-header-demo'
 })
 @View({
-  directives: [RequestHeaderCondition],
+  directives: [ServersideCondition],
   template: `
     <div class="panel panel-default">
       <div class="panel-heading">1) No values set.</div>
@@ -76,14 +75,11 @@ class App {
     };
   }
 
-
   updateConditionlet(demoId:string, event:any){
     console.log("Updated: ", demoId, event)
     this.demo[demoId][event.valueField] = event.value[event.valueField];
   }
-
 }
-
 
 export function main() {
   let app = bootstrap(App)

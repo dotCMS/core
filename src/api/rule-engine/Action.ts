@@ -1,5 +1,5 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import {Component, Input, Output, EventEmitter, Injectable} from 'angular2/angular2';
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel} from "../util/CwModel";
@@ -49,8 +49,6 @@ export class ActionModel extends CwModel {
     this.parameters = {}
   }
 
-
-
   isValid() {
     let valid = !!this.owningRule
     valid = valid && this.owningRule.isValid()
@@ -58,43 +56,42 @@ export class ActionModel extends CwModel {
     return valid
   }
 }
-
+@Injectable()
 export class ActionService {
-  private _removed:EventEmitter
-  private _added:EventEmitter
+
+  private _removed:EventEmitter<ActionModel>
+  private _added:EventEmitter<ActionModel>
   onRemove:Rx.Observable<ActionModel>
   onAdd:Rx.Observable<ActionModel>
   private apiRoot;
   private ref;
   private _typeService:ActionTypeService
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(ActionTypeService) typeService:ActionTypeService) {
+  constructor(apiRoot:ApiRoot, typeService:ActionTypeService) {
     this._typeService = typeService
     this.ref = apiRoot.defaultSite.child('ruleengine/actions')
     this.apiRoot = apiRoot
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added.toRx())
-    let onRemove = Rx.Observable.from(this._removed.toRx())
+    let onAdd = Rx.Observable.from(this._added)
+    let onRemove = Rx.Observable.from(this._removed)
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
   }
 
-  _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot):ActionModel {
+  _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot, cb:Function=noop) {
     let val:any = snapshot.val()
-    let ra = new ActionModel(snapshot.key())
-    ra.name = val.name;
-    ra.owningRule = rule
-    ra.actionType = new ActionTypeModel(val.actionlet)
-
-    Object.keys(val.parameters).forEach((key)=> {
-      let param = val.parameters[key]
-      ra.setParameter(key, param.value)
-    })
     this._typeService.get(val.actionlet, (type)=> {
+      let ra = new ActionModel(snapshot.key(), type)
+      ra.name = val.name;
+      ra.owningRule = rule
+      ra.actionType = new ActionTypeModel(val.actionlet)
+      Object.keys(val.parameters).forEach((key)=> {
+        let param = val.parameters[key]
+        ra.setParameter(key, param.value)
+      })
       ra.actionType = type
     })
-    return ra
   }
 
   _toJson(action:ActionModel):any {
@@ -122,9 +119,10 @@ export class ActionService {
 
   get(rule:RuleModel, key:string, cb:Function = noop) {
     this.ref.child(key).once('value', (actionSnap:EntitySnapshot)=> {
-      let model = this._fromSnapshot(rule, actionSnap)
-      this._added.next(model)
-      cb(model)
+      this._fromSnapshot(rule, actionSnap, (model)=>{
+        this._added.next(model)
+        cb(model)
+      })
     }, (e)=> {
       throw e
     })

@@ -114,7 +114,7 @@ export class RequestHeaderCondition {
     { id: "endsWith" },
     { id: "contains" },
     { id: "matches" }]
-  change:EventEmitter;
+  change:EventEmitter<any>;
   private headerKeyDropdown:DropdownModel
   private comparatorDropdown:DropdownModel
 
@@ -125,8 +125,8 @@ export class RequestHeaderCondition {
   constructor(@Attribute('header-key-value') headerKeyValue:string,
               @Attribute('comparatorValue') comparatorValue:string,
               @Attribute('parameterValues') parameterValues:Array<string>,
-              @Inject apiRoot:ApiRoot,
-              @Inject i18nService:I18nService,
+              @Inject(ApiRoot) apiRoot:ApiRoot,
+              @Inject(I18nService) i18nService:I18nService,
               @Inject(InputService) inputService:InputService) {
     this.value = new RequestHeaderConditionModel(headerKeyValue, comparatorValue)
     this.change = new EventEmitter();

@@ -1,10 +1,11 @@
 import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
+import * as Rx from 'rxjs/Rx.KitchenSink'
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {ParameterModel} from "../../../../../api/rule-engine/Condition";
-//import * as Rx from '../../../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -52,7 +53,7 @@ export class DropdownModel extends CwComponent {
   selected:Array<string>
   options:Array<DropdownOption>
   settings:{ maxSelections?: number }
-  private _optionChange:EventEmitter
+  private _optionChange:EventEmitter<any>
   onOptionChange:Rx.Observable<any>
   allowAdditions: boolean
 
@@ -69,7 +70,7 @@ export class DropdownModel extends CwComponent {
     this.options = options
     this.settings = {}
     this._optionChange = new EventEmitter()
-    this.onOptionChange = Rx.Observable.from(this._optionChange.toRx()).share()
+    this.onOptionChange = Rx.Observable.from(this._optionChange).share()
     this.allowAdditions = allowAdditions
   }
 
@@ -117,13 +118,13 @@ export class DropdownModel extends CwComponent {
 })
 @View({
   template: `
-<div class="ui fluid selection dropdown search" [ng-class]="{multiple: model.settings.maxSelections}" tabindex="0">
+<div class="ui fluid selection dropdown search" [ngClass]="{multiple: model.settings.maxSelections}" tabindex="0">
   <input type="hidden" [name]="model.name" [value]="model.selected.join(',')" >
   <i class="dropdown icon"></i>
   <div class="default text">{{model.placeholder}}</div>
   <div class="menu" tabindex="-1">
     <div *ng-for="var opt of model.options" class="item" [attr.data-value]="opt.id" [attr.data-text]="opt.label">
-      <i [ng-class]="opt.icon" ></i>
+      <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>
   </div>
@@ -133,7 +134,7 @@ export class DropdownModel extends CwComponent {
 })
 export class Dropdown {
 
-  change:EventEmitter
+  change:EventEmitter<any>
   private _model:DropdownModel
   private optionWatch:Rx.Subscription<any>
   private elementRef:ElementRef

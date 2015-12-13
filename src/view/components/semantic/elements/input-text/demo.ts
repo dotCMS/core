@@ -1,41 +1,31 @@
 import {bootstrap, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
-import {InputText, InputTextModel} from './input-text'
-import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
-
+import {InputText} from './input-text'
 
 export class Hero {
 
-
   public id:number
   public name:string
-  private _inputname:InputTextModel
+  public inputname:string
   public power:string
   public alterEgo:string
 
-  constructor(id:number, name:string, inputname:InputTextModel, power:string, alterEgo?:string) {
+  constructor(id:number, name:string, inputname:string, power:string, alterEgo?:string) {
     this.id = id;
     this.name = name;
-    this._inputname = new InputTextModel("inputnamex", "Input Name")
+    this.inputname = inputname;
     this.power = power;
     this.alterEgo = alterEgo;
+    console.log("New Hero", this.inputname,' ==> ', inputname)
+
   }
 
-  get inputname():InputTextModel {
-    return this._inputname;
-  }
-
-  set inputname(value:InputTextModel) {
-    this._inputname = value;
-    console.log("Yo! ", value)
-  }
 }
-
 
 @Component({
   selector: 'hero-form',
   directives: [InputText, CORE_DIRECTIVES, FORM_DIRECTIVES],
   styles: [`
-  .ng-valid[required] {
+  input.ng-valid[required], input.ng-valid[required] {
   border-left: 5px solid #42A948; /* green */
 }
 .ng-invalid {
@@ -43,43 +33,41 @@ export class Hero {
 }`],
   template: `<div flex layout="row" layout-align="center-center">
   <div flex="40" layout="row" layout-wrap layout-align="center-center">
-  <form (ng-submit)="onSubmit()" #hf="form">
-    <div flex="100" layout="row">{{diagnostic}}</div>
-    <div flex="100" layout-wrap  layout="row" class="ui attached segment">
-      <label flex="100" for="name">Name</label>
-      <input flex="100" type="text" class="form-control" required [(ng-model)]="model.name" ng-control="name" #name="form" #spy>
-      <div flex="100">TODO: remove this: {{spy.className}}</div>
-      <div flex="50" [hidden]="name.valid" [class.ui]="!name.valid" class="red basic label">Name is required</div>
-    </div>
-    <div flex="100" layout-wrap  layout="row" class="ui attached segment">
-      <label flex="100" for="name">Text-Input Name</label>
-      <cw-input-text flex="100" required [(ng-model)]="model.inputname" ng-control="inputname" #inputname="form"></cw-input-text>
-      <div flex="100">TODO: remove this: {{spy.className}}</div>
-      <div flex="50" [hidden]="inputname.valid" [class.ui]="!inputname.valid" class="red basic label">Input-Name is required</div>
-    </div>
-    <div flex="100" layout-wrap layout="row" class="ui attached segment">
-      <label flex="100" for="alterEgo">Alter Ego</label>
-      <input flex="100" type="text" class="ui  icon input" [(ng-model)]="model.alterEgo" ng-control="alter-ego">
-    </div>
-    <div flex="100" layout="row" layout-wrap class="ui attached segment">
-      <label flex="100" for="power">Hero Power</label>
-      <select flex="100" class="ui icon input" required [(ng-model)]="model.power" ng-control="power" #power="form">
-        <option *ng-for="#p of powers" [value]="p">{{p}}</option>
-      </select>
-      <div flex="100" [hidden]="power.valid" [class.ui]="!power.valid" class="red basic label"> Power is required </div>
-    </div>
-
-    <button type="submit" class="btn btn-default" [disabled]="!hf.form.valid">Submit</button>
+    <form (ngSubmit)="onSubmit()" #hf="ngForm">
+      <div flex="100" layout="row">{{diagnostic}}</div>
+      <div flex="100" layout-wrap layout="row" class="ui attached segment">
+        <label flex="100" for="name">Name</label>
+        <input flex="100" type="text" required [(ngModel)]="model.name" ngControl="name" #name="ngForm" #spy>
+        <div flex="50" [hidden]="hf.form.valid" class="name red basic label">Name is required</div>
+      </div>
+      <div flex="100" layout-wrap layout="row" class="ui attached segment">
+        <label flex="100" for="name">Text-Input Name</label>
+        <cw-input-text flex="100" required [(ngModel)]="model.inputname" ngControl="inputname" #inputname="ngForm"></cw-input-text>
+        <div flex="50" [hidden]="inputname.valid" [class.ui]="!inputname.valid" class="inputname red basic label">Input-Name is
+          required
+        </div>
+      </div>
+      <div flex="100" layout-wrap layout="row" class="ui attached segment">
+        <label flex="100" for="alterEgo">Alter Ego</label>
+        <input flex="100" type="text" class="ui  icon input" [(ngModel)]="model.alterEgo" ngControl="alter-ego">
+      </div>
+      <div flex="100" layout="row" layout-wrap class="ui attached segment">
+        <label flex="100" for="power">Hero Power</label>
+        <select flex="100" class="ui icon input" required [(ngModel)]="model.power" ngControl="power" #power="ngForm">
+          <option *ngFor="#p of powers" [value]="p">{{p}}</option>
+        </select>
+        <div flex="100" [hidden]="power.valid" [class.ui]="!power.valid" class="red basic label"> Power is required</div>
+      </div>
+      <button type="submit" class="btn btn-default" [disabled]="!hf.form.valid">Submit</button>
     </form>
   </div>
-</div>
 </div>
   `
 })
 export class HeroFormComponent {
   powers = ['Really Smart', 'Super Flexible',
     'Super Hot', 'Weather Changer'];
-  model = new Hero(18, 'Dr IQ', this.powers[0], 'Chuck Overstreet');
+  model = new Hero(18, 'Dr IQ', "def",  this.powers[0], 'Chuck Overstreet');
   submitted = false;
 
   onSubmit() {
@@ -93,12 +81,39 @@ export class HeroFormComponent {
 }
 
 
+class InputTextModel {
+  name:string
+  value:string
+  placeholder:string
+  disabled:boolean
+  icon:string
+
+  constructor(name:string = null,
+              placeholder:string = '',
+              disabled:boolean = null,
+              icon:string = '') {
+    this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
+    this.placeholder = placeholder
+    this.disabled = disabled
+    this.icon = icon || ''
+    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
+      this.icon = (this.icon + ' icon').trim()
+    }
+  }
+
+}
+
+
 @Component({
   selector: 'demo'
 })
 @View({
   directives: [InputText, HeroFormComponent],
-  template: `<div flex layout="row" layout-wrap>
+  template: `
+  <div style="margin-top:5em;margin-bottom:5em">
+    <hero-form></hero-form>
+  </div>
+  <div flex layout="row" layout-wrap>
   <div flex="33">
     <h4 class="ui top attached inverted header">Default</h4>
     <div class="ui attached segment">
@@ -108,19 +123,13 @@ export class HeroFormComponent {
   <div flex="33">
     <h4 class="ui top attached inverted header">Value</h4>
     <div class="ui attached segment">
-      <cw-input-text [model]="demoValue"></cw-input-text>
+      <cw-input-text [value]="demoValue.value"></cw-input-text>
     </div>
   </div>
   <div flex="33">
     <h4 class="ui top attached inverted header">Disabled</h4>
     <div class="ui attached segment">
-      <cw-input-text [model]="demoDisabled"></cw-input-text>
-    </div>
-  </div>
-  <div flex="33">
-    <h4 class="ui top attached inverted header">Error</h4>
-    <div class="ui attached segment">
-      <cw-input-text [model]="demoError" (change)="customChange($event)"></cw-input-text>
+      <cw-input-text [disabled]="demoDisabled.disabled" [value]="demoDisabled.value"></cw-input-text>
     </div>
   </div>
   <div flex="33">
@@ -130,21 +139,17 @@ export class HeroFormComponent {
     </div>
   </div>
 </div>
-<div style="margin-top:5em;">
-  <hero-form></hero-form>
-</div>
+
   `
 })
 class App {
   demoValue:InputTextModel
   demoDisabled:InputTextModel
-  demoError:InputTextModel
   demoIcon:InputTextModel
 
   constructor(@Attribute('id') id:string) {
     this.initDemoValue()
     this.initDemoDisabled()
-    this.initDemoError()
     this.initDemoIcon()
   }
 
@@ -152,30 +157,16 @@ class App {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     model.value = "Costa Rica"
-
     this.demoValue = model;
   }
 
   initDemoDisabled() {
     let model = new InputTextModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.disabled = "true"
+    model.disabled = true
     model.placeholder = "Disabled"
 
     this.demoDisabled = model;
-  }
-
-  initDemoError() {
-    let model = new InputTextModel()
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.value = "Required Field"
-    model.validate = (newValue:string)=> {
-      if (!newValue) {
-        throw new Error("Required Field")
-      }
-    }
-
-    this.demoError = model;
   }
 
   initDemoIcon() {

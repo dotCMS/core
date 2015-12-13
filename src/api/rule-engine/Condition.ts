@@ -1,5 +1,5 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleModel} from "./Rule";
 import {ConditionTypeModel} from "./ConditionType";
@@ -96,8 +96,8 @@ export class ConditionModel extends CwModel {
 }
 
 export class ConditionService {
-  private _removed:EventEmitter
-  private _added:EventEmitter
+  private _removed:EventEmitter<ConditionModel>
+  private _added:EventEmitter<ConditionModel>
   onRemove:Rx.Observable<ConditionModel>
   onAdd:Rx.Observable<ConditionModel>
   private _apiRoot;
@@ -110,8 +110,8 @@ export class ConditionService {
     this._ref = apiRoot.defaultSite.child('ruleengine/conditions')
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added.toRx())
-    let onRemove = Rx.Observable.from(this._removed.toRx())
+    let onAdd = Rx.Observable.from(this._added)
+    let onRemove = Rx.Observable.from(this._removed)
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
   }
@@ -176,11 +176,12 @@ export class ConditionService {
     if (rule.isPersisted()) {
       this.addConditionsFromRule(rule)
     } else {
-      rule.onChange.subscribe((event) => {
-        if (event.type == 'key') {
-          this.addConditionsFromRule(event.target)
-        }
-      })
+      // @todo ggranum
+      //rule.onChange.subscribe((event) => {
+      //  if (event.type == 'key') {
+      //    this.addConditionsFromRule(event.target)
+      //  }
+      //})
     }
     return this.onAdd
   }

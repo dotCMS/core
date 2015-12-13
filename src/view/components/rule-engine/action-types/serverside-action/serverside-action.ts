@@ -26,7 +26,7 @@ import {ActionModel} from "../../../../../api/rule-engine/Action";
 </div>`
 })
 export class ServersideAction {
-  change:EventEmitter;
+  change:EventEmitter<any>;
   private _model:ActionModel;
   private _inputs:Array<InputTextModel>
 
@@ -46,20 +46,20 @@ export class ServersideAction {
 
   set model(model:ActionModel) {
     this._model = model;
-    this._model.onChange.subscribe((event) => {
-      if(event.type === 'key' || event.type === 'actionType'){
-         this._updateInputs()
-      }
-    })
+
+    // @todo ggranum
+    //this._model.onChange.subscribe((event) => {
+    //  if(event.type === 'key' || event.type === 'actionType'){
+    //     this._updateInputs()
+    //  }
+    //})
+
     this._updateInputs()
   }
-
-
 
   get model():ActionModel {
     return this._model
   }
-
 
   handleParamValueChange(paramKey:string, event:any) {
     this.model.setParameter(paramKey, event.target.value)

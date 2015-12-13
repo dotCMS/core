@@ -53,7 +53,7 @@ export class InputToggle {
   _value:boolean
   onText:string
   offText:string
-  toggle:EventEmitter
+  toggle:EventEmitter<any>
 
   constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
     this.value = (value !== 'false')

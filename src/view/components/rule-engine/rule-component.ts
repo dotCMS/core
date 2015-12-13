@@ -1,6 +1,6 @@
 import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
 
-//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
@@ -16,6 +16,7 @@ import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engi
 
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
+import {ActionTypeModel} from "../../../api/rule-engine/ActionType";
 
 var rsrc = {
   fireOn: {
@@ -26,15 +27,14 @@ var rsrc = {
   }
 }
 
-
 @Component({
   selector: 'rule',
   properties: ["rule", "hidden"]
 })
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
-  <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
-    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ng-if="!hidden">
+  <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
+    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
                       class="cw-rule-name-input"
@@ -46,7 +46,7 @@ var rsrc = {
       <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
       <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
     </div>
-    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ng-if="!hidden">
+    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ngIf="!hidden">
       <cw-toggle-input class="cw-input"
                         [on-text]="rsrc.inputs.onOff.on.label"
                         [off-text]="rsrc.inputs.onOff.off.label"
@@ -80,8 +80,8 @@ var rsrc = {
           <rule-action flex [action]="action"></rule-action>
         </div>
         <div flex="0" layout="row" layout-align="end-center">
-          <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
-          <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
+          <div class="cw-spacer cw-add-condition" *ngIf="i !== (actions.length - 1)"></div>
+          <div class="cw-btn-group" *ngIf="i === (actions.length - 1)">
             <div class="ui basic icon buttons">
               <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
                 <i class="plus icon" aria-hidden="true"></i>
@@ -112,7 +112,7 @@ class RuleComponent {
   private groupService:ConditionGroupService
 
   private actionStub:ActionModel
-  private actionStubWatch:Rx.Subscription
+  private actionStubWatch:Rx.Subscription<ActionModel>
   private ruleNameInputTextModel:InputTextModel
   private fireOnDropdown:DropdownModel
   private _groupStub:ConditionGroupModel;
@@ -159,7 +159,7 @@ class RuleComponent {
     if (!this.rule.isPersisted()) {
       var el:Element = this.elementRef.nativeElement
       window.setTimeout(function () {
-        var els = el.getElementsByClassName('cw-rule-name-input')
+        var els:any = el.getElementsByClassName('cw-rule-name-input')
         els = els[0] ? els[0].getElementsByTagName('input') : []
         if (els[0]) {
           els[0]['focus']();
@@ -220,14 +220,16 @@ class RuleComponent {
   }
 
   addAction() {
-    this.actionStub = new ActionModel()
+    this.actionStub = new ActionModel(null, new ActionTypeModel())
     this.actionStub.owningRule = this.rule
     this.actions.push(this.actionStub)
-    this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=> {
-      if (vcEvent.target.isValid()) {
-        this.actionService.add(this.actionStub)
-      }
-    })
+
+    // @todo ggranum
+    //this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=> {
+    //  if (vcEvent.target.isValid()) {
+    //    this.actionService.add(this.actionStub)
+    //  }
+    //})
   }
 
   handleActionAdd(action:ActionModel) {
@@ -294,13 +296,12 @@ class RuleComponent {
     throw err
   }
 
-  removeRule(event:Event) {
+  removeRule(event:any) {
     if ((event.altKey && event.shiftKey) || confirm('Are you sure you want delete this rule?')) {
       event.stopPropagation()
       this.ruleService.remove(this.rule)
     }
   }
-
 }
 
 export {RuleComponent}

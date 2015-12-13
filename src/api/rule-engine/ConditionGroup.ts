@@ -1,5 +1,5 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleModel} from "./Rule";
 import {ConditionService, ConditionModel} from "./Condition";
@@ -28,8 +28,8 @@ export class ConditionGroupModel extends CwModel {
 }
 
 export class ConditionGroupService {
-  private _removed:EventEmitter
-  private _added:EventEmitter
+  private _removed:EventEmitter<ConditionGroupModel>
+  private _added:EventEmitter<ConditionGroupModel>
   onRemove:Rx.Observable<ConditionGroupModel>
   onAdd:Rx.Observable<ConditionGroupModel>
   private apiRoot;
@@ -40,8 +40,8 @@ export class ConditionGroupService {
     this.apiRoot = apiRoot
     this._added = new EventEmitter()
     this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added.toRx())
-    let onRemove = Rx.Observable.from(this._removed.toRx())
+    let onAdd = Rx.Observable.from(this._added)
+    let onRemove = Rx.Observable.from(this._removed)
     this.onAdd = onAdd.share()
     this.onRemove = onRemove.share()
 
