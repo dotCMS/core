@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.ElasticsearchException;
 
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;

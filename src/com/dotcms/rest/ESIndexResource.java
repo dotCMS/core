@@ -18,7 +18,7 @@ import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.javax.ws.rs.core.Response.Status;
 import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
+import org.elasticsearch.action.admin.indices.status.IndexStatus;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataParam;
 import com.dotmarketing.business.APILocator;

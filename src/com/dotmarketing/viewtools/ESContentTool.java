@@ -12,7 +12,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
