@@ -1,0 +1,33 @@
+<script type="application/javascript">
+
+ function camelize(str) {
+	  return str.replace(/[^a-z0-9 ]/ig, '')  // Replace everything but letters, numbers and spaces.
+	    .replace(/(?:^\w|[A-Z]|\b\w|\s+)/g, // Find non-words, uppercase letters, leading-word letters, and multiple spaces.
+	      function(match, index) {
+	        return +match === 0 ? "" : match[index === 0 ? 'toUpperCase' : 'toUpperCase']();
+	      });
+	}
+ 
+ 
+dojo.ready(function(){
+	dojo.connect(dojo.byId("name"), 'onkeyup', null, function(e){
+		var keyTagStr=camelize(dijit.byId('name').get('value'));
+		
+		
+		
+		
+		dojo.byId("showKeyTag").innerHTML =keyTagStr;
+		dojo.byId("keyTag").value=keyTagStr;
+	});
+	
+	
+	dojo.byId("showKeyTag").innerHTML =dojo.byId("keyTag").value;
+	
+
+});
+
+</script>
+<div id="showKeyTag">
+
+</div>
+

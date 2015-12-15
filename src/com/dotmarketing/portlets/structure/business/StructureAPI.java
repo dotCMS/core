@@ -11,4 +11,9 @@ public interface StructureAPI {
     
     
     Structure find(String inode, User user) throws DotSecurityException, DotDataException, DotStateException;
+
+
+	Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException;
+
+
 }

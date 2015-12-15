@@ -345,6 +345,12 @@ a.fakeDojoButton img{vertical-align:middle;margin-top:-2px;}
 
 #menu ul.dropdown li.dotCMS_EXT_CONTENT_PUBLISHING_TOOL a span, .sServerIcon, .pushIcon{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -21px -1880px;width:18px;height:18px;display:inline-block;vertical-align:top;}
 #menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+#menu ul.dropdown li.dotCMS_RULES_ENGINE_PORTLET a span{background: url(/html/images/icons/rules-engine.png) no-repeat }
+
+#menu ul.dropdown li.dotCMS_PERSONAS_PORTLET a span{background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -460px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+.personaIcon {background: url(/html/images/icons/dotcms-sprite.png) no-repeat -1px -460px;width:18px;height:18px;display:inline-block;vertical-align:top;}
+
+
 
 
 /* Action Panel */
