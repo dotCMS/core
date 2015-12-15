@@ -7,8 +7,10 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -54,7 +56,7 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			if (dc.loadResults().size() > 0) {
 				return;
 			}
-	
+
 			dc.setSQL(INSERT_DEFAULT_STRUC_INODE_QUERY);
 			dc.addParam(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 			dc.addParam(UserAPI.SYSTEM_USER_ID);
@@ -96,8 +98,20 @@ public class PersonaFactoryImpl implements PersonaFactory {
 			if (localTransaction) {
 				HibernateUtil.rollbackTransaction();
 			}
-			Logger.error(this, "deleteWorkflowTask failed:" + e, e);
+			Logger.error(this, "defualty persona creation failed:" + e, e);
 			throw new DotDataException(e.toString());
+		}
+		finally{
+			if (localTransaction) {
+				try{
+					HibernateUtil.commitTransaction();
+					HibernateUtil.closeSession();
+					DbConnectionFactory.closeConnection();
+				}
+				catch(Exception e){
+					Logger.error(this, "should not be here failed:" + e, e);
+				}
+			}
 		}
 
 
