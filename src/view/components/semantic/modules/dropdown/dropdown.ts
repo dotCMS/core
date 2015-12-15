@@ -1,4 +1,7 @@
-import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
+import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/angular2';
+import { AfterViewInit, AfterViewChecked} from 'angular2/angular2';
+import { CORE_DIRECTIVES } from 'angular2/angular2';
+import { Output, Input, ChangeDetectionStrategy } from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
@@ -42,62 +45,77 @@ export class DropdownOption {
     this.value = value || valueId
     this.label = label || valueId
     this.icon = icon || ''
-    if(!this.icon.includes(' ') && this.icon.length > 0){
+    if (!this.icon.includes(' ') && this.icon.length > 0) {
       this.icon = (this.icon + ' icon').trim()
     }
   }
+
+  static toJson(opt:DropdownOption):any {
+    return {id: opt.id, value: opt.value, label: opt.label, icon: opt.icon}
+  }
+
+  static fromJson(json):DropdownOption {
+    return new DropdownOption(json.id, json.value, json.label, json.icon)
+  }
 }
+
 export class DropdownModel extends CwComponent {
   name:string
   placeholder:string
   selected:Array<string>
   options:Array<DropdownOption>
-  settings:{ maxSelections?: number }
-  private _optionChange:EventEmitter<any>
-  onOptionChange:Rx.Observable<any>
-  allowAdditions: boolean
+  allowAdditions:boolean
+  maxSelections:number
+  minSelections:number
 
 
   constructor(name:string = null,
               placeholder:string = '',
               selected:Array<string> = [],
               options:Array<DropdownOption> = [],
-              allowAdditions:boolean = false) {
+              allowAdditions:boolean = false,
+              minSelections:number = 0,
+              maxSelections:number = 1) {
     super()
-    this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
+    this.name = name != null ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
     this.placeholder = placeholder
-    this.selected = selected
-    this.options = options
-    this.settings = {}
-    this._optionChange = new EventEmitter()
-    this.onOptionChange = Rx.Observable.from(this._optionChange).share()
+    this.selected = selected != null ? selected :[]
+    this.options = options != null ? options : []
     this.allowAdditions = allowAdditions
+    this.minSelections = minSelections
+    this.maxSelections = maxSelections
   }
 
   static fromParameter(param:ParameterModel, paramDef:ParameterDefinition):DropdownModel {
-    let ddm
-    let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
-    let opts = []
-    let options = inputType.options;
-    Object.keys(options).forEach((key:any)=>{
-      let option = options[key]
-      opts.push(new DropdownOption(key, option.value))
-    })
-    console.log("DD-PARAM:", param.key, param.value, param )
-    return new DropdownModel(param.key, inputType.placeholder, [param.value], opts)
+    try {
+      let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
+      let opts = []
+      let options = inputType.options;
+      Object.keys(options).forEach((key:any)=> {
+        let option = options[key]
+        opts.push(new DropdownOption(key, option.value))
+      })
+      console.log("DD-PARAM:", param.key, param.value, param)
+      let dd =  new DropdownModel(param.key, inputType.placeholder, [param.value], opts)
+      dd['required'] = dd.minSelections > 0
+      return dd
+    } catch(e){
+      console.log("Could not create Dropdown Model from param", param, paramDef,  e)
+    }
   }
 
   addOptions(options:Array<DropdownOption>) {
     options.forEach((option) => {
       this.options.push(option)
     })
-    this._optionChange.next({type: 'add', target: this, value: options})
   }
 
-  selectedValues():Array<any>{
-    return this.selected.map((selectedId)=>{
-      var ddOpt = this.options.filter((opt)=>{ return (opt.id == selectedId) })[0]
-      if(ddOpt){
+  selectedValues():Array<any> {
+    return this.selected.map((selectedId)=> {
+      var ddOpt = this.options.filter((opt)=> {
+        return (opt.id == selectedId)
+      })[0]
+      if (ddOpt) {
         // if not, then 'selected' is a value that isn't in the list!
         return ddOpt.value
       }
@@ -105,120 +123,150 @@ export class DropdownModel extends CwComponent {
   }
 
 
+  toJson():any {
+    let optsJson = {}
+    this.options.forEach((opt:DropdownOption) => {
+      optsJson[opt.id] = DropdownOption.toJson(opt)
+    })
+    return {
+      name: this.name,
+      placeholder: this.placeholder,
+      selected: this.selected,
+      options: optsJson,
+      allowAdditions: this.allowAdditions,
+      minSelections: this.minSelections,
+      maxSelections: this.maxSelections
+    }
+  }
+
+  static fromJson(json:any):DropdownModel {
+    let optsJson = json.options != null ? json.options : {}
+    let options = []
+    Object.keys(optsJson.options).forEach((opt)=> {
+      options.push(DropdownOption.fromJson(opt))
+    })
+    return new DropdownModel(
+        json.name,
+        json.placeholder,
+        json.selected,
+        json.options,
+        json.allowAdditions,
+        json.minSelections,
+        json.maxSelections);
+  }
 }
 
 @Component({
   selector: 'cw-input-dropdown',
-
-  properties: [
-    'model',
-  ], events: [
-    "change"
-  ]
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 @View({
   template: `
-<div class="ui fluid selection dropdown search" [ngClass]="{multiple: model.settings.maxSelections}" tabindex="0">
-  <input type="hidden" [name]="model.name" [value]="model.selected.join(',')" >
+<div class="ui fluid selection dropdown search" [ngClass]="{multiple: model.maxSelections > 1}" tabindex="0">
+  <input type="hidden" [name]="model.name" [value]="getSelected()" >
   <i class="dropdown icon"></i>
   <div class="default text">{{model.placeholder}}</div>
   <div class="menu" tabindex="-1">
-    <div *ng-for="var opt of model.options" class="item" [attr.data-value]="opt.id" [attr.data-text]="opt.label">
+    <div *ngFor="var opt of model.options" class="item" [attr.data-value]="opt.id" [attr.data-text]="opt.label">
       <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>
   </div>
 </div>
   `,
-  directives: [NgClass, NgFor]
+  directives: [CORE_DIRECTIVES]
 })
-export class Dropdown {
+export class Dropdown implements AfterViewInit, AfterViewChecked {
 
-  change:EventEmitter<any>
-  private _model:DropdownModel
-  private optionWatch:Rx.Subscription<any>
+  @Input() model:DropdownModel
+  @Output() change:EventEmitter<any>
+
   private elementRef:ElementRef
+  private _updateView:boolean
+  private _viewIsInitialized:boolean
 
-  private updateView:boolean
-
-  constructor(@ElementRef elementRef:ElementRef) {
-
+  constructor(elementRef:ElementRef) {
     this.elementRef = elementRef
     this.change = new EventEmitter()
-    this.model = new DropdownModel()
-    this.updateView = false
+    this._updateView = false
+    this._viewIsInitialized = false
+    this.model = new DropdownModel();
   }
 
-
-  get model():DropdownModel {
-    return this._model;
-  }
-
-  set model(model:DropdownModel) {
-    if (this.optionWatch) {
-      this.optionWatch.unsubscribe()
-      this.optionWatch = null
+  ngOnChanges(change) {
+    if (change.model) {
+      this._updateView = true
+      this.initDropdown()
     }
-    this._model = model;
-    this.optionWatch = this._model.onOptionChange.subscribe(()=> {
-      this.updateView = true
-    })
-
   }
 
-  afterViewInit() {
+  getSelected(){
+    let sel = this.model.selected;
+    if(sel != null){
+      return sel.join(',');
+    }
+  }
+
+  ngAfterViewInit() {
+    this._viewIsInitialized = true
     if (this.model.options.length > 0) {
       this.initDropdown()
     } // else 'wait for options to be set'
+
   }
 
-  afterViewChecked() {
-    if (this.updateView === true) {
-      this.updateView = false
+  ngAfterViewChecked() {
+    if (this._updateView === true) {
       this.initDropdown()
     }
   }
 
   initDropdown() {
-    var self = this;
-    let config:any = {
-      allowAdditions: this.model.allowAdditions,
+    if (this._viewIsInitialized) {
+      this._updateView = false
+      var self = this;
+      let config:any = {
+        allowAdditions: this.model.allowAdditions,
 
-      onChange: (value, text, $choice)=> {
-        return this.onChange(value, text, $choice)
-      },
-      onAdd: (addedValue, addedText, $addedChoice)=> {
-        return this.onAdd(addedValue, addedText, $addedChoice)
-      },
-      onRemove: (removedValue, removedText, $removedChoice)=> {
-        return this.onRemove(removedValue, removedText, $removedChoice)
-      },
-      onLabelCreate: function (value, text) {
-        let $label = this;
-        return self.onLabelCreate($label, value, text)
-      },
-      onLabelSelect: ($selectedLabels)=> {
-        return this.onLabelSelect($selectedLabels)
-      },
-      onNoResults: (searchValue)=> {
-        return this.onNoResults(searchValue)
-      },
-      onShow: ()=> {
-        return this.onShow()
-      },
-      onHide: ()=> {
-        return this.onHide()
+        onChange: (value, text, $choice)=> {
+          return this.onChange(value, text, $choice)
+        },
+        onAdd: (addedValue, addedText, $addedChoice)=> {
+          return this.onAdd(addedValue, addedText, $addedChoice)
+        },
+        onRemove: (removedValue, removedText, $removedChoice)=> {
+          return this.onRemove(removedValue, removedText, $removedChoice)
+        },
+        onLabelCreate: function (value, text) {
+          let $label = this;
+          return self.onLabelCreate($label, value, text)
+        },
+        onLabelSelect: ($selectedLabels)=> {
+          return this.onLabelSelect($selectedLabels)
+        },
+        onNoResults: (searchValue)=> {
+          return this.onNoResults(searchValue)
+        },
+        onShow: ()=> {
+          return this.onShow()
+        },
+        onHide: ()=> {
+          return this.onHide()
+        }
       }
-    }
-    if (this.model.settings.maxSelections) {
-      config.maxSelections = this.model.settings.maxSelections
-    }
+      if (this.model.maxSelections > 1) {
+        config.maxSelections = this.model.maxSelections
+      }
 
-    var el = this.elementRef.nativeElement
-    var $dropdown = $(el).children('.ui.dropdown');
-    $dropdown.dropdown(config)
-    this._applyArrowNavFix($dropdown);
+      var el = this.elementRef.nativeElement
+      var $dropdown = $(el).children('.ui.dropdown');
+      $dropdown.dropdown(config)
+      this._applyArrowNavFix($dropdown);
+    }
+  }
 
+  private isMultiSelect():boolean {
+    return this.model.maxSelections > 1
   }
 
   /**
@@ -244,8 +292,13 @@ export class Dropdown {
    */
   onChange(value, text, $choice) {
     this.model.selected = [value]
-    this.change.next({type: 'toggle', target: this, value: value})
-    console.log('onChange', value, text, " Selected: ", this.model.selected)
+    if (this.isMultiSelect()) {
+      this.change.emit(this.model.selectedValues())
+    } else {
+      this.change.emit(this.model.selectedValues()[0])
+    }
+
+    console.log('dropdown','onChange', value, text, " Selected: ", this.model.selected)
   }
 
   /**
@@ -302,5 +355,7 @@ export class Dropdown {
    */
   onHide() {
   }
+
+
 }
 

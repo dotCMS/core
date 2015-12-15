@@ -8,6 +8,14 @@ $text-emphasis: #fc7e1c;
 $warn: #c85a6a;
 $primary-one: #209021;
 
+
+input.ng-valid[required], input.ng-valid[required] {
+  border-left: 5px solid $primary-one;
+}
+.ng-invalid {
+  border-left: 5px solid $warn
+}
+
 .cw-rule-engine {
   > .cw-header {
     padding: 1em 2em 2em 2em;

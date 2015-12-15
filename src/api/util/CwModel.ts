@@ -21,7 +21,7 @@ export class CwModel {
    * Override me.
    * @returns {boolean}
    */
-  isValid() {
+  isValid():boolean {
     return true
   }
 }

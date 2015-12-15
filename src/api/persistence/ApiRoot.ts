@@ -15,11 +15,14 @@ export class ApiRoot {
   defaultSiteId: string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
   authUser: UserModel;
   resourceRef: EntityMeta
-  dataStore:DataStore;
+  dataStore:DataStore
+  authToken:string
+
 
   constructor( authUser:UserModel,  dataStore:DataStore){
     this.authUser = authUser
     this.dataStore = dataStore;
+    this.authToken = ApiRoot.createAuthToken(authUser)
     dataStore.setAuth(authUser.username, authUser.password)
     try {
       let query = document.location.search.substring(1);
@@ -38,6 +41,14 @@ export class ApiRoot {
     instanceOfApiRoot = this;
   }
 
+  static createAuthToken(authUser:UserModel)
+  {
+    let token = null
+    if (authUser && authUser.username && authUser.password) {
+      token = 'Basic ' + btoa(authUser.username + ':' + authUser.password)
+    }
+    return token
+  }
   static parseQueryParam(query:string, token:string):string {
     let idx = -1;
     let result = null

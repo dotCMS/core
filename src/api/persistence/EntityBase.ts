@@ -197,7 +197,7 @@ export class EntityMeta {
             onComplete(result.error, result)
           }
           else {
-            console.log("Push succeeded, creating snapshot")
+            console.log("Push succeeded, creating snapshot", data)
             let snap = new EntitySnapshot(result.path, data)
             let childMeta = new EntityMeta(result.path);
             childMeta.latestSnapshot = snap
@@ -306,7 +306,6 @@ export class EntityMeta {
         switch (eventType) {
           case 'added':
           case 'changed':
-            console.log('added/changed: ', this.path)
             this.latestSnapshot = payload
             this.watches.value.forEach((cb) => {
               cb(payload)
@@ -320,19 +319,16 @@ export class EntityMeta {
         if (isChild) {
           switch (eventType) {
             case 'changed':
-              console.log('child changed', path)
               this.watches.child_changed.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'added':
-              console.log('child added', path, payload)
               this.watches.child_added.forEach((cb) => {
                 cb(payload)
               })
               break;
             case 'removed':
-              console.log('child removed', path, payload)
               this.watches.child_removed.forEach((cb) => {
                 cb(payload)
               })

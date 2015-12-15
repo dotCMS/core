@@ -1,23 +1,18 @@
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
+import {Input, Output} from 'angular2/angular2';
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
-import {ActionTypeModel} from "../../../../../api/rule-engine/ActionType";
 import {ActionModel} from "../../../../../api/rule-engine/Action";
 
 
 @Component({
   selector: 'cw-serverside-action',
-  properties: [
-    "model"
-  ],
-  events: [
-    "change"
-  ]
+
 })
 @View({
-  directives: [NgFor, InputText],
   template: `<div flex layout="row" layout-align="start-center" class="cw-action-component-body">
-  <cw-input-text *ng-for="var input of _inputs"
+  <cw-input-text *ngFor="var input of _inputs"
                  flex
                  class="cw-input"
                  (change)="handleParamValueChange(input.name, $event)"
@@ -25,11 +20,13 @@ import {ActionModel} from "../../../../../api/rule-engine/Action";
                  [placeholder]="input.i18nKey"
                  [value]="input.value">
   </cw-input-text>
-</div>`
+</div>`,
+  directives: [CORE_DIRECTIVES, InputText]
 })
 export class ServersideAction {
-  change:EventEmitter<any>;
-  private _model:ActionModel;
+
+  @Input() model:ActionModel
+  @Output() change:EventEmitter<any>;
   private _inputs:Array<any>
 
   constructor() {
@@ -37,17 +34,22 @@ export class ServersideAction {
     this._inputs = []
   }
 
+  ngOnChanges(change){
+    debugger
+  }
+
   _updateInputs(){
     this._inputs = []
-    let paramDefs = this._model.actionType.parameters
+    let paramDefs = this.model.type.parameters
     Object.keys(paramDefs).forEach((paramKey)=> {
+
       let paramDef = paramDefs[paramKey]
-      this._inputs.push({name:paramKey, i18nKey: paramDef.i18nKey, value: this._model.getParameter(paramKey )})
+      this._inputs.push({name:paramKey, i18nKey: paramDef.key, value: this.model.getParameter(paramKey )})
     })
   }
 
-  set model(model:ActionModel) {
-    this._model = model;
+  //set model(model:ActionModel) {
+  //  this._model = model;
 
     // @todo ggranum
     //this._model.onChange.subscribe((event) => {
@@ -56,12 +58,12 @@ export class ServersideAction {
     //  }
     //})
 
-    this._updateInputs()
-  }
-
-  get model():ActionModel {
-    return this._model
-  }
+    //this._updateInputs()
+  //}
+  //
+  //get model():ActionModel {
+  //  return this._model
+  //}
 
   handleParamValueChange(paramKey:string, event:any) {
     this.model.setParameter(paramKey, event.target.value)

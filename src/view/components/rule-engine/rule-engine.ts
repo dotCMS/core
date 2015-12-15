@@ -1,5 +1,9 @@
-import {bootstrap, Provider, NgFor, NgIf, Component, Directive, View, Injector} from 'angular2/angular2';
+import {Http, HTTP_PROVIDERS} from 'angular2/http'
+import {bootstrap} from 'angular2/angular2';
+import {Provider, Observable, Component, Directive, View, Injector} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
+
 
 
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
@@ -32,124 +36,94 @@ import {CwFilter} from "../../../api/util/CwFilter"
   @View({
     template: `<div flex layout="column" class="cw-rule-engine">
   <div flex layout="column" layout-align="start start" class="cw-header">
-  <div flex layout="row" layout-align="space-between center">
-    <div flex layout="row" layout-align="space-between center" class="ui icon input">
-      <i class="filter icon"></i>
-      <input type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
+    <div flex layout="row" layout-align="space-between center">
+      <div flex layout="row" layout-align="space-between center" class="ui icon input">
+        <i class="filter icon"></i>
+        <input class="cw-rule-filter" type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
+      </div>
+      <div flex="2"></div>
+      <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
+        <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
+      </button>
     </div>
-    <div flex="2"></div>
-    <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()" [disabled]="ruleStub != null">
-      <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
-    </button>
-  </div>
     <div class="cw-filter-links">
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">{{rsrc.inputs.filter.status?.all}} ({{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">{{rsrc.inputs.filter.status?.active}} ({{activeRules}}/{{rules.length}})</button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">{{rsrc.inputs.filter.status?.inactive}} ({{rules.length-activeRules}}/{{rules.length}})</button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">
+        {{rsrc.inputs.filter.status?.all}} ({{rules.length}})
+      </button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">
+        {{rsrc.inputs.filter.status?.active}} ({{activeRules}}/{{rules.length}})
+      </button>
+      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">
+        {{rsrc.inputs.filter.status?.inactive}} ({{rules.length-activeRules}}/{{rules.length}})
+      </button>
     </div>
   </div>
 
-  <!--<rule flex layout="row" *ng-for="var r of rules" [rule]="r" [hidden]="isFiltered(r)"></rule>-->
+  <rule flex layout="row" *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
+        (change)="onRuleChange($event)"
+        (remove)="onRuleRemove($event)"
+  ></rule>
 </div>
 
 `,
-    directives: [RuleComponent, NgFor, NgIf]
+    directives: [CORE_DIRECTIVES, RuleComponent]
   })
   export class RuleEngineComponent {
-    rules:RuleModel[];
+    rules:Array<RuleModel>
     filterText:string
     status:string
     activeRules:number
     rsrc:any
     private ruleService:RuleService;
     private ruleStub:RuleModel
-    private stubWatch:Rx.Subscription<RuleModel>
 
-    constructor(actionTypeService:ActionTypeService,
-                conditionTypeService:ConditionTypeService,
-                ruleService:RuleService) {
-      actionTypeService.list() // load types early in a single place rather than calling list repeatedly.
-      conditionTypeService.list() // load types early in a single place rather than calling list repeatedly.
+    constructor(ruleService:RuleService) {
       this.rsrc = ruleService.rsrc
-      ruleService.onResourceUpdate.subscribe((messages)=> {
-        this.rsrc = messages
-      })
       this.ruleService = ruleService
       this.filterText = ""
       this.rules = []
+      this.ruleService.list().subscribe(rules => {
+        this.rules = rules
+        this.sort()
+      })
       this.status = null
-      this.ruleService.onAdd.subscribe(
-          (rule:RuleModel) => {
-            this.handleAdd(rule)
-          },
-          (err) => {
-            this.handleAddError(err)
-          })
-      this.ruleService.onRemove.subscribe(
-          (rule:RuleModel) => {
-            this.handleRemove(rule)
-          },
-          (err) => {
-            this.handleRemoveError(err)
-          })
-      this.ruleService.list()
+
       this.getFilteredRulesStatus()
     }
 
-    handleAdd(rule:RuleModel) {
-      if (rule === this.ruleStub) {
-        this.stubWatch.unsubscribe()
-        this.stubWatch = null
-        this.ruleStub = null
-      } else {
-        this.rules.push(rule)
-        this.rules.sort(function (a, b) {
-          return b.priority - a.priority;
-        });
-      }
-
-      // @todo ggranum
-      //rule.onChange.subscribe((event:CwChangeEvent<RuleModel>) => {
-      //  this.handleRuleChange(event)
-      //})
-      this.getFilteredRulesStatus()
+    sort() {
+      this.rules.sort(function (a, b) {
+        return b.priority - a.priority;
+      });
     }
 
-    handleRuleChange(event:CwChangeEvent<RuleModel>) {
-      if (event.target.isValid()) {
-        this.ruleService.save(event.target)
+    onRuleChange(rule:RuleModel){
+      if(rule.isValid()){
+        if(rule.isPersisted()){
+          this.ruleService.save(rule)
+        }
+        else {
+          this.ruleService.add(rule);
+        }
       }
       this.getFilteredRulesStatus()
     }
 
-    handleRemove(rule:RuleModel) {
+    onRuleRemove(rule:RuleModel){
+      if(rule.isPersisted()){
+        this.ruleService.remove(rule)
+      }
       this.rules = this.rules.filter((arrayRule) => {
         return arrayRule.key !== rule.key
       })
       this.getFilteredRulesStatus()
-      // @todo ggranum: we're leaking Subscribers here, sadly. Might cause issues for long running edit sessions.
-    }
-
-    handleAddError(err) {
-      console.log('Could not add rule: ', err.message, err);
-    }
-
-    handleRemoveError(err) {
-      console.log('Something went wrong: ' + err.message);
-
     }
 
     addRule() {
-      this.ruleStub = new RuleModel()
+      this.ruleStub = new RuleModel(null)
       this.ruleStub.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
       this.rules.unshift(this.ruleStub)
-
-      // @todo ggranum
-      //this.stubWatch = this.ruleStub.onChange.subscribe((event) => {
-      //  if (event.target.isValid()) {
-      //    this.ruleService.save(this.ruleStub)
-      //  }
-      //})
+      this.sort()
     }
 
     getFilteredRulesStatus() {
@@ -160,7 +134,6 @@ import {CwFilter} from "../../../api/util/CwFilter"
     		}
     	}
     }
-
 
     setFieldFilter(field:string, value:string=null){
       // remove old status
@@ -203,6 +176,7 @@ export class RuleEngineApp {
       ConditionGroupService,
       ConditionService,
       ConditionTypeService,
+      HTTP_PROVIDERS,
       new Provider(DataStore, {useClass: RestDataStore})
     ])
 

@@ -38,13 +38,11 @@
     "protractor": "^3.0.0",
     "proxy-middleware": "^0.x.x",
     "reflect-metadata": "^0.1.2",
-    "rxjs": "^5.0.0-alpha.14",
     "selenium-webdriver": "^2.47.0",
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "^2.x.x",
-    "typescript": "^1.7.3",
-    "zone.js": "^0.5.10"
+    "typescript": "^1.7.3"
   },
   "scripts": {
     "postinstall": "./node_modules/protractor/bin/webdriver-manager update",
@@ -53,6 +51,7 @@
     "tsc-no": "tsc -p src",
     "start": "live-server--port=8180 --open=src",
     "test": "gulp build && gulp serve --open=/build/unit-tests.html",
+    "serve": "gulp serve || true",
     "dev": "gulp serve --open=/build/index.html",
     "itest": "gulp serve --open=/build/integration-tests.html",
     "e2e": "./node_modules/protractor/bin/protractor ./protractor.conf.js || true",
@@ -67,7 +66,9 @@
     "angular2": "2.0.0-alpha.52",
     "core-js": "^1.2.5",
     "jquery": "2.1.4",
+    "rxjs": "^5.0.0-alpha.14",
     "systemjs": "0.19.6",
-    "whatwg-fetch": "^0.x.x"
+    "whatwg-fetch": "^0.x.x",
+    "zone.js": "^0.5.0"
   }
 }

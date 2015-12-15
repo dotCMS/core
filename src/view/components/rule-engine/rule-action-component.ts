@@ -1,103 +1,111 @@
-import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
-
-import {ServersideAction} from './action-types/serverside-action/serverside-action'
+import {Component, Directive, View, Inject} from 'angular2/angular2';
+import {Input, Output, EventEmitter} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
 
 import {ActionModel} from "../../../api/rule-engine/Action";
-import {ActionTypeService, ActionTypeModel} from "../../../api/rule-engine/ActionType";
+import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 import {ActionService} from "../../../api/rule-engine/Action";
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {RuleService} from "../../../api/rule-engine/Rule";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {ServersideCondition} from "./condition-types/serverside-condition/serverside-condition";
+import {CountryCondition} from "./condition-types/country/country-condition";
+import {ConditionModel} from "../../../api/rule-engine/Condition";
+import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 @Component({
-  selector: 'rule-action',
-  properties: ["action"]
-})
+  selector: 'rule-action'})
 @View({
-  template: `<div flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
+  template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <cw-input-dropdown
-      class="cw-action-type-dropdown"
-      [model]="actionTypesDropdown"
-      (change)="handleActionTypeChange($event)">
-      </cw-input-dropdown>
+        class="cw-action-type-dropdown"
+        [model]="typeDropdown"
+        [value]="[action.type.key]"
+        (change)="onActionTypeChange($event)">
+    </cw-input-dropdown>
   </div>
+  <div flex layout-fill class="cw-condition-row-main">
+  <cw-serverside-condition class="cw-condition-component"
+                           [model]="action"
+                           [paramDefs]="action.type?.parameters"
 
-
-  <cw-serverside-action flex layout-fill
-                        [model]="action"
-                        (config-change)="actionConfigChanged($event)">
-
-  </cw-serverside-action>
+                           (change)="onActionChange($event)">
+  </cw-serverside-condition>
+  </div>
   <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
     <div class="ui basic icon buttons">
-      <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!_action.isPersisted()">
+      <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!action.isPersisted()">
         <i class="trash icon"></i>
       </button>
     </div>
   </div>
-</div>`,
-  directives: [NgIf, NgFor, ServersideAction, Dropdown],
+</div>`, directives: [CORE_DIRECTIVES,
+    ServersideCondition,
+    CountryCondition,
+    Dropdown
+  ]
 })
 export class RuleActionComponent {
-  _action:ActionModel;
-  actionTypesDropdown:DropdownModel
-  private typeService:ActionTypeService
-  private actionService:ActionService;
 
-  constructor( ruleService:RuleService, typeService:ActionTypeService, actionService:ActionService){
-    this.actionService = actionService;
-    this.actionTypesDropdown = new DropdownModel('actionType', "Select an Action")
+  @Input()  action:ServerSideFieldModel
+  @Input()  index:number
+  @Output() change:EventEmitter<ServerSideFieldModel>
+  @Output() remove:EventEmitter<ServerSideFieldModel>
 
-    ruleService.onResourceUpdate.subscribe((messages:any)=>{
-      this.actionTypesDropdown.placeholder = messages.inputs.action.type.placeholder
-    })
+  typeDropdown:DropdownModel
 
-    this.typeService = typeService
-    this.action  = new ActionModel(null, new ActionTypeModel())
+  private _typeService:ActionTypeService
+  private _actionService:ActionService;
 
-    typeService.onAdd.subscribe((actionType:ActionTypeModel) => {
-      this.actionTypesDropdown.addOptions([new DropdownOption(actionType.key, actionType, actionType.rsrc.name)])
-    })
-  }
+  workPls:string
 
-  set action(action:ActionModel){
-    this._action = action
-    if(this._action.actionType && this._action.actionType.key != 'NoSelection'){
-      this.actionTypesDropdown.selected = [this._action.actionType.key]
-    }
-    // @todo ggranum
-    //action.onChange.subscribe((self)=>{
-    //  if(action.isValid() && action.isPersisted()){
-    //    this.actionService.save(action)
-    //  }
-    //  if(this._action.actionType){
-    //    this.actionTypesDropdown.selected = [this._action.actionType.key]
-    //  }
-    //})
-  }
+  constructor(actionService:ActionService, typeService:ActionTypeService) {
+    this.change = new EventEmitter()
+    this.remove = new EventEmitter()
 
-  get action():ActionModel {
-    return this._action
-  }
+    this._actionService = actionService;
+    this._typeService = typeService
 
-  handleActionTypeChange(event){
-    this.action.clearParameters()
-    this.action.actionType = event.target.model.selectedValues()[0]
-    if(!this.action.isPersisted()){
-      this.actionService.add(this.action)
-    }
-  }
+    this.action = new ConditionModel(null, new ServerSideTypeModel())
+    this.index = 0
 
-  actionConfigChanged(event){
-    if(event.type == 'actionParameterChanged'){
-      Object.keys(event.params).forEach((key)=>{
-        this.action.setParameter(key, event.params[key])
+    this.workPls = ""
+
+    typeService.list().subscribe((types:ServerSideTypeModel[])=> {
+      let opts = []
+      types.forEach(type => {
+        opts.push(new DropdownOption(type.key, type, type.rsrc.name))
       })
+      this.typeDropdown = new DropdownModel('actionType', "Select an Action", [], opts)
+    })
+  }
+
+  ngOnChanges(change){
+    console.log("RuleActionComponent", "ngOnChanges", change)
+    if (change.action){
+      console.log("RuleActionComponent", "ngOnChanges-value", change.action.currentValue)
+      this.action = change.action.currentValue
+      if (this.typeDropdown && this.action.type) {
+        this.typeDropdown.selected = [this.action.type.key]
+      }
     }
+  }
+
+  onActionTypeChange(value) {
+    console.log("RuleActionComponent", "onActionTypeChange", value)
+    this.action.type = value
+    this.workPls = "nrrrg-" + new Date().getTime()
+    this.change.emit(this.action)
+  }
+
+  onActionChange(event) {
+    console.log("RuleActionComponent", "onActionChange")
+    this.change.emit(this.action)
   }
 
   removeAction() {
-    this.actionService.remove(this.action)
+    this.remove.emit(this.action)
   }
 }

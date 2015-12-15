@@ -13,7 +13,7 @@ import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
-import {ConditionTypeService, ConditionTypeModel} from '../../api/rule-engine/ConditionType';
+import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 
 
 import {ActionService} from '../../api/rule-engine/Action';
@@ -21,6 +21,7 @@ import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/
 import {CwChangeEvent} from '../../api/util/CwEvent';
 import {ActionTypeService} from "./ActionType";
 import {I18nService} from "../system/locale/I18n";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
 var injector = Injector.resolveAndCreate([ApiRoot,
   I18nService,
@@ -53,9 +54,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     ruleOnAddSub = ruleService.onAdd.subscribe((rule:RuleModel) => {
       if(!ruleUnderTest) {
         ruleUnderTest = rule
-        groupUnderTest = new ConditionGroupModel()
-        groupUnderTest.operator = "OR"
-        groupUnderTest.owningRule = ruleUnderTest
+        groupUnderTest = new ConditionGroupModel(null, ruleUnderTest, "OR", 1)
         conditionGroupService.add(groupUnderTest, done)
       }
     }, (err) => {
@@ -78,13 +77,13 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   })
 
   it("Can add a new Condition", function(done){
-    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
+    var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("sessionKey", "foo")
     aCondition.setParameter("sessionValue", "bar")
 
-    var sub = conditionService.onAdd.subscribe((condition:ConditionModel) => {
+    var sub = conditionService.listForGroup(groupUnderTest).subscribe((condition:ConditionModel) => {
       sub.unsubscribe()
       //noinspection TypeScriptUnresolvedFunction
       expect(condition.isPersisted()).toBe(true, "Condition is not persisted!")
@@ -99,13 +98,13 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   })
 
   it("Is added to the owning rule's list of conditions.", function(done){
-    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
+    var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
     aCondition.setParameter("isoCode", "US")
 
-    let sub = conditionService.onAdd.subscribe((condition:ConditionModel) => {
+    let sub = conditionService.listForGroup(groupUnderTest).subscribe((condition:ConditionModel) => {
       sub.unsubscribe()
       expect(groupUnderTest.conditions[condition.key]).toBe(true, "Check the ConditionService.onAdd listener in the RuleService.")
       done()
@@ -118,7 +117,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
 
   it("Condition being added to the owning group is persisted to server.", function(done){
-    var aCondition = new ConditionModel(null, new ConditionTypeModel("UsersCountryConditionlet"))
+    var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
     aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
@@ -126,7 +125,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
 
 
-    var firstPass = conditionService.onAdd.subscribe((condition:ConditionModel) => {
+    var firstPass = conditionService.listForGroup(groupUnderTest).subscribe((condition:ConditionModel) => {
       //noinspection TypeScriptUnresolvedFunction
       firstPass.unsubscribe() // don't want to run THIS watcher twice.
       expect(groupUnderTest.conditions[condition.key]).toBe(true, "Check the ConditionService.onAdd listener in the RuleService.")
@@ -149,7 +148,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
 
   it("Will add a new condition parameters to an existing condition.", function(done){
-    var clientCondition = new ConditionModel(null, new ConditionTypeModel("UserBrowserHeaderConditionlet"))
+    var clientCondition = new ConditionModel(null, new ServerSideTypeModel("UserBrowserHeaderConditionlet"))
     clientCondition.owningGroup = groupUnderTest
     clientCondition.setParameter("headerKey", "foo")
     clientCondition.setParameter("headerValue", "bar")
@@ -180,7 +179,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     let param1 = { key: 'sessionKey', v1: 'value1', v2: 'value2'}
     let param2 = { key: 'sessionValue', v1: 'abc123', v2: 'def456'}
 
-    var clientCondition = new ConditionModel(null, new ConditionTypeModel("SetSessionAttributeConditionlet"))
+    var clientCondition = new ConditionModel(null, new ServerSideTypeModel("SetSessionAttributeConditionlet"))
     clientCondition.owningGroup = groupUnderTest
     clientCondition.setParameter(param1.key, param1.v1)
     clientCondition.setParameter(param2.key, param2.v1)
@@ -204,7 +203,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 class Tools {
   static createRule(ruleService:RuleService, cb:Function=null){
     console.log('Attempting to create rule.')
-    let rule = new RuleModel()
+    let rule = new RuleModel(null)
     rule.enabled = true
     rule.name = "TestRule-" + new Date().getTime()
     ruleService.add(rule, cb)

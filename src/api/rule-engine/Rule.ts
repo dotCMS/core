@@ -1,6 +1,6 @@
-import {Inject, EventEmitter, Injectable} from 'angular2/angular2';
+import {Http, HTTP_PROVIDERS, BaseRequestOptions} from 'angular2/http'
+import {Inject, EventEmitter, Injectable} from 'angular2/angular2'
 import {Observable, ConnectableObservable} from 'rxjs/Rx.KitchenSink'
-
 
 
 import {ConditionGroupService, ConditionGroupModel} from "./ConditionGroup";
@@ -24,10 +24,10 @@ export class RuleModel extends CwModel {
   actions:{ [key: string]: boolean }
 
 
-  constructor(key:string = null) {
+  constructor(key:string, name:string = '', fireOn:string = 'EVERY_PAGE') {
     super(key)
-    this.name = ''
-    this.fireOn = 'EVERY_PAGE'
+    this.name = name
+    this.fireOn = fireOn
     this.enabled = false
     this.actions = {}
     this.groups = {}
@@ -47,6 +47,13 @@ export class RuleModel extends CwModel {
     return valid
   }
 
+  static fromJson(key:string, json:any):RuleModel {
+    let rule = new RuleModel(key, json.name, json.fireOn);
+    rule.enabled = json.enabled
+    rule.priority = json.priority
+
+    return rule;
+  }
 }
 const RULE_DEFAULT_RSRC = {
   inputs: {
@@ -96,13 +103,13 @@ const RULE_DEFAULT_RSRC = {
         and: {label: "AND",},
         or: {label: "OR",}
       },
-      type:{
+      type: {
         placeholder: "Select a Condition"
       }
     },
     action: {
       firesActions: "This rule sets the following action(s)",
-      type:{
+      type: {
         placeholder: "Select an Action"
       }
     }
@@ -122,11 +129,17 @@ export class RuleService {
   private _added:EventEmitter<RuleModel>
   private _rsrcService:I18nService;
 
+  http:Http
+  apiRoot:ApiRoot
+  rules;
 
   constructor(apiRoot:ApiRoot,
+              http:Http,
               actionService:ActionService,
               conditionGroupService:ConditionGroupService,
               rsrcService:I18nService) {
+    this.apiRoot = apiRoot
+    this.http = http
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
     this._rsrcService = rsrcService
     this._added = new EventEmitter()
@@ -137,31 +150,7 @@ export class RuleService {
     this.onRemove = onRemove.share()
     this.onResourceUpdate = Observable.create().share()
 
-    actionService.onAdd.subscribe((actionModel:ActionModel) => {
-      if (!actionModel.owningRule.actions[actionModel.key]) {
-        actionModel.owningRule.actions[actionModel.key] = true
-        this.save(actionModel.owningRule)
-      }
-    })
 
-    actionService.onRemove.subscribe((actionModel:ActionModel) => {
-      if (actionModel.owningRule.actions[actionModel.key]) {
-        delete actionModel.owningRule.actions[actionModel.key]
-        this.save(actionModel.owningRule)
-      }
-    })
-
-    conditionGroupService.onAdd.subscribe((groupModel:ConditionGroupModel) => {
-      if (!groupModel.owningRule.groups[groupModel.key]) {
-        groupModel.owningRule.groups[groupModel.key] = groupModel
-      }
-    })
-
-    conditionGroupService.onRemove.subscribe((groupModel:ConditionGroupModel) => {
-      if (!groupModel.owningRule.groups[groupModel.key]) {
-        delete groupModel.owningRule.groups[groupModel.key]
-      }
-    })
 
     this.onResourceUpdate = Observable.create((observer) => {
       rsrcService.get(apiRoot.authUser.locale, RULE_I18N_BASE_KEY, (i18n:I18nResourceModel)=> {
@@ -213,17 +202,21 @@ export class RuleService {
     })
   }
 
-  list():Observable<RuleModel> {
+  list():Observable<Array<RuleModel>> {
+    let emitter = new EventEmitter()
     this.ref.once('value', (snap) => {
       let rules = snap['val']()
+      let parsed = []
       Object.keys(rules).forEach((key) => {
         let rule = RuleService.fromSnapshot(key, snap.child(key))
-        this._added.next(rule)
+        parsed.push(rule)
       })
+      emitter.emit(parsed)
     }, (e)=> {
+      console.log("RuleService", "list", "error", e)
       throw e
     })
-    return this.onAdd
+    return emitter
   }
 
   add(rule:RuleModel, cb:Function = null) {

@@ -15,7 +15,7 @@ describe('Unit.api.rule-engine.Rule', function () {
 
   it("Isn't valid when new.", function(){
 
-    var foo = new RuleModel()
+    var foo = new RuleModel(null)
     expect(foo.isValid()).toEqual(false);
 
   })

@@ -13,9 +13,10 @@ import {UserModel} from '../../api/auth/UserModel';
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 
 
-import {ConditionTypeService, ConditionTypeModel} from '../../api/rule-engine/ConditionType';
+import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 import {CwChangeEvent} from '../../api/util/CwEvent';
 import {I18nService} from "../system/locale/I18n";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
 var injector = Injector.resolveAndCreate([
   ApiRoot,
@@ -28,7 +29,7 @@ var injector = Injector.resolveAndCreate([
 describe('Integration.api.rule-engine.RuleService', function () {
 
   var typeService:ConditionTypeService
-  var subscriptions:Array<Rx.Subscription<ConditionTypeModel>>
+  var subscriptions:Array<Rx.Subscription<ServerSideTypeModel>>
 
   beforeEach(function () {
     subscriptions = []
@@ -37,14 +38,14 @@ describe('Integration.api.rule-engine.RuleService', function () {
   });
 
   afterEach(function(){
-    subscriptions.forEach((sub:Rx.Subscription<ConditionTypeModel>)=>{
+    subscriptions.forEach((sub:Rx.Subscription<ServerSideTypeModel>)=>{
       sub.unsubscribe()
     })
   })
 
   it("Can list condition types, and they are all persisted and valid.", function(done){
     let count = 0;
-    let subscription = typeService.onAdd.subscribe((conditionType:ConditionTypeModel) => {
+    let subscription = typeService.list().subscribe((conditionType:ServerSideTypeModel) => {
       count++
     }, (err) => {
       expect(err).toBeUndefined("error was thrown creating Rule.")
@@ -52,9 +53,9 @@ describe('Integration.api.rule-engine.RuleService', function () {
     })
     subscriptions.push(subscription) // for cleanup.
 
-    typeService.list((types:Array<ConditionTypeModel>)=>{
+    typeService.list((types:Array<ServerSideTypeModel>)=>{
       expect(count).toEqual(types.length, "onAdd subscriber notification count should be same as number of types provided to callback.")
-      types.forEach((type:ConditionTypeModel)=>{
+      types.forEach((type:ServerSideTypeModel)=>{
         expect(type.isPersisted()).toBe(true, "Condition types are readonly and should always be persisted.")
         expect(type.isValid()).toBe(true, "Condition types are readonly and should always be valid.")
       })
@@ -63,7 +64,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   })
 
   it("There are three active condition types.", function(done){
-    typeService.list((types:Array<ConditionTypeModel>)=>{
+    typeService.list((types:Array<ServerSideTypeModel>)=>{
       expect(types.length).toEqual(3, "We have only enabled three condition types. Please update name of test when you update this expectation.")
       done()
     })

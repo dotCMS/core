@@ -1,4 +1,6 @@
-import {NgFor, NgIf, Component, Directive, View, Inject} from 'angular2/angular2';
+import { Component, Directive, View, Inject, EventEmitter} from 'angular2/angular2';
+import {Input, Output} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
 import * as Rx from 'rxjs/Rx.KitchenSink'
 
 
@@ -10,14 +12,10 @@ import {ConditionService, ConditionModel} from "../../../api/rule-engine/Conditi
 import {RuleModel} from "../../../api/rule-engine/Rule";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {RuleService} from "../../../api/rule-engine/Rule";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 @Component({
-  selector: 'condition-group',
-  properties: [
-    "rule",
-    "group",
-    "groupIndex"
-  ]
+  selector: 'condition-group'
 })
 @View({
   template: `<div flex layout="column" layout-align="center-start" class="cw-rule-group">
@@ -28,16 +26,25 @@ import {RuleService} from "../../../api/rule-engine/Rule";
     <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
-          <div >{{group.operator}}</div>
+          <div>{{group.operator}}</div>
         </button>
       </div>
       <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
     </div>
   </div>
   <div flex layout-fill layout="column" layout-align="start-start" class="cw-conditions">
-    <div layout-fill layout="row" layout-align="space-between-center" class="cw-condition-row" *ng-for="var condition of conditions; var i=index">
+    <div layout-fill
+         layout="row"
+         layout-align="space-between-center"
+         class="cw-condition-row"
+         (change)="conditionChanged($event.target.value)"
+         *ngFor="var condition of conditions; var i=index">
       <div flex layout-fill layout="row" layout-align="start-center">
-        <rule-condition flex layout-fill layout="row" [condition]="condition" [index]="i"></rule-condition>
+        <rule-condition flex layout-fill layout="row"
+                        [condition]="condition"
+                        [index]="i"
+                        (remove)="onConditionRemove($event)"
+                        (change)="onConditionChange($event)"></rule-condition>
       </div>
       <div flex="0" layout="row" layout-align="end-center">
         <div class="cw-btn-group" *ngIf="i === (conditions.length - 1)">
@@ -53,26 +60,29 @@ import {RuleService} from "../../../api/rule-engine/Rule";
 </div>
 
 `,
-  directives: [ConditionComponent, NgIf, NgFor]
+  directives: [CORE_DIRECTIVES, ConditionComponent]
 })
 export class ConditionGroupComponent {
-  groupIndex:number
-  _group:ConditionGroupModel
-  rule:RuleModel
+
+  @Input() group:ConditionGroupModel
+  @Input() groupIndex:number
+  @Output() change:EventEmitter<ConditionGroupModel>
+  @Output() remove:EventEmitter<ConditionGroupModel>
+
   conditions:Array<ConditionModel>;
   groupCollapsed:boolean
   rsrc:any
 
-  private conditionStub:ConditionModel
-  private conditionStubWatch:Rx.Subscription<CwChangeEvent<any>>
   private apiRoot:ApiRoot
   private _groupService:ConditionGroupService;
   private _conditionService:ConditionService;
 
-  constructor(@Inject(ApiRoot) apiRoot:ApiRoot,
-              @Inject(RuleService) ruleService:RuleService,
-              @Inject(ConditionGroupService) groupService:ConditionGroupService,
-              @Inject(ConditionService) conditionService:ConditionService) {
+  constructor(apiRoot:ApiRoot,
+              ruleService:RuleService,
+              groupService:ConditionGroupService,
+              conditionService:ConditionService) {
+    this.change = new EventEmitter()
+    this.remove = new EventEmitter()
     this.apiRoot = apiRoot
     this._groupService = groupService;
     this._conditionService = conditionService;
@@ -81,73 +91,42 @@ export class ConditionGroupComponent {
     this.groupIndex = 0
 
     this.rsrc = ruleService.rsrc
-    ruleService.onResourceUpdate.subscribe((messages)=>{
-      this.rsrc = messages
-    })
 
-
-    this._conditionService.onAdd.subscribe((conditionModel) => {
-      if (conditionModel.owningGroup.key == this._group.key) {
-        this.handleAddCondition(conditionModel)
-
-      }
-    })
-    this._conditionService.onRemove.subscribe((conditionModel) => {
-      if (conditionModel.owningGroup.key == this._group.key) {
-        this.handleRemoveCondition(conditionModel)
-      }
-    })
   }
 
-  set group(group:ConditionGroupModel) {
-    this._group = group
-    let groupKeys = Object.keys(group.conditions)
-    if (groupKeys.length == 0) {
-      this.addCondition()
-    } else {
-      this._conditionService.listForGroup(group)
+  ngOnChanges(change) {
+    if (change.group) {
+      let group:ConditionGroupModel = change.group.currentValue
+      let groupKeys = Object.keys(group.conditions)
+      if (groupKeys.length === 0) {
+        this.addCondition()
+      } else {
+        this._conditionService.listForGroup(group).subscribe(conditions => {
+          console.log("ConditionGroupComponent", "list for group", conditions.length, groupKeys.length, conditions)
+          this.conditions = conditions
+        })
+      }
     }
-    // @todo ggranum
-    //this._group.onChange.subscribe((event:CwChangeEvent<ConditionGroupModel>)=> {
-    //  if (event.target.isValid() && event.target.isPersisted()) {
-    //    this._groupService.save(event.target)
-    //  }
-    //})
   }
 
-  get group() {
-    return this._group;
-  }
+
 
   addCondition() {
     console.log('Adding condition to ConditionsGroup')
-    let condition = new ConditionModel(null, null)
+    let condition = new ConditionModel(null, new ServerSideTypeModel())
     condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 1
-    condition.name = "Condition. " + new Date().toISOString()
-    condition.owningGroup = this._group
+    condition.owningGroup = this.group
     condition.operator = 'AND'
-    condition.setParameter('headerKeyValue', '')
-    condition.setParameter('compareTo', '')
-    condition.setParameter('isoCode', '')
-
-    this.conditionStub = condition
-
-    // @todo ggranum
-    //this.conditionStubWatch = condition.onChange.subscribe((self)=> {
-    //  if(this.group.isValid()){
-    //    if (this._group.isPersisted()) {
-    //      this._addCondition(condition)
-    //    } else {
-    //      this._groupService.add(this._group, ()=> {
-    //        this._addCondition(condition)
-    //      })
-    //    }
-    //  }
-    //})
-    this.conditions.push(this.conditionStub)
+    this.conditions.push(condition)
   }
 
-  _addCondition(condition:ConditionModel){
+  sort() {
+    this.conditions.sort(function (a, b) {
+      return a.priority - b.priority;
+    });
+  }
+
+  _addCondition(condition:ConditionModel) {
     if (condition.isValid()) {
       this._conditionService.add(condition)
     }
@@ -157,25 +136,29 @@ export class ConditionGroupComponent {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
   }
 
-  handleRemoveCondition(conditionModel:ConditionModel) {
+  onConditionChange(condition:ConditionModel) {
+    if (condition.isValid()) {
+      if (condition.isPersisted()) {
+        this._conditionService.save(condition)
+      } else {
+        if (!this.group.isPersisted()) {
+          this._groupService.add(this.group, (foo) => {
+            this._conditionService.add(condition)
+          })
+        } else {
+          this._conditionService.add(condition)
+        }
+      }
+    }
+  }
+
+  onConditionRemove(conditionModel:ConditionModel) {
     this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
       return aryModel.key != conditionModel.key
     })
     if (this.conditions.length === 0) {
-      this._groupService.remove(this.group)
+      this.remove.emit(this.group)
     }
-  }
 
-  handleAddCondition(conditionModel:ConditionModel) {
-    if(this.conditionStub && this.conditionStub.key === conditionModel.key){
-      this.conditionStub = null
-      //noinspection TypeScriptUnresolvedFunction
-      this.conditionStubWatch.unsubscribe()
-    } else{
-      this.conditions.push(conditionModel)
-      this.conditions.sort(function (a, b) {
-        return a.priority - b.priority;
-      });
-    }
   }
 }

@@ -1,15 +1,7 @@
-import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
+import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/angular2';
 
 @Component({
-  selector: 'cw-toggle-input',
-
-  properties: [
-    'value',
-    'onText',
-    'offText'
-  ],events: [
-    "toggle" // 'change' is fired by the input component.
-  ]
+  selector: 'cw-toggle-input'
 })
 @View({
   template: `<style>
@@ -42,7 +34,7 @@ import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
 
 </style>
   <span class="ui toggle fitted checkbox" [class.on]="value === true" [class.off]="value === false">
-    <input type="checkbox" [value]="value" [checked]="value" (change)="updateValue($event.target.checked)">
+    <input type="checkbox" [value]="value" [checked]="value" (change)="updateValue($event)">
     <label></label>
     <span class="on-label">{{onText}}</span>
     <span class="off-label">{{offText}}</span>
@@ -50,30 +42,31 @@ import {Component, View, EventEmitter, Attribute} from 'angular2/angular2';
   `
 })
 export class InputToggle {
-  _value:boolean
+  @Input() value:boolean
   onText:string
   offText:string
-  toggle:EventEmitter<any>
+
+  @Output() change:EventEmitter<boolean>
 
   constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
     this.value = (value !== 'false')
     this.onText = onText || 'On'
     this.offText = offText || 'Off'
-    this.toggle = new EventEmitter()
+    this.change = new EventEmitter()
   }
 
-  set value(value:boolean){
-    this._value = value === true
+  ngOnChanges(change){
+    if(change.value){
+      this.value = change.value.currentValue === true
+    }
   }
 
-  get value():boolean {
-    return this._value
-  }
-
-  updateValue(value) {
-    console.log('input value changed: [from / to]', this.value, value)
+  updateValue($event) {
+    $event.stopPropagation() // grrr.
+    let value = $event.target.checked
+    console.log("InputToggle", "updateValue", 'input value changed: [from / to]', this.value, value)
     this.value = value
-    this.toggle.next({type: 'toggle', target: this, value: value })
+    this.change.emit(value)
   }
 }
 

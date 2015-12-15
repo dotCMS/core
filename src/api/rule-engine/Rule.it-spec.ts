@@ -55,7 +55,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("Can create a simple rule.", function (done) {
     var clientRule:RuleModel
-    clientRule = new RuleModel()
+    clientRule = new RuleModel(null)
     clientRule.enabled = true
     clientRule.name = "TestRule-" + new Date().getTime()
     let ruleOnAddSub = ruleService.onAdd.subscribe((serverRule:RuleModel) => {

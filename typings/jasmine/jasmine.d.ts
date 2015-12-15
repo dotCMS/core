@@ -279,7 +279,6 @@ declare module jasmine {
         isNot?: boolean;
         message(): any;
 
-        (expected: any): boolean;
         toBe(expected: any, expectationFailOutput?: any): boolean;
         toEqual(expected: any, expectationFailOutput?: any): boolean;
         toMatch(expected: any, expectationFailOutput?: any): boolean;
@@ -418,7 +417,6 @@ declare module jasmine {
         mostRecentCall: { args: any[]; };
         argsForCall: any[];
         wasCalled: boolean;
-        callCount: number;
     }
 
     interface SpyAnd {
@@ -495,40 +493,4 @@ declare module jasmine {
     export var HtmlReporter: HtmlReporter;
     export var HtmlSpecFilter: HtmlSpecFilter;
     export var DEFAULT_TIMEOUT_INTERVAL: number;
-
-    export interface GlobalPolluter {
-        describe(description: string, specDefinitions: () => void): void;
-        fdescribe(description: string, specDefinitions: () => void): void;
-        xdescribe(description: string, specDefinitions: () => void): void;
-
-        it(expectation: string, assertion?: () => void): void;
-        it(expectation: string, assertion?: (done: () => void) => void): void;
-        fit(expectation: string, assertion?: () => void): void;
-        fit(expectation: string, assertion?: (done: () => void) => void): void;
-        xit(expectation: string, assertion?: () => void): void;
-        xit(expectation: string, assertion?: (done: () => void) => void): void;
-
-        pending(): void;
-
-        beforeEach(action: () => void): void;
-        beforeEach(action: (done: () => void) => void): void;
-        afterEach(action: () => void): void;
-        afterEach(action: (done: () => void) => void): void;
-
-        beforeAll(action: () => void): void;
-        beforeAll(action: (done: () => void) => void): void;
-        afterAll(action: () => void): void;
-        afterAll(action: (done: () => void) => void): void;
-
-        expect(spy: Function): jasmine.Matchers;
-        expect(actual: any): jasmine.Matchers;
-
-        fail(e?: any): void;
-
-        spyOn(object: any, method: string): jasmine.Spy;
-
-        runs(asyncMethod: Function): void;
-        waitsFor(latchMethod: () => boolean, failureMessage?: string, timeout?: number): void;
-        waits(timeout?: number): void;
-    }
 }
