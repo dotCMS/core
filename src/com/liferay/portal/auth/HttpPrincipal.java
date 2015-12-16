@@ -24,7 +24,8 @@ package com.liferay.portal.auth;
 
 import java.io.Serializable;
 
-import com.liferay.util.Encryptor;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 
 /**
  * <a href="HttpPrincipal.java.html"><b><i>View Source</i></b></a>
@@ -34,18 +35,17 @@ import com.liferay.util.Encryptor;
  *
  */
 public class HttpPrincipal implements Serializable {
+    private static final long serialVersionUID = -5575766192585856481L;
 
-	public HttpPrincipal(String url) {
+    public HttpPrincipal(String url) {
 		_url = url;
 	}
 
-	public HttpPrincipal(String url, String userId, String password) {
+	public HttpPrincipal(String url, String userId, String password) throws PasswordException {
 		this(url, userId, password, false);
 	}
 
-	public HttpPrincipal(String url, String userId, String password,
-						 boolean digested) {
-
+	public HttpPrincipal(String url, String userId, String password, boolean digested) throws PasswordException {
 		_url = url;
 		_userId = userId;
 
@@ -53,7 +53,7 @@ public class HttpPrincipal implements Serializable {
 			_password = password;
 		}
 		else {
-			_password = Encryptor.digest(password);
+			_password = PasswordFactoryProxy.generateHash(password);
 		}
 	}
 

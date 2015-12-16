@@ -6,6 +6,8 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
@@ -13,7 +15,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -23,7 +24,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.createaccount.struts.CreateAccountForm;
 import com.dotmarketing.cms.factories.PublicAddressFactory;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.action.LoginAction;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
@@ -41,7 +41,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageException;
@@ -167,8 +166,15 @@ public class CreateAccountAction extends DispatchAction {
 		user.setLastLoginDate(today);
 		user.setLoginIP(request.getRemoteAddr());
 		user.setLoginDate(today);
-		user.setPasswordEncrypted(true);
-		user.setPassword(PublicEncryptionFactory.digestString(form.getPassword1()));
+
+        // Use new password hash method
+        try {
+            user.setPassword(PasswordFactoryProxy.generateHash(form.getPassword1()));
+        } catch (PasswordException e) {
+            Logger.error(CreateAccountAction.class, "An error occurred generating the hashed password for email: " + user.getEmailAddress(), e);
+            throw new DotDataException("An error occurred generating the hashed password.");
+        }
+
 		user.setComments(form.getComments());
 		user.setGreeting("Welcome, " + user.getFullName() + "!");            
 

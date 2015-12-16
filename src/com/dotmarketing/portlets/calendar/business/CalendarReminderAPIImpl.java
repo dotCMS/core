@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -197,14 +199,16 @@ public class CalendarReminderAPIImpl implements CalendarReminderAPI {
 			user.setLastName(lastName == null ? "" : lastName);
 			user.setNickName("");
 			user.setCompanyId(company.getCompanyId());
-			user.setPasswordEncrypted(true);
 			user.setGreeting("Welcome, " + user.getFullName() + "!");
 
 			// Set defaults values
 			if (user.isNew()) {
 				// if it's a new user we set random password
 				String pass = PublicEncryptionFactory.getRandomPassword();
-				user.setPassword(PublicEncryptionFactory.digestString(pass));
+
+                // Use new password hash method
+                user.setPassword(PasswordFactoryProxy.generateHash(pass));
+
 				user.setLanguageId(defaultUser.getLanguageId());
 				user.setTimeZoneId(defaultUser.getTimeZoneId());
 				user.setSkinId(defaultUser.getSkinId());

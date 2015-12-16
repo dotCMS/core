@@ -143,7 +143,6 @@ public class UserAjax {
 			user.setFirstName(firstName);
 			user.setLastName(lastName);
 			user.setPassword(password);
-			user.setPasswordEncrypted(false);
 			uAPI.save(user, uWebAPI.getLoggedInUser(request), true, !uWebAPI.isLoggedToBackend(request));
 
 			ActivityLogger.logInfo(getClass(), "User Added", "Date: " + date + "; "+ "User:" + modUser.getUserId());
@@ -256,7 +255,6 @@ public class UserAjax {
 			if (password != null) {
 				// Password has changed, so it has to be validated
 				userToSave.setPassword(password);
-				userToSave.setPasswordEncrypted(false);
 				validatePassword = true;
 				// And re-authentication might be required
 				reauthenticationRequired = true;
