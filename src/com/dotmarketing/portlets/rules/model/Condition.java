@@ -1,21 +1,25 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.util.Logger;
 
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-public class Condition implements Serializable {
+public class Condition implements RuleComponentModel, Serializable {
 
     private static final long serialVersionUID = 1L;
+    private RuleComponentInstance instance;
 
     public enum Operator {
         AND,
@@ -27,13 +31,11 @@ public class Condition implements Serializable {
         }
     }
 
-    @JsonIgnore
     private String id;
     private String name;
     private String conditionletId;
     private String conditionGroup;
-    private String comparison;
-    private List<ConditionValue> values;
+    private List<ParameterModel> values;
     private Date modDate;
     private Operator operator;
     private int priority;
@@ -71,19 +73,23 @@ public class Condition implements Serializable {
         this.conditionGroup = conditionGroup;
     }
 
-    public String getComparison() {
-        return comparison;
-    }
-
-    public void setComparison(String comparison) {
-        this.comparison = comparison;
-    }
-
-    public List<ConditionValue> getValues() {
+    public List<ParameterModel> getValues() {
         return values;
     }
 
-    public void setValues(List<ConditionValue> values) {
+    public Map<String, ParameterModel> getParameters() {
+        Map<String, ParameterModel> p = Maps.newLinkedHashMap();
+        for (ParameterModel value : values) {
+            p.put(value.getKey(), value);
+        }
+        return p;
+    }
+
+    public void addParameter(String key, String value){
+        getParameters().put(key, new ParameterModel(key, value));
+    }
+
+    public void setValues(List<ParameterModel> values) {
         this.values = values;
     }
 
@@ -111,6 +117,10 @@ public class Condition implements Serializable {
         this.priority = priority;
     }
 
+    public void checkValid() {
+        this.instance = getConditionlet().doCheckValid(this);
+    }
+
     public Conditionlet getConditionlet() {
         if(conditionlet==null) {
             try {
@@ -123,14 +133,17 @@ public class Condition implements Serializable {
         return conditionlet;
     }
 
-    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
-        return getConditionlet().evaluate(req, res, getComparison(), getValues());
+    public final boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
+        //noinspection unchecked
+        return getConditionlet().doEvaluate(req, res, instance);
     }
+
+
 	@Override
 	public String toString() {
 		return "Condition [id=" + id + ", name=" + name
                 + ", conditionletId=" + conditionletId + ", conditionGroup="
-				+ conditionGroup + ", comparison=" + comparison + ", values="
+				+ conditionGroup + ", values="
 				+ values + ", modDate=" + modDate + ", operator=" + operator
 				+ ", priority=" + priority + "]";
 	}

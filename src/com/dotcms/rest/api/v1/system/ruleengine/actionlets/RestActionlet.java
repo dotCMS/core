@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import java.util.Map;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
@@ -14,19 +15,19 @@ public final class RestActionlet extends Validated {
 
     public final String i18nKey;
 
-    public final Map<String, RestActionParamDefinition> parameters;
+    public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestActionlet(Builder builder) {
         id = builder.id;
         i18nKey = builder.i18nKey;
-        parameters = ImmutableMap.copyOf(builder.parameters);
+        parameterDefinitions = ImmutableMap.copyOf(builder.parameters);
         checkValid();
     }
 
     public static final class Builder {
         @JsonProperty private String id;
         @JsonProperty private String i18nKey;
-        @JsonProperty private Map<String, RestActionParamDefinition> parameters;
+        @JsonProperty private Map<String, ParameterDefinition> parameters;
 
         public Builder() {}
 
@@ -35,7 +36,7 @@ public final class RestActionlet extends Validated {
             return this;
         }
 
-        public Builder parameters(Map<String, RestActionParamDefinition> parameters) {
+        public Builder parameters(Map<String, ParameterDefinition> parameters) {
             this.parameters = parameters;
             return this;
         }
@@ -48,7 +49,7 @@ public final class RestActionlet extends Validated {
         public Builder from(RestActionlet copy) {
             id = copy.id;
             i18nKey = copy.i18nKey;
-            parameters = copy.parameters;
+            parameters = copy.parameterDefinitions;
             return this;
         }
 

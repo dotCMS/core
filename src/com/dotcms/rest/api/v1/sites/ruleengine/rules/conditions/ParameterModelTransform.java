@@ -1,10 +1,10 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.function.Function;
 
-public class ConditionValueTransform {
-    public final Function<ConditionValue, RestConditionValue> toRest = (app) -> {
+public class ParameterModelTransform {
+    public final Function<ParameterModel, RestConditionValue> toRest = (app) -> {
 
         RestConditionValue rest = new RestConditionValue.Builder()
             .id(app.getId())
@@ -15,8 +15,8 @@ public class ConditionValueTransform {
 
         return rest;
     };
-    public final Function<RestConditionValue, ConditionValue> toApp = (rest) -> {
-        ConditionValue app = new ConditionValue();
+    public final Function<RestConditionValue, ParameterModel> toApp = (rest) -> {
+        ParameterModel app = new ParameterModel();
         app.setId(rest.id);
         app.setPriority(rest.priority);
         app.setValue(rest.value);
@@ -24,7 +24,7 @@ public class ConditionValueTransform {
         return app;
     };
 
-    public ConditionValue applyRestToApp(RestConditionValue rest, ConditionValue app) {
+    public ParameterModel applyRestToApp(RestConditionValue rest, ParameterModel app) {
         app.setId(rest.id);
         app.setPriority(rest.priority);
         app.setValue(rest.value);

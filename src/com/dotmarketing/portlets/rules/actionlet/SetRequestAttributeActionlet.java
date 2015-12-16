@@ -1,12 +1,12 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
-import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-import java.util.List;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -15,37 +15,47 @@ import javax.servlet.http.HttpServletResponse;
  * Actionlet to add Key/Value to the Request.
  * The exact names that had to be set in params are: requestKey and requestValue.
  *
+ * @author Oscar Arrieta
+ * @version 1.0
+ * @since 09-22-2015
  */
-public class SetRequestAttributeActionlet extends RuleActionlet{
+public class SetRequestAttributeActionlet extends RuleActionlet<SetRequestAttributeActionlet.Instance> {
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetRequestAttribute";
 
     public static final String REQUEST_KEY = "requestKey";
     public static final String REQUEST_VALUE = "requestValue";
 
-    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
-			new ActionParameterDefinition(REQUEST_KEY, DataType.TEXT),
-			new ActionParameterDefinition(REQUEST_VALUE)
-    );
-
-    public SetRequestAttributeActionlet(){
-        super(I18N_BASE, PARAMS);
+    public SetRequestAttributeActionlet() {
+        super(I18N_BASE,
+              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType())),
+              new ParameterDefinition<>(2, REQUEST_VALUE, new TextInput<>(new TextType())));
     }
 
     @Override
-    public void validateActionInstance(RuleAction actionInstance) throws InvalidActionInstanceException {
-        Map<String, RuleActionParameter> params = actionInstance.getParameterMap();
-        RuleActionParameter keyParam = Preconditions.checkNotNull(params.get(REQUEST_KEY), "SetRequestAttributeActionlet requires key parameter.");
-        RuleActionParameter valueParam = Preconditions.checkNotNull(params.get(REQUEST_VALUE), "SetRequestAttributeActionlet requires Value parameter.");
-        Preconditions.checkArgument(StringUtils.isNotBlank(keyParam.getValue()), "SetRequestAttributeActionlet requires valid key.");
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+        return new Instance(parameters);
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
-        String key = params.get(REQUEST_KEY).getValue();
-        String value = params.get(REQUEST_VALUE).getValue();
-        request.setAttribute(key, value);
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        if(instance.value == null){
+            request.removeAttribute(instance.key);
+        } else {
+            request.setAttribute(instance.key, instance.value);
+        }
+        return true;
     }
 
+    static class Instance implements RuleComponentInstance {
 
+        private final String key;
+        private final String value;
+
+        public Instance(Map<String, ParameterModel> parameters) {
+            key = parameters.get(REQUEST_KEY).getValue();
+            value = parameters.get(REQUEST_VALUE).getValue();
+            Preconditions.checkArgument(StringUtils.isNotBlank(key), "SetRequestAttributeActionlet requires valid key.");
+        }
+    }
 }

@@ -32,10 +32,10 @@ public class ConditionDataGen {
     public Condition next() {
         Condition condition = new Condition();
         condition.setName("meh");
-        condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
+//        condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
         condition.setOperator(operator);
         condition.setConditionGroup(groupId);
-        condition.setComparison("is");
+        condition.addParameter("comparison", "is");
 
         return condition;
     }

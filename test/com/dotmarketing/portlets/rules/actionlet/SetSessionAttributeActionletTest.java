@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.TestBase;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -9,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
-import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
@@ -53,7 +53,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         createRule(Rule.FireOn.EVERY_REQUEST, firstTime);
 
         makeRequest(
-                "http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis(),
+                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
                 "JSESSIONID=" + request.getSession().getId());
 
         String firstTimeRequest = (String)request.getSession().getAttribute("time");
@@ -63,7 +63,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         updateRuleActionParam(secondTime);
 
         makeRequest(
-                "http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis(),
+                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
                 "JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");
@@ -206,10 +206,10 @@ public class SetSessionAttributeActionletTest extends TestBase {
         RuleAction ruleAction = rule.getRuleActions().get(0);
 
         //Updating just the sessionValue RuleActionParameter.
-        List<RuleActionParameter> ruleActionParameters = ruleAction.getParameters();
-        for (RuleActionParameter ruleActionParameter : ruleActionParameters) {
-            if (ruleActionParameter.getKey().equals("sessionValue")){
-                ruleActionParameter.setValue(sessionValue);
+        List<ParameterModel> parameterModels = Lists.newArrayList(ruleAction.getParameters().values());
+        for (ParameterModel parameterModel : parameterModels) {
+            if (parameterModel.getKey().equals("sessionValue")){
+                parameterModel.setValue(sessionValue);
             }
         }
 
@@ -219,7 +219,6 @@ public class SetSessionAttributeActionletTest extends TestBase {
 
     private void createRule(Rule.FireOn fireOn, String sessionValue) throws Exception {
         RulesAPI rulesAPI = APILocator.getRulesAPI();
-        rulesAPI.addConditionlet(MockTrueConditionlet.class);
 
         User user = APILocator.getUserAPI().getSystemUser();
 
@@ -237,37 +236,24 @@ public class SetSessionAttributeActionletTest extends TestBase {
 
         ruleId = rule.getId();
 
-        ConditionGroup group = new ConditionGroup();
-        group.setRuleId(rule.getId());
-        group.setOperator(Condition.Operator.AND);
 
-        rulesAPI.saveConditionGroup(group, user, false);
-
-        Condition condition = new Condition();
-        condition.setName("testCondition");
-        condition.setConditionGroup(group.getId());
-        condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
-        condition.setOperator(Condition.Operator.AND);
-        condition.setComparison("is");
-
-        rulesAPI.saveCondition(condition, user, false);
 
         RuleAction action = new RuleAction();
         action.setActionlet(SetSessionAttributeActionlet.class.getSimpleName());
         action.setRuleId(rule.getId());
         action.setName("SetSessionAttributeActionlet");
 
-        RuleActionParameter timeKeyParam = new RuleActionParameter();
-        timeKeyParam.setRuleActionId(action.getId());
+        ParameterModel timeKeyParam = new ParameterModel();
+        timeKeyParam.setOwnerId(action.getId());
         timeKeyParam.setKey("sessionKey");
         timeKeyParam.setValue("time");
 
-        RuleActionParameter timeValueParam = new RuleActionParameter();
-        timeValueParam.setRuleActionId(action.getId());
+        ParameterModel timeValueParam = new ParameterModel();
+        timeValueParam.setOwnerId(action.getId());
         timeValueParam.setKey("sessionValue");
         timeValueParam.setValue(sessionValue);
 
-        List<RuleActionParameter> params = new ArrayList<>();
+        List<ParameterModel> params = new ArrayList<>();
         params.add(timeKeyParam);
         params.add(timeValueParam);
 
