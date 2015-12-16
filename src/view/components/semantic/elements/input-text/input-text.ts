@@ -58,7 +58,7 @@ export class InputText {
   change:EventEmitter
   private elementRef:ElementRef
 
-  constructor(@ElementRef() elementRef:ElementRef) {
+  constructor(@ElementRef elementRef:ElementRef) {
     this.elementRef = elementRef
     this.change = new EventEmitter()
     this._model = new InputTextModel()
