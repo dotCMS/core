@@ -56,6 +56,11 @@ var project = {
     cb()
   },
 
+  copyNodeFiles: function(cb){
+    gulp.src('./node_modules/rxjs/**/*')
+        .pipe(gulp.dest(config.buildDir + '/thirdparty/rxjs/')).on('finish', cb);
+  },
+
   /**
    *
    */
@@ -99,11 +104,12 @@ var project = {
   },
 
   compile: function (cb) {
-    var done = project.callbackOnCount(4, cb, 'compile')
+    var done = project.callbackOnCount(5, cb, 'compile')
     project.compileJavascript(done)
     project.compileTypescript(done)
     project.compileStyles(done)
     project.compileStatic(done)
+    project.copyNodeFiles(done)
   },
 
   packageRelease: function (done) {
@@ -463,6 +469,10 @@ gulp.task('compile-ts', function (cb) {
 });
 
 
+gulp.task('copy-node-files', function (cb) {
+  project.copyNodeFiles(cb)
+});
+
 gulp.task('compile-styles', function (done) {
   project.compileStyles(done)
 });
@@ -479,7 +489,7 @@ gulp.task('compile', [], function (done) {
   project.compile(done)
 })
 
-gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates'], function () {
+gulp.task('watch', ['compile-styles', 'compile-js', 'compile-templates', 'copy-node-files'], function () {
   return project.watch()
 });
 

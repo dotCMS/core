@@ -1,5 +1,3 @@
-/// <reference path="../../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
 import {Dropdown, DropdownModel, DropdownOption} from './dropdown'
 
@@ -57,31 +55,22 @@ class App {
   }
 
   initDemo2() {
-    let model = new DropdownModel()
-    model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.placeholder = "Gender"
-
-    let opts = [
-      new DropdownOption('M', 100, 'Male', 'male'),
-      new DropdownOption('F', 42, 'Female', 'female')
-    ]
-    model.options = opts
-
-
-    this.demo2 = model;
+    this.demo2 = new DropdownModel(
+        "field-" + new Date().getTime() + Math.floor(Math.random() * 1000),
+        "Gender",
+        [], [
+          new DropdownOption('M', 100, 'Male', 'male'),
+          new DropdownOption('F', 42, 'Female', 'female')
+        ]);
   }
 
   initDemo3() {
-    let model = new DropdownModel(null, "Color", ["Y"], [
-      new DropdownOption('R', { x: 'red'}, 'Red', 'asterisk'),
+    this.demo3 = new DropdownModel(null, "Color", ["Y"], [
+      new DropdownOption('R', {x: 'red'}, 'Red', 'asterisk'),
       new DropdownOption('Y', 'yellow', 'Yellow', 'certificate'),
       new DropdownOption('G', 92, 'Green', 'circle'),
       new DropdownOption('B', 'blue', 'Blue', 'square'),
-      new DropdownOption('P', 'purple', 'Purple', 'cube')])
-    model.settings.maxSelections = 2
-
-
-    this.demo3 = model;
+      new DropdownOption('P', 'purple', 'Purple', 'cube')], false, 0, 2);
   }
 
   initDemo4() {
@@ -90,8 +79,7 @@ class App {
       new DropdownOption('Y', 'yellow', 'Yellow', 'certificate'),
       new DropdownOption('G', 'green', 'Green', 'circle'),
       new DropdownOption('B', 'blue', 'Blue', 'square'),
-      new DropdownOption('P', 'purple', 'Purple', 'cube')])
-    model.settings.maxSelections = 4
+      new DropdownOption('P', 'purple', 'Purple', 'cube')], false, 0, 4)
 
 
     this.demo4 = {
@@ -100,7 +88,7 @@ class App {
     };
   }
 
-  demo4OnChange(event){
+  demo4OnChange(event) {
     let dd:DropdownModel = event.target.model
     this.demo4.selected = dd.selected.join(',')
     console.log(dd)

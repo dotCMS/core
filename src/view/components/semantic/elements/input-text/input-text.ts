@@ -1,93 +1,106 @@
-import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
+import { NgClass, NgIf, Directive, Component, View, TemplateRef,
+    Input,
+    Output,
+    Validators,
+    EventEmitter,
+    ElementRef,
+    ChangeDetectionStrategy,
+    Renderer,
+    Self,
+    forwardRef,
+    Provider,
+    SimpleChange,
+    NG_VALUE_ACCESSOR,
+    ControlValueAccessor} from 'angular2/angular2';
+
+import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
+
+const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
+    NG_VALUE_ACCESSOR, {useExisting: forwardRef(() => InputText), multi: true}));
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
  */
-
-export class InputTextModel {
-  name:string
-  placeholder:string
-  value:string
-  disabled:string
-  icon:string
-
-  constructor(name:string = null,
-              placeholder:string = '',
-              value:string = null,
-              disabled:string = null,
-              icon:string = '') {
-
-    this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    this.placeholder = placeholder
-    this.value = value
-    this.disabled = disabled
-    this.icon = icon || ''
-    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
-      this.icon = (this.icon + ' icon').trim()
-    }
-  }
-
-  validate(value:string){ };
-}
-
 @Component({
   selector: 'cw-input-text',
+  host: { 'role': 'text' },
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  bindings: [CW_TEXT_VALUE_ACCESSOR]
 
-  properties: [
-    'model',
-  ], events: [
-    "change"
-  ]
 })
 @View({
   template: `
-<div class="ui fluid input" [ng-class]="{disabled: model.disabled, error: errorMessage, icon: model.icon}">
-  <input type="text" [name]="model.name" [value]="model.value" [placeholder]="model.placeholder" (change)="inputChange($event)">
-  <i [ng-class]="model.icon" *ng-if="model.icon"></i>
-  <div class="ui small red message" *ng-if="errorMessage">{{errorMessage}}</div>
+<div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
+  <input type="text" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+    class="ng-valid"
+    [required]="required"
+    (input)="onChange($event.target.value)"
+    (change)="$event.stopPropagation(); onChange($event.target.value)"
+    (blur)="onBlur($event.target.value)">
+  <i [ngClass]="icon" *ngIf="icon"></i>
+  <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
   `,
   directives: [NgClass, NgIf]
 })
-export class InputText {
+export class InputText implements ControlValueAccessor{
 
-  private _model:InputTextModel
-  private errorMessage:String
+  onChange = (_) => {
+    this.change.emit(_)
+  };
+  onTouched = () => {};
 
-  change:EventEmitter
-  private elementRef:ElementRef
+  @Input()  name:string=""
+  @Input()  value:string=""
+  @Input()  placeholder:string=""
+  @Input()  icon:string
+  @Input()  disabled:boolean=false
+  @Input()  focused:boolean=false
+  @Input()  required:boolean=false
+  @Input()  errorMessage:string
+  @Output() change:EventEmitter<any>
+  @Output() blur:EventEmitter<any>
 
-  constructor(@ElementRef() elementRef:ElementRef) {
-    this.elementRef = elementRef
+
+  constructor(private _renderer: Renderer, private _elementRef: ElementRef) {
     this.change = new EventEmitter()
-    this._model = new InputTextModel()
-    this.errorMessage = null
+    this.blur = new EventEmitter()
   }
 
-  get model():InputTextModel {
-    return this._model;
-  }
-
-  set model(model:InputTextModel) {
-    this._model = model;
-  }
-
-  inputChange(event){
-    try {
-      this.errorMessage = null
-
-      this._model.value = event.target.value
-
-      //Check if the validate function exists in this model.
-      if (typeof this._model.validate == 'function') {
-        this._model.validate(event.target.value)
+  ngOnChanges(change){
+    if(change.focused){
+      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      if(f) {
+        let el = this._elementRef.nativeElement
+        el.children[0].children[0].focus()
       }
-    }
-    catch(err) {
-      this.errorMessage = err.toString();
+      this.focused = false;
     }
   }
 
+  onBlur(value){
+    this.onTouched()
+    this.blur.emit(value)
+  }
+
+  writeValue(value: string): void {
+    this.value  = isBlank(value) ? '' : value
+    console.log("writing value: ", value,  " ==> ", this.value)
+  }
+
+  registerOnChange(fn: (_: any) => void): void {
+    this.onChange = (_: any) => {
+      console.log("Value changed: ", _)
+      fn(_)
+      this.change.emit(_)
+    }
+  }
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = () => {
+      console.log("Touched")
+      fn()
+    }
+  }
 }
 

@@ -1,10 +1,12 @@
-import {Inject} from 'angular2/angular2';
+import {Injectable} from 'angular2/angular2';
 
 import {EntityMeta} from "./EntityBase";
 import {DataStore} from "./DataStore";
 import {UserModel} from "../auth/UserModel";
 
 var instanceOfApiRoot = null
+
+@Injectable()
 export class ApiRoot {
   // Points to {baseUrl}/api/v1
   root:EntityMeta;
@@ -13,11 +15,14 @@ export class ApiRoot {
   defaultSiteId: string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
   authUser: UserModel;
   resourceRef: EntityMeta
-  dataStore:DataStore;
+  dataStore:DataStore
+  authToken:string
 
-  constructor(@Inject(UserModel) authUser:UserModel, @Inject(DataStore) dataStore:DataStore){
+
+  constructor( authUser:UserModel,  dataStore:DataStore){
     this.authUser = authUser
     this.dataStore = dataStore;
+    this.authToken = ApiRoot.createAuthToken(authUser)
     dataStore.setAuth(authUser.username, authUser.password)
     try {
       let query = document.location.search.substring(1);
@@ -36,6 +41,14 @@ export class ApiRoot {
     instanceOfApiRoot = this;
   }
 
+  static createAuthToken(authUser:UserModel)
+  {
+    let token = null
+    if (authUser && authUser.username && authUser.password) {
+      token = 'Basic ' + btoa(authUser.username + ':' + authUser.password)
+    }
+    return token
+  }
   static parseQueryParam(query:string, token:string):string {
     let idx = -1;
     let result = null

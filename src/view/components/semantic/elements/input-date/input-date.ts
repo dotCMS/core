@@ -91,10 +91,10 @@ export class InputDate {
   private _model:InputDateModel
   private errorMessage:String
 
-  change:EventEmitter
+  change:EventEmitter<InputDateModel>
   private elementRef:ElementRef
 
-  constructor(@ElementRef() elementRef:ElementRef) {
+  constructor(@ElementRef elementRef:ElementRef) {
     this.elementRef = elementRef
     this.change = new EventEmitter()
     this._model = new InputDateModel()

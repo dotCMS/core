@@ -1,6 +1,7 @@
-import {NgFor, NgIf, Component, Directive, View, ElementRef, Inject} from 'angular2/angular2';
+import {Component, Directive, View, ElementRef, Inject, Input, Output, EventEmitter} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
 
-//import * as Rx from '../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
@@ -15,7 +16,8 @@ import {EntityMeta} from "../../../api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
 import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
-import {InputText, InputTextModel} from "../semantic/elements/input-text/input-text";
+import {InputText} from "../semantic/elements/input-text/input-text";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 var rsrc = {
   fireOn: {
@@ -26,32 +28,33 @@ var rsrc = {
   }
 }
 
-
 @Component({
-  selector: 'rule',
-  properties: ["rule", "hidden"]
+  selector: 'rule'
 })
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
-  <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ng-if="!hidden" (click)="toggleCollapsed()">
-    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ng-if="!hidden">
+  <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
+    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
-                      class="cw-rule-name-input"
-                     (change)="handleRuleNameChange($event.target.value)"
+                     class="cw-rule-name-input"
+                     (blur)="handleRuleNameChange($event)"
                      (focus)="collapsed = false"
+                     focused="{{rule.key == null}}"
                      (click)="$event.stopPropagation()"
-                     [model]="ruleNameInputTextModel">
+                     name="rule-{{rule.key}}-name"
+                     placeholder="{{rsrc.inputs.name.placeholder}}"
+                     [value]="rule.name">
       </cw-input-text>
       <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
-      <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="handleFireOnDropdownChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
+      <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="onFireOnChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
     </div>
-    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ng-if="!hidden">
+    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ngIf="!hidden">
       <cw-toggle-input class="cw-input"
-                        [on-text]="rsrc.inputs.onOff.on.label"
-                        [off-text]="rsrc.inputs.onOff.off.label"
+                       [on-text]="rsrc.inputs.onOff.on.label"
+                       [off-text]="rsrc.inputs.onOff.off.label"
                        [value]="rule.enabled"
-                       (toggle)="rule.enabled = $event.target.value"
+                       (change)="handleEnabledToggle($event)"
                        (click)="$event.stopPropagation()">
       </cw-toggle-input>
       <div class="cw-btn-group">
@@ -67,23 +70,25 @@ var rsrc = {
     </div>
   </div>
   <div flex layout="column" class="cw-accordion-body" [class.cw-hidden]="collapsed">
-    <condition-group flex="grow" layout="row" *ng-for="var group of groups; var i=index"
+    <condition-group flex="grow" layout="row" *ngFor="var group of groups; var i=index"
                      [rule]="rule"
                      [group]="group"
-                     [group-index]="i"></condition-group>
+                     [group-index]="i"
+                     (remove)="onConditionGroupRemove($event)"
+                     (change)="onConditionGroupChange($event)"></condition-group>
     <div flex layout="column" layout-align="center-start" class="cw-action-separator">
       {{rsrc.inputs.action.firesActions}}
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
-      <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ng-for="var action of actions; var i=index">
-        <div flex layout="row" layout-align="start-center"  layout-fill>
-          <rule-action flex [action]="action"></rule-action>
+      <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
+        <div flex layout="row" layout-align="start-center" layout-fill>
+          <rule-action flex [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
         </div>
         <div flex="0" layout="row" layout-align="end-center">
-          <div class="cw-spacer cw-add-condition" *ng-if="i !== (actions.length - 1)"></div>
-          <div class="cw-btn-group" *ng-if="i === (actions.length - 1)">
+          <div class="cw-spacer cw-add-condition" *ngIf="i !== (actions.length - 1)"></div>
+          <div class="cw-btn-group" *ngIf="i === (actions.length - 1)">
             <div class="ui basic icon buttons">
-              <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!action.isPersisted()">
+              <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
                 <i class="plus icon" aria-hidden="true"></i>
               </button>
             </div>
@@ -95,47 +100,45 @@ var rsrc = {
 </div>
 
 `,
-  directives: [InputToggle, RuleActionComponent, ConditionGroupComponent, NgIf, NgFor, InputText, Dropdown]
+  directives: [CORE_DIRECTIVES, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown]
 })
 class RuleComponent {
-  _rule:RuleModel
+  @Input() rule:RuleModel
+  @Input() hidden:boolean
+
+  @Output() change:EventEmitter<RuleModel>
+  @Output() remove:EventEmitter<RuleModel>
+
+  collapsed:boolean
   actions:Array<ActionModel>
   groups:Array<ConditionGroupModel>
-
-  hidden:boolean
-  collapsed:boolean
 
   elementRef:ElementRef
   rsrc:any
   private ruleService:RuleService
   private actionService:ActionService
-  private groupService:ConditionGroupService
+  private _groupService:ConditionGroupService
 
-  private actionStub:ActionModel
-  private actionStubWatch:Rx.Subscription
-  private ruleNameInputTextModel:InputTextModel
   private fireOnDropdown:DropdownModel
-  private _groupStub:ConditionGroupModel;
 
 
   constructor(elementRef:ElementRef,
-              @Inject(RuleService) ruleService:RuleService,
-              @Inject(ActionService) actionService:ActionService,
-              @Inject(ConditionGroupService) conditionGroupService:ConditionGroupService) {
+              ruleService:RuleService,
+              actionService:ActionService,
+              groupService:ConditionGroupService) {
+    this.change = new EventEmitter()
+    this.remove = new EventEmitter()
     this.rsrc = ruleService.rsrc
-    ruleService.onResourceUpdate.subscribe((messages)=>{
-      this.rsrc = messages
-    })
     this.elementRef = elementRef
     this.actionService = actionService
     this.ruleService = ruleService;
-    this.groupService = conditionGroupService;
+    this._groupService = groupService;
 
     this.groups = []
     this.actions = []
 
     this.hidden = false
-    this.collapsed = true
+    this.collapsed = false
 
 
     var fireOnOptions = [
@@ -146,108 +149,90 @@ class RuleComponent {
     ]
     this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOnOptions)
 
-    this.ruleNameInputTextModel = new InputTextModel()
-    this.ruleNameInputTextModel.placeholder = this.rsrc.inputs.name.placeholder
-    this.ruleNameInputTextModel.validate = (newValue:string)=> {
-      if (!newValue) {
-        throw new Error("Required Field")
-      }
-    }
   }
 
-  onInit() {
-    if (!this.rule.isPersisted()) {
-      var el:Element = this.elementRef.nativeElement
-      window.setTimeout(function () {
-        var els = el.getElementsByClassName('cw-rule-name-input')
-        els = els[0] ? els[0].getElementsByTagName('input') : []
-        if (els[0]) {
-          els[0]['focus']();
-        }
-      }, 50) //avoid tick recursively error
-    }
-  }
-
-  set rule(rule:RuleModel) {
-
-    if (!this.rule || this.rule.key !== rule.key) {
-      this._rule = rule
-      this.groups = []
-      this.actions = []
-      this.actionService.onAdd.subscribe((action:ActionModel) => this.handleActionAdd(action), (err) => this.handleActionAddError(err))
-      this.actionService.onRemove.subscribe((action:ActionModel) => this.handleActionRemove(action), (err) => this.handleActionRemoveError(err))
-      this.groupService.onAdd.subscribe((group:ConditionGroupModel) => this.handleGroupAdd(group), (err) => this.handleGroupAddError(err))
-      this.groupService.onRemove.subscribe((group:ConditionGroupModel) => this.handleGroupRemove(group), (err) => this.handleGroupRemoveError(err))
-      this.actionService.list(this.rule)
-      this.groupService.list(this.rule)
-      this.ruleNameInputTextModel.value = rule.name
-      this.fireOnDropdown.selected = [rule.fireOn]
-      if (Object.keys(rule.actions).length === 0) {
+  ngOnChanges(change) {
+    if (change.rule) {
+      let rule:RuleModel = change.rule.currentValue
+      this.rule = rule
+      if (rule.isPersisted()) {
+        this._groupService.list(rule).subscribe((groups) => {
+          this.groups = groups || []
+          if (this.groups.length === 0) {
+            this.addGroup()
+          } else {
+            this.sort()
+          }
+        })
+        this.actionService.list(rule).subscribe((actions) => {
+          console.log("RuleComponent", "askdlfaslkdfjlj", actions)
+          this.actions = actions || []
+          if (this.actions.length === 0) {
+            this.addAction()
+          } else {
+            this.sort()
+          }
+        })
+        this.fireOnDropdown.selected = [rule.fireOn]
+        this.collapsed = rule.isPersisted()
+      } else {
+        this.addGroup()
         this.addAction()
       }
-      if (Object.keys(rule.groups).length === 0) {
-        this.addGroup()
-      }
-      if(this.rule.name == ''){
-        this.collapsed = false
-      }
-
     }
+  }
+
+  sort() {
+    this.groups.sort(function (a, b) {
+      return a.priority - b.priority;
+    });
+    this.actions.sort(function (a, b) {
+      return a.priority - b.priority;
+    });
   }
 
   toggleCollapsed() {
     this.collapsed = !this.collapsed
   }
 
-  get rule():RuleModel {
-    return this._rule
-  }
-
-  handleFireOnDropdownChange(event:any) {
-    this.rule.fireOn = event.value
+  onFireOnChange(value:string) {
+    this.rule.fireOn = value
+    this.change.emit(this.rule)
   }
 
   handleRuleNameChange(name:string) {
+    console.log("handleRuleNameChange")
     this.rule.name = name
+    this.change.emit(this.rule)
   }
 
-  addGroup() {
-    this._groupStub = new ConditionGroupModel()
-    this._groupStub.priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 1
-    this._groupStub.operator = 'AND'
-    this._groupStub.owningRule = this.rule
-    this.groups.push(this._groupStub)
-    /* Groups are persisted when a Condition is added to them. */
+  handleEnabledToggle(enabled:boolean) {
+    console.log("RuleComponent", "handleEnabledToggle", enabled)
+    this.rule.enabled = enabled
+    this.change.emit(this.rule)
   }
 
   addAction() {
-    this.actionStub = new ActionModel()
-    this.actionStub.owningRule = this.rule
-    this.actions.push(this.actionStub)
-    this.actionStubWatch = this.actionStub.onChange.subscribe((vcEvent:CwChangeEvent<ActionModel>)=> {
-      if (vcEvent.target.valid) {
-        this.actionService.add(this.actionStub)
-      }
-    })
+    let priority = this.actions.length ? this.actions[this.actions.length - 1].priority + 1 : 1
+    this.actions.push(new ActionModel(null, new ServerSideTypeModel(), this.rule, priority))
+    this.sort()
   }
 
-  handleActionAdd(action:ActionModel) {
-    if (action.owningRule.key === this.rule.key) {
-      if (action == this.actionStub) {
-        this.actionStub = null
-        this.actionStubWatch.unsubscribe()
-      } else if (this.actions.indexOf(action) == -1) {
-        this.actions.push(action)
+  onActionChange(action:ActionModel) {
+    if (action.isValid()) {
+      if (!action.isPersisted()) {
+        action.owningRule = this.rule
+        this.actionService.add(action)
+      } else {
+        this.actionService.save(action)
       }
     }
   }
 
-  handleActionAddError(err:any) {
-    console.log("Error: ", err)
-    throw err
-  }
-
-  handleActionRemove(action:ActionModel) {
+  onActionRemove(action:ActionModel) {
+    if (action.isPersisted()) {
+      this.actionService.remove(action)
+    }
     this.actions = this.actions.filter((aryAction)=> {
       return aryAction.key != action.key
     })
@@ -256,32 +241,18 @@ class RuleComponent {
     }
   }
 
-  handleActionRemoveError(err:any) {
-    console.log("Error: ", err)
-    throw err
+  addGroup() {
+    let priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 1
+    let group = new ConditionGroupModel(null, this.rule, 'AND', priority)
+    this.groups.push(group)
+    this.sort()
   }
 
-
-  handleGroupAdd(group:ConditionGroupModel) {
-    if (group.owningRule.key === this.rule.key) {
-      if (group == this._groupStub) {
-        this._groupStub = null
-
-      } else if (this.groups.indexOf(group) == -1) {
-        this.groups.push(group)
-        this.groups.sort(function (a, b) {
-          return a.priority - b.priority;
-        });
-      }
-    }
+  onConditionGroupChange(group:ConditionGroupComponent) {
   }
 
-  handleGroupAddError(err:any) {
-    console.log("Error: ", err)
-    throw err
-  }
-
-  handleGroupRemove(group:ConditionGroupModel) {
+  onConditionGroupRemove(group:ConditionGroupModel) {
+    this._groupService.remove(group)
     this.groups = this.groups.filter((aryGroup)=> {
       return aryGroup.key != group.key
     })
@@ -290,21 +261,12 @@ class RuleComponent {
     }
   }
 
-  handleGroupRemoveError(err:any) {
-    console.log("Error: ", err)
-    throw err
-  }
-
-  removeRule(event:Event) {
-    if ((event.altKey && event.shiftKey)
-        || this.rule.isEmpty()
-        || confirm('Are you sure you want delete this rule?')) {
-
-      event.stopPropagation()
-      this.ruleService.remove(this.rule)
+  removeRule(event:any) {
+    event.stopPropagation()
+    if ((event.altKey && event.shiftKey) || confirm('Are you sure you want delete this rule?')) {
+      this.remove.emit(this.rule)
     }
   }
-
 }
 
 export {RuleComponent}

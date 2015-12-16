@@ -1,3 +1,4 @@
+import * as Rx from 'rxjs/Rx.KitchenSink'
 
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
 
@@ -11,7 +12,6 @@ import {DataStore} from "../../api/persistence/DataStore";
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from "../../api/auth/UserModel";
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
-import {ActionTypeModel} from '../../api/rule-engine/ActionType';
 import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 
@@ -23,6 +23,7 @@ import {ConditionService} from "../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../api/util/CwEvent";
 import {ActionTypeService} from "./ActionType";
 import {I18nService} from "../system/locale/I18n";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
 var injector = Injector.resolveAndCreate([ApiRoot,
   I18nService,
@@ -40,7 +41,7 @@ var injector = Injector.resolveAndCreate([ApiRoot,
 describe('Integration.api.rule-engine.ActionService', function () {
 
   var ruleService:RuleService
-  var ruleOnAddSub
+  var ruleOnAddSub:Rx.Subscription<RuleModel>
 
   var actionService:ActionService
   var ruleUnderTest:RuleModel
@@ -48,8 +49,8 @@ describe('Integration.api.rule-engine.ActionService', function () {
   beforeEach(function (done) {
     ruleService = injector.get(RuleService)
     actionService = injector.get(ActionService)
-    ruleOnAddSub = ruleService.onAdd.subscribe((rule:RuleModel) => {
-      ruleUnderTest = rule
+    ruleOnAddSub = ruleService.list().subscribe((rule:RuleModel[]) => {
+      ruleUnderTest = rule[0]
       done()
     }, (err) => {
       expect(err).toBeUndefined("error was thrown.")
@@ -69,13 +70,11 @@ describe('Integration.api.rule-engine.ActionService', function () {
   })
 
   it("Can add a new Action", function(done){
-    var anAction = new ActionModel()
-    anAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
-    anAction.owningRule = ruleUnderTest
+    var anAction = new ActionModel(null, new ServerSideTypeModel("SetSessionAttributeActionlet"), ruleUnderTest)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
 
-    var subscriber = actionService.onAdd.subscribe((action:ActionModel) => {
+    actionService.list(ruleUnderTest).subscribe((action:ActionModel) => {
       //noinspection TypeScriptUnresolvedFunction
       expect(action.isPersisted()).toBe(true, "Action is not persisted!")
       done()
@@ -89,14 +88,12 @@ describe('Integration.api.rule-engine.ActionService', function () {
   })
 
   it("Is added to the owning rule's list of actions.", function(done){
-    var anAction = new ActionModel()
-    anAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
-    anAction.owningRule = ruleUnderTest
+    var anAction = new ActionModel(null, new ServerSideTypeModel("SetSessionAttributeActionlet"), ruleUnderTest)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
 
-    actionService.onAdd.subscribe((action:ActionModel) => {
-      expect(ruleUnderTest.actions[action.key]).toBe(true, "Check the ActionService.onAdd listener in the RuleService.")
+    actionService.list(ruleUnderTest).subscribe((action:ActionModel) => {
+      expect(ruleUnderTest.actions[action.key]).toBe(true, "Check the ActionService.list(ruleUnderTest) listener in the RuleService.")
       done()
     }, (err) => {
       expect(err).toBeUndefined("error was thrown.")
@@ -107,22 +104,20 @@ describe('Integration.api.rule-engine.ActionService', function () {
 
 
   it("Action being added to the owning rule is persisted to server.", function(done){
-    var anAction = new ActionModel()
-    anAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
-    anAction.owningRule = ruleUnderTest
+    var anAction = new ActionModel(null, new ServerSideTypeModel("SetSessionAttributeActionlet"), ruleUnderTest)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
 
-    var firstPass = actionService.onAdd.subscribe((action:ActionModel) => {
+    var firstPass = actionService.list(ruleUnderTest).subscribe((action:ActionModel) => {
       //noinspection TypeScriptUnresolvedFunction
       firstPass.unsubscribe() // don't want to run THIS watcher twice.
-      expect(ruleUnderTest.actions[action.key]).toBe(true, "Check the ActionService.onAdd listener in the RuleService.")
+      expect(ruleUnderTest.actions[action.key]).toBe(true, "Check the ActionService.list(ruleUnderTest) listener in the RuleService.")
       ruleService.save(ruleUnderTest, () => {
         ruleService.get(ruleUnderTest.key, (rule:RuleModel)=> {
           expect(rule.actions[action.key]).toBe(true)
 
           /* Now read the Actions off the rule we just got back. Add listener first, then trigger call. */
-          let sub = actionService.onAdd.subscribe((action:ActionModel)=>{
+          let sub = actionService.list(ruleUnderTest).subscribe((action:ActionModel)=>{
             expect(action.getParameter("sessionKey")).toEqual("foo")
             sub.unsubscribe()
             done()
@@ -139,28 +134,26 @@ describe('Integration.api.rule-engine.ActionService', function () {
 
 
   it("Will add a new action parameters to an existing action.", function(done){
-    var clientAction = new ActionModel()
-    clientAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
-    clientAction.owningRule = ruleUnderTest
+    var clientAction = new ActionModel(null, new ServerSideTypeModel("SetSessionAttributeActionlet"), ruleUnderTest)
     clientAction.setParameter("sessionKey", "foo")
     clientAction.setParameter("sessionValue", "bar")
 
     let key = "aParamKey"
     let value = "aParamValue"
 
-    actionService.add(clientAction, (resultAction)=>{
+    actionService.add(clientAction, ()=>{
       // serverAction is the same instance as resultAction
       expect(clientAction.isPersisted()).toBe(true, "Action is not persisted!")
-      clientAction.clearParameters()
+
       clientAction.setParameter(key, value)
-      actionService.save(clientAction, (savedAction)=>{
+      actionService.save(clientAction, ()=>{
         // savedAction is also the same instance as resultAction
         actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
           // updatedAction and clientAction SHOULD NOT be the same instance object.
           updatedAction['abc123'] = 100
           expect(clientAction['abc123']).toBeUndefined()
           expect(clientAction.getParameter(key)).toBe(value, "ClientAction param value should still be set.")
-          expect(updatedAction.getParameter(key)).toBe(value, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(key)).toBe(value, "Action refreshed from server should have the correct param value.")
           expect(Object.keys(updatedAction.parameters).length).toEqual(1, "The old keys should have been removed.")
           done()
 
@@ -174,20 +167,18 @@ describe('Integration.api.rule-engine.ActionService', function () {
     let param1 = { key: 'sessionKey', v1: 'value1', v2: 'value2'}
     let param2 = { key: 'sessionValue', v1: 'abc123', v2: 'def456'}
 
-    var clientAction = new ActionModel()
-    clientAction.actionType = new ActionTypeModel("SetSessionAttributeActionlet")
-    clientAction.owningRule = ruleUnderTest
+    var clientAction = new ActionModel(null, new ServerSideTypeModel("SetSessionAttributeActionlet"), ruleUnderTest)
     clientAction.setParameter(param1.key, param1.v1)
     clientAction.setParameter(param2.key, param2.v1)
 
 
 
-    actionService.add(clientAction, (resultAction)=>{
+    actionService.add(clientAction, ()=>{
       clientAction.setParameter(param1.key, param1.v2)
-      actionService.save(clientAction, (savedAction)=>{
+      actionService.save(clientAction, ()=>{
         actionService.get(clientAction.owningRule, clientAction.key, (updatedAction)=>{
-          expect(updatedAction.getParameter(param1.key)).toBe(param1.v2, "Action refreshed from server should have the correct param value.")
-          expect(updatedAction.getParameter(param2.key)).toBe(param2.v1, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(param1.key)).toBe(param1.v2, "Action refreshed from server should have the correct param value.")
+          expect(updatedAction.getParameterValue(param2.key)).toBe(param2.v1, "Action refreshed from server should have the correct param value.")
           expect(Object.keys(updatedAction.parameters).length).toEqual(2, "The old keys should have been removed.")
           done()
 
@@ -205,7 +196,7 @@ class Gen {
 
   static createRules(ruleService:RuleService){
     console.log('Attempting to create rule.')
-    let rule = new RuleModel()
+    let rule = new RuleModel(null)
     rule.enabled = true
     rule.name = "TestRule-" + new Date().getTime()
 

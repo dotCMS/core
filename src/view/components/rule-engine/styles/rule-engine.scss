@@ -11,6 +11,14 @@ $text-emphasis: #fc7e1c;
 $warn: #c85a6a;
 $primary-one: #209021;
 
+
+input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[required], .required.ui.dropdown.ng-valid {
+  border-left: 5px solid $primary-one;
+}
+.ng-invalid, .ui.input input.ng-invalid {
+  border-left: 5px solid $warn
+}
+
 .cw-rule-engine {
   > .cw-header {
     padding: 1em 2em 2em 2em;
@@ -139,8 +147,14 @@ $primary-one: #209021;
     &:first-child {
       margin-left: 0
     }
+    &.cw-first {
+      margin-left:0
+    }
     &:last-child {
       margin-right: 0
+    }
+    &.cw-last {
+      margin-right:0
     }
   }
 
@@ -185,6 +199,10 @@ $primary-one: #209021;
     }
 
   }
+}
+
+.cw-last {
+  margin-right:0;
 }
 
 .ui.basic.button.cw-button-toggle-operator {

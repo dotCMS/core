@@ -1,6 +1,3 @@
-/// <reference path="../../../../../typings/es6/lib.es6.d.ts" />
-/// <reference path="../../../../thirdparty/angular2/bundles/typings/angular2/angular2.d.ts" />
-
 import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
 import {InputToggle} from './InputToggle'
 
@@ -52,7 +49,6 @@ class App {
   constructor(@Attribute('id') id:string) {
     this.changeDemoValue = true
   }
-
 }
 
 

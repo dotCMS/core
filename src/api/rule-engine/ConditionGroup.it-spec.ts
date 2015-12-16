@@ -45,8 +45,8 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   beforeEach(function (done) {
     ruleService = injector.get(RuleService)
     conditionGroupService = injector.get(ConditionGroupService)
-    onAddSub = ruleService.onAdd.subscribe((rule:RuleModel) => {
-      ruleUnderTest = rule
+    onAddSub = ruleService.list().subscribe((rule:RuleModel[]) => {
+      ruleUnderTest = rule[0]
       done()
     }, (err) => {
       expect(err).toBeUndefined("error was thrown.")
@@ -66,12 +66,9 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   })
 
   it("Can add a new ConditionGroup", function(done){
-    var aConditionGroup = new ConditionGroupModel()
+    var aConditionGroup = new ConditionGroupModel(null, ruleUnderTest, "OR", 1)
 
-    aConditionGroup.owningRule = ruleUnderTest
-    aConditionGroup.operator = "OR"
-
-    var subscriber = conditionGroupService.onAdd.subscribe((conditionGroup:ConditionGroupModel) => {
+    var subscriber = conditionGroupService.list(ruleUnderTest).subscribe((conditionGroup:ConditionGroupModel) => {
       //noinspection TypeScriptUnresolvedFunction
       expect(conditionGroup.isPersisted()).toBe(true, "ConditionGroup is not persisted!")
       done()
@@ -85,11 +82,9 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   })
 
   it("Is added to the owning rule's list of conditionGroups.", function(done){
-    var aConditionGroup = new ConditionGroupModel()
-    aConditionGroup.owningRule = ruleUnderTest
-    aConditionGroup.operator = "OR"
+    var aConditionGroup = new ConditionGroupModel(null, ruleUnderTest, "OR", 1)
 
-    conditionGroupService.onAdd.subscribe((conditionGroup:ConditionGroupModel) => {
+    conditionGroupService.list(ruleUnderTest).subscribe((conditionGroup:ConditionGroupModel) => {
       expect(ruleUnderTest.groups[conditionGroup.key]).toBeDefined()
       done()
     }, (err) => {
@@ -101,13 +96,11 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
 
 
   it("ConditionGroup being added to the owning rule is persisted to server.", function(done){
-    var aConditionGroup = new ConditionGroupModel()
+    var aConditionGroup = new ConditionGroupModel(null, ruleUnderTest, "OR", 99)
     aConditionGroup.owningRule = ruleUnderTest
-    aConditionGroup.operator = "OR"
-    aConditionGroup.priority = 99
 
 
-    var firstPass = conditionGroupService.onAdd.subscribe((conditionGroup:ConditionGroupModel) => {
+    var firstPass = conditionGroupService.list(ruleUnderTest).subscribe((conditionGroup:ConditionGroupModel) => {
       firstPass.unsubscribe() // don't want to run THIS watcher twice.
       expect(ruleUnderTest.groups[conditionGroup.key]).toBeDefined("Expected group to be on the rule." )
       ruleService.save(ruleUnderTest, () => {
@@ -119,7 +112,7 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
           //expect(rule.groups[conditionGroup.key].priority).toEqual(99)
 
           /* Now read the ConditionGroups off the rule we just got back. Add listener first, then trigger call. */
-          conditionGroupService.onAdd.subscribe((conditionGroup:ConditionGroupModel)=>{
+          conditionGroupService.list(ruleUnderTest).subscribe((conditionGroup:ConditionGroupModel)=>{
             expect(conditionGroup.operator).toEqual("OR")
             // @todo ggranum: Defect=Cannot set priority at creation time.
             //expect(conditionGroup.priority).toEqual(99)
@@ -143,7 +136,7 @@ class Gen {
 
   static createRules(ruleService:RuleService){
     console.log('Attempting to create rule.')
-    let rule = new RuleModel()
+    let rule = new RuleModel(null)
     rule.enabled = true
     rule.name = "TestRule-" + new Date().getTime()
 
