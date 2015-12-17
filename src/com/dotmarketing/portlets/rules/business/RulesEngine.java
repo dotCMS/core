@@ -19,7 +19,7 @@ import java.util.Set;
 
 public class RulesEngine {
 
-    public void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
+    public static void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
 
         Host host;
 

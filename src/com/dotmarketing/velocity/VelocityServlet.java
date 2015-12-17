@@ -12,13 +12,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -28,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.dotcms.visitor.business.VisitorFactory;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 
 import com.dotmarketing.portlets.rules.business.RulesEngine;
@@ -115,8 +111,6 @@ public abstract class VelocityServlet extends HttpServlet {
 	private String VELOCITY_HTMLPAGE_EXTENSION = "dotpage";
 	
 	public static final String VELOCITY_CONTEXT = "velocityContext";
-
-    private RulesEngine rulesEngine;
 
 	protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
@@ -321,8 +315,6 @@ public abstract class VelocityServlet extends HttpServlet {
 		CHARSET = Config.getStringProperty("CHARSET");
 		VELOCITY_HTMLPAGE_EXTENSION = Config.getStringProperty("VELOCITY_HTMLPAGE_EXTENSION");
 
-        rulesEngine = new RulesEngine();
-
 	}
 
 	protected void doAdminMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
@@ -387,13 +379,6 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
 
-            rulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
-            if(response.isCommitted()) {
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                Logger.debug(VelocityServlet.class, "An EVERY_PAGE RuleEngine Action has committed the response.");
-                return;
-            }
-
     		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
 
@@ -437,6 +422,9 @@ public abstract class VelocityServlet extends HttpServlet {
     		response.setContentType(CHARSET);
     		request.setAttribute("idInode", String.valueOf(ident.getInode()));
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
+
+			boolean newVisit = false;
+			boolean newVisitor = false;
     
     		/*
     		 * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659
@@ -447,14 +435,9 @@ public abstract class VelocityServlet extends HttpServlet {
     		if (!UtilMethods.isSet(_dotCMSID)) {
     			// create unique generator engine
     			Cookie idCookie = CookieUtil.createCookie();
+				_dotCMSID = idCookie.getValue();
     			response.addCookie(idCookie);
-
-                rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
-                if(response.isCommitted()) {
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                    Logger.debug(VelocityServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
-                    return;
-                }
+				newVisitor = true;
     		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
@@ -463,14 +446,43 @@ public abstract class VelocityServlet extends HttpServlet {
             if (!UtilMethods.isSet(_oncePerVisitCookie)) {
                 Cookie cookie = CookieUtil.createOncePerVisitCookie();
                 response.addCookie(cookie);
-
-                rulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
-                if(response.isCommitted()) {
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                    Logger.debug(VelocityServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
-                    return;
-                }
+				newVisit = true;
             }
+
+			// todo property for making Visitor configurable?
+			Visitor visitor = (Visitor) request.getSession().getAttribute(WebKeys.VISITOR);
+
+			if(Objects.isNull(visitor)) {
+				visitor = VisitorFactory.getInstance().createVisitor(request, UUID.fromString(_dotCMSID), newVisitor);
+				request.getSession().setAttribute(WebKeys.VISITOR, visitor);
+			}
+
+			if(fireOncePerVisitorRules) {
+				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
+				if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+					Logger.debug(VelocityServlet.class, "A ONCE_PER_VISITOR RuleEngine Action has committed the response.");
+					return;
+				}
+			}
+
+			if(fireOncePerVisitRules) {
+				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+				if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+					Logger.debug(VelocityServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
+					return;
+				}
+			}
+
+
+			RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
+
+			if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+				Logger.debug(VelocityServlet.class, "An EVERY_PAGE RuleEngine Action has committed the response.");
+				return;
+			}
 
     
     		com.liferay.portal.model.User user = null;
