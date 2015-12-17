@@ -16,9 +16,7 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
-task copyToLib {
-
-    sync {
+task syncFelixLibs(type: Sync) {
         from configurations.compile
         into configurations.felixFolder
 
@@ -26,18 +24,20 @@ task copyToLib {
         include '**/dot.org.apache.felix.fileinstall*.jar'
         include '**/dot.org.apache.felix.gogo.*.jar'
         include '**/dot.org.apache.felix.http.bundle*.jar'
-    }
+}
 
-    sync {
+task syncNonFelixLibs(type: Sync) {
         from configurations.compile
         into configurations.libsFolder
 
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
         exclude '**/dot.org.apache.felix.gogo.*.jar'
-        exclude '**/*.zip'
-    }
+        exclude '**/*.zip'    
+}
 
+task copyToLib {
+    dependsOn syncFelixLibs, syncNonFelixLibs
     copy {
         from configurations.compile
         into configurations.dotcmsFolder
@@ -70,7 +70,7 @@ tasks.copyToLib.execute()
 ant.importBuild 'build.xml'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
+    gradleVersion = '2.9'
 }
 
 defaultTasks 'help', 'tasks'
