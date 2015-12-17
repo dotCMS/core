@@ -423,9 +423,9 @@ public abstract class VelocityServlet extends HttpServlet {
     		request.setAttribute("idInode", String.valueOf(ident.getInode()));
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
 
-			boolean newVisit = false;
 			boolean newVisitor = false;
-    
+			boolean newVisit = false;
+
     		/*
     		 * JIRA http://jira.dotmarketing.net/browse/DOTCMS-4659
     		//Set long lived cookie regardless of who this is */
@@ -457,7 +457,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				request.getSession().setAttribute(WebKeys.VISITOR, visitor);
 			}
 
-			if(fireOncePerVisitorRules) {
+			if(newVisitor) {
 				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
@@ -466,7 +466,7 @@ public abstract class VelocityServlet extends HttpServlet {
 				}
 			}
 
-			if(fireOncePerVisitRules) {
+			if(newVisit) {
 				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
