@@ -4,7 +4,7 @@ import com.dotcms.content.elasticsearch.util.ESClient;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.commons.lang.SystemUtils;
-import com.dotcms.repackage.org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.BooleanQuery;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.beans.Host;
