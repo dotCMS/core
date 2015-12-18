@@ -77,6 +77,7 @@ public class LanguageCacheImpl extends LanguageCache {
     public Language getLanguageByCode(String languageCode, String countryCode) {
     	DotCacheAdministrator cache = CacheLocator.getCacheAdministrator();
         String languageKey = languageCode + "-" + countryCode;
+        languageKey = languageKey.toLowerCase();
         Language l = null;
         try{
         	l = (Language) cache.get(getPrimaryGroup() + languageKey,getPrimaryGroup());
@@ -126,6 +127,7 @@ public class LanguageCacheImpl extends LanguageCache {
         long id = l.getId();
         String idSt = String.valueOf(l.getId());
         String languageKey = l.getLanguageCode() + "-" + l.getCountryCode();
+        languageKey =  languageKey.toLowerCase();
         cache.remove(getPrimaryGroup() + id,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + idSt,getPrimaryGroup());
         cache.remove(getPrimaryGroup() + languageKey,getPrimaryGroup());

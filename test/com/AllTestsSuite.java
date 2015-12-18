@@ -5,6 +5,7 @@ package com;
 import com.dotmarketing.portlets.rules.business.RulesAPITest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
+import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -113,7 +114,8 @@ import com.dotmarketing.webdav.WebDavTest;
     SetSessionAttributeActionletTest.class,
     SetResponseHeaderActionletFTest.class,
 //    UsersCountryConditionletFTest.class,
-    ActionResourceFTest.class
+    ActionResourceFTest.class,
+    RulesCacheFTest.class
 })
 public class AllTestsSuite {
 

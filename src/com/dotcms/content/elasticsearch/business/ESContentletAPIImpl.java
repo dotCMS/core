@@ -38,10 +38,10 @@ import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchPhaseExecutionException;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHit;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
+import org.elasticsearch.action.search.SearchPhaseExecutionException;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
 import com.dotcms.repackage.org.jboss.util.Strings;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -3997,10 +3997,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 		}
 		try {
 			validateContentlet(contentlet, cats);
+		    if(Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ){
+		    	APILocator.getPersonaAPI().validatePersona(contentlet);
+		    }
 		} catch (DotContentletValidationException ve) {
 			cve = ve;
 			hasError = true;
 		}
+		
+		
+		
 		if (contentRelationships != null) {
 			List<ContentletRelationshipRecords> records = contentRelationships
 					.getRelationshipsRecords();

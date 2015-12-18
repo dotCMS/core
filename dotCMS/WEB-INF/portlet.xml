@@ -3504,6 +3504,13 @@
 		<display-name>Rules Editor</display-name>
 		<portlet-class>com.dotcms.rest.RulesEnginePortlet</portlet-class>
 	</portlet>
+	
+	<portlet>
+		<portlet-name>PERSONAS_PORTLET</portlet-name>
+		<display-name>Personas</display-name>
+		<portlet-class>com.dotcms.rest.personas.PersonasResourcePortlet</portlet-class>
+
+	</portlet>
 
 	<custom-window-state>
 		<window-state>exclusive</window-state>

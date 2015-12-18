@@ -24,7 +24,7 @@ public class ConditionGroupDataGen {
     }
 
     private String ruleId;
-    private Condition.Operator operator;
+    private Condition.Operator operator = Condition.Operator.AND;
 
     public ConditionGroupDataGen() {
     }

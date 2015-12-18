@@ -48,6 +48,7 @@
     int STRUCTURE_TYPE_FORM = 3;
     int STRUCTURE_TYPE_FILEASSET= 4;
     int STRUCTURE_TYPE_HTMLPAGE= 5;
+    int STRUCTURE_TYPE_PERSONA= 6;
     List<Integer> structureTypes = new ArrayList<Integer>();
     structureTypes.add(STRUCTURE_TYPE_CONTENT);
     structureTypes.add(STRUCTURE_TYPE_WIDGET);
@@ -56,6 +57,9 @@
     }
     structureTypes.add(STRUCTURE_TYPE_FILEASSET);
     structureTypes.add(STRUCTURE_TYPE_HTMLPAGE);
+    if(LicenseUtil.getLevel() > 199){
+    	structureTypes.add(STRUCTURE_TYPE_PERSONA);
+    }
     int structureType = 0;
     try {
 		if (session.getAttribute(com.dotmarketing.util.WebKeys.Structure.STRUCTURE_EDIT_TYPE) != null)
@@ -274,6 +278,8 @@ var deleteLabel = "";
 						 strTypeName = LanguageUtil.get(pageContext, "File");
 					 }else if(next == STRUCTURE_TYPE_HTMLPAGE){
                          strTypeName = LanguageUtil.get(pageContext, "HTMLPage");
+                     }else if(next == STRUCTURE_TYPE_PERSONA){
+                         strTypeName = LanguageUtil.get(pageContext, "Persona");
                      }
 			%>
 				<option value="<%=next%>" <%=structureType == next?"selected='true'":""%>><%=strTypeName%></option>
@@ -350,6 +356,8 @@ var deleteLabel = "";
 						<span class="fileIcon"></span>
 				    <% }else if(structure.isHTMLPageAsset()){ %>
 				        <span class="pageIcon"></span>
+				    <% }else if(structure.isPersona()){ %>
+				        <span class="personaIcon"></span>
 					<% }else{ %>
 						<span class="contentIcon"></span>
 					<% } %>

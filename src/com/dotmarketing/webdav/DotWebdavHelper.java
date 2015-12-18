@@ -52,7 +52,7 @@ import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -185,14 +185,18 @@ public class DotWebdavHelper {
 		} else {
 			_user = userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false);
 		}
-		if (PublicEncryptionFactory.digestString(passwd).equals(_user.getPassword())) {
-			return _user;
-		}else if(_user == null){
-			throw new DotSecurityException("The user was returned NULL");
-		}else{
-			Logger.debug(this, "The user's passwords didn't match");
-			throw new DotSecurityException("The user's passwords didn't match");
-		}
+
+        if (_user == null) {
+            throw new DotSecurityException("The user was returned NULL");
+        }
+
+        // Validate password and rehash when is needed
+        if (LoginFactory.passwordMatch(passwd, _user)) {
+            return _user;
+        } else {
+            Logger.debug(this, "The user's passwords didn't match");
+            throw new DotSecurityException("The user's passwords didn't match");
+        }
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {

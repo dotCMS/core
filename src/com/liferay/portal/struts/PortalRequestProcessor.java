@@ -30,12 +30,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.PortletContext;
 import com.dotcms.repackage.javax.portlet.PortletException;
 import com.dotcms.repackage.javax.portlet.PortletMode;
 import com.dotcms.repackage.javax.portlet.PortletPreferences;
 import com.dotcms.repackage.javax.portlet.WindowState;
+
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -45,7 +48,6 @@ import javax.servlet.jsp.PageContext;
 
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.config.ForwardConfig;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -316,14 +318,11 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 
 							if (encPwd) {
 								ses.setAttribute("j_password", jPassword);
-							}
-							else {
-								ses.setAttribute("j_password",
-									Encryptor.digest(jPassword));
-
-								ses.setAttribute(
-									WebKeys.USER_PASSWORD, jPassword);
-							}
+                            } else {
+                                final String digestedJPassword = PasswordFactoryProxy.generateHash(jPassword);
+                                ses.setAttribute("j_password", digestedJPassword);
+                                ses.setAttribute(WebKeys.USER_PASSWORD, digestedJPassword);
+                            }
 
 							return _PATH_PORTAL_PUBLIC_LOGIN;
 						}
@@ -331,7 +330,7 @@ public class PortalRequestProcessor extends StxxTilesRequestProcessor {
 				}
 
 			}
-			catch (AutoLoginException ale) {
+			catch (PasswordException | AutoLoginException ale) {
 				Logger.error(this,ale.getMessage(),ale);
 			}
 		}

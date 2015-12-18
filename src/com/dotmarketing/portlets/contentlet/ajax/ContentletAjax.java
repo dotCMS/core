@@ -1609,6 +1609,9 @@ public class ContentletAjax {
 					saveContentErrors.add(errorString);
 				}
 			}
+			if(saveContentErrors.size()==0){
+				saveContentErrors.add(ve.getMessage());
+			}
 
 		}
 		catch(DotLockException dse){

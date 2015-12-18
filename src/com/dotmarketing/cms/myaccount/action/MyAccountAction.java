@@ -6,6 +6,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
@@ -99,17 +100,33 @@ public class MyAccountAction extends DispatchAction {
 		boolean reauthenticate = false;
 		if (!form.getNewPassword().equals("")
 				|| !user.getEmailAddress().equals(form.getEmailAddress())) {
-			if (!user.getPassword().equals(
-					PublicEncryptionFactory.digestString(form.getPassword()))) {
+
+            boolean passwordMatch = false;
+
+            if (PasswordFactoryProxy.isUnsecurePasswordHash(user.getPassword())) {
+                passwordMatch = user.getPassword().equals(form.getPassword())
+                        || user.getPassword().equals(PublicEncryptionFactory.digestString(form.getPassword()));
+            } else {
+                // Has new hash algorithm
+                if (PasswordFactoryProxy.authPassword(form.getPassword(), user.getPassword()).equals(
+                        PasswordFactoryProxy.AuthenticationStatus.NOT_AUTHENTICATED)) {
+                    passwordMatch = false;
+                } else {
+                    passwordMatch = true;
+                }
+            }
+
+			if (passwordMatch == false) {
 				ActionErrors errors = new ActionErrors();
 				errors.add("password", new ActionMessage(
 						"current.usermanager.password.incorrect"));
 				saveMessages(request, errors);
 				return mapping.findForward("myAccountPage");
 			}
-			user.setPassword(PublicEncryptionFactory.digestString(form
-					.getNewPassword()));
-			user.setPasswordEncrypted(true);
+
+            // Use new password hash method
+            user.setPassword(PasswordFactoryProxy.generateHash(form.getNewPassword()));
+
 			user.setEmailAddress(form.getEmailAddress().trim().toLowerCase());
 			reauthenticate = true;
 		}

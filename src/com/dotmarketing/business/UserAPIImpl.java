@@ -4,12 +4,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -21,7 +24,6 @@ import com.liferay.portal.model.Address;
 import com.liferay.portal.model.User;
 import com.liferay.portal.pwd.PwdToolkitUtil;
 import com.liferay.portal.util.PropsUtil;
-import com.liferay.util.Encryptor;
 import com.liferay.util.GetterUtil;
 
 /**
@@ -124,10 +126,10 @@ public class UserAPIImpl implements UserAPI {
 		//Role cmsAdminRole = roleAPI.loadRoleByKey(Config.getStringProperty("CMS_ADMINISTRATOR_ROLE"));
 		Role cmsAdminRole = roleAPI.loadCMSAdminRole();
 		try {
-			user = uf.loadUserById("system");
+			user = uf.loadUserById(SYSTEM_USER_ID);
 		} catch (NoSuchUserException e) {
 		    user = createUser("system", "system@dotcmsfakeemail.org");
-            user.setUserId("system");
+            user.setUserId(SYSTEM_USER_ID);
             user.setFirstName("system user");
             user.setLastName("system user");
             user.setCreateDate(new java.util.Date());
@@ -232,7 +234,7 @@ public class UserAPIImpl implements UserAPI {
 			boolean respectFrontEndRoles) throws DotDataException,
 			DotSecurityException, DuplicateUserException {
 		String pwd = userToSave.getPassword();
-		if (validatePassword && !userToSave.isPasswordEncrypted()) {
+		if (validatePassword) {
 			PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
 					.getManager();
 			try {
@@ -246,8 +248,14 @@ public class UserAPIImpl implements UserAPI {
 				throw new DotDataException(
 						"An error occurred during the save process.");
 			}
-			userToSave.setPassword(Encryptor.digest(pwd));
-			userToSave.setPasswordEncrypted(true);
+
+            // Use new password hash method
+            try {
+                userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+            } catch (PasswordException e) {
+                Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
+                throw new DotDataException("An error occurred generating the hashed password.");
+            }
 		}
 		save(userToSave, user, respectFrontEndRoles);
 	}
@@ -303,8 +311,15 @@ public class UserAPIImpl implements UserAPI {
         if(!PwdToolkitUtil.validate(newpass)) {
             throw new DotInvalidPasswordException("Invalid password");
         }
-        user.setPassword(Encryptor.digest(newpass));
-        user.setPasswordEncrypted(true);
+
+        // Use new password hash method
+        try {
+            user.setPassword(PasswordFactoryProxy.generateHash(newpass));
+        } catch (PasswordException e) {
+            Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + user.getUserId(), e);
+            throw new DotDataException("An error occurred generating the hashed password.");
+        }
+
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));

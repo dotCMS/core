@@ -10,6 +10,8 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.RuleResource;
 import com.dotcms.rest.api.v1.system.ruleengine.actionlets.ActionletsResource;
 import com.dotcms.rest.api.v1.system.ruleengine.conditionlets.ConditionletsResource;
 import com.dotcms.rest.api.v1.system.i18n.I18NResource;
+import com.dotcms.rest.personas.PersonasResourcePortlet;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -45,12 +47,15 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
                     REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
-					REST_CLASSES.add(RulesEnginePortlet.class);
 
+					REST_CLASSES.add(RulesEnginePortlet.class);
 					REST_CLASSES.add(RuleResource.class);
 					REST_CLASSES.add(ConditionGroupResource.class);
 					REST_CLASSES.add(ConditionResource.class);
 					REST_CLASSES.add(ConditionValueResource.class);
+					REST_CLASSES.add(PersonasResourcePortlet.class);
+
+
 					REST_CLASSES.add(ConditionletsResource.class);
 					REST_CLASSES.add(ActionResource.class);
 					REST_CLASSES.add(ActionletsResource.class);

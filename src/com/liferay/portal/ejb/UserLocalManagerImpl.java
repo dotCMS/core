@@ -29,6 +29,8 @@ import java.util.Locale;
 
 import javax.mail.internet.InternetAddress;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
 import com.dotmarketing.util.Logger;
@@ -57,7 +59,6 @@ import com.liferay.portal.util.PropsUtil;
 import com.liferay.portlet.admin.ejb.AdminConfigManagerUtil;
 import com.liferay.portlet.admin.model.EmailConfig;
 import com.liferay.portlet.admin.model.UserConfig;
-import com.liferay.util.Encryptor;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.InstancePool;
 import com.liferay.util.StringUtil;
@@ -129,8 +130,16 @@ public class UserLocalManagerImpl implements UserLocalManager {
 
 		user.setCompanyId(companyId);
 		user.setCreateDate(new Date());
-		user.setPassword(Encryptor.digest(password1));
-		user.setPasswordEncrypted(true);
+
+        // Use new password hash method
+        try {
+            user.setPassword(PasswordFactoryProxy.generateHash(password1));
+        } catch (PasswordException e) {
+            Logger.error(UserLocalManagerImpl.class,
+                        "An error occurred generating the hashed password for userId: " + userId, e);
+            throw new SystemException("An error occurred generating the hashed password.");
+        }
+
 		user.setPasswordExpirationDate(expirationDate);
 		user.setPasswordReset(passwordReset);
 		user.setFirstName(firstName);
@@ -383,11 +392,14 @@ public class UserLocalManagerImpl implements UserLocalManager {
 		User user = UserUtil.findByPrimaryKey(userId);
 
 		String oldEncPwd = user.getPassword();
-		if (!user.isPasswordEncrypted()) {
-			oldEncPwd = Encryptor.digest(user.getPassword());
-		}
-
-		String newEncPwd = Encryptor.digest(password1);
+		// Use new password hash method
+        try {
+            user.setPassword(PasswordFactoryProxy.generateHash(password1));
+        } catch (PasswordException e) {
+            Logger.error(UserLocalManagerImpl.class,
+                    "An error occurred generating the hashed password for userId: " + userId, e);
+            throw new SystemException("An error occurred generating the hashed password.");
+        }
 
 		int passwordsLifespan = GetterUtil.getInteger(
 			PropsUtil.get(PropsUtil.PASSWORDS_LIFESPAN));
@@ -398,12 +410,6 @@ public class UserLocalManagerImpl implements UserLocalManager {
 				System.currentTimeMillis() + Time.DAY * passwordsLifespan);
 		}
 
-		/*if (user.hasCompanyMx()) {
-			MailManagerUtil.updatePassword(userId, password1);
-		}*/
-
-		user.setPassword(newEncPwd);
-		user.setPasswordEncrypted(true);
 		user.setPasswordExpirationDate(expirationDate);
 		user.setPasswordReset(passwordReset);
 

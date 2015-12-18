@@ -539,6 +539,10 @@ public class RulesFactoryImpl implements RulesFactory {
         }
 
         cache.removeConditionGroup(group);
+
+        Rule rule  = getRuleById(group.getRuleId());
+        cache.removeRule(rule);
+
     }
 
     @Override
@@ -599,6 +603,10 @@ public class RulesFactoryImpl implements RulesFactory {
             }
 
             cache.removeCondition(condition);
+            ConditionGroup group = getConditionGroupById(condition.getConditionGroup());
+            cache.removeConditionGroup(group);
+            Rule rule = getRuleById(group.getRuleId());
+            cache.removeRule(rule);
 
         } catch (DotDataException e) {
             try {
@@ -663,7 +671,12 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(parameterModel.getId());
                 db.loadResult();
             }
-
+            Condition condition = getConditionById(parameterModel.getOwnerId());
+            cache.removeCondition(condition);
+            ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+            cache.removeConditionGroup(group);
+            Rule rule  = getRuleById(group.getRuleId());
+            cache.removeRule(rule);
         } catch (DotDataException e) {
             try {
                 HibernateUtil.rollbackTransaction();
@@ -735,16 +748,26 @@ public class RulesFactoryImpl implements RulesFactory {
             db.addParam(parameter.getValue());
             db.loadResult();
         }
+
+        cache.removeAction(ruleAction);
+
+        Rule rule  = getRuleById(ruleAction.getRuleId());
+        cache.removeRule(rule);
+
     }
 
     @Override
     public void deleteConditionGroup(ConditionGroup conditionGroup)
+
         throws DotDataException {
+    	Rule rule  = getRuleById(conditionGroup.getRuleId());
         final DotConnect db = new DotConnect();
         db.setSQL(sql.DELETE_CONDITION_GROUP_BY_ID);
         db.addParam(conditionGroup.getId());
         db.loadResult();
         cache.removeConditionGroup(conditionGroup);
+
+        cache.removeRule(rule);
     }
 
     @Override
@@ -767,6 +790,9 @@ public class RulesFactoryImpl implements RulesFactory {
         for(Condition condition: conditionsByGroup) {
             cache.removeCondition(condition);
         }
+        cache.removeConditionGroup(conditionGroup);
+    	Rule rule  = getRuleById(conditionGroup.getRuleId());
+        cache.removeRule(rule);
     }
 
     @Override
@@ -776,6 +802,10 @@ public class RulesFactoryImpl implements RulesFactory {
         db.addParam(condition.getId());
         db.loadResult();
         cache.removeCondition(condition);
+        ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+        cache.removeConditionGroup(group);
+        Rule rule  = getRuleById(group.getRuleId());
+        cache.removeRule(rule);
     }
 
     @Override
@@ -784,6 +814,12 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.DELETE_CONDITION_VALUE_BY_ID);
         db.addParam(parameterModel.getId());
         db.loadResult();
+        Condition condition = getConditionById(parameterModel.getOwnerId());
+        cache.removeCondition(condition);
+        ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+        cache.removeConditionGroup(group);
+        Rule rule  = getRuleById(group.getRuleId());
+        cache.removeRule(rule);
     }
 
     @Override
@@ -802,6 +838,10 @@ public class RulesFactoryImpl implements RulesFactory {
         db.addParam(ruleAction.getId());
         db.loadResult();
         cache.removeAction(ruleAction);
+        Rule rule  = getRuleById(ruleAction.getRuleId());
+
+
+        cache.removeRule(rule);
     }
 
     @Override
@@ -821,7 +861,9 @@ public class RulesFactoryImpl implements RulesFactory {
 
         for(RuleAction action: actionsByRule) {
             cache.removeAction(action);
+
         }
+        cache.removeRule(rule);
 
     }
 
@@ -856,6 +898,10 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.DELETE_RULE_ACTION_PARAM_BY_ACTION);
         db.addParam(action.getId());
         db.loadResult();
+
+        cache.removeAction(action);
+        Rule rule  = getRuleById(action.getRuleId());
+        cache.removeRule(rule);
     }
 
     @Override
@@ -864,6 +910,11 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.DELETE_CONDITION_VALUES_BY_CONDITION);
         db.addParam(condition.getId());
         db.loadResult();
+        cache.removeCondition(condition);
+        ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+        cache.removeConditionGroup(group);
+        Rule rule  = getRuleById(group.getRuleId());
+        cache.removeRule(rule);
     }
 
     public static Rule convertRule(Map<String, Object> row) {

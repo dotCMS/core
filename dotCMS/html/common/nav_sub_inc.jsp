@@ -730,7 +730,7 @@ dojo.require("dojo.cookie");
 				<div style="text-align:center;font-size:77%;color:#999;"><%=LanguageUtil.get(pageContext, "Toll-Free") %>+1 877-936-8267</div>
 				<div style="text-align:center;font-size:146.5%;color:#999;"><%=LanguageUtil.get(pageContext, "or") %></div>
 				<div style="text-align:center;">
-					<a href="http://dotcms.org/enterprise/" target="_blank"><%=LanguageUtil.get(pageContext, "Click-here-to-login-to-your-account") %></a>
+					<a href="https://my.dotcms.com" target="_blank"><%=LanguageUtil.get(pageContext, "Click-here-to-login-to-your-account") %></a>
 				</div>
 			</td>
 		</tr></table>

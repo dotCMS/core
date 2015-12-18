@@ -33,13 +33,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import com.dotcms.enterprise.AuthPipeProxy;
-import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.mail.ejb.MailManagerUtil;
+import com.dotcms.repackage.org.apache.commons.lang.RandomStringUtils;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.Mailer;
-import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.RequiredUserException;
@@ -139,16 +141,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 
 		User user = UserUtil.findByPrimaryKey(liferayUserId);
 
-		try {
-			password = Encryptor.decrypt(company.getKeyObj(), password);
-		}
-		catch (EncryptorException ee) {
-			throw new SystemException(ee);
-		}
+        AuthenticationStatus authenticationStatus = PasswordFactoryProxy.AuthenticationStatus.NOT_AUTHENTICATED;
+        try {
+            authenticationStatus = PasswordFactoryProxy.authPassword(password, user.getPassword());
+        } catch (PasswordException e) {
+            Logger.error(UserManagerImpl.class, "An error occurred generating the hashed password for userId: "
+                    + userId, e);
+            throw new SystemException("An error occurred generating the hashed password.");
+        }
 
-		String encPwd = Encryptor.digest(password);
-
-		if (user.getPassword().equals(encPwd)) {
+		if (authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED)) {
 			if (user.isPasswordExpired()) {
 				user.setPasswordReset(true);
 
@@ -672,24 +674,14 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
 			return Authenticator.DNE;
 		}
 
-		if (!user.isPasswordEncrypted()) {
-			user.setPassword(Encryptor.digest(user.getPassword()));
-			user.setPasswordEncrypted(true);
-			user.setPasswordReset(GetterUtil.getBoolean(
-				PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-
-			UserUtil.update(user);
-		}
-		else if (user.isPasswordExpired()) {
+		if (user.isPasswordExpired()) {
 			user.setPasswordReset(true);
 
 			UserUtil.update(user);
 		}
 
 		if (authResult == Authenticator.SUCCESS) {
-			String encPwd = Encryptor.digest(password);
-
-			if (user.getPassword().equals(encPwd)) {
+			if (LoginFactory.passwordMatch(password, user)) {
 				authResult = Authenticator.SUCCESS;
 			}
 			else {

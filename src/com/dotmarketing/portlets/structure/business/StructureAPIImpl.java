@@ -137,7 +137,15 @@ public class StructureAPIImpl implements StructureAPI {
 	     db.setSQL("delete from contentlet where structure_inode = '" + structureInode + "'");
 	     db.getResult();
 	}
-
-
+	
+	
+	@Override
+	public Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException{
+		Structure s = StructureFactory.getStructureByVelocityVarName(varName);
+		if(!APILocator.getPermissionAPI().doesUserHavePermission(s, PermissionAPI.PERMISSION_READ, user)){
+			throw new DotSecurityException("User " + user + " does not have permission to struct " +varName);
+		}
+		return s;
+	}
 
 }

@@ -61,13 +61,14 @@ public class LanguageFactoryImpl extends LanguageFactory {
     protected Language getLanguage(String languageCode, String countryCode) {
 
         try {
-
+        	languageCode = languageCode.toLowerCase();
+        	countryCode = countryCode.toLowerCase();
         	Language lang = CacheLocator.getLanguageCache().getLanguageByCode(languageCode, countryCode);
 
         	if(lang == null) {
 	            HibernateUtil dh = new HibernateUtil(Language.class);
 	            dh.setQuery(
-	                "from language in class com.dotmarketing.portlets.languagesmanager.model.Language where language_code = ? and country_code = ?");
+	                "from language in class com.dotmarketing.portlets.languagesmanager.model.Language where lower(language_code) = ? and lower(country_code) = ?");
 	            dh.setParam(languageCode);
 	            dh.setParam(countryCode);
 	            lang = (Language) dh.load();
@@ -87,16 +88,27 @@ public class LanguageFactoryImpl extends LanguageFactory {
 
 	@Override
     protected Language getLanguage(String id) {
-        long x = 1;
 
-        try {
-            x = Long.parseLong(id);
+		// if we have a number
+        if(id!=null && !id.contains("_") || !id.contains("-")  ){
+	        try {
+	        	long  x = Long.parseLong(id);
+	            return getLanguage(x);
+	        } catch (NumberFormatException e) {
+	            Logger.debug(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + id, e);
+	        }
+		}
+        
+        try{
+        	String[] codes= id.split("[_|-]");
+        	return getLanguage(codes[0], codes[1]);
         } catch (Exception e) {
-            Logger.error(LanguageFactoryImpl.class, "getLanguage failed passed id is not numeric. Value from parameter: " + id, e);
-            throw new DotRuntimeException(e.toString(), e);
+            Logger.error(LanguageFactoryImpl.class, "getLanguage failed for id:" + id,e);
+            throw new DotRuntimeException("getLanguage failed for id:" + id, e);
+        
         }
+        
 
-        return getLanguage(x);
     }
 
 	@Override

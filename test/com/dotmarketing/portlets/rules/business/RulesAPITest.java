@@ -1,7 +1,10 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -21,16 +24,15 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
-//import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
 import static com.dotcms.repackage.org.junit.Assert.*;
-
 
 public class RulesAPITest extends TestBase {
 
@@ -190,7 +192,7 @@ public class RulesAPITest extends TestBase {
 		rulesAPI.saveRule(rule, user, false);
 		
 		ruleId = rule.getId();
-		
+
 		RuleAction action = new RuleAction();
 		action.setActionlet(CountRequestsActionlet.class.getSimpleName());
 		action.setRuleId(rule.getId());
@@ -209,7 +211,23 @@ public class RulesAPITest extends TestBase {
 		rulesAPI.saveRuleAction(action, user, false);
 
 	}
-	
+
+	@Test
+	public void testRefreshConditionletsMapNoExceptionWhenErrorInCustomConditionlet() {
+		RulesAPI rulesAPI = new RulesAPIImpl();
+		// addConditionlet calls refreshConditionletsMap under the cover
+		// shouldn't throw error
+		rulesAPI.addConditionlet(ThrowErrorConditionlet.class);
+	}
+
+	@Test
+	public void testRefreshActionletsMapNoExceptionWhenErrorInCustomActionlet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+		RulesAPI rulesAPI = new RulesAPIImpl();
+		// addRuleActionlet calls refreshActionletsMap under the cover
+		// shouldn't throw error
+		rulesAPI.addRuleActionlet(ThrowErrorActionlet.class);
+	}
+
 	@After
     public void deleteRule() throws DotDataException, DotSecurityException {
         if (ruleId != null) {
@@ -218,4 +236,8 @@ public class RulesAPITest extends TestBase {
         }
     }
 
+
 }
+
+
+

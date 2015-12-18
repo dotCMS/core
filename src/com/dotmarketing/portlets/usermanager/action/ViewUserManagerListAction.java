@@ -15,22 +15,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import com.dotcms.repackage.javax.portlet.ActionRequest;
-import com.dotcms.repackage.javax.portlet.ActionResponse;
-import com.dotcms.repackage.javax.portlet.PortletConfig;
-import com.dotcms.repackage.javax.portlet.RenderRequest;
-import com.dotcms.repackage.javax.portlet.RenderResponse;
-import com.dotcms.repackage.javax.portlet.WindowState;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.PageContext;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotcms.repackage.javax.portlet.ActionResponse;
+import com.dotcms.repackage.javax.portlet.PortletConfig;
+import com.dotcms.repackage.javax.portlet.RenderRequest;
+import com.dotcms.repackage.javax.portlet.RenderResponse;
+import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -1062,8 +1062,9 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                 } else {
                                     user.setActive(true);
                                 }
-                                user.setPassword(PublicEncryptionFactory.digestString(password));
-                                user.setPasswordEncrypted(true);
+
+                                // Use new password hash method
+                                user.setPassword(PasswordFactoryProxy.generateHash(password));
 
                                 APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
 
@@ -1173,8 +1174,8 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                         userDuplicated.setBirthday(birthday);
 
                                     if (UtilMethods.isSet(password)) {
-                                        userDuplicated.setPassword(PublicEncryptionFactory.digestString(password));
-                                        userDuplicated.setPasswordEncrypted(true);
+                                        // Use new password hash method
+                                        userDuplicated.setPassword(PasswordFactoryProxy.generateHash(password));
                                     }
 
                                     APILocator.getUserAPI().save(userDuplicated,APILocator.getUserAPI().getSystemUser(),false);
