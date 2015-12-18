@@ -89,14 +89,12 @@ public class Condition implements RuleComponentModel, Serializable {
         getParameters().put(key, new ParameterModel(key, value));
     }
 
-    public void setValues(List<ParameterModel> values) {
-        this.values = values;
+    public void addParameter(ParameterModel value) {
+        getParameters().put(value.getKey(), value);
     }
 
-    public void addConditionValue(ConditionValue value) {
-        if(values!=null) {
-            values.add(value);
-        }
+    public void setValues(List<ParameterModel> values) {
+        this.values = values;
     }
 
     public Date getModDate() {

@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.beust.jcommander.internal.Sets;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
@@ -9,14 +8,11 @@ import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.util.Logger;
 
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collection;
-import java.util.List;
 
 public class ConditionletOSGIFTest {
 

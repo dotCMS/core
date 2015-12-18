@@ -50,9 +50,9 @@ public class SetResponseHeaderActionlet extends RuleActionlet<SetResponseHeaderA
 
         public Instance(Map<String, ParameterModel> parameters) {
             key = parameters.get(HEADER_KEY).getValue();
-            value = parameters.get(HEADER_VALUE).getValue();
+            String v = parameters.get(HEADER_VALUE).getValue();
+            value = v != null ? v : "";
             Preconditions.checkArgument(StringUtils.isNotBlank(key), "SetResponseHeaderActionlet requires valid key.");
-            Preconditions.checkNotNull(value, "SetResponseHeaderActionlet requires Value parameter.");
         }
     }
 }

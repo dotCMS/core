@@ -9,7 +9,7 @@ import javax.servlet.http.HttpServletResponse;
 public class CountRequestsActionlet extends RuleActionlet<CountRequestsActionlet.Instance> {
 
     public CountRequestsActionlet() {
-        super("EveryPageActionlet");
+        super("Count Requests Actionlet");
     }
 
     @Override
