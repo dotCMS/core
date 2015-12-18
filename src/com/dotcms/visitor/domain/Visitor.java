@@ -18,7 +18,7 @@ public class Visitor implements Serializable {
 
     private InetAddress ipAddress;
 
-    private int selectedLanguageId;
+    private long selectedLanguageId;
 
     private Locale locale;
 
@@ -56,11 +56,11 @@ public class Visitor implements Serializable {
         this.ipAddress = ipAddress;
     }
 
-    public int getSelectedLanguageId() {
+    public long getSelectedLanguageId() {
         return selectedLanguageId;
     }
 
-    public void setSelectedLanguageId(int selectedLanguageId) {
+    public void setSelectedLanguageId(long selectedLanguageId) {
         this.selectedLanguageId = selectedLanguageId;
     }
 

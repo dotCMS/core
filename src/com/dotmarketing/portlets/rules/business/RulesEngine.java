@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class RulesEngine {
+public final class RulesEngine {
 
     public static void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
 

@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.visitor.business.VisitorFactory;
+import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 
@@ -63,7 +63,6 @@ import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
@@ -82,7 +81,6 @@ import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -99,6 +97,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	private static PortletAPI portletAPI = APILocator.getPortletAPI();
 
 	private static HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
+
+	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
 
 	public static  ThreadLocal<Context> velocityCtx = Logger.velocityCtx;
 
@@ -423,6 +423,8 @@ public abstract class VelocityServlet extends HttpServlet {
     		request.setAttribute("idInode", String.valueOf(ident.getInode()));
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
 
+			visitorAPI.getVisitor(request, true);
+
 			boolean newVisitor = false;
 			boolean newVisit = false;
 
@@ -449,14 +451,6 @@ public abstract class VelocityServlet extends HttpServlet {
 				newVisit = true;
             }
 
-			// todo property for making Visitor configurable?
-			Visitor visitor = (Visitor) request.getSession().getAttribute(WebKeys.VISITOR);
-
-			if(Objects.isNull(visitor)) {
-				visitor = VisitorFactory.getInstance().createVisitor(request, UUID.fromString(_dotCMSID), newVisitor);
-				request.getSession().setAttribute(WebKeys.VISITOR, visitor);
-			}
-
 			if(newVisitor) {
 				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISITOR);
 				if(response.isCommitted()) {
@@ -474,7 +468,6 @@ public abstract class VelocityServlet extends HttpServlet {
 					return;
 				}
 			}
-
 
 			RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_PAGE);
 
