@@ -1,6 +1,5 @@
 package com.dotcms.visitor.business;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.HttpRequestDataUtil;

@@ -3,7 +3,6 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import org.testng.annotations.Test;
 
@@ -20,12 +19,12 @@ import static org.testng.Assert.*;
 public class VisitorAPITest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testGetVisitorWhenNullRequestThrowsException() {
+    public void testGetVisitor_WhenNullRequest_ThrowsException() {
         APILocator.getVisitorAPI().getVisitor(null);
     }
 
     @Test
-    public void testGetVisitorWhenNullSessionAndCreateEqualsFalseReturnEmptyVisitor() {
+    public void testGetVisitor_WhenNullSessionAndCreateEqualsFalse_ReturnEmptyVisitor() {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         when(mockRequest.getSession(false)).thenReturn(null);
         Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(mockRequest, false);
@@ -33,7 +32,7 @@ public class VisitorAPITest {
     }
 
     @Test
-    public Optional<Visitor> testGetVisitorWhenCreateEqualsTrueReturnVisitor() {
+    public void testGetVisitor_WhenCreateEqualsTrue_ReturnVisitor() {
         HttpServletRequest mockRequest = mock(HttpServletRequest.class);
         HttpSession mockSession = mock(HttpSession.class);
         when(mockRequest.getSession()).thenReturn(mockSession);
@@ -47,7 +46,6 @@ public class VisitorAPITest {
         verify(mockRequest).getSession();
         assertTrue(visitor.isPresent());
         verify(mockSession).setAttribute(WebKeys.VISITOR, visitor.get());
-        return visitor;
     }
 
     private Language getLanguage() {
