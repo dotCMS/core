@@ -51,17 +51,13 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     ruleService = injector.get(RuleService)
     conditionGroupService = injector.get(ConditionGroupService)
     conditionService = injector.get(ConditionService)
-    ruleOnAddSub = ruleService.onAdd.subscribe((rule:RuleModel) => {
+    Tools.createRule(ruleService, (rule:RuleModel) => {
       if(!ruleUnderTest) {
         ruleUnderTest = rule
         groupUnderTest = new ConditionGroupModel(null, ruleUnderTest, "OR", 1)
         conditionGroupService.add(groupUnderTest, done)
       }
-    }, (err) => {
-      expect(err).toBeUndefined("error was thrown.")
-      done()
     })
-    Tools.createRule(ruleService)
 
   });
 

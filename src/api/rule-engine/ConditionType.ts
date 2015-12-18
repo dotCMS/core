@@ -5,7 +5,7 @@ import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
-import {I18nService, I18nResourceModel} from "../system/locale/I18n";
+import {I18nService} from "../system/locale/I18n";
 import {ParameterDefinition} from "../util/CwInputModel";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
@@ -46,15 +46,11 @@ export class ConditionTypeService {
   private _ref;
   private _cacheMap:{[key:string]: ServerSideTypeModel}
   private _rsrcService:I18nService;
-  private comparisonRsrc = {};
 
   constructor(apiRoot:ApiRoot, rsrcService:I18nService) {
     this._apiRoot = apiRoot
     this._rsrcService = rsrcService
     this._ref = apiRoot.root.child('system/ruleengine/conditionlets')
-    rsrcService.get(apiRoot.authUser.locale, 'api.sites.ruleengine.rules.inputs.comparison', (model:I18nResourceModel)=> {
-      this.comparisonRsrc = model.messages
-    })
     this._cacheMap = {}
   }
 
@@ -78,12 +74,13 @@ export class ConditionTypeService {
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
           json.key = key
-          this._rsrcService.get(this._apiRoot.authUser.locale, json.i18nKey, (rsrcResult:I18nResourceModel)=> {
+          console.log('requesting i18n:', json.i18nKey)
+          this._rsrcService.get(json.i18nKey).subscribe((rsrcResult)=> {
             count++
             let model = ServerSideTypeModel.fromJson(json)
             if (rsrcResult) {
               /* @todo ggranum: Remove the rsrc params from the Model object. */
-              model.i18n = rsrcResult
+              model.rsrc = rsrcResult
             }
             this._cacheMap[model.key] = model
             conditionTypes.push(model)

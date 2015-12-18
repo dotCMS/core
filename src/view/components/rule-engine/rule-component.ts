@@ -34,7 +34,7 @@ var rsrc = {
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
-    <div flex="70" layout="row" layout-align="start-center" class="cw-header" *ngIf="!hidden">
+    <div flex="70" layout="row" layout-align="start-center" class="cw-header-right" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
                      class="cw-rule-name-input"
@@ -49,7 +49,7 @@ var rsrc = {
       <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
       <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="onFireOnChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
     </div>
-    <div flex="30" layout="row" layout-align="end-center" class="cw-header" *ngIf="!hidden">
+    <div flex="30" layout="row" layout-align="end-center" class="cw-header-left" *ngIf="!hidden">
       <cw-toggle-input class="cw-input"
                        [on-text]="rsrc.inputs.onOff.on.label"
                        [off-text]="rsrc.inputs.onOff.off.label"
@@ -59,10 +59,10 @@ var rsrc = {
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button" aria-label="Delete Rule" (click)="removeRule($event)">
+          <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="removeRule($event)">
             <i class="trash icon"></i>
           </button>
-          <button class="ui button" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+          <button class="ui button cw-add-group" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -148,7 +148,6 @@ class RuleComponent {
       new DropdownOption('EVERY_REQUEST', 'EVERY_REQUEST', this.rsrc.inputs.fireOn.options.EveryRequest),
     ]
     this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOnOptions)
-
   }
 
   ngOnChanges(change) {

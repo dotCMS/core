@@ -5,8 +5,9 @@ import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel, CwI18nModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
-import {I18nService, I18nResourceModel, Internationalized} from "../system/locale/I18n";
+import {I18nService} from "../system/locale/I18n";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {TreeNode} from "../system/locale/I18n";
 
 let noop = (...arg:any[])=> {
 }
@@ -57,12 +58,12 @@ export class ActionTypeService {
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
           json.key = key
-          this._rsrcService.get(this._apiRoot.authUser.locale, json.i18nKey, (rsrcResult:I18nResourceModel)=> {
+          this._rsrcService.get(json.i18nKey).subscribe((rsrcResult:TreeNode)=> {
             count++
             let model = ServerSideTypeModel.fromJson(json)
             if (rsrcResult) {
               /* @todo ggranum: Remove the rsrc params from the Model object. */
-              model.i18n = rsrcResult
+              model.rsrc = rsrcResult
             }
             this._cacheMap[model.key] = model
             hydratedTypes.push(model)

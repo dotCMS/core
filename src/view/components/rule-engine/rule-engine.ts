@@ -1,10 +1,8 @@
 import {Http, HTTP_PROVIDERS} from 'angular2/http'
 import {bootstrap} from 'angular2/angular2';
-import {Provider, Observable, Component, Directive, View, Injector} from 'angular2/angular2';
+import {Provider, EventEmitter, Component, Directive, View, Injector} from 'angular2/angular2';
 import {CORE_DIRECTIVES} from 'angular2/angular2';
-import * as Rx from 'rxjs/Rx.KitchenSink'
-
-
+import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase';
@@ -26,35 +24,39 @@ import {ComparisonService} from "../../../api/system/ruleengine/conditionlets/Co
 import {InputService} from "../../../api/system/ruleengine/conditionlets/Inputs";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 import {CwFilter} from "../../../api/util/CwFilter"
+import {TreeNode} from "../../../api/system/locale/I18n";
 
-  /**
-   *
-   */
-  @Component({
-    selector: 'cw-rule-engine'
-  })
-  @View({
-    template: `<div flex layout="column" class="cw-rule-engine">
+
+const I8N_BASE:string = 'api.sites.ruleengine'
+
+/**
+ *
+ */
+@Component({
+  selector: 'cw-rule-engine'
+})
+@View({
+  template: `<div flex layout="column" class="cw-rule-engine">
   <div flex layout="column" layout-align="start start" class="cw-header">
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
         <i class="filter icon"></i>
-        <input class="cw-rule-filter" type="text" placeholder="{{rsrc.inputs.filter.placeholder}}" [value]="filterText" (keyup)="filterText = $event.target.value">
+        <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}" [value]="filterText" (keyup)="filterText = $event.target.value">
       </div>
       <div flex="2"></div>
       <button class="ui button cw-button-add" aria-label="Create a new rule" (click)="addRule()">
-        <i class="plus icon" aria-hidden="true"></i>{{rsrc.inputs.addRule.label}}
+        <i class="plus icon" aria-hidden="true"></i>{{rsrc('inputs.addRule.label') | async}}
       </button>
     </div>
     <div class="cw-filter-links">
       <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">
-        {{rsrc.inputs.filter.status?.all}} ({{rules.length}})
+        {{rsrc('inputs.filter.status.all.label') | async}} ({{rules.length}})
       </button>
       <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">
-        {{rsrc.inputs.filter.status?.active}} ({{activeRules}}/{{rules.length}})
+        {{rsrc('inputs.filter.status.active.label') | async}} ({{activeRules}}/{{rules.length}})
       </button>
       <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">
-        {{rsrc.inputs.filter.status?.inactive}} ({{rules.length-activeRules}}/{{rules.length}})
+        {{rsrc('inputs.filter.status.inactive.label') | async}} ({{rules.length-activeRules}}/{{rules.length}})
       </button>
     </div>
   </div>
@@ -66,99 +68,115 @@ import {CwFilter} from "../../../api/util/CwFilter"
 </div>
 
 `,
-    directives: [CORE_DIRECTIVES, RuleComponent]
-  })
-  export class RuleEngineComponent {
-    rules:Array<RuleModel>
-    filterText:string
-    status:string
-    activeRules:number
-    rsrc:any
-    private ruleService:RuleService;
-    private ruleStub:RuleModel
+  directives: [CORE_DIRECTIVES, RuleComponent]
+})
+export class RuleEngineComponent {
+  rules:Array<RuleModel>
+  filterText:string
+  status:string
+  activeRules:number
+  inactiveText:string
+  addRuleText:string
+  private ruleService:RuleService;
+  private ruleStub:RuleModel
+  private resources:I18nService;
+  private _rsrcCache:{[key:string]:Observable<string>}
 
-    constructor(ruleService:RuleService) {
-      this.rsrc = ruleService.rsrc
-      this.ruleService = ruleService
-      this.filterText = ""
-      this.rules = []
-      this.ruleService.list().subscribe(rules => {
-        this.rules = rules
-        this.sort()
-      })
-      this.status = null
-
-      this.getFilteredRulesStatus()
-    }
-
-    sort() {
-      this.rules.sort(function (a, b) {
-        return b.priority - a.priority;
-      });
-    }
-
-    onRuleChange(rule:RuleModel){
-      if(rule.isValid()){
-        if(rule.isPersisted()){
-          this.ruleService.save(rule)
-        }
-        else {
-          this.ruleService.add(rule);
-        }
-      }
-      this.getFilteredRulesStatus()
-    }
-
-    onRuleRemove(rule:RuleModel){
-      if(rule.isPersisted()){
-        this.ruleService.remove(rule)
-      }
-      this.rules = this.rules.filter((arrayRule) => {
-        return arrayRule.key !== rule.key
-      })
-      this.getFilteredRulesStatus()
-    }
-
-    addRule() {
-      let rule = new RuleModel(null)
-      rule.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
-      this.rules.unshift(rule)
+  constructor(ruleService:RuleService, resources:I18nService) {
+    this.resources = resources
+    resources.get(I8N_BASE).subscribe((rsrc)=> {
+    })
+    this.ruleService = ruleService
+    this.filterText = ""
+    this.rules = []
+    this._rsrcCache = {}
+    this.ruleService.list().subscribe(rules => {
+      this.rules = rules
       this.sort()
-    }
+    })
+    this.status = null
 
-    getFilteredRulesStatus() {
-    	this.activeRules = 0;
-    	for (var i = 0;  i < this.rules.length ; i++){
-    		if (this.rules[i].enabled){
-    			this.activeRules++;
-    		}
-    	}
-    }
+    this.getFilteredRulesStatus()
+  }
 
-    setFieldFilter(field:string, value:string=null){
-      // remove old status
-      var re = new RegExp(field + ':[\\w]*')
-      this.filterText = this.filterText.replace(re, '' ) // whitespace issues: "blah:foo enabled:false mahRule"
-      if(value !== null) {
-        this.filterText = field + ':' + value + ' ' + this.filterText
+  rsrc(subkey:string) {
+    let x = this._rsrcCache[subkey]
+    if(!x){
+      x = this.resources.get(I8N_BASE + '.rules.' + subkey)
+      this._rsrcCache[subkey] = x
+    }
+    return x
+
+  }
+
+  sort() {
+    this.rules.sort(function (a, b) {
+      return b.priority - a.priority;
+    });
+  }
+
+  onRuleChange(rule:RuleModel) {
+    if (rule.isValid()) {
+      if (rule.isPersisted()) {
+        this.ruleService.save(rule)
+      }
+      else {
+        this.ruleService.add(rule);
       }
     }
+    this.getFilteredRulesStatus()
+  }
 
-    isFilteringField(field:string, value:any=null):boolean{
-      let isFiltering
-      if(value === null){
-        var re = new RegExp(field + ':[\\w]*')
-        isFiltering =  this.filterText.match(re) != null
-      } else{
-        isFiltering = this.filterText.indexOf(field + ':' + value) >= 0
-      }
-      return isFiltering
+  onRuleRemove(rule:RuleModel) {
+    if (rule.isPersisted()) {
+      this.ruleService.remove(rule)
     }
+    this.rules = this.rules.filter((arrayRule) => {
+      return arrayRule.key !== rule.key
+    })
+    this.getFilteredRulesStatus()
+  }
 
-    isFiltered(rule:RuleModel){
-        return CwFilter.isFiltered(rule,this.filterText)
+  addRule() {
+    let rule = new RuleModel(null)
+    rule.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
+    this.rules.unshift(rule)
+    this.sort()
+  }
+
+  getFilteredRulesStatus() {
+    this.activeRules = 0;
+    for (var i = 0; i < this.rules.length; i++) {
+      if (this.rules[i].enabled) {
+        this.activeRules++;
+      }
     }
   }
+
+  setFieldFilter(field:string, value:string = null) {
+    // remove old status
+    var re = new RegExp(field + ':[\\w]*')
+    this.filterText = this.filterText.replace(re, '') // whitespace issues: "blah:foo enabled:false mahRule"
+    if (value !== null) {
+      this.filterText = field + ':' + value + ' ' + this.filterText
+    }
+  }
+
+  isFilteringField(field:string, value:any = null):boolean {
+    let isFiltering
+    if (value === null) {
+      var re = new RegExp(field + ':[\\w]*')
+      isFiltering = this.filterText.match(re) != null
+    } else {
+      isFiltering = this.filterText.indexOf(field + ':' + value) >= 0
+    }
+    return isFiltering
+  }
+
+  isFiltered(rule:RuleModel) {
+    return CwFilter.isFiltered(rule, this.filterText)
+  }
+}
 
 
 export class RuleEngineApp {

@@ -1,6 +1,6 @@
 import {Inject, EventEmitter} from 'angular2/angular2';
 import {CwChangeEvent} from "./CwEvent";
-import {I18nResourceModel, Internationalized} from "../system/locale/I18n";
+import {TreeNode} from "../system/locale/I18n";
 
 
 
@@ -30,9 +30,8 @@ export class CwModel {
 
 export class CwI18nModel extends CwModel{
 
-  rsrc: any
+  rsrc: TreeNode | any
   private _i18nKey:string
-  private _i18n:I18nResourceModel
 
 
   constructor(key:string = null,  i18nKey:string = null, defaultResources:any = null) {
@@ -44,15 +43,5 @@ export class CwI18nModel extends CwModel{
   get i18nKey():string {
     return this._i18nKey;
   }
-
-  get i18n():I18nResourceModel {
-    return this._i18n;
-  }
-
-  set i18n(value:I18nResourceModel) {
-    this._i18n = value;
-    Object.assign(this.rsrc, value.messages)
-  }
-
 
 }

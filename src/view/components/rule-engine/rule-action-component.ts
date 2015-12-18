@@ -20,7 +20,7 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <cw-input-dropdown
-        class="cw-action-type-dropdown"
+        class="cw-type-dropdown"
         [model]="typeDropdown"
         [value]="[action.type.key]"
         (change)="onActionTypeChange($event)">

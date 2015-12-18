@@ -37,7 +37,8 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     [required]="required"
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
-    (blur)="onBlur($event.target.value)">
+    (blur)="onBlur($event.target.value)"
+    (focus)="onFocus($event.target.value)">
   <i [ngClass]="icon" *ngIf="icon"></i>
   <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
@@ -61,11 +62,13 @@ export class InputText implements ControlValueAccessor{
   @Input()  errorMessage:string
   @Output() change:EventEmitter<any>
   @Output() blur:EventEmitter<any>
+  @Output() focus:EventEmitter<any>
 
 
   constructor(private _renderer: Renderer, private _elementRef: ElementRef) {
     this.change = new EventEmitter()
     this.blur = new EventEmitter()
+    this.focus = new EventEmitter()
   }
 
   ngOnChanges(change){
@@ -82,6 +85,10 @@ export class InputText implements ControlValueAccessor{
   onBlur(value){
     this.onTouched()
     this.blur.emit(value)
+  }
+
+  onFocus(value){
+    this.focus.emit(value)
   }
 
   writeValue(value: string): void {

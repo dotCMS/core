@@ -7,7 +7,6 @@ import {I18NCountryProvider} from "../../../../../api/system/locale/I18NCountryP
 import {DropdownModel} from "../../../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
-import {I18nResourceModel} from "../../../../../api/system/locale/I18n";
 
 export class CountryConditionModel {
   parameterKeys:Array<string> = ['isoCode']
@@ -68,9 +67,9 @@ export class CountryCondition {
     this.change = new EventEmitter();
     this.value = new CountryConditionModel()
     let opts = []
-    i18nService.get(apiRoot.authUser.locale, 'api.sites.ruleengine.rules.inputs.comparison', (result:I18nResourceModel)=>{
+    i18nService.get('api.sites.ruleengine.rules.inputs.comparison', (result)=>{
       this.comparisons.forEach((comparison:any)=>{
-        opts.push(new DropdownOption(comparison.id, comparison.id, result.messages[comparison.id]))
+        opts.push(new DropdownOption(comparison.id, comparison.id, result[comparison.id]))
       })
       this.comparatorDropdown.addOptions( opts);
     })

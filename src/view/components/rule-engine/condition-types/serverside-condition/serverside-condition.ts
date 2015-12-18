@@ -59,11 +59,10 @@ export class ServersideCondition {
     console.log("ServersideCondition", "ngOnChanges", change)
     if(change.model){
       console.log("ServersideCondition", "ngOnChanges-value", change.model.currentValue)
-
     }
     if(change.paramDefs){
       let prevPriority = 0
-
+      this.inputs = []
       Object.keys(this.paramDefs).forEach(key => {
         let paramDef = this.model.getParameterDef(key)
         let param = this.model.getParameter(key);

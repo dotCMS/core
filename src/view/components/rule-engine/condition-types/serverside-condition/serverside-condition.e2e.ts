@@ -1,4 +1,4 @@
-import {TestButton, DDInput} from "../../../../../api/test/CwProtractor";
+import {TestButton, TestInputDropdown} from "../../../../../api/test/CwProtractor";
 
 class TextInput {
   root:protractor.ElementFinder
@@ -12,8 +12,8 @@ class TextInput {
 }
 
 class PageInputs {
-  demoOneRequestHeaderDD:DDInput = new DDInput(element.all(by.tagName('cw-input-dropdown')).get(0))
-  demoOneComparisonDD:DDInput = new DDInput(element.all(by.tagName('cw-input-dropdown')).get(1))
+  demoOneRequestHeaderDD:TestInputDropdown = new TestInputDropdown(element.all(by.tagName('cw-input-dropdown')).get(0))
+  demoOneComparisonDD:TestInputDropdown = new TestInputDropdown(element.all(by.tagName('cw-input-dropdown')).get(1))
   demoOneRequestValueTF:TextInput = new TextInput(element.all(by.tagName('cw-input-text')).get(0))
 }
 
@@ -72,7 +72,7 @@ describe('The serverside condtion demo', function () {
     let visibleItems = dd.menu.all(by.css('[class="item selected"]'))
     expect(visibleItems.count()).toEqual(1, "There should only be one element unfiltered, and it should be selected.")
     compareDD.el.click() // click away from this dd to close menu and set value.
-    let value = dd.valueInput.getAttribute('value')
+    let value = dd.getValueText()
     expect(value).toEqual("Connection", "Value should have been set to Connection because it was only search result.")
   })
 })

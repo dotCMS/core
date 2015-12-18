@@ -167,7 +167,7 @@ export class DropdownModel extends CwComponent {
 })
 @View({
   template: `
-<div class="ui fluid selection dropdown search ng-valid" [ngClass]="{required:model.minSelections > 0, multiple: model.maxSelections > 1}" tabindex="0">
+<div class="ui fluid selection dropdown search ng-valid" [ngClass]="{required:model.minSelections > 0, multiple: model.maxSelections > 1}" tabindex="0" (change)="stopNativeEvents($event)" (blur)="stopNativeEvents($event)">
   <input type="hidden" [name]="model.name" [value]="getSelected()" >
   <i class="dropdown icon"></i>
   <div class="default text">{{model.placeholder}}</div>
@@ -288,6 +288,11 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
       }
     })
   };
+
+  stopNativeEvents(event){
+    console.log("Preventing bubbling of native change event.", event)
+    event.stopPropagation();
+  }
 
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element

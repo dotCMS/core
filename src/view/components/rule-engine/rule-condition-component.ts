@@ -11,6 +11,7 @@ import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {I18nService} from "../../../api/system/locale/I18n";
 
 
 @Component({
@@ -27,7 +28,7 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
       </button>
     </div>
     <cw-input-dropdown
-        class="cw-condition-type-dropdown"
+        class="cw-type-dropdown"
         [model]="typeDropdown"
         [value]="[condition.type.key]"
         (change)="onConditionTypeChange($event)"></cw-input-dropdown>
@@ -79,7 +80,7 @@ export class ConditionComponent {
   private _typeService:ConditionTypeService
   private _conditionService:ConditionService;
 
-  constructor(conditionService:ConditionService, typeService:ConditionTypeService) {
+  constructor(conditionService:ConditionService, typeService:ConditionTypeService, resources:I18nService) {
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
 
@@ -94,15 +95,13 @@ export class ConditionComponent {
       types.forEach(type => {
         opts.push(new DropdownOption(type.key, type, type.rsrc.name))
       })
-      this.typeDropdown = new DropdownModel('conditionType', "Select a Condition", [], opts)
+      this.typeDropdown = new DropdownModel('conditionType', "Select a Condition...", [], opts)
     })
   }
 
   ngOnChanges(change){
     console.log("ConditionComponent", "ngOnChanges", change)
     if(change.condition){
-      console.log("ConditionComponent", "ngOnChanges-value", change.condition.currentValue)
-
       this.condition = change.condition.currentValue
       if(this.typeDropdown && this.condition.type){
         this.typeDropdown.selected = [this.condition.type.key]

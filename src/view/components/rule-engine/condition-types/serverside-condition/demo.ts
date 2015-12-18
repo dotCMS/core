@@ -11,16 +11,17 @@ import {ServerSideTypeModel} from "../../../../../api/rule-engine/ServerSideFiel
   template: `<div flex layout="row" layout-wrap layout-align="start-start" style="height:5em">
   <div flex="100" layout="row" layout-wrap >
     <div flex="100"> Dropdown, Comparisons, Text Input </div>
-    <cw-serverside-condition flex="100" [model]="demo.one" (change)="demoOneChange($event)"></cw-serverside-condition>
+    <cw-serverside-condition flex="100" [model]="demo.one" [paramDefs]="paramDefs" (change)="demoOneChange($event)"></cw-serverside-condition>
   </div>
 </div>
   `
 })
 class App {
   demo:any;
+  paramDefs:any
 
   constructor(@Attribute('id') id:string) {
-
+    this.paramDefs = MOCK_CONDITIONLET.parameterDefinitions
     this.demo = {
       'one': new ConditionModel("test2", new ServerSideTypeModel("Demo1Condition", "demo1", MOCK_CONDITIONLET.parameterDefinitions)),
       'two': {},

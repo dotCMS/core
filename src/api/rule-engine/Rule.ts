@@ -9,7 +9,7 @@ import {EntitySnapshot} from "../persistence/EntityBase";
 import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {ActionService, ActionModel} from "./Action";
-import {I18nService, I18nResourceModel} from "../system/locale/I18n";
+import {I18nService} from "../system/locale/I18n";
 import {DevUtil} from "../util/DevUtil";
 
 
@@ -119,14 +119,9 @@ const RULE_I18N_BASE_KEY = 'api.sites.ruleengine.rules';
 @Injectable()
 export class RuleService {
   ref:EntityMeta
-  onRemove:Observable<RuleModel>
-  onAdd:Observable<RuleModel>
-  onResourceUpdate:ConnectableObservable<RuleModel>
 
   rsrc:any = RULE_DEFAULT_RSRC
 
-  private _removed:EventEmitter<RuleModel>
-  private _added:EventEmitter<RuleModel>
   private _rsrcService:I18nService;
 
   http:Http
@@ -142,23 +137,6 @@ export class RuleService {
     this.http = http
     this.ref = apiRoot.defaultSite.child('ruleengine/rules')
     this._rsrcService = rsrcService
-    this._added = new EventEmitter()
-    this._removed = new EventEmitter()
-    let onAdd = Observable.from(this._added)
-    let onRemove = Observable.from(this._removed)
-    this.onAdd = onAdd.share()
-    this.onRemove = onRemove.share()
-    this.onResourceUpdate = Observable.create().share()
-
-
-
-    this.onResourceUpdate = Observable.create((observer) => {
-      rsrcService.get(apiRoot.authUser.locale, RULE_I18N_BASE_KEY, (i18n:I18nResourceModel)=> {
-        this.rsrc = i18n.messages
-        observer.next(i18n.messages)
-      })
-    }).publishReplay()
-    this.onResourceUpdate.connect()
   }
 
 
@@ -226,7 +204,6 @@ export class RuleService {
       }
       rule.snapshot = resultSnapshot
       rule.key = resultSnapshot.key()
-      this._added.next(rule)
       if (cb) {
         cb(rule)
       }
@@ -248,12 +225,17 @@ export class RuleService {
     }
   }
 
-  remove(rule:RuleModel) {
+  remove(rule:RuleModel, cb:Function=null) {
     if (rule.isPersisted()) {
       rule.snapshot.ref().remove((key)=> {
-        this._removed.next(rule)
+        if(cb){
+          cb()
+        }
       }).catch((e) => {
         console.log("Error removing rule", e)
+        if(cb){
+          cb(e)
+        }
         throw e
       })
     }

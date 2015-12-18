@@ -41,7 +41,7 @@ export class Hero {
       </div>
       <div flex="100" layout-wrap layout="row" class="ui attached segment">
         <label flex="100" for="name">Text-Input Name</label>
-        <cw-input-text flex="100" required [(ngModel)]="model.inputname" ngControl="inputname" #inputname="ngForm"></cw-input-text>
+        <cw-input-text flex="100" [name]="model.inputname.name" required [(ngModel)]="model.inputname" ngControl="inputname" #inputname="ngForm"></cw-input-text>
         <div flex="50" [hidden]="inputname.valid" [class.ui]="!inputname.valid" class="inputname red basic label">Input-Name is
           required
         </div>
