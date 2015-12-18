@@ -23,6 +23,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringEscapeUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -76,7 +77,7 @@ public class JSONCategoriesServlet extends HttpServlet implements Servlet {
 			int count = -1;
 			String startStr = request.getParameter("start");
 			String countStr = request.getParameter("count");
-			String sort = request.getParameter("sort");
+			String sort = SQLUtil.sanityOrderBy(request.getParameter("sort"));
 
 			if(UtilMethods.isSet(startStr) && UtilMethods.isSet(countStr)) {
 				start = Integer.parseInt(request.getParameter("start"));

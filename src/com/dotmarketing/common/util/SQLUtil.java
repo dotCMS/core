@@ -147,4 +147,35 @@ public class SQLUtil {
 		}
   	  return queryString.toString();
 	}
+	
+	/**
+	 * Method to sanitize order by SQL injection
+	 * @param orderByRequest
+	 * @return
+	 */
+	public static String sanityOrderBy(String orderByRequest){
+		String[] validOrders = {"title", "modDate", "page_url","name","velocity_var_name","description","category_","sort_order","keywords"};
+		String[] evilSQLWords = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
+				"group", "order", "as ", "count","drop", "alter","truncate", "declair", "where", "exec", "--", "procedure", "pg_", "lock",
+				"unlock","write", "engine", "null","not ","mode", "set ",";"};
+
+		
+		if(!UtilMethods.isSet(orderByRequest)){//check if is not null
+			return "";
+		}
+		
+		for(String str : evilSQLWords){
+			if(orderByRequest.contains(str)){//check if the order by requested have any other command
+				return "";
+			}
+		}
+		
+		for(String str : validOrders){
+			if(orderByRequest.contains(str)){//check if the order by requested is a valid one
+				return orderByRequest;
+			}
+		}
+		
+		return "";
+	}
 }

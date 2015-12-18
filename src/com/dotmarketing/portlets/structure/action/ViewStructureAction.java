@@ -14,6 +14,7 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
@@ -73,7 +74,7 @@ public class ViewStructureAction extends DotPortletAction {
 		
 		
 		try {
-			String orderby = req.getParameter("orderBy");
+			String orderby = SQLUtil.sanityOrderBy(req.getParameter("orderby"));
 			String direction = req.getParameter("direction");
 			if (!UtilMethods.isSet(orderby)){
 				orderby = "mod_date";
