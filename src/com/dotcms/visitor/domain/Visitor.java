@@ -8,9 +8,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.Locale;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public class Visitor implements Serializable {
 
@@ -24,7 +22,7 @@ public class Visitor implements Serializable {
 
     private IPersona persona;
 
-    private Set<String> accruedTags;
+    private Set<String> accruedTags = new HashSet<>();
 
     private UserAgent userAgent;
 
@@ -35,6 +33,8 @@ public class Visitor implements Serializable {
     private URI referrer;
 
     private LocalDateTime lastRequestDate;
+
+    private final Map<String, Serializable> map = new HashMap<>();
 
     //private VisitorsJourney journey;
 
@@ -120,6 +120,14 @@ public class Visitor implements Serializable {
 
     public void setLastRequestDate(LocalDateTime lastRequestDate) {
         this.lastRequestDate = lastRequestDate;
+    }
+
+    public Serializable put(String key, Serializable value) {
+        return map.put(key, value);
+    }
+
+    public Serializable get(String key) {
+        return map.get(key);
     }
 
     @Override
