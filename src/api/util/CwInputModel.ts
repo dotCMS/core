@@ -93,6 +93,7 @@ export class CwDropdownInputModel extends CwInputDefinition {
   minSelections:number = 0
   maxSelections:number = 1
   selected:Array<any>
+  i18nBaseKey:string
 
   constructor(id:string, name:string) {
     super(id, name)
@@ -134,7 +135,7 @@ export class ParameterDefinition {
   priority: number
   key:string
   inputType: CwInputDefinition
-
+  i18nBaseKey:string
 
   constructor() {
   }
@@ -146,6 +147,8 @@ export class ParameterDefinition {
     m.priority = json.priority
     m.key = json.key
     m.inputType = CwInputDefinition.fromJson(json.inputType, m.key)
+    m.i18nBaseKey = json.i18nBaseKey
+
     return m;
   }
 }

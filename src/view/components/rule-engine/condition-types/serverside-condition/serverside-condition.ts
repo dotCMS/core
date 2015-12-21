@@ -112,17 +112,29 @@ export class ServersideCondition {
     let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
     let opts = []
     let options = inputType.options;
-    let baseI18nKey
+    let i18nBaseKey
     if (param.key == 'comparison') {
-      baseI18nKey = 'api.sites.ruleengine.rules.inputs.comparison'
+      i18nBaseKey = 'api.sites.ruleengine.rules.inputs.comparison'
+    }
+    else if(paramDef.i18nBaseKey){
+      i18nBaseKey = paramDef.i18nBaseKey
     }
     else{
-      baseI18nKey = this.model.type.i18nKey + '.inputs.' + paramDef.key + '.options'
+      i18nBaseKey = this.model.type.i18nKey + '.inputs.' + paramDef.key + '.options'
     }
 
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
-      opts.push({value: key, label: this._resources.get(baseI18nKey + '.' + option.i18nKey)})
+      let labelKey = i18nBaseKey + '.' + option.i18nKey
+      // hack for country - @todo ggranum: kill 'name' on locale?
+      if(param.key === 'country'){
+        labelKey = labelKey + '.name'
+      }
+      opts.push({
+        value: key,
+        label: this._resources.get(labelKey),
+        icon: option.icon
+      })
     })
     let input:any = {
       value: this.model.getParameterValue(param.key),

@@ -97,7 +97,6 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
         this.initDropdown()
       }
     }
-    console.log('changes:', change)
   }
 
   addOption(option:InputOption) {
@@ -125,10 +124,8 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
   }
 
   initDropdown() {
-    console.log("Dropdown", "initDropdown", "Initialized?", this._viewIsInitialized)
     if (this._viewIsInitialized) {
       this._updateView = false
-      console.log("Dropdown", "initDropdown")
       var self = this;
       let config:any = {
         allowAdditions: this.allowAdditions,
@@ -192,7 +189,6 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
   };
 
   stopNativeEvents(event) {
-    console.log("Preventing bubbling of native change event.", event)
     event.stopPropagation();
   }
 
@@ -203,7 +199,6 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
    * @param $choice
    */
   onChange(value, text, $choice) {
-    console.log('dropdown', 'onChange', value, text, " Selected: ", this.value)
     this.value = value
     if (this.isMultiSelect()) {
       debugger
