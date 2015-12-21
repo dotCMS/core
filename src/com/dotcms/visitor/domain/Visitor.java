@@ -38,12 +38,6 @@ public class Visitor implements Serializable {
 
     //private VisitorsJourney journey;
 
-//    public Visitor ipAddress(String ipAddress) {
-//        this.ipAddress = ipAddress;
-//        return this;
-//    }
-
-
     public static Visitor newInstance(HttpServletRequest request) {
         return new Visitor();
     }
