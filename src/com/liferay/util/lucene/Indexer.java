@@ -24,7 +24,7 @@ package com.liferay.util.lucene;
 
 import com.dotcms.repackage.javax.portlet.PortletURL;
 
-import com.dotcms.repackage.org.apache.lucene.document.Document;
+import org.apache.lucene.document.Document;
 
 /**
  * <a href="Indexer.java.html"><b><i>View Source</i></b></a>

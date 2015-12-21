@@ -24,7 +24,7 @@ package com.liferay.util.lucene;
 
 import java.io.Serializable;
 
-import com.dotcms.repackage.org.apache.lucene.document.Document;
+import org.apache.lucene.document.Document;
 
 /**
  * <a href="Hits.java.html"><b><i>View Source</i></b></a>
