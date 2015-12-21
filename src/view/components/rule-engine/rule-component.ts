@@ -1,7 +1,7 @@
 import {Component, Directive, View, ElementRef, Inject, Input, Output, EventEmitter} from 'angular2/angular2';
 import {CORE_DIRECTIVES} from 'angular2/angular2';
 
-import * as Rx from 'rxjs/Rx.KitchenSink'
+import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
@@ -15,9 +15,13 @@ import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {EntityMeta} from "../../../api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
-import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
+import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText} from "../semantic/elements/input-text/input-text";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {I18nService} from "../../../api/system/locale/I18n";
+
+
+const I8N_BASE:string = 'api.sites.ruleengine'
 
 var rsrc = {
   fireOn: {
@@ -43,16 +47,27 @@ var rsrc = {
                      focused="{{rule.key == null}}"
                      (click)="$event.stopPropagation()"
                      name="rule-{{rule.key}}-name"
-                     placeholder="{{rsrc.inputs.name.placeholder}}"
+                     placeholder="{{rsrc('inputs.name.placeholder') | async}}"
                      [value]="rule.name">
       </cw-input-text>
-      <span class="cw-fire-on-label">{{rsrc.inputs.fireOn.label}}</span>
-      <cw-input-dropdown flex="none" class="cw-fire-on-dropdown" [model]="fireOnDropdown" (change)="onFireOnChange($event)" (click)="$event.stopPropagation()"></cw-input-dropdown>
+      <span class="cw-fire-on-label">{{rsrc('inputs.fireOn.label') | async}}</span>
+      <cw-input-dropdown flex="none"
+                         class="cw-fire-on-dropdown"
+                         [value]="fireOn.value"
+                         placeholder="{{fireOn.placeholder | async}}"
+                         (change)="onFireOnChange($event)"
+                         (click)="$event.stopPropagation()">
+        <cw-input-option
+            *ngFor="#opt of fireOn.options"
+            [value]="opt.value"
+            [label]="opt.label | async"
+            icon="{{opt.icon}}"></cw-input-option>
+      </cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end-center" class="cw-header-left" *ngIf="!hidden">
       <cw-toggle-input class="cw-input"
-                       [on-text]="rsrc.inputs.onOff.on.label"
-                       [off-text]="rsrc.inputs.onOff.off.label"
+                       [on-text]="rsrc('inputs.onOff.on.label') | async"
+                       [off-text]="rsrc('inputs.onOff.off.label') | async"
                        [value]="rule.enabled"
                        (change)="handleEnabledToggle($event)"
                        (click)="$event.stopPropagation()">
@@ -77,7 +92,7 @@ var rsrc = {
                      (remove)="onConditionGroupRemove($event)"
                      (change)="onConditionGroupChange($event)"></condition-group>
     <div flex layout="column" layout-align="center-start" class="cw-action-separator">
-      {{rsrc.inputs.action.firesActions}}
+      {{rsrc('inputs.action.firesActions') | async}}
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
       <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
@@ -100,7 +115,7 @@ var rsrc = {
 </div>
 
 `,
-  directives: [CORE_DIRECTIVES, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown]
+  directives: [CORE_DIRECTIVES, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption]
 })
 class RuleComponent {
   @Input() rule:RuleModel
@@ -114,25 +129,28 @@ class RuleComponent {
   groups:Array<ConditionGroupModel>
 
   elementRef:ElementRef
-  rsrc:any
   private ruleService:RuleService
   private actionService:ActionService
   private _groupService:ConditionGroupService
 
-  private fireOnDropdown:DropdownModel
-
+  private fireOn:any
+  private _rsrcCache:{[key:string]:Observable<string>}
+  resources:I18nService
 
   constructor(elementRef:ElementRef,
               ruleService:RuleService,
               actionService:ActionService,
-              groupService:ConditionGroupService) {
+              groupService:ConditionGroupService,
+              resources:I18nService) {
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
-    this.rsrc = ruleService.rsrc
     this.elementRef = elementRef
     this.actionService = actionService
     this.ruleService = ruleService;
-    this._groupService = groupService;
+    this._groupService = groupService
+    this.resources = resources
+    this._rsrcCache = {}
+
 
     this.groups = []
     this.actions = []
@@ -141,13 +159,28 @@ class RuleComponent {
     this.collapsed = false
 
 
-    var fireOnOptions = [
-      new DropdownOption('EVERY_PAGE', 'EVERY_PAGE', this.rsrc.inputs.fireOn.options.EveryPage),
-      new DropdownOption('ONCE_PER_VISIT', 'ONCE_PER_VISIT', this.rsrc.inputs.fireOn.options.OncePerVisit),
-      new DropdownOption('ONCE_PER_VISITOR', 'ONCE_PER_VISITOR', this.rsrc.inputs.fireOn.options.OncePerVisitor),
-      new DropdownOption('EVERY_REQUEST', 'EVERY_REQUEST', this.rsrc.inputs.fireOn.options.EveryRequest),
-    ]
-    this.fireOnDropdown = new DropdownModel('fireOn', "Select One", ['EVERY_PAGE'], fireOnOptions)
+    this.fireOn = {
+      value: 'EVERY_PAGE',
+      placeholder: Observable.of("Select One"),
+      options: [
+        {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage')},
+        {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
+        {value: 'ONCE_PER_VISITOR', label: this.rsrc('inputs.fireOn.options.OncePerVisitor')},
+        {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
+      ]
+    }
+  }
+
+  rsrc(subkey:string) {
+    let msgObserver = this._rsrcCache[subkey]
+    if (!msgObserver) {
+      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey)
+      this._rsrcCache[subkey] = msgObserver.map(v => {
+        return v
+      })
+    }
+    return msgObserver
+
   }
 
   ngOnChanges(change) {
@@ -164,7 +197,6 @@ class RuleComponent {
           }
         })
         this.actionService.list(rule).subscribe((actions) => {
-          console.log("RuleComponent", "askdlfaslkdfjlj", actions)
           this.actions = actions || []
           if (this.actions.length === 0) {
             this.addAction()
@@ -172,7 +204,7 @@ class RuleComponent {
             this.sort()
           }
         })
-        this.fireOnDropdown.selected = [rule.fireOn]
+        this.fireOn.value = rule.fireOn
         this.collapsed = rule.isPersisted()
       } else {
         this.addGroup()

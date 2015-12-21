@@ -7,6 +7,7 @@ import {CwI18nModel} from "../util/CwModel";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwChangeEvent} from "../util/CwEvent";
 import {ParameterDefinition} from "../util/CwInputModel";
+import {CwInputDefinition} from "../util/CwInputModel";
 
 
 let noop = (...arg:any[])=> {
@@ -117,7 +118,6 @@ export class ServerSideFieldModel extends CwModel {
 
 
 export class ServerSideTypeModel extends CwI18nModel {
-
 
   i18nKey:string
   parameters:{ [key:string]:ParameterDefinition}

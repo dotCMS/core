@@ -1,11 +1,12 @@
 import {Component, Directive, View, Inject} from 'angular2/angular2';
 import {Input, Output, EventEmitter} from 'angular2/angular2';
 import {CORE_DIRECTIVES} from 'angular2/angular2';
+import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {ActionModel} from "../../../api/rule-engine/Action";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 import {ActionService} from "../../../api/rule-engine/Action";
-import {Dropdown, DropdownModel, DropdownOption} from "../semantic/modules/dropdown/dropdown";
+import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
@@ -21,9 +22,14 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <cw-input-dropdown
         class="cw-type-dropdown"
-        [model]="typeDropdown"
-        [value]="[action.type.key]"
-        (change)="onActionTypeChange($event)">
+        [value]="action.type.key"
+        placeholder="{{typeDropdown.placeholder}}"
+        (change)="onTypeChange($event)">
+         <cw-input-option
+            *ngFor="#opt of typeDropdown.options"
+            [value]="opt.value"
+            [label]="opt.label | async"
+            icon="{{opt.icon}}"></cw-input-option>
     </cw-input-dropdown>
   </div>
   <div flex layout-fill class="cw-condition-row-main">
@@ -44,7 +50,8 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
 </div>`, directives: [CORE_DIRECTIVES,
     ServersideCondition,
     CountryCondition,
-    Dropdown
+    Dropdown,
+    InputOption
   ]
 })
 export class RuleActionComponent {
@@ -54,16 +61,17 @@ export class RuleActionComponent {
   @Output() change:EventEmitter<ServerSideFieldModel>
   @Output() remove:EventEmitter<ServerSideFieldModel>
 
-  typeDropdown:DropdownModel
+  typeDropdown:any
 
   private _typeService:ActionTypeService
   private _actionService:ActionService;
+  private _types:{[key:string]: any}
 
-  workPls:string
 
-  constructor(actionService:ActionService, typeService:ActionTypeService) {
+  constructor(actionService:ActionService, typeService:ActionTypeService, resources:I18nService) {
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
+    this._types = {}
 
     this._actionService = actionService;
     this._typeService = typeService
@@ -71,32 +79,31 @@ export class RuleActionComponent {
     this.action = new ConditionModel(null, new ServerSideTypeModel())
     this.index = 0
 
-    this.workPls = ""
-
     typeService.list().subscribe((types:ServerSideTypeModel[])=> {
-      let opts = []
+      this.typeDropdown = {
+        value: "",
+        placeholder:"Select an Action",
+        options: []
+      }
       types.forEach(type => {
-        opts.push(new DropdownOption(type.key, type, type.rsrc.name))
+        this._types[type.key] = type
+        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name')}
+        this.typeDropdown.options.push(opt)
       })
-      this.typeDropdown = new DropdownModel('actionType', "Select an Action", [], opts)
     })
   }
 
   ngOnChanges(change){
-    console.log("RuleActionComponent", "ngOnChanges", change)
     if (change.action){
-      console.log("RuleActionComponent", "ngOnChanges-value", change.action.currentValue)
       this.action = change.action.currentValue
       if (this.typeDropdown && this.action.type) {
-        this.typeDropdown.selected = [this.action.type.key]
+        this.typeDropdown.value = this.action.type.key
       }
     }
   }
 
-  onActionTypeChange(value) {
-    console.log("RuleActionComponent", "onActionTypeChange", value)
-    this.action.type = value
-    this.workPls = "nrrrg-" + new Date().getTime()
+  onTypeChange(value) {
+    this.action.type = this._types[value]
     this.change.emit(this.action)
   }
 

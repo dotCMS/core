@@ -1,10 +1,8 @@
 import {Component, View, Attribute, EventEmitter, NgFor, NgIf, Inject} from 'angular2/angular2';
 
 
-import {Dropdown} from "../../../semantic/modules/dropdown/dropdown";
-import {DropdownOption} from "../../../semantic/modules/dropdown/dropdown";
+import {Dropdown, InputOption} from "../../../semantic/modules/dropdown/dropdown";
 import {I18NCountryProvider} from "../../../../../api/system/locale/I18NCountryProvider";
-import {DropdownModel} from "../../../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 
@@ -59,8 +57,8 @@ export class CountryCondition {
   countries:Array<any>
 
   value:CountryConditionModel
-  private countryDropdown:DropdownModel
-  private comparatorDropdown:DropdownModel
+  private countryDropdown:any
+  private comparatorDropdown:any
 
   constructor(@Inject(ApiRoot) apiRoot:ApiRoot, @Inject(I18NCountryProvider) countryProvider:I18NCountryProvider, @Inject(I18nService) i18nService:I18nService) {
     this.countries = []
@@ -69,12 +67,12 @@ export class CountryCondition {
     let opts = []
     i18nService.get('api.sites.ruleengine.rules.inputs.comparison', (result)=>{
       this.comparisons.forEach((comparison:any)=>{
-        opts.push(new DropdownOption(comparison.id, comparison.id, result[comparison.id]))
+        opts.push({value:comparison.id,  label: result[comparison.id]})
       })
       this.comparatorDropdown.addOptions( opts);
     })
-    this.comparatorDropdown = new DropdownModel("comparator", "Comparison", [this.comparisons[0].id], []);
-    this.countryDropdown = new DropdownModel("country", "Country")
+    this.comparatorDropdown = {name:"comparator", placeholder:"Comparison", value: this.comparisons[0].id}
+    this.countryDropdown = {name:"country", placeholder:"Country"}
 
     countryProvider.promise.then(()=> {
       var byNames = countryProvider.byName
@@ -84,7 +82,7 @@ export class CountryCondition {
       names.forEach((name)=> {
         tempCountries.push({id: byNames[name], label: name})
         let id = byNames[name]
-        opts.push(new DropdownOption(id, id, name, id.toLowerCase() + " flag"))
+        opts.push({ value: id, label: name, icon: id.toLowerCase() + " flag" })
       })
       this.countries = tempCountries
       this.countryDropdown.addOptions(opts)
@@ -133,12 +131,12 @@ export class CountryCondition {
   handleComparatorChange(event) {
     let value = event.value
     this.value.comparatorValue = value
-    this.change.next({type: 'comparisonChange', target: this, value: value})
+    this.change.emit({type: 'comparisonChange', target: this, value: value})
   }
 
   handleCountryChange(event) {
     this.value.isoCode = event.value
-    this.change.next({type:'parameterValueChange', target:this, value:this.getEventValue()})
+    this.change.emit({type:'parameterValueChange', target:this, value:this.getEventValue()})
 
   }
 }

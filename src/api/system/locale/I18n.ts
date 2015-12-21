@@ -23,13 +23,11 @@ export class I18nService {
   ref:EntityMeta
   root:TreeNode
   private _apiRoot:ApiRoot
-  private _observerCache:{[key:string]:Observable<TreeNode|any>}
 
   constructor(apiRoot:ApiRoot) {
     this.ref = apiRoot.root.child('system/i18n')
     this._apiRoot = apiRoot
     this.root = {_p: null, _k: 'root'}
-    this._observerCache = {}
   }
 
   treeNodeFor(locale:string, dots:string):{node:TreeNode, isNew:boolean} {
@@ -86,27 +84,49 @@ export class I18nService {
   }
 
   getForLocale(locale:string, key:string, cb:Function = noop):Observable<TreeNode|any> {
-    let nodeResult = this.treeNodeFor(locale, key)
+    let nodeResult
+    let error;
+    try {
+      nodeResult = this.treeNodeFor(locale, key)
+    } catch (e) {
+      error = e
+    }
     return Observable.defer(()=> {
-      let ee:EventEmitter<TreeNode> = new EventEmitter()
-      let path = key.replace(/\./g, '/')
-      let node = nodeResult.node
-      if (!nodeResult.isNew) {
-        cb(node)
-        ee.emit(node)
-        console.log("Emitting cached", node, 'for key:', key)
-      } else {
-        this.ref.child(locale).child(path).once('value', (snap) => {
-          node = this.addAll(node, snap.val(), key)
-          cb(node)
-          ee.emit(node)
-          console.log("Emitting not-cached", node, 'for key:', key)
-        }, (e)=> {
-          console.log('Error reading resources for: ', key)
-          throw e
-        })
-      }
-      return ee
+
+      return  Observable.create((obs)=> {
+        if(error){
+          console.log("Emitting provided key due to error for key: ", key)
+          let idx = key.lastIndexOf('.')
+          let resp = key
+          if(idx > 0 ){
+            resp = key.substring(idx + 1)
+          }
+          obs.next(resp)
+        }
+        else {
+          let path = key.replace(/\./g, '/')
+          let node = nodeResult.node
+          if (!nodeResult.isNew) {
+            try {
+              cb(node)
+              obs.next(node)
+              console.log("Emitting cached node value '" + node + "' for key: ", key)
+            } catch (e) {
+              obs.error(e)
+            }
+          } else {
+            this.ref.child(locale).child(path).once('value', (snap) => {
+              node = this.addAll(node, snap.val(), key)
+              cb(node)
+              obs.next(node)
+              console.log("Emitting node value '" + node + "' for key: ", key)
+            }, (e)=> {
+              console.log('Error reading resources for: ', key)
+              obs.error(e)
+            })
+          }
+        }
+      })
     })
   }
 

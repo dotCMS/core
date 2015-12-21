@@ -36,14 +36,12 @@ export class CwInputDefinition {
     return new CwValidationResults(true)
   }
 
-
-
   static registerType(typeId:string, type:Function){
     Registry[typeId] = type
   }
 
   static fromJson(json:any, name:string):CwInputDefinition{
-    let m = Registry[json.id].fromJson(json, name);
+    let m = Registry[json.id || json.type].fromJson(json, name);
     m.placeholder = json.placeholder
     m.dataType = json.dataType
     return m;

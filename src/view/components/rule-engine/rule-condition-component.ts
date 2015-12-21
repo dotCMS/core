@@ -1,13 +1,14 @@
 import {Attribute, Component, Directive, View, EventEmitter} from 'angular2/angular2';
 import {Input, Output} from 'angular2/angular2';
 import {CORE_DIRECTIVES} from 'angular2/angular2';
+import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 
-import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
+import {Dropdown, InputOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
@@ -27,11 +28,17 @@ import {I18nService} from "../../../api/system/locale/I18n";
         {{condition.operator}}
       </button>
     </div>
-    <cw-input-dropdown
+     <cw-input-dropdown
         class="cw-type-dropdown"
-        [model]="typeDropdown"
-        [value]="[condition.type.key]"
-        (change)="onConditionTypeChange($event)"></cw-input-dropdown>
+        [value]="condition.type.key"
+        placeholder="{{typeDropdown.placeholder}}"
+        (change)="onTypeChange($event)">
+         <cw-input-option
+            *ngFor="#opt of typeDropdown.options"
+            [value]="opt.value"
+            [label]="opt.label | async"
+            icon="{{opt.icon}}"></cw-input-option>
+    </cw-input-dropdown>
   </div>
   <div flex layout-fill class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
     <template [ngSwitchWhen]="'XUsersCountryConditionlet'">
@@ -66,7 +73,8 @@ import {I18nService} from "../../../api/system/locale/I18n";
   directives: [CORE_DIRECTIVES,
     ServersideCondition,
     CountryCondition,
-    Dropdown
+    Dropdown,
+    InputOption
   ]
 })
 export class ConditionComponent {
@@ -75,10 +83,11 @@ export class ConditionComponent {
   @Input() index:number
   @Output() change:EventEmitter<ConditionModel>
   @Output() remove:EventEmitter<ConditionModel>
-  typeDropdown:DropdownModel
+  typeDropdown:any
 
   private _typeService:ConditionTypeService
   private _conditionService:ConditionService;
+  private _types:{[key:string]: any}
 
   constructor(conditionService:ConditionService, typeService:ConditionTypeService, resources:I18nService) {
     this.change = new EventEmitter()
@@ -86,16 +95,22 @@ export class ConditionComponent {
 
     this._conditionService = conditionService;
     this._typeService = typeService
+    this._types = {}
 
     this.condition = new ConditionModel(null, new ServerSideTypeModel())
     this.index = 0
 
     typeService.list().subscribe((types:ServerSideTypeModel[])=> {
-      let opts = []
+      this.typeDropdown = {
+        value: "",
+        placeholder: "Select a Condition",
+        options: []
+      }
       types.forEach(type => {
-        opts.push(new DropdownOption(type.key, type, type.rsrc.name))
+        this._types[type.key] = type
+        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name')}
+        this.typeDropdown.options.push(opt)
       })
-      this.typeDropdown = new DropdownModel('conditionType', "Select a Condition...", [], opts)
     })
   }
 
@@ -104,14 +119,13 @@ export class ConditionComponent {
     if(change.condition){
       this.condition = change.condition.currentValue
       if(this.typeDropdown && this.condition.type){
-        this.typeDropdown.selected = [this.condition.type.key]
+        this.typeDropdown.value = this.condition.type.key
       }
     }
   }
 
-  onConditionTypeChange(value) {
-    console.log("ConditionComponent", "handleConditionTypeChange", value)
-    this.condition.type = value
+  onTypeChange(value) {
+    this.condition.type = this._types[value]
     this.change.emit(this.condition)
   }
 

@@ -1,30 +1,29 @@
 import {Http, HTTP_PROVIDERS} from 'angular2/http'
 import {bootstrap} from 'angular2/angular2';
-import {Provider, EventEmitter, Component, Directive, View, Injector} from 'angular2/angular2';
-import {CORE_DIRECTIVES} from 'angular2/angular2';
+import {Provider, EventEmitter, Component, Directive, View, Injector} from 'angular2/angular2'
+import {CORE_DIRECTIVES} from 'angular2/angular2'
 import {Observable} from 'rxjs/Rx.KitchenSink'
 
-import {ApiRoot} from '../../../api/persistence/ApiRoot';
-import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase';
-import {UserModel} from "../../../api/auth/UserModel";
+import {ApiRoot} from '../../../api/persistence/ApiRoot'
+import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase'
+import {UserModel} from "../../../api/auth/UserModel"
 import {I18NCountryProvider} from '../../../api/system/locale/I18NCountryProvider'
 
 
-import {RuleComponent} from './rule-component';
-import {RuleService, RuleModel} from "../../../api/rule-engine/Rule";
-import {ActionService} from "../../../api/rule-engine/Action";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
-import {RestDataStore} from "../../../api/persistence/RestDataStore";
-import {DataStore} from "../../../api/persistence/DataStore";
-import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
-import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
-import {ConditionService} from "../../../api/rule-engine/Condition";
-import {I18nService} from "../../../api/system/locale/I18n";
-import {ComparisonService} from "../../../api/system/ruleengine/conditionlets/Comparisons";
-import {InputService} from "../../../api/system/ruleengine/conditionlets/Inputs";
-import {ActionTypeService} from "../../../api/rule-engine/ActionType";
+import {RuleComponent} from './rule-component'
+import {RuleService, RuleModel} from "../../../api/rule-engine/Rule"
+import {ActionService} from "../../../api/rule-engine/Action"
+import {CwChangeEvent} from "../../../api/util/CwEvent"
+import {RestDataStore} from "../../../api/persistence/RestDataStore"
+import {DataStore} from "../../../api/persistence/DataStore"
+import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup"
+import {ConditionTypeService} from "../../../api/rule-engine/ConditionType"
+import {ConditionService} from "../../../api/rule-engine/Condition"
+import {I18nService, TreeNode} from "../../../api/system/locale/I18n"
+import {ComparisonService} from "../../../api/system/ruleengine/conditionlets/Comparisons"
+import {InputService} from "../../../api/system/ruleengine/conditionlets/Inputs"
+import {ActionTypeService} from "../../../api/rule-engine/ActionType"
 import {CwFilter} from "../../../api/util/CwFilter"
-import {TreeNode} from "../../../api/system/locale/I18n";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -75,10 +74,7 @@ export class RuleEngineComponent {
   filterText:string
   status:string
   activeRules:number
-  inactiveText:string
-  addRuleText:string
   private ruleService:RuleService;
-  private ruleStub:RuleModel
   private resources:I18nService;
   private _rsrcCache:{[key:string]:Observable<string>}
 
