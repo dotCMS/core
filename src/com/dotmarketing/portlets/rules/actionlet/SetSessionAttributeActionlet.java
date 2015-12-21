@@ -1,17 +1,13 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition.DataType;
-import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
-
-import java.util.List;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import java.util.Map;
 
 /**
  * Actionlet to add Key/Value to the Session.
@@ -20,42 +16,40 @@ import java.util.Map;
  * @author Oscar Arrieta
  * @version 1.0
  * @since 09-22-2015
- *
  */
-public class SetSessionAttributeActionlet extends RuleActionlet{
+public class SetSessionAttributeActionlet extends RuleActionlet<SetSessionAttributeActionlet.Instance> {
 
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetSessionAttribute";
 
-    private static final String SESSION_KEY = "sessionKey";
     private static final String SESSION_VALUE = "sessionValue";
-    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(
-			new ActionParameterDefinition(SESSION_KEY, DataType.TEXT),
-			new ActionParameterDefinition(SESSION_VALUE)
-    );
+    private static final String SESSION_KEY = "sessionKey";
 
-    public SetSessionAttributeActionlet(){
-        super(I18N_BASE, PARAMS);
+    public SetSessionAttributeActionlet() {
+        super(I18N_BASE, new ParameterDefinition<>(1, SESSION_KEY, new TextInput<>(new TextType())),
+              new ParameterDefinition<>(2, SESSION_VALUE, new TextInput<>(new TextType()))
+        );
     }
 
     @Override
-    public void validateActionInstance(RuleAction actionInstance) throws InvalidActionInstanceException {
-        Map<String, RuleActionParameter> params = actionInstance.getParameterMap();
-        RuleActionParameter keyParam = Preconditions.checkNotNull(params.get(SESSION_KEY), "SetSessionAttributeActionlet requires sessionKey parameter.");
-        RuleActionParameter valueParam = Preconditions.checkNotNull(params.get(SESSION_VALUE), "SetSessionAttributeActionlet requires sessionValue parameter.");
-        Preconditions.checkArgument(StringUtils.isNotBlank(keyParam.getValue()), "SetSessionAttributeActionlet requires valid sessionKey.");
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        request.getSession().removeAttribute(instance.key);
+        request.getSession().setAttribute(instance.key, instance.value);
+        return true;
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
-        String key = params.get(SESSION_KEY).getValue();
-        String value = params.get(SESSION_VALUE).getValue();
-        if(value == null){
-            request.getSession().removeAttribute(key);
-        } else{
-            request.getSession().setAttribute(key, value);
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+        return new Instance(parameters);
+    }
 
+    static class Instance implements RuleComponentInstance {
+
+        private final String key;
+        private final String value;
+
+        public Instance(Map<String, ParameterModel> parameters) {
+            key = parameters.get(SESSION_KEY).getValue();
+            value = parameters.get(SESSION_VALUE).getValue();
         }
     }
-
-
 }

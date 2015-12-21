@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -10,11 +10,17 @@ public class ThrowErrorActionlet extends RuleActionlet {
 
     public ThrowErrorActionlet() {
         super("");
-        throw new Error();
+        throw new Error("As the name says... " + this.getClass().getName());
+    }
+
+
+    @Override
+    public RuleComponentInstance instanceFrom(Map parameters) {
+        throw new Error("As the name says... " + this.getClass().getName());
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
-
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, RuleComponentInstance instance) {
+        throw new Error("As the name says... " + this.getClass().getName());
     }
 }

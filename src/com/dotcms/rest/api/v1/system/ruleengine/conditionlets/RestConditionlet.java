@@ -2,13 +2,15 @@ package com.dotcms.rest.api.v1.system.ruleengine.conditionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.dotcms.repackage.com.google.common.collect.ImmutableList;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
 import com.dotcms.repackage.javax.validation.constraints.Size;
-//import com.dotcms.repackage.org.hibernate.validator.constraints.Length;
 import com.dotcms.rest.api.Validated;
-import com.dotcms.rest.api.v1.system.ruleengine.actionlets.RestComparison;
 
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 @JsonDeserialize(builder = RestConditionlet.Builder.class)
 public final class RestConditionlet extends Validated {
@@ -20,12 +22,12 @@ public final class RestConditionlet extends Validated {
 
     @NotNull
     @Size(min = 0, max = 100)
-    public final List<RestComparison> comparisons;
+    public final Map<String, ParameterDefinition> parameterDefinitions;
 
     private RestConditionlet(Builder builder) {
         id = builder.id;
         i18nKey = builder.i18nKey;
-        comparisons = ImmutableList.copyOf(builder.comparisons);
+        parameterDefinitions = ImmutableMap.copyOf(builder.parameterDefinitions);
         checkValid();
     }
 
@@ -33,7 +35,7 @@ public final class RestConditionlet extends Validated {
 
         private String id;
         private String i18nKey;
-        private List<RestComparison> comparisons;
+        private Map<String, ParameterDefinition> parameterDefinitions;
 
         public Builder() {
         }
@@ -48,15 +50,15 @@ public final class RestConditionlet extends Validated {
             return this;
         }
 
-        public Builder comparisons(List<RestComparison> comparisons) {
-            this.comparisons = comparisons;
+        public Builder parameters(Map<String, ParameterDefinition> comparisons) {
+            this.parameterDefinitions = comparisons;
             return this;
         }
 
         public Builder from(RestConditionlet copy) {
             id = copy.id;
             i18nKey = copy.i18nKey;
-            comparisons = copy.comparisons;
+            parameterDefinitions = copy.parameterDefinitions;
             return this;
         }
 

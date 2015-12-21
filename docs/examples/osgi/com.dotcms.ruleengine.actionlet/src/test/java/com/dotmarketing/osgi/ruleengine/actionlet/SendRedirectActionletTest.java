@@ -1,7 +1,7 @@
 package com.dotmarketing.osgi.ruleengine.actionlet;
 
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,8 +30,8 @@ public class SendRedirectActionletTest {
     @Test(dataProvider = "urlCases")
     public void testValidateParameters(SimpleUrlCase theCase) throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
-        RuleActionParameter param = new RuleActionParameter(URL_KEY, theCase.url);
-        List<RuleActionParameter> list = new ArrayList<>();
+        ParameterModel param = new ParameterModel(URL_KEY, theCase.url);
+        List<ParameterModel> list = new ArrayList<>();
         list.add(param);
         RuleAction actionInstance = new RuleAction();
         actionInstance.setParameters(list);
@@ -52,8 +52,8 @@ public class SendRedirectActionletTest {
         HttpServletResponse response = mock(HttpServletResponse.class);
 
         String url = "For performance reasons validation is not performed on execute. Any value is fine for testing.";
-        RuleActionParameter param = new RuleActionParameter(URL_KEY, url);
-        Map<String, RuleActionParameter> params = new HashMap<>();
+        ParameterModel param = new ParameterModel(URL_KEY, url);
+        Map<String, ParameterModel> params = new HashMap<>();
         params.put(URL_KEY, param);
 
         SendRedirectActionlet actionlet = new SendRedirectActionlet();

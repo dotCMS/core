@@ -1,9 +1,9 @@
-package com.dotmarketing.portlets.rules.actionlet;
+package com.dotmarketing.portlets.rules.exception;
 
 /**
  * @author Geoff M. Granum
  */
-public class InvalidActionInstanceException extends RuntimeException {
+public class InvalidActionInstanceException extends RuleEngineException {
 
     private static final long serialVersionUID = 1L;
 
@@ -12,7 +12,7 @@ public class InvalidActionInstanceException extends RuntimeException {
     }
 
     public InvalidActionInstanceException(Throwable cause, String message, String... messageArgs) {
-        super(String.format(message == null  ? "" : message, (String[])messageArgs), cause);
+        super(cause, message, messageArgs);
     }
 
 

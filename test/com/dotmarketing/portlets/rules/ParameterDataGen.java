@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules;
 
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 
 /**
  * @author Geoff M. Granum
@@ -14,11 +14,11 @@ public class ParameterDataGen {
     public ParameterDataGen() {
     }
 
-    public RuleActionParameter next() {
-        RuleActionParameter next = new RuleActionParameter();
+    public ParameterModel next() {
+        ParameterModel next = new ParameterModel();
         next.setKey(key);
         next.setValue(value);
-        next.setRuleActionId(ownerId);
+        next.setOwnerId(ownerId);
         return next;
     }
 

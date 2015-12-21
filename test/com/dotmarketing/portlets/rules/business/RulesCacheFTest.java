@@ -4,13 +4,13 @@ import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionDataGen;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionGroupDataGen;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionValueDataGen;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 
 import java.util.*;
@@ -25,7 +25,7 @@ public class RulesCacheFTest {
     private RuleDataGen ruleDataGen = new RuleDataGen();
     private ConditionGroupDataGen conditionGroupDataGen = new ConditionGroupDataGen();
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
-    private ConditionValueDataGen conditionValueDataGen = new ConditionValueDataGen();
+    private ParameterDataGen parameterDataGen = new ParameterDataGen();
     private List<Rule> rulesToRemove = new ArrayList<>();
 
     @Test
@@ -107,10 +107,9 @@ public class RulesCacheFTest {
 
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
-        ConditionValue value = conditionValueDataGen.key("key").value("value").next();
-        condition.addConditionValue(value);
+        ParameterModel value = parameterDataGen.key("key").value("value").ownerId(condition.getId()).next();
+        condition.addParameter(value);
         conditionDataGen.persist(condition);
-        value.setConditionId(condition.getId());
 
         // let's add the rule to the cache
         addRuleToHostFireOnCache(rule);
@@ -203,10 +202,10 @@ public class RulesCacheFTest {
 
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
-        ConditionValue value = conditionValueDataGen.key("key").value("value").next();
-        condition.addConditionValue(value);
+        ParameterModel value = parameterDataGen.key("key").value("value").next();
+        condition.addParameter(value);
         conditionDataGen.persist(condition);
-        value.setConditionId(condition.getId());
+        value.setOwnerId(condition.getId());
 
         // let's add the rule to the cache
         addRuleToHostFireOnCache(rule);
@@ -230,9 +229,10 @@ public class RulesCacheFTest {
 
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
-        ConditionValue value = conditionValueDataGen.key("key").value("value").next();
-        condition.addConditionValue(value);
+        ParameterModel value = parameterDataGen.key("key").value("value").next();
+        condition.addParameter(value);
         conditionDataGen.persist(condition);
+        value.setOwnerId(condition.getId());
 
         // let's add the rule to the cache
         addRuleToHostFireOnCache(rule);

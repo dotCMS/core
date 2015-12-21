@@ -20,7 +20,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -40,7 +40,7 @@ public class ConditionValueResource {
 
     private final RulesAPI rulesAPI;
     private final WebResource webResource;
-    private final ConditionValueTransform conditionValueTransform;
+    private final ParameterModelTransform parameterModelTransform;
     private HostAPI hostAPI;
 
     public ConditionValueResource() {
@@ -56,7 +56,7 @@ public class ConditionValueResource {
         this.rulesAPI = apiProvider.rulesAPI();
         this.hostAPI = apiProvider.hostAPI();
         this.webResource = webResource;
-        this.conditionValueTransform = new ConditionValueTransform();
+        this.parameterModelTransform = new ParameterModelTransform();
     }
 
     @GET
@@ -99,8 +99,8 @@ public class ConditionValueResource {
 
         try {
             getHost(siteId, user);
-            ConditionValue value = rulesAPI.getConditionValueById(valueId, user, false);
-            RestConditionValue restConditionValue = conditionValueTransform.toRest.apply(value);
+            ParameterModel value = rulesAPI.getConditionValueById(valueId, user, false);
+            RestConditionValue restConditionValue = parameterModelTransform.toRest.apply(value);
             return Response.ok(restConditionValue).build();
         } catch (DotDataException | DotSecurityException e) {
             Logger.error(this, "Error getting Condition", e);
@@ -185,7 +185,7 @@ public class ConditionValueResource {
             conditionId = checkNotEmpty(conditionId, BadRequestException.class, "Condition Id is required.");
             getHost(siteId, user);
             getCondition(conditionId, user);
-            ConditionValue value = getConditionValue(valueId, user);
+            ParameterModel value = getConditionValue(valueId, user);
             rulesAPI.deleteConditionValue(value, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
@@ -232,9 +232,9 @@ public class ConditionValueResource {
     }
 
     @VisibleForTesting
-    ConditionValue getConditionValue(String valueId, User user) {
+    ParameterModel getConditionValue(String valueId, User user) {
         try {
-            ConditionValue value = rulesAPI.getConditionValueById(valueId, user, false);
+            ParameterModel value = rulesAPI.getConditionValueById(valueId, user, false);
             if(value == null) {
                 throw new NotFoundException("Condition Value not found: '%s'", valueId);
             }
@@ -248,17 +248,17 @@ public class ConditionValueResource {
     }
 
     private List<RestConditionValue> getValuesInternal(User user, Condition condition) {
-        List<ConditionValue> values = condition.getValues();
-        return values.stream().map(conditionValueTransform.toRest).collect(Collectors.toList());
+        List<ParameterModel> values = condition.getValues();
+        return values.stream().map(parameterModelTransform.toRest).collect(Collectors.toList());
     }
 
     private String createConditionValueInternal(String conditionId, RestConditionValue restValue, User user) {
         try {
-            ConditionValue conditionValue = conditionValueTransform.toApp.apply(restValue);
-            conditionValue.setConditionId(conditionId);
+            ParameterModel parameterModel = parameterModelTransform.toApp.apply(restValue);
+            parameterModel.setOwnerId(conditionId);
 
-            rulesAPI.saveConditionValue(conditionValue, user, false);
-            return conditionValue.getId();
+            rulesAPI.saveConditionValue(parameterModel, user, false);
+            return parameterModel.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {
@@ -268,14 +268,14 @@ public class ConditionValueResource {
 
     private String updateConditionValueInternal(User user, String valueId, RestConditionValue restValue) {
         try {
-            ConditionValue conditionValue = rulesAPI.getConditionValueById(valueId, user, false);
-            if(conditionValue == null) {
+            ParameterModel parameterModel = rulesAPI.getConditionValueById(valueId, user, false);
+            if(parameterModel == null) {
                 throw new NotFoundException("Condition Value with id '%s' not found: ", valueId);
             }
-            conditionValueTransform.applyRestToApp(restValue, conditionValue);
-            conditionValue.setId(valueId);
-            rulesAPI.saveConditionValue(conditionValue, user, false);
-            return conditionValue.getId();
+            parameterModelTransform.applyRestToApp(restValue, parameterModel);
+            parameterModel.setId(valueId);
+            rulesAPI.saveConditionValue(parameterModel, user, false);
+            return parameterModel.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException e) {

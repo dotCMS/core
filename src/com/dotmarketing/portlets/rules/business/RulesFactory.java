@@ -2,9 +2,7 @@ package com.dotmarketing.portlets.rules.business;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.*;
-import com.liferay.portal.model.User;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +24,7 @@ public interface RulesFactory {
 
     RuleAction getRuleActionById(String ruleActionId) throws DotDataException;
 
-    RuleActionParameter getRuleActionParameterById(String id) throws DotDataException;
+    ParameterModel getRuleActionParameterById(String id) throws DotDataException;
 
     List<ConditionGroup> getConditionGroupsByRule(String ruleId) throws DotDataException;
 
@@ -36,7 +34,7 @@ public interface RulesFactory {
 
     Condition getConditionById(String id) throws DotDataException ;
 
-    ConditionValue getConditionValueById(String id) throws DotDataException;
+    ParameterModel getConditionValueById(String id) throws DotDataException;
 
     void saveRule(Rule rule) throws DotDataException;
 
@@ -44,7 +42,7 @@ public interface RulesFactory {
 
     void saveCondition(Condition condition) throws DotDataException;
 
-    void saveConditionValue(ConditionValue conditionValue) throws DotDataException;
+    void saveConditionValue(ParameterModel parameterModel) throws DotDataException;
 
     void saveRuleAction(RuleAction ruleAction) throws DotDataException;
 
@@ -56,7 +54,7 @@ public interface RulesFactory {
 
     void deleteCondition(Condition condition) throws DotDataException;
 
-    void deleteConditionValue(ConditionValue conditionValue) throws DotDataException;
+    void deleteConditionValue(ParameterModel parameterModel) throws DotDataException;
 
     void deleteRuleAction(RuleAction ruleAction) throws DotDataException;
 
@@ -66,6 +64,6 @@ public interface RulesFactory {
 
     void deleteConditionValues(Condition condition) throws DotDataException;
 
-    Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action) throws DotDataException;
+    Map<String, ParameterModel> getRuleActionParameters(RuleAction action) throws DotDataException;
 
 }

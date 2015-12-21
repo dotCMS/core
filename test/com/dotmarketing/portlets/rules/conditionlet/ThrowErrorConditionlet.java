@@ -1,42 +1,24 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotmarketing.portlets.rules.model.ConditionValue;
-
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 public class ThrowErrorConditionlet extends Conditionlet {
 
     public ThrowErrorConditionlet() {
         super("");
-        throw new Error();
+        throw new Error("As the name says... " + this.getClass().getName());
     }
 
     @Override
-    public Set<Comparison> getComparisons() {
-        return null;
+    public RuleComponentInstance instanceFrom(Map parameters) {
+        throw new Error("As the name says... " + this.getClass().getName());
     }
 
     @Override
-    public ValidationResults validate(Comparison comparison, Set<ConditionletInputValue> inputValues) {
-        return null;
-    }
-
-    @Override
-    protected ValidationResult validate(Comparison comparison, ConditionletInputValue inputValue) {
-        return null;
-    }
-
-    @Override
-    public Collection<ConditionletInput> getInputs(String comparisonId) {
-        return null;
-    }
-
-    @Override
-    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, String comparisonId, List<ConditionValue> values) {
-        return false;
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, RuleComponentInstance instance) {
+        throw new Error("As the name says... " + this.getClass().getName());
     }
 }
