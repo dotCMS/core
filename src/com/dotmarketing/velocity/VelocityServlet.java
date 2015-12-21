@@ -320,6 +320,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	protected void doAdminMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		// LIVE MODE - LIVE PAGE
 
+		visitorAPI.getVisitor(request);
+
 		com.liferay.portal.model.User backendUser = null;
 		backendUser = com.liferay.portal.util.PortalUtil.getUser(request);
 
@@ -423,7 +425,7 @@ public abstract class VelocityServlet extends HttpServlet {
     		request.setAttribute("idInode", String.valueOf(ident.getInode()));
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
 
-			visitorAPI.getVisitor(request, true);
+			Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
 			boolean newVisitor = false;
 			boolean newVisit = false;
@@ -440,6 +442,11 @@ public abstract class VelocityServlet extends HttpServlet {
 				_dotCMSID = idCookie.getValue();
     			response.addCookie(idCookie);
 				newVisitor = true;
+
+				if(visitor.isPresent()) {
+					visitor.get().setDmid(UUID.fromString(_dotCMSID));
+				}
+
     		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
@@ -616,6 +623,8 @@ public abstract class VelocityServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
+		Optional<Visitor> visitor = visitorAPI.getVisitor(request);
+
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
 
 
@@ -666,8 +675,12 @@ public abstract class VelocityServlet extends HttpServlet {
         context.put( "canViewDiff", new Boolean( LicenseUtil.getLevel() > 199 ? true : false ) );
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-        context.put( "HTMLPAGE_IS_CONTENT" , htmlPage.isContent());
-        
+        context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
+
+		if(visitor.isPresent()) {
+			context.put("visitor", visitor.get());
+		}
+
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
 		        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),
 				PERMISSION_WRITE, user, true);
@@ -860,7 +873,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
         String uri = request.getRequestURI();
 
-        Host host = hostWebAPI.getCurrentHost( request );
+        Host host = hostWebAPI.getCurrentHost(request);
 
         StringBuilder preExecuteCode = new StringBuilder();
         Boolean widgetPreExecute = false;
@@ -894,8 +907,8 @@ public abstract class VelocityServlet extends HttpServlet {
 		List<PublishingEndPoint> receivingEndpoints = pepAPI.getReceivingEndPoints();
         // to check user has permission to write on this page
         boolean hasAddChildrenPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_CAN_ADD_CHILDREN, backendUser );
-        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_WRITE, backendUser );
-        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission( htmlPage, PERMISSION_PUBLISH, backendUser );
+        boolean hasWritePermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_WRITE, backendUser);
+        boolean hasPublishPermOverHTMLPage = permissionAPI.doesUserHavePermission(htmlPage, PERMISSION_PUBLISH, backendUser);
         boolean hasRemotePublishPermOverHTMLPage = hasPublishPermOverHTMLPage && LicenseUtil.getLevel() > 199;
         boolean hasEndPoints = UtilMethods.isSet( receivingEndpoints ) && !receivingEndpoints.isEmpty();
 
@@ -930,7 +943,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
         Identifier templateIdentifier = APILocator.getIdentifierAPI().find( cmsTemplate );
 
-        Logger.debug( VelocityServlet.class, "VELOCITY TEMPLATE INODE=" + cmsTemplate.getInode() );
+        Logger.debug(VelocityServlet.class, "VELOCITY TEMPLATE INODE=" + cmsTemplate.getInode());
 
         VelocityUtil.makeBackendContext( context, htmlPage, cmsTemplate.getInode(), id.getURI(), request, true, true, false, host );
         // added to show tabs
