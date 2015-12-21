@@ -631,6 +631,35 @@ dojo.require("dojox.layout.ContentPane");
 		}).placeAt("contentletVersionsDiv");
     }
 
+
+    function refreshRulesCp(){
+
+    	var y =Math.floor(Math.random()*1123213213);
+
+    	var myCp = dijit.byId("contentletRulezDivCp");
+    	
+		if (myCp) {
+			return;
+
+		}
+    	var myDiv = dijit.byId("contentletRulezDiv");
+    	
+		if (myDiv) {
+			dojo.empty(myDiv);
+		}
+		myCp = new dojox.layout.ContentPane({
+			id : "contentletRulezDivCp",
+			style: "height:100%",
+			href:  "/api/portlet/RULES_ENGINE_PORTLET/include?id=" +contentAdmin.contentletIdentifier + "&r=" + y
+		}).placeAt("contentletRulezDiv");
+		
+
+    }
+
+
+    
+    
+    
 	function saveBinaryFileOnContent(fieldInode, fieldVarName, fieldContentlet, fileName){
 		var fieldRelatedData = {"fieldContentlet" : fieldContentlet,
 								"fieldVarName" : fieldVarName,

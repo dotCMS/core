@@ -53,12 +53,23 @@ public class RulesEngine {
 
                 // Let's execute the actions
                 if(result) {
+                	String firedActionlets = null;
                     List<RuleAction> actions = APILocator.getRulesAPI().getRuleActionsByRule(rule.getId(), systemUser, false);
 
                     for (RuleAction action : actions) {
                         RuleActionlet actionlet = APILocator.getRulesAPI().findActionlet(action.getActionlet());
+                        
+                        firedActionlets+=actionlet.getId() + ",";
+                        
+                        
                         Map<String, RuleActionParameter> params = APILocator.getRulesAPI().getRuleActionParameters(action, systemUser, false);
                         actionlet.executeAction(req, res, params);
+                        
+                        
+                        
+                    }
+                    if(firedActionlets!=null){
+                    	res.addHeader("X-RULES-FIRED", firedActionlets);
                     }
                 }
             }
