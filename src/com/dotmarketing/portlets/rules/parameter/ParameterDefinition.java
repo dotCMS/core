@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.rules.parameter.type.DataType;
 public class ParameterDefinition<T extends DataType> {
 
     private final String key;
+    private final String i18nBaseKey;
     private final String defaultValue;
     private final Input<T> inputType;
     private final int priority;
@@ -19,9 +20,14 @@ public class ParameterDefinition<T extends DataType> {
     public ParameterDefinition(int priority, String key, Input<T> inputType) {
         this(priority, key, inputType, "");
     }
+
     public ParameterDefinition(int priority, String key, Input<T> inputType, String defaultValue) {
+        this(priority, key, null, inputType, defaultValue);
+    }
+    public ParameterDefinition(int priority, String key, String i18nBaseKey, Input<T> inputType, String defaultValue) {
         Preconditions.checkState(StringUtils.isNotBlank(key), "ParameterDefinition requires a valid key.");
         this.key = key;
+        this.i18nBaseKey = i18nBaseKey;
         this.defaultValue = defaultValue == null ? "" : defaultValue;
         this.inputType = inputType;
         this.priority = priority;
@@ -29,6 +35,10 @@ public class ParameterDefinition<T extends DataType> {
 
     public String getKey() {
         return key;
+    }
+
+    public String getI18nBaseKey() {
+        return i18nBaseKey;
     }
 
     public String getDefaultValue() {

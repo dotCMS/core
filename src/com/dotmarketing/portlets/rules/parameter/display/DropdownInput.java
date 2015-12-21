@@ -67,11 +67,21 @@ public class DropdownInput extends TextInput<TextType> {
         public final String i18nKey;
         public final String value;
         public final int priority;
+        private String icon;
 
         public Option(String i18nKey, String value, int priority) {
             this.i18nKey = i18nKey;
             this.value = value;
             this.priority = priority;
+        }
+
+        public Option icon(String icon) {
+            this.icon = icon;
+            return this;
+        }
+
+        public String getIcon() {
+            return icon;
         }
     }
 }
