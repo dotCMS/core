@@ -1,4 +1,4 @@
-import * as App from 'view/components/semantic/elements/input-text/demo';
+import * as App from './demo';
 
 App.main().then(function () {
   console.log("Loaded Demo.")

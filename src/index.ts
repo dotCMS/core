@@ -1,5 +1,3 @@
-
-
 import {RuleEngineApp} from './view/components/rule-engine/rule-engine'
 
 RuleEngineApp.main().then(function () {

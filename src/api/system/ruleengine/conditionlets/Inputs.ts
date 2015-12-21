@@ -16,7 +16,7 @@ export class InputsModel {
         this._inputs = { }
 
         inputs.forEach((input)=> {
-            this._inputs[input.id] = input.label
+            this._inputs[input.type] = input.label
         })
     }
 

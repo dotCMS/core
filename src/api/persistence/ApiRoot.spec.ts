@@ -4,8 +4,8 @@ import {Injector, Provider} from 'angular2/angular2';
 import {I18nService} from "../system/locale/I18n";
 import {UserModel} from "../../api/auth/UserModel";
 import {ApiRoot} from '../../api/persistence/ApiRoot';
-import {DataStore} from 'api/persistence/DataStore'
-import {LocalDataStore} from "api/persistence/LocalDataStore";
+import {DataStore} from '../../api/persistence/DataStore'
+import {LocalDataStore} from "../../api/persistence/LocalDataStore";
 
 var injector = Injector.resolveAndCreate([
   UserModel,

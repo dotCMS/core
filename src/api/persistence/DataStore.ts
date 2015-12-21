@@ -1,6 +1,7 @@
+import {Injectable} from 'angular2/angular2';
 import  {Check} from '../validation/Check'
 
-
+@Injectable()
 export class DataStore {
 
   get length():number {

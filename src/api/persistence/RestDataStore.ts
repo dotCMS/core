@@ -150,7 +150,7 @@ export class RestDataStore extends DataStore {
 
   remoteSet(path, entity, create = false) {
     let url = this.pathToUrl(path)
-    console.log("Saving entity to: ", url)
+    console.log("Saving entity to: ", url, entity)
     let headers:any = {
       'Accept': 'application/json',
       'Content-Type': 'application/json'

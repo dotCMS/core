@@ -1,162 +1,87 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
-//import * as Rx from '../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import {EventEmitter, Injectable} from 'angular2/angular2';
+import {Observable, ConnectableObservable} from 'rxjs/Rx.KitchenSink'
 
 import {RuleModel} from "./Rule";
-import {ConditionTypeModel} from "./ConditionType";
 import {CwModel} from "../util/CwModel";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {ConditionGroupModel} from "./ConditionGroup";
 import {CwChangeEvent} from "../util/CwEvent";
 import {ConditionTypeService} from "./ConditionType";
+import {ParameterDefinition} from "../util/CwInputModel";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {ServerSideFieldModel} from "./ServerSideFieldModel";
 
 
 let noop = (...arg:any[])=> {
 }
 
-interface ConditionModelParameter {
+export interface ParameterModel {
   key:string
-  value:any
+  value:string
   priority:number
 }
 
-export class ConditionModel extends CwModel {
+export class ConditionModel extends ServerSideFieldModel {
+  comparison:string
+  operator:string
+  owningGroup:ConditionGroupModel
 
-  private _name:string // @todo ggranum: vestigial field, kill on server side.
-
-  private _comparison:string
-  private _operator:string
-  private _owningGroup:ConditionGroupModel
-  private _conditionType:ConditionTypeModel
-  private _parameters:{[key:string]: ConditionModelParameter}
-
-  constructor(key:string = null) {
-    super(key)
-    this._conditionType = new ConditionTypeModel('', '')
-    this.comparison = 'is'
-    this.operator = 'AND'
-    this.priority = 1
-    this._parameters = {}
-  }
-
-  setParameter(key:string, value:any, priority:number = 1) {
-    let existing = this._parameters[key]
-    this._parameters[key] = {key: key, value: value, priority: priority}
-    this._changed('parameters')
-  }
-
-  getParameter(key:string):any {
-    let v:any = ''
-    if (this.parameters[key] !== undefined) {
-      v = this.parameters[key].value
-    }
-    return v
-  }
-
-  clearParameters() {
-    this._parameters = {}
-    this._changed('parameters')
-  }
-
-  get parameters():{[key:string]: ConditionModelParameter} {
-    return this._parameters
-  }
-
-  get conditionType():ConditionTypeModel {
-    return this._conditionType;
-  }
-
-  set conditionType(value:ConditionTypeModel) {
-    this._conditionType = value;
-    this._changed('conditionType')
-  }
-
-  get owningGroup():ConditionGroupModel {
-    return this._owningGroup;
-  }
-
-  set owningGroup(value:ConditionGroupModel) {
-    this._owningGroup = value;
-    this._changed('owningGroup')
-  }
-
-  get name():string {
-    return this._name;
-  }
-
-  set name(value:string) {
-    this._name = value;
-    this._changed('name')
-  }
-
-  get comparison():string {
-    return this._comparison;
-  }
-
-  set comparison(value:string) {
-    this._comparison = value;
-    this._changed('comparison')
-  }
-
-  get operator():string {
-    return this._operator;
-  }
-
-  set operator(value:string) {
-    this._operator = value;
-    this._changed('operator')
-  }
-
-  _changed(key:string) {
-    console.log("api.rule-engine.ConditionModel", "_changed", key)
-    super._changed(key)
+  constructor(key:string, type:ServerSideTypeModel) {
+    super(key, type)
   }
 
   isValid() {
-    let valid = !!this._owningGroup
-    valid = valid && this._owningGroup.isValid() && this._owningGroup.isPersisted()
-    valid = valid && this._conditionType && this._conditionType.key && this._conditionType.key != 'NoSelection'
-    return valid
+    return !!this.owningGroup && super.isValid()
+  }
+
+  toJson():any {
+    let json = super.toJson()
+    json.owningGroup = this.owningGroup;
+    return json
+  }
+
+  static fromJson():ConditionModel {
+    return null
   }
 }
 
+@Injectable()
 export class ConditionService {
-  private _removed:EventEmitter
-  private _added:EventEmitter
-  onRemove:Rx.Observable<ConditionModel>
-  onAdd:Rx.Observable<ConditionModel>
   private _apiRoot;
   private _ref;
   private _conditionTypeService:ConditionTypeService
+  private _cacheMap:{[key:string]: ServerSideTypeModel}
 
-  constructor(@Inject(ApiRoot) apiRoot, @Inject(ConditionTypeService) conditionTypeService:ConditionTypeService) {
+  constructor(apiRoot:ApiRoot, conditionTypeService:ConditionTypeService) {
     this._apiRoot = apiRoot
     this._conditionTypeService = conditionTypeService
     this._ref = apiRoot.defaultSite.child('ruleengine/conditions')
-    this._added = new EventEmitter()
-    this._removed = new EventEmitter()
-    let onAdd = Rx.Observable.from(this._added.toRx())
-    let onRemove = Rx.Observable.from(this._removed.toRx())
-    this.onAdd = onAdd.share()
-    this.onRemove = onRemove.share()
+    this._cacheMap = {};
   }
 
-  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot):ConditionModel {
+  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot, cb:Function = noop) {
     let val:any = snapshot.val()
-    let ra = new ConditionModel(snapshot.key())
-    ra.name = val.name;
-    ra.owningGroup = group
-    ra.comparison = val.comparison
-    ra.priority = val.priority
-    ra.operator = val.operator
-    Object.keys(val.values).forEach((key)=> {
-      let x = val.values[key]
-      ra.setParameter(key, x.value, x.priority)
+    let count = 0
+    this._conditionTypeService.get(val.conditionlet, (type:ServerSideTypeModel)=> {
+      console.log("ConditionService", "count:", count++, snapshot.key())
+      try {
+        let ra = new ConditionModel(snapshot.key(), type)
+        ra.name = val.name;
+        ra.owningGroup = group
+        ra.priority = val.priority
+        ra.operator = val.operator
+
+        Object.keys(val.values).forEach((key)=> {
+          let x = val.values[key]
+          ra.setParameter(key, x.value, x.priority)
+        })
+        cb(ra)
+      } catch (e) {
+        console.log("Error reading Condition.", e)
+        throw e;
+      }
     })
-    this._conditionTypeService.get(val.conditionlet, (type)=> {
-      ra.conditionType = type
-    })
-    return ra
   }
 
   static toJson(condition:ConditionModel):any {
@@ -164,55 +89,51 @@ export class ConditionService {
     json.id = condition.key
     json.name = condition.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningGroup = condition.owningGroup.key
-    json.conditionlet = condition.conditionType.key
-    json.comparison = condition.comparison
+    json.conditionlet = condition.type.key
     json.priority = condition.priority
     json.operator = condition.operator
     json.values = condition.parameters
     return json
   }
 
-
-  addConditionsFromRule(rule:RuleModel) {
-    Object.keys(rule.groups).forEach((groupId)=> {
-      let group:ConditionGroupModel = rule.groups[groupId];
-      this.addConditionsFromConditionGroup(group)
-    })
-  }
-
-  addConditionsFromConditionGroup(group:ConditionGroupModel) {
-    Object.keys(group.conditions).forEach((conditionId)=> {
-      let cRef = this._ref.child(conditionId)
-      cRef.once('value', (conditionSnap)=> {
-        this._added.next(this.fromSnapshot(group, conditionSnap))
-      }, (e)=> {
-        throw e
-      })
-    })
-  }
-
-  listForRule(rule:RuleModel):Rx.Observable<ConditionModel> {
-    if (rule.isPersisted()) {
-      this.addConditionsFromRule(rule)
-    } else {
-      rule.onChange.subscribe((event) => {
-        if (event.type == 'key') {
-          this.addConditionsFromRule(event.target)
+  listForGroup(group:ConditionGroupModel):Observable<ConditionModel[]> {
+    let ee = new EventEmitter()
+    let deferred = Observable.defer(() => ee)
+    var keys = Object.keys(group.conditions);
+    let count = 0
+    let conditions = []
+    keys.forEach((conditionId)=> {
+      if (this._cacheMap[conditionId]) {
+        count++
+        conditions.push(this._cacheMap[conditionId])
+        if (count == keys.length) {
+          ee.emit(conditions)
         }
-      })
-    }
-    return this.onAdd
-  }
-
-  listForGroup(group:ConditionGroupModel) {
-    this.addConditionsFromConditionGroup(group)
+      } else {
+        let cRef = this._ref.child(conditionId)
+        cRef.once('value', (conditionSnap)=> {
+          this.fromSnapshot(group, conditionSnap, (model)=> {
+            count++
+            conditions.push(model)
+            this._cacheMap[model.key] = model
+            if (count == keys.length) {
+              ee.emit(conditions)
+            }
+          })
+        }, (e)=> {
+          throw e
+        })
+      }
+    })
+    return deferred
   }
 
   get(group:ConditionGroupModel, key:string, cb:Function = null) {
     this._ref.child(key).once('value', (conditionSnap)=> {
-      let model = this.fromSnapshot(group, conditionSnap);
-      this._added.next(model)
-      cb(model)
+      let model = this.fromSnapshot(group, conditionSnap, (model) => {
+        cb(model)
+      });
+
     }, (e)=> {
       throw e
     })
@@ -225,11 +146,10 @@ export class ConditionService {
     }
     let json = ConditionService.toJson(model)
     this._ref.push(json, (e, result)=> {
-      if(e){
+      if (e) {
         throw e;
       }
       model.key = result.key()
-      this._added.next(model)
       cb(model)
     })
   }
@@ -252,7 +172,6 @@ export class ConditionService {
   remove(model:ConditionModel, cb:Function = noop) {
     console.log("api.rule-engine.ConditionService", "remove", model)
     this._ref.child(model.key).remove(()=> {
-      this._removed.next(model)
       cb(model)
     })
   }

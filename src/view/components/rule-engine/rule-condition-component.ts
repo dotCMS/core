@@ -1,14 +1,18 @@
-import {Attribute, Component, Directive, View, NgFor, NgIf, NgSwitch, NgSwitchWhen, NgSwitchDefault, EventEmitter} from 'angular2/angular2';
+import {Attribute, Component, Directive, View, EventEmitter} from 'angular2/angular2';
+import {Input, Output} from 'angular2/angular2';
+import {CORE_DIRECTIVES} from 'angular2/angular2';
+import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
-import {RequestHeaderCondition} from './condition-types/request-header/request-header-condition'
 import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 
-import {Dropdown, DropdownModel, DropdownOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
-import {ConditionTypeService, ConditionTypeModel} from "../../../api/rule-engine/ConditionType";
+import {Dropdown, InputOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
+import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {RuleService} from "../../../api/rule-engine/Rule";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {I18nService} from "../../../api/system/locale/I18n";
 
 
 @Component({
@@ -16,142 +20,126 @@ import {RuleService} from "../../../api/rule-engine/Rule";
   properties: ["condition", "index"]
 })
 @View({
-  template: `<div flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
+  template: `
+<div *ngIf="typeDropdown != null" flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
-      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ng-if="index !== 0">
-        {{operatorLabel(condition.operator)}}
+      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
+        {{condition.operator}}
       </button>
     </div>
-    <cw-input-dropdown class="cw-condition-type-dropdown" [model]="conditionTypesDropdown" (change)="handleConditionTypeChange($event)"></cw-input-dropdown>
+     <cw-input-dropdown
+        class="cw-type-dropdown"
+        [value]="condition.type.key"
+        placeholder="{{typeDropdown.placeholder}}"
+        (change)="onTypeChange($event)">
+         <cw-input-option
+            *ngFor="#opt of typeDropdown.options"
+            [value]="opt.value"
+            [label]="opt.label | async"
+            icon="{{opt.icon}}"></cw-input-option>
+    </cw-input-dropdown>
   </div>
-  <div flex layout-fill class="cw-condition-row-main" [ng-switch]="condition.conditionType?.key">
-    <template [ng-switch-when]="'RequestHeaderConditionlet'">
-      <cw-request-header-condition
-          class="cw-condition-component"
-          [comparator-value]="condition.comparison"
-          [parameter-values]="parameterValues"
-          (change)="conditionChanged($event)">
-      </cw-request-header-condition>
-    </template>
-    <template [ng-switch-when]="'UsersCountryConditionlet'">
+  <div flex layout-fill class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
+    <template [ngSwitchWhen]="'XUsersCountryConditionlet'">
       <cw-country-condition
           class="cw-condition-component"
           [comparator-value]="condition.comparison"
-          [parameter-values]="parameterValues"
-          (change)="conditionChanged($event)">
+          [parameter-values]="condition.parameters"
+          (change)="onConditionChange($event)">
       </cw-country-condition>
 
     </template>
-    <template [ng-switch-when]="'NoSelection'">
+    <template [ngSwitchWhen]="'NoSelection'">
       <div class="cw-condition-component"></div>
     </template>
-    <template ng-switch-default>
+    <template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"
                                [model]="condition"
-                               (change)="conditionChanged($event)">
+                               [paramDefs]="condition.type?.parameters"
+                               (change)="onConditionChange($event)">
       </cw-serverside-condition>
     </template>
   </div>
   <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
-      <div class="ui basic icon buttons">
-        <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()" [disabled]="!condition.isPersisted()">
-          <i class="trash icon"></i>
-        </button>
+    <div class="ui basic icon buttons">
+      <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
+        <i class="trash icon"></i>
+      </button>
     </div>
   </div>
 </div>
 `,
-  directives: [NgIf, NgFor, NgSwitch, NgSwitchWhen, NgSwitchDefault,
+  directives: [CORE_DIRECTIVES,
     ServersideCondition,
-    RequestHeaderCondition,
     CountryCondition,
     Dropdown,
-
+    InputOption
   ]
 })
 export class ConditionComponent {
-  index:number
-  _condition:ConditionModel
-  parameterValues:any
-  conditionTypesDropdown:DropdownModel
-  typeService:ConditionTypeService
+
+  @Input() condition:ConditionModel
+  @Input() index:number
+  @Output() change:EventEmitter<ConditionModel>
+  @Output() remove:EventEmitter<ConditionModel>
+  typeDropdown:any
+
+  private _typeService:ConditionTypeService
   private _conditionService:ConditionService;
-  rsrc:any
+  private _types:{[key:string]: any}
 
-  constructor(ruleService:RuleService,
-              typeService:ConditionTypeService,
-              conditionService:ConditionService) {
+  constructor(conditionService:ConditionService, typeService:ConditionTypeService, resources:I18nService) {
+    this.change = new EventEmitter()
+    this.remove = new EventEmitter()
+
     this._conditionService = conditionService;
-    this.typeService = typeService
+    this._typeService = typeService
+    this._types = {}
 
-    this.rsrc = ruleService.rsrc
-    ruleService.onResourceUpdate.subscribe((messages)=> {
-        this.rsrc = messages
-    })
-
-    this.conditionTypesDropdown = new DropdownModel('conditionType', this.rsrc.inputs.condition.type.placeholder)
-
-    let condition = new ConditionModel()
-    condition.conditionType = new ConditionTypeModel()
-    this.condition = condition
-    this.parameterValues = {}
+    this.condition = new ConditionModel(null, new ServerSideTypeModel())
     this.index = 0
 
-    /* Note that 'typeService.list()' was called earlier, and the following observer relies on that fact. */
-    typeService.onAdd.subscribe((conditionType:ConditionTypeModel)=> {
-      this.conditionTypesDropdown.addOptions([new DropdownOption(conditionType.key, conditionType, conditionType.rsrc.name)])
+    typeService.list().subscribe((types:ServerSideTypeModel[])=> {
+      this.typeDropdown = {
+        value: "",
+        placeholder: "Select a Condition",
+        options: []
+      }
+      types.forEach(type => {
+        this._types[type.key] = type
+        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name')}
+        this.typeDropdown.options.push(opt)
+      })
     })
   }
 
-  set condition(condition:ConditionModel) {
-    this._condition = condition
-    if (this._condition.conditionType) {
-      this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
+  ngOnChanges(change){
+    console.log("ConditionComponent", "ngOnChanges", change)
+    if(change.condition){
+      this.condition = change.condition.currentValue
+      if(this.typeDropdown && this.condition.type){
+        this.typeDropdown.value = this.condition.type.key
+      }
     }
-
-    this._condition.onChange.subscribe((event:CwChangeEvent<ConditionModel>)=> {
-      if (event.target.isValid() && event.target.isPersisted()) {
-        this._conditionService.save(event.target)
-      }
-      if (this._condition.conditionType && this._condition.conditionType.key != 'NoSelection') {
-        this.conditionTypesDropdown.selected = [this._condition.conditionType.key]
-      }
-
-    })
-    this.parameterValues = this.condition.parameters
   }
 
-  get condition() {
-    return this._condition;
-  }
-
-  handleConditionTypeChange(event) {
-    this.condition.conditionType = event.target.model.selectedValues()[0]
-    this.condition.clearParameters()
+  onTypeChange(value) {
+    this.condition.type = this._types[value]
+    this.change.emit(this.condition)
   }
 
   toggleOperator() {
     this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
+    this.change.emit(this.condition)
   }
 
-  operatorLabel(operator:string):string{
-    return (operator=='AND')? this.rsrc.inputs.condition.andOr.and.label : this.rsrc.inputs.condition.andOr.or.label;
+  onConditionChange(condition) {
+    this.change.emit(condition)
   }
 
   removeCondition() {
-    this._conditionService.remove(this._condition)
-  }
-
-
-  conditionChanged(event) {
-    if (event.type == 'comparisonChange') {
-      this.condition.comparison = event.value
-    } else if (event.type == 'parameterValueChange') {
-      event.value.forEach((param)=> {
-        this.condition.setParameter(param.key, param.value)
-      })
-    }
+    this.remove.emit(this.condition)
   }
 }
 

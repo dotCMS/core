@@ -1,5 +1,15 @@
-import { NgClass, ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute, NgFor} from 'angular2/angular2';
-//import * as Rx from '../../../../../../node_modules/angular2/node_modules/@reactivex/rxjs/src/Rx.KitchenSink'
+import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/angular2';
+import { Host, AfterViewInit, AfterViewChecked} from 'angular2/angular2';
+import { CORE_DIRECTIVES } from 'angular2/angular2';
+import { Output, Input, ChangeDetectionStrategy } from 'angular2/angular2';
+import {Observable} from 'rxjs/Rx.KitchenSink'
+import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
+import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
+import {CwComponent} from "../../../../../api/util/CwComponent";
+import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
+import {ParameterModel} from "../../../../../api/rule-engine/Condition";
+import {Verify} from "../../../../../api/validation/Verify";
+
 
 /**
  * Angular 2 wrapper around Semantic UI Dropdown Module.
@@ -22,183 +32,145 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   40: 'downArrow',
 }
 
-/**
- *
- */
-export class DropdownOption {
-  id:string
-  value:any
-  label:string
-  icon:string
-
-  constructor(valueId:string, value:any = null, label:string = null, icon:string = null) {
-    this.id = valueId
-    this.value = value || valueId
-    this.label = label || valueId
-    this.icon = icon || ''
-    if(!this.icon.includes(' ') && this.icon.length > 0){
-      this.icon = (this.icon + ' icon').trim()
-    }
-  }
-}
-export class DropdownModel {
-  name:string
-  placeholder:string
-  selected:Array<string>
-  options:Array<DropdownOption>
-  settings:{ maxSelections?: number }
-  private _optionChange:EventEmitter
-  onOptionChange:Rx.Observable<any>
-  allowAdditions: boolean
-
-
-  constructor(name:string = null,
-              placeholder:string = '',
-              selected:Array<string> = [],
-              options:Array<DropdownOption> = [],
-              allowAdditions:boolean = false) {
-    this.name = !!name ? name : "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    this.placeholder = placeholder
-    this.selected = selected
-    this.options = options
-    this.settings = {}
-    this._optionChange = new EventEmitter()
-    this.onOptionChange = Rx.Observable.from(this._optionChange.toRx()).share()
-    this.allowAdditions = allowAdditions
-  }
-
-  addOptions(options:Array<DropdownOption>) {
-    options.forEach((option) => {
-      this.options.push(option)
-    })
-    this._optionChange.next({type: 'add', target: this, value: options})
-  }
-
-  selectedValues():Array<any>{
-    return this.selected.map((selectedId)=>{
-      var ddOpt = this.options.filter((opt)=>{ return (opt.id == selectedId) })[0]
-      if(ddOpt){
-        // if not, then 'selected' is a value that isn't in the list!
-        return ddOpt.value
-      }
-    })
-  }
-
-
-}
 
 @Component({
   selector: 'cw-input-dropdown',
-
-  properties: [
-    'model',
-  ], events: [
-    "change"
-  ]
+  //changeDetection: ChangeDetectionStrategy.OnPush
 })
 @View({
-  template: `
-<div class="ui fluid selection dropdown search" [ng-class]="{multiple: model.settings.maxSelections}" tabindex="0">
-  <input type="hidden" [name]="model.name" [value]="model.selected.join(',')" >
+  template: `<div class="ui fluid selection dropdown search ng-valid"
+     [ngClass]="{required:minSelections > 0, multiple: maxSelections > 1}"
+     tabindex="0"
+     (change)="stopNativeEvents($event)"
+     (blur)="stopNativeEvents($event)">
+  <input type="hidden" [name]="name" [value]="value" />
   <i class="dropdown icon"></i>
-  <div class="default text">{{model.placeholder}}</div>
+  <div class="default text">{{placeholder}}</div>
   <div class="menu" tabindex="-1">
-    <div *ng-for="var opt of model.options" class="item" [attr.data-value]="opt.id" [attr.data-text]="opt.label">
-      <i [ng-class]="opt.icon" ></i>
+    <div *ngFor="var opt of _options" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
+      <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>
   </div>
 </div>
   `,
-  directives: [NgClass, NgFor]
+  directives: [CORE_DIRECTIVES]
 })
-export class Dropdown {
+export class Dropdown implements AfterViewInit, AfterViewChecked {
 
-  change:EventEmitter
-  private _model:DropdownModel
-  private optionWatch:Rx.Subscription<any>
+  @Input() value:string
+  @Input() name:string
+  @Input() placeholder:string
+  @Input() allowAdditions:boolean
+  @Input() minSelections:number
+  @Input() maxSelections:number
+
+  @Output() change:EventEmitter<any>
+
+  private _options:InputOption[]
   private elementRef:ElementRef
+  private _updateView:boolean
+  private _viewIsInitialized:boolean
+  private _$dropdown:any
 
-  private updateView:boolean
-
-  constructor(@ElementRef elementRef:ElementRef) {
+  constructor(elementRef:ElementRef) {
+    this.placeholder = ""
+    this.allowAdditions = true
+    this.minSelections = 0
+    this.maxSelections = 1
+    this.change = new EventEmitter()
+    this._options = []
 
     this.elementRef = elementRef
-    this.change = new EventEmitter()
-    this.model = new DropdownModel()
-    this.updateView = false
+    this._updateView = false
+    this._viewIsInitialized = false
+    this.name = "dd-" + new Date().getTime() + Math.random()
   }
 
-
-  get model():DropdownModel {
-    return this._model;
-  }
-
-  set model(model:DropdownModel) {
-    if (this.optionWatch) {
-      this.optionWatch.unsubscribe()
-      this.optionWatch = null
+  ngOnChanges(change) {
+    if (change.value) {
+      this.value = change.value.currentValue
+      if (this._$dropdown) {
+        this._$dropdown.dropdown('set selected', this.value)
+      } else {
+        this._updateView = true
+        this.initDropdown()
+      }
     }
-    this._model = model;
-    this.optionWatch = this._model.onOptionChange.subscribe(()=> {
-      this.updateView = true
-    })
-
   }
 
-  afterViewInit() {
-    if (this.model.options.length > 0) {
+  addOption(option:InputOption) {
+    this._options.push(option)
+  }
+
+  ngAfterViewInit() {
+    this._viewIsInitialized = true
+    if (this._options.length > 0) {
       this.initDropdown()
     } // else 'wait for options to be set'
+
   }
 
-  afterViewChecked() {
-    if (this.updateView === true) {
-      this.updateView = false
+  ngAfterViewChecked() {
+    if (this._updateView === true) {
       this.initDropdown()
+    }
+  }
+
+  refreshDisplayText(label:string) {
+    if (this._$dropdown) {
+      this._$dropdown.dropdown('set text', label)
     }
   }
 
   initDropdown() {
-    var self = this;
-    let config:any = {
-      allowAdditions: this.model.allowAdditions,
+    if (this._viewIsInitialized) {
+      this._updateView = false
+      var self = this;
+      let config:any = {
+        allowAdditions: this.allowAdditions,
+        placeholder: 'auto',
 
-      onChange: (value, text, $choice)=> {
-        return this.onChange(value, text, $choice)
-      },
-      onAdd: (addedValue, addedText, $addedChoice)=> {
-        return this.onAdd(addedValue, addedText, $addedChoice)
-      },
-      onRemove: (removedValue, removedText, $removedChoice)=> {
-        return this.onRemove(removedValue, removedText, $removedChoice)
-      },
-      onLabelCreate: function (value, text) {
-        let $label = this;
-        return self.onLabelCreate($label, value, text)
-      },
-      onLabelSelect: ($selectedLabels)=> {
-        return this.onLabelSelect($selectedLabels)
-      },
-      onNoResults: (searchValue)=> {
-        return this.onNoResults(searchValue)
-      },
-      onShow: ()=> {
-        return this.onShow()
-      },
-      onHide: ()=> {
-        return this.onHide()
+        onChange: (value, text, $choice)=> {
+          return this.onChange(value, text, $choice)
+        },
+        onAdd: (addedValue, addedText, $addedChoice)=> {
+          return this.onAdd(addedValue, addedText, $addedChoice)
+        },
+        onRemove: (removedValue, removedText, $removedChoice)=> {
+          return this.onRemove(removedValue, removedText, $removedChoice)
+        },
+        onLabelCreate: function (value, text) {
+          let $label = this;
+          return self.onLabelCreate($label, value, text)
+        },
+        onLabelSelect: ($selectedLabels)=> {
+          return this.onLabelSelect($selectedLabels)
+        },
+        onNoResults: (searchValue)=> {
+          return this.onNoResults(searchValue)
+        },
+        onShow: ()=> {
+          return this.onShow()
+        },
+        onHide: ()=> {
+          return this.onHide()
+        }
       }
-    }
-    if (this.model.settings.maxSelections) {
-      config.maxSelections = this.model.settings.maxSelections
-    }
+      if (this.maxSelections > 1) {
+        config.maxSelections = this.maxSelections
+      }
 
-    var el = this.elementRef.nativeElement
-    var $dropdown = $(el).children('.ui.dropdown');
-    $dropdown.dropdown(config)
-    this._applyArrowNavFix($dropdown);
 
+      var el = this.elementRef.nativeElement
+      this._$dropdown = $(el).children('.ui.dropdown');
+      this._$dropdown.dropdown(config)
+      this._applyArrowNavFix(this._$dropdown);
+    }
+  }
+
+  private isMultiSelect():boolean {
+    return this.maxSelections > 1
   }
 
   /**
@@ -216,6 +188,10 @@ export class Dropdown {
     })
   };
 
+  stopNativeEvents(event) {
+    event.stopPropagation();
+  }
+
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element
    * @param value
@@ -223,9 +199,14 @@ export class Dropdown {
    * @param $choice
    */
   onChange(value, text, $choice) {
-    this.model.selected = [value]
-    this.change.next({type: 'toggle', target: this, value: value})
-    console.log('onChange', value, text, " Selected: ", this.model.selected)
+    this.value = value
+    if (this.isMultiSelect()) {
+      debugger
+      this.change.emit(this.value.split[','])
+    } else {
+      this.change.emit(this.value)
+    }
+
   }
 
   /**
@@ -283,4 +264,35 @@ export class Dropdown {
   onHide() {
   }
 }
+
+
+@Directive({
+  selector: 'cw-input-option'
+})
+export class InputOption {
+  @Input() value:string;
+  @Input() label:string;
+  @Input() icon:string;
+  private _dropdown:Dropdown
+  private _isRegistered:boolean
+
+
+  constructor(@Host() dropdown:Dropdown) {
+    this._dropdown = dropdown
+  }
+
+  ngOnChanges(change) {
+    if (!this._isRegistered) {
+      this._dropdown.addOption(this);
+      this._isRegistered = true;
+    } else if (change.label && this._dropdown.value === this.value) {
+        let label = change.label.currentValue
+        if (label) {
+          this._dropdown.refreshDisplayText(label)
+        }
+    }
+
+  }
+}
+
 

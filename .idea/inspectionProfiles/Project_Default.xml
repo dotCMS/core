@@ -12,20 +12,35 @@
     <inspection_tool class="HtmlUnknownAttribute" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="myValues">
         <value>
-          <list size="13">
+          <list size="28">
             <item index="0" class="java.lang.String" itemvalue="flex" />
             <item index="1" class="java.lang.String" itemvalue="layout" />
             <item index="2" class="java.lang.String" itemvalue="layout-align" />
-            <item index="3" class="java.lang.String" itemvalue="#filter" />
-            <item index="4" class="java.lang.String" itemvalue="(click)" />
-            <item index="5" class="java.lang.String" itemvalue="[value]" />
-            <item index="6" class="java.lang.String" itemvalue="(keypress)" />
-            <item index="7" class="java.lang.String" itemvalue="[control-group]" />
-            <item index="8" class="java.lang.String" itemvalue="*for" />
-            <item index="9" class="java.lang.String" itemvalue="ng-show" />
-            <item index="10" class="java.lang.String" itemvalue="[control]" />
-            <item index="11" class="java.lang.String" itemvalue="md-no-float" />
-            <item index="12" class="java.lang.String" itemvalue="control" />
+            <item index="3" class="java.lang.String" itemvalue="[hidden]" />
+            <item index="4" class="java.lang.String" itemvalue="[value]" />
+            <item index="5" class="java.lang.String" itemvalue="*ng-for" />
+            <item index="6" class="java.lang.String" itemvalue="ngcontrol" />
+            <item index="7" class="java.lang.String" itemvalue="[(ngmodel)]" />
+            <item index="8" class="java.lang.String" itemvalue="[class.ui]" />
+            <item index="9" class="java.lang.String" itemvalue="[disabled]" />
+            <item index="10" class="java.lang.String" itemvalue="(ngsubmit)" />
+            <item index="11" class="java.lang.String" itemvalue="[ngclass]" />
+            <item index="12" class="java.lang.String" itemvalue="[ng-class]" />
+            <item index="13" class="java.lang.String" itemvalue="[name]" />
+            <item index="14" class="java.lang.String" itemvalue="ngfor" />
+            <item index="15" class="java.lang.String" itemvalue="#input" />
+            <item index="16" class="java.lang.String" itemvalue="#islast" />
+            <item index="17" class="java.lang.String" itemvalue="ngswitchdefault" />
+            <item index="18" class="java.lang.String" itemvalue="[class.cw-hidden]" />
+            <item index="19" class="java.lang.String" itemvalue="[class.cw-disabled]" />
+            <item index="20" class="java.lang.String" itemvalue="(click)" />
+            <item index="21" class="java.lang.String" itemvalue="[class.down]" />
+            <item index="22" class="java.lang.String" itemvalue="[class.right]" />
+            <item index="23" class="java.lang.String" itemvalue="arial-label" />
+            <item index="24" class="java.lang.String" itemvalue="(change)" />
+            <item index="25" class="java.lang.String" itemvalue="(blur)" />
+            <item index="26" class="java.lang.String" itemvalue="[attr.data-value]" />
+            <item index="27" class="java.lang.String" itemvalue="[attr.data-text]" />
           </list>
         </value>
       </option>
@@ -34,7 +49,7 @@
     <inspection_tool class="HtmlUnknownTag" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="myValues">
         <value>
-          <list size="13">
+          <list size="14">
             <item index="0" class="java.lang.String" itemvalue="nobr" />
             <item index="1" class="java.lang.String" itemvalue="noembed" />
             <item index="2" class="java.lang.String" itemvalue="comment" />
@@ -48,6 +63,7 @@
             <item index="10" class="java.lang.String" itemvalue="rules-engine" />
             <item index="11" class="java.lang.String" itemvalue="rule-action" />
             <item index="12" class="java.lang.String" itemvalue="rule-engine" />
+            <item index="13" class="java.lang.String" itemvalue="cw-serverside-condition" />
           </list>
         </value>
       </option>

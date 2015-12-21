@@ -22,7 +22,8 @@ import {CwChangeEvent} from '../../api/util/CwEvent';
 import {I18nService} from "../system/locale/I18n";
 
 
-var injector = Injector.resolveAndCreate([ApiRoot,
+var injector = Injector.resolveAndCreate([
+  ApiRoot,
   I18nService,
   UserModel,
   RuleService,
@@ -54,10 +55,11 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("Can create a simple rule.", function (done) {
     var clientRule:RuleModel
-    clientRule = new RuleModel()
+    clientRule = new RuleModel(null)
     clientRule.enabled = true
     clientRule.name = "TestRule-" + new Date().getTime()
-    let ruleOnAddSub = ruleService.onAdd.subscribe((serverRule:RuleModel) => {
+
+    ruleService.add(clientRule, (serverRule:RuleModel) => {
       rulesToRemove.push(serverRule)
       expect(serverRule.isPersisted()).toBe(true)
       expect(serverRule.enabled).toBe(true)
@@ -66,13 +68,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
       serverRule[randomKey] = "The object provided by the observer is the same instance as the one added."
       expect(clientRule[randomKey]).toBe(serverRule[randomKey])
       done()
-    }, (err) => {
-      expect(err).toBeUndefined("error was thrown creating Rule.")
-      done()
     })
-
-    ruleService.add(clientRule) // will trigger callback to subscription.
-
   })
 
 });

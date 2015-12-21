@@ -9,26 +9,32 @@
   <link rel="stylesheet" type="text/css" href="thirdparty/semantic/dist/semantic.css">
   <link rel="stylesheet" type="text/css" href="thirdparty/angular-material/angular-material.layouts.css">
 
+
+
 </head>
 <body>
 <cw-rule-engine>Loading...</cw-rule-engine>
 
 <!-- DEV MODE -->
 <script src="thirdparty/system/dist/system.js"></script>
-<script src="thirdparty/angular2/bundles/angular2.min.js"></script>
-<script src="thirdparty/angular2/node_modules/@reactivex/rxjs/dist/global/Rx.js"></script>
+<script src="thirdparty/angular2/bundles/angular2.dev.js"></script>
+<script src="thirdparty/angular2/bundles/http.min.js"></script>
 <script src="thirdparty/jquery/dist/jquery.min.js"></script>
 <script src="thirdparty/semantic/dist/semantic.min.js"></script>
 <script src="thirdparty/core-js/client/shim.min.js"></script>
 
 <script>
   System.config({
+    defaultJSExtensions: false,
     packages: {
       'api': {defaultExtension: 'js'},
-      'view': {defaultExtension: 'js'}
+      'view': {defaultExtension: 'js'},
+      'rxjs': {defaultExtension: 'js'}
     },
     map: {
-      "whatwg-fetch": "thirdparty/whatwg-fetch/fetch.js"
+      "whatwg-fetch": "thirdparty/whatwg-fetch/fetch.js",
+      "rxjs": "thirdparty/rxjs"
+
     }
   });
 

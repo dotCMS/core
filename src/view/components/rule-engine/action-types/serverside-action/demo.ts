@@ -1,12 +1,12 @@
 
 import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
-import {RequestHeaderCondition} from './serverside-condition';
+import {ServersideAction} from './serverside-action';
 
 @Component({
   selector: 'cw-request-header-demo'
 })
 @View({
-  directives: [RequestHeaderCondition],
+  directives: [ServersideAction],
   template: `
     <div class="panel panel-default">
       <div class="panel-heading">1) No values set.</div>
