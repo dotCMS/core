@@ -5,7 +5,7 @@ import java.sql.Connection;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-import com.dotcms.repackage.org.elasticsearch.action.bulk.BulkRequestBuilder;
+import org.elasticsearch.action.bulk.BulkRequestBuilder;
 
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;

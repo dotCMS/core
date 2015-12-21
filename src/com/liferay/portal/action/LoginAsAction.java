@@ -9,7 +9,6 @@ import com.dotcms.repackage.org.apache.struts.action.Action;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -19,6 +18,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.auth.PrincipalThreadLocal;
@@ -27,7 +27,6 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portlet.PortletURLImpl;
-import com.liferay.util.Encryptor;
 
 public class LoginAsAction extends Action {
 	
@@ -81,12 +80,7 @@ public class LoginAsAction extends Action {
 				Logger.info(this, "An invalid request to login as a different user was made by " + currentUser.getFullName() + 
 						" (" + currentUser.getUserId() + "), invalid user password submitted. Remote IP: " + req.getRemoteAddr());
 				return mapping.findForward(Constants.COMMON_REFERER);
-			} else if (currentUser.getPasswordEncrypted() && !currentUser.getPassword().equals(Encryptor.digest(passwordParameter))) {
-				req.getSession().setAttribute("portal_login_as_error", "please-enter-a-valid-password");
-				Logger.info(this, "An invalid request to login as a different user was made by " + currentUser.getFullName() + 
-						" (" + currentUser.getUserId() + "), invalid user password submitted. Remote IP: " + req.getRemoteAddr());
-				return mapping.findForward(Constants.COMMON_REFERER);
-			} else if (!currentUser.getPasswordEncrypted() && !currentUser.getPassword().equals(passwordParameter)) {
+			} else if(LoginFactory.passwordMatch(passwordParameter, currentUser) == false) {
 				req.getSession().setAttribute("portal_login_as_error", "please-enter-a-valid-password");
 				Logger.info(this, "An invalid request to login as a different user was made by " + currentUser.getFullName() + 
 						" (" + currentUser.getUserId() + "), invalid user password submitted. Remote IP: " + req.getRemoteAddr());

@@ -869,7 +869,7 @@ create table User_ (
 	userId varchar(100) not null primary key,
 	companyId varchar(100) not null,
 	createDate timestamp null,
-	password_ varchar(100) null,
+	password_ text null,
 	passwordEncrypted bit,
 	passwordExpirationDate timestamp null,
 	passwordReset bit,

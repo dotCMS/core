@@ -17,8 +17,7 @@ repositories {
 }
 
 task copyToLib {
-
-    sync {
+    copy {
         from configurations.compile
         into configurations.felixFolder
 
@@ -26,16 +25,17 @@ task copyToLib {
         include '**/dot.org.apache.felix.fileinstall*.jar'
         include '**/dot.org.apache.felix.gogo.*.jar'
         include '**/dot.org.apache.felix.http.bundle*.jar'
+
     }
 
-    sync {
+    copy {
         from configurations.compile
         into configurations.libsFolder
 
         exclude '**/dot.org.apache.felix.bundlerepository*.jar'
         exclude '**/dot.org.apache.felix.fileinstall*.jar'
         exclude '**/dot.org.apache.felix.gogo.*.jar'
-        exclude '**/*.zip'
+        exclude '**/*.zip'       
     }
 
     copy {
@@ -70,7 +70,7 @@ tasks.copyToLib.execute()
 ant.importBuild 'build.xml'
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '1.11'
+    gradleVersion = '2.9'
 }
 
 defaultTasks 'help', 'tasks'

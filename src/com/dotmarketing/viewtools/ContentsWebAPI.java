@@ -16,7 +16,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotcms.repackage.org.apache.commons.beanutils.PropertyUtils;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.SearchHits;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

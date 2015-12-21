@@ -254,11 +254,11 @@ public class UserModel extends BaseModel {
 	}
 
 	public boolean getPasswordEncrypted() {
-		return _passwordEncrypted;
+		return true;
 	}
 
 	public boolean isPasswordEncrypted() {
-		return _passwordEncrypted;
+		return true;
 	}
 
 	public void setPasswordEncrypted(boolean passwordEncrypted) {
