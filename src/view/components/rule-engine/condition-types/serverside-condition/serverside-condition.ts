@@ -26,7 +26,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
                        layout-fill
                        class="cw-input"
                        [value]="input.value"
-                       placeholder="{{input.placeholder}}"
+                       placeholder="{{input.placeholder || async}}"
                        [required]="input.required"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
@@ -45,7 +45,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
                    [class.cw-last]="islast"
                    [required]="input.required"
                    [name]="input.name"
-                   [placeholder]="input.placeholder"
+                   [placeholder]="input.placeholder | async"
                    [value]="input.value"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
   </template>
@@ -69,10 +69,6 @@ export class ServersideCondition {
   }
 
   ngOnChanges(change) {
-    console.log("ServersideCondition", "ngOnChanges", change)
-    if (change.model) {
-      console.log("ServersideCondition", "ngOnChanges-value", change.model.currentValue)
-    }
     if (change.paramDefs) {
       let prevPriority = 0
       this._inputs = []
@@ -88,58 +84,64 @@ export class ServersideCondition {
     }
   }
 
-  getInputFor(type:string, param, paramDef):any {
+  getInputFor(type:string, param, paramDef:ParameterDefinition):any {
+
+    let i18nBaseKey = paramDef.i18nBaseKey || this.model.type.i18nKey
+    /* Save a potentially large number of requests by loading parent key: */
+    this._resources.get(i18nBaseKey).subscribe(()=>{})
+
     let input
     if (type === 'text') {
-      input = this.getTextInput(param, paramDef)
+      input = this.getTextInput(param, paramDef, i18nBaseKey)
     } else if (type === 'dropdown') {
-      input = this.getDropdownInput(param, paramDef)
+      input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
     input.type = type
     return input
   }
 
-  private getTextInput(param, paramDef) {
+  private getTextInput(param, paramDef, i18nBaseKey:string) {
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    let placeholderKey = rsrcKey + '.placeholder'
     return {
       name: param.key,
-      placeholder: paramDef.key,
+      placeholder: this._resources.get(placeholderKey, paramDef.key),
       value: this.model.getParameterValue(param.key),
       required: paramDef.inputType.dataType['minLength'] > 0
     }
   };
 
-  private getDropdownInput(param:ParameterModel, paramDef:ParameterDefinition):CwComponent {
+  private getDropdownInput(param:ParameterModel, paramDef:ParameterDefinition, i18nBaseKey:string):CwComponent {
     let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
     let opts = []
     let options = inputType.options;
-    let i18nBaseKey
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    let placeholderKey = rsrcKey + '.placeholder'
     if (param.key == 'comparison') {
-      i18nBaseKey = 'api.sites.ruleengine.rules.inputs.comparison'
-    }
-    else if(paramDef.i18nBaseKey){
-      i18nBaseKey = paramDef.i18nBaseKey
+      rsrcKey = 'api.sites.ruleengine.rules.inputs.comparison'
     }
     else{
-      i18nBaseKey = this.model.type.i18nKey + '.inputs.' + paramDef.key + '.options'
+      rsrcKey = rsrcKey + '.options'
     }
+
 
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
-      let labelKey = i18nBaseKey + '.' + option.i18nKey
+      let labelKey = rsrcKey + '.' + option.i18nKey
       // hack for country - @todo ggranum: kill 'name' on locale?
       if(param.key === 'country'){
         labelKey = labelKey + '.name'
       }
       opts.push({
         value: key,
-        label: this._resources.get(labelKey),
+        label: this._resources.get(labelKey, option.i18nKey),
         icon: option.icon
       })
     })
     let input:any = {
       value: this.model.getParameterValue(param.key),
       name: param.key,
-      placeholder: inputType.placeholder,
+      placeholder: this._resources.get(placeholderKey, paramDef.key),
       options: opts,
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,

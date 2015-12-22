@@ -22,8 +22,8 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <cw-input-dropdown
         class="cw-type-dropdown"
-        [value]="action.type.key"
-        placeholder="{{typeDropdown.placeholder}}"
+        [value]="typeDropdown.value"
+        placeholder="{{typeDropdown.placeholder | async}}"
         (change)="onTypeChange($event)">
          <cw-input-option
             *ngFor="#opt of typeDropdown.options"
@@ -76,18 +76,17 @@ export class RuleActionComponent {
     this._actionService = actionService;
     this._typeService = typeService
 
-    this.action = new ConditionModel(null, new ServerSideTypeModel())
     this.index = 0
 
     typeService.list().subscribe((types:ServerSideTypeModel[])=> {
       this.typeDropdown = {
         value: "",
-        placeholder:"Select an Action",
+        placeholder: resources.get("api.sites.ruleengine.rules.inputs.action.type.placeholder"),
         options: []
       }
       types.forEach(type => {
         this._types[type.key] = type
-        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name')}
+        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name', type.i18nKey)}
         this.typeDropdown.options.push(opt)
       })
     })
@@ -97,7 +96,9 @@ export class RuleActionComponent {
     if (change.action){
       this.action = change.action.currentValue
       if (this.typeDropdown && this.action.type) {
-        this.typeDropdown.value = this.action.type.key
+        if(this.action.type.key != 'NoSelection') {
+          this.typeDropdown.value = this.action.type.key
+        }
       }
     }
   }

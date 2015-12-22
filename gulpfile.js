@@ -57,8 +57,12 @@ var project = {
   },
 
   copyNodeFiles: function(cb){
+    var done = project.callbackOnCount(2, cb)
+
     gulp.src('./node_modules/rxjs/**/*')
-        .pipe(gulp.dest(config.buildDir + '/thirdparty/rxjs/')).on('finish', cb);
+        .pipe(gulp.dest(config.buildDir + '/thirdparty/rxjs/')).on('finish', done);
+    gulp.src('./node_modules/angular2/bundles/*.*')
+        .pipe(gulp.dest(config.buildDir + '/thirdparty/angular2/bundles/')).on('finish', done);
   },
 
   /**

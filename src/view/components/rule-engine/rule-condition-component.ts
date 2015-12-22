@@ -31,7 +31,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
      <cw-input-dropdown
         class="cw-type-dropdown"
         [value]="condition.type.key"
-        placeholder="{{typeDropdown.placeholder}}"
+        placeholder="{{typeDropdown.placeholder | async}}"
         (change)="onTypeChange($event)">
          <cw-input-option
             *ngFor="#opt of typeDropdown.options"
@@ -102,13 +102,12 @@ export class ConditionComponent {
 
     typeService.list().subscribe((types:ServerSideTypeModel[])=> {
       this.typeDropdown = {
-        value: "",
-        placeholder: "Select a Condition",
+        placeholder: resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder"),
         options: []
       }
       types.forEach(type => {
         this._types[type.key] = type
-        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name')}
+        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name', type.i18nKey)}
         this.typeDropdown.options.push(opt)
       })
     })

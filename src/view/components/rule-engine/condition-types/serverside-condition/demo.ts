@@ -1,7 +1,14 @@
-import {bootstrap, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
+import {bootstrap, Provider, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
+import {HTTP_PROVIDERS} from 'angular2/http'
+
 import {ServersideCondition} from './serverside-condition';
 import {ConditionModel} from "../../../../../api/rule-engine/Condition";
 import {ServerSideTypeModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
+import {I18nService} from "../../../../../api/system/locale/I18n";
+import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
+import {UserModel} from "../../../../../api/auth/UserModel";
+import {RestDataStore} from "../../../../../api/persistence/RestDataStore";
+import {DataStore} from "../../../../../api/persistence/DataStore";
 
 @Component({
   selector: 'demo'
@@ -34,7 +41,13 @@ class App {
 }
 
 export function main() {
-  let app = bootstrap(App)
+  let app = bootstrap(App, [
+    ApiRoot,
+    I18nService,
+    UserModel,
+    HTTP_PROVIDERS,
+    new Provider(DataStore, {useClass: RestDataStore})
+  ])
   app.then((appRef) => {
     console.log("Bootstrapped App: ", appRef)
   }).catch((e) => {
