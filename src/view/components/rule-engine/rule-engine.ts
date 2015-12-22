@@ -48,22 +48,18 @@ const I8N_BASE:string = 'api.sites.ruleengine'
       </button>
     </div>
     <div class="cw-filter-links">
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled')" [disabled]="!isFilteringField('enabled')">
-        {{rsrc('inputs.filter.status.all.label') | async}} ({{rules.length}})
-      </button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', true)" [disabled]="isFilteringField('enabled', true)">
-        {{rsrc('inputs.filter.status.active.label') | async}} ({{activeRules}}/{{rules.length}})
-      </button>
-      <button class="cw-button-link ui black basic button" (click)="setFieldFilter('enabled', false)" [disabled]="isFilteringField('enabled', false)">
-        {{rsrc('inputs.filter.status.inactive.label') | async}} ({{rules.length-activeRules}}/{{rules.length}})
-      </button>
+      <span>{{rsrc('inputs.filter.status.show.label') | async}}:</span>
+      <a href="javascript:void(0)" [ngClass]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
+      <span>&#124;</span>
+      <a href="javascript:void(0)" [ngClass]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
+      <span>&#124;</span>
+      <a href="javascript:void(0)" [ngClass]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
 
   <rule flex layout="row" *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
         (change)="onRuleChange($event)"
-        (remove)="onRuleRemove($event)"
-  ></rule>
+        (remove)="onRuleRemove($event)"></rule>
 </div>
 
 `,
