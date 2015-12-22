@@ -12,9 +12,9 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class RulesEngine {
+public final class RulesEngine {
 
-    public void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
+    public static void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
 
         Host host;
 
