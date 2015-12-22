@@ -149,7 +149,7 @@ export class I18nService {
             } else{
               v = cNode._value
             }
-            console.log("I18n", "Providing: ", msgKey, "=", v)
+            //console.log("I18n", "Providing: ", msgKey, "=", v)
             obs.next(v)
           })
         }
