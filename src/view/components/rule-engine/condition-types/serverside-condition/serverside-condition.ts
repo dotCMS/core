@@ -130,7 +130,7 @@ export class ServersideCondition {
       let labelKey = rsrcKey + '.' + option.i18nKey
       // hack for country - @todo ggranum: kill 'name' on locale?
       if(param.key === 'country'){
-        labelKey = labelKey + '.name'
+        labelKey = i18nBaseKey + '.' + option.i18nKey + '.name'
       }
       opts.push({
         value: key,

@@ -114,10 +114,10 @@ export class I18nService {
   }
 
   get(msgKey:string, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
-    return this.getForLocale(this._apiRoot.authUser.locale, msgKey, defaultValue)
+    return this.getForLocale(this._apiRoot.authUser.locale, msgKey, true, defaultValue)
   }
 
-  getForLocale(locale:string, msgKey:string, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
+  getForLocale(locale:string, msgKey:string, forceText:boolean=true, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
     let path = msgKey.split('.')
     let cNode = this.root.$descendant(path)
     if (!cNode.$isLoaded() && !cNode.$isLoading()) {
@@ -143,8 +143,13 @@ export class I18nService {
           obs.next("-I18nLoadFailed-")
         } else {
           cNode._loading.then(()=> {
-            let v = cNode.$isLeaf() ? cNode._value : cNode
-            //console.log("I18n", "Providing: ", msgKey, "=", v)
+            let v
+            if(!cNode.$isLeaf() ){
+                v = forceText ? defaultValue : cNode
+            } else{
+              v = cNode._value
+            }
+            console.log("I18n", "Providing: ", msgKey, "=", v)
             obs.next(v)
           })
         }
