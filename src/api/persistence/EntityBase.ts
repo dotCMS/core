@@ -230,7 +230,6 @@ export class EntityMeta {
 
     this.on(eventType, tempCB, (e) => {
       this.off(eventType, tempCB)
-      debugger
       failureCallback(e)
     })
   }

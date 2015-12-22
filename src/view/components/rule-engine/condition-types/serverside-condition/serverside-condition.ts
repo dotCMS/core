@@ -26,7 +26,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
                        layout-fill
                        class="cw-input"
                        [value]="input.value"
-                       placeholder="{{input.placeholder || async}}"
+                       placeholder="{{input.placeholder | async}}"
                        [required]="input.required"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
