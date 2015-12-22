@@ -1,6 +1,7 @@
 package com.dotcms.visitor;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.WebKeys;
@@ -11,9 +12,8 @@ import javax.servlet.http.HttpSession;
 
 import java.util.Optional;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+
+import static org.mockito.Mockito.*;
 import static org.testng.Assert.*;
 
 public class VisitorAPITest {
@@ -37,11 +37,10 @@ public class VisitorAPITest {
         HttpSession mockSession = mock(HttpSession.class);
         when(mockRequest.getSession()).thenReturn(mockSession);
 
-        LanguageAPI mockLanguageAPI = mock(LanguageAPI.class);
-        when(mockLanguageAPI.getDefaultLanguage()).thenReturn(getLanguage());
-        when(mockLanguageAPI.getLanguage(1L)).thenReturn(getLanguage());
+        LanguageWebAPI mockLanguageWebAPI = mock(LanguageWebAPI.class);
+        when(mockLanguageWebAPI.getLanguage(mockRequest)).thenReturn(getLanguage());
 
-        APILocator.getVisitorAPI().setLanguageAPI(mockLanguageAPI);
+        APILocator.getVisitorAPI().setLanguageWebAPI(mockLanguageWebAPI);
         Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(mockRequest, true);
         verify(mockRequest).getSession();
         assertTrue(visitor.isPresent());

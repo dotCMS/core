@@ -1,14 +1,14 @@
 package com.dotcms.visitor.business;
 
 import com.dotcms.visitor.domain.Visitor;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Optional;
 
 public interface VisitorAPI {
 
-    void setLanguageAPI(LanguageAPI languageAPI);
+    void setLanguageWebAPI(LanguageWebAPI languageWebAPI);
 
     Optional<Visitor> getVisitor(HttpServletRequest request);
 

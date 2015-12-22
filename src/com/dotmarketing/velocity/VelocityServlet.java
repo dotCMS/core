@@ -623,7 +623,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	@SuppressWarnings("unchecked")
 	public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 
-		Optional<Visitor> visitor = visitorAPI.getVisitor(request);
+		visitorAPI.getVisitor(request);
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
 
@@ -676,10 +676,6 @@ public abstract class VelocityServlet extends HttpServlet {
 
         context.put( "HTMLPAGE_ASSET_STRUCTURE_TYPE", htmlPage.isContent() ? ((Contentlet)htmlPage).getStructureInode() : APILocator.getHTMLPageAssetAPI().DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
         context.put("HTMLPAGE_IS_CONTENT", htmlPage.isContent());
-
-		if(visitor.isPresent()) {
-			context.put("visitor", visitor.get());
-		}
 
 		boolean canUserWriteOnTemplate = permissionAPI.doesUserHavePermission(
 		        APILocator.getHTMLPageAssetAPI().getTemplate(htmlPage, true),

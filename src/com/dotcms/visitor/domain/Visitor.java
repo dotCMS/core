@@ -1,5 +1,6 @@
 package com.dotcms.visitor.domain;
 
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 import eu.bitwalker.useragentutils.UserAgent;
 
@@ -16,7 +17,7 @@ public class Visitor implements Serializable {
 
     private InetAddress ipAddress;
 
-    private long selectedLanguageId;
+    private Language selectedLanguage;
 
     private Locale locale;
 
@@ -50,12 +51,12 @@ public class Visitor implements Serializable {
         this.ipAddress = ipAddress;
     }
 
-    public long getSelectedLanguageId() {
-        return selectedLanguageId;
+    public Language getSelectedLanguage() {
+        return selectedLanguage;
     }
 
-    public void setSelectedLanguageId(long selectedLanguageId) {
-        this.selectedLanguageId = selectedLanguageId;
+    public void setSelectedLanguage(Language selectedLanguage) {
+        this.selectedLanguage = selectedLanguage;
     }
 
     public Locale getLocale() {
