@@ -32,7 +32,7 @@ export class ActionTypeService {
   private _cacheMap:{[key:string]: ServerSideTypeModel}
   private _rsrcService:I18nService;
 
-  constructor( apiRoot:ApiRoot, rsrcService:I18nService) {
+  constructor(apiRoot:ApiRoot, rsrcService:I18nService) {
     this._ref = apiRoot.root.child('system/ruleengine/actionlets')
     this._apiRoot = apiRoot
     this._rsrcService = rsrcService;
@@ -58,20 +58,11 @@ export class ActionTypeService {
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
           json.key = key
-          this._rsrcService.get(json.i18nKey).subscribe((rsrcResult:TreeNode)=> {
-            count++
-            let model = ServerSideTypeModel.fromJson(json)
-            if (rsrcResult) {
-              /* @todo ggranum: Remove the rsrc params from the Model object. */
-              model.rsrc = rsrcResult
-            }
-            this._cacheMap[model.key] = model
-            hydratedTypes.push(model)
-            if (count === keys.length) {
-              ee.emit(hydratedTypes)
-            }
-          })
+          let model = ServerSideTypeModel.fromJson(json)
+          this._cacheMap[model.key] = model
+          hydratedTypes.push(model)
         })
+        ee.emit(hydratedTypes)
         cb(hydratedTypes)
       }, (e)=> {
         throw e
@@ -88,7 +79,7 @@ export class ActionTypeService {
 
   get(key:string, cb:Function = noop) {
     let cachedValue = this._cacheMap[key]
-    if (cachedValue ) {
+    if (cachedValue) {
       cb(cachedValue)
     } else {
       /* There is no direct endpoint to get actions by key. So we'll hydrate all of them  */

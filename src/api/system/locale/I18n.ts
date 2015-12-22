@@ -1,130 +1,152 @@
-import {Injectable, EventEmitter} from 'angular2/angular2';
+import {Injectable} from 'angular2/angular2';
+import {Http, HTTP_PROVIDERS, RequestOptions, Headers} from 'angular2/http';
 import {Observable} from 'rxjs/Rx.KitchenSink'
 
-
-import {EntitySnapshot} from "../../persistence/EntityBase";
-import {EntityMeta} from "../../persistence/EntityBase";
 import {ApiRoot} from "../../persistence/ApiRoot";
-import {CwModel} from "../../util/CwModel";
 import {Verify} from "../../validation/Verify";
 
-let noop = (...arg:any[])=> {
-}
-
-export interface TreeNode {
+export class TreeNode {
   [key:string]: TreeNode | any
-  _p: TreeNode
-  _k: string
+  _p:TreeNode
+  _k:string
+  _loading:Promise<TreeNode>
+  _loaded:boolean
+  _value:string
+
+  constructor(parent:TreeNode, key:string) {
+    this._p = parent
+    this._k = key
+    this._loading = null
+    this._loaded = false
+  }
+
+  $addAllFromJson(key:string, childJson:any) {
+    let cNode = this.$child(key)
+    if (Verify.isString(childJson)) {
+      cNode._value = childJson
+    } else {
+      Object.keys(childJson).forEach(cKey => {
+        cNode.$addAllFromJson(cKey, childJson[cKey])
+      })
+    }
+    cNode._loaded = true
+  }
+
+  $isLeaf() {
+    return this._value !== undefined
+  }
+
+  $isLoaded():boolean {
+    return this._p == null ? false : this._loaded || this._p.$isLoaded()
+  }
+
+  $isLoading():boolean {
+    return this._p == null ? false : (this._loading != null) || this._p.$isLoading()
+  }
+
+  $markAsLoaded() {
+    this._loaded = true
+    this.$children().forEach(child=> child.$markAsLoaded())
+  }
+
+  $markAsLoading(promise:Promise<TreeNode>) {
+    this._loaded = false
+    this._loading = promise
+    this.$children().forEach(child=> child.$markAsLoading(promise))
+  }
+
+  $children():TreeNode[] {
+    return Object.keys(this).filter(key => key[0] != '_').map(cKey => this[cKey])
+  }
+
+  $child(cKey:string):TreeNode {
+    let child
+    child = this[cKey]
+    if (child == null) {
+      child = new TreeNode(this, cKey)
+      child._loading = this._loading
+      this[cKey] = child
+    }
+    return child
+  }
+
+  $descendant(path:string[]):TreeNode {
+    let cKey = path[0]
+    let child = this.$child(cKey)
+    if (path.length > 1) {
+      child = child.$descendant(path.slice(1))
+    }
+    return child
+  }
+
+  $isPathLoaded(path:string[]):boolean {
+    return this.$descendant(path).$isLoaded()
+  }
 }
 
 
 @Injectable()
 export class I18nService {
-  ref:EntityMeta
   root:TreeNode
   private _apiRoot:ApiRoot
+  private _http:Http;
+  private _baseUrl
 
-  constructor(apiRoot:ApiRoot) {
-    this.ref = apiRoot.root.child('system/i18n')
+  constructor(apiRoot:ApiRoot, http:Http) {
+    this._http = http;
     this._apiRoot = apiRoot
-    this.root = {_p: null, _k: 'root'}
+    this._baseUrl = apiRoot.baseUrl + 'api/v1/system/i18n'
+    this.root = new TreeNode(null, 'root')
   }
 
-  treeNodeFor(locale:string, dots:string):{node:TreeNode, isNew:boolean} {
-    let t = dots.split('.')
-    let isNew:boolean = false
-    let node = this.root
-    if (!node[locale]) {
-      node[locale] = {_p: this.root, _k: locale}
-      isNew = true
+  makeRequest(url) {
+    let opts;
+    if (this._apiRoot.authToken) {
+      let headers = new Headers();
+      headers.append('Authorization', this._apiRoot.authToken);
+      let opts = new RequestOptions({
+        headers: headers
+      });
     }
-    node = node[locale]
-    t.forEach((child)=> {
-      if (!node[child]) {
-        node[child] = {_p: node, _k: child}
-        isNew = true
-      }
-      node = node[child]
+    return this._http.get(this._baseUrl + '/' + url, opts).map((res) => {
+      return res.json()
     })
-    return {node: node, isNew: isNew}
   }
 
-  /**
-   * Does NOT create the node if it is absent.
-   * @param locale
-   * @param dots
-   */
-  getTreeNode(locale:string, dots:string):TreeNode {
-    let t = dots.split('.')
-    let node = this.root[locale]
-    if (node) {
-      for (var i = 0; i < t.length && node; i++) {
-        var child = t[i];
-        node = node[child]
-      }
-    }
-    return node
+  get(msgKey:string, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
+    return this.getForLocale(this._apiRoot.authUser.locale, msgKey, defaultValue)
   }
 
-  addAll(node:TreeNode, rsrc:TreeNode|string, key:string = null):TreeNode|any {
-    if (Verify.isString(rsrc)) {
-      let key = node._k
-      node._p[key] = rsrc
-      node = node._p[key]
-    } else {
-      Object.keys(rsrc).forEach((key)=> {
-        node[key] = rsrc[key]
+  getForLocale(locale:string, msgKey:string, defaultValue:any="-error loading resource-"):Observable<TreeNode|any> {
+    let path = msgKey.split('.')
+    let cNode = this.root.$descendant(path)
+    if (!cNode.$isLoaded() && !cNode.$isLoading()) {
+      let promise = new Promise((resolve, reject)=> {
+        console.log("I18n", "Requesting: ", msgKey)
+        this.makeRequest(locale + '/' + path.join('/')).catch((err:any, source:Observable<any>)=>{
+          console.log("I18n", "Failed:: ", msgKey, "=", cNode)
+          return Observable.create(obs =>{
+            obs.next(defaultValue)
+          })
+        }).subscribe(jsonVal => {
+          cNode._p.$addAllFromJson(cNode._k, jsonVal)
+          cNode.$markAsLoaded()
+          resolve(cNode)
+        })
       })
-    }
-    return node
-  }
-
-  get(key:string, cb:Function = noop):Observable<TreeNode|any> {
-    return this.getForLocale(this._apiRoot.authUser.locale, key, cb)
-  }
-
-  getForLocale(locale:string, key:string, cb:Function = noop):Observable<TreeNode|any> {
-    let nodeResult
-    let error;
-    try {
-      nodeResult = this.treeNodeFor(locale, key)
-    } catch (e) {
-      error = e
+      cNode.$markAsLoading(promise)
     }
     return Observable.defer(()=> {
-
-      return  Observable.create((obs)=> {
-        if(error){
-          console.log("Emitting provided key due to error for key: ", key)
-          let idx = key.lastIndexOf('.')
-          let resp = key
-          if(idx > 0 ){
-            resp = key.substring(idx + 1)
-          }
-          obs.next(resp)
-        }
-        else {
-          let path = key.replace(/\./g, '/')
-          let node = nodeResult.node
-          if (!nodeResult.isNew) {
-            try {
-              cb(node)
-              obs.next(node)
-              console.log("Emitting cached node value '" + node + "' for key: ", key)
-            } catch (e) {
-              obs.error(e)
-            }
-          } else {
-            this.ref.child(locale).child(path).once('value', (snap) => {
-              node = this.addAll(node, snap.val(), key)
-              cb(node)
-              obs.next(node)
-              console.log("Emitting node value '" + node + "' for key: ", key)
-            }, (e)=> {
-              console.log('Error reading resources for: ', key)
-              obs.error(e)
-            })
-          }
+      return Observable.create((obs)=> {
+        if (cNode._loading == null) {
+          console.log("I18n", "Failed:: ", msgKey, "=", cNode)
+          obs.next("-I18nLoadFailed-")
+        } else {
+          cNode._loading.then(()=> {
+            let v = cNode.$isLeaf() ? cNode._value : cNode
+            //console.log("I18n", "Providing: ", msgKey, "=", v)
+            obs.next(v)
+          })
         }
       })
     })

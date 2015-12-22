@@ -13,7 +13,6 @@ let noop = (...arg:any[])=> {
 }
 
 
-
 // @todo ggranum: Remove this and code that defers to it once we either add an 'enabled' field to conditionlet types,
 // or we have implemented all the conditionlet types we intend to release with.
 var DISABLED_CONDITION_TYPE_IDS = {
@@ -74,21 +73,11 @@ export class ConditionTypeService {
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
           json.key = key
-          console.log('requesting i18n:', json.i18nKey)
-          this._rsrcService.get(json.i18nKey).subscribe((rsrcResult)=> {
-            count++
-            let model = ServerSideTypeModel.fromJson(json)
-            if (rsrcResult) {
-              /* @todo ggranum: Remove the rsrc params from the Model object. */
-              model.rsrc = rsrcResult
-            }
-            this._cacheMap[model.key] = model
-            conditionTypes.push(model)
-            if (count === keys.length) {
-              ee.emit(conditionTypes)
-            }
-          })
+          let model = ServerSideTypeModel.fromJson(json)
+          this._cacheMap[model.key] = model
+          conditionTypes.push(model)
         })
+        ee.emit(conditionTypes)
         cb(conditionTypes)
       }, (e)=> {
         throw e

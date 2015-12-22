@@ -75,7 +75,7 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
 
   constructor(elementRef:ElementRef) {
     this.placeholder = ""
-    this.allowAdditions = true
+    this.allowAdditions = false
     this.minSelections = 0
     this.maxSelections = 1
     this.change = new EventEmitter()
