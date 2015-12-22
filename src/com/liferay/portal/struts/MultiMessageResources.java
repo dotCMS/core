@@ -22,6 +22,7 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
 import com.dotcms.repackage.com.oroad.stxx.util.PropertyMessageResources;
 import com.dotmarketing.business.APILocator;
@@ -64,7 +65,9 @@ public class MultiMessageResources extends PropertyMessageResources {
 	}
 
 	public Map getMessages() {
-		return messages;
+		synchronized (messages) {
+			return ImmutableMap.copyOf(messages);
+		}
 	}
 
 	public void setServletContext(ServletContext servletContext) {
