@@ -135,12 +135,6 @@ public class PageServices {
 			sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
 		}
 
-		// set the visitor object if present
-
-		sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\""+ WebKeys.VISITOR+"\"))");
-		sb.append("#set ($visitor = $request.session.getAttribute(\""+ WebKeys.VISITOR+"\"))");
-		sb.append("#end ");
-
 		// set the host variables
 
 		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlPage);

@@ -5,6 +5,8 @@ import com.dotcms.rest.validation.Preconditions;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.web.LanguageWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -27,11 +29,11 @@ import java.util.UUID;
 
 public class VisitorAPIImpl implements VisitorAPI {
 
-    private LanguageAPI languageAPI = APILocator.getLanguageAPI();
+    private LanguageWebAPI languageWebAPI = WebAPILocator.getLanguageWebAPI();
 
     @Override
-    public void setLanguageAPI(LanguageAPI languageAPI) {
-        this.languageAPI = languageAPI;
+    public void setLanguageWebAPI(LanguageWebAPI languageWebAPI) {
+        this.languageWebAPI = languageWebAPI;
     }
 
     @Override
@@ -61,7 +63,7 @@ public class VisitorAPIImpl implements VisitorAPI {
             Visitor visitor = (Visitor) session.getAttribute(WebKeys.VISITOR);
 
             if(Objects.isNull(visitor)) {
-                visitor = createVisitor(request, session);
+                visitor = createVisitor(request);
                 session.setAttribute(WebKeys.VISITOR, visitor);
             }
 
@@ -71,13 +73,13 @@ public class VisitorAPIImpl implements VisitorAPI {
         return visitorOpt;
     }
 
-    private Visitor createVisitor(HttpServletRequest request, HttpSession session) {
+    private Visitor createVisitor(HttpServletRequest request) {
 
         InetAddress ipAddress = lookupIPAddress(request);
 
-        long selectedLanguageId = lookupSelectedLanguage(session);
+        Language selectedLanguage = languageWebAPI.getLanguage(request);
 
-        Locale locale = lookupLocale(selectedLanguageId);
+        Locale locale = new Locale(selectedLanguage.getLanguageCode(), selectedLanguage.getCountryCode());
 
         UserAgent userAgent = UserAgent.parseUserAgentString(request.getHeader("User-Agent"));
 
@@ -91,7 +93,7 @@ public class VisitorAPIImpl implements VisitorAPI {
 
         Visitor visitor = new Visitor();
         visitor.setIpAddress(ipAddress);
-        visitor.setSelectedLanguageId(selectedLanguageId);
+        visitor.setSelectedLanguage(selectedLanguage);
         visitor.setLocale(locale);
         visitor.setUserAgent(userAgent);
         visitor.setDmid(dmid);
@@ -119,23 +121,6 @@ public class VisitorAPIImpl implements VisitorAPI {
         }
 
         return address;
-    }
-
-    private long lookupSelectedLanguage(HttpSession session) {
-        long selectedLanguage = languageAPI.getDefaultLanguage().getId();
-        String sessionLanguageStr = (String)session.getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
-
-        if(Strings.isNotBlank((sessionLanguageStr))) {
-            selectedLanguage = Long.parseLong(sessionLanguageStr);
-        }
-
-        return selectedLanguage;
-    }
-
-
-    private Locale lookupLocale(long selectedLanguageId) {
-        Language currentLang = languageAPI.getLanguage(selectedLanguageId);
-        return new Locale(currentLang.getLanguageCode(), currentLang.getCountryCode());
     }
 
     private UUID lookupDMID(HttpServletRequest request) {
