@@ -30,6 +30,7 @@ import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -44,7 +45,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.files.business.FileAPI;
 import com.dotmarketing.portlets.files.model.File;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
@@ -794,12 +794,14 @@ public class WebAssetFactory {
 		return newWebAsset;
 	}
 
+	@Deprecated
 	public static List getAssetsPerConditionWithPermission(Host host, String condition, Class c,
 			int limit, int offset, String orderby, String parent, User user) {
 		return getAssetsPerConditionWithPermission(host.getIdentifier(), condition, c, limit, offset, orderby, parent, user);
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static List<WebAsset> getAssetsPerConditionWithPermission(String hostId, String condition, Class c,
 			int limit, int offset, String orderby, String parent, User user) {
 		HibernateUtil dh = new HibernateUtil(c);
@@ -888,6 +890,9 @@ public class WebAssetFactory {
 	@SuppressWarnings("unchecked")
 	public static List<WebAsset> getAssetsWorkingWithPermission(Class c, int limit,
 			int offset, String orderby, String parent, User user) {
+		orderby = SQLUtil.sanitizeParameter(orderby);
+		parent = SQLUtil.sanitizeParameter(parent);
+
 		HibernateUtil dh = new HibernateUtil(c);
 
 		StringBuilder sb = new StringBuilder();
@@ -955,6 +960,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static List<WebAsset> getAssetsPerConditionWithPermissionWithParent(String hostId, String condition, Class c,
 			int limit, String fromAssetId, Direction direction, String orderby, String parent, boolean showDeleted, User user) {
 		HibernateUtil dh = new HibernateUtil(c);
@@ -1088,6 +1094,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static List<WebAsset> getAssetsPerConditionWithPermissionWithParent(String condition, Class c, int limit,
 			String fromAssetId, Direction direction, String orderby, String parent, boolean showDeleted, User user) {
 		HibernateUtil dh = new HibernateUtil(c);
@@ -1213,6 +1220,7 @@ public class WebAssetFactory {
 
 	}
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndConditionWithParent(String hostId, Role[] roles,
 			String condition, int limit, String fromAssetId, Direction direction, String orderby, Class assetsClass, String tableName, String parentId, boolean showDeleted, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
@@ -1261,6 +1269,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndConditionWithParent(Role[] roles,
 			String condition, int limit, String fromAssetId, Direction direction, String orderby, Class assetsClass, String tableName, String parentId, boolean showDeleted, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
@@ -1310,6 +1319,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(String hostId, Role[] roles,
 			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
@@ -1375,6 +1385,7 @@ public class WebAssetFactory {
 	 * @deprecated
 	 */
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(String hostId, Role[] roles,
 			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, String parent, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		java.util.List<PermissionAsset> entries = new java.util.ArrayList<PermissionAsset>();
@@ -1425,6 +1436,7 @@ public class WebAssetFactory {
 
 	// Generic method for all Assets.
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(Role[] roles,
 			int limit, int offset, String orderby, Class assetsClass, String tableName, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
@@ -1474,6 +1486,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static java.util.List<PermissionAsset> getAssetsAndPermissionsPerRoleAndCondition(Role[] roles,
 			String condition, int limit, int offset, String orderby, Class assetsClass, String tableName, String parent, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 
@@ -1673,6 +1686,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static int getAssetsCountPerConditionWithPermissionWithParent(String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
 		DotConnect dc = new DotConnect();
 
@@ -1751,6 +1765,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static int getAssetsCountPerConditionWithPermission(String condition, Class c, int limit, int offset, String parent, User user) {
 		DotConnect dc = new DotConnect();
 
@@ -1830,6 +1845,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static int getAssetsCountPerConditionWithPermissionWithParent(String hostId, String condition, Class c, int limit, int offset, String parent, boolean showDeleted, User user) {
 		DotConnect dc = new DotConnect();
 
@@ -1917,6 +1933,7 @@ public class WebAssetFactory {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public static int getAssetsCountPerConditionWithPermission(String hostId, String condition, Class c, int limit, int offset, String parent, User user) {
 		DotConnect dc = new DotConnect();
 
@@ -2013,6 +2030,10 @@ public class WebAssetFactory {
 			boolean includeArchived, int limit, int offset, String orderBy, String tableName, String parent, String query, User user) throws DotIdentifierStateException, DotDataException, DotSecurityException {
 		PaginatedArrayList<PermissionAsset>  paginatedEntries = new PaginatedArrayList<PermissionAsset> ();
 		long totalCount = 0;
+
+		parent = SQLUtil.sanitizeParameter(parent);
+		query = SQLUtil.sanitizeParameter(query);
+		orderBy = SQLUtil.sanitizeParameter(orderBy);
 
 		AssetType type = AssetType.getObject(tableName.toUpperCase());
 		java.util.List<? extends Permissionable> elements = null;

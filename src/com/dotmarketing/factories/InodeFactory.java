@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -1440,6 +1441,10 @@ public class InodeFactory {
 		if( c.equals(Identifier.class)){
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
+
+		orderby = SQLUtil.sanitizeParameter(orderby);
+		direction = SQLUtil.sanitizeParameter(direction);
+
 		try {
 			HibernateUtil dh = new HibernateUtil(c);
 			String type = ((Inode) c.newInstance()).getType();
