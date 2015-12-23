@@ -14,7 +14,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;

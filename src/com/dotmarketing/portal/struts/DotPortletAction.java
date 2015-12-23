@@ -36,7 +36,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -634,9 +633,6 @@ public class DotPortletAction extends PortletAction {
 			}
 
 			String orderBy = req.getParameter("orderby");
-			
-			
-			
 			int pageNumber = 1;
 
 			if (!hostChanged && UtilMethods.isSet(req.getParameter("pageNumber"))) {
