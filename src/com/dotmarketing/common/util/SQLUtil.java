@@ -3,6 +3,7 @@ package com.dotmarketing.common.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -185,7 +186,7 @@ public class SQLUtil {
 	public static String sanitizeParameter(String parameter){
 
 
-		if(!UtilMethods.isSet(parameter)){//check if is not null
+		if(Strings.isBlank(parameter)){//check if is not null
 			return "";
 		}
 
