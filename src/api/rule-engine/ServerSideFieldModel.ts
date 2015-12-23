@@ -28,7 +28,7 @@ export class ServerSideFieldModel extends CwModel {
   parameterDefs:{[key:string]: ParameterDefinition}
   priority:number
 
-  constructor(key:string, type:ServerSideTypeModel, priority:number=1) {
+  constructor(key:string, type:ServerSideTypeModel, priority:number = 1) {
     super(key)
     this.name = "asdfasdf-" + new Date().getTime()
     this.parameters = {}
@@ -43,13 +43,18 @@ export class ServerSideFieldModel extends CwModel {
   }
 
   set type(type:ServerSideTypeModel) {
-    this._type = type;
-    Object.keys(type.parameters).forEach((key)=> {
-      let x = type.parameters[key]
-      let paramDef = ParameterDefinition.fromJson(x)
-      this.parameterDefs[key] = paramDef
-      this.parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
-    })
+    if (this._type != type) {
+      this._type = type;
+      this.parameterDefs = {}
+      this.parameters = {}
+
+      Object.keys(type.parameters).forEach((key)=> {
+        let x = type.parameters[key]
+        let paramDef = ParameterDefinition.fromJson(x)
+        this.parameterDefs[key] = paramDef
+        this.parameters[key] = {key: key, value: paramDef.defaultValue, priority: paramDef.priority}
+      })
+    }
   }
 
 
@@ -91,7 +96,8 @@ export class ServerSideFieldModel extends CwModel {
     if (this.parameterDefs) {
       Object.keys(this.parameterDefs).forEach(key=> {
         let paramDef = this.getParameterDef(key)
-        var value = this.parameters[key].value;
+        let param = this.parameters[key]
+        var value = param.value;
         valid = valid && paramDef.inputType.verify(value).valid
         console.log("validate => key: ", key, "  value: ", value, "  valid: ", valid)
       })
