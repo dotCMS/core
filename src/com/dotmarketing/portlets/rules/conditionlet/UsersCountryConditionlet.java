@@ -286,7 +286,7 @@ public class UsersCountryConditionlet extends Conditionlet<UsersCountryCondition
     private static final ParameterDefinition<TextType> country = new ParameterDefinition<>(
         3, COUNTRY_KEY, "system.locale.country",
         countries,
-        "Accept"
+        ""
     );
 
 
