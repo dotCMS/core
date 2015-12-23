@@ -27,7 +27,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.repackage.com.liferay.counter.ejb.CounterManagerUtil;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.PasswordTracker;
@@ -89,7 +92,16 @@ public class PasswordTrackerLocalManagerImpl
 		}
 		// Validate recycling
 		if (isPasswordRecyclingActive()) {
-			String newEncPwd = Encryptor.digest(password);
+            String newEncPwd = null;
+            // Use new password hash method
+            try {
+                newEncPwd = PasswordFactoryProxy.generateHash(password);
+            } catch (PasswordException e) {
+                Logger.error(PasswordTrackerLocalManagerImpl.class,
+                        "An error occurred generating the hashed password for userId: " + userId, e);
+                throw new SystemException("An error occurred generating the hashed password.");
+            }
+
 			Date now = new Date();
 			int passwordsRecycle = GetterUtil.getInteger(PropsUtil
 					.get(PropsUtil.PASSWORDS_RECYCLE));

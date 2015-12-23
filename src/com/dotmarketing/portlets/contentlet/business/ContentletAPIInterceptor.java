@@ -9,7 +9,7 @@ import java.util.*;
 
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchResponse;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;

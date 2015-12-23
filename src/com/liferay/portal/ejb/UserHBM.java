@@ -129,7 +129,7 @@ public class UserHBM {
 	}
 
 	protected boolean getPasswordEncrypted() {
-		return _passwordEncrypted;
+		return true;
 	}
 
 	protected void setPasswordEncrypted(boolean passwordEncrypted) {

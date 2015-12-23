@@ -1,28 +1,33 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
-import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.*;
-import com.dotmarketing.portlets.rules.model.*;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -50,11 +55,11 @@ public class RulesAPITest extends TestBase {
 		createRule(Rule.FireOn.EVERY_REQUEST);
 
 		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis());
+				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
 		Integer count = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
 		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/robots.txt?t=" + System.currentTimeMillis());
+				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
 		Integer newCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
 		assertTrue(newCount > count);
@@ -168,7 +173,6 @@ public class RulesAPITest extends TestBase {
 
 	private void createRule(Rule.FireOn fireOn) throws Exception {
 		RulesAPI rulesAPI = APILocator.getRulesAPI();
-        rulesAPI.addConditionlet(MockTrueConditionlet.class);
 
 		User user = APILocator.getUserAPI().getSystemUser();
 
@@ -188,33 +192,18 @@ public class RulesAPITest extends TestBase {
 		rulesAPI.saveRule(rule, user, false);
 		
 		ruleId = rule.getId();
-		
-		ConditionGroup group = new ConditionGroup();
-		group.setRuleId(rule.getId());
-		group.setOperator(Condition.Operator.AND);
-
-		rulesAPI.saveConditionGroup(group, user, false);
-
-		Condition condition = new Condition();
-		condition.setName("testCondition");
-		condition.setConditionGroup(group.getId());
-		condition.setConditionletId(MockTrueConditionlet.class.getSimpleName());
-		condition.setOperator(Condition.Operator.AND);
-		condition.setComparison("is");
-
-		rulesAPI.saveCondition(condition, user, false);
 
 		RuleAction action = new RuleAction();
 		action.setActionlet(CountRequestsActionlet.class.getSimpleName());
 		action.setRuleId(rule.getId());
 		action.setName(fireOn.getCamelCaseName() + "Actionlet");
 
-		RuleActionParameter fireOnParam = new RuleActionParameter();
-		fireOnParam.setRuleActionId(action.getId());
+		ParameterModel fireOnParam = new ParameterModel();
+		fireOnParam.setOwnerId(action.getId());
 		fireOnParam.setKey("fireOn");
 		fireOnParam.setValue(fireOn.name());
 
-		List<RuleActionParameter> params = new ArrayList<>();
+		List<ParameterModel> params = new ArrayList<>();
 		params.add(fireOnParam);
 
 		action.setParameters(params);

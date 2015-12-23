@@ -21,7 +21,7 @@ import com.dotcms.repackage.org.apache.commons.fileupload.FileUploadException;
 import com.dotcms.repackage.org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import com.dotcms.repackage.org.apache.commons.fileupload.servlet.ServletFileUpload;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.elasticsearch.action.admin.indices.status.IndexStatus;
+import org.elasticsearch.action.admin.indices.status.IndexStatus;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;

@@ -1,7 +1,8 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.com.google.common.collect.Sets;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
@@ -11,17 +12,14 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,13 +36,14 @@ public class RulesFactoryImpl implements RulesFactory {
 
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
-        cache = CacheLocator.getRulesCache();
+//        cache = CacheLocator.getRulesCache();
+        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
     public List<Rule> getEnabledRulesByHost(Host host) throws DotDataException {
         List<Rule> ruleList = getAllRulesByHost(host);
-        return ruleList.stream().filter(rule -> rule.isEnabled()).collect(Collectors.toList());
+        return ruleList.stream().filter(Rule::isEnabled).collect(Collectors.toList());
     }
 
     @Override
@@ -61,7 +60,16 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_ALL_RULES_BY_HOST);
             db.addParam(host.getIdentifier());
-            rules = convertListToObjects(db.loadObjectResults(), Rule.class);
+            final List<Rule> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    ret.add(convertRule(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + Rule.class + " " + e.getMessage(), e);
+
+            }
+            rules = ret;
             cache.putRulesByHost(host,rules);
         } else {
             rules = new ArrayList<>();
@@ -83,7 +91,16 @@ public class RulesFactoryImpl implements RulesFactory {
             db.setSQL(sql.SELECT_RULES_BY_HOST_FIRE_ON);
             db.addParam(host);
             db.addParam(fireOn.toString());
-            ruleList = convertListToObjectsSet(db.loadObjectResults(), Rule.class);
+            final Set<Rule> ret = Sets.newHashSet();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    ret.add(convertRule(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + Rule.class + " " + e.getMessage(), e);
+
+            }
+            ruleList = ret;
             cache.addRulesByHostFireOn(ruleList, host, fireOn);
         }
         return ruleList;
@@ -101,10 +118,20 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_RULE_BY_ID);
             db.addParam(id);
-            List<Rule> result = convertListToObjects(db.loadObjectResults(),
-                Rule.class);
-            if (!result.isEmpty()) {
-                rule = result.get(0);
+            final List<Rule> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    Rule result;
+
+                        result = convertRule(map);
+                    ret.add(result);
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + Rule.class + " " + e.getMessage(), e);
+
+            }
+            if (!ret.isEmpty()) {
+                rule = ret.get(0);
                 cache.addRule(rule);
             }
         }
@@ -125,7 +152,17 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_RULE_ACTIONS_BY_RULE);
             db.addParam(ruleId);
-            actions = convertListToObjects(db.loadObjectResults(), RuleAction.class);
+            final List<RuleAction> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+
+                    ret.add(convertRuleAction(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + RuleAction.class + " " + e.getMessage(), e);
+
+            }
+            actions = ret;
             getRuleActionsParametersFromDB(actions, db);
 
             cache.putActionsByRule(rule, actions);
@@ -149,10 +186,20 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_RULE_ACTION_BY_ID);
             db.addParam(ruleActionId);
-            List<RuleAction> result = convertListToObjects(
-                db.loadObjectResults(), RuleAction.class);
-            if (!result.isEmpty()) {
-                action = result.get(0);
+            final List<RuleAction> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    RuleAction result;
+
+                        result = convertRuleAction(map);
+                    ret.add(result);
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + RuleAction.class + " " + e.getMessage(), e);
+
+            }
+            if (!ret.isEmpty()) {
+                action = ret.get(0);
                 getRuleActionParametersFromDB(action, db);
                 cache.addAction(action);
             }
@@ -163,7 +210,17 @@ public class RulesFactoryImpl implements RulesFactory {
     private void getRuleActionParametersFromDB(RuleAction action, DotConnect db) throws DotDataException {
         db.setSQL(sql.SELECT_RULE_ACTIONS_PARAMS);
         db.addParam(action.getId());
-        action.setParameters(convertListToObjects(db.loadObjectResults(), RuleActionParameter.class));
+        final List<ParameterModel> ret = Lists.newArrayList();
+        try {
+            for (final Map<String, Object> map : db.loadObjectResults()) {
+
+                ret.add(convertParamInstance(map));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + ParameterModel.class + " " + e.getMessage(), e);
+
+        }
+        action.setParameters(ret);
     }
 
     private void getRuleActionsParametersFromDB(List<RuleAction> actions, DotConnect db) throws DotDataException {
@@ -173,16 +230,23 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public RuleActionParameter getRuleActionParameterById(String id) throws DotDataException {
-        RuleActionParameter param = null;
+    public ParameterModel getRuleActionParameterById(String id) throws DotDataException {
+        ParameterModel param = null;
 
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_RULE_ACTION_PARAMS);
         db.addParam(id);
-        List<RuleActionParameter> result = convertListToObjects(db.loadObjectResults(),
-            RuleActionParameter.class);
-        if (!result.isEmpty()) {
-            param = result.get(0);
+        final List<ParameterModel> ret = Lists.newArrayList();
+        try {
+            for (final Map<String, Object> map : db.loadObjectResults()) {
+                ret.add(convertParamInstance(map));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + ParameterModel.class + " " + e.getMessage(), e);
+
+        }
+        if (!ret.isEmpty()) {
+            param = ret.get(0);
         }
 
         return param;
@@ -202,7 +266,16 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_CONDITION_GROUPS_BY_RULE);
             db.addParam(ruleId);
-            groups = convertListToObjects(db.loadObjectResults(), ConditionGroup.class);
+            final List<ConditionGroup> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    ret.add(convertConditionGroup(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + ConditionGroup.class + " " + e.getMessage(), e);
+
+            }
+            groups = ret;
 
             cache.putConditionGroupsByRule(rule, groups);
         } else {
@@ -225,10 +298,17 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_CONDITION_GROUP_BY_ID);
             db.addParam(conditionGroupId);
-            List<ConditionGroup> result = convertListToObjects(
-                db.loadObjectResults(), ConditionGroup.class);
-            if (!result.isEmpty()) {
-                conditionGroup = result.get(0);
+            final List<ConditionGroup> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    ret.add(convertConditionGroup(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + ConditionGroup.class + " " + e.getMessage(), e);
+
+            }
+            if (!ret.isEmpty()) {
+                conditionGroup = ret.get(0);
                 cache.addConditionGroup(conditionGroup);
             }
         }
@@ -236,8 +316,7 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public List<Condition> getConditionsByGroup(String groupId)
-        throws DotDataException {
+    public List<Condition> getConditionsByGroup(String groupId) throws DotDataException {
         if(Strings.isNullOrEmpty(groupId)) {
             throw new IllegalArgumentException("Invalid groupId.");
         }
@@ -250,7 +329,16 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_CONDITIONS_BY_GROUP);
             db.addParam(groupId);
-            conditions = convertListToObjects(db.loadObjectResults(), Condition.class);
+            final List<Condition> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    ret.add(convertCondition(map));
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + Condition.class + " " + e.getMessage(), e);
+
+            }
+            conditions = ret;
 
             getConditionsValuesFromDB(conditions, db);
 
@@ -275,10 +363,22 @@ public class RulesFactoryImpl implements RulesFactory {
             final DotConnect db = new DotConnect();
             db.setSQL(sql.SELECT_CONDITION_BY_ID);
             db.addParam(id);
-            List<Condition> result = convertListToObjects(
-                db.loadObjectResults(), Condition.class);
-            if (!result.isEmpty()) {
-                condition = result.get(0);
+            final List<Condition> ret = Lists.newArrayList();
+            try {
+                for (final Map<String, Object> map : db.loadObjectResults()) {
+                    Condition result;
+
+
+                        result = convertCondition(map);
+
+                    ret.add(result);
+                }
+            } catch (final Exception e) {
+                throw new DotDataException("cannot convert object to " + Condition.class + " " + e.getMessage(), e);
+
+            }
+            if (!ret.isEmpty()) {
+                condition = ret.get(0);
                 getConditionValuesFromDB(condition, db);
 
                 cache.addCondition(condition);
@@ -290,7 +390,17 @@ public class RulesFactoryImpl implements RulesFactory {
     private void getConditionValuesFromDB(Condition condition, DotConnect db) throws DotDataException {
         db.setSQL(sql.SELECT_CONDITION_VALUES_BY_CONDITION);
         db.addParam(condition.getId());
-        condition.setValues(convertListToObjects(db.loadObjectResults(), ConditionValue.class));
+        final List<ParameterModel> ret = Lists.newArrayList();
+        try {
+            for (final Map<String, Object> map : db.loadObjectResults()) {
+
+                ret.add(convertParamInstance(map));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + ParameterModel.class + " " + e.getMessage(), e);
+
+        }
+        condition.setValues(ret);
     }
 
     private void getConditionsValuesFromDB(List<Condition> conditions, DotConnect db) throws DotDataException {
@@ -300,16 +410,23 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public ConditionValue getConditionValueById(String id) throws DotDataException {
+    public ParameterModel getConditionValueById(String id) throws DotDataException {
 
-        ConditionValue value = null;
+        ParameterModel value = null;
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_CONDITION_VALUE_BY_ID);
         db.addParam(id);
-        List<ConditionValue> result = convertListToObjects(
-            db.loadObjectResults(), ConditionValue.class);
-        if (!result.isEmpty()) {
-            value = result.get(0);
+        final List<ParameterModel> ret = Lists.newArrayList();
+        try {
+            for (final Map<String, Object> map : db.loadObjectResults()) {
+                ret.add(convertParamInstance(map));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + ParameterModel.class + " " + e.getMessage(), e);
+
+        }
+        if (!ret.isEmpty()) {
+            value = ret.get(0);
         }
 
         return value;
@@ -425,7 +542,7 @@ public class RulesFactoryImpl implements RulesFactory {
 
         Rule rule  = getRuleById(group.getRuleId());
         cache.removeRule(rule);
-        
+
     }
 
     @Override
@@ -455,23 +572,14 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getName());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
-                db.addParam(condition.getComparison());
+                db.addParam("fake-comparison"); // avoiding editing sql statements right now.
                 db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
                 db.loadResult();
 
                 if (condition.getValues() != null) {
-                    for (ConditionValue value : condition.getValues()) {
-                        value.setId(UUIDGenerator.generateUuid());
-                        db.setSQL(sql.INSERT_CONDITION_VALUE);
-                        db.addParam(value.getId());
-                        db.addParam(condition.getId());
-                        db.addParam(value.getKey());
-                        db.addParam(value.getValue());
-                        db.addParam(value.getPriority());
-                        db.loadResult();
-                    }
+                    insertConditionParameterValues(condition, db);
                 }
 
             } else {
@@ -479,7 +587,7 @@ public class RulesFactoryImpl implements RulesFactory {
                 db.addParam(condition.getName());
                 db.addParam(condition.getConditionletId());
                 db.addParam(condition.getConditionGroup());
-                db.addParam(condition.getComparison());
+                db.addParam("fake-comparison"); // avoiding editing sql statements right now.
                 db.addParam(condition.getOperator().toString());
                 db.addParam(condition.getPriority());
                 db.addParam(condition.getModDate());
@@ -489,26 +597,16 @@ public class RulesFactoryImpl implements RulesFactory {
                 deleteConditionValues(condition);
 
                 if (condition.getValues() != null) {
-                    for (ConditionValue value : condition.getValues()) {
-                        value.setId(UUIDGenerator.generateUuid());
-                        db.setSQL(sql.INSERT_CONDITION_VALUE);
-                        db.addParam(value.getId());
-                        db.addParam(condition.getId());
-                        db.addParam(value.getKey());
-                        db.addParam(value.getValue());
-                        db.addParam(value.getPriority());
-                        db.loadResult();
-                    }
+                    insertConditionParameterValues(condition, db);
                 }
 
             }
 
             cache.removeCondition(condition);
-            ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
+            ConditionGroup group = getConditionGroupById(condition.getConditionGroup());
             cache.removeConditionGroup(group);
-            Rule rule  = getRuleById(group.getRuleId());
+            Rule rule = getRuleById(group.getRuleId());
             cache.removeRule(rule);
-            
 
         } catch (DotDataException e) {
             try {
@@ -522,21 +620,33 @@ public class RulesFactoryImpl implements RulesFactory {
 
     }
 
+    private void insertConditionParameterValues(Condition condition, DotConnect db) throws DotDataException {
+        for (ParameterModel value : condition.getValues()) {
+            value.setId(UUIDGenerator.generateUuid());
+            db.setSQL(sql.INSERT_CONDITION_VALUE);
+            db.addParam(value.getId());
+            db.addParam(condition.getId());
+            db.addParam(value.getKey());
+            db.addParam(value.getValue());
+            db.addParam(value.getPriority());
+            db.loadResult();
+        }
+    }
 
     @Override
-    public void saveConditionValue(ConditionValue conditionValue) throws DotDataException {
+    public void saveConditionValue(ParameterModel parameterModel) throws DotDataException {
 
         boolean isNew = true;
-        if (UtilMethods.isSet(conditionValue.getId())) {
+        if (UtilMethods.isSet(parameterModel.getId())) {
             try {
-                if (getConditionValueById(conditionValue.getId()) != null) {
+                if (getConditionValueById(parameterModel.getId()) != null) {
                     isNew = false;
                 }
             } catch (final Exception e) {
                 Logger.debug(this.getClass(), e.getMessage(), e);
             }
         } else {
-            conditionValue.setId(UUIDGenerator.generateUuid());
+            parameterModel.setId(UUIDGenerator.generateUuid());
         }
 
         final DotConnect db = new DotConnect();
@@ -545,23 +655,23 @@ public class RulesFactoryImpl implements RulesFactory {
             if (isNew) {
 
                 db.setSQL(sql.INSERT_CONDITION_VALUE);
-                db.addParam(conditionValue.getId());
-                db.addParam(conditionValue.getConditionId());
-                db.addParam(conditionValue.getKey());
-                db.addParam(conditionValue.getValue());
-                db.addParam(conditionValue.getPriority());
+                db.addParam(parameterModel.getId());
+                db.addParam(parameterModel.getOwnerId());
+                db.addParam(parameterModel.getKey());
+                db.addParam(parameterModel.getValue());
+                db.addParam(parameterModel.getPriority());
                 db.loadResult();
 
             } else {
                 db.setSQL(sql.UPDATE_CONDITION_VALUE);
-                db.addParam(conditionValue.getConditionId());
-                db.addParam(conditionValue.getKey());
-                db.addParam(conditionValue.getValue());
-                db.addParam(conditionValue.getPriority());
-                db.addParam(conditionValue.getId());
+                db.addParam(parameterModel.getOwnerId());
+                db.addParam(parameterModel.getKey());
+                db.addParam(parameterModel.getValue());
+                db.addParam(parameterModel.getPriority());
+                db.addParam(parameterModel.getId());
                 db.loadResult();
             }
-            Condition condition = getConditionById(conditionValue.getConditionId());
+            Condition condition = getConditionById(parameterModel.getOwnerId());
             cache.removeCondition(condition);
             ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
             cache.removeConditionGroup(group);
@@ -605,15 +715,7 @@ public class RulesFactoryImpl implements RulesFactory {
 
 
             if (ruleAction.getParameters() != null) {
-                for (RuleActionParameter parameter : ruleAction.getParameters()) {
-                    parameter.setId(UUIDGenerator.generateUuid());
-                    db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
-                    db.addParam(parameter.getId());
-                    db.addParam(ruleAction.getId());
-                    db.addParam(parameter.getKey());
-                    db.addParam(parameter.getValue());
-                    db.loadResult();
-                }
+                insertActionParameterValues(ruleAction, db);
             }
 
         } else {
@@ -628,16 +730,23 @@ public class RulesFactoryImpl implements RulesFactory {
             deleteRuleActionsParameters(ruleAction);
 
             if (ruleAction.getParameters() != null) {
-                for (RuleActionParameter parameter : ruleAction.getParameters()) {
-                    parameter.setId(UUIDGenerator.generateUuid());
-                    db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
-                    db.addParam(parameter.getId());
-                    db.addParam(ruleAction.getId());
-                    db.addParam(parameter.getKey());
-                    db.addParam(parameter.getValue());
-                    db.loadResult();
-                }
+                insertActionParameterValues(ruleAction, db);
             }
+        }
+
+        cache.removeAction(ruleAction);
+
+    }
+
+    private void insertActionParameterValues(RuleAction ruleAction, DotConnect db) throws DotDataException {
+        for (ParameterModel parameter : ruleAction.getParameters().values()) {
+            parameter.setId(UUIDGenerator.generateUuid());
+            db.setSQL(sql.INSERT_RULE_ACTION_PARAM);
+            db.addParam(parameter.getId());
+            db.addParam(ruleAction.getId());
+            db.addParam(parameter.getKey());
+            db.addParam(parameter.getValue());
+            db.loadResult();
         }
 
         cache.removeAction(ruleAction);
@@ -649,7 +758,7 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public void deleteConditionGroup(ConditionGroup conditionGroup)
-    
+
         throws DotDataException {
     	Rule rule  = getRuleById(conditionGroup.getRuleId());
         final DotConnect db = new DotConnect();
@@ -700,12 +809,12 @@ public class RulesFactoryImpl implements RulesFactory {
     }
 
     @Override
-    public void deleteConditionValue(ConditionValue conditionValue) throws DotDataException {
+    public void deleteConditionValue(ParameterModel parameterModel) throws DotDataException {
         final DotConnect db = new DotConnect();
         db.setSQL(sql.DELETE_CONDITION_VALUE_BY_ID);
-        db.addParam(conditionValue.getId());
+        db.addParam(parameterModel.getId());
         db.loadResult();
-        Condition condition = getConditionById(conditionValue.getConditionId());
+        Condition condition = getConditionById(parameterModel.getOwnerId());
         cache.removeCondition(condition);
         ConditionGroup group  = getConditionGroupById(condition.getConditionGroup());
         cache.removeConditionGroup(group);
@@ -730,8 +839,8 @@ public class RulesFactoryImpl implements RulesFactory {
         db.loadResult();
         cache.removeAction(ruleAction);
         Rule rule  = getRuleById(ruleAction.getRuleId());
-        
-        
+
+
         cache.removeRule(rule);
     }
 
@@ -752,23 +861,31 @@ public class RulesFactoryImpl implements RulesFactory {
 
         for(RuleAction action: actionsByRule) {
             cache.removeAction(action);
-            
-        }     
+
+        }
         cache.removeRule(rule);
 
     }
 
 
     @Override
-    public Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action) throws DotDataException {
+    public Map<String, ParameterModel> getRuleActionParameters(RuleAction action) throws DotDataException {
         final DotConnect db = new DotConnect();
         db.setSQL(sql.SELECT_RULE_ACTIONS_PARAMS);
         db.addParam(action.getId());
-        List<RuleActionParameter> params = convertListToObjects(db.loadObjectResults(),
-            RuleActionParameter.class);
+        final List<ParameterModel> ret = Lists.newArrayList();
+        try {
+            for (final Map<String, Object> map1 : db.loadObjectResults()) {
 
-        final Map<String, RuleActionParameter> map = new LinkedHashMap<>();
-        for (final RuleActionParameter param : params) {
+                ret.add(convertParamInstance(map1));
+            }
+        } catch (final Exception e) {
+            throw new DotDataException("cannot convert object to " + ParameterModel.class + " " + e.getMessage(), e);
+
+        }
+
+        final Map<String, ParameterModel> map = new LinkedHashMap<>();
+        for (final ParameterModel param : ret) {
             map.put(param.getKey(), param);
         }
 
@@ -781,7 +898,7 @@ public class RulesFactoryImpl implements RulesFactory {
         db.setSQL(sql.DELETE_RULE_ACTION_PARAM_BY_ACTION);
         db.addParam(action.getId());
         db.loadResult();
-        
+
         cache.removeAction(action);
         Rule rule  = getRuleById(action.getRuleId());
         cache.removeRule(rule);
@@ -798,55 +915,6 @@ public class RulesFactoryImpl implements RulesFactory {
         cache.removeConditionGroup(group);
         Rule rule  = getRuleById(group.getRuleId());
         cache.removeRule(rule);
-    }
-
-    private List convertListToObjects(List<Map<String, Object>> rs, Class clazz)
-        throws DotDataException {
-        final List ret = new ArrayList();
-        try {
-            for (final Map<String, Object> map : rs) {
-                ret.add(this.convertMaptoObject(map, clazz));
-            }
-        } catch (final Exception e) {
-            throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage(), e);
-
-        }
-        return ret;
-    }
-
-    private Set convertListToObjectsSet(List<Map<String, Object>> rs, Class clazz)
-        throws DotDataException {
-        final Set ret = new HashSet();
-        try {
-            for (final Map<String, Object> map : rs) {
-                ret.add(this.convertMaptoObject(map, clazz));
-            }
-        } catch (final Exception e) {
-            throw new DotDataException("cannot convert object to " + clazz + " " + e.getMessage(), e);
-
-        }
-        return ret;
-    }
-
-    private Object convertMaptoObject(Map<String, Object> map, Class clazz)
-        throws InstantiationException, IllegalAccessException,
-        InvocationTargetException {
-
-        if (clazz.getName().equals(Rule.class.getName())) {
-            return convertRule(map);
-        } else if (clazz.getName().equals(RuleAction.class.getName())) {
-            return convertRuleAction(map);
-        } else if (clazz.getName().equals(Condition.class.getName())) {
-            return convertCondition(map);
-        } else if (clazz.getName().equals(ConditionGroup.class.getName())) {
-            return convertConditionGroup(map);
-        } else if (clazz.getName().equals(RuleActionParameter.class.getName())) {
-            return convertRuleActionParam(map);
-        } else if (clazz.getName().equals(ConditionValue.class.getName())) {
-            return convertConditionValue(map);
-        } else {
-            return this.convert(clazz.newInstance(), map);
-        }
     }
 
     public static Rule convertRule(Map<String, Object> row) {
@@ -870,7 +938,6 @@ public class RulesFactoryImpl implements RulesFactory {
         c.setName(row.get("name").toString());
         c.setConditionletId(row.get("conditionlet").toString());
         c.setConditionGroup(row.get("condition_group").toString());
-        c.setComparison(row.get("comparison").toString());
         c.setOperator(Condition.Operator.valueOf(row.get("operator").toString()));
         c.setPriority(Integer.parseInt(row.get("priority").toString()));
         c.setModDate((Date) row.get("mod_date"));
@@ -887,10 +954,10 @@ public class RulesFactoryImpl implements RulesFactory {
         return c;
     }
 
-    public static ConditionValue convertConditionValue(Map<String, Object> row) {
-        ConditionValue c = new ConditionValue();
+    public static ParameterModel convertConditionValue(Map<String, Object> row) {
+        ParameterModel c = new ParameterModel();
         c.setId(row.get("id").toString());
-        c.setConditionId(row.get("condition_id").toString());
+        c.setOwnerId(row.get("condition_id").toString());
         c.setKey(row.get("paramkey").toString());
         Object value = row.get("value");
         c.setValue(value != null ? value.toString() : null);
@@ -908,18 +975,17 @@ public class RulesFactoryImpl implements RulesFactory {
         return r;
     }
 
-    public static RuleActionParameter convertRuleActionParam(Map<String, Object> row) {
-        RuleActionParameter r = new RuleActionParameter();
+    public static ParameterModel convertParamInstance(Map<String, Object> row) {
+        ParameterModel r = new ParameterModel();
         r.setId(row.get("id").toString());
-        r.setRuleActionId(row.get("rule_action_id").toString());
+        Object oid = row.get("condition_id");
+        if(oid == null){
+            oid = row.get("rule_action_id");
+        }
+        r.setOwnerId(oid.toString());
         r.setKey(row.get("paramkey").toString());
         Object value = row.get("value");
         r.setValue(value == null ? null : String.valueOf(value));
         return r;
-    }
-
-    private Object convert(Object obj, Map<String, Object> map) throws IllegalAccessException, InvocationTargetException {
-        BeanUtils.copyProperties(obj, map);
-        return obj;
     }
 }

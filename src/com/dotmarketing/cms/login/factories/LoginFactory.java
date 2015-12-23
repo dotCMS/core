@@ -1,7 +1,5 @@
 package com.dotmarketing.cms.login.factories;
 
-import java.util.ArrayList;
-
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -9,11 +7,16 @@ import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.BaseAuthenticator;
 import com.dotcms.enterprise.LDAPImpl;
-import com.dotcms.enterprise.salesforce.SalesForceUtils;
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.cas.CASAuthUtils;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
+import com.dotcms.enterprise.salesforce.SalesForceUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.cms.login.struts.LoginForm;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -42,7 +45,6 @@ public class LoginFactory {
 
     public static boolean doLogin(LoginForm form, HttpServletRequest request, HttpServletResponse response) throws NoSuchUserException {
         return doLogin(form.getUserName(), form.getPassword(), form.isRememberMe(), request, response);
-
     }
 
     public static boolean doCookieLogin(String encryptedId, HttpServletRequest request, HttpServletResponse response) {
@@ -232,8 +234,9 @@ public class LoginFactory {
 	            	return false;
 	            }
 
-	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
-	            
+	            // Validate password and rehash when is needed
+	            match = passwordMatch(password, user);
+
 	            if (match) {
 	            	if(useSalesForceLoginFilter){/*Custom Code */
 	            		user = SalesForceUtils.migrateUserFromSalesforce(userName, request,  response, false);
@@ -365,6 +368,7 @@ public class LoginFactory {
  				}
  			}
 
+        	// LDAP Authentication
         	if ((PRE_AUTHENTICATOR != null) &&
         		(0 < PRE_AUTHENTICATOR.length()) &&
         		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
@@ -399,6 +403,7 @@ public class LoginFactory {
 
     			match = auth == Authenticator.SUCCESS;
         	} else {
+        	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
  	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            } else {
@@ -418,15 +423,11 @@ public class LoginFactory {
  	            	return false;
  	            }
 
- 	            match = user.getPassword().equals(password) || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
-
- 	            if (match) {
- 	            	user.setLastLoginDate(new java.util.Date());
- 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
- 	            } else {
- 	            	user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
- 	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
- 	            }
+                match = passwordMatch(password, user);
+                if (match == false) {
+                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
+                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
+                }
         	}
 
             // if passwords match
@@ -477,6 +478,67 @@ public class LoginFactory {
         idCookie.setPath("/");
         response.addCookie(idCookie);
 
+    }
+
+    /**
+     * This method validates legacy, clear and new passwords. When identifies a
+     * clear or legacy password it will validate and then change it to a
+     * stronger hash then save it into the system.
+     * 
+     * @param password
+     *            string entered by the user
+     * @param user
+     *            MUST be loaded from db with all the information because we are
+     *            going to save this object if rehash process required
+     * @return
+     */
+    public static boolean passwordMatch(final String password, User user) {
+        boolean needsToRehashPassword = false;
+
+        try {
+            if (PasswordFactoryProxy.isUnsecurePasswordHash(user.getPassword())) {
+                // This is the legacy functionality that we will removed with
+                // the new hash library
+                boolean match = user.getPassword().equals(password)
+                        || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
+
+                // Bad credentials
+                if (!match) {
+                    return false;
+                }
+
+                // Force password rehash
+                needsToRehashPassword = true;
+            } else {
+                PasswordFactoryProxy.AuthenticationStatus authStatus = PasswordFactoryProxy.authPassword(password,
+                        user.getPassword());
+
+                // Bad credentials
+                if (authStatus.equals(PasswordFactoryProxy.AuthenticationStatus.NOT_AUTHENTICATED)) {
+                    return false;
+                }
+
+                // Force password rehash
+                if (authStatus.equals(PasswordFactoryProxy.AuthenticationStatus.NEEDS_REHASH)) {
+                    needsToRehashPassword = true;
+                }
+            }
+
+            // Apply new hash to the password and update user
+            if (needsToRehashPassword) {
+                // We need to rehash password and save the new ones
+                user.setPassword(PasswordFactoryProxy.generateHash(password));
+                user.setLastLoginDate(new java.util.Date());
+                APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
+
+                SecurityLogger.logInfo(LoginFactory.class, "User password was rehash with id: " + user.getUserId());
+            }
+        } catch (PasswordException | DuplicateUserException | DotDataException | DotSecurityException e) {
+            Logger.error(LoginFactory.class, "Error validating password from userId: " + user.getUserId(), e);
+            return false;
+        }
+
+        return true;
     }
 
 }

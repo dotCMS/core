@@ -1,9 +1,9 @@
 package com.dotcms.elasticsearch.script;
 
-import com.dotcms.repackage.org.elasticsearch.index.fielddata.ScriptDocValues;
-import com.dotcms.repackage.org.elasticsearch.script.AbstractLongSearchScript;
-import com.dotcms.repackage.org.elasticsearch.script.ExecutableScript;
-import com.dotcms.repackage.org.elasticsearch.script.NativeScriptFactory;
+import org.elasticsearch.index.fielddata.ScriptDocValues;
+import org.elasticsearch.script.AbstractLongSearchScript;
+import org.elasticsearch.script.ExecutableScript;
+import org.elasticsearch.script.NativeScriptFactory;
 
 import java.util.List;
 import java.util.Map;

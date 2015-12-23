@@ -1,9 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
-import com.dotcms.repackage.org.elasticsearch.action.search.SearchResponse;
-import com.dotcms.repackage.org.elasticsearch.search.SearchHits;
-import com.dotcms.repackage.org.elasticsearch.search.facet.Facets;
-import com.dotcms.repackage.org.elasticsearch.search.suggest.Suggest;
+import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.facet.Facets;
+import org.elasticsearch.search.suggest.Suggest;
 
 import java.util.Collection;
 import java.util.Iterator;

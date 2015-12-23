@@ -141,6 +141,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03500RulesEngineDataModel.class);
 		ret.add(Task03505PublishingQueueAuditTable.class);
 		ret.add(Task03510CreateDefaultPersona.class);
+		ret.add(Task03515AlterPasswordColumnFromUserTable.class);
         return ret;
     }
 

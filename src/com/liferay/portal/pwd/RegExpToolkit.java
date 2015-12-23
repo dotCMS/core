@@ -45,14 +45,18 @@ public class RegExpToolkit extends BasicToolkit {
         _pattern = PropsUtil.get( PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN );
     }
 
+    public RegExpToolkit (String pattern) {
+        _pattern = pattern;
+    }
+
     public String generate () {
         return PwdGenerator.getPassword();
     }
 
-    public boolean validate ( String password ) {
+    public boolean validate(String password) {
         Perl5Util util = new Perl5Util();
 
-        return util.match( _pattern, password );
+        return password == null ? false : util.match( _pattern, password );
     }
 
 	/**

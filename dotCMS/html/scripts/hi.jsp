@@ -1,8 +1,8 @@
 <%@page import="com.dotmarketing.util.UUIDGenerator"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.action.delete.DeleteRequest"%>
+<%@page import="org.elasticsearch.action.delete.DeleteRequest"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.action.index.IndexRequest"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.client.Client"%>
+<%@page import="org.elasticsearch.action.index.IndexRequest"%>
+<%@page import="org.elasticsearch.client.Client"%>
 <%@page import="com.dotcms.content.elasticsearch.util.ESClient"%>
 <%
 

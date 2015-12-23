@@ -1,27 +1,38 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class CountRequestsActionlet extends RuleActionlet {
+public class CountRequestsActionlet extends RuleActionlet<CountRequestsActionlet.Instance> {
 
     public CountRequestsActionlet() {
-        super("EveryPageActionlet");
+        super("Count Requests Actionlet");
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, RuleActionParameter> params) {
-
-        String fireOn = params.get("fireOn").getValue();
-
-        Integer count = (Integer)request.getServletContext().getAttribute(fireOn);
-
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, CountRequestsActionlet.Instance instance) {
+        Integer count = (Integer)request.getServletContext().getAttribute(instance.fireOn);
         if(count == null) {
             count = 0;
         }
+        request.getServletContext().setAttribute(instance.fireOn, ++count);
+        return true;
+    }
 
-        request.getServletContext().setAttribute(fireOn, ++count);
+    @Override
+    public Instance instanceFrom(Map<String, ParameterModel> values) {
+        return new Instance(values);
+    }
+
+    static class Instance implements RuleComponentInstance {
+
+        private final String fireOn;
+
+        public Instance(Map<String, ParameterModel> values) {
+            this.fireOn = values.get("fireOn").getValue();
+        }
     }
 }

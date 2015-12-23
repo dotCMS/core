@@ -8,13 +8,14 @@ import java.net.URLDecoder;
 import java.util.Date;
 import java.util.List;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.javax.portlet.WindowState;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.apache.commons.beanutils.BeanUtils;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
@@ -22,7 +23,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.beans.UserProxy;
@@ -432,13 +432,11 @@ public class EditUserManagerAction extends DotPortletAction{
 			user.setEmailAddress(userForm.getEmailAddress().trim().toLowerCase());
 
 		if ((userForm.getNewPassword() != null) && (!userForm.getNewPassword().equals(""))) {
-			user.setPassword(PublicEncryptionFactory.digestString(userForm.getNewPassword()));
-			user.setPasswordEncrypted(true);
+			user.setPassword(PasswordFactoryProxy.generateHash(userForm.getNewPassword()));
 		}
 
 		if (user.isNew() || userForm.getPassChanged().equals("true")) {
-			user.setPassword(PublicEncryptionFactory.digestString(userForm.getPassword()));
-			user.setPasswordEncrypted(true);
+			user.setPassword(PasswordFactoryProxy.generateHash(userForm.getNewPassword()));
 		}
 
 		APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
@@ -583,7 +581,10 @@ public class EditUserManagerAction extends DotPortletAction{
 			return;
 		}
 		String pass = PublicEncryptionFactory.getRandomPassword();
-		user.setPassword(PublicEncryptionFactory.digestString(pass));
+
+        // Use new password hash method
+        user.setPassword(PasswordFactoryProxy.generateHash(pass));
+
 		APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 		Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 		EmailFactory.sendForgotPassword(user, pass, host.getIdentifier());

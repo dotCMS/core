@@ -1,11 +1,11 @@
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@page import="com.liferay.util.Validator"%>
 <%@page import="com.dotcms.content.elasticsearch.business.ESSearchResults"%>
-<%@ page import="com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.search.suggest.Suggest.Suggestion"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.search.facet.terms.TermsFacet"%>
-<%@page import="com.dotcms.repackage.org.elasticsearch.search.facet.Facet"%>
+<%@ page import="org.elasticsearch.search.suggest.term.TermSuggestion.*"%>
+<%@page import="org.elasticsearch.search.suggest.term.TermSuggestion"%>
+<%@page import="org.elasticsearch.search.suggest.Suggest.Suggestion"%>
+<%@page import="org.elasticsearch.search.facet.terms.TermsFacet"%>
+<%@page import="org.elasticsearch.search.facet.Facet"%>
 
 <%@page import="com.dotcms.content.elasticsearch.business.ESContentletAPIImpl"%>
 <%@page import="java.util.List"%>
@@ -263,8 +263,8 @@ function showEsHelpDialog(){
 					<%for(Suggestion s : cons.getSuggestions() ){ %>
 			
 						<%for (Object entry : s.getEntries()) {%>
-							<%=ii++%>. <%=((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> | 
-							<%for(TermSuggestion.Entry.Option opt : ((com.dotcms.repackage.org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
+							<%=ii++%>. <%=((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getText() %> | 
+							<%for(TermSuggestion.Entry.Option opt : ((org.elasticsearch.search.suggest.term.TermSuggestion.Entry) entry).getOptions() ){ %>
 								<%=opt.getText()%>
 							<%} %>
 							<br>

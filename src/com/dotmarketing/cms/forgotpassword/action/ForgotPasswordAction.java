@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionErrors;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
@@ -15,7 +16,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessage;
 import com.dotcms.repackage.org.apache.struts.action.ActionMessages;
 import com.dotcms.repackage.org.apache.struts.actions.DispatchAction;
-
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
@@ -167,11 +167,11 @@ public class ForgotPasswordAction extends DispatchAction {
 			return sendResetPassword(mapping, lf, request, response);
 
 		} else {
-			
 			//if we have some errors
 
 			String pass = PublicEncryptionFactory.getRandomPassword();
-			user.setPassword(PublicEncryptionFactory.digestString(pass));
+            // Use new password hash method
+            user.setPassword(PasswordFactoryProxy.generateHash(pass));
 			APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 			Host host = hostWebAPI.getCurrentHost(request);
         	Company company = PublicCompanyFactory.getDefaultCompany(); 
@@ -237,7 +237,10 @@ public class ForgotPasswordAction extends DispatchAction {
         	if (userProxy.getChallengeQuestionAnswer().equalsIgnoreCase(challengeQuestionAnswer)) {
 				
 				String pass = PublicEncryptionFactory.getRandomPassword();
-				user.setPassword(PublicEncryptionFactory.digestString(pass));
+
+                // Use new password hash method
+                user.setPassword(PasswordFactoryProxy.generateHash(pass));
+
 				APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 				Host host = hostWebAPI.getCurrentHost(request);
 				try {
@@ -387,8 +390,8 @@ public class ForgotPasswordAction extends DispatchAction {
 				if (!Validator.validate(request, lf, mapping))
 					return mapping.findForward("resetPasswordPage");
 
-				user.setPassword(PublicEncryptionFactory.digestString(form.getNewPassword()));
-				user.setPasswordEncrypted(true);
+                // Use new password hash method
+                user.setPassword(PasswordFactoryProxy.generateHash(form.getNewPassword()));
 
 				APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 

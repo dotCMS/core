@@ -1,7 +1,7 @@
 //noinspection GroovyAssignabilityCheck
 dependencies {
 
-    compile group: 'com.dotcms.enterprise', name: 'ee', version: '64880b0-SNAPSHOT'
+    compile group: 'com.dotcms.enterprise', name: 'ee', version: '1b0264d-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '5abf2b5-SNAPSHOT'
     compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
 
@@ -62,7 +62,7 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.drools-jsr94', version:'3.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.dwr', version:'3rc2modified_2'
     compile group: 'com.dotcms.lib', name: 'dot.ehcache', version:'1.6.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.4.2_2'
+    compile group: 'com.dotcms.lib', name: 'dot.elasticsearch', version:'1.4.2_4'
     compile group: 'com.dotcms.lib', name: 'dot.fileupload-ext', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.fop', version:'0.20.1_3'
     compile group: 'com.dotcms.lib', name: 'dot.gif89', version:'ukv_2'
@@ -119,7 +119,6 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.jsoup', version:'1.6.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jstl', version:'1.0.5_2'
     compile group: 'com.dotcms.lib', name: 'dot.jta', version:'1.1_2'
-    compile group: 'com.dotcms.lib', name: 'dot.junit', version:'4.8.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.jxl', version:'2.6_2'
     compile group: 'com.dotcms.lib', name: 'dot.jython', version:'2.2.1_2'
     compile group: 'com.dotcms.lib', name: 'dot.ldap', version:'ukv_2'
@@ -129,15 +128,16 @@ dependencies {
     compile group: 'com.dotcms.lib', name: 'dot.log4j-core', version:'2.3_2'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-jcl', version:'2.3_1'
     compile group: 'com.dotcms.lib', name: 'dot.log4j-web', version:'2.3_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-join', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-memory', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-queries', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-queryparser', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version:'4.10.2_2'
-    compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version:'4.10.2_2'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-analyzers-common', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-core', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-expressions', version:'4.10.2_1'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-highlighter', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-join', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-memory', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queries', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-queryparser', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-sandbox', version:'4.10.2_3'
+    compile group: 'com.dotcms.lib', name: 'dot.lucene-suggest', version:'4.10.2_3'
     compile group: 'com.dotcms.lib', name: 'dot.mail-ejb', version:'ukv_2'
     compile group: 'com.dotcms.lib', name: 'dot.milton-api', version:'1.8.1.4_2'
     compile group: 'com.dotcms.lib', name: 'dot.milton-servlet', version:'1.8.1.4_2'
@@ -244,6 +244,12 @@ dependencies {
     compile group: 'eu.bitwalker', name: 'UserAgentUtils', version:'1.16'
 
     /**
+     * Order matters here: JUNIT must come after hamcrest.
+     */
+    compile group: 'org.hamcrest', name: 'hamcrest-all', version: '1.3'
+    compile group: 'com.dotcms.lib', name: 'dot.junit', version: '4.8.1_2'
+
+    /**
      * Order matters here: OSGI-Core must come after felix.
      */
     compile group: 'com.dotcms.lib', name: 'dot.felix', version:'4.2.1_3'
@@ -262,7 +268,7 @@ dependencies {
     compile fileTree("${project.projectDir}/plugins/com.dotcms.config/build/jar").include('plugin-com.dotcms.config.jar')
 
 
-    compile group: 'com.dotcms', name: 'starter', version: '20150727', ext: 'zip'
+    compile group: 'com.dotcms', name: 'starter', version: '20151217-SNAPSHOT', ext: 'zip'
     coreWeb group: 'com.dotcms', name: 'core-web', version: '3.5.0-alpha-SNAPSHOT', ext: 'zip'
     provided fileTree("${project.projectDir}/libs/buildlibs").include('**/*.jar')
     provided fileTree("${project.projectDir}/libs/buildlibs").include('jtds-*.jar', 'mail.jar', 'mysql-conn*.jar', 'ojdbc*.jar', 'postgres*.jar', 'sqljdbc*.jar')

@@ -574,6 +574,9 @@ public final class WebKeys {
     public static final String WIKI_IN_WIKI = "com.dotmarketing.wiki.in.wiki";
     public static final String WIKI_CONTENTLET_URL = "com.dotmarketing.wiki.contentlet.url";
 
+    //VISITOR
+    public static final String VISITOR = "com.dotcms.visitor";
+
     public static class Cache
     {
         public static final String CACHE_BANNER_CACHE = "com.dotmarketing.cache.BannerCache";

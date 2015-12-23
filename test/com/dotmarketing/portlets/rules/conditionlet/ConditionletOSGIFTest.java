@@ -6,15 +6,13 @@ import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.osgi.HostActivator;
-import com.dotmarketing.portlets.rules.model.ConditionValue;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.Logger;
 
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-
 
 public class ConditionletOSGIFTest {
 
@@ -35,7 +33,7 @@ public class ConditionletOSGIFTest {
             Assert.assertNull(APILocator.getRulesAPI().findConditionlet(UsersContinentConditionlet.class.getSimpleName()));
 
         } catch(Exception e) {
-            Logger.error(ConditionletOSGIFTest.class, "Error starting/stoping ConditionletActivator", e);
+            Logger.error(ConditionletOSGIFTest.class, "Error starting/stopping ConditionletActivator", e);
             throw e;
         }
 
@@ -57,10 +55,10 @@ public class ConditionletOSGIFTest {
         public void stop(BundleContext bundleContext) throws Exception {
             unregisterConditionlets();
         }
-
     }
 
-    public static class UsersContinentConditionlet extends Conditionlet {
+
+    public static class UsersContinentConditionlet extends Conditionlet<Instance> {
 
         private static final long serialVersionUID = 1L;
 
@@ -69,35 +67,17 @@ public class ConditionletOSGIFTest {
         }
 
         @Override
-        public Set<Comparison> getComparisons() {
-            return null;
-        }
-
-        @Override
-        public ValidationResults validate(Comparison comparison,
-                                          Set<ConditionletInputValue> inputValues) {
-            return null;
-        }
-
-        @Override
-        protected ValidationResult validate(Comparison comparison,
-                                            ConditionletInputValue inputValue) {
-            return null;
-        }
-
-        @Override
-        public Collection<ConditionletInput> getInputs(String comparisonId) {
-            return null;
-        }
-
-        @Override
-        public boolean evaluate(HttpServletRequest request,
-                                HttpServletResponse response,
-                                String comparisonId,
-                                List<ConditionValue> values) {
+        public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
             return false;
         }
 
+        @Override
+        public Instance instanceFrom( Map<String, ParameterModel> values) {
+            return null;
+        }
+
     }
+
+    protected static class Instance implements RuleComponentInstance{}
 
 }

@@ -12,11 +12,13 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.DisplayedLanguage;
+import com.liferay.portal.model.User;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -224,7 +226,6 @@ public class VelocityUtil {
 		else
 		    context.put("language", request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE));
 
-		session = request.getSession(false);
 		try {
 			Host host;
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
@@ -232,14 +233,16 @@ public class VelocityUtil {
 		} catch (Exception e) {
 			Logger.error(VelocityUtil.class,e.getMessage(),e);
 		}
-		session = request.getSession(false);
 		context.put("pdfExport", false);
-		com.liferay.portal.model.User user = null;
 
 		if(request.getSession(false)!=null){
 			try {
-				user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+				User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 				context.put("user", user);
+
+				Visitor visitor = (Visitor) request.getSession().getAttribute(WebKeys.VISITOR);
+				context.put("visitor", visitor);
+
 			} catch (Exception nsue) {
 				Logger.error(VelocityServlet.class, nsue.getMessage(), nsue);
 			}
