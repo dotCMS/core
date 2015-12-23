@@ -26,22 +26,22 @@ describe('Integration.api.system.locale.I18n', function () {
   });
 
 
-  it("Can get a specific message.", function(done){
-    rsrcService.getForLocale('en-US',  'message.comment.success', (rsrc)=>{
+  it("Can get a specific message.", function (done) {
+    rsrcService.getForLocale('en-US', 'message.comment.success').subscribe((rsrc)=> {
       expect(rsrc).toBe("Your comment has been saved")
-      rsrcService.getForLocale('de',  'message.comment.success', (rsrc)=>{
+      rsrcService.get('de', 'message.comment.success').subscribe((rsrc)=> {
         expect(rsrc).toBe("Ihr Kommentar wurde gespeichert")
         done()
       })
     })
   })
 
-  it("Can get all message under a particular path.", function(done){
-    rsrcService.getForLocale('en-US',  'message.comment', (rsrc)=>{
+  it("Can get all message under a particular path.", function (done) {
+    rsrcService.getForLocale('en-US', 'message.comment').subscribe((rsrc)=> {
       expect(rsrc.delete).toBe("Your comment has been delete")
       expect(rsrc.failure).toBe("Your comment couldn't be created")
       expect(rsrc.success).toBe("Your comment has been saved")
-      rsrcService.getForLocale('de',  'message.comment', (rsrc)=>{
+      rsrcService.getForLocale('de', 'message.comment').subscribe((rsrc)=> {
         expect(rsrc.delete).toBe("Ihr Kommentar wurde gelöscht")
         expect(rsrc.failure).toBe("Ihr Kommentar konnte nicht erstellt werden")
         expect(rsrc.success).toBe("Ihr Kommentar wurde gespeichert")

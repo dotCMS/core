@@ -1,5 +1,5 @@
 import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/angular2';
-import { Host, AfterViewInit, AfterViewChecked} from 'angular2/angular2';
+import { Host, AfterViewInit, AfterViewChecked, OnDestroy} from 'angular2/angular2';
 import { CORE_DIRECTIVES } from 'angular2/angular2';
 import { Output, Input, ChangeDetectionStrategy } from 'angular2/angular2';
 import {Observable} from 'rxjs/Rx.KitchenSink'
@@ -286,10 +286,10 @@ export class InputOption {
       this._dropdown.addOption(this);
       this._isRegistered = true;
     } else if (change.label && this._dropdown.value === this.value) {
-        let label = change.label.currentValue
-        if (label) {
-          this._dropdown.refreshDisplayText(label)
-        }
+      let label = change.label.currentValue
+      if (label) {
+        this._dropdown.refreshDisplayText(label)
+      }
     }
 
   }
