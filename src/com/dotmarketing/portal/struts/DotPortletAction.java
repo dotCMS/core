@@ -633,7 +633,7 @@ public class DotPortletAction extends PortletAction {
 				showDel = false;
 			}
 
-			String orderBy = SQLUtil.sanityOrderBy(req.getParameter("orderby"));
+			String orderBy = req.getParameter("orderby");
 			
 			
 			

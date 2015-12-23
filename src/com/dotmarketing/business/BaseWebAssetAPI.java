@@ -426,16 +426,19 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public int getCountAssetsAndPermissionsPerRoleAndConditionWithParent(String condition, Class assetsClass, String parentId, boolean showDeleted, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermissionWithParent(condition, assetsClass, 100000, 0, parentId, showDeleted, user);
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public int getCountAssetsPerConditionWithPermission(String condition, Class c, User user) {
 		return getCountAssetsPerConditionWithPermission(condition, c, null, user);
 	}
 
 	@SuppressWarnings("unchecked")
+	@Deprecated
 	public int getCountAssetsPerConditionWithPermission(String condition, Class c, String parent, User user) {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(condition, c, -1, 0, parent, user);
 	}

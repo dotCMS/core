@@ -713,6 +713,7 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 				// condition.append(" status , ");
 			}
 			if (UtilMethods.isSet(searcher.getOrderBy())) {
+
 				orderby=searcher.getOrderBy().replaceAll("[^\\w_\\. ]", "");
 			} else {
 
@@ -1148,26 +1149,32 @@ public class WorkflowFactoryImpl implements WorkFlowFactory {
 		DotConnect dc = getWorkflowSqlQuery(searcher, false);
 		dc.setStartRow(searcher.getCount() * searcher.getPage());
 		dc.setMaxRows(searcher.getCount());
-		List<Map<String,Object>> results = dc.loadObjectResults();
-		List<WorkflowTask> wfTasks = new ArrayList<WorkflowTask>();
+		try {
+			List<Map<String, Object>> results = dc.loadObjectResults();
+			List<WorkflowTask> wfTasks = new ArrayList<WorkflowTask>();
 
-		for (Map<String, Object> row : results) {
-			WorkflowTask wt = new WorkflowTask();
-			wt.setId(getStringValue(row, "id"));
-			wt.setCreationDate((Date)row.get("creation_date"));
-			wt.setModDate((Date)row.get("mod_date"));
-			wt.setDueDate((Date)row.get("due_date"));
-			wt.setCreatedBy(getStringValue(row, "created_by"));
-			wt.setAssignedTo(getStringValue(row, "assigned_to"));
-			wt.setBelongsTo(getStringValue(row, "belongs_to"));
-			wt.setTitle(getStringValue(row, "title"));
-			wt.setDescription(getStringValue(row, "description"));
-			wt.setStatus(getStringValue(row, "status"));
-			wt.setWebasset(getStringValue(row, "webasset"));
-			wfTasks.add(wt);
+			for (Map<String, Object> row : results) {
+				WorkflowTask wt = new WorkflowTask();
+				wt.setId(getStringValue(row, "id"));
+				wt.setCreationDate((Date) row.get("creation_date"));
+				wt.setModDate((Date) row.get("mod_date"));
+				wt.setDueDate((Date) row.get("due_date"));
+				wt.setCreatedBy(getStringValue(row, "created_by"));
+				wt.setAssignedTo(getStringValue(row, "assigned_to"));
+				wt.setBelongsTo(getStringValue(row, "belongs_to"));
+				wt.setTitle(getStringValue(row, "title"));
+				wt.setDescription(getStringValue(row, "description"));
+				wt.setStatus(getStringValue(row, "status"));
+				wt.setWebasset(getStringValue(row, "webasset"));
+				wfTasks.add(wt);
+			}
+
+			return wfTasks;
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 
-		return wfTasks;
+		return null;
 	}
 
 	private String getStringValue(Map<String, Object> row, String key) {

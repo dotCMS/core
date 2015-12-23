@@ -21,6 +21,11 @@ import com.liferay.util.StringUtil;
 
 public class SQLUtil {
 
+
+	private static final String[] EVIL_SQL_WORDS = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
+			"group", "order", "as ", "count","drop", "alter","truncate", "declair", "where", "exec", "--", "procedure", "pg_", "lock",
+			"unlock","write", "engine", "null","not ","mode", "set ",";"};
+
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
 		if (schema!=null) {
@@ -150,32 +155,46 @@ public class SQLUtil {
 	
 	/**
 	 * Method to sanitize order by SQL injection
-	 * @param orderByRequest
+	 * @param parameter
 	 * @return
 	 */
-	public static String sanityOrderBy(String orderByRequest){
+	public static String sanitizeSortBy(String parameter){
 		String[] validOrders = {"title", "modDate", "page_url","name","velocity_var_name","description","category_","sort_order","keywords"};
-		String[] evilSQLWords = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-				"group", "order", "as ", "count","drop", "alter","truncate", "declair", "where", "exec", "--", "procedure", "pg_", "lock",
-				"unlock","write", "engine", "null","not ","mode", "set ",";"};
+
 
 		
-		if(!UtilMethods.isSet(orderByRequest)){//check if is not null
+		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
 		
-		for(String str : evilSQLWords){
-			if(orderByRequest.contains(str)){//check if the order by requested have any other command
+		for(String str : EVIL_SQL_WORDS){
+			if(parameter.contains(str)){//check if the order by requested have any other command
 				return "";
 			}
 		}
 		
 		for(String str : validOrders){
-			if(orderByRequest.contains(str)){//check if the order by requested is a valid one
-				return orderByRequest;
+			if(parameter.contains(str)){//check if the order by requested is a valid one
+				return parameter;
 			}
 		}
 		
 		return "";
+	}
+
+	public static String sanitizeParameter(String parameter){
+
+
+		if(!UtilMethods.isSet(parameter)){//check if is not null
+			return "";
+		}
+
+		for(String str : EVIL_SQL_WORDS){
+			if(parameter.contains(str)){//check if the order by requested have any other command
+				return "";
+			}
+		}
+
+		return parameter;
 	}
 }

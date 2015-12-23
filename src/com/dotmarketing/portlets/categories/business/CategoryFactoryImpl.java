@@ -16,6 +16,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -270,6 +271,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy)
 	throws DotDataException {
+		orderBy = SQLUtil.sanitizeParameter(orderBy);
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
@@ -282,6 +284,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy,
 			String relationType) throws DotDataException {
+		orderBy = SQLUtil.sanitizeParameter(orderBy);
+
 		if(!UtilMethods.isSet(orderBy))
 			orderBy = "tree_order";
 		HibernateUtil hu = new HibernateUtil(Category.class);
@@ -480,6 +484,8 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
+		filter = SQLUtil.sanitizeParameter(filter);
+		sort = SQLUtil.sanitizeParameter(sort);
 		HibernateUtil dh = new HibernateUtil(Category.class);
 		StringBuilder sql = new StringBuilder();
 		sql.append("SELECT {category.*} from category category left join tree tree on category.inode = tree.child, ");
@@ -493,6 +499,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Deprecated
 	//  Have to delete from cache
 	protected void deleteChildren(String inode) {
+		inode = SQLUtil.sanitizeParameter(inode);
 		Statement s = null;
 		Connection conn = null;
 		try {
@@ -526,6 +533,10 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
+		inode = SQLUtil.sanitizeParameter(inode);
+		filter = SQLUtil.sanitizeParameter(filter);
+		sort = SQLUtil.sanitizeParameter(sort);
+
 		HibernateUtil dh = new HibernateUtil(Category.class);
 		StringBuilder sql = new StringBuilder();
 		sql.append("select {category.*} from inode category_1_, category, tree where ");
@@ -537,6 +548,9 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	}
 
 	private String getFilterAndSortSQL(String filter, String sort) {
+		filter = SQLUtil.sanitizeParameter(filter);
+		sort = SQLUtil.sanitizeParameter(sort);
+
 		StringBuilder sb = new StringBuilder();
 
 		if(UtilMethods.isSet(filter)) {
