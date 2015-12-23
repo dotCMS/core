@@ -28,6 +28,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
                        [value]="input.value"
                        placeholder="{{input.placeholder | async}}"
                        [required]="input.required"
+                       [allowAdditions]="input.allowAdditions"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
                        (change)="handleParamValueChange($event, input)">
@@ -124,9 +125,13 @@ export class ServersideCondition {
       rsrcKey = rsrcKey + '.options'
     }
 
-
+    let currentValue = this.model.getParameterValue(param.key)
+    let needsCustomAttribute = currentValue != null
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
+      if(needsCustomAttribute && key == currentValue){
+        needsCustomAttribute = false
+      }
       let labelKey = rsrcKey + '.' + option.i18nKey
       // hack for country - @todo ggranum: kill 'name' on locale?
       if(param.key === 'country'){
@@ -138,6 +143,15 @@ export class ServersideCondition {
         icon: option.icon
       })
     })
+
+    if(needsCustomAttribute){
+      opts.push({
+        value: currentValue,
+        label: Observable.of(currentValue)
+      })
+    }
+
+
     let input:any = {
       value: this.model.getParameterValue(param.key),
       name: param.key,
@@ -145,7 +159,8 @@ export class ServersideCondition {
       options: opts,
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
-      required: inputType.minSelections > 0
+      required: inputType.minSelections > 0,
+      allowAdditions:inputType.allowAdditions
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''
