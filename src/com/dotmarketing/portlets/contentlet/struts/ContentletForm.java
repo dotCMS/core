@@ -125,7 +125,7 @@ public class ContentletForm extends ValidatorForm {
     }
 
     public void setHasvalidationerrors(boolean Hasvalidationerrors) {
-        map.put(LANGUAGEID_KEY, Hasvalidationerrors);
+        map.put(HAS_VALIDATION_ERRORS, Hasvalidationerrors);
     }
 
     public String getStructureInode() {
