@@ -7,7 +7,6 @@ import {Observable} from 'rxjs/Rx.KitchenSink'
 import {ApiRoot} from '../../../api/persistence/ApiRoot'
 import {EntityMeta, EntitySnapshot} from '../../../api/persistence/EntityBase'
 import {UserModel} from "../../../api/auth/UserModel"
-import {I18NCountryProvider} from '../../../api/system/locale/I18NCountryProvider'
 
 
 import {RuleComponent} from './rule-component'
@@ -180,7 +179,6 @@ export class RuleEngineApp {
       InputService,
       ActionTypeService,
       UserModel,
-      I18NCountryProvider,
       RuleService,
       ActionService,
       ConditionGroupService,

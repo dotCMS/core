@@ -124,7 +124,11 @@ export class I18nService {
       let promise = new Promise((resolve, reject)=> {
         console.log("I18n", "Requesting: ", msgKey)
         this.makeRequest(locale + '/' + path.join('/')).catch((err:any, source:Observable<any>)=>{
-          console.log("I18n", "Failed:: ", msgKey, "=", cNode)
+          if(err && err.status === 404){
+            console.log("Missing Resource: '" , msgKey, "'")
+          } else {
+            console.log("I18n", "Failed:: ", msgKey, "=", cNode, 'error:', err)
+          }
           return Observable.create(obs =>{
             obs.next(defaultValue)
           })
@@ -139,13 +143,18 @@ export class I18nService {
     return Observable.defer(()=> {
       return Observable.create((obs)=> {
         if (cNode._loading == null) {
-          console.log("I18n", "Failed:: ", msgKey, "=", cNode)
+          console.log("I18n", "Failed: ", msgKey, "=", cNode)
           obs.next("-I18nLoadFailed-")
         } else {
           cNode._loading.then(()=> {
             let v
             if(!cNode.$isLeaf() ){
-                v = forceText ? defaultValue : cNode
+                if(forceText){
+                  v = defaultValue
+                  console.log("Misconfigured resource:", msgKey )
+                } else {
+                  v = cNode
+                }
             } else{
               v = cNode._value
             }
@@ -156,7 +165,5 @@ export class I18nService {
       })
     })
   }
-
-
 }
 

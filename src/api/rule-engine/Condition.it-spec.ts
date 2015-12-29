@@ -12,7 +12,6 @@ import {RestDataStore} from '../../api/persistence/RestDataStore';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
-import {I18NCountryProvider} from '../../api/system/locale/I18NCountryProvider'
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 
 

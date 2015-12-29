@@ -4,7 +4,6 @@ import {CORE_DIRECTIVES} from 'angular2/angular2';
 import {Observable} from 'rxjs/Rx.KitchenSink'
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
-import {CountryCondition} from './condition-types/country/country-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 
@@ -21,7 +20,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
 })
 @View({
   template: `
-<div *ngIf="typeDropdown != null" flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
+<div *ngIf="typeDropdown != null && condition.type != null" flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
   <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
       <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
@@ -41,22 +40,13 @@ import {I18nService} from "../../../api/system/locale/I18n";
     </cw-input-dropdown>
   </div>
   <div flex layout-fill class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-    <template [ngSwitchWhen]="'XUsersCountryConditionlet'">
-      <cw-country-condition
-          class="cw-condition-component"
-          [comparator-value]="condition.comparison"
-          [parameter-values]="condition.parameters"
-          (change)="onConditionChange($event)">
-      </cw-country-condition>
-
-    </template>
     <template [ngSwitchWhen]="'NoSelection'">
       <div class="cw-condition-component"></div>
     </template>
     <template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"
                                [model]="condition"
-                               [paramDefs]="condition.type?.parameters"
+                               [paramDefs]="condition.type.parameters"
                                (change)="onConditionChange($event)">
       </cw-serverside-condition>
     </template>
@@ -72,7 +62,6 @@ import {I18nService} from "../../../api/system/locale/I18n";
 `,
   directives: [CORE_DIRECTIVES,
     ServersideCondition,
-    CountryCondition,
     Dropdown,
     InputOption
   ]
