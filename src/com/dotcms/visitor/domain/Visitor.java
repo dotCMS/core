@@ -147,5 +147,20 @@ public class Visitor implements Serializable {
         return dmid != null ? dmid.hashCode() : 0;
     }
 
-
+    @Override
+    public String toString() {
+        return "Visitor{" +
+                "ipAddress=" + ipAddress +
+                ", selectedLanguage=" + selectedLanguage +
+                ", locale=" + locale +
+                ", persona=" + persona +
+                ", accruedTags=" + accruedTags +
+                ", userAgent=" + userAgent +
+                ", dmid=" + dmid +
+                ", newVisitor=" + newVisitor +
+                ", referrer=" + referrer +
+                ", lastRequestDate=" + lastRequestDate +
+                ", map=" + map +
+                '}';
+    }
 }
