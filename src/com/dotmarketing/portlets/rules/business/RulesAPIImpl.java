@@ -19,7 +19,12 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
-import com.dotmarketing.portlets.rules.conditionlet.*;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
+import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.VisitorsLanguageConditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -30,8 +35,13 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 
@@ -50,6 +60,7 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(UsersCountryConditionlet.class)
                          .add(RequestHeaderConditionlet.class)
                          .add(UsersPlatformConditionlet.class)
+                         .add(VisitorsLanguageConditionlet.class)
 //                         .add(UsersBrowserConditionlet.class)
 //                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
@@ -57,7 +68,6 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersHostConditionlet.class)
 //                         .add(UsersIpAddressConditionlet.class)
 //                         .add(UsersLandingPageUrlConditionlet.class)
-//                         .add(UsersLanguageConditionlet.class)
 //                         .add(UsersLogInConditionlet.class)
 //                         .add(UsersOperatingSystemConditionlet.class)
 //                         .add(UsersPageVisitsConditionlet.class)
