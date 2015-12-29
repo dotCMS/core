@@ -29,7 +29,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 	@Override
 	public List<Field> getBasePersonaFields(Structure structure) {
-		List<Field> fields = new ArrayList<Field>();
+		List<Field> fields = new ArrayList<>();
 		Field field = null;
 		int i = 1;
 
@@ -125,12 +125,12 @@ public class PersonaAPIImpl implements PersonaAPI {
 	@Override
 	public List<Persona> getPersonas(Object parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,
 			boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		List<Persona> personas = new ArrayList<Persona>();
-		StringBuffer query = new StringBuffer();
+		List<Persona> personas = new ArrayList<>();
+		StringBuilder query = new StringBuilder();
 		String liveWorkingDeleted = (live) ? " +live:true " : (deleted) ? " +working:true +deleted:true " : " +working:true -deleted:true ";
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Host) {
-			query.append(" +conFolder:SYSTEM_FOLDER +conHost:" + ((Host) parent).getIdentifier() + " ");
+			query.append(" +conFolder:SYSTEM_FOLDER +conHost:").append(((Host)parent).getIdentifier()).append(" ");
 		}
 		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_PERSONA);
 		if (!UtilMethods.isSet(sortBy)) {
