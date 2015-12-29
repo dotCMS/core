@@ -892,6 +892,7 @@ public abstract class VelocityServlet extends HttpServlet {
 
         // creates the context where to place the variables
         response.setContentType( CHARSET );
+		request.setAttribute("EDIT_MODE", Boolean.TRUE);
         Context context = VelocityUtil.getWebContext( request, response );
 
 		IHTMLPage htmlPage = VelocityUtil.getPage(id, request, false, context);

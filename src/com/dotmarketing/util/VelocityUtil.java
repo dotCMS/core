@@ -6,12 +6,14 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.enterprise.LicenseUtil;
+import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.DotStateException;
@@ -235,7 +237,7 @@ public class VelocityUtil {
 		}
 		context.put("pdfExport", false);
 
-		if(request.getSession(false)!=null){
+		if(request.getSession(false)!=null && Objects.isNull(request.getAttribute("EDIT_MODE"))){
 			try {
 				User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 				context.put("user", user);
