@@ -11,7 +11,6 @@ import {I18nService} from "../../../api/system/locale/I18n";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {ServersideCondition} from "./condition-types/serverside-condition/serverside-condition";
-import {CountryCondition} from "./condition-types/country/country-condition";
 import {ConditionModel} from "../../../api/rule-engine/Condition";
 import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
@@ -49,7 +48,6 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   </div>
 </div>`, directives: [CORE_DIRECTIVES,
     ServersideCondition,
-    CountryCondition,
     Dropdown,
     InputOption
   ]
