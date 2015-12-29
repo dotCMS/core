@@ -3,7 +3,6 @@
 <%@ page import="com.dotmarketing.portlets.kco.factories.KCOAssetFactory" %>
 <%@ page import="com.dotmarketing.portlets.kco.model.KCOAsset" %>
 <%@ page import="com.dotmarketing.db.HibernateUtil" %>
-<%@ page import="com.liferay.util.lucene.KeywordsUtil" %>
 <%@ page import="com.dotmarketing.portlets.categories.model.Category" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotmarketing.beans.Host" %>

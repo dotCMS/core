@@ -13,9 +13,8 @@
 %><%@ page import="com.liferay.portal.model.*"%>
 <%@ page import="com.liferay.portal.util.Constants"%><%@ page
 	import="com.liferay.portal.util.CookieKeys"
-%><%@ page import="com.liferay.portal.util.ImageKey"%><%@ page
-	import="com.liferay.portal.util.LuceneFields"
-%><%@ page import="com.liferay.portal.util.OmniadminUtil"%><%@ page
+%><%@ page import="com.liferay.portal.util.ImageKey"%>
+<%@ page import="com.liferay.portal.util.OmniadminUtil"%><%@ page
 	import="com.liferay.portal.util.PortalUtil"
 %><%@ page import="com.liferay.portal.util.PortletKeys"%><%@ page
 	import="com.liferay.portal.util.Recipient"
@@ -67,9 +66,8 @@
 	import="com.liferay.util.cal.Recurrence"
 %><%@ page import="com.liferay.util.lang.BooleanWrapper"%><%@ page
 	import="com.liferay.util.lang.IntegerWrapper"
-%><%@ page import="com.liferay.util.log4j.Levels"%><%@ page
-	import="com.liferay.util.lucene.Hits"
-%><%@ page import="com.liferay.util.servlet.DynamicServletRequest"%><%@ page
+%><%@ page import="com.liferay.util.log4j.Levels"%>
+<%@ page import="com.liferay.util.servlet.DynamicServletRequest"%><%@ page
 	import="com.liferay.util.servlet.SessionParameters"
 %><%@ page import="com.liferay.util.servlet.StringServletResponse"%><%@ page
 	import="com.liferay.util.servlet.UploadException"

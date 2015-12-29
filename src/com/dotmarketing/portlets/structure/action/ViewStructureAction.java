@@ -80,11 +80,7 @@ public class ViewStructureAction extends DotPortletAction {
 				direction = "desc";
 			}
 			if(orderby.equals("name")) {
-				
 				orderby = "upper(name)";
-				
-				direction = "asc";
-				
 			}
 			
 			if (!UtilMethods.isSet(direction)) {

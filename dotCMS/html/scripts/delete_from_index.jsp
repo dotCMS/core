@@ -41,11 +41,7 @@ if(hasAdminRole){
 					continue;
 				}
 				x =x.trim();
-				
-				//LuceneUtils.removeDocByIdenToCurrentIndex(x);
-				
-				
-				
+
 				i++;
 				out.println(i + ":" + x);
 				out.println("<br>");

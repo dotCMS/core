@@ -486,7 +486,7 @@ public class ContentsWebAPI implements ViewTool {
 		} catch (Exception e) {
 			structure = CacheLocator.getContentTypeCache().getStructureByType(structureType);
 		}
-		//luceneCondition = LuceneUtils.findAndReplaceQueryDatesLegacy(luceneCondition);
+
 		int offSet = 0;
 		if (pageSize > 0) {
 			offSet = (page - 1) * pageSize;

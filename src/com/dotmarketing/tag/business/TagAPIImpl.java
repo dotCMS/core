@@ -16,6 +16,7 @@ import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -124,6 +125,8 @@ public class TagAPIImpl implements TagAPI{
 	 */
 	public java.util.List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count) {
         try {
+
+			sort = SQLUtil.sanitizeParameter(sort);
 
         	HibernateUtil dh = new HibernateUtil(Tag.class);
         	List list = new java.util.ArrayList();
@@ -550,7 +553,7 @@ public class TagAPIImpl implements TagAPI{
 	 */
 	public List getTagInfoByName(String name) {
 		try {
-			name = escapeSingleQuote(name);
+			name = SQLUtil.sanitizeParameter(escapeSingleQuote(name));
 
 			HibernateUtil dh = new HibernateUtil();
 			StringBuffer sb = new StringBuffer();

@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotmarketing.portlets.rules.model.ConditionValue;
-import com.dotmarketing.portlets.rules.model.RuleActionParameter;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 
 /**
  * @author Geoff M. Granum
@@ -15,11 +14,11 @@ public class ConditionValueDataGen {
     public ConditionValueDataGen() {
     }
 
-    public ConditionValue next() {
-        ConditionValue next = new ConditionValue();
+    public ParameterModel next() {
+        ParameterModel next = new ParameterModel();
         next.setKey(key);
         next.setValue(value);
-        next.setConditionId(ownerId);
+        next.setOwnerId(ownerId);
         return next;
     }
 

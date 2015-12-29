@@ -682,7 +682,7 @@ public abstract class GenericBundleActivator implements BundleActivator {
         Enumeration<String> langFiles = context.getBundle().getEntryPaths("messages");
         while( langFiles.hasMoreElements() ){
 
-            String langFile = (String)langFiles.nextElement();
+            String langFile = langFiles.nextElement();
 
             //We need to verify file is a language file.
             String languageFilePrefix = "messages/Language_";

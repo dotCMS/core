@@ -2,13 +2,13 @@ package com.dotcms.rest.api.v1.system.ruleengine.actionlets;
 
 import com.dotcms.repackage.com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-@JsonDeserialize(builder = RestComparison.Builder.class)
-public final class RestComparison {
+@JsonDeserialize(builder = RestParameterDefinition.Builder.class)
+public final class RestParameterDefinition {
 
     public final String id;
     public final String label;
 
-    private RestComparison(Builder builder) {
+    private RestParameterDefinition(Builder builder) {
         id = builder.id;
         label = builder.label;
     }
@@ -29,15 +29,15 @@ public final class RestComparison {
             return this;
         }
 
-        public Builder from(RestComparison copy) {
+        public Builder from(RestParameterDefinition copy) {
             id = copy.id;
             label = copy.label;
             return this;
         }
 
-        public RestComparison build() {
+        public RestParameterDefinition build() {
             checkValid();
-            return new RestComparison(this);
+            return new RestParameterDefinition(this);
         }
 
         private void checkValid() {

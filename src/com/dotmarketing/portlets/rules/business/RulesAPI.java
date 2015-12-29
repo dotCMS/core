@@ -158,7 +158,7 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    ConditionValue getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    ParameterModel getConditionValueById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      *
@@ -182,13 +182,13 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
 
     /**
      *
-     * @param conditionValue
+     * @param parameterModel
      * @param user
      * @param respectFrontendRoles
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    void saveConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    void saveConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**
@@ -223,13 +223,13 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
 
     /**
      *
-     * @param conditionValue
+     * @param parameterModel
      * @param user
      * @param respectFrontendRoles
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    void deleteConditionValue(ConditionValue conditionValue, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    void deleteConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
     /**
      *
@@ -260,7 +260,7 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    Map<String, RuleActionParameter> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    Map<String, ParameterModel> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**
@@ -272,7 +272,7 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    RuleActionParameter getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+    ParameterModel getRuleActionParameterById(String id, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 
     /**
@@ -281,7 +281,7 @@ public interface RulesAPI extends ConditionletOSGIService, RuleActionletOSGIServ
      * @throws DotDataException
      * @throws DotSecurityException
      */
-    List<Conditionlet> findConditionlets() throws DotDataException, DotSecurityException;
+    List<Conditionlet<?>> findConditionlets() throws DotDataException, DotSecurityException;
 
     /**
      *

@@ -31,6 +31,8 @@ import com.dotcms.timemachine.business.TimeMachineAPI;
 import com.dotcms.timemachine.business.TimeMachineAPIImpl;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
+import com.dotcms.visitor.business.VisitorAPI;
+import com.dotcms.visitor.business.VisitorAPIImpl;
 import com.dotmarketing.business.portal.PortletAPI;
 import com.dotmarketing.business.portal.PortletAPIImpl;
 import com.dotmarketing.cms.polls.business.PollsAPI;
@@ -358,6 +360,10 @@ public class APILocator extends Locator<APIIndex>{
 		return (RulesAPI) getInstance( APIIndex.RULES_API );
 	}
 
+    public static VisitorAPI getVisitorAPI () {
+		return (VisitorAPI) getInstance( APIIndex.VISITOR_API );
+	}
+
 
 	private static Object getInstance(APIIndex index) {
 
@@ -451,7 +457,8 @@ enum APIIndex
 	
 	SERVER_ACTION_API,
 	ES_SEARCH_API,
-    RULES_API;
+    RULES_API,
+    VISITOR_API;
 
 
 	Object create() {
@@ -515,6 +522,7 @@ enum APIIndex
 		case SERVER_ACTION_API: return new ServerActionAPIImplProxy();
 		case ES_SEARCH_API: return new ESSearchProxy();
 		case RULES_API: return new RulesAPIImpl();
+		case VISITOR_API: return new VisitorAPIImpl();
 
 		
 		}

@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.dotmarketing.util.*;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
 import com.dotcms.enterprise.LicenseUtil;
@@ -32,11 +33,6 @@ import com.dotmarketing.portlets.htmlpages.model.HTMLPage;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.ConfigUtils;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.velocity.DotResourceCache;
 
 /**
@@ -137,13 +133,8 @@ public class PageServices {
 		
 		if("contentlet".equals(identifier.getAssetType())){
 			sb.append("#set($dotPageContent = $dotcontent.find(\"" + htmlPage.getInode() + "\" ))");
-			
-			
 		}
-		
-		
-		
-		
+
 		// set the host variables
 
 		Host host = APILocator.getHTMLPageAssetAPI().getParentHost(htmlPage);
