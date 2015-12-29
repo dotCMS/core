@@ -937,7 +937,9 @@ public class ContentletAjax {
 		                        	? "formIcon"
 				                        :  (s.getStructureType() ==4)
 			                        	? "uknIcon " + UtilMethods.getFileExtension( ident.getURI()) + "Icon"
-		                        			: "pageIcon";
+			                        		:  (s.getStructureType() ==5)
+			                        		? "pageIcon"
+			                        				: "personaIcon";
 					                        
 			String typeStringToShow = s.getName() ;
 			searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
