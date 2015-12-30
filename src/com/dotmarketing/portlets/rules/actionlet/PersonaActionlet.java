@@ -2,25 +2,23 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.com.google.common.collect.Maps;
-import com.dotcms.repackage.org.apache.commons.collections.functors.ExceptionClosure;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
-import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -38,36 +36,35 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
 
     public static final String PERSONA_ID_KEY = "personaIdKey";
     public static final String REQUEST_VALUE = "requestValue";
+    private PersonaAPI personaAPI;
 
     public PersonaActionlet() {
         super(I18N_BASE);
+        personaAPI = APILocator.getPersonaAPI();
     }
 
     @Override
     public Map<String, ParameterDefinition> getParameterDefinitions() {
         Map<String, ParameterDefinition> map = Maps.newLinkedHashMap();
-        map.put(PERSONA_ID_KEY, new ParameterDefinition<>(1, PERSONA_ID_KEY,
-                                                          getDropdown()));
-
-
-
-        return super.getParameterDefinitions();
+        map.put(PERSONA_ID_KEY, new ParameterDefinition<>(1, PERSONA_ID_KEY, getDropdown()));
+        return map;
     }
 
     private DropdownInput getDropdown() {
-        DropdownInput input = new DropdownInput();
+        DropdownInput input = new DropdownInput().minSelections(1);
 
         try {
+            /*@ todo ggranum: This information will need to come from a different rest endpoint, so we can avoid
+            forcing request handling into the Actionlets themselves. Which is to say: lets keep the
+            Action and Condition type definitions 'static', and push the dynamic aspects elsewhere. */
             HostAPI hostAPI = new ApiProvider().hostAPI();
-
-            PersonaAPI personaAPI = APILocator.getPersonaAPI();
             User user = APILocator.getUserAPI().getSystemUser();
             Host systemHost = hostAPI.findSystemHost();
             List<Persona> personas = personaAPI.getPersonas(systemHost, true, false, user, true);
+            for (Persona persona : personas) {
+                input.option(persona.getIdentifier(), persona.getKeyTag());
+            }
 
-            Logger.error(PersonaActionlet.class, "weeee!");
-        } catch (DotSecurityException | DotDataException e) {
-            e.printStackTrace();
         } catch(Exception e){
             e.printStackTrace();
         }
@@ -82,6 +79,16 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        try {
+            Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(request);
+            if(opt.isPresent()){
+                User user = APILocator.getUserAPI().getSystemUser();
+                Persona p = personaAPI.find(instance.key, user, false);
+                opt.get().setPersona(p);
+            }
+        } catch (Exception e) {
+            throw new RuleEvaluationFailedException(e, "Could not evaluate action %s", this.getClass().getName());
+        }
 
         return true;
     }
