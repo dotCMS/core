@@ -1,7 +1,7 @@
 #if(!$ADMIN_MODE)
 	#stop
 #end
-
+#set($dotPageContent = $dotcontent.find($HTMLPAGE_INODE))
 #if($dotPageContent.isHTMLPage())
 	#parse("/preview_left_menu_page_as_content.vtl")
 	#stop 

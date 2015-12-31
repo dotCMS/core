@@ -1,13 +1,20 @@
 package com.dotmarketing.portlets.personas.business;
 
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -18,9 +25,6 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
 
 public class PersonaAPIImpl implements PersonaAPI {
 
@@ -28,7 +32,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 	@Override
 	public List<Field> getBasePersonaFields(Structure structure) {
-		List<Field> fields = new ArrayList<>();
+		List<Field> fields = new ArrayList<Field>();
 		Field field = null;
 		int i = 1;
 
@@ -116,24 +120,29 @@ public class PersonaAPIImpl implements PersonaAPI {
 	}
 
 	@Override
-	public List<Persona> getPersonas(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles)
+	public List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles)
 			throws DotDataException, DotSecurityException {
 		return getPersonas(parent, live, deleted, -1, 0, "", user, respectFrontEndRoles);
 	}
 
 	@Override
-	public List<Persona> getPersonas(Object parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,
+	public List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,
 			boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		List<Persona> personas = new ArrayList<>();
-		StringBuilder query = new StringBuilder();
+		List<Persona> personas = new ArrayList<Persona>();
+		StringBuffer query = new StringBuffer();
 		String liveWorkingDeleted = (live) ? " +live:true " : (deleted) ? " +working:true +deleted:true " : " +working:true -deleted:true ";
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Host) {
-			query.append(" +conFolder:SYSTEM_FOLDER +conHost:").append(((Host)parent).getIdentifier()).append(" ");
+			query.append(" +conFolder:SYSTEM_FOLDER");
+			query.append(" +conHost:(" + parent.getIdentifier() + " " + Host.SYSTEM_HOST + ")");
 		}
+		else if (parent instanceof Folder) {
+			query.append(" +conFolder:" + parent.getIdentifier() + " ");
+		}
+		
 		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_PERSONA);
 		if (!UtilMethods.isSet(sortBy)) {
-			sortBy = "modDate desc";
+			sortBy = "title desc";
 		}
 		List<Contentlet> contentlets = APILocator.getContentletAPI().search(query.toString(), limit, offset, sortBy, user,
 				respectFrontEndRoles);
@@ -170,17 +179,17 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 		StringWriter sw = new StringWriter();
 		if (UtilMethods.isSet(persona.getIdentifier())) {
-			sw.append(" -identifier:").append(persona.getIdentifier());
+			sw.append(" -identifier:" + persona.getIdentifier());
 		}
 		if (UtilMethods.isSet(persona.getInode())) {
-			sw.append(" -inode:").append(persona.getInode());
+			sw.append(" -inode:" + persona.getInode());
 		}
 
-		sw.append(" +conhost:").append(persona.getHost());
+		sw.append(" +conhost:" + persona.getHost());
 		sw.append(" +basetype:6 +languageid:* +(");
 
 		for (Structure s : personaStructs) {
-			sw.append(s.getVelocityVarName()).append(".").append(KEY_TAG_FIELD).append(":").append(keyTag).append(" ");
+			sw.append( s.getVelocityVarName() + "." + KEY_TAG_FIELD + ":" + keyTag + " ");
 
 		}
 		sw.append(") ");

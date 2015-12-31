@@ -218,6 +218,12 @@ public abstract class VelocityServlet extends HttpServlet {
 			LanguageWebAPI langWebAPI = WebAPILocator.getLanguageWebAPI();
 			langWebAPI.checkSessionLocale(request);
 
+			// we will always need a visitor in admin mode
+			if(ADMIN_MODE){
+				visitorAPI.getVisitor(request,true);
+			}
+			
+			
 			if (PREVIEW_MODE && ADMIN_MODE) {
 				// preview mode has the left hand menu and edit buttons on the
 				// working page
@@ -320,7 +326,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	protected void doAdminMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 		// LIVE MODE - LIVE PAGE
 
-		visitorAPI.getVisitor(request);
+
 
 		com.liferay.portal.model.User backendUser = null;
 		backendUser = com.liferay.portal.util.PortalUtil.getUser(request);
@@ -622,8 +628,6 @@ public abstract class VelocityServlet extends HttpServlet {
 
 	@SuppressWarnings("unchecked")
 	public void doPreviewMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
-
-		visitorAPI.getVisitor(request);
 
 		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
 

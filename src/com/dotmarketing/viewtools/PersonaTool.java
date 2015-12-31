@@ -1,5 +1,6 @@
 package com.dotmarketing.viewtools;
 
+import java.util.List;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
@@ -8,7 +9,9 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+import com.dotcms.repackage.bsh.util.Util;
 import com.dotcms.visitor.domain.Visitor;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -49,24 +52,49 @@ public class PersonaTool implements ViewTool {
 		}
 	}
 	
-	public Persona persona() throws DotDataException, DotSecurityException {
-		if(ADMIN_MODE){
-			if(request.getParameter(WebKeys.CMS_PERSONA_ID)!=null){
-				return find(request.getParameter(WebKeys.CMS_PERSONA_ID));
-			}
+
+	/**
+	 * Forces a specific persona into the visitor object.  If the persona is not found, 
+	 * it will rm the persona from the visitor object
+	 * @param id
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public Persona forcePersona(String id)  {
+
+		if(!UtilMethods.isSet(id)){
+			return null;
 		}
 		
-		Optional<Visitor> v = APILocator.getVisitorAPI().getVisitor(request);
-		Visitor visitor = (v.isPresent()) ? v.get() : new Visitor();
-		if (visitor.getPersona() != null) {
-			return (Persona) visitor.getPersona();
+		Persona persona;
+		Optional<Visitor> visitor = APILocator.getVisitorAPI().getVisitor(request, true);
+		try {
+			persona = find(id);
+			visitor.get().setPersona(persona);
+		} catch (Exception  e) {
+			Logger.debug(this.getClass(), e.getMessage());
+			visitor.get().setPersona(null);
+			return null;
 		}
-		return null;
+		
+		
+		
+		return persona;
 	}
 	
 	
 	
 	
+	
+	
+	/**
+	 * Permission based find method
+	 * @param id
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public Persona find(String id) throws DotDataException, DotSecurityException {
 		
 		if(!UtilMethods.isSet(id)){
@@ -77,4 +105,28 @@ public class PersonaTool implements ViewTool {
 
 	}
 
+	/**
+	 * gets personas on both the host being viewed and the system host (global personas)
+	 * @return
+	 */
+	public List<Persona> getPersonas(){
+		
+		
+		try {
+			
+			Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
+			List<Persona> personas = APILocator.getPersonaAPI().getPersonas(host, false, false, user, false);
+
+			return personas;
+		} catch (DotDataException | DotSecurityException | PortalException | SystemException e) {
+			Logger.error(this.getClass(), e.getMessage());
+		}
+		return null;
+		
+	}
+	
+	
+	
+	
+	
 }

@@ -161,7 +161,8 @@ public class Visitor implements Serializable {
     @Override
     public String toString() {
         return "Visitor{" +
-                "ipAddress=" + ipAddress +
+        		"id=" + this.hashCode() +
+                ", ipAddress=" + ipAddress +
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
                 ", persona=" + persona +
