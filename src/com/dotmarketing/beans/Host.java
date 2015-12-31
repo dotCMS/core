@@ -9,6 +9,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -22,7 +23,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
  *
  * @author David H Torres
  */
-public class Host extends Contentlet implements Permissionable {
+public class Host extends Contentlet implements Permissionable,Treeable {
 
 	/**
      *
