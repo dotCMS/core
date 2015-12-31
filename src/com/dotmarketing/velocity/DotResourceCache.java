@@ -76,7 +76,6 @@ public class DotResourceCache implements ResourceCache,Cachable {
 	 */
 	public Resource get(Object resourceKey) {
 
-		if(true) return null;
 		String cleanedResourceKey = cleanKey(resourceKey.toString());
 		String group = primaryGroup;
 
