@@ -271,7 +271,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy)
 	throws DotDataException {
-		orderBy = SQLUtil.sanitizeParameter(orderBy);
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 		HibernateUtil hu = new HibernateUtil(Category.class);
 		hu.setSQLQuery("select {category.*} from inode category_1_, category, tree where " +
 				"category.inode = tree.child and tree.parent = ? and category_1_.inode = category.inode " +
@@ -284,7 +284,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> getChildren(Categorizable parent, String orderBy,
 			String relationType) throws DotDataException {
-		orderBy = SQLUtil.sanitizeParameter(orderBy);
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
 		if(!UtilMethods.isSet(orderBy))
 			orderBy = "tree_order";
@@ -485,7 +485,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	@Override
 	protected List<Category> findTopLevelCategoriesByFilter(String filter, String sort) throws DotDataException {
 		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeParameter(sort);
+		sort = SQLUtil.sanitizeSortBy(sort);
 		HibernateUtil dh = new HibernateUtil(Category.class);
 		StringBuilder sql = new StringBuilder();
 		sql.append("SELECT {category.*} from category category left join tree tree on category.inode = tree.child, ");
@@ -535,7 +535,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 	protected List<Category> findChildrenByFilter(String inode, String filter, String sort) throws DotDataException {
 		inode = SQLUtil.sanitizeParameter(inode);
 		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeParameter(sort);
+		sort = SQLUtil.sanitizeSortBy(sort);
 
 		HibernateUtil dh = new HibernateUtil(Category.class);
 		StringBuilder sql = new StringBuilder();
@@ -549,7 +549,7 @@ public class CategoryFactoryImpl extends CategoryFactory {
 
 	private String getFilterAndSortSQL(String filter, String sort) {
 		filter = SQLUtil.sanitizeParameter(filter);
-		sort = SQLUtil.sanitizeParameter(sort);
+		sort = SQLUtil.sanitizeSortBy(sort);
 
 		StringBuilder sb = new StringBuilder();
 
