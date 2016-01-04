@@ -1442,7 +1442,7 @@ public class InodeFactory {
 			throw new DotStateException("Identifiers are no longer Inodes!");
 		}
 
-		orderby = SQLUtil.sanitizeParameter(orderby);
+		orderby = SQLUtil.sanitizeSortBy(orderby);
 		direction = SQLUtil.sanitizeParameter(direction);
 
 		try {
