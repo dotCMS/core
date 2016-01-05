@@ -56,7 +56,7 @@ public class UsersReferringURLConditionlet extends Conditionlet<UsersReferringUR
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String referringUrlActualValue = HttpRequestDataUtil.getReferrerUrl(request);
+        String referringUrlActualValue = request.getHeader("referer");
 
         if(Strings.isBlank(referringUrlActualValue)) {
             return false;

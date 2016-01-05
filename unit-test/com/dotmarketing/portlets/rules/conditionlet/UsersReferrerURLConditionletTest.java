@@ -3,12 +3,13 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.dotcms.repackage.com.sun.xml.bind.v2.runtime.IllegalAnnotationException;
 import com.dotcms.unittest.TestUtil;
-import com.dotmarketing.business.web.LanguageWebAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.VisitorsLanguageConditionlet.LANGUAGE_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.UsersReferringURLConditionlet.REFERRING_URL_KEY;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -33,7 +34,7 @@ public class UsersReferrerURLConditionletTest {
 
     @BeforeMethod
     public void setUp() throws Exception {
-
+        MockitoAnnotations.initMocks(this);
     }
 
     @DataProvider(name = "cases")
@@ -43,46 +44,39 @@ public class UsersReferrerURLConditionletTest {
 
 
         /* Is */
-            data.add(new TestCase("If GB set and visitor's location is GB , evaluate to true.")
+            data.add(new TestCase("If google.com set and visitor's referrer URL is google , evaluate to true.")
                          .withComparison(IS)
-                         .withReferrer("GB")
-                         .withMockReferrer("GB")
+                         .withReferrer("google.com")
+                         .withMockReferrer("google.com")
                          .shouldBeTrue()
             );
 
-            data.add(new TestCase("Ignores case - If gb set and visitor's location is GB , evaluate to true.")
+            data.add(new TestCase("Ignores case - If google.com set and visitor's referrer URL is google.COM , evaluate to true.")
                          .withComparison(IS)
-                         .withReferrer("gb")
-                         .withMockReferrer("GB")
+                         .withReferrer("google.com")
+                         .withMockReferrer("google.COM")
                          .shouldBeTrue()
             );
 
-            data.add(new TestCase("Ignores case - If GB set and visitor's location is gb , evaluate to true.")
+            data.add(new TestCase("If google.com set and visitor's referring URL is yahoo.com , evaluate to false.")
                          .withComparison(IS)
-                         .withReferrer("GB")
-                         .withMockReferrer("gb")
-                         .shouldBeTrue()
-            );
-
-            data.add(new TestCase("If GB set and visitor's location is US , evaluate to false.")
-                         .withComparison(IS)
-                         .withReferrer("GB")
-                         .withMockReferrer("US")
+                         .withReferrer("google.com")
+                         .withMockReferrer("yahoo.com")
                          .shouldBeFalse()
             );
 
             /* Is Not*/
-            data.add(new TestCase("Is Not: If GB set and visitor's location is US , evaluate to true.")
-                         .withComparison(IS_NOT)
-                         .withReferrer("GB")
-                         .withMockReferrer("US")
-                         .shouldBeTrue()
+            data.add(new TestCase("Is Not: If google.com set and visitor's referring URL is yahoo.com , evaluate to true.")
+                        .withComparison(IS_NOT)
+                        .withReferrer("google.com")
+                        .withMockReferrer("yahoo.com")
+                        .shouldBeTrue()
             );
 
-            data.add(new TestCase("Is Not: If GB set and visitor's location is GB , evaluate to false.")
+            data.add(new TestCase("Is Not: If google.com set and visitor's referrer URL is google , evaluate to false.")
                          .withComparison(IS_NOT)
-                         .withReferrer("GB")
-                         .withMockReferrer("GB")
+                         .withReferrer("google.com")
+                         .withMockReferrer("google.com")
                          .shouldBeFalse()
             );
 
@@ -103,18 +97,18 @@ public class UsersReferrerURLConditionletTest {
         return aCase.conditionlet.evaluate(aCase.request, aCase.response, aCase.conditionlet.instanceFrom(aCase.params));
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testEvaluatesToFalseWhenArgumentsAreEmptyOrMissing() throws Exception {
         new TestCase("").conditionlet.instanceFrom(null);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testCannotValidateWhenComparisonIsNull() throws Exception {
-        TestCase aCase = new TestCase("Empty parameter list should throw NPE.").withComparison(null);
+        TestCase aCase = new TestCase("Empty parameter list should throw IAE.").withComparison(null);
         new TestCase("").conditionlet.instanceFrom(aCase.params);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expectedExceptions = IllegalStateException.class)
     public void testCannotValidateWhenComparisonNotSet() throws Exception {
         new TestCase("").conditionlet.instanceFrom(Maps.newHashMap());
     }
@@ -124,8 +118,8 @@ public class UsersReferrerURLConditionletTest {
     public void testUnsupportedComparisonThrowsException() throws Exception {
         TestCase aCase = new TestCase("Exists: Unsupported comparison should throw.")
             .withComparison(EXISTS)
-            .withReferrer("GB")
-            .withMockReferrer("GB")
+            .withReferrer("google.com")
+            .withMockReferrer("google.com")
             .shouldBeFalse();
         runCase(aCase);
     }
@@ -133,9 +127,10 @@ public class UsersReferrerURLConditionletTest {
     private class TestCase {
 
         public final UsersReferringURLConditionlet conditionlet;
-        public final LanguageWebAPI langApi = mock(LanguageWebAPI.class);
-        private final HttpServletRequest request;
+
+        private final HttpServletRequest request ;
         private final HttpServletResponse response;
+
         private final Map<String, ParameterModel> params = Maps.newLinkedHashMap();
         private final String testDescription;
 
@@ -145,7 +140,7 @@ public class UsersReferrerURLConditionletTest {
             this.testDescription = testDescription;
             this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
-            conditionlet = new UsersReferringURLConditionlet(langApi);
+            conditionlet = new UsersReferringURLConditionlet();
         }
 
         TestCase shouldBeTrue() {
@@ -164,14 +159,12 @@ public class UsersReferrerURLConditionletTest {
         }
 
         TestCase withMockReferrer(String mockReferrer) throws IOException, GeoIp2Exception {
-            Language mockLang = mock(Language.class);
-            when(mockLang.getLanguageCode()).thenReturn(mockReferrer);
-            when(langApi.getLanguage(request)).thenReturn(mockLang);
+            when(request.getHeader("referer")).thenReturn(mockReferrer);
             return this;
         }
 
         TestCase withReferrer(String referrer) {
-            params.put(LANGUAGE_KEY, new ParameterModel(LANGUAGE_KEY, referrer));
+            params.put(REFERRING_URL_KEY, new ParameterModel(REFERRING_URL_KEY, referrer));
             return this;
         }
 
