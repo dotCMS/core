@@ -435,12 +435,7 @@ var editButtonRow="editContentletButtonRow";
 	
 	<!-- -Rules -->
    	<%if(InodeUtils.isSet(contentlet.getInode()) && contentlet.getStructure()!=null ){ %>
-   		<%if(contentlet.getStructure().isPersona()) {%>
-			<div id="rulez" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Trigger When") %>" onShow="refreshRulesCp()">
-				<div id="contentletRulezDiv" style="height:100%;">
-				</div>
-			</div>
-		<%}else if(contentlet.isHost() || contentlet.getStructure().isHTMLPageAsset()){ %>
+   		<%if(contentlet.isHost() || contentlet.getStructure().isHTMLPageAsset()){ %>
 			<div id="rulez" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Rules") %>" onShow="refreshRulesCp()">
 				<div id="contentletRulezDiv" style="height:100%;">
 				</div>

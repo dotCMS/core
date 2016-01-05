@@ -128,7 +128,9 @@
     }
     
     function changePersona(){
-    	//alert(dijit.byId("personaSelector").getValue());
+		if(dijit.byId("personaSelector")==undefined){
+			return;
+		}
     	personaId=dijit.byId("personaSelector").getValue();
     	getPersonaImage(personaId);
 		changeUrl();
@@ -379,6 +381,9 @@
     
     
     function getPersonaImage(id){
+		if(document.getElementById("personaImage")==undefined){
+			return;
+		}
    		if(!id){
 			document.getElementById("personaImage").style.backgroundImage="url(/html/images/persona/default-persona.png)";
    			document.getElementById("personaImage").src="/html/images/shim.gif";
@@ -545,38 +550,38 @@
 </div>
 
 
-
-## Personas
-<div id="personaInfo" style="text-align:center;border:0px;margin:10px 0px 0px 0px;visibility:none;">
-	<div style="padding:0px 0px 10px 0px;">
-		$languagewebapi.getFromUserLanguage("modes.persona.select.persona"):
+#if($canViewDiff)
+	## Personas
+	<div id="personaInfo" style="text-align:center;border:0px;margin:10px 0px 0px 0px;visibility:none;">
+		<div style="padding:0px 0px 10px 0px;">
+			$languagewebapi.getFromUserLanguage("modes.persona.select.persona"):
+		</div>
+		<div id="personaImageDiv">
+			<img id="personaImage" 
+			#if($visitor.persona.identifier) 
+				src="/contentAsset/image/${visitor.persona.identifier}/photo/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/photo" 
+			#else 
+				src="/html/images/shim.gif" 
+			#end 
+			style="border-radius:50%; width:100px;height:100px; border:0px;background:no-repeat center" /> 
+		</div>
 	</div>
-	<div id="personaImageDiv">
-		<img id="personaImage" 
-		#if($visitor.persona.identifier) 
-			src="/contentAsset/image/${visitor.persona.identifier}/photo/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/photo" 
-		#else 
-			src="/html/images/shim.gif" 
-		#end 
-		style="border-radius:50%; width:100px;height:100px; border:0px;background:no-repeat center" /> 
+
+	<div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
+	
+		<select name="personaSelector" id="personaSelector" dojoType="dijit.form.FilteringSelect" onchange="changePersona">
+			<option value="0">$languagewebapi.getFromUserLanguage("modes.persona.no.persona")</option>
+			#foreach($persona in $personatool.personas)
+				<option value="$persona.identifier" #if($visitor.persona.identifier ==$persona.identifier ) selected #end  >$persona.name</option>
+			#end
+		</select>
 	</div>
-</div>
-
-<div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
-
-	<select name="personaSelector" id="personaSelector" dojoType="dijit.form.FilteringSelect" onchange="changePersona">
-		<option value="0">$languagewebapi.getFromUserLanguage("modes.persona.no.persona")</option>
-		#foreach($persona in $personatool.personas)
-			<option value="$persona.identifier" #if($visitor.persona.identifier ==$persona.identifier ) selected #end  >$persona.name</option>
-		#end
-	</select>
-</div>
-
+#end
 
 
 <!-- Start Languages -->
     #if($availablePageLangs.size() > 0)
-        <div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
+        <div class="lang" style="border-top:0px;padding-left:0px;margin-left:0px;text-align:center;">
 
             <div id="combo_zone2">
                 <input id="language_id"/>
