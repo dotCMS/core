@@ -125,19 +125,6 @@ public class HttpRequestDataUtil {
 	}
 
 	/**
-	 * Returns the referrer URL where the specified {@link HttpServletRequest}
-	 * was generated from.
-	 * 
-	 * @param request
-	 *            - The {@link HttpServletRequest} object.
-	 * @return The referrer URL.
-	 */
-	public static String getReferrerUrl(HttpServletRequest request) {
-		String referrerUrl = request.getHeader("referer");
-		return referrerUrl;
-	}
-
-	/**
 	 * Returns the decoded URI of the request.
 	 * 
 	 * @param request
