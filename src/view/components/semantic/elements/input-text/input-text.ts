@@ -1,17 +1,22 @@
-import { NgClass, NgIf, Directive, Component, View, TemplateRef,
+import {bootstrap} from 'angular2/bootstrap'
+import {Attribute,
+    ChangeDetectionStrategy,
+    Component,
+    Directive,
+    ElementRef,
+    EventEmitter,
+    forwardRef,
     Input,
     Output,
-    Validators,
-    EventEmitter,
-    ElementRef,
-    ChangeDetectionStrategy,
+    Provider,
     Renderer,
     Self,
-    forwardRef,
-    Provider,
     SimpleChange,
-    NG_VALUE_ACCESSOR,
-    ControlValueAccessor} from 'angular2/angular2';
+    TemplateRef,
+    View
+} from 'angular2/core'
+import {Validators, NG_VALUE_ACCESSOR, ControlValueAccessor, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
+import {HTTP_PROVIDERS} from 'angular2/http'
 
 import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
 
@@ -24,7 +29,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
  */
 @Component({
   selector: 'cw-input-text',
-  host: { 'role': 'text' },
+  host: {'role': 'text'},
   changeDetection: ChangeDetectionStrategy.OnPush,
   bindings: [CW_TEXT_VALUE_ACCESSOR]
 
@@ -43,38 +48,39 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
   <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
   `,
-  directives: [NgClass, NgIf]
+  directives: [CORE_DIRECTIVES]
 })
-export class InputText implements ControlValueAccessor{
+export class InputText implements ControlValueAccessor {
 
   onChange = (_) => {
     this.change.emit(_)
   };
-  onTouched = () => {};
+  onTouched = () => {
+  };
 
-  @Input()  name:string=""
-  @Input()  value:string=""
-  @Input()  placeholder:string=""
+  @Input()  name:string = ""
+  @Input()  value:string = ""
+  @Input()  placeholder:string = ""
   @Input()  icon:string
-  @Input()  disabled:boolean=false
-  @Input()  focused:boolean=false
-  @Input()  required:boolean=false
+  @Input()  disabled:boolean = false
+  @Input()  focused:boolean = false
+  @Input()  required:boolean = false
   @Input()  errorMessage:string
   @Output() change:EventEmitter<any>
   @Output() blur:EventEmitter<any>
   @Output() focus:EventEmitter<any>
 
 
-  constructor(private _renderer: Renderer, private _elementRef: ElementRef) {
+  constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
     this.change = new EventEmitter()
     this.blur = new EventEmitter()
     this.focus = new EventEmitter()
   }
 
-  ngOnChanges(change){
-    if(change.focused){
+  ngOnChanges(change) {
+    if (change.focused) {
       let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
-      if(f) {
+      if (f) {
         let el = this._elementRef.nativeElement
         el.children[0].children[0].focus()
       }
@@ -82,28 +88,29 @@ export class InputText implements ControlValueAccessor{
     }
   }
 
-  onBlur(value){
+  onBlur(value) {
     this.onTouched()
     this.blur.emit(value)
   }
 
-  onFocus(value){
+  onFocus(value) {
     this.focus.emit(value)
   }
 
-  writeValue(value: string): void {
-    this.value  = isBlank(value) ? '' : value
-    console.log("writing value: ", value,  " ==> ", this.value)
+  writeValue(value:string):void {
+    this.value = isBlank(value) ? '' : value
+    console.log("writing value: ", value, " ==> ", this.value)
   }
 
-  registerOnChange(fn: (_: any) => void): void {
-    this.onChange = (_: any) => {
+  registerOnChange(fn:(_:any) => void):void {
+    this.onChange = (_:any) => {
       console.log("Value changed: ", _)
       fn(_)
       this.change.emit(_)
     }
   }
-  registerOnTouched(fn: () => void): void {
+
+  registerOnTouched(fn:() => void):void {
     this.onTouched = () => {
       console.log("Touched")
       fn()

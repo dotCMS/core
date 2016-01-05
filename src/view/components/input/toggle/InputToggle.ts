@@ -1,4 +1,4 @@
-import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/angular2';
+import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/core';
 
 @Component({
   selector: 'cw-toggle-input'

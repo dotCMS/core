@@ -1,8 +1,7 @@
-import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/angular2';
-import { Host, AfterViewInit, AfterViewChecked, OnDestroy} from 'angular2/angular2';
-import { CORE_DIRECTIVES } from 'angular2/angular2';
-import { Output, Input, ChangeDetectionStrategy } from 'angular2/angular2';
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/core';
+import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
+import { CORE_DIRECTIVES,  } from 'angular2/common';
+import {Observable} from 'rxjs/Rx'
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";

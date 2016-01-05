@@ -1,5 +1,5 @@
-
-import {bootstrap, Component, View, Attribute} from 'angular2/angular2';
+import {bootstrap} from 'angular2/bootstrap';
+import {Component, View, Attribute} from 'angular2/core';
 import {ServersideAction} from './serverside-action';
 
 @Component({

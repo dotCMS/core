@@ -1,4 +1,4 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
+import {Inject, EventEmitter} from 'angular2/core';
 
 import {EntitySnapshot} from "../../../persistence/EntityBase";
 import {EntityMeta} from "../../../persistence/EntityBase";

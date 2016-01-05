@@ -1,7 +1,6 @@
-import {Attribute, Component, Directive, View, EventEmitter} from 'angular2/angular2';
-import {Input, Output} from 'angular2/angular2';
-import {CORE_DIRECTIVES} from 'angular2/angular2';
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import {CORE_DIRECTIVES} from 'angular2/common';
+import {Observable} from 'rxjs/Rx'
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";

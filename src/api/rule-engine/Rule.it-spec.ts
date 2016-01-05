@@ -1,7 +1,7 @@
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
 import {ConditionService, ConditionModel} from '../../api/rule-engine/Condition';
 
-import {Injector, Provider} from 'angular2/angular2';
+import {Injector, Provider} from 'angular2/core';
 
 import {DataStore} from '../../api/persistence/DataStore'
 import {LocalDataStore} from '../../api/persistence/LocalDataStore';

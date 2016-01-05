@@ -1,7 +1,7 @@
-import {Component, Directive, View, ElementRef, Inject, Input, Output, EventEmitter} from 'angular2/angular2';
-import {CORE_DIRECTIVES} from 'angular2/angular2';
+import { Component, Directive, View, Inject, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
+import {CORE_DIRECTIVES} from 'angular2/common';
 
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import {Observable} from 'rxjs/Rx'
 
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';

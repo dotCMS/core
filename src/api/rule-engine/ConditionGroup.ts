@@ -1,5 +1,5 @@
-import {Inject, EventEmitter} from 'angular2/angular2';
-import {Observable, ConnectableObservable} from 'rxjs/Rx.KitchenSink'
+import {Inject, EventEmitter} from 'angular2/core';
+import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
 
 import {RuleModel} from "./Rule";

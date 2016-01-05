@@ -1,4 +1,6 @@
-import {bootstrap, Provider, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
+import {bootstrap} from 'angular2/bootstrap'
+import {Attribute, Component, View, Provider} from 'angular2/core'
+import {CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
 import {HTTP_PROVIDERS} from 'angular2/http'
 
 import {ServersideCondition} from './serverside-condition';

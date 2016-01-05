@@ -1,5 +1,5 @@
-import {Inject, EventEmitter, Injectable} from 'angular2/angular2';
-import {Observable, ConnectableObservable} from 'rxjs/Rx.KitchenSink'
+import {Inject, EventEmitter, Injectable} from 'angular2/core';
+import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwModel, CwI18nModel} from "../util/CwModel";
