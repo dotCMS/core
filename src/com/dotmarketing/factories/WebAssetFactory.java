@@ -890,7 +890,7 @@ public class WebAssetFactory {
 	@SuppressWarnings("unchecked")
 	public static List<WebAsset> getAssetsWorkingWithPermission(Class c, int limit,
 			int offset, String orderby, String parent, User user) {
-		orderby = SQLUtil.sanitizeParameter(orderby);
+		orderby = SQLUtil.sanitizeSortBy(orderby);
 		parent = SQLUtil.sanitizeParameter(parent);
 
 		HibernateUtil dh = new HibernateUtil(c);
@@ -2033,7 +2033,7 @@ public class WebAssetFactory {
 
 		parent = SQLUtil.sanitizeParameter(parent);
 		query = SQLUtil.sanitizeParameter(query);
-		orderBy = SQLUtil.sanitizeParameter(orderBy);
+		orderBy = SQLUtil.sanitizeSortBy(orderBy);
 
 		AssetType type = AssetType.getObject(tableName.toUpperCase());
 		java.util.List<? extends Permissionable> elements = null;

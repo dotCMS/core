@@ -126,7 +126,7 @@ public class TagAPIImpl implements TagAPI{
 	public java.util.List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count) {
         try {
 
-			sort = SQLUtil.sanitizeParameter(sort);
+			sort = SQLUtil.sanitizeSortBy(sort);
 
         	HibernateUtil dh = new HibernateUtil(Tag.class);
         	List list = new java.util.ArrayList();
