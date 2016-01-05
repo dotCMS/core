@@ -1,4 +1,4 @@
-import {Injector, Provider} from 'angular2/angular2';
+import {Injector, Provider} from 'angular2/core';
 
 
 import {I18nService} from "../system/locale/I18n";

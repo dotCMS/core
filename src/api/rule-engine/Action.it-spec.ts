@@ -1,8 +1,8 @@
-import * as Rx from 'rxjs/Rx.KitchenSink'
+import * as Rx from 'rxjs/Rx'
 
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
 
-import {Injector, Provider} from 'angular2/angular2';
+import {Injector, Provider} from 'angular2/core';
 
 import {LocalDataStore} from "../../api/persistence/LocalDataStore";
 import {RestDataStore} from "../../api/persistence/RestDataStore";

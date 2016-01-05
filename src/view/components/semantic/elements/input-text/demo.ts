@@ -1,4 +1,6 @@
-import {bootstrap, Attribute, Component, View, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/angular2'
+import {bootstrap} from 'angular2/bootstrap'
+import {Attribute, Component, View} from 'angular2/core'
+import {CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
 import {InputText} from './input-text'
 
 export class Hero {

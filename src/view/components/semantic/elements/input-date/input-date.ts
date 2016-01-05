@@ -1,4 +1,5 @@
-import { NgClass, NgIf, Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/angular2';
+import { Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/core';
+import { CORE_DIRECTIVES } from 'angular2/common';
 
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
@@ -84,7 +85,7 @@ export class InputDateModel {
 </div>
 
   `,
-  directives: [NgClass, NgIf]
+  directives: [CORE_DIRECTIVES]
 })
 export class InputDate {
 

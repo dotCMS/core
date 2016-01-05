@@ -1,6 +1,5 @@
-import {Component, View, Attribute, EventEmitter, NgFor, NgIf} from 'angular2/angular2';
-import {CORE_DIRECTIVES} from 'angular2/angular2';
-import {Input, Output} from 'angular2/angular2';
+import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import {CORE_DIRECTIVES} from 'angular2/common';
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {ActionModel} from "../../../../../api/rule-engine/Action";

@@ -1,6 +1,6 @@
-import {Injectable} from 'angular2/angular2';
+import {Injectable} from 'angular2/core';
 import {Http, HTTP_PROVIDERS, RequestOptions, Headers} from 'angular2/http';
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../../persistence/ApiRoot";
 import {Verify} from "../../validation/Verify";

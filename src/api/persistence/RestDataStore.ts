@@ -1,4 +1,4 @@
-import {Inject} from 'angular2/angular2';
+import {Inject} from 'angular2/core';
 import {Check} from '../../api/validation/Check'
 import {DataStore} from "../../api/persistence/DataStore";
 import 'whatwg-fetch';
@@ -16,7 +16,7 @@ export class RestDataStore extends DataStore {
   setItem(path:string, entity:any, isNew:boolean = false) {
     path = this.checkPath(path)
     entity = Check.exists(entity, "Cannot save empty values. Did you mean to remove?")
-    return this.remoteSet(path, entity, isNew).then((response) => {
+    return this.remoteSet(path, entity, isNew).then((response:any) => {
       if( response.isError){
         response.entity = entity // restore the original, entity
       }

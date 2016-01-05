@@ -1,6 +1,7 @@
-import {Component,Input, Output, View, Attribute, EventEmitter,CORE_DIRECTIVES} from 'angular2/angular2';
+import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
+import {CORE_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import {Observable} from 'rxjs/Rx'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";

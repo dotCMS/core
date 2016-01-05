@@ -1,7 +1,7 @@
-import {Component, Directive, View, Inject} from 'angular2/angular2';
-import {Input, Output, EventEmitter} from 'angular2/angular2';
-import {CORE_DIRECTIVES} from 'angular2/angular2';
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import {CORE_DIRECTIVES} from 'angular2/common';
+
+import {Observable} from 'rxjs/Rx'
 
 import {ActionModel} from "../../../api/rule-engine/Action";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";

@@ -1,6 +1,7 @@
-import {bootstrap, Attribute, Component, View} from 'angular2/angular2'
+import {bootstrap} from 'angular2/platform/browser'
+import {Attribute, Component, View} from 'angular2/core'
 import {Dropdown, InputOption} from './dropdown'
-import {Observable} from 'rxjs/Rx.KitchenSink'
+import {Observable} from 'rxjs/Rx'
 
 @Component({
   selector: 'demo'
@@ -55,7 +56,7 @@ import {Observable} from 'rxjs/Rx.KitchenSink'
 </div>
   `
 })
-class App {
+export class App {
   demo2:any
   demo3:any
   demo4:any
@@ -153,16 +154,4 @@ class App {
     console.log(dd)
   }
 
-}
-
-
-export function main() {
-  let app = bootstrap(App)
-  app.then((appRef) => {
-    console.log("Bootstrapped App: ", appRef)
-  }).catch((e) => {
-    console.log("Error bootstrapping app: ", e)
-    throw e;
-  });
-  return app
 }
