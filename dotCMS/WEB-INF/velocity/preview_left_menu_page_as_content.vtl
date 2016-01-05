@@ -130,6 +130,7 @@
     function changePersona(){
     	//alert(dijit.byId("personaSelector").getValue());
     	personaId=dijit.byId("personaSelector").getValue();
+    	getPersonaImage(personaId);
 		changeUrl();
     }
     
@@ -153,7 +154,7 @@
     		newUrl+="&previewPage=2"
     	}
     	if(_lastUrl!=newUrl){
-	    	console.log("changing url:" + newUrl);
+	    	//console.log("changing url:" + newUrl);
 	    	_lastUrl=newUrl;
 	    	window.top.frameMain.location  = newUrl;
    	 	}
@@ -376,6 +377,36 @@
     	
     }
     
+    
+    function getPersonaImage(id){
+   		if(!id){
+			document.getElementById("personaImage").style.backgroundImage="url(/html/images/persona/default-persona.png)";
+   			document.getElementById("personaImage").src="/html/images/shim.gif";
+   			document.getElementById("personaImage").style.backgroundColor="#fff";
+   			return;
+   		}
+
+		var imageUrl = "/contentAsset/image/" + id + "/photo/filter/Thumbnail/thumbnail_w/80/thumbnail_h/80/?r=" +new Date().getTime();
+		var newImage = new Image();
+						
+		newImage.onload = function(){
+			document.getElementById("personaImage").src= this.src;
+		}
+		newImage.onerror = function(){
+			console.log(document.getElementById("personaImage").style);
+			document.getElementById("personaImage").src="/html/images/shim.gif";
+			document.getElementById("personaImage").style.backgroundImage="url(/html/images/persona/default-persona.png)";
+			document.getElementById("personaImage").style.backgroundColor="#fff";
+		}
+		newImage.src=imageUrl;
+
+
+    }
+    
+    
+    
+    
+    
     function toggleLock(lock){
 
     	locked = lock;
@@ -424,7 +455,7 @@
 		});
 		
 		toggleLock(locked);
-		
+		getPersonaImage('$!visitor.persona.identifier');
 
     })
     
@@ -495,12 +526,8 @@
 				</a>
 			</div>
 		#end
-		
-		
-		
-    	<div class="pageTools commonPageTools"></div>
-        
 
+    	<div class="pageTools commonPageTools"></div>
     </div>
 <!-- /Preview Mode -->
 
@@ -520,11 +547,23 @@
 
 
 ## Personas
+<div id="personaInfo" style="text-align:center;border:0px;margin:10px 0px 0px 0px;visibility:none;">
+	<div style="padding:0px 0px 10px 0px;">
+		$languagewebapi.getFromUserLanguage("modes.persona.select.persona"):
+	</div>
+	<div id="personaImageDiv">
+		<img id="personaImage" 
+		#if($visitor.persona.identifier) 
+			src="/contentAsset/image/${visitor.persona.identifier}/photo/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100/photo" 
+		#else 
+			src="/html/images/shim.gif" 
+		#end 
+		style="border-radius:50%; width:100px;height:100px; border:0px;background:no-repeat center" /> 
+	</div>
+</div>
 
+<div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
 
-<div class="clear"></div>
-<div class="lang">
-$languagewebapi.getFromUserLanguage("modes.persona.select.persona")
 	<select name="personaSelector" id="personaSelector" dojoType="dijit.form.FilteringSelect" onchange="changePersona">
 		<option value="0">$languagewebapi.getFromUserLanguage("modes.persona.no.persona")</option>
 		#foreach($persona in $personatool.personas)
@@ -534,12 +573,10 @@ $languagewebapi.getFromUserLanguage("modes.persona.select.persona")
 </div>
 
 
-<!--  a href="javascript:refreshIfrome()">refreshActionTab</a>-->
-<div class="clear"></div>
 
 <!-- Start Languages -->
     #if($availablePageLangs.size() > 0)
-        <div class="lang">
+        <div class="lang" style="border-top:0px;padding-left:0px;text-align:center;">
 
             <div id="combo_zone2">
                 <input id="language_id"/>
