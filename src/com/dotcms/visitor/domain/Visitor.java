@@ -105,7 +105,9 @@ public class Visitor implements Serializable {
     public boolean isNewVisitor() {
         return newVisitor;
     }
-
+    public boolean getNewVisitor() {
+        return newVisitor;
+    }
     public void setNewVisitor(boolean newVisitor) {
         this.newVisitor = newVisitor;
     }

@@ -85,6 +85,9 @@
 	var language="$language";
 	var personaId="$!visitor.persona.identifier";
 	var state="live";
+	var locked = $isLocked;
+	
+	
 	function setKeepAlive(){
 		var myId=document.getElementById("dot_keep_alive_hidden_iframe");
 		myId.src ="/html/common/keep_alive.jsp?r=" + Math.random();
@@ -113,6 +116,8 @@
     }
 
     function livePage(){
+		console.log("livePage");
+		console.log("locked:" + locked);
 		state="live";
 		changeUrl();
     }
@@ -130,36 +135,59 @@
     
     
 
+    var _lastUrl;
     function changeUrl(){
     	
-    	var newLocation=""; 
-    	newLocation+="${VTLSERVLET_URI}?mainFrame=1&host_id=${host.identifier}";
-    	newLocation+="&com.dotmarketing.htmlpage.language="+language ;
-    	newLocation+="&com.dotmarketing.persona.id="+personaId ;
+    	var newUrl=""; 
+    	newUrl+="${VTLSERVLET_URI}?mainFrame=1&host_id=${host.identifier}";
+    	newUrl+="&com.dotmarketing.htmlpage.language="+language ;
+    	newUrl+="&com.dotmarketing.persona.id="+personaId ;
 
     	if(state == "live"){
-    		newLocation+="&livePage=1"
+    		newUrl+="&livePage=1"
     	}
     	else if(state=="editing"){
-    		newLocation+="&previewPage=1"
+    		newUrl+="&previewPage=1"
     	}
     	else if(state=="preview"){
-    		newLocation+="&previewPage=2"
-    		previewPage
+    		newUrl+="&previewPage=2"
     	}
-    	//alert(newLocation);
-    	window.top.frameMain.location  = newLocation;
+    	if(_lastUrl!=newUrl){
+	    	console.log("changing url:" + newUrl);
+	    	_lastUrl=newUrl;
+	    	window.top.frameMain.location  = newUrl;
+   	 	}
     }
     
     
-    
+
 
     function previewPage(){
+		//console.log("previewPage");
+		//console.log("locked:" + locked);
     	state="preview";
+    	// hide editing, show preview
+    	if(locked){
+    		dojo.byId("previewModeTools").innerHTML=dojo.byId("lockedPageToolsTmpl").innerHTML;
+    		dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"inline-block"});
+    	}
+    	else{
+        	var html = dojo.byId("unLockedPageToolsTmpl").innerHTML;
+			dojo.byId("previewModeTools").innerHTML=dojo.byId("unLockedPageToolsTmpl").innerHTML;
+			dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"none"});
+    	}
+		
+
     	changeUrl();
     }
 
     function editingPage(){
+		//console.log("editingPage");
+		//console.log("locked:" + locked);
+    	// hide preview, show editing
+		dojo.byId("lockedPageTools").innerHTML=dojo.byId("lockedPageToolsTmpl").innerHTML;
+		dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"inline-block"});
+    	
     	state="editing";
     	changeUrl();
     }
@@ -184,7 +212,7 @@
         document.getElementById('submitParent').submit();
     }
 
-    function editPage(){
+    function editPageProperties(){
         document.getElementById('cmd').value="editHTMLPage";
         document.getElementById('submitParent').submit();
     }
@@ -256,15 +284,48 @@
             parent.resetFrameWidth();
         }
     }
+    
+    
     function viewDiff(){
 		var varHTMLPage = document.getElementById("htmlPage").value;
-		
+		var diffUrl;
         #if($UtilMethods.isSet($request.getAttribute('com.dotmarketing.wiki.contentlet')))
-            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
+        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage + "&contentId=$request.getAttribute('com.dotmarketing.wiki.contentlet')";
         #else
-            parent.frameMain.location="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage;
+        	diffUrl="/html/portlet/ext/htmlpages/view_live_working_diff.jsp?id=" + varHTMLPage;
         #end
+        var nothingChangedMsg='$languagewebapi.getFromUserLanguage("nothing-changed")';
+        
+    	var xhrArgs = {
+    			url : diffUrl ,
+    			handleAs : "text",
 
+    			sync: false,
+    			load : function(data) {
+    				var html = data.trim();
+    				if(html.length<50 || html == nothingChangedMsg){
+    			    	parent.frameMenu.document.body.style.cursor  = 'default';
+    			    	parent.frameMain.document.body.style.cursor  = 'default';
+    					alert(nothingChangedMsg);
+    					
+    				}
+    				else{
+    					var  frameDocument=  parent.frameMain.document;
+    					frameDocument.write(html);
+    			    	parent.frameMenu.document.body.style.cursor  = 'default';
+    			    	parent.frameMain.document.body.style.cursor  = 'default';
+    			    	_lastUrl=diffUrl;
+    				}
+    			},
+    			error : function(error) {
+    				alert(error);
+    				console.log(error);
+    			}
+    		}
+    	
+    	parent.frameMenu.document.body.style.cursor  = 'progress';
+    	parent.frameMain.document.body.style.cursor  = 'progress';
+    	var deferred = dojo.xhrGet(xhrArgs);
     }
     
     function fireLockPage(){
@@ -280,7 +341,7 @@
     			sync: false,
     			load : function(data) {
 
-    				editingPage();
+    				
     				toggleLock(true);
     			},
     			error : function(error) {
@@ -303,7 +364,6 @@
     		    },
     			sync: false,
     			load : function(data) {
-    				previewPage();
     				toggleLock(false);
     			},
     			error : function(error) {
@@ -318,23 +378,36 @@
     
     function toggleLock(lock){
 
-    	if(lock && $iCanLock){
-    		dojo.byId("previewModeTools").innerHTML=dojo.byId("lockedPageToolsTmpl").innerHTML;
-    		dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"inline-block"});
+    	locked = lock;
+		//console.log("toggleLock");
+		//console.log("locked:" + locked);
+    	if(locked && $iCanLock){
+
 			var edit = dijit.byId("editModeTab");
 			var tabs = dijit.byId("mainTabContainer");
-			if(!edit.get('selected')){
+			if(tabs.selectedChildWidget.id==edit.id){
+				editingPage();
+			}
+			else{
 				tabs.selectChild(edit);
 			}
+			
+
 
     	}else{
-    		dojo.byId("previewModeTools").innerHTML=dojo.byId("unLockedPageToolsTmpl").innerHTML;
-    		dojo.style(dijit.byId("editModeTab").controlButton.domNode,{display:"none"});
+
 			var preview = dijit.byId("previewModeTab");
 			var tabs = dijit.byId("mainTabContainer");
-			if(!preview.get('selected')){
+			
+			//console.log(tabs.selectedChildWidget.id)
+			//console.log(preview.id)
+			if(tabs.selectedChildWidget.id==preview.id){
+				previewPage();
+			}
+			else{
 				tabs.selectChild(preview);
 			}
+
     	}
     }
 
@@ -343,18 +416,14 @@
     
     dojo.ready(function(){
 
-    	var html = dojo.byId("lockedPageToolsTmpl").innerHTML;
     	
-		dojo.byId("lockedPageTools").innerHTML = html;
-    	
-
     	
 		html = dojo.byId("commonPageToolsTmpl").innerHTML;
 		dojo.query(".commonPageTools").forEach(function(node, index, arr){
 		    node.innerHTML = html
 		});
 		
-		toggleLock($isLocked);
+		toggleLock(locked);
 		
 
     })
@@ -363,7 +432,7 @@
     
     
     dojo.subscribe("mainTabContainer-selectChild", function(child){
-
+		//console.log("tab selected child:" + child.id);
         if("previewModeTab" == child.id){
             previewPage();
         }
@@ -604,7 +673,7 @@ $languagewebapi.getFromUserLanguage("modes.persona.select.persona")
 
 
 	<div id="commonPageToolsTmpl" style="display:none">
-		<a href="javascript: editPage();">
+		<a href="javascript: editPageProperties();">
 			<span class="pagePropIcon"></span> $languagewebapi.getFromUserLanguage("modes.Page-Properties")
 		</a>
 		<a href="javascript: viewStatistics();">
