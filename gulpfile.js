@@ -4,6 +4,7 @@
 var glob = require('glob')
 var fs = require('fs')
 var gulp = require('gulp')
+var rename = require('gulp-rename')
 var del = require('del')
 var minimist = require('minimist')
 var replace = require('gulp-replace')
@@ -29,16 +30,24 @@ config.proxyHost = config.proxyProtocol + '://' + config.proxyHostname + ':' + c
 
 
 var minimistCliOpts = {
-  string: ['open'],
+  string: ['open', 'env'],
   alias: {
     'open': ['o']
   },
   default: {
     open: false,
-    env: process.env.NODE_ENV || 'production'
+    env: process.env.NODE_ENV || 'dev'
   }
 };
 config.args = minimist(process.argv.slice(2), minimistCliOpts)
+
+if(config.args.env){
+  if(config.args.env.startsWith('prod')) {
+    config.buildTarget = 'prod'
+  } else {
+    config.buildTarget = 'dev'
+  }
+}
 
 var typescriptProject = ts.createProject(config.srcDir + '/tsconfig.json');
 
@@ -56,13 +65,71 @@ var project = {
     cb()
   },
 
-  copyNodeFiles: function(cb){
-    var done = project.callbackOnCount(2, cb)
+  copyNodeFiles: function (cb) {
 
-    gulp.src('./node_modules/rxjs/**/*')
-        .pipe(gulp.dest(config.buildDir + '/thirdparty/rxjs/')).on('finish', done);
-    gulp.src('./node_modules/angular2/bundles/*.*')
-        .pipe(gulp.dest(config.buildDir + '/thirdparty/angular2/bundles/')).on('finish', done);
+    var libs =
+    {
+      'angular2/bundles/': [
+        { dev: 'angular2-polyfills.js', prod: 'angular2-polyfills.min.js', out: 'angular2-polyfills.js' },
+        { dev: 'angular2.dev.js', prod: 'angular2.min.js', out: 'angular2.js' },
+        { dev: 'http.dev.js', prod: 'http.min.js', out: 'http.js' },
+        { dev: 'router.dev.js', prod: 'router.min.js', out: 'router.js' }
+      ],
+      'rxjs/bundles/': [
+        { dev: 'Rx.js', prod: 'Rx.min.js', out: 'Rx.js' },
+        { dev: 'Rx.min.js.map', prod: null, out: 'Rx.min.js.map' }
+      ],
+      'angular-material/': [
+        { dev: 'angular-material.layouts.css', prod: 'angular-material.layouts.min.css', out: 'angular-material.layouts.css' }
+      ],
+      'core-js/client/': [
+        { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
+      ],
+      'jquery/dist/': [
+        { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
+        { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
+      ],
+      'systemjs/dist/': [
+        { dev: 'system.src.js', prod: 'system.js', out: 'system.js' },
+        { dev: 'system.js.map', prod: null, out: 'system.js.map' }
+      ],
+      'whatwg-fetch/': [
+        { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }
+      ]
+    }
+
+    var baseOutPath =  config.buildDir + '/thirdparty/'
+    var libKeys = Object.keys(libs)
+
+
+    var count = 0
+    libKeys.forEach(function(basePath) {
+      var lib = libs[basePath]
+      lib.forEach(function(libFile){
+        if(libFile[config.buildTarget] != null) {
+          count++
+        }
+      })
+    })
+    var done = project.callbackOnCount(count, cb)
+
+    libKeys.forEach(function(basePath) {
+      var lib = libs[basePath]
+      lib.forEach(function(libFile){
+        var inFile = libFile[config.buildTarget]
+        if(inFile) {
+          gulp.src('./node_modules/' + basePath + libFile[config.buildTarget])
+              .pipe(rename(function (path) {
+                path.basename = libFile.out.substring(0, libFile.out.lastIndexOf("."))
+                return path
+              }))
+              .pipe(gulp.dest(baseOutPath + basePath)).on('finish', done);
+        }
+      })
+
+
+    })
+
   },
 
   /**
@@ -328,13 +395,17 @@ var generatePom = function (baseDeployName, groupId, artifactId, version, packag
     console.log('Wrote pom to ', outPath);
     callback(outPath)
   });
-
 }
+
+gulp.task('set-build-target-to-prod', function(done){
+  config.buildTarget = 'prod'
+  done()
+})
 
 gulp.task('publish-snapshot', ['package'], function (done) {
   var artifactoryUpload = require('gulp-artifactory-upload');
   var getRev = require('git-rev')
-  var config = require('./deploy-config.js').artifactory.snapshot
+  var deployConfig = require('./deploy-config.js').artifactory.snapshot
 
   var mvn = {
     group: 'com.dotcms',
@@ -346,7 +417,7 @@ gulp.task('publish-snapshot', ['package'], function (done) {
     var versionStr = mvn.version + '-SNAPSHOT';
     var baseDeployName = 'core-web-' + versionStr
     var deployName = baseDeployName + ".zip"
-    var artifactoryUrl = config.url + '/' + mvn.group.replace('.', '/') + '/' + mvn.artifactId + '/' + versionStr
+    var artifactoryUrl = deployConfig.url + '/' + mvn.group.replace('.', '/') + '/' + mvn.artifactId + '/' + versionStr
 
     console.log("Deploying artifact: PUT ", artifactoryUrl + '/' + deployName)
 
@@ -362,8 +433,8 @@ gulp.task('publish-snapshot', ['package'], function (done) {
       gulp.src(['./dist/core-web.zip', pomPath])
           .pipe(artifactoryUpload({
             url: artifactoryUrl,
-            username: config.username,
-            password: config.password,
+            username: deployConfig.username,
+            password: deployConfig.password,
             rename: function (filename) {
               return filename.replace(mvn.artifactId, baseDeployName)
             }
@@ -501,10 +572,6 @@ gulp.task('publish', ['publish-github-pages', 'publish-snapshot'], function (don
   done()
 })
 
-//noinspection JSUnusedLocalSymbols
-gulp.task('play', ['serve'], function (done) {
-  console.log("This task will be removed in the next iteration, use 'gulp serve' instead.")
-})
 
 gulp.task('serve', ['start-server', 'watch'], function (done) {
   // if 'done' is not passed in this task will not block.
