@@ -35,6 +35,8 @@ npm install
 npm run itest
 ```
 
+Note that `npm install` will produce a number of 'peer dependency' warnings and errors. Ignore them and move on with life.    
+
 If `npm install` fails, do try at least one additional time. Occasionally npm has issues due to dependency order... or something like that. 
 
 To run for development purposes you should execute the `npm run itest` target. This will open your browser to the integration tests,
