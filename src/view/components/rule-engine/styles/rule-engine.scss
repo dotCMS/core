@@ -110,10 +110,11 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
   }
 
   .cw-action-separator {
-    margin-top: .5em;
-    padding: 0 1em 0 1em;
-    height: 2.5em;
     background-color: $background-secondary-alternate;
+  }
+
+  .cw-condition-group-separator {
+    padding-top:.40em
   }
 
   .cw-add-action-button {
@@ -164,17 +165,19 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
 
   .cw-condition-row, .cw-action-row {
     margin-bottom: .5em;
+    width: 100%;
   }
 
 }
 
 .cw-condition-group-separator, .cw-action-separator {
   margin-top: .5em;
-  margin-bottom: .5em;
   padding: 0 1em 0 1em;
   height: 2.5em;
+  min-height: 2.5em;
   background-color: $background-secondary;
   border-radius: .5em;
+  width:100%;
 }
 
 .cw-rule-group {
