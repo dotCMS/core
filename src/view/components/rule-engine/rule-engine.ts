@@ -18,7 +18,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 })
 @View({
   template: `<div flex layout="column" class="cw-rule-engine">
-  <div flex layout="column" layout-align="start start" class="cw-header">
+  <div flex layout="column" class="cw-header">
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
         <i class="filter icon"></i>

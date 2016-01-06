@@ -37,8 +37,8 @@ var rsrc = {
 })
 @View({
   template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
-  <div flex="grow" layout="row" layout-align="space-between-center" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
-    <div flex="70" layout="row" layout-align="start-center" class="cw-header-right" *ngIf="!hidden">
+  <div flex="grow" layout="row" layout-align="space-between center" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
+    <div flex="70" layout="row" layout-align="start center" class="cw-header-right" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <cw-input-text flex="70"
                      class="cw-rule-name-input"
@@ -64,7 +64,7 @@ var rsrc = {
             icon="{{opt.icon}}"></cw-input-option>
       </cw-input-dropdown>
     </div>
-    <div flex="30" layout="row" layout-align="end-center" class="cw-header-left" *ngIf="!hidden">
+    <div flex="30" layout="row" layout-align="end center" class="cw-header-left" *ngIf="!hidden">
       <cw-toggle-input class="cw-input"
                        [on-text]="rsrc('inputs.onOff.on.label') | async"
                        [off-text]="rsrc('inputs.onOff.off.label') | async"
@@ -88,18 +88,18 @@ var rsrc = {
     <condition-group flex="grow" layout="row" *ngFor="var group of groups; var i=index"
                      [rule]="rule"
                      [group]="group"
-                     [group-index]="i"
+                     [groupIndex]="i"
                      (remove)="onConditionGroupRemove($event)"
                      (change)="onConditionGroupChange($event)"></condition-group>
-    <div flex layout="column" layout-align="center-start" class="cw-action-separator">
+    <div flex layout="column" layout-align="center start" class="cw-action-separator">
       {{rsrc('inputs.action.firesActions') | async}}
     </div>
     <div flex="100" layout="column" class="cw-rule-actions">
-      <div flex layout="row" layout-align="space-between-center" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
-        <div flex layout="row" layout-align="start-center" layout-fill>
+      <div flex layout="row" layout-align="space-between center" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
+        <div flex layout="row" layout-align="start center" layout-fill>
           <rule-action flex [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
         </div>
-        <div flex="0" layout="row" layout-align="end-center">
+        <div flex="0" layout="row" layout-align="end center">
           <div class="cw-spacer cw-add-condition" *ngIf="i !== (actions.length - 1)"></div>
           <div class="cw-btn-group" *ngIf="i === (actions.length - 1)">
             <div class="ui basic icon buttons">

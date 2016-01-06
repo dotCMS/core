@@ -19,8 +19,8 @@ import {I18nService} from "../../../api/system/locale/I18n";
 })
 @View({
   template: `
-<div *ngIf="typeDropdown != null && condition.type != null" flex layout-fill layout="row" layout-align="space-between-center" class="cw-condition cw-entry">
-  <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
+<div *ngIf="typeDropdown != null && condition.type != null" flex layout-fill layout="row" layout-align="space-between center" class="cw-condition cw-entry">
+  <div flex="35" layout="row" layout-align="end center" class="cw-row-start-area">
     <div flex class="cw-btn-group cw-condition-toggle">
       <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
         {{condition.operator}}
@@ -50,7 +50,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
       </cw-serverside-condition>
     </template>
   </div>
-  <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
+  <div flex="5" layout="row" layout-align="end center" class="cw-btn-group">
     <div class="ui basic icon buttons">
       <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
         <i class="trash icon"></i>

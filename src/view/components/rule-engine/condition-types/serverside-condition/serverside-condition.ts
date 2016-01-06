@@ -19,7 +19,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
 })
 @View({
   directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText],
-  template: `<div flex layout-fill layout="row" layout-align="start-center" class="cw-condition-component-body">
+  template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
     <cw-input-dropdown *ngIf="input.type == 'dropdown'"

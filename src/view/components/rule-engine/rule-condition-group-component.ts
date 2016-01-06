@@ -17,12 +17,12 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
   selector: 'condition-group'
 })
 @View({
-  template: `<div flex layout="column" layout-align="center-start" class="cw-rule-group">
-  <div flex="0" layout-fill layout="row" layout-align="start-center">
-    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ngIf="groupIndex === 0">
+  template: `<div flex layout="column" layout-align="center start" class="cw-rule-group">
+  <div flex="0" layout-fill layout="row" layout-align="start center">
+    <div flex layout="row" layout-align="start center" class="cw-condition-group-separator" *ngIf="groupIndex === 0">
       {{rsrc.inputs.group.whenConditions.label}}
     </div>
-    <div flex layout="row" layout-align="start-center" class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
+    <div flex layout="row" layout-align="start center" class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
       <div class="ui basic icon buttons">
         <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
           <div>{{group.operator}}</div>
@@ -31,21 +31,21 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
       <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
     </div>
   </div>
-  <div flex layout-fill layout="column" layout-align="start-start" class="cw-conditions">
+  <div flex layout-fill layout="column" layout-align="start start" class="cw-conditions">
     <div layout-fill
          layout="row"
-         layout-align="space-between-center"
+         layout-align="space-between center"
          class="cw-condition-row"
          (change)="conditionChanged($event.target.value)"
          *ngFor="var condition of conditions; var i=index">
-      <div flex layout-fill layout="row" layout-align="start-center">
+      <div flex layout-fill layout="row" layout-align="start center">
         <rule-condition flex layout-fill layout="row"
                         [condition]="condition"
                         [index]="i"
                         (remove)="onConditionRemove($event)"
                         (change)="onConditionChange($event)"></rule-condition>
       </div>
-      <div flex="0" layout="row" layout-align="end-center">
+      <div flex="0" layout="row" layout-align="end center">
         <div class="cw-btn-group" *ngIf="i === (conditions.length - 1)">
           <div class="ui basic icon buttons">
             <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">

@@ -85,7 +85,7 @@ export class RequestHeaderBlah{}
 //})
 //@View({
 //  directives: [NgFor, Dropdown, InputText],
-//  template: `<div flex layout="row" layout-align="start-center" class="cw-condition-component-body">
+//  template: `<div flex layout="row" layout-align="start center" class="cw-condition-component-body">
 //  <cw-input-dropdown flex="40"
 //                     class="cw-input"
 //                     [model]="headerKeyDropdown"

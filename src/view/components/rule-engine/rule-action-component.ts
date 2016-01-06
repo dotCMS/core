@@ -17,8 +17,8 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
 @Component({
   selector: 'rule-action'})
 @View({
-  template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between-center" class="cw-rule-action cw-entry">
-  <div flex="35" layout="row" layout-align="end-center" class="cw-row-start-area">
+  template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between center" class="cw-rule-action cw-entry">
+  <div flex="35" layout="row" layout-align="end center" class="cw-row-start-area">
     <cw-input-dropdown
         class="cw-type-dropdown"
         [value]="typeDropdown.value"
@@ -39,7 +39,7 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
                            (change)="onActionChange($event)">
   </cw-serverside-condition>
   </div>
-  <div flex="5" layout="row" layout-align="end-center" class="cw-btn-group">
+  <div flex="5" layout="row" layout-align="end center" class="cw-btn-group">
     <div class="ui basic icon buttons">
       <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!action.isPersisted()">
         <i class="trash icon"></i>

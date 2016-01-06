@@ -17,7 +17,7 @@ import {DataStore} from "../../../../../api/persistence/DataStore";
 })
 @View({
   directives: [ServersideCondition],
-  template: `<div flex layout="row" layout-wrap layout-align="start-start" style="height:5em">
+  template: `<div flex layout="row" layout-wrap layout-align="start start" style="height:5em">
   <div flex="100" layout="row" layout-wrap >
     <div flex="100"> Dropdown, Comparisons, Text Input </div>
     <cw-serverside-condition flex="100" [model]="demo.one" [paramDefs]="paramDefs" (change)="demoOneChange($event)"></cw-serverside-condition>
