@@ -24,6 +24,7 @@ import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
 import com.dotmarketing.portlets.rules.conditionlet.RequestHeaderConditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.UsersPlatformConditionlet;
+import com.dotmarketing.portlets.rules.conditionlet.UsersSiteVisitsConditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.VisitorsLanguageConditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -72,7 +73,7 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersOperatingSystemConditionlet.class)
 //                         .add(UsersPageVisitsConditionlet.class)
 //                         .add(UsersReferringUrlConditionlet.class)
-//                         .add(UsersSiteVisitsConditionlet.class)
+                         .add(UsersSiteVisitsConditionlet.class)
 //                         .add(UsersStateConditionlet.class)
 //                         .add(UsersTimeConditionlet.class)
 //                         .add(UsersUrlParameterConditionlet.class)
