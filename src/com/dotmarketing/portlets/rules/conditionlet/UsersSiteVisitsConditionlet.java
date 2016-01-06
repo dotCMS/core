@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -9,30 +8,16 @@ import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import com.dotmarketing.portlets.rules.parameter.comparison.EqualComparison;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.GREATER_THAN_OR_EQUAL;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.LESS_THAN_OR_EQUAL;
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.PortalException;
-import com.liferay.portal.SystemException;
-import com.liferay.portal.model.User;
 
 
 /**
@@ -71,7 +56,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	private static final String SITE_VISITS_KEY = "site-visits";
 	
-	private static final ParameterDefinition<NumericType> siteVisitsValue = new ParameterDefinition<>(1,SITE_VISITS_KEY,new NumericInput<>(new NumericType()));
+	private static final ParameterDefinition<NumericType> siteVisitsValue = new ParameterDefinition<>(3,SITE_VISITS_KEY,new NumericInput<>(new NumericType()));
 	
 	public UsersSiteVisitsConditionlet() {
         super("api.ruleengine.system.conditionlet.SiteVisits",
@@ -96,6 +81,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
     	private final Comparison comparison;
     	
     	private Instance(UsersSiteVisitsConditionlet definition, Map<String, ParameterModel> parameters){
+    		checkState(parameters != null && parameters.size() == 2, "Users Site Visits Condition requires parameters %s and %s.", COMPARISON_KEY, SITE_VISITS_KEY);
+            assert parameters != null;
     		this.siteVisits = parameters.get(SITE_VISITS_KEY).getValue();
     		String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
     		try {
