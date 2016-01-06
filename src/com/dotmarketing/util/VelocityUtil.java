@@ -237,7 +237,7 @@ public class VelocityUtil {
 		}
 		context.put("pdfExport", false);
 
-		if(request.getSession(false)!=null && Objects.isNull(request.getAttribute("EDIT_MODE"))){
+		if(request.getSession(false)!=null){
 			try {
 				User user = (com.liferay.portal.model.User) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
 				context.put("user", user);

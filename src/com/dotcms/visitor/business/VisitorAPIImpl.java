@@ -9,14 +9,18 @@ import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
+
 import eu.bitwalker.useragentutils.UserAgent;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -69,6 +73,27 @@ public class VisitorAPIImpl implements VisitorAPI {
 
             visitorOpt = Optional.of(visitor);
         }
+        
+        // If we are forcing a persona on a visitor
+        if(visitorOpt.isPresent()){
+			if(Objects.nonNull(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER))){
+				Visitor visitor = visitorOpt.get();
+				try{		
+					User user = com.liferay.portal.util.PortalUtil.getUser(request);
+					Persona p = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, false);
+					visitor.setPersona(p);
+				}
+				catch(Exception e){
+					visitor.setPersona(null);
+				}
+			}
+        }
+        
+        
+        
+        
+        
+        
 
         return visitorOpt;
     }

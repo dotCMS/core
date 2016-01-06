@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
@@ -80,6 +81,7 @@ public class RulesAPIImpl implements RulesAPI {
                     .add(SetSessionAttributeActionlet.class)
                     .add(SetRequestAttributeActionlet.class)
                     .add(SetResponseHeaderActionlet.class)
+                    .add(PersonaActionlet.class)
                     .build();
 
     public RulesAPIImpl() {

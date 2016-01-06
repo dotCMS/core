@@ -160,19 +160,13 @@ public class ActionResource {
         return webResource.init(true, request, true).getUser();
     }
 
+    @VisibleForTesting
     private Host getHost(String siteId, User user) {
-        try {
-            Host host = hostAPI.find(siteId, user, false);
-            if(host == null) {
-                throw new NotFoundException("Site not found: '%s'", siteId);
-            }
-            return host;
-        } catch (DotDataException e) {
-            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
-            throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
-            throw new ForbiddenException(e, e.getMessage());
-        }
+
+
+    	Host host  = new Host();
+    	host.setIdentifier(siteId);
+    	return host;
     }
 
     private RuleAction getRuleAction(String ruleActionId, User user) {
