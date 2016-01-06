@@ -10,7 +10,7 @@ import {ActionModel} from "../../../../../api/rule-engine/Action";
 
 })
 @View({
-  template: `<div flex layout="row" layout-align="start-center" class="cw-action-component-body">
+  template: `<div flex layout="row" layout-align="start center" class="cw-action-component-body">
   <cw-input-text *ngFor="var input of _inputs"
                  flex
                  class="cw-input"

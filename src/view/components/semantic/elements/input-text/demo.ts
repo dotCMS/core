@@ -32,8 +32,8 @@ export class Hero {
 .ng-invalid {
   border-left: 5px solid #a94442; /* red */
 }`],
-  template: `<div flex layout="row" layout-align="center-center">
-  <div flex="40" layout="row" layout-wrap layout-align="center-center">
+  template: `<div flex layout="row" layout-align="center center">
+  <div flex="40" layout="row" layout-wrap layout-align="center center">
     <form (ngSubmit)="onSubmit()" #hf="ngForm">
       <div flex="100" layout="row">{{diagnostic}}</div>
       <div flex="100" layout-wrap layout="row" class="ui attached segment">
