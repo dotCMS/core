@@ -12,33 +12,6 @@ import {ServerSideTypeModel} from "./ServerSideFieldModel";
 let noop = (...arg:any[])=> {
 }
 
-
-// @todo ggranum: Remove this and code that defers to it once we either add an 'enabled' field to conditionlet types,
-// or we have implemented all the conditionlet types we intend to release with.
-var DISABLED_CONDITION_TYPE_IDS = {
-  //UsersCountryConditionlet: false,
-  //UsersBrowserHeaderConditionlet: false,
-  //UsersContinentConditionlet: true,
-  //UsersPlatformConditionlet: true,
-  UsersIpAddressConditionlet: true,
-  UsersVisitedUrlConditionlet: true,
-  UsersCityConditionlet: true,
-  UsersTimeConditionlet: true,
-  UsersLandingPageUrlConditionlet: true,
-  UsersLanguageConditionlet: true,
-  UsersPageVisitsConditionlet: true,
-  MockTrueConditionlet: true,
-  UsersUrlParameterConditionlet: true,
-  UsersReferringUrlConditionlet: true,
-  UsersCurrentUrlConditionlet: true,
-  UsersHostConditionlet: true,
-  UsersStateConditionlet: true,
-  UsersSiteVisitsConditionlet: true,
-  UsersDateTimeConditionlet: true,
-  UsersOperatingSystemConditionlet: true,
-  UsersLogInConditionlet: true,
-  UsersBrowserConditionlet: true
-}
 @Injectable()
 export class ConditionTypeService {
   private _apiRoot;
@@ -68,7 +41,7 @@ export class ConditionTypeService {
       this._ref.once('value', (snap:EntitySnapshot) => {
         let types = snap.val()
         let conditionTypes = []
-        let keys = Object.keys(types).filter(key => DISABLED_CONDITION_TYPE_IDS[key] !== true);
+        let keys = Object.keys(types);
         let count = 0
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
