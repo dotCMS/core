@@ -36,8 +36,8 @@ public class RulesFactoryImpl implements RulesFactory {
 
     public RulesFactoryImpl() {
         sql = RuleSQL.getInstance();
-//        cache = CacheLocator.getRulesCache();
-        cache = new NoOpRulesCacheImpl();
+        cache = CacheLocator.getRulesCache();
+//        cache = new NoOpRulesCacheImpl();
     }
 
     @Override
@@ -782,14 +782,10 @@ public class RulesFactoryImpl implements RulesFactory {
 
         List<Condition> conditionsByGroup = getConditionsByGroup(conditionGroup.getId());
 
-        final DotConnect db = new DotConnect();
-        db.setSQL(sql.DELETE_CONDITION_BY_GROUP);
-        db.addParam(conditionGroup.getId());
-        db.loadResult();
-
         for(Condition condition: conditionsByGroup) {
-            cache.removeCondition(condition);
+            deleteCondition(condition);
         }
+
         cache.removeConditionGroup(conditionGroup);
     	Rule rule  = getRuleById(conditionGroup.getRuleId());
         cache.removeRule(rule);
@@ -797,6 +793,8 @@ public class RulesFactoryImpl implements RulesFactory {
 
     @Override
     public void deleteCondition(Condition condition) throws DotDataException {
+        deleteConditionValues(condition);
+
         final DotConnect db = new DotConnect();
         db.setSQL(sql.DELETE_CONDITION_BY_ID);
         db.addParam(condition.getId());

@@ -2,7 +2,7 @@ package com;
 
 
 //import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
-import com.dotmarketing.portlets.rules.business.RulesAPITest;
+import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
@@ -46,7 +46,7 @@ import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
-import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
 import com.dotmarketing.portlets.structure.business.URLMapTest;
 import com.dotmarketing.portlets.structure.factories.FieldFactoryTest;
@@ -104,14 +104,14 @@ import com.dotmarketing.webdav.WebDavTest;
     ContentletAjaxTest.class,
     SimpleNodeTest.class,
     DbConnectionFactoryUtilTest.class,
-    RulesAPITest.class,
+    RulesAPIFTest.class,
     RuleResourceFTest.class,
     ConditionGroupResourceFTest.class,
 //    ConditionResourceFTest.class,
     RemotePublishAjaxActionTest.class, //Needs Enterprise License
 //    ConditionletTest.class,
     ActionletResourceFTest.class,
-    SetSessionAttributeActionletTest.class,
+    SetSessionAttributeActionletFTest.class,
     SetResponseHeaderActionletFTest.class,
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,

@@ -107,8 +107,8 @@ public class RulesCacheFTest {
 
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
-        ParameterModel value = parameterDataGen.key("key").value("value").ownerId(condition.getId()).next();
-        condition.addParameter(value);
+        ParameterModel value = parameterDataGen.key("key").value("value").next();
+        condition.addValue(value);
         conditionDataGen.persist(condition);
 
         // let's add the rule to the cache
@@ -118,6 +118,7 @@ public class RulesCacheFTest {
         assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
 
         // let's update the condition value
+        value.setOwnerId(condition.getId());
         value.setValue("updatedValue");
         FactoryLocator.getRulesFactory().saveConditionValue(value);
 
@@ -203,7 +204,7 @@ public class RulesCacheFTest {
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
         ParameterModel value = parameterDataGen.key("key").value("value").next();
-        condition.addParameter(value);
+        condition.addValue(value);
         conditionDataGen.persist(condition);
         value.setOwnerId(condition.getId());
 
@@ -229,8 +230,8 @@ public class RulesCacheFTest {
 
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();
         Condition condition = conditionDataGen.groupId(group.getId()).next();
-        ParameterModel value = parameterDataGen.key("key").value("value").next();
-        condition.addParameter(value);
+        ParameterModel value = parameterDataGen.ownerId(condition.getId()).key("key").value("value").next();
+        condition.addValue(value);
         conditionDataGen.persist(condition);
         value.setOwnerId(condition.getId());
 

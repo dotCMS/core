@@ -241,7 +241,7 @@ public class ActionResource {
     private void validateActionInstance(RuleAction ruleAction) throws DotDataException, DotSecurityException {
         RuleActionlet actionlet = rulesAPI.findActionlet(ruleAction.getActionlet());
         if(actionlet == null){
-            throw new NotFoundException("Actionlet with id '%s' not found: ", ruleAction.getActionlet());
+            throw new BadRequestException("Actionlet with id '%s' not found: ", ruleAction.getActionlet());
         }
         actionlet.doCheckValid(ruleAction);
     }

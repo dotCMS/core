@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.util.Logger;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -85,6 +86,9 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public void addParameter(ParameterModel parameter) {
+        if(parameters==null)
+            parameters = new ArrayList<>();
+
         this.parameters.add(parameter);
     }
 

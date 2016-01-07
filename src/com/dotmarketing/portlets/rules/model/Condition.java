@@ -9,6 +9,7 @@ import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.util.Logger;
 
+import java.util.ArrayList;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -79,18 +80,27 @@ public class Condition implements RuleComponentModel, Serializable {
 
     public Map<String, ParameterModel> getParameters() {
         Map<String, ParameterModel> p = Maps.newLinkedHashMap();
+
+        if(values==null) { values = new ArrayList<>(); }
+
         for (ParameterModel value : values) {
             p.put(value.getKey(), value);
         }
         return p;
     }
 
-    public void addParameter(String key, String value){
-        getParameters().put(key, new ParameterModel(key, value));
+    public void addValue(String key, String value){
+        if(getValues()==null)
+            setValues(new ArrayList<>());
+
+        getValues().add(new ParameterModel(key, value));
     }
 
-    public void addParameter(ParameterModel value) {
-        getParameters().put(value.getKey(), value);
+    public void addValue(ParameterModel parameterModel) {
+        if(getValues()==null)
+            setValues(new ArrayList<>());
+
+        getValues().add(parameterModel);
     }
 
     public void setValues(List<ParameterModel> values) {

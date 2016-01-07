@@ -34,17 +34,19 @@ import com.liferay.portal.model.User;
 
 import static com.dotcms.repackage.org.junit.Assert.*;
 
-public class RulesAPITest extends TestBase {
+public class RulesAPIFTest extends TestBase {
 
 	private HttpServletRequest request;
-    private String serverName;
-    private Integer serverPort;
-    String ruleId;
-    
-	public RulesAPITest(){		
+    private String ruleId;
+	private final String robotsTxtUrl;
+	private final String indexUrl;
+
+	public RulesAPIFTest(){
 		request = ServletTestRunner.localRequest.get();
-        serverName = request.getServerName();
-        serverPort = request.getServerPort();
+		String serverName = request.getServerName();
+		int serverPort = request.getServerPort();
+		robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
+		indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
 	}
 	
@@ -54,12 +56,10 @@ public class RulesAPITest extends TestBase {
 
 		createRule(Rule.FireOn.EVERY_REQUEST);
 
-		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+		makeRequest(robotsTxtUrl + System.currentTimeMillis());
 		Integer count = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
-		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+		makeRequest(robotsTxtUrl + System.currentTimeMillis());
 		Integer newCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
 
 		assertTrue(newCount > count);
@@ -70,16 +70,15 @@ public class RulesAPITest extends TestBase {
 	public void testFireOnEveryPage() throws Exception {
 
 		createRule(Rule.FireOn.EVERY_PAGE);
-		makeRequest("http://" + serverName + ":" + serverPort);
+		makeRequest(indexUrl);
 		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
-		makeRequest(
-				"http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis());
+		makeRequest(robotsTxtUrl + System.currentTimeMillis());
 		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
 		assertEquals(firstCount, secondCount);
 
-		makeRequest("http://" + serverName + ":" + serverPort);
+		makeRequest(indexUrl);
 		Integer thirdCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
 
 		assertTrue(thirdCount > secondCount);
@@ -90,13 +89,13 @@ public class RulesAPITest extends TestBase {
 
 		createRule(Rule.FireOn.ONCE_PER_VISIT);
 
-		URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort);
+		URLConnection conn = makeRequest(indexUrl);
 
 		String oncePerVisitCookie = getCookie(conn, com.dotmarketing.util.WebKeys.ONCE_PER_VISIT_COOKIE);
 
 		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
 
-		makeRequest("http://" + serverName + ":" + serverPort, oncePerVisitCookie);
+		makeRequest(indexUrl, oncePerVisitCookie);
 		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
 
 		assertEquals(firstCount, secondCount);
@@ -108,13 +107,13 @@ public class RulesAPITest extends TestBase {
 
 		createRule(Rule.FireOn.ONCE_PER_VISITOR);
 
-		URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort);
+		URLConnection conn = makeRequest(indexUrl);
 
 		String longLivedCookie = getCookie(conn, com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
 
 		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
 
-		makeRequest("http://" + serverName + ":" + serverPort, longLivedCookie);
+		makeRequest(indexUrl, longLivedCookie);
 		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
 
 		assertEquals(firstCount, secondCount);
