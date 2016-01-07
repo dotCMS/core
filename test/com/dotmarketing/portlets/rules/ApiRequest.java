@@ -24,11 +24,28 @@ public class ApiRequest {
     }
 
     public URLConnection makeRequest() throws IOException {
-        URL url = new URL(robotsTxtUrl + System.currentTimeMillis());
+        return makeRequest(robotsTxtUrl);
+    }
+
+    public URLConnection makeRequest(String urlStr, String...cookies) throws IOException {
+        URL url = new URL(urlStr + System.currentTimeMillis());
         URLConnection con = url.openConnection();
+
+        StringBuilder cookiesSB = new StringBuilder();
 
         if(jSessionIdCookie != null) {
             con.setRequestProperty("Cookie", jSessionIdCookie);
+            cookiesSB.append(jSessionIdCookie).append("; ");
+        }
+
+        if(cookies != null) {
+            for (String cookie:cookies) {
+                cookiesSB.append(cookie).append("; ");
+            }
+        }
+
+        if(cookiesSB.length()>0) {
+            con.setRequestProperty("Cookie", cookiesSB.toString());
         }
 
         con.connect();
