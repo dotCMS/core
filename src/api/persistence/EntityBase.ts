@@ -248,19 +248,14 @@ export class EntityMeta {
     switch (eventType) {
       case 'value':
         return this.onValue(callback)
-        break
       case 'child_added':
         return this.onChildAdded(callback)
-        break
       case 'child_changed':
         return this.onChildChanged(callback)
-        break
       case 'child_moved':
         return this.onChildMoved(callback)
-        break
       case 'child_removed':
         return this.onChildRemoved(callback)
-        break
       default:
       {
         let e = new Error("Invalid event name: '" + eventType + "'.")

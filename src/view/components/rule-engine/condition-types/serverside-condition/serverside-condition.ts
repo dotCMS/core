@@ -13,6 +13,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Condition";
 import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
+import {ObservableHack} from "../../../../../api/util/ObservableHack";
 
 @Component({
   selector: 'cw-serverside-condition'
@@ -148,7 +149,7 @@ export class ServersideCondition {
     if(needsCustomAttribute){
       opts.push({
         value: currentValue,
-        label: Observable.of(currentValue)
+        label: ObservableHack.of(currentValue)
       })
     }
 
