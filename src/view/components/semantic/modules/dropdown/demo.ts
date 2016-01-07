@@ -74,7 +74,7 @@ export class App {
       value: null,
       options: [
         //{valueId: '', value: '', label:  Observable.of('Gender')},
-        {value: 'M', label:  Observable.of('Male'), icon: 'male icon' },
+        {value: 'M', label:  this.delayedValue('Male', 100), icon: 'male icon' },
         {value: 'F', label:  this.delayedValue('Female', 2000), icon: 'female icon' }
       ]
     }
@@ -83,12 +83,13 @@ export class App {
   initDemo3() {
     this.demo3 = {
       name: "field-" + new Date().getTime() + Math.floor(Math.random() * 1000),
-      placeholder: Observable.of("Gender"),
+      placeholder: Observable.from("Size"),
       value: null,
       options: [
         //{valueId: '', value: '', label:  Observable.of('Gender')},
-        {value: 'M', label:  Observable.of('Male'), icon: 'male icon' },
-        {value: 'F', label:  this.delayedValue('Female', 2000), icon: 'female icon' }
+        {value: 'L', label:  this.delayedValue('Large', 100), icon: 'asterisk icon' },
+        {value: 'M', label:  this.delayedValue('Medium', 1000), icon: 'cube icon' },
+        {value: 'S', label:  this.delayedValue('Small', 2000), icon: 'cubes icon' }
       ]
     }
 
@@ -107,9 +108,9 @@ export class App {
       options: [
         //{valueId: '', value: '', label:  Observable.of('Gender')},
         {value: 'BMW', label:  this.delayedValue('BMW', 5000), icon: 'car icon' },
-        {value: 'Ford', label:  Observable.of('Ford'), icon: 'car icon' },
-        {value: 'GMC', label:  Observable.of('General Motors'), icon: 'car icon' },
-        {value: 'Toyota', label:  Observable.of('Toyota'), icon: 'car icon' },
+        {value: 'Ford', label:  this.delayedValue('Ford', 10), icon: 'car icon' },
+        {value: 'GMC', label:  this.delayedValue('General Motors',50), icon: 'car icon' },
+        {value: 'Toyota', label:  this.delayedValue('Toyota', 100), icon: 'car icon' },
       ]
     }
 

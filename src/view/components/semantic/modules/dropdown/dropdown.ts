@@ -55,7 +55,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   `,
   directives: [CORE_DIRECTIVES]
 })
-export class Dropdown implements AfterViewInit, AfterViewChecked {
+export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
 
   @Input() value:string
   @Input() name:string
@@ -116,7 +116,14 @@ export class Dropdown implements AfterViewInit, AfterViewChecked {
     }
   }
 
+  ngOnDestroy(){
+    this._$dropdown.dropdown('clear')
+    //this._$dropdown.dropdown('refresh')
+    console.log('destorying dd')
+  }
+
   refreshDisplayText(label:string) {
+    console.log("Dropdown", "refreshDisplayText", label)
     if (this._$dropdown) {
       this._$dropdown.dropdown('set text', label)
     }

@@ -3,6 +3,7 @@ import {CORE_DIRECTIVES} from 'angular2/common';
 
 import {Observable} from 'rxjs/Rx'
 
+
 import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
@@ -19,6 +20,7 @@ import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText} from "../semantic/elements/input-text/input-text";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
+import {ObservableHack} from "../../../api/util/ObservableHack";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -161,7 +163,7 @@ class RuleComponent {
 
     this.fireOn = {
       value: 'EVERY_PAGE',
-      placeholder: Observable.of("Select One"),
+      placeholder: this.rsrc('inputs.fireOn.placeholder', "Select One"),
       options: [
         {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage')},
         {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
@@ -171,10 +173,10 @@ class RuleComponent {
     }
   }
 
-  rsrc(subkey:string) {
+  rsrc(subkey:string, defVal:string = null) {
     let msgObserver = this._rsrcCache[subkey]
     if (!msgObserver) {
-      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey)
+      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal )
       this._rsrcCache[subkey] = msgObserver.map(v => {
         return v
       })
