@@ -32,7 +32,7 @@ public class ConditionDataGen {
     public Condition next() {
         Condition condition = new Condition();
         condition.setName("meh");
-        condition.setConditionletId(EvalToTrueConditionlet.class.getSimpleName());
+        condition.setConditionletId(UsersCountryConditionlet.class.getSimpleName());
         condition.setOperator(operator);
         condition.setConditionGroup(groupId);
         condition.addValue(Conditionlet.COMPARISON_KEY, "is");

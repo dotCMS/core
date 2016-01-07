@@ -113,11 +113,6 @@ public class SetResponseHeaderActionletFTest extends TestBase {
             new RuleDataGen(Rule.FireOn.EVERY_REQUEST).name(String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt()));
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
-        ConditionGroup group = new ConditionGroupDataGen().ruleId(rule.getId()).operator(Condition.Operator.AND).nextPersisted();
-        Condition condition = new ConditionDataGen().groupId(group.getId()).nextPersisted();
-        group.addCondition(condition);
-
-        rule.addGroup(group);
 
         RuleActionDataGen actionDataGen = new RuleActionDataGen().ruleId(rule.getId());
         RuleAction action = actionDataGen.actionlet(SetResponseHeaderActionlet.class).priority(random.nextInt(100) + 1).next();
