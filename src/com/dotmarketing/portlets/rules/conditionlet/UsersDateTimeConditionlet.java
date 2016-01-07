@@ -1,17 +1,28 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
+import com.dotcms.repackage.org.elasticsearch.common.joda.time.LocalDateTime;
+import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import com.dotmarketing.portlets.rules.parameter.display.TextInput;
-import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.portlets.rules.parameter.display.*;
+import com.dotmarketing.portlets.rules.parameter.type.*;
+import com.dotmarketing.util.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Calendar;
 import java.util.Map;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
@@ -39,36 +50,67 @@ public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditi
 
     private static final long serialVersionUID = 1L;
 
-    public static final String REFERRING_URL_KEY = "referring-url";
+    public static final String DATE_TIME_1_KEY = "datetime-1";
+    public static final String DATE_TIME_2_KEY = "datetime-2";
 
-    private static final ParameterDefinition<TextType> referringURLValue = new ParameterDefinition<>(
-            3, REFERRING_URL_KEY,
-            new TextInput<>(new TextType())
+    private final GeoIp2CityDbUtil geoIp2Util;
+
+    private static final ParameterDefinition<DateTimeType> dateTime1 = new ParameterDefinition<>(
+            3, DATE_TIME_1_KEY,
+            new DateTimeInput<>(new DateTimeType())
+    );
+
+    private static final ParameterDefinition<DateTimeType> dateTime2 = new ParameterDefinition<>(
+            4, DATE_TIME_2_KEY,
+            new DateTimeInput<>(new DateTimeType())
     );
 
     public UsersDateTimeConditionlet() {
+        this(GeoIp2CityDbUtil.getInstance());
+    }
+
+    @VisibleForTesting
+    UsersDateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.ruleengine.system.conditionlet.VisitorsDateTime",
                 new ComparisonParameterDefinition(2, EQUAL, BETWEEN, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL),
-                referringURLValue);
+                dateTime1, dateTime2);
+        this.geoIp2Util = geoIp2Util;
     }
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String referringUrlActualValue = request.getHeader("referer");
+        LocalDateTime usersDateTime = lookupDateTime(request);
+        boolean evalution = false;
 
-        if (Strings.isBlank(referringUrlActualValue)) {
-            return false;
-        }
-
-        boolean evalSuccess;
-
-        if (instance.comparison != REGEX) {
-            //noinspection unchecked
-            evalSuccess = instance.comparison.perform(referringUrlActualValue.toLowerCase(), instance.referringURLValue.toLowerCase());
+        if(instance.comparison==BETWEEN) {
+            evalution = instance.comparison.perform(usersDateTime, instance.dateTime1, instance.dateTime2);
         } else {
-            evalSuccess = REGEX.perform(referringUrlActualValue, instance.referringURLValue);
+            evalution = instance.comparison.perform(usersDateTime, instance.dateTime1);
         }
-        return evalSuccess;
+
+        return evalution;
+    }
+
+    private LocalDateTime lookupDateTime(HttpServletRequest request) {
+        LocalDateTime localDateTime = null;
+        InetAddress address;
+        try {
+            address = HttpRequestDataUtil.getIpAddress(request);
+        } catch (UnknownHostException e) {
+            throw new RuleEvaluationFailedException(e, "Unknown host.");
+        }
+        String ipAddress = address.getHostAddress();
+        Calendar dateTime = null;
+        try {
+            dateTime = geoIp2Util.getDateTime(ipAddress);
+        } catch (IOException | GeoIp2Exception e) {
+            Logger.error(this, "Could not look up country for request. Using 'unknown': " + request.getRequestURL());
+        }
+
+        if(dateTime!=null) {
+            localDateTime = LocalDateTime.fromCalendarFields(dateTime);
+        }
+        return localDateTime;
     }
 
     @Override
@@ -78,13 +120,13 @@ public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditi
 
     public static class Instance implements RuleComponentInstance {
 
-        public final String referringURLValue;
-        public final Comparison<String> comparison;
+        public final LocalDateTime dateTime1;
+        public final LocalDateTime dateTime2;
+        public final Comparison<Comparable<Object>> comparison;
 
         public Instance(Conditionlet definition, Map<String, ParameterModel> parameters) {
-            checkState(parameters != null && parameters.size() == 2, "Referring URL Condition requires parameters %s and %s.", COMPARISON_KEY, REFERRING_URL_KEY);
             assert parameters != null;
-            this.referringURLValue = parameters.get(REFERRING_URL_KEY).getValue();
+
             String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
             try {
                 //noinspection unchecked
@@ -94,6 +136,16 @@ public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditi
                         comparisonValue,
                         definition.getId());
             }
+
+            if(comparison==BETWEEN) {
+                checkState(parameters != null && parameters.size() == 3, "Referring URL Condition requires parameters %s, %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY, DATE_TIME_2_KEY);
+                this.dateTime2 = LocalDateTime.parse(parameters.get(DATE_TIME_2_KEY).getValue());
+            } else {
+                checkState(parameters != null && parameters.size() == 2, "Referring URL Condition requires parameters %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY);
+                this.dateTime2 = null;
+            }
+
+            this.dateTime1 = LocalDateTime.parse(parameters.get(DATE_TIME_1_KEY).getValue());
         }
     }
 }
