@@ -59,7 +59,7 @@
 		THIS PREVENTS THE javac TASK FROM FAILING
 		-->
 		<mkdir dir="lib" />
-		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.7" target="1.7" compiler="modern" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
+		<javac debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="modern" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
 			<classpath refid="files-classpath" />
 		</javac>
 		<!-- copying other resource within src folder in the classpath -->

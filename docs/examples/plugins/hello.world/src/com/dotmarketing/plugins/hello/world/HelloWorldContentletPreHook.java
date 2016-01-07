@@ -308,6 +308,9 @@ public class HelloWorldContentletPreHook extends ContentletAPIPreHookAbstractImp
 		// TODO Auto-generated method stub
 		return true;
 	}
+	public boolean deleteByHost ( Host host, User user, boolean respectFrontendRoles ) {
+		return true;
+	}
 	/*
 	 * (non-Javadoc)
 	 * @see com.dotmarketing.portlets.contentlet.business.ContentletAPIPreHook#delete(java.util.List, com.liferay.portal.model.User, boolean, boolean)
@@ -928,6 +931,9 @@ public class HelloWorldContentletPreHook extends ContentletAPIPreHookAbstractImp
 	public boolean findContentletsByHost(Host parentHost, User user,
 			boolean respectFrontendRoles) {
 		// TODO Auto-generated method stub
+		return true;
+	}
+	public boolean findContentletsByHost ( Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles ) throws DotDataException, DotSecurityException {
 		return true;
 	}
 	public boolean getSiblings(String identifier) throws DotDataException {

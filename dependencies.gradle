@@ -3,7 +3,7 @@ dependencies {
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: '1b0264d-SNAPSHOT'
     compile group: 'com.dotcms.enterprise', name: 'eelic', version: '5abf2b5-SNAPSHOT'
-    compile group: 'com.dotcms', name: 'ant-tooling-log4j', version: '1.1'
+    compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
 
     compile group: 'com.dotcms.lib', name: 'dot.abdera-client', version:'0.4.0-incubating_2'
     compile group: 'com.dotcms.lib', name: 'dot.abdera-core', version:'0.4.0-incubating_2'
