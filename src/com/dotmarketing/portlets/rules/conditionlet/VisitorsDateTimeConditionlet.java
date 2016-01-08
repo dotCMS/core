@@ -125,6 +125,8 @@ public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeC
         public final Comparison<Comparable> comparison;
 
         public Instance(Conditionlet definition, Map<String, ParameterModel> parameters) {
+            checkState(parameters != null && ((parameters.size() == 2 || parameters.size() == 3)), "Referring URL Condition requires either two (%s, %s) or three (%s, %s, %s) parameters.", COMPARISON_KEY, DATE_TIME_1_KEY, COMPARISON_KEY, DATE_TIME_1_KEY, DATE_TIME_2_KEY);
+
             assert parameters != null;
 
             String comparisonValue = parameters.get(COMPARISON_KEY).getValue();

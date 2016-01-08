@@ -12,9 +12,8 @@ public class BetweenComparison extends Comparison<Comparable> {
     @Override
     public boolean perform(Comparable argA, Comparable argB, Comparable argC) {
         int left = argA.compareTo(argB);
-        int right = argB.compareTo(argC);
-        int spread = argA.compareTo(argC);
-        return left <= right;
+        int right = argA.compareTo(argC);
+        return left >= right;
     }
 }
  

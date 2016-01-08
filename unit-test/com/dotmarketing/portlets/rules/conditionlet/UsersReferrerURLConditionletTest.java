@@ -3,7 +3,6 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.repackage.com.sun.xml.bind.v2.runtime.IllegalAnnotationException;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -29,13 +28,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class UsersReferrerURLConditionletTest {
-
-    private static final String MOCK_IP_ADDRESS = "10.0.0.1";
-
-    @BeforeMethod
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @DataProvider(name = "cases")
     public Object[][] compareCases() throws Exception {
