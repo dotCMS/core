@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -79,15 +80,15 @@ public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeC
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
         LocalDateTime usersDateTime = lookupDateTime(request);
-        boolean evalution = false;
+        boolean evaluation;
 
         if(instance.comparison==BETWEEN) {
-            evalution = instance.comparison.perform((Comparable<Object>) usersDateTime, instance.dateTime1, instance.dateTime2);
+            evaluation = instance.comparison.perform(usersDateTime, instance.dateTime1, instance.dateTime2);
         } else {
-            evalution = instance.comparison.perform(usersDateTime, instance.dateTime1);
+            evaluation = instance.comparison.perform(usersDateTime, instance.dateTime1);
         }
 
-        return evalution;
+        return evaluation;
     }
 
     private LocalDateTime lookupDateTime(HttpServletRequest request) {
@@ -107,7 +108,7 @@ public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeC
         }
 
         if(dateTime!=null) {
-            localDateTime = LocalDateTime.fromCalendarFields(dateTime);
+            localDateTime = LocalDateTime.ofInstant(dateTime.toInstant(), ZoneId.systemDefault());
         }
         return localDateTime;
     }
@@ -121,7 +122,7 @@ public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeC
 
         public final LocalDateTime dateTime1;
         public final LocalDateTime dateTime2;
-        public final Comparison<Comparable<Object>> comparison;
+        public final Comparison<Comparable> comparison;
 
         public Instance(Conditionlet definition, Map<String, ParameterModel> parameters) {
             assert parameters != null;

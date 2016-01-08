@@ -2,6 +2,9 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+
+import java.time.LocalDate;
+import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
 
 public class Comparison<T> {
@@ -13,10 +16,10 @@ public class Comparison<T> {
     public static final Comparison<String> ENDS_WITH = new EndsWith();
     public static final Comparison<String> CONTAINS = new Contains();
     public static final Comparison<String> REGEX = new RegexComparison();
-    public static final Comparison<Comparable<Object>> BETWEEN = new BetweenComparison();
-    public static final Comparison<Comparable<Object>> EQUAL = new EqualComparison();
-    public static final Comparison<Comparable<Object>> LESS_THAN = new LessThanComparison();
-    public static final Comparison<Comparable<Object>> GREATER_THAN = new GreaterThanComparison();
+    public static final Comparison<Comparable> BETWEEN = new BetweenComparison();
+    public static final Comparison<Comparable> EQUAL = new EqualComparison();
+    public static final Comparison<Comparable> LESS_THAN = new LessThanComparison();
+    public static final Comparison<Comparable> GREATER_THAN = new GreaterThanComparison();
     public static final Comparison<Comparable<Object>> LESS_THAN_OR_EQUAL = new LessThanOrEqualComparison();
     public static final Comparison<Comparable<Object>> GREATER_THAN_OR_EQUAL = new GreaterThanOrEqualComparison();
     public static final Comparison<String> NETMASK = new NetmaskComparison();
