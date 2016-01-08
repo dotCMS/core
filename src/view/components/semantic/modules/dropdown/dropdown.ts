@@ -2,12 +2,6 @@ import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, 
 import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
 import { CORE_DIRECTIVES,  } from 'angular2/common';
 import {Observable} from 'rxjs/Rx'
-import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
-import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
-import {CwComponent} from "../../../../../api/util/CwComponent";
-import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
-import {ParameterModel} from "../../../../../api/rule-engine/Condition";
-import {Verify} from "../../../../../api/validation/Verify";
 
 
 /**
