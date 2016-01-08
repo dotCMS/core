@@ -23,18 +23,19 @@ import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.repackage.org.junit.rules.ExpectedException;
 import com.dotcms.repackage.org.mockito.Mockito;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Instance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.util.WebKeys;
 
-public class UsersVisitedUrlConditionletTest {
+public class VisitedUrlConditionletMockTest {
 
     private static final String HOST_IDENTIFIER = "48190c8c-42c4-46af-8d1a-0cd5db894797";
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession session;
-    private UsersVisitedUrlConditionlet visitedConditionlet = new UsersVisitedUrlConditionlet();
+    private VisitedUrlConditionlet visitedConditionlet = new VisitedUrlConditionlet();
     private static Map<String, Set<String>> visitedUrls;
 
     @Rule
@@ -62,18 +63,17 @@ public class UsersVisitedUrlConditionletTest {
 
         // Mock session
         session = Mockito.mock(HttpSession.class);
-        Mockito.when(session.getAttribute(UsersVisitedUrlConditionlet.RULES_CONDITIONLET_VISITEDURLS)).thenReturn(
+        Mockito.when(session.getAttribute(VisitedUrlConditionlet.RULES_CONDITIONLET_VISITEDURLS)).thenReturn(
                 visitedUrls);
         Mockito.when(request.getSession(true)).thenReturn(session);
     }
 
     @Test
-    public void testUsersVisitedUrlConditionletConfiguration() {
+    public void testVisitedUrlConditionletConfiguration() {
         Map<String, ParameterDefinition> parameters = visitedConditionlet.getParameterDefinitions();
 
         // Conditionlet has the input field
-        ParameterDefinition input = ((ParameterDefinition) parameters
-                .get(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY));
+        ParameterDefinition input = ((ParameterDefinition) parameters.get(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY));
         Assert.assertNotNull(input);
 
         // Conditionlet has comparisons
@@ -95,24 +95,22 @@ public class UsersVisitedUrlConditionletTest {
     public void testIsComparison() {
         final String currentUrl = "/indexIs";
 
-        HttpSession session = Mockito.mock(HttpSession.class);
-        Mockito.when(session.getAttribute(UsersVisitedUrlConditionlet.RULES_CONDITIONLET_VISITEDURLS)).thenReturn(
-                visitedUrls);
-        Mockito.when(request.getSession(true)).thenReturn(session);
         Mockito.when(request.getRequestURI()).thenReturn(currentUrl);
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/products"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/products"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL is "/products"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, IS.getId());
     }
 
     @Test
@@ -123,13 +121,34 @@ public class UsersVisitedUrlConditionletTest {
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS_NOT.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/news-events/news"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/news-events/news"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL IS_NOT "/news-events/news"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+
+        // Verify is the new url was added to the visitedUrls
+        Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, IS_NOT.getId());
+    }
+
+    @Test
+    public void testWrongIsNotComparison() {
+        final String currentUrl = "/indexIsNot";
+
+        Mockito.when(request.getRequestURI()).thenReturn(currentUrl);
+
+        Map<String, ParameterModel> parameters = new HashMap<>();
+        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS_NOT.getId()));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index"));
+
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
+        // Incorrect, a visited URL IS_NOT "/about-us/index"
+        Assert.assertFalse(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -144,16 +163,18 @@ public class UsersVisitedUrlConditionletTest {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY,
                 new ParameterModel(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL STARTS_WITH "/about"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, STARTS_WITH.getId());
     }
 
     @Test
@@ -164,16 +185,18 @@ public class UsersVisitedUrlConditionletTest {
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "-us"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "-us"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL ENDS_WITH "-us"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, ENDS_WITH.getId());
     }
 
     @Test
@@ -184,16 +207,18 @@ public class UsersVisitedUrlConditionletTest {
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, CONTAINS.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "tact"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "tact"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL CONTAINS "tact"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, CONTAINS.getId());
     }
 
     @Test
@@ -204,16 +229,18 @@ public class UsersVisitedUrlConditionletTest {
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, REGEX.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/.*us"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/.*us"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL REGEX "/.*us"
-        Assert.assertTrue(result);
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+
+        // Verify use case with empty visited url collections
+        verifyEmptyVisitedUrlsUseCase(instance, REGEX.getId());
     }
 
     @Test
@@ -224,15 +251,28 @@ public class UsersVisitedUrlConditionletTest {
 
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, REGEX.getId()));
-        parameters.put(UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
-                UsersVisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/.*yyy"));
+        parameters.put(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, new ParameterModel(
+                VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/.*yyy"));
 
-        final boolean result = visitedConditionlet.evaluate(request, response,
-                visitedConditionlet.instanceFrom(parameters));
+        Instance instance = visitedConditionlet.instanceFrom(parameters);
+        final boolean result = visitedConditionlet.evaluate(request, response, instance);
         // Incorrect, a visited URL REGEX "/.*yyy"
         Assert.assertFalse(result);
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
+    }
+
+    private void verifyEmptyVisitedUrlsUseCase(Instance instance, final String comparison) {
+        // Test when visited urls are empty
+        visitedUrls = new HashMap<>();
+        Mockito.when(session.getAttribute(VisitedUrlConditionlet.RULES_CONDITIONLET_VISITEDURLS)).thenReturn(
+                visitedUrls);
+
+        if (comparison.equalsIgnoreCase(IS_NOT.getId())) {
+            Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        } else {
+            Assert.assertFalse(visitedConditionlet.evaluate(request, response, instance));
+        }
     }
 }

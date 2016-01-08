@@ -15,7 +15,9 @@ import java.util.Set;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -48,16 +50,14 @@ import com.liferay.portal.SystemException;
  * @since 04-23-2015
  *
  */
-public class UsersVisitedUrlConditionlet extends Conditionlet<UsersVisitedUrlConditionlet.Instance> {
+public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
     public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
     public static final String PATTERN_URL_INPUT_KEY = "has-visited-url";
 
-    // private Map<String, ConditionletInput> inputValues = null;
-
-    public UsersVisitedUrlConditionlet() {
+    public VisitedUrlConditionlet() {
         super("api.ruleengine.system.conditionlet.HasVisitedUrl", new ComparisonParameterDefinition(2, IS, IS_NOT,
                 STARTS_WITH, ENDS_WITH, CONTAINS, REGEX), patternUrl);
     }
@@ -75,47 +75,90 @@ public class UsersVisitedUrlConditionlet extends Conditionlet<UsersVisitedUrlCon
             return false;
         }
 
-        Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request.getSession(true).getAttribute(
-                RULES_CONDITIONLET_VISITEDURLS);
-        Set<String> visitedUrlsByHost = visitedUrls == null ? new LinkedHashSet<String>() : visitedUrls.get(hostId);
+        HttpSession session = request.getSession(true);
 
-        // Find if there visited urls match with the pattern
-        boolean visitedMatch = false;
-        for (String url : visitedUrlsByHost) {
-            if (instance.comparison.perform(url, instance.patternUrl)) {
-                visitedMatch = true;
-                break;
-            }
-        }
-
-        // Add new url to session is not exist
-        updateVisitedUrlsSessionVariable(request, hostId);
-
-        return visitedMatch;
-    }
-
-    /**
-     * 
-     */
-    private void updateVisitedUrlsSessionVariable(HttpServletRequest request, final String hostId) {
-        Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) request.getSession(true).getAttribute(
-                RULES_CONDITIONLET_VISITEDURLS);
-        Set<String> visitedUrlsByHost = visitedUrls == null ? new LinkedHashSet<String>() : visitedUrls.get(hostId);
+        // Get visited urls from session variable
+        Map<String, Set<String>> visitedUrls = (Map<String, Set<String>>) session
+                .getAttribute(RULES_CONDITIONLET_VISITEDURLS);
         if (visitedUrls == null) {
             visitedUrls = new HashMap<String, Set<String>>();
         }
 
-        try {
-            final String uri = HttpRequestDataUtil.getUri(request);
+        // Get visited urls by host id from session variable
+        Set<String> visitedUrlsByHost = visitedUrls.get(hostId);
+        if (visitedUrlsByHost == null) {
+            visitedUrlsByHost = new LinkedHashSet<String>();
+        }
 
-            if (UtilMethods.isSet(uri) && !visitedUrlsByHost.contains(uri)) {
-                visitedUrlsByHost.add(uri);
-                visitedUrls.put(hostId, visitedUrlsByHost);
-                request.getSession(true).setAttribute(RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
+        // Find match with visited urls
+        boolean match = hasMatch(visitedUrlsByHost, instance);
+
+        // Add new url to session is not exist
+        final String uri = getUri(request);
+        if (StringUtils.isNotEmpty(uri) && !visitedUrlsByHost.contains(uri)) {
+            visitedUrlsByHost.add(uri);
+            visitedUrls.put(hostId, visitedUrlsByHost);
+            session.setAttribute(RULES_CONDITIONLET_VISITEDURLS, visitedUrls);
+        }
+
+        return match;
+    }
+
+    /**
+     * Verifies if condition matches with pattern, there are two different use
+     * cases:
+     * <ul>
+     * <li>when comparison is different than IS_NOT. We need to find the first
+     * match and return true otherwise false.</li>
+     * <li>when comparison is equals to IS_NOT. We need to review all the
+     * visited urls if all match return true otherwise false.</li>
+     * </ul>
+     * 
+     * 
+     * @param visitedUrlsByHost
+     * @param instance
+     * @return true is there is a match otherwise false
+     */
+    private boolean hasMatch(Set<String> visitedUrlsByHost, Instance instance) {
+        final boolean comparisonIS_NOT = instance.comparisonValue.equalsIgnoreCase(IS_NOT.getId());
+
+        // Variable must starts with true when IS_NOT comparison
+        boolean match = comparisonIS_NOT;
+
+        for (String url : visitedUrlsByHost) {
+            if (comparisonIS_NOT) {
+                match &= instance.comparison.perform(url, instance.patternUrl);
+            } else {
+                match |= instance.comparison.perform(url, instance.patternUrl);
             }
+
+            if (!comparisonIS_NOT && match) {
+                // We don't need to check all the visited urls when comparison
+                // is different than IS_NOT
+                break;
+            }
+        }
+
+        return match;
+    }
+
+    /**
+     * Returns the uri based on the {@code HttpServletRequest} object.
+     * 
+     * @param request
+     *            - The {@code HttpServletRequest} object.
+     * @return The URI of the request, or {@code null} if an error occurred..
+     */
+    private String getUri(HttpServletRequest request) {
+        String uri = null;
+
+        try {
+            uri = HttpRequestDataUtil.getUri(request);
         } catch (UnsupportedEncodingException e) {
             Logger.error(this, "Could not retrieved a valid URI from request: " + request.getRequestURL());
         }
+
+        return uri;
     }
 
     /**
@@ -128,15 +171,14 @@ public class UsersVisitedUrlConditionlet extends Conditionlet<UsersVisitedUrlCon
      *         retrieving the site information.
      */
     private String getHostId(HttpServletRequest request) {
+        Host host = null;
         try {
-            Host host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            if (host != null) {
-                return host.getIdentifier();
-            }
+            host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
         } catch (PortalException | SystemException | DotDataException | DotSecurityException e) {
             Logger.error(this, "Could not retrieve current host information.");
         }
-        return null;
+
+        return host != null ? host.getIdentifier() : null;
     }
 
     @Override
@@ -148,10 +190,12 @@ public class UsersVisitedUrlConditionlet extends Conditionlet<UsersVisitedUrlCon
 
         private final String patternUrl;
         private final Comparison<String> comparison;
+        private final String comparisonValue;
 
-        private Instance(UsersVisitedUrlConditionlet definition, Map<String, ParameterModel> parameters) {
+        private Instance(VisitedUrlConditionlet definition, Map<String, ParameterModel> parameters) {
             this.patternUrl = parameters.get(PATTERN_URL_INPUT_KEY).getValue();
-            String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+            this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+
             try {
                 // noinspection unchecked
                 this.comparison = ((ComparisonParameterDefinition) definition.getParameterDefinitions().get(
