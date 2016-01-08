@@ -33,7 +33,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS
 // * @since 04-17-2015
 // *
 // */
-public class VisitorsLanguageConditionlet extends Conditionlet<VisitorsLanguageConditionlet.Instance> {
+public class CurrentSessionLanguageConditionlet extends Conditionlet<CurrentSessionLanguageConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
@@ -95,13 +95,13 @@ public class VisitorsLanguageConditionlet extends Conditionlet<VisitorsLanguageC
     );
     private final LanguageWebAPI langApi;
 
-    public VisitorsLanguageConditionlet() {
+    public CurrentSessionLanguageConditionlet() {
         this(WebAPILocator.getLanguageWebAPI());
     }
 
     @VisibleForTesting
-    VisitorsLanguageConditionlet(LanguageWebAPI langApi) {
-        super("api.ruleengine.system.conditionlet.VisitorsLanguage",
+    CurrentSessionLanguageConditionlet(LanguageWebAPI langApi) {
+        super("api.ruleengine.system.conditionlet.CurrentSessionLanguage",
               new ComparisonParameterDefinition(2, IS, IS_NOT),
               LANGUAGE_PARAMETER);
         this.langApi = langApi;
@@ -125,7 +125,7 @@ public class VisitorsLanguageConditionlet extends Conditionlet<VisitorsLanguageC
         private final String isoCode;
         private final Comparison comparison;
 
-        private Instance(VisitorsLanguageConditionlet definition, Map<String, ParameterModel> parameters) {
+        private Instance(CurrentSessionLanguageConditionlet definition, Map<String, ParameterModel> parameters) {
             this.isoCode = parameters.get(LANGUAGE_KEY).getValue().toLowerCase();
             String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
             try {
