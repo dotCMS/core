@@ -58,6 +58,7 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(UsersPlatformConditionlet.class)
                          .add(VisitorsLanguageConditionlet.class)
                          .add(UsersReferringURLConditionlet.class)
+                         .add(VisitedUrlConditionlet.class)
 //                         .add(UsersBrowserConditionlet.class)
 //                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
@@ -73,7 +74,6 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersStateConditionlet.class)
 //                         .add(UsersTimeConditionlet.class)
 //                         .add(UsersUrlParameterConditionlet.class)
-//                         .add(UsersVisitedUrlConditionlet.class)
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
             ImmutableList.<Class<? extends RuleActionlet>>builder()
