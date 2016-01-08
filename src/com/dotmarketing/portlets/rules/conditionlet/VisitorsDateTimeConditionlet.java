@@ -2,8 +2,6 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
-import com.dotcms.repackage.org.elasticsearch.common.joda.time.LocalDateTime;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
@@ -22,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Map;
 
@@ -29,7 +28,7 @@ import static com.dotcms.repackage.com.google.common.base.Preconditions.checkSta
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**
- * This conditionlet will allow dotCMS users to check the client's current date
+ * This conditionlet allows to check the visitor's current date
  * and time when a page was requested. This {@link Conditionlet} provides a
  * drop-down menu with the available comparison mechanisms, and a text field to
  * enter the date and time to compare. This date/time parameter will be
@@ -46,7 +45,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @since 04-22-2015
  */
 
-public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditionlet.Instance> {
+public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
@@ -65,12 +64,12 @@ public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditi
             new DateTimeInput<>(new DateTimeType())
     );
 
-    public UsersDateTimeConditionlet() {
+    public VisitorsDateTimeConditionlet() {
         this(GeoIp2CityDbUtil.getInstance());
     }
 
     @VisibleForTesting
-    UsersDateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
+    VisitorsDateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.ruleengine.system.conditionlet.VisitorsDateTime",
                 new ComparisonParameterDefinition(2, EQUAL, BETWEEN, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL),
                 dateTime1, dateTime2);
@@ -83,7 +82,7 @@ public class UsersDateTimeConditionlet extends Conditionlet<UsersDateTimeConditi
         boolean evalution = false;
 
         if(instance.comparison==BETWEEN) {
-            evalution = instance.comparison.perform(usersDateTime, instance.dateTime1, instance.dateTime2);
+            evalution = instance.comparison.perform((Comparable<Object>) usersDateTime, instance.dateTime1, instance.dateTime2);
         } else {
             evalution = instance.comparison.perform(usersDateTime, instance.dateTime1);
         }
