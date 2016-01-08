@@ -104,7 +104,7 @@ public class RequestHeaderConditionlet extends Conditionlet<RequestHeaderConditi
     public RequestHeaderConditionlet() {
         super("api.system.ruleengine.conditionlet.RequestHeader",
               headerKey,
-              new ComparisonParameterDefinition(2, EXISTS, IS, IS_NOT, STARTS_WITH, ENDS_WITH, CONTAINS, REGEX),
+              new ComparisonParameterDefinition(2, IS, IS_NOT, EXISTS, STARTS_WITH, ENDS_WITH, CONTAINS, REGEX),
               headerValue);
     }
 
