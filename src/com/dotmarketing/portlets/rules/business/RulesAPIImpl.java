@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.osgi.HostActivator;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
@@ -55,9 +56,10 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(UsersCountryConditionlet.class)
                          .add(RequestHeaderConditionlet.class)
                          .add(UsersPlatformConditionlet.class)
-                         .add(VisitorsLanguageConditionlet.class)
-                         .add(UsersReferringURLConditionlet.class)
-                         .add(VisitorsDateTimeConditionlet.class)
+                         .add(CurrentSessionLanguageConditionlet.class)
+                         .add(ReferringURLConditionlet.class)
+                         .add(DateTimeConditionlet.class)
+                         .add(VisitedUrlConditionlet.class)
 //                         .add(UsersBrowserConditionlet.class)
 //                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
@@ -73,7 +75,6 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersStateConditionlet.class)
 //                         .add(UsersTimeConditionlet.class)
 //                         .add(UsersUrlParameterConditionlet.class)
-//                         .add(UsersVisitedUrlConditionlet.class)
                          .build();
     private final List<Class<? extends RuleActionlet>> defaultActionletClasses =
             ImmutableList.<Class<? extends RuleActionlet>>builder()
@@ -81,6 +82,7 @@ public class RulesAPIImpl implements RulesAPI {
                     .add(SetSessionAttributeActionlet.class)
                     .add(SetRequestAttributeActionlet.class)
                     .add(SetResponseHeaderActionlet.class)
+                    .add(PersonaActionlet.class)
                     .build();
 
     public RulesAPIImpl() {

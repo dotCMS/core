@@ -6,6 +6,7 @@ import java.util.List;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
@@ -49,9 +50,9 @@ public interface PersonaAPI {
 	
 	List<Persona> getDeletedPersonas(Host parent, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 	
-	List<Persona> getPersonas(Object parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
+	List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, User user, boolean respectFrontEndRoles) throws DotDataException, DotSecurityException;
 	
-	List<Persona> getPersonas(Object parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
+	List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,boolean respectFrontEndRoles) throws DotDataException,DotSecurityException;
 
 	Persona find(String id,  User user, boolean respectFrontEndRoles)throws DotDataException, DotSecurityException;
 

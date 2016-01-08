@@ -430,6 +430,23 @@ var editButtonRow="editContentletButtonRow";
 			<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_relationships.jsp" />
 		</div>
 	<%}%>
+	
+	
+	
+	<!-- -Rules -->
+   	<%if(InodeUtils.isSet(contentlet.getInode()) && contentlet.getStructure()!=null ){ %>
+   		<%if(contentlet.isHost() || contentlet.getStructure().isHTMLPageAsset()){ %>
+			<div id="rulez" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "Rules") %>" onShow="refreshRulesCp()">
+				<div id="contentletRulezDiv" style="height:100%;">
+				</div>
+			</div>
+		
+		<%} %>
+	<%} %>
+		
+
+
+
 
 	<!-- Permissions -->
 	<%if(!permissionsTabFieldExists && canEditAsset){%>
@@ -471,6 +488,12 @@ var editButtonRow="editContentletButtonRow";
 				<jsp:include page="/html/portlet/ext/contentlet/edit_contentlet_references.jsp" />
 			</div>
 		<%}%>
+		
+
+		
+		
+		
+		
 	<%}%>
 	</div>
 

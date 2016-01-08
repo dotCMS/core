@@ -20,14 +20,14 @@ import java.util.List;
 import java.util.Map;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.VisitorsDateTimeConditionlet.*;
+import static com.dotmarketing.portlets.rules.conditionlet.DateTimeConditionlet.*;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class VistorsDateTimeConditionletTest {
+public class DateTimeConditionletTest {
 
     private static final String MOCK_IP_ADDRESS = "10.0.0.1";
 
@@ -148,7 +148,7 @@ public class VistorsDateTimeConditionletTest {
 
     private class TestCase {
 
-        public final VisitorsDateTimeConditionlet conditionlet;
+        public final DateTimeConditionlet conditionlet;
         public final GeoIp2CityDbUtil geoIp2Util = mock(GeoIp2CityDbUtil.class);
 
         private final HttpServletRequest request ;
@@ -163,7 +163,7 @@ public class VistorsDateTimeConditionletTest {
             this.testDescription = testDescription;
             this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
-            conditionlet = new VisitorsDateTimeConditionlet(geoIp2Util);
+            conditionlet = new DateTimeConditionlet(geoIp2Util);
         }
 
         TestCase shouldBeTrue() {

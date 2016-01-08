@@ -1,10 +1,13 @@
 package com.dotcms.visitor.domain;
 
+import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
+
 import eu.bitwalker.useragentutils.UserAgent;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
@@ -102,7 +105,9 @@ public class Visitor implements Serializable {
     public boolean isNewVisitor() {
         return newVisitor;
     }
-
+    public boolean getNewVisitor() {
+        return newVisitor;
+    }
     public void setNewVisitor(boolean newVisitor) {
         this.newVisitor = newVisitor;
     }
@@ -110,6 +115,14 @@ public class Visitor implements Serializable {
     public URI getReferrer() {
         return referrer;
     }
+    
+    public String getDevice() {
+    	if(userAgent !=null){
+    		return userAgent.getOperatingSystem().getDeviceType().toString();
+    	}
+        return DeviceType.UNKNOWN.toString();
+    }
+    
 
     public void setReferrer(URI referrer) {
         this.referrer = referrer;
@@ -150,12 +163,14 @@ public class Visitor implements Serializable {
     @Override
     public String toString() {
         return "Visitor{" +
-                "ipAddress=" + ipAddress +
+        		"id=" + this.hashCode() +
+                ", ipAddress=" + ipAddress +
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
                 ", persona=" + persona +
                 ", accruedTags=" + accruedTags +
                 ", userAgent=" + userAgent +
+                ", device=" + getDevice() +
                 ", dmid=" + dmid +
                 ", newVisitor=" + newVisitor +
                 ", referrer=" + referrer +

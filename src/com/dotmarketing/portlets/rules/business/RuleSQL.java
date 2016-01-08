@@ -33,7 +33,6 @@ abstract class RuleSQL {
     protected String SELECT_CONDITION_BY_ID = "select * from rule_condition where id=?";
     protected String SELECT_CONDITIONS_BY_GROUP = "select * from rule_condition where condition_group=?";
     protected String DELETE_CONDITION_BY_ID = "delete from rule_condition where id=?";
-    protected String DELETE_CONDITION_BY_GROUP = "delete from rule_condition where condition_group=?";
 
     protected String INSERT_CONDITION_GROUP = "insert into rule_condition_group (id, rule_id, operator, priority, mod_date) values (?,?,?,?,?)";
     protected String UPDATE_CONDITION_GROUP = "update rule_condition_group set rule_id=?, operator=?, priority=?, mod_date=? where id=?";

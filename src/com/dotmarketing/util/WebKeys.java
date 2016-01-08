@@ -683,4 +683,12 @@ public final class WebKeys {
 	
 	public static final String TEXT_EDITOR = "textEditor";
 	public static final String VELOCITY = "velocity";
+	
+	
+	
+	// Personas
+    public static final String CMS_PERSONA_PARAMETER= "com.dotmarketing.persona.id";
+	
+	
+	
 }

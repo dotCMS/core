@@ -255,6 +255,8 @@ public class DirectorAction extends DotPortletAction {
     				params.put("selectedStructure", new String[] { type });
     				params.put("lang", new String[] { language });
     				params.put("referer", new String[] { referer });
+    				params.put("folder", new String[] { req.getParameter("folder") });
+
 				}
 				else {
 				    params.put("struts_action",new String[] {"/ext/htmlpages/edit_htmlpage"});

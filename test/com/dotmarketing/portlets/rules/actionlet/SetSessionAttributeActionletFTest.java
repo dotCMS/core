@@ -32,17 +32,19 @@ import static com.dotcms.repackage.org.junit.Assert.assertNotSame;
  * @since 09-22-2015
  *
  */
-public class SetSessionAttributeActionletTest extends TestBase {
+public class SetSessionAttributeActionletFTest extends TestBase {
 
     private HttpServletRequest request;
-    private String serverName;
-    private Integer serverPort;
     String ruleId;
+    private final String robotsTxtUrl;
+    private final String indexUrl;
 
-    public SetSessionAttributeActionletTest(){
+    public SetSessionAttributeActionletFTest(){
         request = ServletTestRunner.localRequest.get();
-        serverName = request.getServerName();
-        serverPort = request.getServerPort();
+        String serverName = request.getServerName();
+        int serverPort = request.getServerPort();
+        robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
+        indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
     }
 
@@ -52,8 +54,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String firstTime = String.valueOf(System.currentTimeMillis());
         createRule(Rule.FireOn.EVERY_REQUEST, firstTime);
 
-        makeRequest(
-                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
+        makeRequest(robotsTxtUrl + System.currentTimeMillis(),
                 "JSESSIONID=" + request.getSession().getId());
 
         String firstTimeRequest = (String)request.getSession().getAttribute("time");
@@ -62,8 +63,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String secondTime = String.valueOf(System.currentTimeMillis());
         updateRuleActionParam(secondTime);
 
-        makeRequest(
-                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
+        makeRequest(robotsTxtUrl,
                 "JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");
@@ -80,7 +80,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String firstTime = String.valueOf(System.currentTimeMillis());
         createRule(Rule.FireOn.EVERY_PAGE, firstTime);
 
-        makeRequest("http://" + serverName + ":" + serverPort,
+        makeRequest(indexUrl,
                 "JSESSIONID=" + request.getSession().getId());
 
         String firstTimeRequest = (String)request.getSession().getAttribute("time");
@@ -89,8 +89,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String secondTime = String.valueOf(System.currentTimeMillis());
         updateRuleActionParam(secondTime);
 
-        makeRequest(
-                "http://" + serverName + ":" + serverPort + "/html/images/star_on.gif?t=" + System.currentTimeMillis(),
+        makeRequest(robotsTxtUrl,
                 "JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");
@@ -105,7 +104,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String firstTime = String.valueOf(System.currentTimeMillis());
         createRule(Rule.FireOn.ONCE_PER_VISIT, firstTime);
 
-        URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort,
+        URLConnection conn = makeRequest(indexUrl,
                 "JSESSIONID=" + request.getSession().getId());
 
         String oncePerVisitCookie = getCookie(conn, com.dotmarketing.util.WebKeys.ONCE_PER_VISIT_COOKIE);
@@ -116,7 +115,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String secondTime = String.valueOf(System.currentTimeMillis());
         updateRuleActionParam(secondTime);
 
-        makeRequest("http://" + serverName + ":" + serverPort,
+        makeRequest(indexUrl,
                 oncePerVisitCookie + ";JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");
@@ -131,7 +130,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String firstTime = String.valueOf(System.currentTimeMillis());
         createRule(Rule.FireOn.ONCE_PER_VISITOR, firstTime);
 
-        URLConnection conn = makeRequest("http://" + serverName + ":" + serverPort,
+        URLConnection conn = makeRequest(indexUrl,
                 "JSESSIONID=" + request.getSession().getId());
 
         String longLivedCookie = getCookie(conn, com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
@@ -142,7 +141,7 @@ public class SetSessionAttributeActionletTest extends TestBase {
         String secondTime = String.valueOf(System.currentTimeMillis());
         updateRuleActionParam(secondTime);
 
-        makeRequest("http://" + serverName + ":" + serverPort,
+        makeRequest(indexUrl,
                 longLivedCookie + ";JSESSIONID=" + request.getSession().getId());
 
         String secondTimeRequest = (String)request.getSession().getAttribute("time");

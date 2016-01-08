@@ -46,7 +46,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
  * @since 04-22-2015
  */
 
-public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeConditionlet.Instance> {
+public class DateTimeConditionlet extends Conditionlet<DateTimeConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
@@ -65,12 +65,12 @@ public class VisitorsDateTimeConditionlet extends Conditionlet<VisitorsDateTimeC
             new DateTimeInput<>(new DateTimeType())
     );
 
-    public VisitorsDateTimeConditionlet() {
+    public DateTimeConditionlet() {
         this(GeoIp2CityDbUtil.getInstance());
     }
 
     @VisibleForTesting
-    VisitorsDateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
+    DateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.ruleengine.system.conditionlet.VisitorsDateTime",
                 new ComparisonParameterDefinition(2, EQUAL, BETWEEN, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL),
                 dateTime1, dateTime2);

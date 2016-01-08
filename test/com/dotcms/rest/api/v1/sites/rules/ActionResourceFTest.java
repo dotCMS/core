@@ -1,195 +1,111 @@
 package com.dotcms.rest.api.v1.sites.rules;
 
 import com.dotcms.TestBase;
+import com.dotcms.repackage.com.google.common.base.Strings;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.client.Entity;
 import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class ActionResourceFTest extends TestBase {
 
     private final FunctionalTestConfig config;
     private final String actionletEndpointUrl;
+	private final WebTarget target;
+	private String ruleId;
+
+	private List<Rule> rulesToRemove = Lists.newArrayList();
 
     public ActionResourceFTest() {
         config = new FunctionalTestConfig();
-        actionletEndpointUrl = "/sites/" + config.defaultHost.getIdentifier() + "/ruleengine/actions";
+        actionletEndpointUrl = "/sites/" + config.defaultHost.getIdentifier() + "/ruleengine/actions/";
+		target = config.restBaseTarget();
     }
 
-    /**
-     * Used to create as many rules as needed for testing, based on simple rule creation
-     */
-    private String createRule(String ruleName) throws JSONException {
-        //setup
-        JSONObject ruleJSON = new JSONObject();
-        ruleJSON.put("name", ruleName);
-        ruleJSON.put("enabled", "true");
-        ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
-
-        // client call
-        WebTarget target = config.restBaseTarget();
-
-        // create
-        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.json(ruleJSON.toString()));
-
-        // response
-        String responseStr = response.readEntity(String.class);
-        JSONObject responseJSON = new JSONObject(responseStr);
-        String rule = (String)responseJSON.get("id");
-
-        return rule;
-    }
-
-    /**
-     * Used to delete as many rules as needed for testing
-     */
-    private void deleteRule(String ruleID) {
-        WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + ruleID)
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .delete();
-    }
-    
-    
     /**
      * Save Action with required the parameters... return 200
      */
     @Test
-    public void saveActionReq() throws JSONException{
+    public void saveValidAction() throws JSONException{
     	//Creation of the Rule
-    	String ruleId = createRule("Save Action Req Parameters");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-		actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
+    	ruleId = createRule("Save Valid Action");
+		Response response = createAction(ruleId, "MyAction");
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
     	
     	//response
     	String responseStr = response.readEntity(String.class);
     	JSONObject responseJSON = new JSONObject(responseStr);
     	String action = (String)responseJSON.get("id");
+		assertFalse(Strings.isNullOrEmpty(action));
     	
     }
-    
-    /**
-     * Save Action with bad parameter Name empty... return 400
-     */
-    @Test
-    public void saveActionNameEmpty() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = createRule("Save Action Bad Parameter Name");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "");
-    	actionJSON.put("owningRule", ruleId);
-    	actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
-    	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
-    	
-    }
-    
+
     /**
      * Save Action with bad parameter Owning Rule non existent... return 400
      */
     @Test
     public void saveActionRuleNonExistent() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = "00000000-0000-0000-0000-000000000000";
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Test Action Rest");
-    	actionJSON.put("owningRule", ruleId);
-    	actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
+    	String nonExistingRuleId = "00000000-0000-0000-0000-000000000000";
+    	Response response = createAction(nonExistingRuleId, "MyAction");
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
-    	
     }
+
+	/**
+	 * Save Action with bad parameter Name empty... return 400
+	 */
+	@Test
+	public void saveActionEmptyName() throws JSONException{
+		ruleId = createRule("Save Action Empty Name");
+		String emptyName = "";
+		Response response = createAction(ruleId, emptyName);
+		assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
+	}
 
     /**
      * Save Action with bad parameter Actionlet non existent... return 400
      */
     @Test
-    public void saveActionActionletNonExistent() throws JSONException {
-        //Creation of the Rule
-        String ruleId = createRule("Save Action Actionlet Non Existent");
-
-        //Setup
-        JSONObject actionJSON = new JSONObject();
-        actionJSON.put("owningRule", ruleId);
-        actionJSON.put("actionlet", "something");
-
-        // client call
-        WebTarget target = config.restBaseTarget();
-
-        //create
-        Response response = target
-            .path(actionletEndpointUrl)
-            .request(MediaType.APPLICATION_JSON_TYPE)
-            .post(Entity.json(actionJSON.toString()));
-
-        assertTrue(String.format("Server should not be able to save a rule that doesn't exist yet (push requires id field). "
-                                 + "Response code should be 400, but was %s.", response.getStatus()),
-                   response.getStatus() == HttpStatus.SC_BAD_REQUEST);
+    public void saveActionNonExistingActionlet() throws JSONException {
+        ruleId = createRule("Save Action Non Existing Actionlet");
+        Response response = createAction(ruleId, "MyAction", "NonExistingActionlet");
+        assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
     }
     
     /**
-     * Save Action with missing parameter Owning Rule... return 400
+     * Save Action with missing attribute "owningRule"... return 400
      */
     @Test
-    public void saveActionMissingParameter() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = createRule("Save Action Parameter Missing");
-    	
+    public void saveActionMissingMandatoryAttribute() throws JSONException{
     	//Setup
     	JSONObject actionJSON = new JSONObject();
     	actionJSON.put("name", "Test Action Rest");
     	actionJSON.put("actionlet", "something");
     	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
     	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
+    	Response response = target.path(actionletEndpointUrl)
+				.request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
-    	
     }
     
     /**
@@ -198,20 +114,8 @@ public class ActionResourceFTest extends TestBase {
     @Test
     public void getAction() throws JSONException{
     	//Creation of the Rule
-    	String ruleId = createRule("Get Action");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-		actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
+    	ruleId = createRule("Get Action");
+		Response response = createAction(ruleId, "MyAction");
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
     	
@@ -221,10 +125,10 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     	//get
-    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/"+action).request(MediaType.APPLICATION_JSON_TYPE)
-    			.get();
+    	response = target.path(actionletEndpointUrl + action)
+				.request(MediaType.APPLICATION_JSON_TYPE)
+				.get();
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
     }
 
     /**
@@ -232,101 +136,20 @@ public class ActionResourceFTest extends TestBase {
      */
     @Test
     public void getNonExistentAction() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = createRule("Get Non Existent Action");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-		actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
-    	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
-    	//response
-    	String responseStr = response.readEntity(String.class);
-    	JSONObject responseJSON = new JSONObject(responseStr);
-    	String action = (String)responseJSON.get("id");
-    	
-    	//get
-    	response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/"+"00000000-0000-0000-0000-000000000000").request(MediaType.APPLICATION_JSON_TYPE)
-    			.get();
+    	Response response = target.path(actionletEndpointUrl + "00000000-0000-0000-0000-000000000000")
+				.request(MediaType.APPLICATION_JSON_TYPE)
+				.get();
     	assertTrue(response.getStatus() == HttpStatus.SC_NOT_FOUND);
     	
     }
-    
-    /**
-     * Save Action with all the parameters... return 200
-     */
-    @Test
-    public void saveActionAll() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = createRule("Save Action All Parameters");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-    	actionJSON.put("priority", "10");
-		actionJSON.put("actionlet", "SetSessionAttributeActionlet");
-		//JSON sessionKey
-		JSONObject sessionKeyJSON = new JSONObject();
-		sessionKeyJSON.put("key", "sessionKey");
-		sessionKeyJSON.put("value", "myKey");
-		//JSON sessionValue
-		JSONObject sessionValueJSON = new JSONObject();
-		sessionValueJSON.put("key", "sessionValue");
-		sessionValueJSON.put("value", "I am from US");
-		//JSON parameters
-		JSONObject parametersJSON = new JSONObject();
-		parametersJSON.put("sessionKey", sessionKeyJSON);
-		parametersJSON.put("sessionValue", sessionValueJSON);
-		actionJSON.put("parameters", parametersJSON);
 
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
-    	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
-    	//response
-    	String responseStr = response.readEntity(String.class);
-    	JSONObject responseJSON = new JSONObject(responseStr);
-    	String action = (String)responseJSON.get("id");
-    	
-    }
-    
     /**
      * Delete an action... return 204
      */
     @Test
     public void deleteAction() throws JSONException{
-    	//Creation of the Rule
-    	String ruleId = createRule("Delete Action");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-		actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
-    	
+    	ruleId = createRule("Delete Action");
+		Response response = createAction(ruleId, "MyAction");
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
     	
     	//response
@@ -335,7 +158,7 @@ public class ActionResourceFTest extends TestBase {
     	String action = (String)responseJSON.get("id");
     	
     	//delete
-    	response = target.path("/sites/" + config.defaultHostId + "/ruleengine/actions/" + action)
+    	response = target.path(actionletEndpointUrl + action)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
     	
@@ -347,8 +170,7 @@ public class ActionResourceFTest extends TestBase {
      */
     @Test
     public void deleteNonExistentAction() {
-        WebTarget target = config.restBaseTarget();
-        Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/actions/" + "00000000-0000-0000-0000-000000000000")
+        Response response = target.path(actionletEndpointUrl + "00000000-0000-0000-0000-000000000000")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .delete();
         
@@ -361,20 +183,8 @@ public class ActionResourceFTest extends TestBase {
     @Test
     public void updateAction() throws JSONException{
     	//Creation of the Rule
-    	String ruleId = createRule("Update Action");
-    	
-    	//Setup
-    	JSONObject actionJSON = new JSONObject();
-    	actionJSON.put("name", "Action Test REST");
-    	actionJSON.put("owningRule", ruleId);
-		actionJSON.put("actionlet", "CountRequestsActionlet");
-    	    	
-    	// client call
-    	WebTarget target = config.restBaseTarget();
-    	
-    	//create
-    	Response response = target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
-    			.post(Entity.json(actionJSON.toString()));
+    	ruleId = createRule("Update Action");
+		Response response = createAction(ruleId, "MyAction");
     	
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
     	
@@ -387,8 +197,17 @@ public class ActionResourceFTest extends TestBase {
         updateJSON.put("name", "Updated Name");
         updateJSON.put("owningRule", ruleId);
         updateJSON.put("actionlet", "CountRequestsActionlet");
+
+		JSONObject parametersJSON = new JSONObject();
+
+		JSONObject fireOnJSON = new JSONObject();
+		fireOnJSON.put("key", "fireOn");
+		fireOnJSON.put("value", Rule.FireOn.EVERY_PAGE.toString());
+		parametersJSON.put("fireOn", fireOnJSON);
+
+		updateJSON.put("parameters", parametersJSON);
         
-        response = target.path("/sites/"+ config.defaultHost.getIdentifier() + "/ruleengine/actions/" + action)
+        response = target.path(actionletEndpointUrl + action)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.json(updateJSON.toString()));
 
@@ -396,4 +215,72 @@ public class ActionResourceFTest extends TestBase {
         assertTrue(response.getStatus() == HttpStatus.SC_OK);
 
     }
+
+	/**
+	 * Used to create as many rules as needed for testing, based on simple rule creation
+	 */
+	private String createRule(String ruleName) throws JSONException {
+		//setup
+		JSONObject ruleJSON = new JSONObject();
+		ruleJSON.put("name", ruleName + System.currentTimeMillis());
+		ruleJSON.put("enabled", "true");
+		ruleJSON.put("fireOn", Rule.FireOn.EVERY_PAGE.toString());
+
+		// create
+		Response response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules")
+				.request(MediaType.APPLICATION_JSON_TYPE)
+				.post(Entity.json(ruleJSON.toString()));
+
+		// response
+		String responseStr = response.readEntity(String.class);
+		JSONObject responseJSON = new JSONObject(responseStr);
+		String ruleId = (String)responseJSON.get("id");
+
+		return ruleId;
+	}
+
+	private Response createAction(String ruleId, String name) throws JSONException  {
+		return createAction(ruleId, name, "CountRequestsActionlet");
+	}
+
+	private Response createAction(String ruleId, String name, String actionletName) throws JSONException  {
+		List<Map<String, String>> parameters = new ArrayList<>();
+		HashMap<String, String> parameter = new HashMap<>();
+		parameter.put("key", "fireOn");
+		parameter.put("value", Rule.FireOn.EVERY_PAGE.name());
+		parameters.add(parameter);
+		return createAction(ruleId, name, actionletName , parameters);
+	}
+
+	private Response createAction(String ruleId, String name, String actionletName, List<Map<String, String>> parameters) throws JSONException {
+		JSONObject actionJSON = new JSONObject();
+		actionJSON.put("name", name);
+		actionJSON.put("owningRule", ruleId);
+		actionJSON.put("actionlet", actionletName);
+
+		if(parameters!=null) {
+			JSONObject parametersJSON = new JSONObject();
+
+			for (Map<String, String> parameter : parameters) {
+				JSONObject fireOnJSON = new JSONObject();
+				fireOnJSON.put("key", parameter.get("key"));
+				fireOnJSON.put("value", parameter.get("value"));
+				parametersJSON.put("fireOn", fireOnJSON);
+			}
+
+			actionJSON.put("parameters", parametersJSON);
+		}
+
+		return target.path(actionletEndpointUrl).request(MediaType.APPLICATION_JSON_TYPE)
+				.post(Entity.json(actionJSON.toString()));
+	}
+
+
+	@After
+	public void deleteRule() throws DotDataException, DotSecurityException {
+		if (ruleId != null) {
+			APILocator.getRulesAPI().deleteRule(
+					APILocator.getRulesAPI().getRuleById(ruleId, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false);
+		}
+	}
 }
