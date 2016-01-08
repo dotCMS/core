@@ -11,6 +11,13 @@ configurations {
 //Import and apply the dependencies from the dependencies scripts
 apply from: "$rootDir/dependencies.gradle"
 
+configurations.all({
+    // dynamic: e.g. 'version: 2.0+'
+    resolutionStrategy.cacheDynamicVersionsFor 1, 'hours'
+    // changing: e.g. 'version 2.0.0-SNAPSHOT'
+    resolutionStrategy.cacheChangingModulesFor 10, 'minutes'
+})
+
 repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-release" }
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
