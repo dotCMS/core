@@ -66,6 +66,8 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   private _viewIsInitialized:boolean
   private _$dropdown:any
 
+  private _initDebounce:EventEmitter<any>
+
   constructor(elementRef:ElementRef) {
     this.placeholder = ""
     this.allowAdditions = false
@@ -78,6 +80,11 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
     this._updateView = false
     this._viewIsInitialized = false
     this.name = "dd-" + new Date().getTime() + Math.random()
+
+    this._initDebounce = new EventEmitter()
+    this._initDebounce.debounceTime(100).subscribe(()=>{
+      this.initDropdown()
+    })
   }
 
   ngOnChanges(change) {
@@ -87,45 +94,35 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
         this._$dropdown.dropdown('set selected', this.value)
       } else {
         this._updateView = true
-        this.initDropdown()
+        this._initDebounce.emit(1)
       }
     }
   }
 
   addOption(option:InputOption) {
-    console.log("Dropdown", "addOption", option)
     this._options.push(option)
-    if(this._$dropdown && this.value == option.value){
-      console.log("Dropdown", "addOption", 'yaaaaaaay')
-      this._$dropdown.dropdown('set value', option.value)
-      this._$dropdown.dropdown('refresh')
-    }
-    this.initDropdown()
+    this._initDebounce.emit(1)
   }
 
   ngAfterViewInit() {
     this._viewIsInitialized = true
     if (this._options.length > 0) {
-      this.initDropdown()
-      console.log("Dropdown", "ngAfterViewInit", this._options)
+      this._initDebounce.emit(1)
     } // else 'wait for options to be set'
 
   }
 
   ngAfterViewChecked() {
     if (this._updateView === true) {
-      this.initDropdown()
+      this._initDebounce.emit(1)
     }
   }
 
   ngOnDestroy(){
     this._$dropdown.dropdown('clear')
-    //this._$dropdown.dropdown('refresh')
-    console.log('destorying dd')
   }
 
   refreshDisplayText(label:string) {
-    console.log("Dropdown", "refreshDisplayText", label)
     if (this._$dropdown) {
       this._$dropdown.dropdown('set text', label)
     }

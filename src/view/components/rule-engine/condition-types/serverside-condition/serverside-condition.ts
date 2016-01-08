@@ -50,8 +50,8 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                        [value]="input.value"
                        placeholder="{{input.placeholder | async}}"
                        optionUrl="{{input.optionUrl}}"
-                       optionNameField="{{input.optionNameField}}"
                        optionValueField="{{input.optionValueField}}"
+                       optionLabelField="{{input.optionLabelField}}"
                        [required]="input.required"
                        [allowAdditions]="input.allowAdditions"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
@@ -146,8 +146,8 @@ export class ServersideCondition {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       optionUrl: inputType.optionUrl,
-      optionNameField: inputType.optionNameField,
       optionValueField: inputType.optionValueField,
+      optionLabelField: inputType.optionLabelField,
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,

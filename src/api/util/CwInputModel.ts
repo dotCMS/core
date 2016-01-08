@@ -136,8 +136,8 @@ CwInputDefinition.registerType("dropdown", CwDropdownInputModel)
 
 export class CwRestDropdownInputModel extends CwInputDefinition {
   optionUrl: string
-  optionNameField: string
   optionValueField: string
+  optionLabelField: string
   allowAdditions: boolean
   minSelections:number = 0
   maxSelections:number = 1
@@ -166,8 +166,8 @@ export class CwRestDropdownInputModel extends CwInputDefinition {
   static fromJson(json:any, name:string):CwRestDropdownInputModel {
     let m = new CwRestDropdownInputModel(json.id, name);
     m.optionUrl = json.optionUrl
-    m.optionNameField = json.jsonNameField
     m.optionValueField = json.jsonValueField
+    m.optionLabelField = json.jsonLabelField
     m.allowAdditions = json.allowAdditions
     m.minSelections = json.minSelections
     m.maxSelections = json.maxSelections

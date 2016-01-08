@@ -7,6 +7,7 @@ import {Observable} from 'rxjs/Rx'
 
 import {Dropdown, InputOption} from '../dropdown/dropdown'
 import {Verify} from "../../../../../api/validation/Verify";
+import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 
 @Component({
   selector: 'cw-input-rest-dropdown',
@@ -29,19 +30,21 @@ export class RestDropdown {
   @Input() minSelections:number
   @Input() maxSelections:number
   @Input() optionUrl:string
-  @Input() optionNameField:string
   @Input() optionValueField:string
+  @Input() optionLabelField:string
 
   @Output() change:EventEmitter<any>
 
   private _http
   private _options:any[]
+  private _apiRoot:ApiRoot
 
-  constructor(http:Http) {
+  constructor(http:Http, apiRoot: ApiRoot) {
     this._http = http
+    this._apiRoot = apiRoot
     this.placeholder = ""
-    this.optionNameField = "key"
-    this.optionValueField = "value"
+    this.optionValueField = "key"
+    this.optionLabelField = "value"
     this.allowAdditions = false
     this.minSelections = 0
     this.maxSelections = 1
@@ -55,7 +58,8 @@ export class RestDropdown {
 
   ngOnChanges(change) {
     if (change.optionUrl) {
-      this._http.get(change.optionUrl.currentValue)
+      let requestOptionArgs = this._apiRoot.getDefaultRequestOptions()
+      this._http.get(change.optionUrl.currentValue, requestOptionArgs)
           // Call map on the response observable to get the parsed people object
           .map((res:any)=> this.jsonEntriesToOptions(res))
           .subscribe(options => {
@@ -80,16 +84,12 @@ export class RestDropdown {
 
   private jsonEntryToOption(json:any, key:string = null):{value:string, label:string} {
     let opt = {value: null, label: null}
-    if (!json[this.optionNameField] && this.optionNameField === 'key' && key != null) {
+    if (!json[this.optionValueField] && this.optionValueField === 'key' && key != null) {
       opt.value = key
     } else {
-      opt.value = json[this.optionNameField]
+      opt.value = json[this.optionValueField]
     }
-    opt.label = json[this.optionValueField]
-
-    if(this.value === opt.value){
-      console.log("AAAand stuff: ", opt)
-    }
+    opt.label = json[this.optionLabelField]
     return opt
   }
 
