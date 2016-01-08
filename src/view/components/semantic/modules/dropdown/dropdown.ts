@@ -93,13 +93,21 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   }
 
   addOption(option:InputOption) {
+    console.log("Dropdown", "addOption", option)
     this._options.push(option)
+    if(this._$dropdown && this.value == option.value){
+      console.log("Dropdown", "addOption", 'yaaaaaaay')
+      this._$dropdown.dropdown('set value', option.value)
+      this._$dropdown.dropdown('refresh')
+    }
+    this.initDropdown()
   }
 
   ngAfterViewInit() {
     this._viewIsInitialized = true
     if (this._options.length > 0) {
       this.initDropdown()
+      console.log("Dropdown", "ngAfterViewInit", this._options)
     } // else 'wait for options to be set'
 
   }
@@ -181,7 +189,7 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
    */
   private _applyArrowNavFix($dropdown) {
     let $searchField = $dropdown.children('input.search')
-    $searchField.on('keyup', (event)=> {
+    $searchField.on('keyup', (event:any)=> {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
         event.stopPropagation()
       }

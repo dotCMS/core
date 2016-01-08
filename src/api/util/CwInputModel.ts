@@ -41,7 +41,13 @@ export class CwInputDefinition {
   }
 
   static fromJson(json:any, name:string):CwInputDefinition{
-    let m = Registry[json.id || json.type].fromJson(json, name);
+    let type = Registry[json.id || json.type]
+    if(!type){
+      let msg = "No input definition registered for '" + (json.id || json.type) + "'"
+      console.error(msg, json)
+      throw new Error(msg)
+    }
+    let m = type.fromJson(json, name);
     m.placeholder = json.placeholder
     m.dataType = json.dataType
     return m;
@@ -127,6 +133,51 @@ export class CwDropdownInputModel extends CwInputDefinition {
 }
 
 CwInputDefinition.registerType("dropdown", CwDropdownInputModel)
+
+export class CwRestDropdownInputModel extends CwInputDefinition {
+  optionUrl: string
+  optionNameField: string
+  optionValueField: string
+  allowAdditions: boolean
+  minSelections:number = 0
+  maxSelections:number = 1
+  selected:Array<any>
+  i18nBaseKey:string
+
+  constructor(id:string, name:string) {
+    super(id, name)
+    this.selected = []
+  }
+
+  verify(selections:any):CwValidationResults {
+    let valid  = true
+    if(Verify.isString(selections)){
+      selections = [selections]
+    }
+    if(this.minSelections > 0){
+      valid = selections != null && selections.length >= this.minSelections
+    }
+    if(selections != null){
+      valid = valid && selections.length <= this.maxSelections
+    }
+    return new CwValidationResults(valid)
+  }
+
+  static fromJson(json:any, name:string):CwRestDropdownInputModel {
+    let m = new CwRestDropdownInputModel(json.id, name);
+    m.optionUrl = json.optionUrl
+    m.optionNameField = json.jsonNameField
+    m.optionValueField = json.jsonValueField
+    m.allowAdditions = json.allowAdditions
+    m.minSelections = json.minSelections
+    m.maxSelections = json.maxSelections
+    let defV = json.dataType.defaultValue
+    m.selected = (defV == null || defV === '') ? [] : [defV]
+    return m
+  }
+}
+
+CwInputDefinition.registerType("restDropdown", CwRestDropdownInputModel)
 
 
 
