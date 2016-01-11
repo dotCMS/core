@@ -53,7 +53,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			esQuery = new JSONObject(esQueryStr);
 		} catch (Exception e1) {
 			Logger.warn(this.getClass(), "unable to create JSONObject");
-			throw new DotDataException("malformed json");
+			throw new DotDataException("malformed json : " + e1.getMessage());
 		}
 
 		
