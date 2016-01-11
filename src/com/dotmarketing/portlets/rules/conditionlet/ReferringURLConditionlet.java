@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -37,7 +36,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ST
   * @since 04-22-2015
  */
 
-public class UsersReferringURLConditionlet extends Conditionlet<UsersReferringURLConditionlet.Instance> {
+public class ReferringURLConditionlet extends Conditionlet<ReferringURLConditionlet.Instance> {
 
     private static final long serialVersionUID = 1L;
 
@@ -48,7 +47,7 @@ public class UsersReferringURLConditionlet extends Conditionlet<UsersReferringUR
             new TextInput<>(new TextType())
     );
 
-    public UsersReferringURLConditionlet() {
+    public ReferringURLConditionlet() {
         super("api.ruleengine.system.conditionlet.VisitorsReferringURL",
                 new ComparisonParameterDefinition(2, IS, IS_NOT, STARTS_WITH, ENDS_WITH, CONTAINS, REGEX),
                 referringURLValue);

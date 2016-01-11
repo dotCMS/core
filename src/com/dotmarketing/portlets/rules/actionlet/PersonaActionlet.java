@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
@@ -39,37 +40,11 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
     private PersonaAPI personaAPI;
 
     public PersonaActionlet() {
-        super(I18N_BASE);
+        super(I18N_BASE,
+              new ParameterDefinition<>(1,
+                                        PERSONA_ID_KEY,
+                                        new RestDropdownInput("/api/v1/personas", "key", "name")));
         personaAPI = APILocator.getPersonaAPI();
-    }
-
-    @Override
-    public Map<String, ParameterDefinition> getParameterDefinitions() {
-        Map<String, ParameterDefinition> map = Maps.newLinkedHashMap();
-        map.put(PERSONA_ID_KEY, new ParameterDefinition<>(1, PERSONA_ID_KEY, getDropdown()));
-        return map;
-    }
-
-    private DropdownInput getDropdown() {
-        DropdownInput input = new DropdownInput().minSelections(1);
-
-        try {
-            /*@ todo ggranum: This information will need to come from a different rest endpoint, so we can avoid
-            forcing request handling into the Actionlets themselves. Which is to say: lets keep the
-            Action and Condition type definitions 'static', and push the dynamic aspects elsewhere. */
-            HostAPI hostAPI = new ApiProvider().hostAPI();
-            User user = APILocator.getUserAPI().getSystemUser();
-            Host systemHost = hostAPI.findSystemHost();
-            List<Persona> personas = personaAPI.getPersonas(systemHost, true, false, user, true);
-            for (Persona persona : personas) {
-                input.option(persona.getIdentifier(), persona.getKeyTag());
-            }
-
-        } catch(Exception e){
-            e.printStackTrace();
-        }
-
-        return input;
     }
 
     @Override

@@ -32,7 +32,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 	@Override
 	public List<Field> getBasePersonaFields(Structure structure) {
-		List<Field> fields = new ArrayList<Field>();
+		List<Field> fields = new ArrayList<>();
 		Field field = null;
 		int i = 1;
 
@@ -128,16 +128,16 @@ public class PersonaAPIImpl implements PersonaAPI {
 	@Override
 	public List<Persona> getPersonas(Treeable parent, boolean live, boolean deleted, int limit, int offset, String sortBy, User user,
 			boolean respectFrontEndRoles) throws DotDataException, DotSecurityException {
-		List<Persona> personas = new ArrayList<Persona>();
-		StringBuffer query = new StringBuffer();
+		List<Persona> personas = new ArrayList<>();
+		StringBuilder query = new StringBuilder();
 		String liveWorkingDeleted = (live) ? " +live:true " : (deleted) ? " +working:true +deleted:true " : " +working:true -deleted:true ";
 		query.append(liveWorkingDeleted);
 		if (parent instanceof Host) {
 			query.append(" +conFolder:SYSTEM_FOLDER");
-			query.append(" +conHost:(" + parent.getIdentifier() + " " + Host.SYSTEM_HOST + ")");
+			query.append(" +conHost:(").append(parent.getIdentifier()).append(" ").append(Host.SYSTEM_HOST).append(")");
 		}
 		else if (parent instanceof Folder) {
-			query.append(" +conFolder:" + parent.getIdentifier() + " ");
+			query.append(" +conFolder:").append(parent.getIdentifier()).append(" ");
 		}
 		
 		query.append(" +structureType:" + Structure.STRUCTURE_TYPE_PERSONA);
@@ -179,17 +179,17 @@ public class PersonaAPIImpl implements PersonaAPI {
 
 		StringWriter sw = new StringWriter();
 		if (UtilMethods.isSet(persona.getIdentifier())) {
-			sw.append(" -identifier:" + persona.getIdentifier());
+			sw.append(" -identifier:").append(persona.getIdentifier());
 		}
 		if (UtilMethods.isSet(persona.getInode())) {
-			sw.append(" -inode:" + persona.getInode());
+			sw.append(" -inode:").append(persona.getInode());
 		}
 
-		sw.append(" +conhost:" + persona.getHost());
+		sw.append(" +conhost:").append(persona.getHost());
 		sw.append(" +basetype:6 +languageid:* +(");
 
 		for (Structure s : personaStructs) {
-			sw.append( s.getVelocityVarName() + "." + KEY_TAG_FIELD + ":" + keyTag + " ");
+			sw.append(s.getVelocityVarName()).append(".").append(KEY_TAG_FIELD).append(":").append(keyTag).append(" ");
 
 		}
 		sw.append(") ");

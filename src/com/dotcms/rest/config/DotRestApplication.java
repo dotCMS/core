@@ -2,6 +2,7 @@ package com.dotcms.rest.config;
 
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.rest.RulesEnginePortlet;
+import com.dotcms.rest.api.v1.personas.PersonaResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.actions.ActionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionResource;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionValueResource;
@@ -47,6 +48,8 @@ public class DotRestApplication extends com.dotcms.repackage.javax.ws.rs.core.Ap
 
                     REST_CLASSES.add(com.dotcms.rest.RestExamplePortlet.class);
 					REST_CLASSES.add(com.dotcms.rest.elasticsearch.ESContentResourcePortlet.class);
+
+					REST_CLASSES.add(PersonaResource.class);
 
 					REST_CLASSES.add(RulesEnginePortlet.class);
 					REST_CLASSES.add(RuleResource.class);
