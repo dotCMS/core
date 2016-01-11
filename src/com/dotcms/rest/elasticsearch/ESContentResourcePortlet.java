@@ -1,8 +1,15 @@
 package com.dotcms.rest.elasticsearch;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
-import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
 import com.dotcms.repackage.javax.ws.rs.POST;
@@ -29,15 +36,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 @Path("/es")
 public class ESContentResourcePortlet extends BaseRestPortlet {
