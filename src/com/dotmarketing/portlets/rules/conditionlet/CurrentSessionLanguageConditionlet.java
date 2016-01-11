@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -12,9 +13,11 @@ import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
-import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
+import java.util.Map;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
@@ -38,61 +41,24 @@ public class CurrentSessionLanguageConditionlet extends Conditionlet<CurrentSess
     private static final long serialVersionUID = 1L;
 
     public static final String LANGUAGE_KEY = "language";
+    public static final String SYSTEM_LOCATE_LANGUAGE_KEY = "system.locale.language";
+
+    private static final String defaultLanguageKey = APILocator.getLanguageAPI().getDefaultLanguage().getLanguageCode();
+    private static DropdownInput languagesDropDown = new DropdownInput().allowAdditions().minSelections(1);
+    static {
+        //Getting the current list of languages
+        List<Language> currentLanguages = APILocator.getLanguageAPI().getLanguages();
+        for ( Language language : currentLanguages ) {
+            languagesDropDown.option(language.getLanguageCode().toLowerCase());
+        }
+    }
 
     private static final ParameterDefinition<TextType> LANGUAGE_PARAMETER = new ParameterDefinition<>(
-        3, LANGUAGE_KEY,
-        new DropdownInput()
-            .allowAdditions()
-            .minSelections(1)
-            .option("af")
-            .option("sq")
-            .option("ar")
-            .option("be")
-            .option("bn")
-            .option("bs")
-            .option("bg")
-            .option("ca")
-            .option("zh")
-            .option("hr")
-            .option("cs")
-            .option("da")
-            .option("nl")
-            .option("en")
-            .option("fi")
-            .option("fr")
-            .option("de")
-            .option("el")
-            .option("ht")
-            .option("he")
-            .option("hi")
-            .option("hu")
-            .option("id")
-            .option("is")
-            .option("it")
-            .option("ja")
-            .option("ko")
-            .option("ku")
-            .option("lt")
-            .option("no")
-            .option("fa")
-            .option("pl")
-            .option("pt")
-            .option("ro")
-            .option("ru")
-            .option("sd")
-            .option("sm")
-            .option("sr")
-            .option("sk")
-            .option("es")
-            .option("sv")
-            .option("th")
-            .option("tr")
-            .option("uk")
-            .option("vi")
-            .option("yi")
-            .option("za"),
-        "en"
+            3, LANGUAGE_KEY, SYSTEM_LOCATE_LANGUAGE_KEY,
+            languagesDropDown,
+            defaultLanguageKey
     );
+
     private final LanguageWebAPI langApi;
 
     public CurrentSessionLanguageConditionlet() {
