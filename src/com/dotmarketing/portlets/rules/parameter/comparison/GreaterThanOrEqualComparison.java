@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 public class GreaterThanOrEqualComparison extends Comparison<Comparable<Object>> {
 
     public GreaterThanOrEqualComparison() {
-        super("greater_than_or_equal");
+        super("greaterThanOrEqual");
     }
 
     @Override
