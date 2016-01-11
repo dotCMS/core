@@ -5,24 +5,19 @@ import java.io.InputStreamReader;
 import java.net.CookieHandler;
 import java.net.CookieManager;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.com.sun.xml.ws.transport.http.client.CookiePolicy;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -32,18 +27,14 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
-import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
-import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -58,8 +49,6 @@ import com.liferay.portal.model.User;
  */
 public class PersonaActionletTest extends TestBase {
 
-	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-	private static StructureAPI structureAPI = APILocator.getStructureAPI();
 	private static FolderAPI folderAPI = APILocator.getFolderAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
 	private static ContainerAPI containerAPI = APILocator.getContainerAPI();
@@ -69,12 +58,15 @@ public class PersonaActionletTest extends TestBase {
 
 	private static HostAPI hostAPI = APILocator.getHostAPI();
 	private static UserAPI userAPI = APILocator.getUserAPI();
-	private static Host host=null;
 	private static User sysuser=null;
 
 	private HttpServletRequest request=ServletTestRunner.localRequest.get();
-	private HttpServletResponse response=ServletTestRunner.localResponse.get();
 
+	/**
+	 * Test the creation of a persona in the backend and if the persona object 
+	 * change in the $visitor variable for the preview as persona functionality card584
+	 * @throws Exception
+	 */
 	@Test
 	public void addPersona() throws Exception {
 
@@ -85,7 +77,7 @@ public class PersonaActionletTest extends TestBase {
 		/*
 		 * Create personas for test
 		 */
-		//Single host persona
+		//Create a Persona related to Single host
 		Contentlet persona = new Contentlet();
 		persona.setStructureInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 		persona.setHost(host.getIdentifier());
@@ -102,7 +94,7 @@ public class PersonaActionletTest extends TestBase {
 		boolean isPersonaAIndexed = contentletAPI.isInodeIndexed(persona.getInode(), 500);
 		Assert.assertTrue(isPersonaAIndexed);
 
-		//System Host Persona
+		//Create a Persona related to System Host
 		Contentlet persona2 = new Contentlet();
 		persona2.setStructureInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 		persona2.setHost(systemHost.getIdentifier());
@@ -129,7 +121,8 @@ public class PersonaActionletTest extends TestBase {
 
 		/*
 		 * Test 1:
-		 * Create a test page in the same folder
+		 * Create a test page to see if the personas object 
+		 * in the $visitor variable change
 		 */
 		Folder ftest = folderAPI.createFolders("/personafoldertest"+System.currentTimeMillis(), host, sysuser, false);
 		//adding page
@@ -155,7 +148,7 @@ public class PersonaActionletTest extends TestBase {
 		contentAsset=contentletAPI.checkin(contentAsset, sysuser, false);
 		contentletAPI.publish(contentAsset, sysuser, false);
 
-		/*Adding content*/
+		/*Adding simple widget to show the current persona keytag*/
 		String title="personawidget"+UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
 		String body="<p>#if(\"$visitor.persona.keyTag\" == \""+personaA.getKeyTag()+"\")<h1>showing "+personaA.getKeyTag()+"</h1> #elseif(\"$visitor.persona.keyTag\" == \""+personaB.getKeyTag()+"\") <h1>showing "+personaB.getKeyTag()+"</h1> #else showing default persona #end</p>";
 		Contentlet contentAsset2=new Contentlet();
@@ -179,17 +172,17 @@ public class PersonaActionletTest extends TestBase {
 			}
 		}
 
-		/*Relate content to page*/
+		/*Relate widget to page*/
 		MultiTree m = new MultiTree(contentAsset.getIdentifier(), container.getIdentifier(), contentAsset2.getIdentifier());
 		MultiTreeFactory.saveMultiTree(m);
 
 
-		//Call page to see change working
+		//Call page to see if the persona functionality is working
 		CookieHandler.setDefault(new CookieManager());
 		String baseUrl="http://"+request.getServerName()+":"+request.getServerPort();
 		URL testUrl = new URL(baseUrl+"/c/portal_public/login?my_account_cmd=auth&my_account_login=admin@dotcms.com&password=admin&my_account_r_m=true");
 		IOUtils.toString(testUrl.openStream(),"UTF-8");
-		
+
 		String urlpersonaA=baseUrl+ftest.getPath()+pageStr+"?mainFrame=true&livePage=0com.dotmarketing.htmlpage.language=1&host_id="+host.getIdentifier()+"&com.dotmarketing.persona.id="+personaA.getIdentifier()+"&previewPage=2";
 		testUrl = new URL(urlpersonaA);
 		StringBuilder result = new StringBuilder();
@@ -201,7 +194,7 @@ public class PersonaActionletTest extends TestBase {
 		}
 		br.close();
 		Assert.assertTrue("Error the page is not showing the Persona expected",result.toString().contains("showing "+personaA.getKeyTag()));
-		
+
 		String urlpersonaB=baseUrl+ftest.getPath()+pageStr+"?mainFrame=true&livePage=0com.dotmarketing.htmlpage.language=1&host_id="+host.getIdentifier()+"&com.dotmarketing.persona.id="+personaB.getIdentifier()+"&previewPage=2";
 		testUrl = new URL(urlpersonaB);
 		result = new StringBuilder();
@@ -212,9 +205,9 @@ public class PersonaActionletTest extends TestBase {
 		}
 		br.close();
 		Assert.assertTrue("Error the page is not showing the Persona expected",result.toString().contains("showing "+personaB.getKeyTag()));
-		
-		
-		//remove personas, content and page
+
+
+		//remove personas, content, page and folder created for this test
 		contentletAPI.unpublish(persona, sysuser, false);
 		contentletAPI.unpublish(persona2, sysuser, false);
 
@@ -234,12 +227,6 @@ public class PersonaActionletTest extends TestBase {
 		contentletAPI.delete(contentAsset, sysuser, false);
 
 		folderAPI.delete(ftest, sysuser, false);
-		// check everything is clean up
-		//AssetUtil.assertDeleted(pageInode, pageIdent, "htmlpage");
-		//AssetUtil.assertDeleted(pageInode, pageIdent, "htmlpage");
-		//AssetUtil.assertDeleted(templateInode, templateIdent, "template");
-		//AssetUtil.assertDeleted(containerInode, containerIdent, "containers");
-
 	}
 
 }
