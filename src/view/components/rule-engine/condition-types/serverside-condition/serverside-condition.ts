@@ -14,12 +14,14 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
+import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
+import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 
 @Component({
   selector: 'cw-serverside-condition'
 })
 @View({
-  directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText],
+  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText],
   template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
@@ -40,6 +42,22 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
             [label]="opt.label | async"
             icon="{{opt.icon}}"></cw-input-option>
     </cw-input-dropdown>
+
+    <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
+                       flex
+                       layout-fill
+                       class="cw-input"
+                       [value]="input.value"
+                       placeholder="{{input.placeholder | async}}"
+                       optionUrl="{{input.optionUrl}}"
+                       optionValueField="{{input.optionValueField}}"
+                       optionLabelField="{{input.optionLabelField}}"
+                       [required]="input.required"
+                       [allowAdditions]="input.allowAdditions"
+                       [class.cw-comparator-selector]="input.name == 'comparison'"
+                       [class.cw-last]="islast"
+                       (change)="handleParamValueChange($event, input)">
+    </cw-input-rest-dropdown>
 
     <cw-input-text *ngIf="input.type == 'text'"
                    flex
@@ -96,7 +114,10 @@ export class ServersideCondition {
     let input
     if (type === 'text') {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
-    } else if (type === 'dropdown') {
+    } else if (type === 'restDropdown') {
+      input = this.getRestDropdownInput(param, paramDef, i18nBaseKey)
+    }
+    else if (type === 'dropdown') {
       input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
     input.type = type
@@ -112,7 +133,31 @@ export class ServersideCondition {
       value: this.model.getParameterValue(param.key),
       required: paramDef.inputType.dataType['minLength'] > 0
     }
-  };
+  }
+
+  private getRestDropdownInput(param, paramDef, i18nBaseKey:string) {
+    let inputType:CwRestDropdownInputModel = <CwRestDropdownInputModel>paramDef.inputType;
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    let placeholderKey = rsrcKey + '.placeholder'
+
+    let currentValue = this.model.getParameterValue(param.key)
+    let input:any = {
+      value: currentValue,
+      name: param.key,
+      placeholder: this._resources.get(placeholderKey, paramDef.key),
+      optionUrl: inputType.optionUrl,
+      optionValueField: inputType.optionValueField,
+      optionLabelField: inputType.optionLabelField,
+      minSelections: inputType.minSelections,
+      maxSelections: inputType.maxSelections,
+      required: inputType.minSelections > 0,
+      allowAdditions:inputType.allowAdditions
+    }
+    if (!input.value) {
+      input.value = inputType.selected != null ? inputType.selected : ''
+    }
+    return input
+  }
 
   private getDropdownInput(param:ParameterModel, paramDef:ParameterDefinition, i18nBaseKey:string):CwComponent {
     let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
@@ -155,7 +200,7 @@ export class ServersideCondition {
 
 
     let input:any = {
-      value: this.model.getParameterValue(param.key),
+      value: currentValue,
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       options: opts,

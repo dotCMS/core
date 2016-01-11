@@ -1,4 +1,5 @@
 import {Injectable} from 'angular2/core';
+import {Headers, RequestOptions} from 'angular2/http';
 
 import {EntityMeta} from "./EntityBase";
 import {DataStore} from "./DataStore";
@@ -11,15 +12,15 @@ export class ApiRoot {
   // Points to {baseUrl}/api/v1
   root:EntityMeta;
   defaultSite:EntityMeta;
-  baseUrl: string = "http://localhost:8080/";
-  defaultSiteId: string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
-  authUser: UserModel;
-  resourceRef: EntityMeta
+  baseUrl:string = "http://localhost:8080/";
+  siteId:string = '48190c8c-42c4-46af-8d1a-0cd5db894797'
+  authUser:UserModel;
+  resourceRef:EntityMeta
   dataStore:DataStore
   authToken:string
 
 
-  constructor( authUser:UserModel,  dataStore:DataStore){
+  constructor(authUser:UserModel, dataStore:DataStore) {
     this.authUser = authUser
     this.dataStore = dataStore;
     this.authToken = ApiRoot.createAuthToken(authUser)
@@ -27,9 +28,9 @@ export class ApiRoot {
     try {
       let query = document.location.search.substring(1);
       let siteId = ApiRoot.parseQueryParam(query, "realmId");
-      if(siteId){
-        this.defaultSiteId = siteId
-        console.log('Site Id set to ', this.defaultSiteId)
+      if (siteId) {
+        this.siteId = siteId
+        console.log('Site Id set to ', this.siteId)
       }
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
       console.log('Proxy server Base URL set to ', baseUrl)
@@ -41,14 +42,26 @@ export class ApiRoot {
     instanceOfApiRoot = this;
   }
 
-  static createAuthToken(authUser:UserModel)
-  {
+  getDefaultRequestOptions():RequestOptions {
+
+    var headers = new Headers();
+    headers.append("com.dotmarketing.session_host", this.siteId)
+    if (this.authToken) {
+      headers.append('Authorization', this.authToken);
+    }
+    return new RequestOptions({
+      headers: headers
+    })
+  }
+
+  static createAuthToken(authUser:UserModel) {
     let token = null
     if (authUser && authUser.username && authUser.password) {
       token = 'Basic ' + btoa(authUser.username + ':' + authUser.password)
     }
     return token
   }
+
   static parseQueryParam(query:string, token:string):string {
     let idx = -1;
     let result = null
@@ -76,7 +89,7 @@ export class ApiRoot {
       throw new Error("Invalid proxy server base url: '" + url + "'")
     }
     this.root = new EntityMeta(this.baseUrl + 'api/v1')
-    this.defaultSite = this.root.child('sites/' + this.defaultSiteId)
+    this.defaultSite = this.root.child('sites/' + this.siteId)
   }
 
 
