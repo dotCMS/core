@@ -102,7 +102,7 @@ var rsrc = {
           <rule-action flex [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
             <div class="ui basic icon buttons" *ngIf="i === (actions.length - 1)">
-              <button class="cw-button-add-item ui small basic button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
+              <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
                 <i class="plus icon" aria-hidden="true"></i>
               </button>
             </div>

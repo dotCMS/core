@@ -40,7 +40,7 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
                       (change)="onConditionChange($event)"></rule-condition>
       <div class="cw-btn-group cw-add-btn">
         <div class="ui basic icon buttons" *ngIf="i === (conditions.length - 1)">
-          <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
+          <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>

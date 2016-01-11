@@ -209,6 +209,11 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
 
   }
 
+  .cw-add-btn,
+  .cw-delete-btn {
+
+  }
+
   .cw-add-btn {
     min-width: 39px;
     height: 36px;
@@ -241,6 +246,7 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
 
 .cw-condition-toggle {
   min-width: 5em;
+  max-width: 5em;
   margin-right: 1em;
 }
 
