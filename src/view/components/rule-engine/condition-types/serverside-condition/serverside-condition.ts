@@ -22,12 +22,11 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 })
 @View({
   directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText],
-  template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
+  template: `<div flex layout="row" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
-    <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
+    <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
     <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                        flex
-                       layout-fill
                        class="cw-input"
                        [value]="input.value"
                        placeholder="{{input.placeholder | async}}"
@@ -45,7 +44,6 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 
     <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
                        flex
-                       layout-fill
                        class="cw-input"
                        [value]="input.value"
                        placeholder="{{input.placeholder | async}}"
@@ -61,7 +59,6 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 
     <cw-input-text *ngIf="input.type == 'text'"
                    flex
-                   layout-fill
                    class="cw-input"
                    [class.cw-last]="islast"
                    [required]="input.required"

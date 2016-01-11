@@ -18,28 +18,27 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   selector: 'rule-action'})
 @View({
   template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between center" class="cw-rule-action cw-entry">
-  <div flex="35" layout="row" layout-align="end center" class="cw-row-start-area">
+  <div flex="25" layout="row" class="cw-row-start-area">
     <cw-input-dropdown
-        class="cw-type-dropdown"
-        [value]="typeDropdown.value"
-        placeholder="{{typeDropdown.placeholder | async}}"
-        (change)="onTypeChange($event)">
-         <cw-input-option
-            *ngFor="#opt of typeDropdown.options"
-            [value]="opt.value"
-            [label]="opt.label | async"
-            icon="{{opt.icon}}"></cw-input-option>
+      flex
+      class="cw-type-dropdown"
+      [value]="typeDropdown.value"
+      placeholder="{{typeDropdown.placeholder | async}}"
+      (change)="onTypeChange($event)">
+        <cw-input-option
+        *ngFor="#opt of typeDropdown.options"
+        [value]="opt.value"
+        [label]="opt.label | async"
+        icon="{{opt.icon}}"></cw-input-option>
     </cw-input-dropdown>
   </div>
-  <div flex layout-fill class="cw-condition-row-main">
-  <cw-serverside-condition class="cw-condition-component"
+  <cw-serverside-condition flex="75"
+                           class="cw-condition-component"
                            [model]="action"
                            [paramDefs]="action.type?.parameters"
-
                            (change)="onActionChange($event)">
   </cw-serverside-condition>
-  </div>
-  <div flex="5" layout="row" layout-align="end center" class="cw-btn-group">
+  <div class="cw-btn-group cw-delete-btn">
     <div class="ui basic icon buttons">
       <button class="ui button" aria-label="Delete Action" (click)="removeAction()" [disabled]="!action.isPersisted()">
         <i class="trash icon"></i>
