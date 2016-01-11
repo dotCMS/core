@@ -45,6 +45,7 @@ import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
@@ -115,7 +116,8 @@ import com.dotmarketing.webdav.WebDavTest;
     SetResponseHeaderActionletFTest.class,
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
-    RulesCacheFTest.class
+    RulesCacheFTest.class,
+    PersonaActionletTest.class
 })
 public class AllTestsSuite {
 

@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.net.CookieHandler;
+import java.net.CookieManager;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Date;
@@ -11,6 +13,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.TestBase;
+import com.dotcms.repackage.com.sun.xml.ws.transport.http.client.CookiePolicy;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
@@ -134,7 +137,7 @@ public class PersonaActionletTest extends TestBase {
 		List<Template> templates = templateAPI.findTemplatesAssignedTo(host);
 		Template template =null;
 		for(Template temp: templates){
-			if(temp.getTitle().equals("Quest - 1 Column")){
+			if(temp.getTitle().equals("Blank")){
 				template=temp;
 				break;
 			}
@@ -170,7 +173,7 @@ public class PersonaActionletTest extends TestBase {
 		Container container =null;
 		List<Container> containers = containerAPI.findContainersForStructure(contentst.getInode());
 		for(Container c : containers){
-			if(c.getTitle().equals("Large Column (lg-1)")){
+			if(c.getTitle().equals("Blank Container")){
 				container=c;
 				break;
 			}
@@ -182,10 +185,11 @@ public class PersonaActionletTest extends TestBase {
 
 
 		//Call page to see change working
+		CookieHandler.setDefault(new CookieManager());
 		String baseUrl="http://"+request.getServerName()+":"+request.getServerPort();
-		URL testUrl = new URL(baseUrl+"/html/portal/login.jsp?loginAction=login&_loginUserName=admin@dotcms.com&_loginPassword=admin");
+		URL testUrl = new URL(baseUrl+"/c/portal_public/login?my_account_cmd=auth&my_account_login=admin@dotcms.com&password=admin&my_account_r_m=true");
 		IOUtils.toString(testUrl.openStream(),"UTF-8");
-
+		
 		String urlpersonaA=baseUrl+ftest.getPath()+pageStr+"?mainFrame=true&livePage=0com.dotmarketing.htmlpage.language=1&host_id="+host.getIdentifier()+"&com.dotmarketing.persona.id="+personaA.getIdentifier()+"&previewPage=2";
 		testUrl = new URL(urlpersonaA);
 		StringBuilder result = new StringBuilder();
@@ -196,7 +200,7 @@ public class PersonaActionletTest extends TestBase {
 			result.append((char) byteRead);
 		}
 		br.close();
-		Assert.assertTrue(result.toString().contains("showing "+personaA.getKeyTag()));
+		Assert.assertTrue("Error the page is not showing the Persona expected",result.toString().contains("showing "+personaA.getKeyTag()));
 		
 		String urlpersonaB=baseUrl+ftest.getPath()+pageStr+"?mainFrame=true&livePage=0com.dotmarketing.htmlpage.language=1&host_id="+host.getIdentifier()+"&com.dotmarketing.persona.id="+personaB.getIdentifier()+"&previewPage=2";
 		testUrl = new URL(urlpersonaB);
@@ -207,7 +211,7 @@ public class PersonaActionletTest extends TestBase {
 			result.append((char) byteRead);
 		}
 		br.close();
-		Assert.assertTrue(result.toString().contains("showing "+personaB.getKeyTag()));
+		Assert.assertTrue("Error the page is not showing the Persona expected",result.toString().contains("showing "+personaB.getKeyTag()));
 		
 		
 		//remove personas, content and page
