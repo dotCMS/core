@@ -31,10 +31,10 @@ public class UsersBrowserLanguageConditionlet extends Conditionlet<UsersBrowserL
     private static final long serialVersionUID = 1L;
 
     public static final String BROWSER_LANGUAGE_KEY = "api.system.ruleengine.conditionlet.BrowserLanguage";
-    private static final String LANGUAGE_INPUT_KEY = "language";
+    public static final String LANGUAGE_INPUT_KEY = "language";
     private static final String SYSTEM_LOCATE_LANGUAGE_KEY = "system.locale.language";
 
-    private static final String BROWSER_LANGUAGE_HERADER = "Accept-Language";
+    public static final String BROWSER_LANGUAGE_HEADER = "Accept-Language";
 
     //Dropdown with the list of the ISO languages
     public static final DropdownInput isoLanguagesDropdown = new DropdownInput()
@@ -240,7 +240,7 @@ public class UsersBrowserLanguageConditionlet extends Conditionlet<UsersBrowserL
     public boolean evaluate ( HttpServletRequest request, HttpServletResponse response, Instance instance ) {
 
         //Get the current Accept-Language header in order to compare it with what the user provided
-        String headerActualValue = request.getHeader(BROWSER_LANGUAGE_HERADER);
+        String headerActualValue = request.getHeader(BROWSER_LANGUAGE_HEADER);
 
         boolean evalSuccess;
 
