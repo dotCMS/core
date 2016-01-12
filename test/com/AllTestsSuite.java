@@ -6,6 +6,8 @@ import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletFTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -117,7 +119,9 @@ import com.dotmarketing.webdav.WebDavTest;
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
     RulesCacheFTest.class,
-    PersonaActionletTest.class
+    PersonaActionletTest.class,
+	UsersBrowserLanguageConditionletFTest.class,
+	UsersBrowserLanguageConditionletTest.class
 })
 public class AllTestsSuite {
 
