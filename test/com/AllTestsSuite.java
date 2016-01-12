@@ -8,6 +8,8 @@ import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
 import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletFTest;
 import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest;
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -121,7 +123,9 @@ import com.dotmarketing.webdav.WebDavTest;
     RulesCacheFTest.class,
     PersonaActionletTest.class,
 	UsersBrowserLanguageConditionletFTest.class,
-	UsersBrowserLanguageConditionletTest.class
+	UsersBrowserLanguageConditionletTest.class,
+    VisitedUrlConditionletTest.class,
+    VisitedUrlConditionletFTest.class
 })
 public class AllTestsSuite {
 

@@ -1,5 +1,14 @@
 package com.dotcms.rest.elasticsearch;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.repackage.javax.ws.rs.Consumes;
 import com.dotcms.repackage.javax.ws.rs.GET;
@@ -27,13 +36,6 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 @Path("/es")
 public class ESContentResourcePortlet extends BaseRestPortlet {
@@ -44,8 +46,17 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("search")
-	public Response search(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
+	public Response search(@Context HttpServletRequest request, String esQueryStr) throws DotDataException, DotSecurityException{
 
+		JSONObject esQuery = null;
+		try {
+			esQuery = new JSONObject(esQueryStr);
+		} catch (Exception e1) {
+			Logger.warn(this.getClass(), "unable to create JSONObject");
+			throw new DotDataException("malformed json : " + e1.getMessage());
+		}
+
+		
         InitDataObject initData = webResource.init(null, true, request, false, null);
 
 		HttpSession session = request.getSession();
@@ -112,7 +123,7 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({MediaType.APPLICATION_JSON})
 	@Path("search")
-	public Response searchPost(@Context HttpServletRequest request, JSONObject esQuery) throws DotDataException, DotSecurityException{
+	public Response searchPost(@Context HttpServletRequest request, String esQuery) throws DotDataException, DotSecurityException{
 		return search(request, esQuery);
 	}
 	

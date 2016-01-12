@@ -29,7 +29,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.util.WebKeys;
 
-public class VisitedUrlConditionletMockTest {
+public class VisitedUrlConditionletTest {
 
     private static final String HOST_IDENTIFIER = "48190c8c-42c4-46af-8d1a-0cd5db894797";
     private HttpServletRequest request;
