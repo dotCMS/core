@@ -41,7 +41,7 @@ import com.dotmarketing.util.UtilMethods;
  * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
  * </p>
  *
- * @author Jose Castro
+ * @author Jose Castro, Mauricio Rizo
  * @version 1.0
  * @since 04-16-2015
  *
@@ -54,6 +54,7 @@ public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.In
 
 	private final GeoIp2CityDbUtil geoIp2Util;
 
+	// List of possible cities (USA)
 	private static final DropdownInput cities = new DropdownInput()
 			.allowAdditions()
 			.option("Albany")
@@ -107,6 +108,8 @@ public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.In
 			.option("Topeka")
 			.option("Trenton");
 
+	// Parameter definition, "city" is the text displayed on the dropdown as placeholder
+	// and the list of cities, "" (empty) is the default value
 	private static final ParameterDefinition<TextType> city = new ParameterDefinition<>(
 	        3, CITY_KEY, "",
 	        cities,
@@ -117,41 +120,13 @@ public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.In
         this(GeoIp2CityDbUtil.getInstance());
     }
 
+	// User city visitor, with 2 comparison parameters and a list of cities
 	public UsersCityConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.system.ruleengine.conditionlet.VisitorCity",
                 new ComparisonParameterDefinition(2, IS, IS_NOT),
                 city);
         this.geoIp2Util = geoIp2Util;
     }
-
-
-//	protected ValidationResult validate(Comparison comparison,
-//			ConditionletInputValue inputValue) {
-//		ValidationResult validationResult = new ValidationResult();
-//		String inputId = inputValue.getConditionletInputId();
-//		if (UtilMethods.isSet(inputId)) {
-//			String selectedValue = inputValue.getValue();
-//			if (this.inputValues == null
-//					|| this.inputValues.get(inputId) == null) {
-//				getInputs(comparison.getId());
-//			}
-//			ConditionletInput inputField = this.inputValues.get(inputId);
-//			validationResult.setConditionletInputId(inputId);
-//			Set<EntryOption> inputOptions = inputField.getData();
-//			for (EntryOption option : inputOptions) {
-//				if (option.getId().equals(selectedValue)) {
-//					validationResult.setValid(true);
-//					break;
-//				}
-//			}
-//			if (!validationResult.isValid()) {
-//				validationResult.setErrorMessage("Invalid value for input '"
-//						+ inputId + "': '" + selectedValue + "'");
-//			}
-//		}
-//		return validationResult;
-//	}
-
 
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
@@ -167,9 +142,11 @@ public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.In
 					"An error occurred when retrieving the IP address from request: "
 							+ request.getRequestURL());
 		}
+		// if city is null due to a failed attempt to get the city name from the IP
 		if (!UtilMethods.isSet(city)) {
 			city = "unknown";
 		}
+
         return instance.comparison.perform(city, instance.cityName);
 	}
 
@@ -178,6 +155,7 @@ public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.In
         return new Instance(this, parameters);
     }
 
+    // Instance definition
     public static class Instance implements RuleComponentInstance {
 
     	private final String cityName;
