@@ -18,12 +18,12 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
 @View({
   template: `
 <div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
-  <input [type]="type" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+  <input type="{{type}}" name="{{name}}" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
     class="ng-valid"
-    [required]="required"
+    [required]="false"
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
-    (blur)="onBlur($event.target.value)"
+    (blur)="validate($event.target.value); onBlur($event.target.value)"
     (focus)="onFocus($event.target.value)">
   <i [ngClass]="icon" *ngIf="icon"></i>
   <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
@@ -61,7 +61,18 @@ export class InputDate implements ControlValueAccessor  {
     this.blur = new EventEmitter()
     this.focus = new EventEmitter()
     //this._model = new InputDateModel()
+  }
+
+
+  validate(value:string):boolean  {
+    let d = new Date(value)
+    if ( Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d.getTime())) {
+      this.errorMessage = "incomplete"
+      return false
+    }
+
     this.errorMessage = null
+    return true
   }
 
   ngOnChanges(change) {
