@@ -29,5 +29,12 @@ public class CookieUtil {
         return idCookie;
 
     }
+    
+    public static Cookie createSiteVisitsCookie(){
+    	Cookie idCookie = new Cookie(com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE, "1");
+    	idCookie.setPath("/");
+    	idCookie.setMaxAge(60 * 60 * 24 * 356 * 5);
+    	return idCookie;
+    }
 
 }
