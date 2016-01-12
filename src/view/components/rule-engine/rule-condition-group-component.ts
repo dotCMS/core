@@ -143,12 +143,14 @@ export class ConditionGroupComponent {
   }
 
   onConditionRemove(conditionModel:ConditionModel) {
-    this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
-      return aryModel.key != conditionModel.key
-    })
-    if (this.conditions.length === 0) {
-      this.remove.emit(this.group)
-    }
 
+    this._conditionService.remove(conditionModel, () =>{
+      this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
+        return aryModel.key != conditionModel.key
+      })
+      if (this.conditions.length === 0) {
+        this.remove.emit(this.group)
+      }
+    })
   }
 }
