@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.NumericInput;
 import com.dotmarketing.portlets.rules.parameter.type.NumericType;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,12 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-		return false;
+		
+		String siteVisits = UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
+		String siteVisitsValue = instance.siteVisits;
+		
+		return instance.comparison.perform(siteVisits, siteVisitsValue);
+		
 	}
 
     @Override
@@ -47,7 +53,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
     public static class Instance implements RuleComponentInstance {
     	
     	private final String siteVisits;
-    	private final Comparison comparison;
+    	private final Comparison<String> comparison;
     	
     	private Instance(UsersSiteVisitsConditionlet definition, Map<String, ParameterModel> parameters){
     		this.siteVisits = parameters.get(SITE_VISITS_KEY).getValue();
