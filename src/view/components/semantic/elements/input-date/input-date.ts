@@ -1,130 +1,107 @@
-import { Component, View, TemplateRef, EventEmitter, ElementRef} from 'angular2/core';
-import { CORE_DIRECTIVES } from 'angular2/common';
+import { ChangeDetectionStrategy, Component, View, TemplateRef, EventEmitter, ElementRef, Input, Output, Provider, Renderer, forwardRef} from 'angular2/core';
+import { CORE_DIRECTIVES, NG_VALUE_ACCESSOR, ControlValueAccessor } from 'angular2/common';
 
+import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
+
+const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
+    NG_VALUE_ACCESSOR, {useExisting: forwardRef(() => InputDate), multi: true}));
 /**
  * Angular 2 wrapper around Semantic UI Input Element.
  * @see http://semantic-ui.com/elements/input.html
  */
 
-export class InputDateModel {
-  name:string
-  placeholder:string
-  value:string
-  disabled:string
-  icon:string
-  type:string
-
-  constructor(name:string = null,
-              placeholder:string = '',
-              type:string = 'date',
-              value:string = null,
-              disabled:string = null,
-              icon:string = '') {
-
-    this.name = !!name ? name : 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000)
-    this.placeholder = placeholder
-    this.type = type
-    this.value = value
-    this.disabled = disabled
-    this.icon = icon || ''
-    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
-      this.icon = (this.icon + ' icon').trim()
-    }
-  }
-
-  validateDate(date:string) {
-    var date_regex = /^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[1,3-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/;
-    if (!date_regex.test(date)) {
-      throw new Error("Insert a valid date dd/mm/yyyy,dd-mm-yyyy or dd.mm.yyyy");
-    }
-  }
-
-  validateTime(time:string) {
-    var time_regex = /^(10|11|12|[1-9]):[0-5][0-9]$/;
-    if (!time_regex.test(time)) {
-      throw new Error("Insert a valid time HH:MM");
-    }
-  }
-
-  validateDateTime(dateTime:string) {
-    // TODO: better match this regex for MM/DD/YYYY HH:MM
-    var date_time_regex = /^(((\d\d)(([02468][048])|([13579][26]))-02-29)|(((\d\d)(\d\d)))-((((0\d)|(1[0-2]))-((0\d)|(1\d)|(2[0-8])))|((((0[13578])|(1[02]))-31)|(((0[1,3-9])|(1[0-2]))-(29|30)))))\s(([01]\d|2[0-3]):([0-5]\d):([0-5]\d))$/;
-    if (!date_time_regex.test(dateTime)) {
-      throw new Error("Insert a valid date time");
-    }
-  }
-
-  validate(value:string){
-    console.log(this.type);
-    if (this.type === 'date') {
-      this.validateDate(value)
-    } else if (this.type === 'time') {
-      this.validateTime(value)
-    } else if (this.type === 'datetime-local') {
-      this.validateDateTime(value)
-    }
-  };
-}
-
 @Component({
   selector: 'cw-input-date',
-
-  properties: [
-    'model',
-  ], events: [
-    "change"
-  ]
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  bindings: [CW_TEXT_VALUE_ACCESSOR]
 })
 @View({
   template: `
-<div class="ui fluid input" [ng-class]="{disabled: model.disabled, error: errorMessage, icon: model.icon}">
-  <input [type]="model.type" [name]="model.name" [value]="model.value" [placeholder]="model.placeholder" (change)="inputChange($event)">
-  <i [ng-class]="model.icon" *ng-if="model.icon"></i>
-  <br />
-  <div class="ui small red message" *ng-if="errorMessage">{{errorMessage}}</div>
+<div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
+  <input [type]="type" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+    class="ng-valid"
+    [required]="required"
+    (input)="onChange($event.target.value)"
+    (change)="$event.stopPropagation(); onChange($event.target.value)"
+    (blur)="onBlur($event.target.value)"
+    (focus)="onFocus($event.target.value)">
+  <i [ngClass]="icon" *ngIf="icon"></i>
+  <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
-
   `,
   directives: [CORE_DIRECTIVES]
 })
-export class InputDate {
+export class InputDate implements ControlValueAccessor  {
 
-  private _model:InputDateModel
+  onChange = (_) => {
+    this.change.emit(_)
+  };
+  onTouched = () => {
+  };
+
+  @Input()  name:string = ""
+  @Input()  placeholder:string = ""
+  @Input()  value:string = ""
+  @Input()  disabled:boolean = false
+  @Input()  icon:string
+  @Input()  type:string
+  @Input()  focused:boolean = false
+
+  //private _model:InputDateModel
   private errorMessage:String
 
-  change:EventEmitter<InputDateModel>
-  private elementRef:ElementRef
+  @Output() change:EventEmitter<any>
+  @Output() blur:EventEmitter<any>
+  @Output() focus:EventEmitter<any>
+  //private elementRef:ElementRef
 
-  constructor(@ElementRef elementRef:ElementRef) {
-    this.elementRef = elementRef
+  constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
+    //this.elementRef = elementRef
     this.change = new EventEmitter()
-    this._model = new InputDateModel()
+    this.blur = new EventEmitter()
+    this.focus = new EventEmitter()
+    //this._model = new InputDateModel()
     this.errorMessage = null
   }
 
-  get model():InputDateModel {
-    return this._model;
-  }
-
-  set model(model:InputDateModel) {
-    this._model = model;
-  }
-
-  inputChange(event){
-    try {
-      this.errorMessage = null
-
-      this._model.value = event.target.value
-
-      //Check if the validate function exists in this model.
-      if (typeof this._model.validate == 'function') {
-        this._model.validate(event.target.value)
+  ngOnChanges(change) {
+    if (change.focused) {
+      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      if (f) {
+        let el = this._elementRef.nativeElement
+        el.children[0].children[0].focus()
       }
-    }
-    catch(err) {
-      this.errorMessage = err.toString();
+      this.focused = false;
     }
   }
 
+  onBlur(value) {
+    this.onTouched()
+    this.blur.emit(value)
+  }
+
+  onFocus(value) {
+    this.focus.emit(value)
+  }
+
+  writeValue(value:string):void {
+    this.value = isBlank(value) ? '' : value
+    console.log("writing value: ", value, " ==> ", this.value)
+  }
+
+  registerOnChange(fn:(_:any) => void):void {
+    this.onChange = (_:any) => {
+      console.log("Value changed: ", _)
+      fn(_)
+      this.change.emit(_)
+    }
+  }
+
+  registerOnTouched(fn:() => void):void {
+    this.onTouched = () => {
+      console.log("Touched")
+      fn()
+    }
+  }
 }
 

@@ -87,6 +87,23 @@ export class CwTextInputModel extends CwInputDefinition {
 }
 CwInputDefinition.registerType("text", CwTextInputModel)
 
+export class CwDateTimeInputModel extends CwInputDefinition {
+
+  constructor(id:string, name:string) {
+    super(id, name);
+  }
+
+  verify(value:string):CwValidationResults {
+    return new CwValidationResults(true)
+  }
+
+  static fromJson(json:any, name:string):CwDateTimeInputModel {
+    let m = new CwDateTimeInputModel(json.id, name);
+    return m
+  }
+}
+CwInputDefinition.registerType("datetime", CwDateTimeInputModel)
+
 export class CwDropdownInputModel extends CwInputDefinition {
   options: {[key:string]: any}
   allowAdditions: boolean

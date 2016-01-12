@@ -1,8 +1,68 @@
 import {bootstrap} from 'angular2/bootstrap'
 import {Attribute, Component, View} from 'angular2/core'
 import {CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
+import {InputDate} from './input-date'
 
-import {InputDate, InputDateModel} from './input-date'
+
+export class InputDateModel {
+  name:string
+  placeholder:string
+  value:string
+  disabled:boolean
+  icon:string
+  type:string
+
+  constructor(name:string = null,
+              placeholder:string = '',
+              type:string = 'date',
+              value:string = null,
+              disabled:boolean = null,
+              icon:string = '') {
+
+    this.name = !!name ? name : 'field-' + new Date().getTime() + Math.floor(Math.random() * 1000)
+    this.placeholder = placeholder
+    this.type = type
+    this.value = value
+    this.disabled = disabled
+    this.icon = icon || ''
+    if(this.icon.indexOf(' ') == -1 && this.icon.length > 0){
+      this.icon = (this.icon + ' icon').trim()
+    }
+  }
+
+  validateDate(date:string) {
+    var date_regex = /^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[1,3-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$/;
+    if (!date_regex.test(date)) {
+      throw new Error("Insert a valid date dd/mm/yyyy,dd-mm-yyyy or dd.mm.yyyy");
+    }
+  }
+
+  validateTime(time:string) {
+    var time_regex = /^(10|11|12|[1-9]):[0-5][0-9]$/;
+    if (!time_regex.test(time)) {
+      throw new Error("Insert a valid time HH:MM");
+    }
+  }
+
+  validateDateTime(dateTime:string) {
+    // TODO: better match this regex for MM/DD/YYYY HH:MM
+    var date_time_regex = /^(((\d\d)(([02468][048])|([13579][26]))-02-29)|(((\d\d)(\d\d)))-((((0\d)|(1[0-2]))-((0\d)|(1\d)|(2[0-8])))|((((0[13578])|(1[02]))-31)|(((0[1,3-9])|(1[0-2]))-(29|30)))))\s(([01]\d|2[0-3]):([0-5]\d):([0-5]\d))$/;
+    if (!date_time_regex.test(dateTime)) {
+      throw new Error("Insert a valid date time");
+    }
+  }
+
+  validate(value:string){
+    console.log(this.type);
+    if (this.type === 'date') {
+      this.validateDate(value)
+    } else if (this.type === 'time') {
+      this.validateTime(value)
+    } else if (this.type === 'datetime-local') {
+      this.validateDateTime(value)
+    }
+  };
+}
 
 @Component({
   selector: 'demo'
@@ -68,7 +128,7 @@ class App {
   initDemoDisabled() {
     let model = new InputDateModel()
     model.name = "field-" + new Date().getTime() + Math.floor(Math.random() * 1000)
-    model.disabled = "true"
+    model.disabled = true
     model.placeholder = "Disabled"
 
     this.demoDisabled = model;

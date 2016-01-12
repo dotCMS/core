@@ -4,6 +4,7 @@ import {Dropdown, InputOption} from '../../../../../view/components/semantic/mod
 import {Observable} from 'rxjs/Rx'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
+import {InputDate} from "../../../semantic/elements/input-date/input-date";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
@@ -19,7 +20,7 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
   selector: 'cw-serverside-condition'
 })
 @View({
-  directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText],
+  directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText, InputDate],
   template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
@@ -51,6 +52,18 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                    [placeholder]="input.placeholder | async"
                    [value]="input.value"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
+
+     <cw-input-date *ngIf="input.type == 'datetime'"
+                   flex
+                   layout-fill
+                   class="cw-input"
+                   [class.cw-last]="islast"
+                   [required]="input.required"
+                   [name]="input.name"
+                   [placeholder]="input.placeholder | async"
+                   type="datetime-local"
+                   [value]="input.value"
+                   (blur)="handleParamValueChange($event, input)"></cw-input-date>
   </template>
 
 </div>`
@@ -96,6 +109,8 @@ export class ServersideCondition {
     let input
     if (type === 'text') {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
+    } else if (type === 'datetime') {
+      input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
     } else if (type === 'dropdown') {
       input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
@@ -109,6 +124,15 @@ export class ServersideCondition {
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
+      value: this.model.getParameterValue(param.key),
+      required: paramDef.inputType.dataType['minLength'] > 0
+    }
+  };
+
+  private getDateTimeInput(param, paramDef, i18nBaseKey:string) {
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    return {
+      name: param.key,
       value: this.model.getParameterValue(param.key),
       required: paramDef.inputType.dataType['minLength'] > 0
     }
