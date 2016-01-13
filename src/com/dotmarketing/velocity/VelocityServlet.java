@@ -454,6 +454,13 @@ public abstract class VelocityServlet extends HttpServlet {
 				}
 
     		}
+    		
+    		String _siteVisitsCookie = UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
+    		
+    		if(!UtilMethods.isSet(_siteVisitsCookie)){
+    			Cookie cookie = CookieUtil.createSiteVisitsCookie();
+    			response.addCookie(cookie);
+    		}
 
             String _oncePerVisitCookie = UtilMethods.getCookieValue(request.getCookies(),
                     WebKeys.ONCE_PER_VISIT_COOKIE);
@@ -474,7 +481,17 @@ public abstract class VelocityServlet extends HttpServlet {
 			}
 
 			if(newVisit) {
-				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
+				if(UtilMethods.isSet(_siteVisitsCookie)){
+					//Increment siteVisitsCookie
+					int visits = Integer.parseInt(_siteVisitsCookie);
+					visits++;
+					Cookie siteVisitsCookie = UtilMethods.getCookie(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
+					siteVisitsCookie.setValue(Integer.toString(visits));
+					siteVisitsCookie.setMaxAge(60 * 60 * 24 * 356 * 5);
+					siteVisitsCookie.setPath("/");
+					response.addCookie(siteVisitsCookie);
+				}
+   				RulesEngine.fireRules(request, response, Rule.FireOn.ONCE_PER_VISIT);
 				if(response.isCommitted()) {
                 /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
 					Logger.debug(VelocityServlet.class, "A ONCE_PER_VISIT RuleEngine Action has committed the response.");
