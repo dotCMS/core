@@ -6,6 +6,9 @@ import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -45,6 +48,7 @@ import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
@@ -115,7 +119,10 @@ import com.dotmarketing.webdav.WebDavTest;
     SetResponseHeaderActionletFTest.class,
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
-    RulesCacheFTest.class
+    RulesCacheFTest.class,
+    PersonaActionletTest.class,
+    VisitedUrlConditionletTest.class,
+    VisitedUrlConditionletFTest.class
 })
 public class AllTestsSuite {
 

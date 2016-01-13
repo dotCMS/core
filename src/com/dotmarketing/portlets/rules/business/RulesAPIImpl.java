@@ -71,7 +71,7 @@ public class RulesAPIImpl implements RulesAPI {
 //                         .add(UsersOperatingSystemConditionlet.class)
 //                         .add(UsersPageVisitsConditionlet.class)
 //                         .add(UsersReferringUrlConditionlet.class)
-//                         .add(UsersSiteVisitsConditionlet.class)
+                         .add(UsersSiteVisitsConditionlet.class)
 //                         .add(UsersStateConditionlet.class)
 //                         .add(UsersTimeConditionlet.class)
 //                         .add(UsersUrlParameterConditionlet.class)
