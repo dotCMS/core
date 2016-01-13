@@ -37,7 +37,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
 @View({
   template: `
 <div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
-  <input type="text" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+  <input type="{{type}}" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
     class="ng-valid"
     [required]="required"
     (input)="onChange($event.target.value)"
@@ -59,6 +59,7 @@ export class InputText implements ControlValueAccessor {
   };
 
   @Input()  name:string = ""
+  @Input()  type:string = ""
   @Input()  value:string = ""
   @Input()  placeholder:string = ""
   @Input()  icon:string

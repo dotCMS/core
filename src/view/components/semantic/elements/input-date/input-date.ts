@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, View, TemplateRef, EventEmitter, ElementRef, Input, Output, Provider, Renderer, forwardRef} from 'angular2/core';
+import { ChangeDetectionStrategy, Component, View, EventEmitter, ElementRef, Input, Output, Provider, Renderer, forwardRef} from 'angular2/core';
 import { CORE_DIRECTIVES, NG_VALUE_ACCESSOR, ControlValueAccessor } from 'angular2/common';
 
 import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
+import {InputText} from "../input-text/input-text";
 
 const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     NG_VALUE_ACCESSOR, {useExisting: forwardRef(() => InputDate), multi: true}));
@@ -31,7 +32,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
   `,
   directives: [CORE_DIRECTIVES]
 })
-export class InputDate implements ControlValueAccessor  {
+export class InputDate extends InputText {
 
   onChange = (_) => {
     this.change.emit(_)
@@ -40,32 +41,25 @@ export class InputDate implements ControlValueAccessor  {
   };
 
   @Input()  name:string = ""
-  @Input()  placeholder:string = ""
   @Input()  value:string = ""
-  @Input()  disabled:boolean = false
+  @Input()  placeholder:string = ""
   @Input()  icon:string
-  @Input()  type:string
+  @Input()  disabled:boolean = false
   @Input()  focused:boolean = false
-
-  //private _model:InputDateModel
-  private errorMessage:String
-
+  @Input()  required:boolean = false
+  @Input()  errorMessage:string
+  @Input()  type:string
   @Output() change:EventEmitter<any>
   @Output() blur:EventEmitter<any>
   @Output() focus:EventEmitter<any>
-  //private elementRef:ElementRef
 
-  constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
-    //this.elementRef = elementRef
-    this.change = new EventEmitter()
-    this.blur = new EventEmitter()
-    this.focus = new EventEmitter()
-    //this._model = new InputDateModel()
+  constructor(_renderer:Renderer, _elementRef:ElementRef) {
+    super(_renderer, _elementRef);
   }
-
 
   validate(value:string):boolean  {
     let d = new Date(value)
+
     if ( Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d.getTime())) {
       this.errorMessage = "incomplete"
       return false
@@ -75,44 +69,5 @@ export class InputDate implements ControlValueAccessor  {
     return true
   }
 
-  ngOnChanges(change) {
-    if (change.focused) {
-      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
-      if (f) {
-        let el = this._elementRef.nativeElement
-        el.children[0].children[0].focus()
-      }
-      this.focused = false;
-    }
-  }
-
-  onBlur(value) {
-    this.onTouched()
-    this.blur.emit(value)
-  }
-
-  onFocus(value) {
-    this.focus.emit(value)
-  }
-
-  writeValue(value:string):void {
-    this.value = isBlank(value) ? '' : value
-    console.log("writing value: ", value, " ==> ", this.value)
-  }
-
-  registerOnChange(fn:(_:any) => void):void {
-    this.onChange = (_:any) => {
-      console.log("Value changed: ", _)
-      fn(_)
-      this.change.emit(_)
-    }
-  }
-
-  registerOnTouched(fn:() => void):void {
-    this.onTouched = () => {
-      console.log("Touched")
-      fn()
-    }
-  }
 }
 

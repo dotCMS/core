@@ -42,7 +42,7 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
             icon="{{opt.icon}}"></cw-input-option>
     </cw-input-dropdown>
 
-    <cw-input-text *ngIf="input.type == 'text'"
+    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
                    flex
                    layout-fill
                    class="cw-input"
@@ -51,6 +51,7 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                    [name]="input.name"
                    [placeholder]="input.placeholder | async"
                    [value]="input.value"
+                   [type]="input.type"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
 
      <cw-input-date *ngIf="input.type == 'datetime'"
