@@ -9,8 +9,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
@@ -23,6 +22,8 @@ public class UsersBrowserLanguageConditionletTest {
     private HttpServletRequest request;
     private HttpServletResponse response;
     private UsersBrowserLanguageConditionlet conditionlet = new UsersBrowserLanguageConditionlet();
+    private Collection<Locale> localeEnCollection;//English
+    private Collection<Locale> localeEsCollection;//Spanish
 
     @Before
     public void before () {
@@ -30,86 +31,171 @@ public class UsersBrowserLanguageConditionletTest {
         request = Mockito.mock(HttpServletRequest.class);
         // Mock the response
         response = Mockito.mock(HttpServletResponse.class);
+
+        //Mock the getLocales
+        localeEnCollection = new ArrayList<>();
+        Locale localeNso = new Locale("nso");
+        Locale localeXh = new Locale("xh");
+        Locale localeEn_US = new Locale("en", "US");
+        Locale localeEn = new Locale("en");
+        localeEnCollection.add(localeNso);
+        localeEnCollection.add(localeXh);
+        localeEnCollection.add(localeEn_US);
+        localeEnCollection.add(localeEn);
+
+        //Mock the getLocales
+        localeEsCollection = new ArrayList<>();
+        Locale localeEs_CR = new Locale("es", "CR");
+        Locale localeEs = new Locale("es");
+        localeEsCollection.add(localeNso);
+        localeEsCollection.add(localeXh);
+        localeEsCollection.add(localeEs_CR);
+        localeEsCollection.add(localeEs);
     }
 
     @Test
     public void testIsComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("en-us,en;q=0.5");
-
+        //++++++++++++++++++++++++++++++
         //Correct case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEnCollection));
+
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en"));
 
         UsersBrowserLanguageConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
-        // Correct, the Accept-Language language is equals (Actually behaves as a Contains) to the selected language
+        // Correct, the Accept-Language language is equals to the selected language
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
+        //++++++++++++++++++++++++++++++
+        //Correct case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEnCollection));
+
+        parameters = new HashMap<>();
+        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
+        parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
+                new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "nso"));
+
+        instance = conditionlet.instanceFrom(parameters);
+        // Correct, the Accept-Language language is equals to the selected language
+        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+
+        //++++++++++++++++++++++++++++++
+        //Correct case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEnCollection));
+
+        parameters = new HashMap<>();
+        parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
+        parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
+                new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "xh"));
+
+        instance = conditionlet.instanceFrom(parameters);
+        // Correct, the Accept-Language language is equals to the selected language
+        Assert.assertTrue(conditionlet.evaluate(request, response, instance));
+
+        //++++++++++++++++++++++++++++++
         //Wrong case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEnCollection));
+
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "es"));
 
         instance = conditionlet.instanceFrom(parameters);
-        // Incorrect, the Accept-Language language is not equals (Actually behaves as a Contains) to the selected language
+        // Incorrect, the Accept-Language language is not equals to the selected language
         Assert.assertFalse(conditionlet.evaluate(request, response, instance));
 
+        //++++++++++++++++++++++++++++++
         //Test case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEnCollection));
+
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "EN"));
 
         instance = conditionlet.instanceFrom(parameters);
-        // Correct, the Accept-Language language is equals (Actually behaves as a Contains) to the selected language
+        // Correct, the Accept-Language language is equals to the selected language
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
+        //++++++++++++++++++++++++++++++
+        //Mock the getLocales
+        Collection<Locale> localeCollection = new ArrayList<>();
+        Locale localeNso = new Locale("NSO");
+        Locale localeXh = new Locale("XH");
+        Locale localeEn_Us = new Locale("EN", "US");
+        Locale localeEn = new Locale("EN");
+        localeCollection.add(localeNso);
+        localeCollection.add(localeXh);
+        localeCollection.add(localeEn_Us);
+        localeCollection.add(localeEn);
+
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeCollection));
+
+        //++++++++++++++++++++++++++++++
         //Test case
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en"));
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("EN-US,EN;Q=0.5");
-
         instance = conditionlet.instanceFrom(parameters);
-        // Correct, the Accept-Language language is equals (Actually behaves as a Contains) to the selected language
+        // Correct, the Accept-Language language is equals to the selected language
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
     }
 
     @Test
     public void testIsNotComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
-
+        //++++++++++++++++++++++++++++++
         //Correct case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
+
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS_NOT.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en"));
 
         UsersBrowserLanguageConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
-        // Correct, the Accept-Language language is not equals (Actually behaves as a NOT Contains) to the selected language
+        // Correct, the Accept-Language language is not equals to the selected language
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
+        //++++++++++++++++++++++++++++++
         //Wrong case
+
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
+
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, IS_NOT.getId()));
         parameters.put(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY,
                 new ParameterModel(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "es"));
 
         instance = conditionlet.instanceFrom(parameters);
-        // Incorrect, the Accept-Language language is not equals (Actually behaves as a NOT Contains) to the selected language
+        // Incorrect, the Accept-Language language is not equals to the selected language
         Assert.assertFalse(conditionlet.evaluate(request, response, instance));
     }
 
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testExistComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -124,7 +210,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testStartsWithComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -139,7 +226,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testEndsWithComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -154,7 +242,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testContainsComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -169,7 +258,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testRegexComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -184,7 +274,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testBetweenComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -199,7 +290,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testEqualComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -214,7 +306,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testLessThanComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -229,7 +322,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testGreaterThanComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -244,7 +338,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testLessThanOrEqualComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();
@@ -259,7 +354,8 @@ public class UsersBrowserLanguageConditionletTest {
     @Test ( expected = ComparisonNotSupportedException.class )
     public void testGreaterThanOrEqualComparison () {
 
-        Mockito.when(request.getHeader(UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER)).thenReturn("es-CR,es;q=0.5");
+        //Mock the getLocales
+        Mockito.when(request.getLocales()).thenReturn(Collections.enumeration(localeEsCollection));
 
         //Correct case
         Map<String, ParameterModel> parameters = new HashMap<>();

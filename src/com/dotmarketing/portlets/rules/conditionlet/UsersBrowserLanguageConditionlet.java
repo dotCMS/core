@@ -11,6 +11,8 @@ import com.dotmarketing.portlets.rules.parameter.type.TextType;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
@@ -239,20 +241,34 @@ public class UsersBrowserLanguageConditionlet extends Conditionlet<UsersBrowserL
     @Override
     public boolean evaluate ( HttpServletRequest request, HttpServletResponse response, Instance instance ) {
 
-        //Get the current Accept-Language header in order to compare it with what the user provided
-        String headerActualValue = request.getHeader(BROWSER_LANGUAGE_HEADER);
-
-        boolean evalSuccess;
-
         /*
-         We need to handle the IS like a CONTAINS and the IS NOT as a NOT CONTAINS as the Accept-Language header
-         contains more than just the browser language.
-         Remember we want to provide with this Conditionlet a non-technical alternative to the RequestHeaderConditionlet
+        Returns an Enumeration of Locale objects indicating, in decreasing order starting with the preferred locale,
+        the locales that are acceptable to the client based on the Accept-Language header
          */
+        Enumeration<Locale> locales = request.getLocales();
+
+        boolean evalSuccess = false;
+
+        //Check if the selected language exist in the list of languages provided by the Accept-Language header
+        while ( locales.hasMoreElements() ) {
+
+            Locale locale = locales.nextElement();
+            String language = locale.getLanguage();
+
+            //Evaluate
+            evalSuccess = IS.perform(language.toLowerCase(), instance.isoCode.toLowerCase());
+            if ( evalSuccess ) {
+                break;
+            }
+        }
+
         if ( instance.comparison == IS ) {
-            evalSuccess = CONTAINS.perform(headerActualValue.toLowerCase(), instance.isoCode.toLowerCase());
+            //Nothing to do we already handle the IS case
+        } else if ( instance.comparison == IS_NOT ) {
+            //Now, for the IS_NOT case we just need to negate what the IS found
+            evalSuccess = !evalSuccess;
         } else {
-            evalSuccess = !CONTAINS.perform(headerActualValue.toLowerCase(), instance.isoCode.toLowerCase());
+            throw new ComparisonNotSupportedException("Not supported comparison [" + instance.comparison.toString() + "]");
         }
 
         return evalSuccess;
