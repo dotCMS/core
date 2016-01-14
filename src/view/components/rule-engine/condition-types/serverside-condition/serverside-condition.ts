@@ -22,49 +22,51 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
 @View({
   directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText, InputDate],
   template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
-  <template ngFor #input [ngForOf]="_inputs" #islast="last">
+  <template ngFor #input [ngForOf]="_inputs" #islast="last" #idx="index">
     <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
-    <cw-input-dropdown *ngIf="input.type == 'dropdown'"
-                       flex
-                       layout-fill
-                       class="cw-input"
-                       [value]="input.value"
-                       placeholder="{{input.placeholder | async}}"
-                       [required]="input.required"
-                       [allowAdditions]="input.allowAdditions"
-                       [class.cw-comparator-selector]="input.name == 'comparison'"
-                       [class.cw-last]="islast"
-                       (change)="handleParamValueChange($event, input)">
-                       <cw-input-option
-            *ngFor="#opt of input.options"
-            [value]="opt.value"
-            [label]="opt.label | async"
-            icon="{{opt.icon}}"></cw-input-option>
-    </cw-input-dropdown>
+    <div *ngIf="isVisible(idx)" flex layout-fill>
+      <cw-input-dropdown *ngIf="input.type == 'dropdown'"
+                         flex
+                         layout-fill
+                         class="cw-input"
+                         [value]="input.value"
+                         placeholder="{{input.placeholder | async}}"
+                         [required]="input.required"
+                         [allowAdditions]="input.allowAdditions"
+                         [class.cw-comparator-selector]="input.name == 'comparison'"
+                         [class.cw-last]="islast"
+                         (change)="handleParamValueChange($event, input)">
+                         <cw-input-option
+              *ngFor="#opt of input.options"
+              [value]="opt.value"
+              [label]="opt.label | async"
+              icon="{{opt.icon}}"></cw-input-option>
+      </cw-input-dropdown>
 
-    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
-                   flex
-                   layout-fill
-                   class="cw-input"
-                   [class.cw-last]="islast"
-                   [required]="input.required"
-                   [name]="input.name"
-                   [placeholder]="input.placeholder | async"
-                   [value]="input.value"
-                   [type]="input.type"
-                   (blur)="handleParamValueChange($event, input)"></cw-input-text>
+      <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
+                     flex
+                     layout-fill
+                     class="cw-input"
+                     [class.cw-last]="islast"
+                     [required]="input.required"
+                     [name]="input.name"
+                     [placeholder]="input.placeholder | async"
+                     [value]="input.value"
+                     [type]="input.type"
+                     (blur)="handleParamValueChange($event, input)"></cw-input-text>
 
-     <cw-input-date *ngIf="input.type == 'datetime'"
-                   flex
-                   layout-fill
-                   class="cw-input"
-                   [class.cw-last]="islast"
-                   [required]="input.required"
-                   [name]="input.name"
-                   [placeholder]="input.placeholder | async"
-                   type="datetime-local"
-                   [value]="input.value"
-                   (blur)="handleParamValueChange($event, input)"></cw-input-date>
+       <cw-input-date *ngIf="input.type == 'datetime'"
+                     flex
+                     layout-fill
+                     class="cw-input"
+                     [class.cw-last]="islast"
+                     [required]="input.required"
+                     [name]="input.name"
+                     [placeholder]="input.placeholder | async"
+                     type="datetime-local"
+                     [value]="input.value"
+                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
+  </div>
   </template>
 
 </div>`
@@ -83,6 +85,26 @@ export class ServersideCondition {
     this._resources = resources;
     this.change = new EventEmitter();
     this._inputs = [];
+  }
+
+  isVisible(idx):boolean{
+    let vis = true
+    if(idx > 0){
+      let itr = idx
+      while(itr-- > 0){
+        let comparisonInput = this._inputs[itr]
+        if(comparisonInput.name === 'comparison'){
+          let delta = idx -itr
+          var comparisonValue = comparisonInput.value
+          let comparisonObj = comparisonInput.options.filter((e)=> { return e.value == comparisonValue })[0]
+          if(delta > comparisonObj.rightHandArgCount){
+            vis = false
+            break
+          }
+        }
+      }
+    }
+    return vis
   }
 
   ngOnChanges(change) {
@@ -167,7 +189,8 @@ export class ServersideCondition {
       opts.push({
         value: key,
         label: this._resources.get(labelKey, option.i18nKey),
-        icon: option.icon
+        icon: option.icon,
+        rightHandArgCount: option.rightHandArgCount
       })
     })
 
