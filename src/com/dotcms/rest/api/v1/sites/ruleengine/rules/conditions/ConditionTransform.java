@@ -23,7 +23,9 @@ public class ConditionTransform {
         app.setOperator(Condition.Operator.valueOf(rest.operator));
         app.setPriority(rest.priority);
         // reset the values with the ones coming from rest
-        app.getValues().clear();
+		if(app.getValues()!=null){
+			app.getValues().clear();
+		}
         if(rest.values!=null){
         	for(Map.Entry<String, RestConditionValue> entry :  rest.values.entrySet()){
         		app.addValue(entry.getValue().key, entry.getValue().value);
