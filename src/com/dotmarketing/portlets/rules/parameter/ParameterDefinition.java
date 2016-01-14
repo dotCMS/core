@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.parameter;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.display.Input;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
@@ -53,9 +54,15 @@ public class ParameterDefinition<T extends DataType> {
         return inputType;
     }
 
-    public void checkValid(ParameterModel model) {
-        this.inputType.getDataType().checkValid(model.getValue());
-        model.getValue();
+    public void checkValid(ParameterModel model) throws RuleEngineException {
+    	try{
+            this.inputType.getDataType().checkValid(model.getValue());
+            model.getValue();
+    	}
+    	catch(Exception e){
+    		throw new RuleEngineException(e.getMessage());
+    	}
+
     }
 }
 

@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules;
 
+import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
@@ -40,7 +41,9 @@ public class RuleTransform {
         return applyRestToApp(rest, app, user);
     }
 
-    public Rule applyRestToApp(RestRule rest, Rule app, User user) {
+    public Rule applyRestToApp(RestRule rest, Rule rule, User user) {
+    	Rule app = (Rule) SerializationUtils.clone(rule);
+    	
         app.setName(rest.name);
         app.setFireOn(Rule.FireOn.valueOf(rest.fireOn));
         app.setPriority(rest.priority);

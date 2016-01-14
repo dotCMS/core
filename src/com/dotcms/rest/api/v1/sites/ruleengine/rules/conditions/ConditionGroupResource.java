@@ -263,7 +263,7 @@ public class ConditionGroupResource  {
         try {
             ConditionGroup conditionGroup = rulesAPI.getConditionGroupById(conditionGroupId, user, false);
             checkNotNull(conditionGroup, NotFoundException.class, "Condition Group with id '%s' not found: ", conditionGroupId);
-            groupTransform.applyRestToApp(restConditionGroup, conditionGroup);
+            conditionGroup =  groupTransform.applyRestToApp(restConditionGroup, conditionGroup);
             rulesAPI.saveConditionGroup(conditionGroup, user, false);
             return conditionGroup.getId();
         } catch (DotDataException e) {

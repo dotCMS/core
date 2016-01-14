@@ -272,7 +272,7 @@ public class ConditionValueResource {
             if(parameterModel == null) {
                 throw new NotFoundException("Condition Value with id '%s' not found: ", valueId);
             }
-            parameterModelTransform.applyRestToApp(restValue, parameterModel);
+            parameterModel = parameterModelTransform.applyRestToApp(restValue, parameterModel);
             parameterModel.setId(valueId);
             rulesAPI.saveConditionValue(parameterModel, user, false);
             return parameterModel.getId();

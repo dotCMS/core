@@ -52,4 +52,13 @@ public class ParameterModel implements Serializable {
     public void setPriority(int priority) {
         this.priority = priority;
     }
+
+	@Override
+	public String toString() {
+		return "ParameterModel [id=" + id + ", ownerId=" + ownerId + ", key=" + key + ", value=" + value + ", priority=" + priority + "]";
+	}
+    
+    
+    
+    
 }
