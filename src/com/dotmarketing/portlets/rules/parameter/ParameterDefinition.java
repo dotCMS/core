@@ -6,6 +6,7 @@ import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.display.Input;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
+import com.dotmarketing.util.Logger;
 
 public class ParameterDefinition<T extends DataType> {
 
@@ -60,6 +61,7 @@ public class ParameterDefinition<T extends DataType> {
             model.getValue();
     	}
     	catch(Exception e){
+    		Logger.error(this.getClass(), e.getMessage(), e);
     		throw new RuleEngineException(e.getMessage());
     	}
 
