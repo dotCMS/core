@@ -6,6 +6,7 @@ import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ComparisonOption;
 import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import java.util.HashMap;
@@ -36,7 +37,8 @@ public class ComparisonParameterDefinition extends ParameterDefinition<TextType>
     private static DropdownInput dropdownInput(Comparison[] comparisons) {
         DropdownInput input = new DropdownInput();
         for (Comparison comparison : comparisons) {
-            input.option(comparison.getId());
+            ComparisonOption option = new ComparisonOption(comparison.getId(), comparison.getRightHandArgCount());
+            input.option(option);
         }
         return input;
     }

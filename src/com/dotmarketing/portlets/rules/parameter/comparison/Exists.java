@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 public class Exists extends Comparison<Object> {
 
     public Exists() {
-        super("exists");
+        super("exists", 0);
     }
 
     @Override

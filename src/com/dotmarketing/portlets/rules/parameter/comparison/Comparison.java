@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDateTime;
@@ -26,13 +28,23 @@ public class Comparison<T> {
 
     private final String id;
 
-    public Comparison(String id) {
-        this.id = id;
+    private final int rightHandArgCount;
 
+    public Comparison(String id) {
+        this(id, 1);
+    }
+
+    public Comparison(String id, int rightHandArgCount) {
+        this.id = id;
+        this.rightHandArgCount = rightHandArgCount;
     }
 
     public final String getId() {
         return id;
+    }
+
+    public int getRightHandArgCount() {
+        return rightHandArgCount;
     }
 
     /**
@@ -56,8 +68,15 @@ public class Comparison<T> {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
     }
 
+    public static class ComparisonOption extends Option {
 
+        public final int rightHandArgCount;
 
+        public ComparisonOption(String i18nKey, int rightHandArgCount) {
+            super(i18nKey, i18nKey);
+            this.rightHandArgCount = rightHandArgCount;
+        }
+    }
 
     @Override
     public String toString() {
