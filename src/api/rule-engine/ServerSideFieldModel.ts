@@ -3,15 +3,10 @@ import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
 import {RuleModel} from "./Rule";
 import {CwModel} from "../util/CwModel";
-import {CwI18nModel} from "../util/CwModel";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {CwChangeEvent} from "../util/CwEvent";
 import {ParameterDefinition} from "../util/CwInputModel";
 import {CwInputDefinition} from "../util/CwInputModel";
-
-
-let noop = (...arg:any[])=> {
-}
 
 export interface ParameterModel {
   key:string
@@ -63,7 +58,6 @@ export class ServerSideFieldModel extends CwModel {
       console.log("Unsupported parameter: ", key)
       return;
     }
-    let existing = this.parameters[key]
     this.parameters[key] = {key: key, value: value, priority: priority}
   }
 
@@ -108,7 +102,7 @@ export class ServerSideFieldModel extends CwModel {
   }
 
   toJson():any {
-    let json = {
+    return {
       name: this.name,
       comparison: this.comparison,
       typeId: this._type.i18nKey,
@@ -116,19 +110,19 @@ export class ServerSideFieldModel extends CwModel {
       parameters: this.parameters,
       parameterDefs: this.parameterDefs
     }
-    return json
   }
 
 }
 
 
-export class ServerSideTypeModel extends CwI18nModel {
+export class ServerSideTypeModel extends CwModel{
 
   i18nKey:string
   parameters:{ [key:string]:ParameterDefinition}
 
   constructor(key:string = 'NoSelection', i18nKey:string = null, parameters:any = {}) {
-    super(key ? key : 'NoSelection', i18nKey, {name: i18nKey})
+    super(key ? key : 'NoSelection')
+    this.i18nKey = i18nKey
     this.parameters = parameters
   }
 
@@ -137,8 +131,7 @@ export class ServerSideTypeModel extends CwI18nModel {
   }
 
   static fromJson(json:any):ServerSideTypeModel {
-    let model = new ServerSideTypeModel(json.key, json.i18nKey, json.parameterDefinitions);
-    return model
+    return new ServerSideTypeModel(json.key, json.i18nKey, json.parameterDefinitions)
   }
 
 }

@@ -2,7 +2,7 @@ import {EventEmitter, Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel, CwI18nModel} from "../util/CwModel";
+import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService} from "../system/locale/I18n";
@@ -17,12 +17,6 @@ interface ActionTypeParameter {
   dataType:string,
   i18nKey:string
   priority:number
-}
-
-
-var DISABLED_ACTION_TYPE_IDS = {
-  TestActionlet: true, // comment out to prove we don't need to know its name.
-  CountRequestsActionlet: true
 }
 
 @Injectable()
