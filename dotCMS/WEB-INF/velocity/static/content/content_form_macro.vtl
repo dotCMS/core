@@ -352,7 +352,7 @@ var theme = 'dmundra';
 					<div class="group">
 						<dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
 		    				#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName)) || $structures.isFieldConstant($field)))
-		    					<label for="${field.velocityVarName}FieldLabel">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
+		    					<label for="${field.velocityVarName}">#if($field.isRequired())<img src="/html/images/icons/required.gif"/>#end ${field.fieldName}</label>
 		    				#end
 		    			</dt>
 		    			<dd id="${field.velocityVarName}FieldInput" class="formFieldInput">
@@ -368,7 +368,7 @@ var theme = 'dmundra';
 				    <div class="group">
 				    <dt id="${field.velocityVarName}FieldLabel" class="formFieldLabel">
 	    			#if(!($showOnlyRequiredFields && !$field.isRequired()) && !(($isDontShowFields && $stringsapi.MatchCommaSeparated($dontShowFields,$field.velocityVarName) && !$field.isRequired()) || $structures.isFieldConstant($field)))
-	    				<label for="${field.velocityVarName}FieldLabel">
+	    				<label for="${field.velocityVarName}">
 	    				#if($UtilMethods.isSet($field.hint))
 	    					<a href="#" id="tip-$field.getVelocityVarName()"><span class="hintIcon"></span></a>
 							<span dojoType="dijit.Tooltip" connectId="tip-$field.getVelocityVarName()" position="above" style="width:100px;">
