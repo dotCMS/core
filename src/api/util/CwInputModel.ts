@@ -104,6 +104,8 @@ export class CwDateTimeInputModel extends CwInputDefinition {
 }
 CwInputDefinition.registerType("datetime", CwDateTimeInputModel)
 
+CwInputDefinition.registerType("number", CwTextInputModel)
+
 export class CwDropdownInputModel extends CwInputDefinition {
   options: {[key:string]: any}
   allowAdditions: boolean

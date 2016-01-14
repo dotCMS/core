@@ -69,7 +69,6 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                      [value]="input.value"
                      (blur)="handleParamValueChange($event, input)"></cw-input-date>
   </template>
-
 </div>`
 })
 export class ServersideCondition {
@@ -77,7 +76,6 @@ export class ServersideCondition {
   @Input() model:ServerSideFieldModel
   @Input() paramDefs:{ [key:string]:ParameterDefinition}
   @Output() change:EventEmitter<ServerSideFieldModel>
-
 
   private _inputs:Array<any>
   private _resources:I18nService
@@ -89,40 +87,40 @@ export class ServersideCondition {
   }
 
   setVisible(value, input):void {
-    if(value==="") return
+    if(!value) return
     if(input.name === 'comparison'){
       let idx = this._inputs.indexOf(input)
       let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
-      for(var i=idx+1; i<this._inputs.length; i++) {
-        this._inputs[i].visible = (i <= idx+comparisonObj.rightHandArgCount)
-      }
-    }
-  }
-
-  initVisibility(idx):void{
-    //let vis = true
-    if(idx > 0){
-      let itr = idx
-      let input = this._inputs[itr]
-      while(itr-- > 0){
-        let comparisonInput = this._inputs[itr]
-        if(comparisonInput.name === 'comparison'){
-          let delta = idx -itr
-          var comparisonValue = comparisonInput.value
-          let comparisonObj = comparisonInput.options.filter((e)=> { return e.value == comparisonValue })[0]
-          if(delta > comparisonObj.rightHandArgCount){
-            input.visible = false
-            break
-          }
+      if(comparisonObj) {
+        for (var i = idx + 1; i < this._inputs.length; i++) {
+          this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
         }
       }
     }
   }
 
+  //initVisibility(idx):void{
+  //  //let vis = true
+  //  if(idx > 0){
+  //    let itr = idx
+  //    let input = this._inputs[itr]
+  //    while(itr-- > 0){
+  //      let comparisonInput = this._inputs[itr]
+  //      if(comparisonInput.name === 'comparison'){
+  //        let delta = idx -itr
+  //        var comparisonValue = comparisonInput.value
+  //        let comparisonObj = comparisonInput.options.filter((e)=> { return e.value == comparisonValue })[0]
+  //        input.visible = delta <= comparisonObj.rightHandArgCount
+  //      }
+  //    }
+  //  }
+  //}
+
   ngOnChanges(change) {
     if (change.paramDefs) {
       let prevPriority = 0
       this._inputs = []
+      let comparison
       Object.keys(this.paramDefs).forEach(key => {
         let paramDef = this.model.getParameterDef(key)
         let param = this.model.getParameter(key);
@@ -130,8 +128,17 @@ export class ServersideCondition {
           this._inputs.push({type: 'spacer', flex: 40})
         }
         prevPriority = paramDef.priority
-        this._inputs.push(this.getInputFor(paramDef.inputType.type, param, paramDef))
+        let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
 
+        if(input.name === 'comparison') {
+          comparison = input
+        }
+
+        this._inputs.push(input)
+      })
+
+      this._inputs.forEach( input => {
+        this.setVisible(input.value, comparison)
       })
     }
   }
