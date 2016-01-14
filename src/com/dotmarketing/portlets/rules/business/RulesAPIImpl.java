@@ -60,6 +60,7 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(ReferringURLConditionlet.class)
                          .add(DateTimeConditionlet.class)
                          .add(VisitedUrlConditionlet.class)
+                         .add(UsersBrowserLanguageConditionlet.class)
 //                         .add(UsersBrowserConditionlet.class)
 //                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)

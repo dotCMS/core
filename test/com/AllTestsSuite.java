@@ -6,6 +6,8 @@ import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
 import com.dotmarketing.portlets.rules.business.RulesCacheFTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletFTest;
+import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest;
 
@@ -121,8 +123,10 @@ import com.dotmarketing.webdav.WebDavTest;
     ActionResourceFTest.class,
     RulesCacheFTest.class,
     PersonaActionletFTest.class,
-	VisitedUrlConditionletTest.class,
-	VisitedUrlConditionletFTest.class
+	UsersBrowserLanguageConditionletFTest.class,
+	UsersBrowserLanguageConditionletTest.class,
+    VisitedUrlConditionletTest.class,
+    VisitedUrlConditionletFTest.class
 })
 public class AllTestsSuite {
 
