@@ -43,7 +43,9 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
     (blur)="onBlur($event.target.value)"
-    (focus)="onFocus($event.target.value)">
+    (focus)="onFocus($event.target.value)"
+    min="1"
+    >
   <i [ngClass]="icon" *ngIf="icon"></i>
   <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>

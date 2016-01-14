@@ -1,4 +1,4 @@
-import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
+import {Component,Input, Output, View, Attribute, EventEmitter, OnInit} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
@@ -24,7 +24,6 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
   template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last" #idx="index">
     <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
-    <div *ngIf="isVisible(idx)" flex layout-fill>
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
                          layout-fill
@@ -35,7 +34,8 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
                          [class.cw-last]="islast"
-                         (change)="handleParamValueChange($event, input)">
+                         [hidden]="!input.visible"
+                         (change)="setVisible($event, input); handleParamValueChange($event, input)">
                          <cw-input-option
               *ngFor="#opt of input.options"
               [value]="opt.value"
@@ -43,7 +43,7 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
               icon="{{opt.icon}}"></cw-input-option>
       </cw-input-dropdown>
 
-      <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
+      <cw-input-text *ngIf="(input.type == 'text' || input.type == 'number') "
                      flex
                      layout-fill
                      class="cw-input"
@@ -53,9 +53,10 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                      [placeholder]="input.placeholder | async"
                      [value]="input.value"
                      [type]="input.type"
+                     [hidden]="!input.visible"
                      (blur)="handleParamValueChange($event, input)"></cw-input-text>
 
-       <cw-input-date *ngIf="input.type == 'datetime'"
+       <cw-input-date *ngIf="input.type == 'datetime' "
                      flex
                      layout-fill
                      class="cw-input"
@@ -64,9 +65,9 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
                      [name]="input.name"
                      [placeholder]="input.placeholder | async"
                      type="datetime-local"
+                     [hidden]="!input.visible"
                      [value]="input.value"
                      (blur)="handleParamValueChange($event, input)"></cw-input-date>
-  </div>
   </template>
 
 </div>`
@@ -87,10 +88,22 @@ export class ServersideCondition {
     this._inputs = [];
   }
 
-  isVisible(idx):boolean{
-    let vis = true
+  setVisible(value, input):void {
+    if(value==="") return
+    if(input.name === 'comparison'){
+      let idx = this._inputs.indexOf(input)
+      let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
+      for(var i=idx+1; i<this._inputs.length; i++) {
+        this._inputs[i].visible = (i <= idx+comparisonObj.rightHandArgCount)
+      }
+    }
+  }
+
+  initVisibility(idx):void{
+    //let vis = true
     if(idx > 0){
       let itr = idx
+      let input = this._inputs[itr]
       while(itr-- > 0){
         let comparisonInput = this._inputs[itr]
         if(comparisonInput.name === 'comparison'){
@@ -98,13 +111,12 @@ export class ServersideCondition {
           var comparisonValue = comparisonInput.value
           let comparisonObj = comparisonInput.options.filter((e)=> { return e.value == comparisonValue })[0]
           if(delta > comparisonObj.rightHandArgCount){
-            vis = false
+            input.visible = false
             break
           }
         }
       }
     }
-    return vis
   }
 
   ngOnChanges(change) {
@@ -119,6 +131,7 @@ export class ServersideCondition {
         }
         prevPriority = paramDef.priority
         this._inputs.push(this.getInputFor(paramDef.inputType.type, param, paramDef))
+
       })
     }
   }
@@ -130,14 +143,14 @@ export class ServersideCondition {
     this._resources.get(i18nBaseKey).subscribe(()=>{})
 
     let input
-    if (type === 'text') {
+    if (type === 'text' || type === 'number') {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
     } else if (type === 'datetime') {
       input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
     } else if (type === 'dropdown') {
       input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
-    input.type = type
+    input.type = type;
     return input
   }
 
@@ -148,7 +161,8 @@ export class ServersideCondition {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       value: this.model.getParameterValue(param.key),
-      required: paramDef.inputType.dataType['minLength'] > 0
+      required: paramDef.inputType.dataType['minLength'] > 0,
+      visible: true,
     }
   };
 
@@ -157,7 +171,8 @@ export class ServersideCondition {
     return {
       name: param.key,
       value: this.model.getParameterValue(param.key),
-      required: paramDef.inputType.dataType['minLength'] > 0
+      required: paramDef.inputType.dataType['minLength'] > 0,
+      visible: true
     }
   };
 
@@ -176,6 +191,7 @@ export class ServersideCondition {
 
     let currentValue = this.model.getParameterValue(param.key)
     let needsCustomAttribute = currentValue != null
+
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
       if(needsCustomAttribute && key == currentValue){
@@ -186,6 +202,7 @@ export class ServersideCondition {
       if(param.key === 'country'){
         labelKey = i18nBaseKey + '.' + option.i18nKey + '.name'
       }
+
       opts.push({
         value: key,
         label: this._resources.get(labelKey, option.i18nKey),
@@ -210,7 +227,8 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions
+      allowAdditions:inputType.allowAdditions,
+      visible: true,
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''
