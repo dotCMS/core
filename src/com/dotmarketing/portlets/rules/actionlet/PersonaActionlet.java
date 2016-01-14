@@ -1,23 +1,21 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -36,15 +34,25 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
     private static final String I18N_BASE = "api.system.ruleengine.actionlet.SetPersona";
 
     public static final String PERSONA_ID_KEY = "personaIdKey";
-    public static final String REQUEST_VALUE = "requestValue";
+    private final VisitorAPI visitorAPI;
+    private final UserAPI userAPI;
     private PersonaAPI personaAPI;
 
+    @SuppressWarnings("unused")
     public PersonaActionlet() {
+        this(APILocator.getPersonaAPI(), APILocator.getUserAPI(), APILocator.getVisitorAPI());
+    }
+
+    @VisibleForTesting
+    PersonaActionlet(PersonaAPI personaAPI, UserAPI userAPI, VisitorAPI visitorAPI) {
         super(I18N_BASE,
               new ParameterDefinition<>(1,
                                         PERSONA_ID_KEY,
-                                        new RestDropdownInput("/api/v1/personas", "key", "name")));
-        personaAPI = APILocator.getPersonaAPI();
+                                        new RestDropdownInput("/api/v1/personas", "key", "name").minSelections(1)));
+
+        this.personaAPI = personaAPI;
+        this.userAPI = userAPI;
+        this.visitorAPI = visitorAPI;
     }
 
     @Override
@@ -54,27 +62,36 @@ public class PersonaActionlet extends RuleActionlet<PersonaActionlet.Instance> {
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        boolean result;
         try {
-            Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(request);
+            Optional<Visitor> opt = visitorAPI.getVisitor(request);
             if(opt.isPresent()){
-                User user = APILocator.getUserAPI().getSystemUser();
-                Persona p = personaAPI.find(instance.key, user, false);
-                opt.get().setPersona(p);
+                User user = userAPI.getSystemUser();
+                Persona p = personaAPI.find(instance.personaId, user, false);
+                if(p == null){
+                    Logger.warn(PersonaActionlet.class, "Persona with id '" + instance.personaId + "' not be found. Could not execute action.");
+                    result = false;
+                } else {
+                    opt.get().setPersona(p);
+                    result = true;
+                }
+            } else{
+                Logger.warn(PersonaActionlet.class, "No visitor was available on which to set a persona. Could not execute action.");
+                result = false;
             }
         } catch (Exception e) {
             throw new RuleEvaluationFailedException(e, "Could not evaluate action %s", this.getClass().getName());
         }
-
-        return true;
+        return result;
     }
 
     static class Instance implements RuleComponentInstance {
 
-        private final String key;
+        private final String personaId;
 
         public Instance(Map<String, ParameterModel> parameters) {
-            key = parameters.get(PERSONA_ID_KEY).getValue();
-            Preconditions.checkArgument(StringUtils.isNotBlank(key), "Set Persona Actionlet requires valid persona ID.");
+            personaId = parameters.get(PERSONA_ID_KEY).getValue();
+            Preconditions.checkArgument(StringUtils.isNotBlank(personaId), "Set Persona Actionlet requires valid persona ID.");
         }
     }
 }

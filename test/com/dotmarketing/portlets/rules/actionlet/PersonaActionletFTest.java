@@ -47,7 +47,7 @@ import com.liferay.portal.model.User;
  * @since 01-07-2016
  *
  */
-public class PersonaActionletTest extends TestBase {
+public class PersonaActionletFTest extends TestBase {
 
 	private static FolderAPI folderAPI = APILocator.getFolderAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();

@@ -8,7 +8,6 @@ import com.dotcms.repackage.javax.ws.rs.PathParam;
 import com.dotcms.repackage.javax.ws.rs.Produces;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.repackage.org.glassfish.jersey.server.JSONP;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -28,6 +27,7 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotEmpty;
+import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
 @Path("/v1/personas")
 public class PersonaResource {
@@ -51,14 +51,16 @@ public class PersonaResource {
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Map<String, RestPersona> list(@Context HttpServletRequest request) {
-        String siteId = (String)request.getSession().getAttribute(WebKeys.CURRENT_HOST);
-        if(StringUtils.isEmpty(siteId)) {
-            siteId = request.getHeader(WebKeys.CURRENT_HOST);
+        Host host = (Host)request.getSession().getAttribute(WebKeys.CURRENT_HOST);
+        if(host == null){
+            String siteId = request.getHeader(WebKeys.CURRENT_HOST);
+            siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+            host = getHost(siteId);
         }
-        siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
+        host = checkNotNull(host, BadRequestException.class, "Current Site Host could not be determined.");
+
         PersonaTransform transform = new PersonaTransform();
         User user = getUser(request);
-        Host host = getHost(siteId);
         List<Persona> personas = getPersonasInternal(user, host);
         Map<String, RestPersona> hash = Maps.newHashMapWithExpectedSize(personas.size());
         for (Persona persona : personas) {
