@@ -10,6 +10,7 @@ import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditio
 import com.dotmarketing.portlets.rules.conditionlet.UsersBrowserLanguageConditionletTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletFTest;
 import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest;
+
 import org.apache.velocity.runtime.parser.node.SimpleNodeTest;
 
 import com.dotcms.cmis.DotCMSCMISTest;
@@ -49,7 +50,7 @@ import com.dotmarketing.portlets.folder.business.FolderAPITest;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPITest;
 import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPITest;
 import com.dotmarketing.portlets.links.business.MenuLinkAPITest;
-import com.dotmarketing.portlets.rules.actionlet.PersonaActionletTest;
+import com.dotmarketing.portlets.rules.actionlet.PersonaActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionletFTest;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionletFTest;
 import com.dotmarketing.portlets.structure.business.FieldAPITest;
@@ -121,7 +122,7 @@ import com.dotmarketing.webdav.WebDavTest;
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
     RulesCacheFTest.class,
-    PersonaActionletTest.class,
+    PersonaActionletFTest.class,
 	UsersBrowserLanguageConditionletFTest.class,
 	UsersBrowserLanguageConditionletTest.class,
     VisitedUrlConditionletTest.class,

@@ -14,23 +14,11 @@ public class Persona extends Contentlet implements IPersona{
 	
 
 	public Persona(Contentlet oldCon) {
-		
-		
-		
-		
-		Map<String, Object> newMap = new HashMap<String, Object>();
-		
-		oldCon.getMap().forEach((k, v) -> 
-			newMap.put(k,v));
-		
-		
-
+		Map<String, Object> newMap = new HashMap<>();
+		oldCon.getMap().forEach(newMap::put);
 		super.map = newMap;
 	}
 
-
-
-	
 	@Override
 	public String getName() {
 		return getStringProperty(PersonaAPI.NAME_FIELD);
@@ -63,7 +51,7 @@ public class Persona extends Contentlet implements IPersona{
 
 	@Override
 	public String getTags() {
-		return getStringProperty(PersonaAPI.TAGS_FIELD.toString());
+		return getStringProperty(PersonaAPI.TAGS_FIELD);
 	}
 
 	@Override
