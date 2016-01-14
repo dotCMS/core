@@ -1,5 +1,5 @@
 import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import {Control, Validators, CORE_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
 
@@ -61,13 +61,11 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                    flex
                    class="cw-input"
                    [class.cw-last]="islast"
-                   [required]="input.required"
                    [name]="input.name"
                    [placeholder]="input.placeholder | async"
-                   [value]="input.value"
+                   [control]="input.control"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
   </template>
-
 </div>`
 })
 export class ServersideCondition {
@@ -124,10 +122,17 @@ export class ServersideCondition {
   private getTextInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     let placeholderKey = rsrcKey + '.placeholder'
+    let vFns:Function[] = []
+    let minLen = paramDef.inputType.dataType['minLength']
+    if (minLen > 0) {
+      vFns.push(Validators.required)
+      vFns.push(Validators.minLength(minLen))
+    }
+    let control = new Control(this.model.getParameterValue(param.key), Validators.compose(vFns))
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
-      value: this.model.getParameterValue(param.key),
+      control: control ,
       required: paramDef.inputType.dataType['minLength'] > 0
     }
   }

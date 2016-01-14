@@ -12,7 +12,7 @@
     <inspection_tool class="HtmlUnknownAttribute" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="myValues">
         <value>
-          <list size="28">
+          <list size="34">
             <item index="0" class="java.lang.String" itemvalue="flex" />
             <item index="1" class="java.lang.String" itemvalue="layout" />
             <item index="2" class="java.lang.String" itemvalue="layout-align" />
@@ -41,6 +41,12 @@
             <item index="25" class="java.lang.String" itemvalue="(blur)" />
             <item index="26" class="java.lang.String" itemvalue="[attr.data-value]" />
             <item index="27" class="java.lang.String" itemvalue="[attr.data-text]" />
+            <item index="28" class="java.lang.String" itemvalue="icon" />
+            <item index="29" class="java.lang.String" itemvalue="[on-text]" />
+            <item index="30" class="java.lang.String" itemvalue="[off-text]" />
+            <item index="31" class="java.lang.String" itemvalue="[rule]" />
+            <item index="32" class="java.lang.String" itemvalue="(remove)" />
+            <item index="33" class="java.lang.String" itemvalue="[model]" />
           </list>
         </value>
       </option>

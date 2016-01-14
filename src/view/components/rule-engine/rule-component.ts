@@ -1,5 +1,5 @@
 import { Component, Directive, View, Inject, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import {CORE_DIRECTIVES, Control, Validators} from 'angular2/common';
 
 import {Observable} from 'rxjs/Rx'
 
@@ -50,7 +50,7 @@ var rsrc = {
                      (click)="$event.stopPropagation()"
                      name="rule-{{rule.key}}-name"
                      placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     [value]="rule.name">
+                     [control]="ruleNameControl">
       </cw-input-text>
       <span class="cw-fire-on-label">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
@@ -135,6 +135,8 @@ class RuleComponent {
   private _rsrcCache:{[key:string]:Observable<string>}
   resources:I18nService
 
+  ruleNameControl:Control
+
   constructor(elementRef:ElementRef,
               ruleService:RuleService,
               actionService:ActionService,
@@ -148,6 +150,8 @@ class RuleComponent {
     this._groupService = groupService
     this.resources = resources
     this._rsrcCache = {}
+
+    this.initFieldControls()
 
 
     this.groups = []
@@ -169,6 +173,13 @@ class RuleComponent {
     }
   }
 
+  initFieldControls() {
+    let vFns = []
+    vFns.push(Validators.required)
+    vFns.push(Validators.minLength(1))
+    this.ruleNameControl = new Control('', Validators.compose(vFns))
+  }
+
   rsrc(subkey:string, defVal:string = null) {
     let msgObserver = this._rsrcCache[subkey]
     if (!msgObserver) {
@@ -184,7 +195,7 @@ class RuleComponent {
   ngOnChanges(change) {
     if (change.rule) {
       let rule:RuleModel = change.rule.currentValue
-      this.rule = rule
+      this.ruleNameControl.updateValue(this.rule.name, {onlySelf: false, emitEvent: false, emitModelToViewChange: true})
       if (rule.isPersisted()) {
         this._groupService.list(rule).subscribe((groups) => {
           this.groups = groups || []

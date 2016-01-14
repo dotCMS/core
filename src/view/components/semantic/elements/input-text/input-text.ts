@@ -15,7 +15,7 @@ import {Attribute,
     TemplateRef,
     View
 } from 'angular2/core'
-import {Validators, NG_VALUE_ACCESSOR, ControlValueAccessor, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
+import {NgFormControl, Control, ControlGroup, Validator, Validators, NG_VALUE_ACCESSOR, ControlValueAccessor, CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
 import {HTTP_PROVIDERS} from 'angular2/http'
 
 import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
@@ -35,20 +35,21 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
 
 })
 @View({
-  template: `
-<div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
-  <input type="text" [name]="name" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
-    class="ng-valid"
-    [required]="required"
-    (input)="onChange($event.target.value)"
-    (change)="$event.stopPropagation(); onChange($event.target.value)"
-    (blur)="onBlur($event.target.value)"
-    (focus)="onFocus($event.target.value)">
-  <i [ngClass]="icon" *ngIf="icon"></i>
-  <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
+  template: `<div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
+    <input type="text"
+           [name]="name"
+           [ngFormControl]="control"
+           [placeholder]="placeholder" [disabled]="disabled"
+           class="ng-valid"
+           (input)="onChange($event.target.value)"
+           (change)="$event.stopPropagation(); onChange($event.target.value)"
+           (blur)="onBlur($event.target.value)"
+           (focus)="onFocus($event.target.value)">
+    <i [ngClass]="icon" *ngIf="icon"></i>
+    <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
   `,
-  directives: [CORE_DIRECTIVES]
+  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES]
 })
 export class InputText implements ControlValueAccessor {
 
@@ -60,6 +61,7 @@ export class InputText implements ControlValueAccessor {
 
   @Input()  name:string = ""
   @Input()  value:string = ""
+  @Input()  control:Control
   @Input()  placeholder:string = ""
   @Input()  icon:string
   @Input()  disabled:boolean = false
@@ -75,6 +77,7 @@ export class InputText implements ControlValueAccessor {
     this.change = new EventEmitter()
     this.blur = new EventEmitter()
     this.focus = new EventEmitter()
+    this.control = new Control(this.value)
   }
 
   ngOnChanges(change) {
