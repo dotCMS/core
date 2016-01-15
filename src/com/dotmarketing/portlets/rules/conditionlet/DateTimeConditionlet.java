@@ -140,10 +140,10 @@ public class DateTimeConditionlet extends Conditionlet<DateTimeConditionlet.Inst
             }
 
             if(comparison==BETWEEN) {
-                checkState(parameters != null && parameters.size() == 3, "Referring URL Condition requires parameters %s, %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY, DATE_TIME_2_KEY);
+                checkState(parameters != null && parameters.size() == 3, "DateTime Condition requires parameters %s, %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY, DATE_TIME_2_KEY);
                 this.dateTime2 = LocalDateTime.parse(parameters.get(DATE_TIME_2_KEY).getValue());
             } else {
-                checkState(parameters != null && parameters.size() == 2, "Referring URL Condition requires parameters %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY);
+                checkState(parameters != null && parameters.size() >= 2, "DateTime Condition requires parameters %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY);
                 this.dateTime2 = null;
             }
 
