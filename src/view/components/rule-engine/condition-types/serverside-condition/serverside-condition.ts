@@ -103,8 +103,7 @@ export class ServersideCondition {
   }
 
   setVisible(value, input):void {
-    if(!value) return
-    if(input.name === 'comparison'){
+    if(value && input && input.name === 'comparison'){
       let idx = this._inputs.indexOf(input)
       let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
       if(comparisonObj) {
