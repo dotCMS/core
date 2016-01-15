@@ -78,7 +78,7 @@ export class CwTextInputModel extends CwInputDefinition {
     if(this.minLength > 0){
       valid = value != null && value.length >= this.minLength
     }
-    if(value) {
+    if(this.maxLength && value) {
       valid = valid && value.length <= this.maxLength
     }
     return new CwValidationResults(valid)
