@@ -18,10 +18,10 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
 })
 @View({
   template: `<div class="cw-rule-group">
-  <div flex class="cw-condition-group-separator" *ngIf="groupIndex === 0">
+  <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc.inputs.group.whenConditions.label}}
   </div>
-  <div flex class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
+  <div class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
     <div class="ui basic icon buttons">
       <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
         <div>{{group.operator}}</div>
