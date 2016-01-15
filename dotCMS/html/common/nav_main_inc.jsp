@@ -177,6 +177,7 @@ dojo.require("dojo.hash");
                                 id : this.contentDiv
                         }).placeAt(this.hangerDiv);
 
+                        dojo.style(hanger, "min-height", "400px");
 
                         console.log("navigating to:" + hashValue)
                         myCp.attr("href", hashValue);
@@ -245,7 +246,10 @@ dojo.require("dojo.hash");
 
         var dotAjaxNav = new dotcms.dijit.dotAjaxNav({});
 
-        dojo.subscribe("/dojo/hashchange", this, function(hash){dotAjaxNav.refresh();});
+        dojo.subscribe("/dojo/hashchange", this, function(hash){
+        	dotAjaxNav.refresh();
+        	dojo.style(dojo.body(), "visibility", "visible");
+        });
 
 
 
