@@ -2,7 +2,6 @@ import { ChangeDetectionStrategy, Component, View, EventEmitter, ElementRef, Inp
 import { CORE_DIRECTIVES, NG_VALUE_ACCESSOR, ControlValueAccessor } from 'angular2/common';
 
 import {isBlank, CONST_EXPR} from 'angular2/src/facade/lang';
-import {InputText} from "../input-text/input-text";
 
 const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     NG_VALUE_ACCESSOR, {useExisting: forwardRef(() => InputDate), multi: true}));
