@@ -106,7 +106,7 @@ export class ServersideCondition {
     if(value && input && input.name === 'comparison'){
       let idx = this._inputs.indexOf(input)
       let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
-      if(comparisonObj) {
+      if(comparisonObj && comparisonObj.value) {
         for (var i = idx + 1; i < this._inputs.length; i++) {
           this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
         }
