@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionDataGen;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionGroupDataGen;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -109,6 +110,7 @@ public class RulesCacheFTest {
         Condition condition = conditionDataGen.groupId(group.getId()).next();
         ParameterModel value = parameterDataGen.key("key").value("value").next();
         condition.addValue(value);
+        condition.addValue(Conditionlet.COMPARISON_KEY, "is");
         conditionDataGen.persist(condition);
 
         // let's add the rule to the cache
@@ -205,6 +207,7 @@ public class RulesCacheFTest {
         Condition condition = conditionDataGen.groupId(group.getId()).next();
         ParameterModel value = parameterDataGen.key("key").value("value").next();
         condition.addValue(value);
+        condition.addValue(Conditionlet.COMPARISON_KEY, "is");
         conditionDataGen.persist(condition);
         value.setOwnerId(condition.getId());
 
@@ -232,6 +235,7 @@ public class RulesCacheFTest {
         Condition condition = conditionDataGen.groupId(group.getId()).next();
         ParameterModel value = parameterDataGen.ownerId(condition.getId()).key("key").value("value").next();
         condition.addValue(value);
+        condition.addValue(Conditionlet.COMPARISON_KEY, "is");
         conditionDataGen.persist(condition);
         value.setOwnerId(condition.getId());
 

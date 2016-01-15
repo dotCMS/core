@@ -35,7 +35,6 @@ public class ConditionDataGen {
         condition.setConditionletId(UsersCountryConditionlet.class.getSimpleName());
         condition.setOperator(operator);
         condition.setConditionGroup(groupId);
-        condition.addValue(Conditionlet.COMPARISON_KEY, "is");
 
         return condition;
     }
