@@ -2,12 +2,6 @@ import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, 
 import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
 import { CORE_DIRECTIVES,  } from 'angular2/common';
 import {Observable} from 'rxjs/Rx'
-import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
-import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
-import {CwComponent} from "../../../../../api/util/CwComponent";
-import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
-import {ParameterModel} from "../../../../../api/rule-engine/Condition";
-import {Verify} from "../../../../../api/validation/Verify";
 
 
 /**
@@ -72,6 +66,8 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   private _viewIsInitialized:boolean
   private _$dropdown:any
 
+  private _initDebounce:EventEmitter<any>
+
   constructor(elementRef:ElementRef) {
     this.placeholder = ""
     this.allowAdditions = false
@@ -84,6 +80,11 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
     this._updateView = false
     this._viewIsInitialized = false
     this.name = "dd-" + new Date().getTime() + Math.random()
+
+    this._initDebounce = new EventEmitter()
+    this._initDebounce.debounceTime(100).subscribe(()=>{
+      this.initDropdown()
+    })
   }
 
   ngOnChanges(change) {
@@ -93,37 +94,35 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
         this._$dropdown.dropdown('set selected', this.value)
       } else {
         this._updateView = true
-        this.initDropdown()
+        this._initDebounce.emit(1)
       }
     }
   }
 
   addOption(option:InputOption) {
     this._options.push(option)
+    this._initDebounce.emit(1)
   }
 
   ngAfterViewInit() {
     this._viewIsInitialized = true
     if (this._options.length > 0) {
-      this.initDropdown()
+      this._initDebounce.emit(1)
     } // else 'wait for options to be set'
 
   }
 
   ngAfterViewChecked() {
     if (this._updateView === true) {
-      this.initDropdown()
+      this._initDebounce.emit(1)
     }
   }
 
   ngOnDestroy(){
     this._$dropdown.dropdown('clear')
-    //this._$dropdown.dropdown('refresh')
-    console.log('destorying dd')
   }
 
   refreshDisplayText(label:string) {
-    console.log("Dropdown", "refreshDisplayText", label)
     if (this._$dropdown) {
       this._$dropdown.dropdown('set text', label)
     }
@@ -187,7 +186,7 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
    */
   private _applyArrowNavFix($dropdown) {
     let $searchField = $dropdown.children('input.search')
-    $searchField.on('keyup', (event)=> {
+    $searchField.on('keyup', (event:any)=> {
       if (DO_NOT_SEARCH_ON_THESE_KEY_EVENTS[event.keyCode]) {
         event.stopPropagation()
       }

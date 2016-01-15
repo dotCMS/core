@@ -17,7 +17,7 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
   selector: 'condition-group'
 })
 @View({
-  template: `<div flex layout="column" layout-align="start start" class="cw-rule-group">
+  template: `<div flex layout="column" class="cw-rule-group">
   <div flex class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc.inputs.group.whenConditions.label}}
   </div>
@@ -29,26 +29,20 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
     </div>
     <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
   </div>
-  <div flex layout-fill layout="column" layout-align="start start" class="cw-conditions">
+  <div flex layout="column" class="cw-conditions">
     <div layout="row"
-         layout-align="space-between center"
          class="cw-condition-row"
-         (change)="conditionChanged($event.target.value)"
          *ngFor="var condition of conditions; var i=index">
-      <div flex layout-fill layout="row" layout-align="start center">
-        <rule-condition flex layout-fill layout="row"
-                        [condition]="condition"
-                        [index]="i"
-                        (remove)="onConditionRemove($event)"
-                        (change)="onConditionChange($event)"></rule-condition>
-      </div>
-      <div flex="0" layout="row" layout-align="end center">
-        <div class="cw-btn-group" *ngIf="i === (conditions.length - 1)">
-          <div class="ui basic icon buttons">
-            <button class="cw-button-add-item ui small basic button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
-              <i class="plus icon" aria-hidden="true"></i>
-            </button>
-          </div>
+      <rule-condition flex layout="row"
+                      [condition]="condition"
+                      [index]="i"
+                      (remove)="onConditionRemove($event)"
+                      (change)="onConditionChange($event)"></rule-condition>
+      <div class="cw-btn-group cw-add-btn">
+        <div class="ui basic icon buttons" *ngIf="i === (conditions.length - 1)">
+          <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
+            <i class="plus icon" aria-hidden="true"></i>
+          </button>
         </div>
       </div>
     </div>
@@ -149,12 +143,14 @@ export class ConditionGroupComponent {
   }
 
   onConditionRemove(conditionModel:ConditionModel) {
-    this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
-      return aryModel.key != conditionModel.key
-    })
-    if (this.conditions.length === 0) {
-      this.remove.emit(this.group)
-    }
 
+    this._conditionService.remove(conditionModel, () =>{
+      this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
+        return aryModel.key != conditionModel.key
+      })
+      if (this.conditions.length === 0) {
+        this.remove.emit(this.group)
+      }
+    })
   }
 }
