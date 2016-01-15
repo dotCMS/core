@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 public class LessThanComparison extends Comparison<Comparable> {
 
     public LessThanComparison() {
-        super("less_than");
+        super("lessThan");
     }
 
     @Override

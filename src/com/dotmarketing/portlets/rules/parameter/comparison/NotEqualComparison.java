@@ -3,15 +3,15 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 /**
  * @author Geoff M. Granum
  */
-public class GreaterThanComparison extends Comparison<Comparable> {
+public class NotEqualComparison extends Comparison<Comparable> {
 
-    public GreaterThanComparison() {
-        super("greaterThan");
+    public NotEqualComparison() {
+        super("notEqual");
     }
 
     @Override
     public boolean perform(Comparable argA, Comparable argB) {
-        return argA.compareTo(argB) > 0;
+        return argA.compareTo(argB) != 0;
     }
 }
  
