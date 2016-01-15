@@ -19,26 +19,26 @@ import {I18nService} from "../../../api/system/locale/I18n";
 })
 @View({
   template: `
-<div *ngIf="typeDropdown != null && condition.type != null" flex layout-fill layout="row" layout-align="space-between center" class="cw-condition cw-entry">
-  <div flex="35" layout="row" layout-align="end center" class="cw-row-start-area">
-    <div flex class="cw-btn-group cw-condition-toggle">
-      <button flex class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
-        {{condition.operator}}
-      </button>
-    </div>
-     <cw-input-dropdown
-        class="cw-type-dropdown"
-        [value]="condition.type.key"
-        placeholder="{{typeDropdown.placeholder | async}}"
-        (change)="onTypeChange($event)">
-         <cw-input-option
-            *ngFor="#opt of typeDropdown.options"
-            [value]="opt.value"
-            [label]="opt.label | async"
-            icon="{{opt.icon}}"></cw-input-option>
-    </cw-input-dropdown>
+<div *ngIf="typeDropdown != null && condition.type != null" flex layout="row" class="cw-condition cw-entry">
+  <div class="cw-btn-group cw-condition-toggle">
+    <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
+      {{condition.operator}}
+    </button>
   </div>
-  <div flex layout-fill class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
+  <cw-input-dropdown
+      flex="25"
+      layout="row"
+      class="cw-type-dropdown"
+      [value]="condition.type.key"
+      placeholder="{{typeDropdown.placeholder | async}}"
+      (change)="onTypeChange($event)">
+       <cw-input-option
+          *ngFor="#opt of typeDropdown.options"
+          [value]="opt.value"
+          [label]="opt.label | async"
+          icon="{{opt.icon}}"></cw-input-option>
+  </cw-input-dropdown>
+  <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
     <template [ngSwitchWhen]="'NoSelection'">
       <div class="cw-condition-component"></div>
     </template>
@@ -50,12 +50,12 @@ import {I18nService} from "../../../api/system/locale/I18n";
       </cw-serverside-condition>
     </template>
   </div>
-  <div flex="5" layout="row" layout-align="end center" class="cw-btn-group">
-    <div class="ui basic icon buttons">
-      <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
-        <i class="trash icon"></i>
-      </button>
-    </div>
+</div>
+<div class="cw-btn-group cw-delete-btn">
+  <div class="ui basic icon buttons">
+    <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
+      <i class="trash icon"></i>
+    </button>
   </div>
 </div>
 `,

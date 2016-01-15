@@ -100,14 +100,7 @@ export class I18nService {
   }
 
   makeRequest(url) {
-    let opts;
-    if (this._apiRoot.authToken) {
-      let headers = new Headers();
-      headers.append('Authorization', this._apiRoot.authToken);
-      let opts = new RequestOptions({
-        headers: headers
-      });
-    }
+    let opts = this._apiRoot.getDefaultRequestOptions()
     return this._http.get(this._baseUrl + '/' + url, opts).map((res) => {
       return res.json()
     })

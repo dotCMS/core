@@ -15,59 +15,75 @@ import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
+import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
+import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 
 @Component({
   selector: 'cw-serverside-condition'
 })
 @View({
-  directives: [CORE_DIRECTIVES, Dropdown, InputOption, InputText, InputDate],
-  template: `<div flex layout-fill layout="row" layout-align="start center" class="cw-condition-component-body">
-  <template ngFor #input [ngForOf]="_inputs" #islast="last" #idx="index">
-    <div *ngIf="input.type == 'spacer'" flex layout-fill class="cw-input cw-input-placeholder">&nbsp;</div>
-      <cw-input-dropdown *ngIf="input.type == 'dropdown'"
-                         flex
-                         layout-fill
-                         class="cw-input"
-                         [value]="input.value"
-                         placeholder="{{input.placeholder | async}}"
-                         [required]="input.required"
-                         [allowAdditions]="input.allowAdditions"
-                         [class.cw-comparator-selector]="input.name == 'comparison'"
-                         [class.cw-last]="islast"
-                         [hidden]="!input.visible"
-                         (change)="setVisible($event, input); handleParamValueChange($event, input)">
-                         <cw-input-option
-              *ngFor="#opt of input.options"
-              [value]="opt.value"
-              [label]="opt.label | async"
-              icon="{{opt.icon}}"></cw-input-option>
-      </cw-input-dropdown>
 
-      <cw-input-text *ngIf="(input.type == 'text' || input.type == 'number') "
-                     flex
-                     layout-fill
-                     class="cw-input"
-                     [class.cw-last]="islast"
-                     [required]="input.required"
-                     [name]="input.name"
-                     [placeholder]="input.placeholder | async"
-                     [value]="input.value"
-                     [type]="input.type"
-                     [hidden]="!input.visible"
-                     (blur)="handleParamValueChange($event, input)"></cw-input-text>
+  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
+  template: `<div flex layout="row" class="cw-condition-component-body">
+  <template ngFor #input [ngForOf]="_inputs" #islast="last">
+    <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
+    <cw-input-dropdown *ngIf="input.type == 'dropdown'"
+                       flex
+                       class="cw-input"
+                       [value]="input.value"
+                       placeholder="{{input.placeholder | async}}"
+                       [required]="input.required"
+                       [allowAdditions]="input.allowAdditions"
+                       [class.cw-comparator-selector]="input.name == 'comparison'"
+                       [class.cw-last]="islast"
+                           [hidden]="!input.visible"
+                       (change)="setVisible($event, input); handleParamValueChange($event, input)">
+                       <cw-input-option
+            *ngFor="#opt of input.options"
+            [value]="opt.value"
+            [label]="opt.label | async"
+            icon="{{opt.icon}}"></cw-input-option>
+    </cw-input-dropdown>
 
-       <cw-input-date *ngIf="input.type == 'datetime' "
-                     flex
-                     layout-fill
-                     class="cw-input"
-                     [class.cw-last]="islast"
-                     [required]="input.required"
-                     [name]="input.name"
-                     [placeholder]="input.placeholder | async"
-                     type="datetime-local"
-                     [hidden]="!input.visible"
-                     [value]="input.value"
-                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
+    <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
+                       flex
+                       class="cw-input"
+                       [value]="input.value"
+                       placeholder="{{input.placeholder | async}}"
+                       optionUrl="{{input.optionUrl}}"
+                       optionValueField="{{input.optionValueField}}"
+                       optionLabelField="{{input.optionLabelField}}"
+                       [required]="input.required"
+                       [allowAdditions]="input.allowAdditions"
+                       [class.cw-comparator-selector]="input.name == 'comparison'"
+                       [class.cw-last]="islast"
+                       (change)="handleParamValueChange($event, input)">
+    </cw-input-rest-dropdown>
+
+    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
+                   flex
+                   class="cw-input"
+                   [class.cw-last]="islast"
+                   [required]="input.required"
+                   [name]="input.name"
+                   [placeholder]="input.placeholder | async"
+                   [value]="input.value"
+                   [type]="input.type"
+                   [hidden]="!input.visible"
+                   (blur)="handleParamValueChange($event, input)"></cw-input-text>
+
+    <cw-input-date *ngIf="input.type == 'datetime' "
+                    flex
+                    layout-fill
+                    class="cw-input"
+                    [class.cw-last]="islast"
+                    [required]="input.required"
+                    [name]="input.name"
+                    [placeholder]="input.placeholder | async"
+                    type="datetime-local"
+                    [hidden]="!input.visible"
+                    [value]="input.value"
+                    (blur)="handleParamValueChange($event, input)"></cw-input-date>
   </template>
 </div>`
 })
@@ -98,23 +114,6 @@ export class ServersideCondition {
       }
     }
   }
-
-  //initVisibility(idx):void{
-  //  //let vis = true
-  //  if(idx > 0){
-  //    let itr = idx
-  //    let input = this._inputs[itr]
-  //    while(itr-- > 0){
-  //      let comparisonInput = this._inputs[itr]
-  //      if(comparisonInput.name === 'comparison'){
-  //        let delta = idx -itr
-  //        var comparisonValue = comparisonInput.value
-  //        let comparisonObj = comparisonInput.options.filter((e)=> { return e.value == comparisonValue })[0]
-  //        input.visible = delta <= comparisonObj.rightHandArgCount
-  //      }
-  //    }
-  //  }
-  //}
 
   ngOnChanges(change) {
     if (change.paramDefs) {
@@ -154,6 +153,8 @@ export class ServersideCondition {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
     } else if (type === 'datetime') {
       input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
+    } else if (type === 'restDropdown') {
+      input = this.getRestDropdownInput(param, paramDef, i18nBaseKey)
     } else if (type === 'dropdown') {
       input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
@@ -181,7 +182,32 @@ export class ServersideCondition {
       required: paramDef.inputType.dataType['minLength'] > 0,
       visible: true
     }
-  };
+  }
+
+  private getRestDropdownInput(param, paramDef, i18nBaseKey:string) {
+    let inputType:CwRestDropdownInputModel = <CwRestDropdownInputModel>paramDef.inputType;
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    let placeholderKey = rsrcKey + '.placeholder'
+
+    let currentValue = this.model.getParameterValue(param.key)
+    let input:any = {
+      value: currentValue,
+      name: param.key,
+      placeholder: this._resources.get(placeholderKey, paramDef.key),
+      optionUrl: inputType.optionUrl,
+      optionValueField: inputType.optionValueField,
+      optionLabelField: inputType.optionLabelField,
+      minSelections: inputType.minSelections,
+      maxSelections: inputType.maxSelections,
+      required: inputType.minSelections > 0,
+      allowAdditions:inputType.allowAdditions,
+      visible: true,
+    }
+    if (!input.value) {
+      input.value = inputType.selected != null ? inputType.selected : ''
+    }
+    return input
+  }
 
   private getDropdownInput(param:ParameterModel, paramDef:ParameterDefinition, i18nBaseKey:string):CwComponent {
     let inputType:CwDropdownInputModel = <CwDropdownInputModel>paramDef.inputType;
@@ -227,7 +253,7 @@ export class ServersideCondition {
 
 
     let input:any = {
-      value: this.model.getParameterValue(param.key),
+      value: currentValue,
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       options: opts,
