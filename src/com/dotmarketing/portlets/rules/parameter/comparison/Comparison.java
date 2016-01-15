@@ -20,6 +20,7 @@ public class Comparison<T> {
     public static final Comparison<String> REGEX = new RegexComparison();
     public static final Comparison<Comparable> BETWEEN = new BetweenComparison();
     public static final Comparison<Comparable> EQUAL = new EqualComparison();
+    public static final Comparison<Comparable> NOT_EQUAL = new NotEqualComparison();
     public static final Comparison<Comparable> LESS_THAN = new LessThanComparison();
     public static final Comparison<Comparable> GREATER_THAN = new GreaterThanComparison();
     public static final Comparison<Comparable<Object>> LESS_THAN_OR_EQUAL = new LessThanOrEqualComparison();
