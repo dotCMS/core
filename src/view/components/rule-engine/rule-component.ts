@@ -38,7 +38,7 @@ var rsrc = {
   selector: 'rule'
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
+  template: `<div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
@@ -87,13 +87,13 @@ var rsrc = {
     </div>
   </div>
   <div flex class="cw-accordion-body" [class.cw-hidden]="collapsed">
-    <condition-group layout="row" *ngFor="var group of groups; var i=index"
+    <condition-group *ngFor="var group of groups; var i=index"
                      [rule]="rule"
                      [group]="group"
                      [groupIndex]="i"
                      (remove)="onConditionGroupRemove($event)"
                      (change)="onConditionGroupChange($event)"></condition-group>
-    <div flex layout="column" class="cw-action-group">
+    <div class="cw-action-group">
       <div flex class="cw-action-separator">
         {{rsrc('inputs.action.firesActions') | async}}
       </div>

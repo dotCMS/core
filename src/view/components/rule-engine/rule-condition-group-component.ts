@@ -17,7 +17,7 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
   selector: 'condition-group'
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule-group">
+  template: `<div class="cw-rule-group">
   <div flex class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc.inputs.group.whenConditions.label}}
   </div>
