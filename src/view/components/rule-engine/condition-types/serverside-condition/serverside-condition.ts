@@ -4,6 +4,7 @@ import {Dropdown, InputOption} from '../../../../../view/components/semantic/mod
 import {Observable} from 'rxjs/Rx'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
+import {InputDate} from "../../../semantic/elements/input-date/input-date";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
@@ -21,7 +22,8 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
   selector: 'cw-serverside-condition'
 })
 @View({
-  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText],
+
+  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
   template: `<div flex layout="row" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
@@ -34,7 +36,8 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                        [allowAdditions]="input.allowAdditions"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
-                       (change)="handleParamValueChange($event, input)">
+                       [hidden]="!input.visible"
+                       (change)="setVisible($event, input); handleParamValueChange($event, input)">
                        <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
@@ -57,7 +60,7 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                        (change)="handleParamValueChange($event, input)">
     </cw-input-rest-dropdown>
 
-    <cw-input-text *ngIf="input.type == 'text'"
+    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
                    flex
                    class="cw-input"
                    [class.cw-last]="islast"
@@ -65,9 +68,23 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                    [name]="input.name"
                    [placeholder]="input.placeholder | async"
                    [value]="input.value"
+                   [type]="input.type"
+                   [hidden]="!input.visible"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
-  </template>
 
+    <cw-input-date *ngIf="input.type == 'datetime' "
+                    flex
+                    layout-fill
+                    class="cw-input"
+                    [class.cw-last]="islast"
+                    [required]="input.required"
+                    [name]="input.name"
+                    [placeholder]="input.placeholder | async"
+                    type="datetime-local"
+                    [hidden]="!input.visible"
+                    [value]="input.value"
+                    (blur)="handleParamValueChange($event, input)"></cw-input-date>
+  </template>
 </div>`
 })
 export class ServersideCondition {
@@ -75,7 +92,6 @@ export class ServersideCondition {
   @Input() model:ServerSideFieldModel
   @Input() paramDefs:{ [key:string]:ParameterDefinition}
   @Output() change:EventEmitter<ServerSideFieldModel>
-
 
   private _inputs:Array<any>
   private _resources:I18nService
@@ -86,10 +102,24 @@ export class ServersideCondition {
     this._inputs = [];
   }
 
+  setVisible(value, input):void {
+    if(!value) return
+    if(input.name === 'comparison'){
+      let idx = this._inputs.indexOf(input)
+      let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
+      if(comparisonObj) {
+        for (var i = idx + 1; i < this._inputs.length; i++) {
+          this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
+        }
+      }
+    }
+  }
+
   ngOnChanges(change) {
     if (change.paramDefs) {
       let prevPriority = 0
       this._inputs = []
+      let comparison
       Object.keys(this.paramDefs).forEach(key => {
         let paramDef = this.model.getParameterDef(key)
         let param = this.model.getParameter(key);
@@ -97,7 +127,17 @@ export class ServersideCondition {
           this._inputs.push({type: 'spacer', flex: 40})
         }
         prevPriority = paramDef.priority
-        this._inputs.push(this.getInputFor(paramDef.inputType.type, param, paramDef))
+        let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
+
+        if(input.name === 'comparison') {
+          comparison = input
+        }
+
+        this._inputs.push(input)
+      })
+
+      this._inputs.forEach( input => {
+        this.setVisible(input.value, comparison)
       })
     }
   }
@@ -109,15 +149,16 @@ export class ServersideCondition {
     this._resources.get(i18nBaseKey).subscribe(()=>{})
 
     let input
-    if (type === 'text') {
+    if (type === 'text' || type === 'number') {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
+    } else if (type === 'datetime') {
+      input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
     } else if (type === 'restDropdown') {
       input = this.getRestDropdownInput(param, paramDef, i18nBaseKey)
-    }
-    else if (type === 'dropdown') {
+    } else if (type === 'dropdown') {
       input = this.getDropdownInput(param, paramDef, i18nBaseKey)
     }
-    input.type = type
+    input.type = type;
     return input
   }
 
@@ -128,7 +169,18 @@ export class ServersideCondition {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       value: this.model.getParameterValue(param.key),
-      required: paramDef.inputType.dataType['minLength'] > 0
+      required: paramDef.inputType.dataType['minLength'] > 0,
+      visible: true,
+    }
+  };
+
+  private getDateTimeInput(param, paramDef, i18nBaseKey:string) {
+    let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
+    return {
+      name: param.key,
+      value: this.model.getParameterValue(param.key),
+      required: paramDef.inputType.dataType['minLength'] > 0,
+      visible: true
     }
   }
 
@@ -148,7 +200,8 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions
+      allowAdditions:inputType.allowAdditions,
+      visible: true,
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''
@@ -171,6 +224,7 @@ export class ServersideCondition {
 
     let currentValue = this.model.getParameterValue(param.key)
     let needsCustomAttribute = currentValue != null
+
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
       if(needsCustomAttribute && key == currentValue){
@@ -181,10 +235,12 @@ export class ServersideCondition {
       if(param.key === 'country'){
         labelKey = i18nBaseKey + '.' + option.i18nKey + '.name'
       }
+
       opts.push({
         value: key,
         label: this._resources.get(labelKey, option.i18nKey),
-        icon: option.icon
+        icon: option.icon,
+        rightHandArgCount: option.rightHandArgCount
       })
     })
 
@@ -204,7 +260,8 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions
+      allowAdditions:inputType.allowAdditions,
+      visible: true,
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''
