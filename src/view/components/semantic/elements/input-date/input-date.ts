@@ -32,7 +32,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
   `,
   directives: [CORE_DIRECTIVES]
 })
-export class InputDate extends InputText {
+export class InputDate implements ControlValueAccessor  {
 
   onChange = (_) => {
     this.change.emit(_)
@@ -53,8 +53,10 @@ export class InputDate extends InputText {
   @Output() blur:EventEmitter<any>
   @Output() focus:EventEmitter<any>
 
-  constructor(_renderer:Renderer, _elementRef:ElementRef) {
-    super(_renderer, _elementRef);
+  constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
+    this.change = new EventEmitter()
+    this.blur = new EventEmitter()
+    this.focus = new EventEmitter()
   }
 
   validate(value:string):boolean  {
@@ -67,6 +69,46 @@ export class InputDate extends InputText {
 
     this.errorMessage = null
     return true
+  }
+
+  ngOnChanges(change) {
+    if (change.focused) {
+      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      if (f) {
+        let el = this._elementRef.nativeElement
+        el.children[0].children[0].focus()
+      }
+      this.focused = false;
+    }
+  }
+
+  onBlur(value) {
+    this.onTouched()
+    this.blur.emit(value)
+  }
+
+  onFocus(value) {
+    this.focus.emit(value)
+  }
+
+  writeValue(value:string):void {
+    this.value = isBlank(value) ? '' : value
+    console.log("writing value: ", value, " ==> ", this.value)
+  }
+
+  registerOnChange(fn:(_:any) => void):void {
+    this.onChange = (_:any) => {
+      console.log("Value changed: ", _)
+      fn(_)
+      this.change.emit(_)
+    }
+  }
+
+  registerOnTouched(fn:() => void):void {
+    this.onTouched = () => {
+      console.log("Touched")
+      fn()
+    }
   }
 
 }

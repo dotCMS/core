@@ -1,4 +1,4 @@
-import {Component,Input, Output, View, Attribute, EventEmitter, OnInit} from 'angular2/core';
+import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
@@ -36,7 +36,7 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                        [allowAdditions]="input.allowAdditions"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
-                           [hidden]="!input.visible"
+                       [hidden]="!input.visible"
                        (change)="setVisible($event, input); handleParamValueChange($event, input)">
                        <cw-input-option
             *ngFor="#opt of input.options"
