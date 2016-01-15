@@ -26,7 +26,9 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -165,6 +167,8 @@ public class RulesAPIImpl implements RulesAPI {
 
         // delete the Rule
         rulesFactory.deleteRule(rule);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule: " + rule.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void deleteRuleActionsByRule(Rule rule, User user) throws DotDataException, DotSecurityException  {
@@ -184,6 +188,8 @@ public class RulesAPIImpl implements RulesAPI {
 
             // delete the action
             rulesFactory.deleteRuleAction(action);
+            String userID = user != null ? user.getUserId() : "";
+            ActivityLogger.logInfo(getClass(), "Removed Rule Action: " + action.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
         }
 
     }
@@ -363,6 +369,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveRule(rule);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Saved/Updated Rule: " + rule.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -377,6 +385,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveConditionGroup(conditionGroup);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Saved/Updated Condition Group: " + conditionGroup.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -394,6 +404,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveCondition(condition);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Saved/Updated Rule Condition: " + condition.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void saveConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -416,6 +428,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveConditionValue(parameterModel);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Saved/Updated Rule Condition Value: " + parameterModel.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -439,6 +453,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.saveRuleAction(ruleAction);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Saved/Updated Rule Action: " + ruleAction.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void deleteCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -461,9 +477,11 @@ public class RulesAPIImpl implements RulesAPI {
 
         // delete the condition values
         rulesFactory.deleteConditionValues(condition);
-
+        
         // delete the condition
         rulesFactory.deleteCondition(condition);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule Condition: " + condition.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void deleteConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -487,6 +505,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         rulesFactory.deleteConditionValue(parameterModel);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule Condition Value: " + parameterModel.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
 
     }
 
@@ -513,6 +533,8 @@ public class RulesAPIImpl implements RulesAPI {
 
         // delete the condition
         rulesFactory.deleteConditionsByGroup(group);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule Conditions By Group: " + group.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void deleteConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -536,6 +558,8 @@ public class RulesAPIImpl implements RulesAPI {
         deleteConditions(conditionGroup, user);
 
         rulesFactory.deleteConditionGroup(conditionGroup);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule Condition Group: " + conditionGroup.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public void deleteRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -557,6 +581,8 @@ public class RulesAPIImpl implements RulesAPI {
         rulesFactory.deleteRuleActionsParameters(ruleAction);
 
         rulesFactory.deleteRuleAction(ruleAction);
+        String userID = user != null ? user.getUserId() : "";
+        ActivityLogger.logInfo(getClass(), "Removed Rule Action: " + ruleAction.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
     public Map<String, ParameterModel> getRuleActionParameters(RuleAction action, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
