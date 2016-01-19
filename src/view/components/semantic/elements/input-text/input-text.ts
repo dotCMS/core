@@ -26,7 +26,9 @@ import {isBlank} from 'angular2/src/facade/lang';
            [value]="_modelValue"
            [disabled]="disabled"
            placeholder="{{placeholder}}"
-           (change)="onChange($event.target.value)" />
+           (blur)="onTouched()"
+           (change)="$event.stopPropagation()"
+           (input)="onChange($event.target.value)" />
     <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
@@ -40,6 +42,7 @@ export class InputText implements ControlValueAccessor {
   @Input() disabled:boolean = false
   @Input() focused:boolean = false
   @Input() required:boolean = false
+  @Output() blur:EventEmitter<any>
 
   errorMessage:string
   _modelValue:any
@@ -50,6 +53,7 @@ export class InputText implements ControlValueAccessor {
     if(control){
       control.valueAccessor = this;
     }
+    this.blur = new EventEmitter()
   }
 
   ngOnChanges(change) {
@@ -61,6 +65,12 @@ export class InputText implements ControlValueAccessor {
       }
       this.focused = false;
     }
+  }
+
+
+  onBlur(value) {
+    this.onTouched()
+    this.blur.emit(value)
   }
 
   writeValue(value:any) {

@@ -1,5 +1,5 @@
-import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
-import {Control, Validators, CORE_DIRECTIVES} from 'angular2/common';
+import {Component, Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
+import {Control, Validators, ControlGroup, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
 
@@ -23,8 +23,10 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 })
 @View({
 
-  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
-  template: `<div flex layout="row" class="cw-condition-component-body">
+  directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
+  template: `<form [ngFormModel]="formModel" #xf="ngForm">
+  <div flex layout="row" class="cw-condition-component-body">
+
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
     <cw-input-dropdown *ngIf="input.type == 'dropdown'"
@@ -64,48 +66,55 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                    flex
                    class="cw-input"
                    [class.cw-last]="islast"
-                   [name]="input.name"
                    [placeholder]="input.placeholder | async"
-                   [control]="input.control"
+                   [ngFormControl]="input.control"
                    [type]="input.type"
                    [hidden]="!input.visible"
-                   (blur)="handleParamValueChange($event, input)"></cw-input-text>
+                   #abc="ngForm"
+                   ></cw-input-text>
 
     <cw-input-date *ngIf="input.type == 'datetime' "
                     flex
                     layout-fill
                     class="cw-input"
                     [class.cw-last]="islast"
-                    [required]="input.required"
-                    [name]="input.name"
                     [placeholder]="input.placeholder | async"
                     type="datetime-local"
                     [hidden]="!input.visible"
                     [value]="input.value"
                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
   </template>
-</div>`
+
+</div>
+</form>`
 })
 export class ServersideCondition {
 
-  @Input() model:ServerSideFieldModel
-  @Input() paramDefs:{ [key:string]:ParameterDefinition}
-  @Output() change:EventEmitter<ServerSideFieldModel>
+  @Input()
+  model:ServerSideFieldModel
+  @Input()
+  paramDefs:{ [key:string]:ParameterDefinition}
+  @Output()
+  change:EventEmitter<ServerSideFieldModel>
 
   private _inputs:Array<any>
   private _resources:I18nService
 
-  constructor(resources:I18nService) {
+  formModel:ControlGroup
+
+
+  constructor(fb:FormBuilder, resources:I18nService) {
     this._resources = resources;
     this.change = new EventEmitter();
     this._inputs = [];
+    this.formModel = fb.group({})
   }
 
   setVisible(value, input):void {
-    if(value && input && input.name === 'comparison'){
+    if (value && input && input.name === 'comparison') {
       let idx = this._inputs.indexOf(input)
       let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
-      if(comparisonObj && comparisonObj.value) {
+      if (comparisonObj && comparisonObj.value) {
         for (var i = idx + 1; i < this._inputs.length; i++) {
           this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
         }
@@ -127,14 +136,14 @@ export class ServersideCondition {
         prevPriority = paramDef.priority
         let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
 
-        if(input.name === 'comparison') {
+        if (input.name === 'comparison') {
           comparison = input
         }
 
         this._inputs.push(input)
       })
 
-      this._inputs.forEach( input => {
+      this._inputs.forEach(input => {
         this.setVisible(input.value, comparison)
       })
     }
@@ -144,7 +153,7 @@ export class ServersideCondition {
 
     let i18nBaseKey = paramDef.i18nBaseKey || this.model.type.i18nKey
     /* Save a potentially large number of requests by loading parent key: */
-    this._resources.get(i18nBaseKey).subscribe(()=>{})
+    this._resources.get(i18nBaseKey).subscribe(()=> {})
 
     let input
     if (type === 'text' || type === 'number') {
@@ -170,12 +179,17 @@ export class ServersideCondition {
       vFns.push(Validators.minLength(minLen))
     }
     let control = new Control(this.model.getParameterValue(param.key), Validators.compose(vFns))
+    control.valueChanges.debounceTime(250).subscribe((value) => {
+      this.model.setParameter(param.key , value)
+      this.change.emit(this.model)
+    })
+    this.formModel.addControl(param.key, control)
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
-      control: control ,
+      control: control,
       required: paramDef.inputType.dataType['minLength'] > 0,
-      visible:true
+      visible: true
     }
   }
 
@@ -205,7 +219,7 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions,
+      allowAdditions: inputType.allowAdditions,
       visible: true,
     }
     if (!input.value) {
@@ -223,7 +237,7 @@ export class ServersideCondition {
     if (param.key == 'comparison') {
       rsrcKey = 'api.sites.ruleengine.rules.inputs.comparison'
     }
-    else{
+    else {
       rsrcKey = rsrcKey + '.options'
     }
 
@@ -232,12 +246,12 @@ export class ServersideCondition {
 
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
-      if(needsCustomAttribute && key == currentValue){
+      if (needsCustomAttribute && key == currentValue) {
         needsCustomAttribute = false
       }
       let labelKey = rsrcKey + '.' + option.i18nKey
       // hack for country - @todo ggranum: kill 'name' on locale?
-      if(param.key === 'country'){
+      if (param.key === 'country') {
         labelKey = i18nBaseKey + '.' + option.i18nKey + '.name'
       }
 
@@ -249,7 +263,7 @@ export class ServersideCondition {
       })
     })
 
-    if(needsCustomAttribute){
+    if (needsCustomAttribute) {
       opts.push({
         value: currentValue,
         label: ObservableHack.of(currentValue)
@@ -265,7 +279,7 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions,
+      allowAdditions: inputType.allowAdditions,
       visible: true,
     }
     if (!input.value) {

@@ -1,5 +1,8 @@
 import { Component, Directive, View, Inject, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
-import {CORE_DIRECTIVES, Control, Validators} from 'angular2/common';
+import {
+    CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
+    ControlGroup
+} from 'angular2/common';
 
 import {Observable} from 'rxjs/Rx'
 
@@ -35,23 +38,23 @@ var rsrc = {
 }
 
 @Component({
-  selector: 'rule'
-})
-@View({
-  template: `<div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
+  selector: 'rule',
+  directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
+  template: `<form [ngFormModel]="formModel" #rf="ngForm">
+  <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
-      <cw-input-text flex="70"
+      <div flex="70" layout="column">
+      <cw-input-text
                      class="cw-rule-name-input"
-                     (blur)="handleRuleNameChange($event)"
-                     (focus)="collapsed = false"
                      focused="{{rule.key == null}}"
-                     (click)="$event.stopPropagation()"
-                     name="rule-{{rule.key}}-name"
                      placeholder="{{rsrc('inputs.name.placeholder') | async}}"
-                     [control]="ruleNameControl">
+                     ngControl="name"
+                     (click)="$event.stopPropagation()" #fName="ngForm">
       </cw-input-text>
+      <div flex="50" [hidden]="fName.valid" class="name red basic label">Name is required</div>
+      </div>
       <span class="cw-fire-on-label">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
                          class="cw-fire-on-dropdown"
@@ -112,8 +115,8 @@ var rsrc = {
     </div>
   </div>
 </div>
+</form>
 `,
-  directives: [CORE_DIRECTIVES, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption]
 })
 class RuleComponent {
   @Input() rule:RuleModel
@@ -135,9 +138,10 @@ class RuleComponent {
   private _rsrcCache:{[key:string]:Observable<string>}
   resources:I18nService
 
-  ruleNameControl:Control
+  formModel:ControlGroup
 
-  constructor(elementRef:ElementRef,
+  constructor(fb:FormBuilder,
+              elementRef:ElementRef,
               ruleService:RuleService,
               actionService:ActionService,
               groupService:ConditionGroupService,
@@ -150,9 +154,6 @@ class RuleComponent {
     this._groupService = groupService
     this.resources = resources
     this._rsrcCache = {}
-
-    this.initFieldControls()
-
 
     this.groups = []
     this.actions = []
@@ -171,13 +172,18 @@ class RuleComponent {
         {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
       ]
     }
+
+    this.initFormModel(fb)
   }
 
-  initFieldControls() {
+  initFormModel(fb:FormBuilder) {
     let vFns = []
     vFns.push(Validators.required)
-    vFns.push(Validators.minLength(1))
-    this.ruleNameControl = new Control('', Validators.compose(vFns))
+    vFns.push(Validators.minLength(3))
+    this.formModel = fb.group({
+      name: new Control(this.rule ? this.rule.name : '', Validators.compose(vFns))
+    })
+
   }
 
   rsrc(subkey:string, defVal:string = null) {
@@ -195,7 +201,12 @@ class RuleComponent {
   ngOnChanges(change) {
     if (change.rule) {
       let rule:RuleModel = change.rule.currentValue
-      this.ruleNameControl.updateValue(this.rule.name, {onlySelf: false, emitEvent: false, emitModelToViewChange?: boolean})
+      let ctrl:Control = <Control>this.formModel.controls['name']
+      ctrl.updateValue(this.rule.name, {})
+      ctrl.valueChanges.debounceTime(250).subscribe((name:string)=> {
+        this.rule.name = name
+        this.change.emit(this.rule)
+      })
       if (rule.isPersisted()) {
         this._groupService.list(rule).subscribe((groups) => {
           this.groups = groups || []
@@ -237,12 +248,6 @@ class RuleComponent {
 
   onFireOnChange(value:string) {
     this.rule.fireOn = value
-    this.change.emit(this.rule)
-  }
-
-  handleRuleNameChange(name:string) {
-    console.log("handleRuleNameChange")
-    this.rule.name = name
     this.change.emit(this.rule)
   }
 

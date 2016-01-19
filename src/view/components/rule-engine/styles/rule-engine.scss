@@ -12,16 +12,20 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
-input.ng-valid,
+.ng-valid input,
 input.ng-valid,
 .ui.input input.ng-valid,
+.ng-valid .ui.input input,
 .ui.dropdown.ng-valid,
 .ui.selection.dropdown.ng-valid,
 .required.ui.dropdown.ng-valid {
   border-left: 5px solid $primary-one;
 }
-.ng-invalid,
+
+.ng-invalid input,
+input.ng-invalid,
 .ui.input input.ng-invalid,
+.ng-invalid .ui.input input,
 .ui.selection.dropdown.ng-invalid {
   border-left: 5px solid $warn
 }
