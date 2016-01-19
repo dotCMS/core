@@ -38,7 +38,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 		
-		String siteVisits = UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
+		String siteVisits = (UtilMethods.isSet(request.getCookies())) ? UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE) : "1";
 		String siteVisitsValue = instance.siteVisits;
 		
 		return instance.comparison.perform(siteVisits, siteVisitsValue);
