@@ -195,7 +195,7 @@ class RuleComponent {
   ngOnChanges(change) {
     if (change.rule) {
       let rule:RuleModel = change.rule.currentValue
-      this.ruleNameControl.updateValue(this.rule.name, {onlySelf: false, emitEvent: false, emitModelToViewChange: true})
+      this.ruleNameControl.updateValue(this.rule.name, {onlySelf: false, emitEvent: false, emitModelToViewChange?: boolean})
       if (rule.isPersisted()) {
         this._groupService.list(rule).subscribe((groups) => {
           this.groups = groups || []

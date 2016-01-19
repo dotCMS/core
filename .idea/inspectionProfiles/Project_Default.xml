@@ -12,7 +12,7 @@
     <inspection_tool class="HtmlUnknownAttribute" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="myValues">
         <value>
-          <list size="34">
+          <list size="36">
             <item index="0" class="java.lang.String" itemvalue="flex" />
             <item index="1" class="java.lang.String" itemvalue="layout" />
             <item index="2" class="java.lang.String" itemvalue="layout-align" />
@@ -47,6 +47,8 @@
             <item index="31" class="java.lang.String" itemvalue="[rule]" />
             <item index="32" class="java.lang.String" itemvalue="(remove)" />
             <item index="33" class="java.lang.String" itemvalue="[model]" />
+            <item index="34" class="java.lang.String" itemvalue="required" />
+            <item index="35" class="java.lang.String" itemvalue="#inputname" />
           </list>
         </value>
       </option>
