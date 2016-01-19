@@ -64,7 +64,7 @@ public class RulesAPIImpl implements RulesAPI {
                          .add(VisitedUrlConditionlet.class)
                          .add(UsersBrowserLanguageConditionlet.class)
 //                         .add(UsersBrowserConditionlet.class)
-//                         .add(UsersCityConditionlet.class)
+                         .add(UsersCityConditionlet.class)
 //                         .add(UsersCurrentUrlConditionlet.class)
 //                         .add(UsersDateTimeConditionlet.class)
 //                         .add(UsersHostConditionlet.class)

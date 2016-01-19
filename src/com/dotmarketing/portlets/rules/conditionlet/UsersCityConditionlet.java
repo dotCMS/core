@@ -1,208 +1,177 @@
-//package com.dotmarketing.portlets.rules.conditionlet;
-//
-//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-//import com.dotcms.repackage.com.google.common.collect.Sets;
-//import com.dotmarketing.portlets.rules.RuleComponentInstance;
+package com.dotmarketing.portlets.rules.conditionlet;
+
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.dotcms.util.GeoIp2CityDbUtil;
+import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 //import com.dotmarketing.portlets.rules.ValidationResult;
-//import com.dotmarketing.portlets.rules.model.ParameterModel;
-//import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-//import com.dotmarketing.util.UtilMethods;
-//import java.util.Collection;
-//import java.util.LinkedHashMap;
-//import java.util.LinkedHashSet;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.Set;
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//
-//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-//
-///**
-// * This conditionlet will allow CMS users to check the city a user request comes
-// * from. The comparison of city names is case-insensitive, except for the
-// * regular expression comparison. This {@link Conditionlet} provides a drop-down
-// * menu with the available comparison mechanisms, and a drop-down menu with the
-// * capital cities of the states in the USA, where users can select one or more
-// * values that will match the selected criterion.
-// * <p>
-// * The location of the request is determined by the IP address of the client
-// * that issued the request. Geographic information is then retrieved via the <a
-// * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
-// * </p>
-// *
-// * @author Jose Castro
-// * @version 1.0
-// * @since 04-16-2015
-// *
-// */
-//public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.Instance> {
-//
-//	private static final long serialVersionUID = 1L;
-//
-//	private static final String INPUT_ID = "city";
-//	private static final String CONDITIONLET_NAME = "User's City (USA)";
-//
-//	private static final String COMPARISON_IS = "is";
-//	private static final String COMPARISON_ISNOT = "isNot";
-//
-//	private LinkedHashSet<Comparison> comparisons = null;
-//	private Map<String, ConditionletInput> inputValues = null;
-//
-//	public UsersCityConditionlet() {
-//        super("api.system.ruleengine.conditionlet.VisitorCity", ImmutableSet.of(IS,
-//                                                                                Comparison.IS_NOT), Sets.newHashSet());
-//    }
-//
-//
-//	protected ValidationResult validate(Comparison comparison,
-//			ConditionletInputValue inputValue) {
-//		ValidationResult validationResult = new ValidationResult();
-//		String inputId = inputValue.getConditionletInputId();
-//		if (UtilMethods.isSet(inputId)) {
-//			String selectedValue = inputValue.getValue();
-//			if (this.inputValues == null
-//					|| this.inputValues.get(inputId) == null) {
-//				getInputs(comparison.getId());
-//			}
-//			ConditionletInput inputField = this.inputValues.get(inputId);
-//			validationResult.setConditionletInputId(inputId);
-//			Set<EntryOption> inputOptions = inputField.getData();
-//			for (EntryOption option : inputOptions) {
-//				if (option.getId().equals(selectedValue)) {
-//					validationResult.setValid(true);
-//					break;
-//				}
-//			}
-//			if (!validationResult.isValid()) {
-//				validationResult.setErrorMessage("Invalid value for input '"
-//						+ inputId + "': '" + selectedValue + "'");
-//			}
-//		}
-//		return validationResult;
-//	}
-//
-//	@Override
-//	public Collection<ConditionletInput> getInputs(String comparisonId) {
-//		if (this.inputValues == null) {
-//			ConditionletInput inputField = new ConditionletInput();
-//			// Set field configuration and available options
-//			inputField.setId(INPUT_ID);
-//			inputField.setMultipleSelectionAllowed(true);
-//			inputField.setDefaultValue("");
-//			inputField.setMinNum(1);
-//			Set<EntryOption> options = new LinkedHashSet<EntryOption>();
-//			options.add(new EntryOption("Juneau", "Juneau"));
-//			options.add(new EntryOption("Montgomery", "Montgomery"));
-//			options.add(new EntryOption("Little Rock", "Little Rock"));
-//			options.add(new EntryOption("Phoenix", "Phoenix"));
-//			options.add(new EntryOption("Sacramento", "Sacramento"));
-//			options.add(new EntryOption("Denver", "Denver"));
-//			options.add(new EntryOption("Hartford", "Hartford"));
-//			options.add(new EntryOption("Dover", "Dover"));
-//			options.add(new EntryOption("Tallahassee", "Tallahassee"));
-//			options.add(new EntryOption("Atlanta", "Atlanta"));
-//			options.add(new EntryOption("Honolulu", "Honolulu"));
-//			options.add(new EntryOption("Des Moines", "Des Moines"));
-//			options.add(new EntryOption("Boise", "Boise"));
-//			options.add(new EntryOption("Springfield", "Springfield"));
-//			options.add(new EntryOption("Indianapolis", "Indianapolis"));
-//			options.add(new EntryOption("Topeka", "Topeka"));
-//			options.add(new EntryOption("Frankfort", "Frankfort"));
-//			options.add(new EntryOption("Baton Rouge", "Baton Rouge"));
-//			options.add(new EntryOption("Boston", "Boston"));
-//			options.add(new EntryOption("Annapolis", "Annapolis"));
-//			options.add(new EntryOption("Augusta", "Augusta"));
-//			options.add(new EntryOption("Lansing", "Lansing"));
-//			options.add(new EntryOption("Saint Paul", "Saint Paul"));
-//			options.add(new EntryOption("Jefferson City", "Jefferson City"));
-//			options.add(new EntryOption("Jackson", "Jackson"));
-//			options.add(new EntryOption("Helena", "Helena"));
-//			options.add(new EntryOption("Raleigh", "Raleigh"));
-//			options.add(new EntryOption("Bismark", "Bismark"));
-//			options.add(new EntryOption("Lincoln", "Lincoln"));
-//			options.add(new EntryOption("Concord", "Concord"));
-//			options.add(new EntryOption("Trenton", "Trenton"));
-//			options.add(new EntryOption("Santa Fe", "Santa Fe"));
-//			options.add(new EntryOption("Carson City", "Carson City"));
-//			options.add(new EntryOption("Albany", "Albany"));
-//			options.add(new EntryOption("Columbus", "Columbus"));
-//			options.add(new EntryOption("Oklahoma City", "Oklahoma City"));
-//			options.add(new EntryOption("Salem", "Salem"));
-//			options.add(new EntryOption("Harrisburg", "Harrisburg"));
-//			options.add(new EntryOption("Providence", "Providence"));
-//			options.add(new EntryOption("Columbia", "Columbia"));
-//			options.add(new EntryOption("Pierre", "Pierre"));
-//			options.add(new EntryOption("Nashville", "Nashville"));
-//			options.add(new EntryOption("Austin", "Austin"));
-//			options.add(new EntryOption("Salt Lake City", "Salt Lake City"));
-//			options.add(new EntryOption("Richmond", "Richmond"));
-//			options.add(new EntryOption("Montpelier", "Montpelier"));
-//			options.add(new EntryOption("Olympia", "Olympia"));
-//			options.add(new EntryOption("Madison", "Madison"));
-//			options.add(new EntryOption("Charleston", "Charleston"));
-//			options.add(new EntryOption("Cheyenne", "Cheyenne"));
-//			inputField.setData(options);
-//			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-//			this.inputValues.put(inputField.getId(), inputField);
-//		}
-//		return this.inputValues.values();
-//	}
-//
-//	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-//
-////        GeoIp2CityDbUtil geoIp2Util = GeoIp2CityDbUtil.getInstance();
-////		String city = null;
-////		try {
-////			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-////			String ipAddress = address.getHostAddress();
-////			// TODO: Remove
-////			ipAddress = "170.123.234.133";
-////			city = geoIp2Util.getCityName(ipAddress);
-////		} catch (IOException | GeoIp2Exception e) {
-////			Logger.error(this,
-////					"An error occurred when retrieving the IP address from request: "
-////							+ request.getRequestURL());
-////		}
-////		if (!UtilMethods.isSet(city)) {
-////			return false;
-////		}
-////		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-////		for (ParameterModel value : values) {
-////			inputValues.add(new ConditionletInputValue(INPUT_ID, value
-////					.getValue()));
-////		}
-////		ValidationResults validationResults = validate(comparison, inputValues);
-////		if (validationResults.hasErrors()) {
-////			return false;
-////		}
-////		if (comparison.getId().equals(COMPARISON_IS)) {
-////			for (ParameterModel value : values) {
-////				if (value.getValue().equals(city)) {
-////					return true;
-////				}
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-////			for (ParameterModel value : values) {
-////				if (value.getValue().equals(city)) {
-////					return false;
-////				}
-////			}
-////			return true;
-////		}
-//		return false;
-//	}
-//
-//    @Override
-//    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
-//        return new Instance(comparison, values);
-//    }
-//
-//    public static class Instance implements RuleComponentInstance {
-//
-//        private Instance(Comparison comparison, List<ParameterModel> values) {
-//        }
-//    }
-//
-//}
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
+
+/**
+ * This conditionlet will allow CMS users to check the city a user request comes
+ * from. The comparison of city names is case-insensitive, except for the
+ * regular expression comparison. This {@link Conditionlet} provides a drop-down
+ * menu with the available comparison mechanisms, and a drop-down menu with the
+ * capital cities of the states in the USA, where users can select one or more
+ * values that will match the selected criterion.
+ * <p>
+ * The location of the request is determined by the IP address of the client
+ * that issued the request. Geographic information is then retrieved via the <a
+ * href="http://maxmind.github.io/GeoIP2-java/index.html">GeoIP2 Java API</a>.
+ * </p>
+ *
+ * @author Jose Castro, Mauricio Rizo
+ * @version 1.0
+ * @since 04-16-2015
+ *
+ */
+public class UsersCityConditionlet extends Conditionlet<UsersCityConditionlet.Instance> {
+
+	private static final long serialVersionUID = 1L;
+
+	public static final String CITY_KEY = "city";
+
+	private final GeoIp2CityDbUtil geoIp2Util;
+
+	// List of possible cities (USA)
+	private static final DropdownInput cities = new DropdownInput()
+			.allowAdditions()
+			.option("Albany")
+			.option("Annapolis")
+			.option("Atlanta")
+			.option("Augusta")
+			.option("Austin")
+			.option("Baton Rouge")
+			.option("Bismark")
+			.option("Boise")
+			.option("Boston")
+			.option("Carson City")
+			.option("Charleston")
+			.option("Cheyenne")
+			.option("Columbia")
+			.option("Columbus")
+			.option("Concord")
+			.option("Denver")
+			.option("Des Moines")
+			.option("Dover")
+			.option("Frankfort")
+			.option("Harrisburg")
+			.option("Hartford")
+			.option("Helena")
+			.option("Honolulu")
+			.option("Indianapolis")
+			.option("Jackson")
+			.option("Jefferson City")
+			.option("Juneau")
+			.option("Lansing")
+			.option("Lincoln")
+			.option("Little Rock")
+			.option("Madison")
+			.option("Montgomery")
+			.option("Montpelier")
+			.option("Nashville")
+			.option("Oklahoma City")
+			.option("Olympia")
+			.option("Phoenix")
+			.option("Pierre")
+			.option("Providence")
+			.option("Raleigh")
+			.option("Richmond")
+			.option("Sacramento")
+			.option("Saint Paul")
+			.option("Salem")
+			.option("Salt Lake City")
+			.option("Santa Fe")
+			.option("Springfield")
+			.option("Tallahassee")
+			.option("Topeka")
+			.option("Trenton");
+
+	// Parameter definition, "city" is the text displayed on the dropdown as placeholder
+	// and the list of cities, "" (empty) is the default value
+	private static final ParameterDefinition<TextType> city = new ParameterDefinition<>(
+	        3, CITY_KEY, "",
+	        cities,
+	        ""
+	    );
+
+	public UsersCityConditionlet() {
+        this(GeoIp2CityDbUtil.getInstance());
+    }
+
+	// User city visitor, with 2 comparison parameters and a list of cities
+	public UsersCityConditionlet(GeoIp2CityDbUtil geoIp2Util) {
+        super("api.system.ruleengine.conditionlet.VisitorCity",
+                new ComparisonParameterDefinition(2, IS, IS_NOT),
+                city);
+        this.geoIp2Util = geoIp2Util;
+    }
+
+	@Override
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+
+		String city = null;
+		try {
+			InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+			String ipAddress = address.getHostAddress();
+			if(ipAddress != null)
+				city = geoIp2Util.getCityName(ipAddress);
+		} catch (IOException | GeoIp2Exception e) {
+			Logger.error(this,
+					"An error occurred when retrieving the IP address from request: "
+							+ request.getRequestURL());
+		}
+		// if city is null due to a failed attempt to get the city name from the IP
+		if (!UtilMethods.isSet(city)) {
+			city = "unknown";
+		}
+
+        return instance.comparison.perform(city, instance.cityName);
+	}
+
+    @Override
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+        return new Instance(this, parameters);
+    }
+
+    // Instance definition
+    public static class Instance implements RuleComponentInstance {
+
+    	private final String cityName;
+    	private final Comparison<String> comparison;
+
+        private Instance(UsersCityConditionlet definition, Map<String, ParameterModel> parameters) {
+        	this.cityName = parameters.get(CITY_KEY).getValue();
+            String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+            try {
+                //noinspection unchecked
+                this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
+            } catch (ComparisonNotPresentException e) {
+                throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",
+                                                          comparisonValue,
+                                                          definition.getId());
+            }
+        }
+    }
+}
