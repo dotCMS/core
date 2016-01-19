@@ -17,9 +17,9 @@ const I8N_BASE:string = 'api.sites.ruleengine'
   selector: 'cw-rule-engine'
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule-engine">
-  <div flex layout="column" class="cw-header" >
-    <div flex layout="row" layout-align="space-between center" >
+  template: `<div class="cw-rule-engine">
+  <div class="cw-header">
+    <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
         <i class="filter icon"></i>
         <input class="cw-rule-filter" type="text" placeholder="{{rsrc('inputs.filter.placeholder') | async}}" [value]="filterText" (keyup)="filterText = $event.target.value">
@@ -39,7 +39,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
     </div>
   </div>
 
-  <rule flex layout="row" *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
+  <rule *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
         (change)="onRuleChange($event)"
         (remove)="onRuleRemove($event)"></rule>
 </div>

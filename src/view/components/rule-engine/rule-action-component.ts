@@ -17,7 +17,7 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
 @Component({
   selector: 'rule-action'})
 @View({
-  template: `<div *ngIf="typeDropdown != null" flex layout="row" layout-align="space-between center" class="cw-rule-action cw-entry">
+  template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
   <div flex="25" layout="row" class="cw-row-start-area">
     <cw-input-dropdown
       flex

@@ -27,7 +27,7 @@ import {isBlank} from 'angular2/src/facade/lang';
            [disabled]="disabled"
            placeholder="{{placeholder}}"
            (change)="onChange($event.target.value)" />
-    <i flex="5" [ngClass]="icon" *ngIf="icon"></i>
+    <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
   directives: []

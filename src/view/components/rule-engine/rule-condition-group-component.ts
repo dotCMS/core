@@ -17,11 +17,11 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
   selector: 'condition-group'
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule-group">
-  <div flex class="cw-condition-group-separator" *ngIf="groupIndex === 0">
+  template: `<div class="cw-rule-group">
+  <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
     {{rsrc.inputs.group.whenConditions.label}}
   </div>
-  <div flex class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
+  <div class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
     <div class="ui basic icon buttons">
       <button class="ui small button cw-group-operator" (click)="toggleGroupOperator()">
         <div>{{group.operator}}</div>
