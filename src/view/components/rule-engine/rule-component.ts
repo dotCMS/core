@@ -38,7 +38,7 @@ var rsrc = {
   selector: 'rule'
 })
 @View({
-  template: `<div flex layout="column" class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
+  template: `<div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
@@ -86,20 +86,20 @@ var rsrc = {
       </div>
     </div>
   </div>
-  <div flex class="cw-accordion-body" [class.cw-hidden]="collapsed">
-    <condition-group layout="row" *ngFor="var group of groups; var i=index"
+  <div class="cw-accordion-body" [class.cw-hidden]="collapsed">
+    <condition-group *ngFor="var group of groups; var i=index"
                      [rule]="rule"
                      [group]="group"
                      [groupIndex]="i"
                      (remove)="onConditionGroupRemove($event)"
                      (change)="onConditionGroupChange($event)"></condition-group>
-    <div flex layout="column" class="cw-action-group">
-      <div flex class="cw-action-separator">
+    <div class="cw-action-group">
+      <div class="cw-action-separator">
         {{rsrc('inputs.action.firesActions') | async}}
       </div>
       <div flex layout="column" class="cw-rule-actions">
-        <div flex layout="row" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
-          <rule-action flex [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
+        <div layout="row" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
+          <rule-action flex layout="row" [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
             <div class="ui basic icon buttons" *ngIf="i === (actions.length - 1)">
               <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
