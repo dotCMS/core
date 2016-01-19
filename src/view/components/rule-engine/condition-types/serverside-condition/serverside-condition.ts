@@ -24,90 +24,89 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 @View({
 
   directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
-  template: `<form [ngFormModel]="formModel" #xf="ngForm">
+  template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
 
-  <template ngFor #input [ngForOf]="_inputs" #islast="last">
-    <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
-    <cw-input-dropdown *ngIf="input.type == 'dropdown'"
-                       flex
-                       class="cw-input"
-                       [value]="input.value"
-                       placeholder="{{input.placeholder | async}}"
-                       [required]="input.required"
-                       [allowAdditions]="input.allowAdditions"
-                       [class.cw-comparator-selector]="input.name == 'comparison'"
-                       [class.cw-last]="islast"
-                       [hidden]="!input.visible"
-                       (change)="setVisible($event, input); handleParamValueChange($event, input)">
-                       <cw-input-option
+    <template ngFor #input [ngForOf]="_inputs" #islast="last">
+      <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
+      <cw-input-dropdown *ngIf="input.type == 'dropdown'"
+                         flex
+                         class="cw-input"
+                         [value]="input.value"
+                         placeholder="{{input.placeholder | async}}"
+                         [required]="input.required"
+                         [allowAdditions]="input.allowAdditions"
+                         [class.cw-comparator-selector]="input.name == 'comparison'"
+                         [class.cw-last]="islast"
+                         [hidden]="!input.visible"
+                         (change)="setVisible($event, input); handleParamValueChange($event, input)">
+        <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
             [label]="opt.label | async"
             icon="{{opt.icon}}"></cw-input-option>
-    </cw-input-dropdown>
+      </cw-input-dropdown>
 
-    <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
-                       flex
-                       class="cw-input"
-                       [value]="input.value"
-                       placeholder="{{input.placeholder | async}}"
-                       optionUrl="{{input.optionUrl}}"
-                       optionValueField="{{input.optionValueField}}"
-                       optionLabelField="{{input.optionLabelField}}"
-                       [required]="input.required"
-                       [allowAdditions]="input.allowAdditions"
-                       [class.cw-comparator-selector]="input.name == 'comparison'"
-                       [class.cw-last]="islast"
-                       (change)="handleParamValueChange($event, input)">
-    </cw-input-rest-dropdown>
+      <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
+                              flex
+                              class="cw-input"
+                              [value]="input.value"
+                              placeholder="{{input.placeholder | async}}"
+                              optionUrl="{{input.optionUrl}}"
+                              optionValueField="{{input.optionValueField}}"
+                              optionLabelField="{{input.optionLabelField}}"
+                              [required]="input.required"
+                              [allowAdditions]="input.allowAdditions"
+                              [class.cw-comparator-selector]="input.name == 'comparison'"
+                              [class.cw-last]="islast"
+                              (change)="handleParamValueChange($event, input)">
+      </cw-input-rest-dropdown>
 
-    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
-                   flex
-                   class="cw-input"
-                   [class.cw-last]="islast"
-                   [placeholder]="input.placeholder | async"
-                   [ngFormControl]="input.control"
-                   [type]="input.type"
-                   [hidden]="!input.visible"
-                   #abc="ngForm"
-                   ></cw-input-text>
+      <div flex layout-fill layout="column" *ngIf="input.type == 'text' || input.type == 'number'">
+        <cw-input-text
+            flex
+            class="cw-input"
+            [class.cw-last]="islast"
+            [placeholder]="input.placeholder | async"
+            [ngFormControl]="input.control"
+            [type]="input.type"
+            [hidden]="!input.visible"
+            #fInput="ngForm"
+        ></cw-input-text>
+        <div flex="50" [hidden]="fInput.valid" class="name red basic label">[Required]</div>
+      </div>
 
-    <cw-input-date *ngIf="input.type == 'datetime' "
-                    flex
-                    layout-fill
-                    class="cw-input"
-                    [class.cw-last]="islast"
-                    [placeholder]="input.placeholder | async"
-                    type="datetime-local"
-                    [hidden]="!input.visible"
-                    [value]="input.value"
-                    (blur)="handleParamValueChange($event, input)"></cw-input-date>
-  </template>
+      <cw-input-date *ngIf="input.type == 'datetime' "
+                     flex
+                     class="cw-input"
+                     [class.cw-last]="islast"
+                     [placeholder]="input.placeholder | async"
+                     type="datetime-local"
+                     [hidden]="!input.visible"
+                     [value]="input.value"
+                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
 
-</div>
+
+    </template>
+
+  </div>
 </form>`
 })
 export class ServersideCondition {
 
-  @Input()
-  model:ServerSideFieldModel
-  @Input()
-  paramDefs:{ [key:string]:ParameterDefinition}
-  @Output()
-  change:EventEmitter<ServerSideFieldModel>
+  @Input() model:ServerSideFieldModel
+  @Input() paramDefs:{ [key:string]:ParameterDefinition}
+  @Output() change:EventEmitter<ServerSideFieldModel>
 
   private _inputs:Array<any>
   private _resources:I18nService
 
-  formModel:ControlGroup
 
 
   constructor(fb:FormBuilder, resources:I18nService) {
     this._resources = resources;
     this.change = new EventEmitter();
     this._inputs = [];
-    this.formModel = fb.group({})
   }
 
   setVisible(value, input):void {
@@ -183,7 +182,6 @@ export class ServersideCondition {
       this.model.setParameter(param.key , value)
       this.change.emit(this.model)
     })
-    this.formModel.addControl(param.key, control)
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
