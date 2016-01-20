@@ -8,7 +8,7 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 public class NumericType extends DataType {
 
     public NumericType() {
-        super("numeric");
+        super("numeric", "api.system.type.numeric");
     }
 
     @Override

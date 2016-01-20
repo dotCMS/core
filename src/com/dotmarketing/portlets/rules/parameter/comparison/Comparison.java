@@ -3,8 +3,6 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
 
 public class Comparison<T> {
@@ -55,9 +53,6 @@ public class Comparison<T> {
     public boolean perform(T argA, T argB, T argC) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
     }
-
-
-
 
     @Override
     public String toString() {

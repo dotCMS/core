@@ -90,8 +90,7 @@ public class CurrentSessionLanguageConditionlet extends Conditionlet<CurrentSess
             .option("uk")
             .option("vi")
             .option("yi")
-            .option("za"),
-        "en"
+            .option("za")
     );
     private final LanguageWebAPI langApi;
 
