@@ -38,7 +38,7 @@ export class ServerSideFieldModel extends CwModel {
   }
 
   set type(type:ServerSideTypeModel) {
-    if (this._type != type) {
+    if (type && this._type != type) {
       this._type = type;
       this.parameterDefs = {}
       this.parameters = {}
