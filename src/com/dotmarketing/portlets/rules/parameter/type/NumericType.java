@@ -7,8 +7,29 @@ import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
  */
 public class NumericType extends DataType {
 
+    private Integer maxValue;
+    private Integer minValue;
+
     public NumericType() {
         super("numeric", "api.system.type.numeric");
+    }
+
+    public NumericType maxValue(int maxValue) {
+        this.maxValue = maxValue;
+        return this;
+    }
+
+    public NumericType minValue(int minValue) {
+        this.minValue = minValue;
+        return this;
+    }
+
+    public Integer getMaxValue() {
+        return maxValue;
+    }
+
+    public Integer getMinValue() {
+        return minValue;
     }
 
     @Override

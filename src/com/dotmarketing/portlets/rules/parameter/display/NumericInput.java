@@ -11,7 +11,7 @@ public class NumericInput<T extends NumericType> extends Input<T> {
 	private String placeholder = "";
 
     public NumericInput(T dataType) {
-        super("number", dataType);
+        this("number", dataType);
     }
 
     protected NumericInput(String id, T dataType) {
