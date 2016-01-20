@@ -111,15 +111,6 @@ export class ServersideCondition {
     this._inputs = [];
   }
 
-  private static getSelectedOption(input, value) {
-    let opt = null
-    let optAry = input.options.filter((e)=> { return e.value == value })
-    if(optAry && optAry.length === 1){
-      opt = optAry[0]
-    }
-    return opt
-  }
-
 
   ngOnChanges(change) {
     if (change.paramDefs) {
@@ -143,26 +134,18 @@ export class ServersideCondition {
           comparison = input
           comparisonIdx = idx
           selectedComparison = ServersideCondition.getSelectedOption(input, comparison.value)
-          this._rhArgCount = Verify.isNumber(selectedComparison.rightHandArgCount)
-              ? selectedComparison.rightHandArgCount
-              : 1
-
-          console.log("ServersideCondition", "Righthandargcount", this._rhArgCount)
+          this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
         }
 
         if( comparison && idx > comparisonIdx && selectedComparison.rightHandArgCount){
-          let lastVisible = comparisonIdx + selectedComparison.rightHandArgCount
           input.argIndex = idx - comparisonIdx
         }
-        console.log("ServersideCondition", "comparisonIdx", comparisonIdx, "idx: ", idx)
         this._inputs.push(input)
       })
     }
   }
 
-  private static isComparisonParameter(input) {
-    return input && input.name === 'comparison'
-  }
+
 
   getInputFor(type:string, param, paramDef:ParameterDefinition):any {
 
@@ -297,13 +280,27 @@ export class ServersideCondition {
     this.change.emit(this.model)
     if(ServersideCondition.isComparisonParameter(input)){
       let selectedComparison = ServersideCondition.getSelectedOption(input, value)
-      this._rhArgCount = Verify.isNumber(selectedComparison.rightHandArgCount)
-          ? selectedComparison.rightHandArgCount
-          : 1
+      this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
     }
   }
+  private static getRightHandArgCount(selectedComparison) {
+    return Verify.isNumber(selectedComparison.rightHandArgCount)
+        ? selectedComparison.rightHandArgCount
+        : 1
+  }
 
+  private static isComparisonParameter(input) {
+    return input && input.name === 'comparison'
+  }
 
+  private static getSelectedOption(input, value) {
+    let opt = null
+    let optAry = input.options.filter((e)=> { return e.value == value })
+    if(optAry && optAry.length === 1){
+      opt = optAry[0]
+    }
+    return opt
+  }
 
 }
 
