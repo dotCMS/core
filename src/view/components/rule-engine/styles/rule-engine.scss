@@ -40,6 +40,11 @@ input.ng-invalid,
   }
 }
 
+.cw-warn {
+  color:$warn;
+}
+
+
 .cw-hidden {
   display: none !important;
 }

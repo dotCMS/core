@@ -75,10 +75,10 @@ import {Verify} from "../../../../../api/validation/Verify";
             [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
             #fInput="ngForm"
         ></cw-input-text>
-        <div flex="50" [hidden]="fInput.valid" class="name red basic label">[Required]</div>
+        <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Required]</div>
       </div>
 
-      <cw-input-date *ngIf="input.type == 'datetime' "
+      <cw-input-date *ngIf="input.type == 'datetime'"
                      flex
                     layout-fill
                      class="cw-input"

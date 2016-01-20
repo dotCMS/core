@@ -53,7 +53,7 @@ var rsrc = {
                      ngControl="name"
                      (click)="$event.stopPropagation()" #fName="ngForm">
       </cw-input-text>
-      <div flex="50" [hidden]="fName.valid" class="name red basic label">Name is required</div>
+      <div flex="50" [hidden]="!fName.touched || fName.valid" class="name cw-warn basic label">Name is required</div>
       </div>
       <span class="cw-fire-on-label">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
