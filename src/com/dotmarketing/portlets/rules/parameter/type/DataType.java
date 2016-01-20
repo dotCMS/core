@@ -11,14 +11,21 @@ import java.util.List;
 public abstract class DataType<T> {
 
     private final String id;
+    private final String errorMessageKey;
+
     private List<Comparison<?>> restrictions = Lists.newArrayList();
 
-    public DataType(String id) {
+    public DataType(String id, String errorMessageKey) {
         this.id = id;
+        this.errorMessageKey = errorMessageKey;
     }
 
     public String getId() {
         return id;
+    }
+
+    public String getErrorMessageKey() {
+        return errorMessageKey;
     }
 
     public abstract T convert(String from);

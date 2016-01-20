@@ -24,6 +24,6 @@ public class DateTimeType extends DataType {
     }
 
     public DateTimeType() {
-        super("dateTime");
+        super("dateTime", "api.system.type.datetime");
     }
 }
