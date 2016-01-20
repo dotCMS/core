@@ -213,7 +213,7 @@ public class ConditionResource {
             if(condition == null) {
                 throw new NotFoundException("Condition with id '%s' not found: ", conditionId);
             }
-            conditionTransform.applyRestToApp(restCondition, condition);
+            condition= conditionTransform.applyRestToApp(restCondition, condition);
             rulesAPI.saveCondition(condition, user, false);
             return condition.getId();
         } catch (DotDataException | DotRuntimeException e) {

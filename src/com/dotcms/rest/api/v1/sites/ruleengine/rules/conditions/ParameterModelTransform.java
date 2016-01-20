@@ -1,6 +1,8 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
+
 import java.util.function.Function;
 
 public class ParameterModelTransform {
@@ -24,7 +26,9 @@ public class ParameterModelTransform {
         return app;
     };
 
-    public ParameterModel applyRestToApp(RestConditionValue rest, ParameterModel app) {
+    public ParameterModel applyRestToApp(RestConditionValue rest, ParameterModel pModel) {
+    	ParameterModel app = (ParameterModel) SerializationUtils.clone(pModel);
+
         app.setId(rest.id);
         app.setPriority(rest.priority);
         app.setValue(rest.value);

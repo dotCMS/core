@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.portlets.rules.business.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
@@ -24,7 +25,8 @@ public class ConditionGroupTransform {
         return applyRestToApp(rest, app);
     }
 
-    public ConditionGroup applyRestToApp(RestConditionGroup rest, ConditionGroup app) {
+    public ConditionGroup applyRestToApp(RestConditionGroup rest, ConditionGroup cgroup) {
+    	ConditionGroup app = (ConditionGroup) SerializationUtils.clone(cgroup);
         app.setOperator(Condition.Operator.valueOf(rest.operator));
         app.setPriority(rest.priority);
         return app;

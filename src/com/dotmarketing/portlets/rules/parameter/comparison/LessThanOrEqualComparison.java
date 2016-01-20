@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 public class LessThanOrEqualComparison extends Comparison<Comparable<Object>> {
 
     public LessThanOrEqualComparison() {
-        super("less_than_or_equal");
+        super("lessThanOrEqual");
     }
 
     @Override

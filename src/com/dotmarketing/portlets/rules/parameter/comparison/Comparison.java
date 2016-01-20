@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
 import java.util.Collection;
 
@@ -16,6 +17,7 @@ public class Comparison<T> {
     public static final Comparison<String> REGEX = new RegexComparison();
     public static final Comparison<Comparable> BETWEEN = new BetweenComparison();
     public static final Comparison<Comparable> EQUAL = new EqualComparison();
+    public static final Comparison<Comparable> NOT_EQUAL = new NotEqualComparison();
     public static final Comparison<Comparable> LESS_THAN = new LessThanComparison();
     public static final Comparison<Comparable> GREATER_THAN = new GreaterThanComparison();
     public static final Comparison<Comparable<Object>> LESS_THAN_OR_EQUAL = new LessThanOrEqualComparison();
@@ -24,13 +26,23 @@ public class Comparison<T> {
 
     private final String id;
 
-    public Comparison(String id) {
-        this.id = id;
+    private final int rightHandArgCount;
 
+    public Comparison(String id) {
+        this(id, 1);
+    }
+
+    public Comparison(String id, int rightHandArgCount) {
+        this.id = id;
+        this.rightHandArgCount = rightHandArgCount;
     }
 
     public final String getId() {
         return id;
+    }
+
+    public int getRightHandArgCount() {
+        return rightHandArgCount;
     }
 
     /**
@@ -52,6 +64,16 @@ public class Comparison<T> {
 
     public boolean perform(T argA, T argB, T argC) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with three argument values.");
+    }
+
+    public static class ComparisonOption extends Option {
+
+        public final int rightHandArgCount;
+
+        public ComparisonOption(String i18nKey, int rightHandArgCount) {
+            super(i18nKey, i18nKey);
+            this.rightHandArgCount = rightHandArgCount;
+        }
     }
 
     @Override

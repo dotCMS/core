@@ -1,17 +1,8 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.CookieHandler;
-import java.net.CookieManager;
-import java.net.URL;
-import java.util.Date;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
+import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -38,6 +29,16 @@ import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Date;
+import java.util.List;
+
 /**
  * jUnit test used to verify the results of calling the personas actionlets provided
  * out of the box in dotCMS.
@@ -47,7 +48,7 @@ import com.liferay.portal.model.User;
  * @since 01-07-2016
  *
  */
-public class PersonaActionletTest extends TestBase {
+public class PersonaActionletFTest extends TestBase {
 
 	private static FolderAPI folderAPI = APILocator.getFolderAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
@@ -61,6 +62,7 @@ public class PersonaActionletTest extends TestBase {
 	private static User sysuser=null;
 
 	private HttpServletRequest request=ServletTestRunner.localRequest.get();
+	private final String baseUrl = "http://" + request.getServerName() + ":" + request.getServerPort();
 
 	/**
 	 * Test the creation of a persona in the backend and if the persona object 
@@ -179,7 +181,6 @@ public class PersonaActionletTest extends TestBase {
 
 		//Call page to see if the persona functionality is working
 		CookieHandler.setDefault(new CookieManager());
-		String baseUrl="http://"+request.getServerName()+":"+request.getServerPort();
 		URL testUrl = new URL(baseUrl+"/c/portal_public/login?my_account_cmd=auth&my_account_login=admin@dotcms.com&password=admin&my_account_r_m=true");
 		IOUtils.toString(testUrl.openStream(),"UTF-8");
 
@@ -227,6 +228,15 @@ public class PersonaActionletTest extends TestBase {
 		contentletAPI.delete(contentAsset, sysuser, false);
 
 		folderAPI.delete(ftest, sysuser, false);
+	}
+
+	@After
+	public void tearDown () throws Exception {
+		URL logoutUrl = new URL(baseUrl + "/destroy.jsp");
+		URLConnection con = logoutUrl.openConnection();
+
+		con.connect();
+		con.getInputStream();
 	}
 
 }

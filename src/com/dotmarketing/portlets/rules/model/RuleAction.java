@@ -93,6 +93,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public Map<String, ParameterModel> getParameters(){
+    	parameters = (parameters==null) ? new ArrayList<>() : parameters; 
         Map<String, ParameterModel> params = Maps.newHashMap();
         for (ParameterModel param : parameters) {
             params.put(param.getKey(), param);

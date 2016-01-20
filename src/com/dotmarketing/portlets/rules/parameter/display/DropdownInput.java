@@ -31,6 +31,12 @@ public class DropdownInput extends TextInput<TextType> {
         return this;
     }
 
+    public DropdownInput option(Option option) {
+        option.priority = options.size() + 1;
+        options.put(option.i18nKey, option);
+        return this;
+    }
+
     public DropdownInput allowAdditions() {
         this.allowAdditions = true;
         return this;
@@ -66,10 +72,16 @@ public class DropdownInput extends TextInput<TextType> {
 
         public final String i18nKey;
         public final String value;
-        public final int priority;
+        public int priority;
         private String icon;
 
         public Option(String i18nKey, String value, int priority) {
+            this.i18nKey = i18nKey;
+            this.value = value;
+            this.priority = priority;
+        }
+
+        public Option(String i18nKey, String value) {
             this.i18nKey = i18nKey;
             this.value = value;
             this.priority = priority;

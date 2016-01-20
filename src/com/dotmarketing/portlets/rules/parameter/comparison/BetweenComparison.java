@@ -6,7 +6,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 public class BetweenComparison extends Comparison<Comparable> {
 
     public BetweenComparison() {
-        super("between");
+        super("between", 2);
     }
 
     @Override

@@ -248,7 +248,7 @@ public class RuleResource {
             if(rule == null) {
                 throw new NotFoundException("Rule with key '%s' not found: ", restRule.key);
             }
-            ruleTransform.applyRestToApp(restRule, rule, user);
+            rule = ruleTransform.applyRestToApp(restRule, rule, user);
             rulesAPI.saveRule(rule, user, false);
             return rule.getId();
         } catch (DotDataException e) {

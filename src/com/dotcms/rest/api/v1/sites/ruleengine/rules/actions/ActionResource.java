@@ -219,7 +219,7 @@ public class ActionResource {
             if(ruleAction == null) {
                 throw new NotFoundException("Rule Action with id '%s' not found: ", ruleActionId);
             }
-            actionTransform.applyRestToApp(restRuleAction, ruleAction);
+            ruleAction = actionTransform.applyRestToApp(restRuleAction, ruleAction);
             validateActionInstance(ruleAction);
             ruleAction.setId(ruleActionId);
 

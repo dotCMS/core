@@ -20,7 +20,7 @@ import java.util.List;
 public class Condition implements RuleComponentModel, Serializable {
 
     private static final long serialVersionUID = 1L;
-    private RuleComponentInstance instance;
+    private transient RuleComponentInstance instance;
 
     public enum Operator {
         AND,
@@ -40,7 +40,7 @@ public class Condition implements RuleComponentModel, Serializable {
     private Date modDate;
     private Operator operator;
     private int priority;
-    private Conditionlet conditionlet;
+    private transient Conditionlet conditionlet;
 
     public String getId() {
         return id;
