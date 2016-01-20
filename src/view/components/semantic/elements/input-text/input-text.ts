@@ -22,7 +22,7 @@ import {isBlank} from 'angular2/src/facade/lang';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<div flex layout="row" layout-wrap class="ui fluid input" [ngClass]="{disabled: disabled, icon: icon, required: required}">
     <input flex
-           type="text"
+           type="{{type}}"
            [value]="_modelValue"
            [disabled]="disabled"
            placeholder="{{placeholder}}"
@@ -36,8 +36,8 @@ import {isBlank} from 'angular2/src/facade/lang';
 })
 export class InputText implements ControlValueAccessor {
 
-  @Input() control:Control
   @Input() placeholder:string = ""
+  @Input()  type:string = ""
   @Input() icon:string
   @Input() disabled:boolean = false
   @Input() focused:boolean = false

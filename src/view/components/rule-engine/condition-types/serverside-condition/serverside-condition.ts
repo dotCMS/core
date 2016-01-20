@@ -20,10 +20,7 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 import {Verify} from "../../../../../api/validation/Verify";
 
 @Component({
-  selector: 'cw-serverside-condition'
-})
-@View({
-
+  selector: 'cw-serverside-condition',
   directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
@@ -64,11 +61,9 @@ import {Verify} from "../../../../../api/validation/Verify";
                               (change)="handleParamValueChange($event, input)">
       </cw-input-rest-dropdown>
 
-      <div flex layout-fill layout="column" *ngIf="input.type == 'text' || input.type == 'number'">
+      <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
         <cw-input-text
             flex
-            class="cw-input"
-            [class.cw-last]="islast"
             [placeholder]="input.placeholder | async"
             [ngFormControl]="input.control"
             [type]="input.type"
@@ -155,6 +150,7 @@ export class ServersideCondition {
 
     let input
     if (type === 'text' || type === 'number') {
+      console.log("ServersideCondition", "getInputFor", type)
       input = this.getTextInput(param, paramDef, i18nBaseKey)
     } else if (type === 'datetime') {
       input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
