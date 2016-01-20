@@ -102,16 +102,17 @@ export class ServersideCondition {
     this._inputs = [];
   }
 
-  setVisible(value, input):void {
-    if(value && input && input.name === 'comparison'){
-      let idx = this._inputs.indexOf(input)
-      let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
-      if(comparisonObj && comparisonObj.value) {
-        for (var i = idx + 1; i < this._inputs.length; i++) {
-          this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
-        }
-      }
+  private static getSelectedOption(input, value) {
+    let opt = null
+    let optAry = input.options.filter((e)=> { return e.value == value })
+    if(optAry && optAry.length === 1){
+      opt = optAry[0]
     }
+    return opt
+  }
+
+  private static isComparisonParameter(input) {
+    return input && input.name === 'comparison'
   }
 
   ngOnChanges(change) {
@@ -119,6 +120,9 @@ export class ServersideCondition {
       let prevPriority = 0
       this._inputs = []
       let comparison
+      let comparisonIdx
+      let selectedComparison
+      let idx = 0
       Object.keys(this.paramDefs).forEach(key => {
         let paramDef = this.model.getParameterDef(key)
         let param = this.model.getParameter(key);
@@ -128,15 +132,18 @@ export class ServersideCondition {
         prevPriority = paramDef.priority
         let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
 
-        if(input.name === 'comparison') {
+        if(ServersideCondition.isComparisonParameter(input)) {
           comparison = input
+          comparisonIdx = idx
+          selectedComparison = ServersideCondition.getSelectedOption(input, comparison.value)
         }
 
+        if( comparison && idx > comparisonIdx && selectedComparison.rightHandArgCount){
+          let lastVisible = comparisonIdx + selectedComparison.rightHandArgCount
+          input.visible = idx <= lastVisible
+        }
         this._inputs.push(input)
-      })
-
-      this._inputs.forEach( input => {
-        this.setVisible(input.value, comparison)
+        idx = this._inputs.length
       })
     }
   }
