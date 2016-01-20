@@ -1,5 +1,5 @@
-import {Component,Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
-import {CORE_DIRECTIVES} from 'angular2/common';
+import {Component, Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
+import {Control, Validators, ControlGroup, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
 
@@ -20,79 +20,74 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
 import {Verify} from "../../../../../api/validation/Verify";
 
 @Component({
-  selector: 'cw-serverside-condition'
-})
-@View({
+  selector: 'cw-serverside-condition',
+  directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
+  template: `<form>
+  <div flex layout="row" class="cw-condition-component-body">
 
-  directives: [CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
-  template: `<div flex layout="row" class="cw-condition-component-body">
-  <template ngFor #input [ngForOf]="_inputs" #islast="last">
-    <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
-
-    <div hidden>name: {{input.name}}  argindex: {{input.argIndex}}  count:{{_rhArgCount}}</div>
-    <div hidden>Comparison: {{input.argIndex !== null && input.argIndex > _rhArgCount}}</div>
-    <cw-input-dropdown *ngIf="input.type == 'dropdown'"
-                       flex
-                       class="cw-input"
-                       [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
-                       [value]="input.value"
-                       placeholder="{{input.placeholder | async}}"
-                       [required]="input.required"
-                       [allowAdditions]="input.allowAdditions"
-                       [class.cw-comparator-selector]="input.name == 'comparison'"
-                       [class.cw-last]="islast"
-                       (change)="handleParamValueChange($event, input)">
-                       <cw-input-option
+    <template ngFor #input [ngForOf]="_inputs" #islast="last">
+      <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
+      <cw-input-dropdown *ngIf="input.type == 'dropdown'"
+                         flex
+                         class="cw-input"
+                         [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                         [value]="input.value"
+                         placeholder="{{input.placeholder | async}}"
+                         [required]="input.required"
+                         [allowAdditions]="input.allowAdditions"
+                         [class.cw-comparator-selector]="input.name == 'comparison'"
+                         [class.cw-last]="islast"
+                         (change)="handleParamValueChange($event, input)">
+        <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
             [label]="opt.label | async"
             icon="{{opt.icon}}"></cw-input-option>
-    </cw-input-dropdown>
+      </cw-input-dropdown>
 
-    <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
-                       flex
-                       class="cw-input"
-                       [value]="input.value"
-                       [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
-                       placeholder="{{input.placeholder | async}}"
-                       optionUrl="{{input.optionUrl}}"
-                       optionValueField="{{input.optionValueField}}"
-                       optionLabelField="{{input.optionLabelField}}"
-                       [required]="input.required"
-                       [allowAdditions]="input.allowAdditions"
-                       [class.cw-comparator-selector]="input.name == 'comparison'"
-                       [class.cw-last]="islast"
-                       (change)="handleParamValueChange($event, input)">
-    </cw-input-rest-dropdown>
+      <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
+                              flex
+                              class="cw-input"
+                              [value]="input.value"
+                              [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                              placeholder="{{input.placeholder | async}}"
+                              optionUrl="{{input.optionUrl}}"
+                              optionValueField="{{input.optionValueField}}"
+                              optionLabelField="{{input.optionLabelField}}"
+                              [required]="input.required"
+                              [allowAdditions]="input.allowAdditions"
+                              [class.cw-comparator-selector]="input.name == 'comparison'"
+                              [class.cw-last]="islast"
+                              (change)="handleParamValueChange($event, input)">
+      </cw-input-rest-dropdown>
 
-    <cw-input-text *ngIf="input.type == 'text' || input.type == 'number'"
-                   flex
-                   class="cw-input"
-                   [class.cw-last]="islast"
-                   [required]="input.required"
-                   [name]="input.name"
-                   [placeholder]="input.placeholder | async"
-                   [value]="input.value"
-                   [type]="input.type"
-                   [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
-                   (blur)="handleParamValueChange($event, input)"></cw-input-text>
+      <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
+        <cw-input-text
+            flex
+            [placeholder]="input.placeholder | async"
+            [ngFormControl]="input.control"
+            [type]="input.type"
+            [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+            #fInput="ngForm"
+        ></cw-input-text>
+        <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
+      </div>
 
-
-
-    <cw-input-date *ngIf="input.type == 'datetime' "
-                    flex
+      <cw-input-date *ngIf="input.type == 'datetime'"
+                     flex
                     layout-fill
-                    class="cw-input"
-                    [class.cw-last]="islast"
-                    [required]="input.required"
-                    [name]="input.name"
-                    [placeholder]="input.placeholder | async"
-                    type="datetime-local"
-                    [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
-                    [value]="input.value"
-                    (blur)="handleParamValueChange($event, input)"></cw-input-date>
-  </template>
-</div>`
+                     class="cw-input"
+                     [class.cw-last]="islast"
+                     [placeholder]="input.placeholder | async"
+                     type="datetime-local"
+                     [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                     [value]="input.value"
+                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
+
+
+    </template>
+  </div>
+</form>`
 })
 export class ServersideCondition {
 
@@ -105,7 +100,7 @@ export class ServersideCondition {
 
   private _rhArgCount:number = 1
 
-  constructor(resources:I18nService) {
+  constructor(fb:FormBuilder, resources:I18nService) {
     this._resources = resources;
     this.change = new EventEmitter();
     this._inputs = [];
@@ -151,11 +146,12 @@ export class ServersideCondition {
 
     let i18nBaseKey = paramDef.i18nBaseKey || this.model.type.i18nKey
     /* Save a potentially large number of requests by loading parent key: */
-    this._resources.get(i18nBaseKey).subscribe(()=>{})
+    this._resources.get(i18nBaseKey).subscribe(()=> {})
 
     let input
     if (type === 'text' || type === 'number') {
       input = this.getTextInput(param, paramDef, i18nBaseKey)
+      console.log("ServersideCondition", "getInputFor", type, paramDef)
     } else if (type === 'datetime') {
       input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
     } else if (type === 'restDropdown') {
@@ -170,14 +166,47 @@ export class ServersideCondition {
   private getTextInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     let placeholderKey = rsrcKey + '.placeholder'
+    let vFns:Function[] = []
+    let minLen = paramDef.inputType.dataType['minLength']
+    if (minLen > 0) {
+      vFns.push(Validators.required)
+      vFns.push(Validators.minLength(minLen))
+    }
+    if(paramDef.inputType.dataType['maxValue']){
+      var max = paramDef.inputType.dataType['maxValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if(val > max){
+          resp = {maxValue: max, actualValue: val }
+        }
+        return resp
+      })
+    }
+    if(Verify.isNumber(paramDef.inputType.dataType['minValue'])){
+      var min = paramDef.inputType.dataType['minValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if(val < min){
+            resp = {minValue: min, actualValue: val }
+        }
+        return resp
+      })
+    }
+
+    let control = new Control(this.model.getParameterValue(param.key), Validators.compose(vFns))
+    control.valueChanges.debounceTime(250).subscribe((value) => {
+      this.model.setParameter(param.key , value)
+      this.change.emit(this.model)
+    })
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
-      value: this.model.getParameterValue(param.key),
-      required: paramDef.inputType.dataType['minLength'] > 0,
-      visible: true,
+      control: control,
+      required: paramDef.inputType.dataType['minLength'] > 0
     }
-  };
+  }
 
   private getDateTimeInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
@@ -205,8 +234,7 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions,
-      visible: true,
+      allowAdditions: inputType.allowAdditions
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''
@@ -223,7 +251,7 @@ export class ServersideCondition {
     if (param.key == 'comparison') {
       rsrcKey = 'api.sites.ruleengine.rules.inputs.comparison'
     }
-    else{
+    else {
       rsrcKey = rsrcKey + '.options'
     }
 
@@ -232,12 +260,12 @@ export class ServersideCondition {
 
     Object.keys(options).forEach((key:any)=> {
       let option = options[key]
-      if(needsCustomAttribute && key == currentValue){
+      if (needsCustomAttribute && key == currentValue) {
         needsCustomAttribute = false
       }
       let labelKey = rsrcKey + '.' + option.i18nKey
       // hack for country - @todo ggranum: kill 'name' on locale?
-      if(param.key === 'country'){
+      if (param.key === 'country') {
         labelKey = i18nBaseKey + '.' + option.i18nKey + '.name'
       }
 
@@ -249,7 +277,7 @@ export class ServersideCondition {
       })
     })
 
-    if(needsCustomAttribute){
+    if (needsCustomAttribute) {
       opts.push({
         value: currentValue,
         label: ObservableHack.of(currentValue)
@@ -265,8 +293,7 @@ export class ServersideCondition {
       minSelections: inputType.minSelections,
       maxSelections: inputType.maxSelections,
       required: inputType.minSelections > 0,
-      allowAdditions:inputType.allowAdditions,
-      visible: true,
+      allowAdditions: inputType.allowAdditions,
     }
     if (!input.value) {
       input.value = inputType.selected != null ? inputType.selected : ''

@@ -12,10 +12,21 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
-input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[required], .required.ui.dropdown.ng-valid {
+.ng-valid input,
+input.ng-valid,
+.ui.input input.ng-valid,
+.ng-valid .ui.input input,
+.ui.dropdown.ng-valid,
+.ui.selection.dropdown.ng-valid,
+.required.ui.dropdown.ng-valid {
   border-left: 5px solid $primary-one;
 }
-.ng-invalid, .ui.input input.ng-invalid {
+
+.ng-invalid input,
+input.ng-invalid,
+.ui.input input.ng-invalid,
+.ng-invalid .ui.input input,
+.ui.selection.dropdown.ng-invalid {
   border-left: 5px solid $warn
 }
 
@@ -27,6 +38,10 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
       color: $foreground-tertiary;
     }
   }
+}
+
+.cw-warn {
+  color:$warn;
 }
 
 .cw-hidden {
@@ -71,6 +86,10 @@ input.ng-valid.required, input.ng-valid[required], .ui.input input.ng-valid[requ
 
   .cw-header-actions {
     margin-right: .5em;
+  }
+
+  .cw-type-dropdown {
+    max-height: 2em;
   }
 
   .cw-input,

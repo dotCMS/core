@@ -2,7 +2,7 @@ import {Inject, EventEmitter, Injectable} from 'angular2/core';
 import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel, CwI18nModel} from "../util/CwModel";
+import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService} from "../system/locale/I18n";

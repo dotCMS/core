@@ -91,7 +91,9 @@ var project = {
       ],
       'systemjs/dist/': [
         { dev: 'system.src.js', prod: 'system.js', out: 'system.js' },
-        { dev: 'system.js.map', prod: null, out: 'system.js.map' }
+        { dev: 'system.js.map', prod: null, out: 'system.js.map' },
+        { dev: 'system-polyfills.src.js', prod: 'system-polyfills.js', out: 'system-polyfills.js' },
+        { dev: 'system-polyfills.js.map', prod: null, out: 'system-polyfills.js.map' }
       ],
       'whatwg-fetch/': [
         { dev: 'fetch.js', prod: 'fetch.js', out: 'fetch.js' }

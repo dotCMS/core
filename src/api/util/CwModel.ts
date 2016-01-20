@@ -26,22 +26,3 @@ export class CwModel {
   }
 }
 
-
-
-export class CwI18nModel extends CwModel{
-
-  rsrc: TreeNode | any
-  private _i18nKey:string
-
-
-  constructor(key:string = null,  i18nKey:string = null, defaultResources:any = null) {
-    super(key)
-    this._i18nKey = i18nKey
-    this.rsrc = defaultResources ? defaultResources : {}
-  }
-
-  get i18nKey():string {
-    return this._i18nKey;
-  }
-
-}
