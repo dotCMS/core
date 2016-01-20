@@ -310,10 +310,15 @@ export class ServersideCondition {
       this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
     }
   }
+
   private static getRightHandArgCount(selectedComparison) {
-    return Verify.isNumber(selectedComparison.rightHandArgCount)
-        ? selectedComparison.rightHandArgCount
-        : 1
+    let argCount = null
+    if (selectedComparison) {
+      argCount = Verify.isNumber(selectedComparison.rightHandArgCount)
+          ? selectedComparison.rightHandArgCount
+          : 1
+    }
+    return argCount
   }
 
   private static isComparisonParameter(input) {
