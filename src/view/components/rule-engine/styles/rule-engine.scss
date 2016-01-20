@@ -44,7 +44,6 @@ input.ng-invalid,
   color:$warn;
 }
 
-
 .cw-hidden {
   display: none !important;
 }
@@ -87,6 +86,10 @@ input.ng-invalid,
 
   .cw-header-actions {
     margin-right: .5em;
+  }
+
+  .cw-type-dropdown {
+    max-height: 2em;
   }
 
   .cw-input,

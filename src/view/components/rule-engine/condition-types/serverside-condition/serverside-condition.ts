@@ -70,7 +70,7 @@ import {Verify} from "../../../../../api/validation/Verify";
             [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
             #fInput="ngForm"
         ></cw-input-text>
-        <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Required]</div>
+        <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
       </div>
 
       <cw-input-date *ngIf="input.type == 'datetime'"
@@ -150,8 +150,8 @@ export class ServersideCondition {
 
     let input
     if (type === 'text' || type === 'number') {
-      console.log("ServersideCondition", "getInputFor", type)
       input = this.getTextInput(param, paramDef, i18nBaseKey)
+      console.log("ServersideCondition", "getInputFor", type, paramDef)
     } else if (type === 'datetime') {
       input = this.getDateTimeInput(param, paramDef, i18nBaseKey)
     } else if (type === 'restDropdown') {
@@ -172,6 +172,29 @@ export class ServersideCondition {
       vFns.push(Validators.required)
       vFns.push(Validators.minLength(minLen))
     }
+    if(paramDef.inputType.dataType['maxValue']){
+      var max = paramDef.inputType.dataType['maxValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if(val > max){
+          resp = {maxValue: max, actualValue: val }
+        }
+        return resp
+      })
+    }
+    if(Verify.isNumber(paramDef.inputType.dataType['minValue'])){
+      var min = paramDef.inputType.dataType['minValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if(val < min){
+            resp = {minValue: min, actualValue: val }
+        }
+        return resp
+      })
+    }
+
     let control = new Control(this.model.getParameterValue(param.key), Validators.compose(vFns))
     control.valueChanges.debounceTime(250).subscribe((value) => {
       this.model.setParameter(param.key , value)

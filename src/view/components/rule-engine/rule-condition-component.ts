@@ -27,7 +27,6 @@ import {I18nService} from "../../../api/system/locale/I18n";
   </div>
   <cw-input-dropdown
       flex="25"
-      layout="row"
       class="cw-type-dropdown"
       [value]="condition.type.key"
       placeholder="{{typeDropdown.placeholder | async}}"

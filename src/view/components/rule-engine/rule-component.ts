@@ -46,8 +46,7 @@ var rsrc = {
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <div flex="70" layout="column">
-      <cw-input-text
-                     class="cw-rule-name-input"
+      <cw-input-text class="cw-rule-name-input"
                      focused="{{rule.key == null}}"
                      placeholder="{{rsrc('inputs.name.placeholder') | async}}"
                      ngControl="name"
