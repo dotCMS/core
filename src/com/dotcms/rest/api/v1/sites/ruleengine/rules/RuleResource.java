@@ -27,6 +27,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -204,7 +205,7 @@ public class RuleResource {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -219,7 +220,7 @@ public class RuleResource {
             return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -237,7 +238,7 @@ public class RuleResource {
             return rule.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -253,7 +254,7 @@ public class RuleResource {
             return rule.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

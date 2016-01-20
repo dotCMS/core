@@ -14,6 +14,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.liferay.portal.model.User;
 import java.util.List;
@@ -142,7 +143,7 @@ public class ConditionletsResource {
                            .collect(Collectors.toMap(restCondition -> restCondition.id, Function.identity()));
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }

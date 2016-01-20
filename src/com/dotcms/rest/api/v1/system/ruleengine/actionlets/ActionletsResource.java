@@ -13,6 +13,7 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.liferay.portal.model.User;
@@ -62,7 +63,7 @@ public class ActionletsResource {
             return actionlets.stream().map(transform.appToRestFn()).collect(Collectors.toMap(restAction -> restAction.id, Function.identity()));
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
