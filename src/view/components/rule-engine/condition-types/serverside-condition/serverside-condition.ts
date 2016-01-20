@@ -17,6 +17,7 @@ import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
 import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
+import {Verify} from "../../../../../api/validation/Verify";
 
 @Component({
   selector: 'cw-serverside-condition'
@@ -27,17 +28,20 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
   template: `<div flex layout="row" class="cw-condition-component-body">
   <template ngFor #input [ngForOf]="_inputs" #islast="last">
     <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
+
+    <div hidden>name: {{input.name}}  argindex: {{input.argIndex}}  count:{{_rhArgCount}}</div>
+    <div hidden>Comparison: {{input.argIndex !== null && input.argIndex > _rhArgCount}}</div>
     <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                        flex
                        class="cw-input"
+                       [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
                        [value]="input.value"
                        placeholder="{{input.placeholder | async}}"
                        [required]="input.required"
                        [allowAdditions]="input.allowAdditions"
                        [class.cw-comparator-selector]="input.name == 'comparison'"
                        [class.cw-last]="islast"
-                       [hidden]="!input.visible"
-                       (change)="setVisible($event, input); handleParamValueChange($event, input)">
+                       (change)="handleParamValueChange($event, input)">
                        <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
@@ -49,6 +53,7 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                        flex
                        class="cw-input"
                        [value]="input.value"
+                       [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
                        placeholder="{{input.placeholder | async}}"
                        optionUrl="{{input.optionUrl}}"
                        optionValueField="{{input.optionValueField}}"
@@ -69,8 +74,10 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                    [placeholder]="input.placeholder | async"
                    [value]="input.value"
                    [type]="input.type"
-                   [hidden]="!input.visible"
+                   [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
                    (blur)="handleParamValueChange($event, input)"></cw-input-text>
+
+
 
     <cw-input-date *ngIf="input.type == 'datetime' "
                     flex
@@ -81,7 +88,7 @@ import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown"
                     [name]="input.name"
                     [placeholder]="input.placeholder | async"
                     type="datetime-local"
-                    [hidden]="!input.visible"
+                    [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
                     [value]="input.value"
                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
   </template>
@@ -96,50 +103,49 @@ export class ServersideCondition {
   private _inputs:Array<any>
   private _resources:I18nService
 
+  private _rhArgCount:number = 1
+
   constructor(resources:I18nService) {
     this._resources = resources;
     this.change = new EventEmitter();
     this._inputs = [];
   }
 
-  setVisible(value, input):void {
-    if(value && input && input.name === 'comparison'){
-      let idx = this._inputs.indexOf(input)
-      let comparisonObj = input.options.filter((e)=> { return e.value == value })[0]
-      if(comparisonObj && comparisonObj.value) {
-        for (var i = idx + 1; i < this._inputs.length; i++) {
-          this._inputs[i].visible = (i <= idx + comparisonObj.rightHandArgCount)
-        }
-      }
-    }
-  }
 
   ngOnChanges(change) {
     if (change.paramDefs) {
       let prevPriority = 0
       this._inputs = []
       let comparison
+      let comparisonIdx
+      let selectedComparison
+      let idx
       Object.keys(this.paramDefs).forEach(key => {
         let paramDef = this.model.getParameterDef(key)
         let param = this.model.getParameter(key);
         if (paramDef.priority > (prevPriority + 1)) {
           this._inputs.push({type: 'spacer', flex: 40})
         }
+        idx = this._inputs.length
         prevPriority = paramDef.priority
         let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
 
-        if(input.name === 'comparison') {
+        if(ServersideCondition.isComparisonParameter(input)) {
           comparison = input
+          comparisonIdx = idx
+          selectedComparison = ServersideCondition.getSelectedOption(input, comparison.value)
+          this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
         }
 
+        if( comparison && idx > comparisonIdx && selectedComparison.rightHandArgCount){
+          input.argIndex = idx - comparisonIdx
+        }
         this._inputs.push(input)
-      })
-
-      this._inputs.forEach( input => {
-        this.setVisible(input.value, comparison)
       })
     }
   }
+
+
 
   getInputFor(type:string, param, paramDef:ParameterDefinition):any {
 
@@ -272,6 +278,28 @@ export class ServersideCondition {
   handleParamValueChange(value:any, input:any) {
     this.model.setParameter(input.name, value)
     this.change.emit(this.model)
+    if(ServersideCondition.isComparisonParameter(input)){
+      let selectedComparison = ServersideCondition.getSelectedOption(input, value)
+      this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
+    }
+  }
+  private static getRightHandArgCount(selectedComparison) {
+    return Verify.isNumber(selectedComparison.rightHandArgCount)
+        ? selectedComparison.rightHandArgCount
+        : 1
+  }
+
+  private static isComparisonParameter(input) {
+    return input && input.name === 'comparison'
+  }
+
+  private static getSelectedOption(input, value) {
+    let opt = null
+    let optAry = input.options.filter((e)=> { return e.value == value })
+    if(optAry && optAry.length === 1){
+      opt = optAry[0]
+    }
+    return opt
   }
 
 }
