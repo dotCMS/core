@@ -14,11 +14,12 @@ public class DateTimeType extends DataType {
 
     @Override
     public void checkValid(String value) {
-        Preconditions.checkArgument(!Strings.isNullOrEmpty(value));
-        try {
-            LocalDateTime.parse(value);
-        } catch(DateTimeParseException e) {
-            throw new ParameterNotValidException(e, "Could not parse %s into a date-time type.", value);
+        if(!Strings.isNullOrEmpty(value)) {
+            try {
+                LocalDateTime.parse(value);
+            } catch (DateTimeParseException e) {
+                throw new ParameterNotValidException(e, "Could not parse %s into a date-time type.", value);
+            }
         }
     }
 
