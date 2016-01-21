@@ -2,26 +2,23 @@ package com.dotmarketing.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
+import java.util.Set;
 
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mssql.prefs.MSSQLPreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
+import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
-import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 
-
-
-
-
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
@@ -33,6 +30,19 @@ public class SQLUtil {
 			"unlock","write", "engine", "null","not ","mode", "set ",";"};
 	
 
+	
+	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
+			"title","filename", "moddate", "tagname","pageUrl", 
+			"category_name","category_velocity_var_name", 
+			"mod_date","structuretype,upper(name)","upper(name)",
+			"category_key", "page_url","name","velocity_var_name",
+			"description","category_","sort_order","hostName", "keywords"
+			
+			
+			
+			);
+	
+	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
 		if (schema!=null) {
@@ -167,7 +177,7 @@ public class SQLUtil {
 	 */
 	public static String sanitizeSortBy(String parameter){
 
-		String[] ORDER_BY_WHITELIST = {"title","filename", "modDate", "tagname","pageUrl", "category_name","category_velocity_var_name", "mod_date","structuretype,upper(name)","upper(name)","category_key", "page_url","name","velocity_var_name","description","category_","sort_order","hostName", "keywords"};
+
 
 		
 		if(!UtilMethods.isSet(parameter)){//check if is not null
@@ -175,15 +185,14 @@ public class SQLUtil {
 		}
 
 
-		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "");
-		for(String str : ORDER_BY_WHITELIST){
-			if(testParam.equalsIgnoreCase(str)){//check if the order by requested is a valid one
-				return parameter;
-			}
+		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "").toLowerCase();
+		if(ORDERBY_WHITELIST.contains(testParam)){
+			return parameter;
 		}
 
 		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return "";
 	}
 
