@@ -29,8 +29,9 @@ public class SQLUtil {
 
 
 	private static final String[] EVIL_SQL_WORDS = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declair", "where", "exec", "--", "procedure", "pg_", "lock",
+			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
 			"unlock","write", "engine", "null","not ","mode", "set ",";"};
+	
 
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
@@ -165,16 +166,18 @@ public class SQLUtil {
 	 * @return
 	 */
 	public static String sanitizeSortBy(String parameter){
-		String[] validOrders = {"title", "modDate", "mod_date", "page_url","name","velocity_var_name","description","category_","sort_order","hostName", "keywords"};
 
+		String[] ORDER_BY_WHITELIST = {"title","filename", "modDate", "tagname","pageUrl", "category_name","category_velocity_var_name", "mod_date","structuretype,upper(name)","upper(name)","category_key", "page_url","name","velocity_var_name","description","category_","sort_order","hostName", "keywords"};
 
 		
 		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
-		
-		for(String str : validOrders){
-			if(parameter.contains(str)){//check if the order by requested is a valid one
+
+
+		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "");
+		for(String str : ORDER_BY_WHITELIST){
+			if(testParam.equalsIgnoreCase(str)){//check if the order by requested is a valid one
 				return parameter;
 			}
 		}
@@ -187,12 +190,12 @@ public class SQLUtil {
 	public static String sanitizeParameter(String parameter){
 
 
-		if(Strings.isBlank(parameter)){//check if is not null
+		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
 
 		for(String str : EVIL_SQL_WORDS){
-			if(parameter.contains(str)){//check if the order by requested have any other command
+			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
 				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
 				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
 				return "";
