@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
+
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
@@ -15,8 +16,12 @@ import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 
 
 
+
+
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
@@ -160,7 +165,7 @@ public class SQLUtil {
 	 * @return
 	 */
 	public static String sanitizeSortBy(String parameter){
-		String[] validOrders = {"title", "modDate", "page_url","name","velocity_var_name","description","category_","sort_order","keywords"};
+		String[] validOrders = {"title", "modDate", "mod_date", "page_url","name","velocity_var_name","description","category_","sort_order","hostName", "keywords"};
 
 
 		
@@ -168,18 +173,14 @@ public class SQLUtil {
 			return "";
 		}
 		
-		for(String str : EVIL_SQL_WORDS){
-			if(parameter.contains(str)){//check if the order by requested have any other command
-				return "";
-			}
-		}
-		
 		for(String str : validOrders){
 			if(parameter.contains(str)){//check if the order by requested is a valid one
 				return parameter;
 			}
 		}
-		
+
+		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
 		return "";
 	}
 
@@ -192,6 +193,8 @@ public class SQLUtil {
 
 		for(String str : EVIL_SQL_WORDS){
 			if(parameter.contains(str)){//check if the order by requested have any other command
+				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
 				return "";
 			}
 		}
