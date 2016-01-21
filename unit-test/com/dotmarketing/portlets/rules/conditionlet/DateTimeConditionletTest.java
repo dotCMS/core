@@ -37,42 +37,6 @@ public class DateTimeConditionletTest {
             List<TestCase> data = Lists.newArrayList();
 
 
-            /* EQUAL */
-            data.add(new TestCase("If 2016-01-01T00:00 set and visitor's datetime is 2016-01-01T00:00 , evaluate to true.")
-                    .withComparison(EQUAL)
-                    .withRequestIpAddress(MOCK_IP_ADDRESS)
-                    .withDateTime1("2016-01-01T00:00")
-                    .withMockVisitorsDateTime(MOCK_IP_ADDRESS, "2016-01-01T00:00")
-                    .shouldBeTrue()
-            );
-
-            /* EQUAL */
-            data.add(new TestCase("If 2016-01-01T00:00 set and visitor's datetime is 2016-01-01T00:01 , evaluate to false.")
-                    .withComparison(EQUAL)
-                    .withRequestIpAddress(MOCK_IP_ADDRESS)
-                    .withDateTime1("2016-01-01T00:00")
-                    .withMockVisitorsDateTime(MOCK_IP_ADDRESS, "2016-01-01T00:01")
-                    .shouldBeFalse()
-            );
-
-            /* NOT EQUAL */
-            data.add(new TestCase("If 2016-01-01T00:00 set and visitor's datetime is 2016-01-01T00:01 , evaluate to false.")
-                    .withComparison(NOT_EQUAL)
-                    .withRequestIpAddress(MOCK_IP_ADDRESS)
-                    .withDateTime1("2016-01-01T00:00")
-                    .withMockVisitorsDateTime(MOCK_IP_ADDRESS, "2016-01-01T00:01")
-                    .shouldBeTrue()
-            );
-
-            /* NOT EQUAL */
-            data.add(new TestCase("If 2016-01-01T00:00 set and visitor's datetime is 2016-01-01T00:01 , evaluate to false.")
-                    .withComparison(NOT_EQUAL)
-                    .withRequestIpAddress(MOCK_IP_ADDRESS)
-                    .withDateTime1("2016-01-01T00:00")
-                    .withMockVisitorsDateTime(MOCK_IP_ADDRESS, "2016-01-01T00:00")
-                    .shouldBeFalse()
-            );
-
             /* GREATER THAN */
             data.add(new TestCase("If 2016-01-01T00:00 set and visitor's datetime is 2016-01-01T01:00 , evaluate to true.")
                     .withComparison(GREATER_THAN)
