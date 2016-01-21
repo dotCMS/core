@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
+import com.dotcms.rest.exception.InvalidConditionParameterException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import java.util.Map;
 
@@ -37,6 +40,10 @@ public class DropdownInput extends TextInput<TextType> {
         return this;
     }
 
+    /**
+     * Use to allow new values on the dropdown, and is used by the REST API to validate parameters.
+     * @return
+     */
     public DropdownInput allowAdditions() {
         this.allowAdditions = true;
         return this;
@@ -96,5 +103,13 @@ public class DropdownInput extends TextInput<TextType> {
             return icon;
         }
     }
+
+    @Override
+    public void checkValid(String value) throws InvalidConditionParameterException{
+        if(!allowAdditions){
+        	if(!options.containsKey(value))
+        		throw new InvalidConditionParameterException("Parameter '%s' is not allowed.  Additions are not allowed on the dropdown",value);
+        }
+    }
 }
- 
+

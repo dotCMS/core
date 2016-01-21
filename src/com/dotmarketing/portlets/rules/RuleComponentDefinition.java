@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
@@ -55,7 +56,11 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
     public final T doCheckValid(RuleComponentModel data) {
         Map<String, ParameterModel> params = data.getParameters();
         for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
-            entry.getValue().checkValid(params.get(entry.getKey()));
+        	try{
+        		entry.getValue().checkValid(params.get(entry.getKey()));
+        	}catch(InvalidConditionParameterException e){
+        		throw e;
+        	}
         }
 
         T instance;
@@ -84,4 +89,4 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, T instance);
 }
- 
+
