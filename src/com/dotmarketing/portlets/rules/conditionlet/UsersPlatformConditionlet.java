@@ -50,7 +50,6 @@ public class UsersPlatformConditionlet extends Conditionlet<UsersPlatformConditi
     private static final ParameterDefinition<TextType> platform = new ParameterDefinition<>(
         3, PLATFORM_KEY,
         new DropdownInput()
-            .allowAdditions()
             .minSelections(1)
             .option(DeviceType.COMPUTER.name())
             .option(DeviceType.MOBILE.name())

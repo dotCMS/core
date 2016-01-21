@@ -32,6 +32,7 @@ public class ConditionTransform {
         	}
         }
 
+        app.checkValid();
         return app;
     }
 

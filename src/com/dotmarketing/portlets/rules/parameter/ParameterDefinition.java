@@ -2,11 +2,11 @@ package com.dotmarketing.portlets.rules.parameter;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
 import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.display.Input;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
-import com.dotmarketing.util.Logger;
 
 public class ParameterDefinition<T extends DataType> {
 
@@ -55,16 +55,8 @@ public class ParameterDefinition<T extends DataType> {
         return inputType;
     }
 
-    public void checkValid(ParameterModel model) throws RuleEngineException {
-    	try{
-            this.inputType.getDataType().checkValid(model.getValue());
-            model.getValue();
-    	}
-    	catch(Exception e){
-    		Logger.error(this.getClass(), e.getMessage(), e);
-    		throw new RuleEngineException(e.getMessage());
-    	}
-
+    public void checkValid(ParameterModel model) throws InvalidConditionParameterException, RuleEngineException {
+    	this.inputType.checkValid(model.getValue());
     }
 }
 
