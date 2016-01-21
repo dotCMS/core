@@ -32,11 +32,7 @@ public class ConditionTransform {
         	}
         }
 
-        try{
-        	app.checkValid();
-        }catch(Exception e){
-        	throw e;
-        }
+        app.checkValid();
         return app;
     }
 

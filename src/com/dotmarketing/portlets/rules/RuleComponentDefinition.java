@@ -56,11 +56,7 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
     public final T doCheckValid(RuleComponentModel data) {
         Map<String, ParameterModel> params = data.getParameters();
         for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
-        	try{
-        		entry.getValue().checkValid(params.get(entry.getKey()));
-        	}catch(InvalidConditionParameterException e){
-        		throw e;
-        	}
+        	entry.getValue().checkValid(params.get(entry.getKey()));
         }
 
         T instance;

@@ -5,6 +5,8 @@ import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
 import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.util.Logger;
+
 import java.util.Map;
 
 /**
@@ -105,11 +107,17 @@ public class DropdownInput extends TextInput<TextType> {
     }
 
     @Override
-    public void checkValid(String value) throws InvalidConditionParameterException{
-        if(!allowAdditions){
+    public void checkValid(String value) throws InvalidConditionParameterException, RuleEngineException{
+        if(allowAdditions)
+        	try{
+        		this.getDataType().checkValid(value);
+        	}catch(Exception e){
+        		Logger.error(this.getClass(), e.getMessage(), e);
+        		throw new RuleEngineException(e.getMessage());
+        	}
+        else
         	if(!options.containsKey(value))
         		throw new InvalidConditionParameterException("Parameter '%s' is not allowed.  Additions are not allowed on the dropdown",value);
-        }
     }
 }
 
