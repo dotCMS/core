@@ -7,7 +7,6 @@ import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.display.Input;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
-import com.dotmarketing.util.Logger;
 
 public class ParameterDefinition<T extends DataType> {
 
@@ -57,20 +56,7 @@ public class ParameterDefinition<T extends DataType> {
     }
 
     public void checkValid(ParameterModel model) throws InvalidConditionParameterException, RuleEngineException {
-    	try{
-            this.inputType.getDataType().checkValid(model.getValue());
-            // check for valid parameters
-            this.inputType.checkValid(model.getValue());
-            model.getValue();
-    	}
-    	catch(InvalidConditionParameterException ip){
-    		throw ip;
-    	}
-    	catch(Exception e){
-    		Logger.error(this.getClass(), e.getMessage(), e);
-    		throw new RuleEngineException(e.getMessage());
-    	}
-
+    	this.inputType.checkValid(model.getValue());
     }
 }
 
