@@ -72,7 +72,7 @@ public class DateTimeConditionlet extends Conditionlet<DateTimeConditionlet.Inst
     @VisibleForTesting
     DateTimeConditionlet(GeoIp2CityDbUtil geoIp2Util) {
         super("api.ruleengine.system.conditionlet.VisitorsDateTime",
-                new ComparisonParameterDefinition(2, EQUAL, NOT_EQUAL, BETWEEN, GREATER_THAN, GREATER_THAN_OR_EQUAL, LESS_THAN, LESS_THAN_OR_EQUAL),
+                new ComparisonParameterDefinition(2, BETWEEN, GREATER_THAN, LESS_THAN),
                 dateTime1, dateTime2);
         this.geoIp2Util = geoIp2Util;
     }
