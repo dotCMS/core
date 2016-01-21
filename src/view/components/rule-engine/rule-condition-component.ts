@@ -11,13 +11,11 @@ import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
+import {Verify} from "../../../api/validation/Verify";
 
 
 @Component({
   selector: 'rule-condition',
-  properties: ["condition", "index"]
-})
-@View({
   template: `
 <div *ngIf="typeDropdown != null && condition.type != null" flex layout="row" class="cw-condition cw-entry">
   <div class="cw-btn-group cw-condition-toggle">
@@ -43,8 +41,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
     </template>
     <template ngSwitchDefault>
       <cw-serverside-condition class="cw-condition-component"
-                               [model]="condition"
-                               [paramDefs]="condition.type.parameters"
+                               [componentInstance]="condition"
                                (change)="onConditionChange($event)">
       </cw-serverside-condition>
     </template>
@@ -70,6 +67,7 @@ export class ConditionComponent {
   @Input() index:number
   @Output() change:EventEmitter<ConditionModel>
   @Output() remove:EventEmitter<ConditionModel>
+
   typeDropdown:any
 
   private _typeService:ConditionTypeService
@@ -112,6 +110,10 @@ export class ConditionComponent {
 
   onTypeChange(value) {
     this.condition.type = this._types[value]
+    // @todo ggranum aaaaand this is where we need to move to a Redux style state engine. Business logic is all over the UI at this point. Ugh.
+    if(Verify.empty(this.condition.comparison)) {
+      this.condition.comparison = this.condition.type.parameters['comparison'].defaultValue
+    }
     this.change.emit(this.condition)
   }
 

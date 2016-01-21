@@ -1,4 +1,4 @@
-import {Component, Input, Output, View, Attribute, EventEmitter} from 'angular2/core';
+import {Component, Input, Output, View, Attribute, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
 import {Control, Validators, ControlGroup, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 import {Observable} from 'rxjs/Rx'
@@ -22,6 +22,7 @@ import {Verify} from "../../../../../api/validation/Verify";
 @Component({
   selector: 'cw-serverside-condition',
   directives: [FORM_DIRECTIVES, CORE_DIRECTIVES, RestDropdown, Dropdown, InputOption, InputText, InputDate],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
 
@@ -30,7 +31,7 @@ import {Verify} from "../../../../../api/validation/Verify";
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
                          class="cw-input"
-                         [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                         [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                          [value]="input.value"
                          placeholder="{{input.placeholder | async}}"
                          [required]="input.required"
@@ -49,7 +50,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                               flex
                               class="cw-input"
                               [value]="input.value"
-                              [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                              [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                               placeholder="{{input.placeholder | async}}"
                               optionUrl="{{input.optionUrl}}"
                               optionValueField="{{input.optionValueField}}"
@@ -67,7 +68,7 @@ import {Verify} from "../../../../../api/validation/Verify";
             [placeholder]="input.placeholder | async"
             [ngFormControl]="input.control"
             [type]="input.type"
-            [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+            [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
             #fInput="ngForm"
         ></cw-input-text>
         <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
@@ -80,7 +81,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                      [class.cw-last]="islast"
                      [placeholder]="input.placeholder | async"
                      type="datetime-local"
-                     [hidden]="input.argIndex !== null && input.argIndex > _rhArgCount"
+                     [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
                      (blur)="handleParamValueChange($event, input)"></cw-input-date>
 
@@ -91,14 +92,13 @@ import {Verify} from "../../../../../api/validation/Verify";
 })
 export class ServersideCondition {
 
-  @Input() model:ServerSideFieldModel
-  @Input() paramDefs:{ [key:string]:ParameterDefinition}
+  @Input() componentInstance:ServerSideFieldModel
   @Output() change:EventEmitter<ServerSideFieldModel>
 
   private _inputs:Array<any>
   private _resources:I18nService
 
-  private _rhArgCount:number = 1
+  private _rhArgCount:number
 
   constructor(fb:FormBuilder, resources:I18nService) {
     this._resources = resources;
@@ -108,43 +108,49 @@ export class ServersideCondition {
 
 
   ngOnChanges(change) {
-    if (change.paramDefs) {
+    let paramDefs = null
+    if( change.componentInstance ) {
+      this._rhArgCount = null
+      paramDefs = this.componentInstance.type.parameters
+    }
+    if (paramDefs) {
       let prevPriority = 0
       this._inputs = []
-      let comparison
-      let comparisonIdx
-      let selectedComparison
-      let idx
-      Object.keys(this.paramDefs).forEach(key => {
-        let paramDef = this.model.getParameterDef(key)
-        let param = this.model.getParameter(key);
+      Object.keys(paramDefs).forEach(key => {
+        let paramDef = this.componentInstance.getParameterDef(key)
+        let param = this.componentInstance.getParameter(key);
         if (paramDef.priority > (prevPriority + 1)) {
           this._inputs.push({type: 'spacer', flex: 40})
         }
-        idx = this._inputs.length
         prevPriority = paramDef.priority
         let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
-
-        if(ServersideCondition.isComparisonParameter(input)) {
-          comparison = input
-          comparisonIdx = idx
-          selectedComparison = ServersideCondition.getSelectedOption(input, comparison.value)
-          this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
-        }
-
-        if( comparison && idx > comparisonIdx && selectedComparison.rightHandArgCount){
-          input.argIndex = idx - comparisonIdx
-        }
         this._inputs.push(input)
       })
+
+      let comparison
+      let comparisonIdx = null
+      this._inputs.forEach((input:any, idx) => {
+        if(ServersideCondition.isComparisonParameter(input)) {
+          comparison = input
+          this.applyRhsCount(comparison.value)
+          comparisonIdx = idx
+        } else if(comparisonIdx !== null){
+          if(this._rhArgCount !== null ){
+            input.argIndex = idx - comparisonIdx - 1
+          }
+        }
+
+      })
+      if(comparison){
+        this.applyRhsCount(comparison.value)
+      }
+
     }
   }
 
-
-
   getInputFor(type:string, param, paramDef:ParameterDefinition):any {
 
-    let i18nBaseKey = paramDef.i18nBaseKey || this.model.type.i18nKey
+    let i18nBaseKey = paramDef.i18nBaseKey || this.componentInstance.type.i18nKey
     /* Save a potentially large number of requests by loading parent key: */
     this._resources.get(i18nBaseKey).subscribe(()=> {})
 
@@ -195,10 +201,10 @@ export class ServersideCondition {
       })
     }
 
-    let control = new Control(this.model.getParameterValue(param.key), Validators.compose(vFns))
+    let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
     control.valueChanges.debounceTime(250).subscribe((value) => {
-      this.model.setParameter(param.key , value)
-      this.change.emit(this.model)
+      this.componentInstance.setParameter(param.key , value)
+      this.change.emit(this.componentInstance)
     })
     return {
       name: param.key,
@@ -212,7 +218,7 @@ export class ServersideCondition {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     return {
       name: param.key,
-      value: this.model.getParameterValue(param.key),
+      value: this.componentInstance.getParameterValue(param.key),
       required: paramDef.inputType.dataType['minLength'] > 0,
       visible: true
     }
@@ -223,7 +229,7 @@ export class ServersideCondition {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     let placeholderKey = rsrcKey + '.placeholder'
 
-    let currentValue = this.model.getParameterValue(param.key)
+    let currentValue = this.componentInstance.getParameterValue(param.key)
     let input:any = {
       value: currentValue,
       name: param.key,
@@ -255,7 +261,7 @@ export class ServersideCondition {
       rsrcKey = rsrcKey + '.options'
     }
 
-    let currentValue = this.model.getParameterValue(param.key)
+    let currentValue = this.componentInstance.getParameterValue(param.key)
     let needsCustomAttribute = currentValue != null
 
     Object.keys(options).forEach((key:any)=> {
@@ -303,12 +309,18 @@ export class ServersideCondition {
 
 
   handleParamValueChange(value:any, input:any) {
-    this.model.setParameter(input.name, value)
-    this.change.emit(this.model)
+    this.componentInstance.setParameter(input.name, value)
+    this.change.emit(this.componentInstance)
     if(ServersideCondition.isComparisonParameter(input)){
-      let selectedComparison = ServersideCondition.getSelectedOption(input, value)
-      this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparison)
+      this.applyRhsCount(value)
     }
+  }
+
+  private applyRhsCount(selectedComparison:string) {
+    let comparisonDef = this.componentInstance.getParameterDef('comparison')
+    let comparisonType:CwDropdownInputModel = <CwDropdownInputModel>comparisonDef.inputType
+    let selectedComparisonDef = comparisonType.options[selectedComparison]
+    this._rhArgCount = ServersideCondition.getRightHandArgCount(selectedComparisonDef)
   }
 
   private static getRightHandArgCount(selectedComparison) {
