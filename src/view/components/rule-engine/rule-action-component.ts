@@ -15,8 +15,7 @@ import {ConditionModel} from "../../../api/rule-engine/Condition";
 import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 @Component({
-  selector: 'rule-action'})
-@View({
+  selector: 'rule-action',
   template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-rule-action cw-entry">
   <div flex="25" layout="row" class="cw-row-start-area">
     <cw-input-dropdown
@@ -34,8 +33,7 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
   </div>
   <cw-serverside-condition flex="75"
                            class="cw-condition-component"
-                           [model]="action"
-                           [paramDefs]="action.type?.parameters"
+                           [componentInstance]="action"
                            (change)="onActionChange($event)">
   </cw-serverside-condition>
   <div class="cw-btn-group cw-delete-btn">
@@ -102,6 +100,8 @@ export class RuleActionComponent {
 
   onTypeChange(value) {
     this.action.type = this._types[value]
+    // required to force change detection on child that doesn't reference type.
+    this.action = new ServerSideFieldModel(this.action.key, this.action.type, this.action.priority)
     this.change.emit(this.action)
   }
 

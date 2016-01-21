@@ -32,7 +32,7 @@ export class ConditionModel extends ServerSideFieldModel {
   }
 
   isValid() {
-    return !!this.owningGroup && super.isValid()
+    return !!this.owningGroup && !!this.comparison && super.isValid()
   }
 
   toJson():any {

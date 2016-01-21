@@ -29,9 +29,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 @Component({
   selector: 'cw-input-dropdown',
   //changeDetection: ChangeDetectionStrategy.OnPush
-})
-@View({
-  template: `<div class="ui fluid selection dropdown search ng-valid"
+ template: `<div class="ui fluid selection dropdown search ng-valid"
      [ngClass]="{required:minSelections > 0, multiple: maxSelections > 1}"
      tabindex="0"
      (change)="stopNativeEvents($event)"
@@ -88,8 +86,7 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   }
 
   ngOnChanges(change) {
-    if (change.value) {
-      this.value = change.value.currentValue
+    if (change.value ) {
       if (this._$dropdown) {
         this._$dropdown.dropdown('set selected', this.value)
       } else {
@@ -119,6 +116,8 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   }
 
   ngOnDestroy(){
+    // remove the change emitter so that we don't fire changes when we clear the dropdown.
+    this.change = null;
     this._$dropdown.dropdown('clear')
   }
 
@@ -205,13 +204,14 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
    */
   onChange(value, text, $choice) {
     this.value = value
-    if (this.isMultiSelect()) {
-      debugger
-      this.change.emit(this.value.split[','])
-    } else {
-      this.change.emit(this.value)
+    if (this.change) {
+      if (this.isMultiSelect()) {
+        debugger
+        this.change.emit(this.value.split[','])
+      } else {
+        this.change.emit(this.value)
+      }
     }
-
   }
 
   /**
