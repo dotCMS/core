@@ -24,21 +24,27 @@ exports.config = {
         build: {
           format: 'register',
           defaultExtension: 'js'
+        },
+        'whatwg-fetch': {
+          format: 'register'
         }
       },
       map: {
-        "whatwg-fetch": "../thirdparty/whatwg-fetch/fetch.js"
+        "whatwg-fetch": "../../thirdparty/whatwg-fetch/fetch.js"
       }
     });
 
+    var specFiles = [
+      'build/view/components/rule-engine/rule-engine.e2e'
+    ]
 
     protractor.__hack = []
-    var p = new Promise(function (resolve, reject) {
+    var p = Promise.all([
       System.import('build/view/components/rule-engine/rule-engine.e2e').then(function (fn) {
         protractor.__hack.push(fn)
-        resolve(protractor.__hack)
-      }, console.error.bind(console));
-    });
+      })
+    ])
+
     module.exports = p
     return p
   },
