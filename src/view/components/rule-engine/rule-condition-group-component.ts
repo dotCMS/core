@@ -130,10 +130,14 @@ export class ConditionGroupComponent {
       } else {
         if (!this.group.isPersisted()) {
           this._groupService.add(this.group, (foo) => {
-            this._conditionService.add(condition)
+            this._conditionService.add(condition, () => {
+              this.group.conditions[condition.key] = true
+            })
           })
         } else {
-          this._conditionService.add(condition)
+          this._conditionService.add(condition, () => {
+            this.group.conditions[condition.key] = true
+          })
         }
       }
     }

@@ -307,7 +307,18 @@ class RuleComponent {
 
   removeRule(event:any) {
     event.stopPropagation()
-    if ((event.altKey && event.shiftKey) || confirm('Are you sure you want delete this rule?')) {
+    let noWarn = (event.altKey && event.shiftKey)
+    if (!noWarn) {
+      noWarn = this.actions.length === 1 && !this.actions[0].isPersisted()
+      noWarn = noWarn && this.groups.length === 1
+      if(noWarn){
+        let conditions = this.groups[0].conditions
+        let keys = Object.keys(conditions)
+        noWarn = noWarn && (keys.length === 0)
+      }
+    }
+
+    if (noWarn || confirm('Are you sure you want delete this rule?')) {
       this.remove.emit(this.rule)
     }
   }

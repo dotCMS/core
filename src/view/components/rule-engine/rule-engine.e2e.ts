@@ -58,10 +58,6 @@ export function initSpec(TestUtil) {
       expect(rulePage.addRuleButton.el).toBeDefined("Add rule button should exist.");
     });
 
-    it('should have an Add Rule button..', function () {
-      expect(rulePage.addRuleButton.el).toBeDefined("Add rule button should exist.");
-    });
-
     it('should add a rule when add rule button is clicked.', function () {
       let count1 = rulePage.ruleCount()
       rulePage.addRuleButton.click()
@@ -90,6 +86,22 @@ export function initSpec(TestUtil) {
       expect(rule.name.getValue()).toEqual(name, "Rule should still exist, and should still be first.")
     });
 
+
+    it('should remove a rule with no alert no conditionlets.', function (done) {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        rule.removeBtn.click()
+        let hadAlert = null
+        browser.switchTo().alert().accept().then(()=> {
+          hadAlert = true
+          expect(hadAlert).toEqual(false, "No alert should have been displayed.")
+          done()
+        }, ()=> {
+          hadAlert = false
+          expect(hadAlert).toEqual(false, "No alert should have been displayed.")
+          done()
+        })
+      })
+    });
 
     it('should save the fire-on value when changed.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
