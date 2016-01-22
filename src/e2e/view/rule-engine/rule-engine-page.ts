@@ -114,6 +114,21 @@ export class TestRuleComponent {
     return new TestActionComponent(this.actionEls.first())
   }
 
+  firstCondition():TestConditionComponent{
+    return new TestRequestHeaderCondition(this.firstGroup().conditionEls.first())
+  }
+
+  newRequestHeaderCondition():TestRequestHeaderCondition {
+    let conditionDef:TestRequestHeaderCondition = <TestRequestHeaderCondition>this.firstCondition()
+    conditionDef.typeSelect.setSearch("Request Hea")
+    this.fireOn.el.click()
+    conditionDef.setComparison(TestConditionComponent.COMPARE_IS, this.fireOn.el)
+    conditionDef.setHeaderValue("AbcDef")
+    this.fireOn.el.click()
+    return conditionDef
+
+  }
+
   remove():Promise<any> {
     return new Promise((a, r)=> {
       this.removeBtn.click()
@@ -125,7 +140,6 @@ export class TestRuleComponent {
       }
       a()
     })
-
   }
 }
 
@@ -202,11 +216,24 @@ export class TestParameter {
 
 export class TestConditionComponent extends TestRuleInputRow {
 
+  static COMPARE_IS:string= "Is"
+  static COMPARE_IS_NOT:string= "Is not"
   compareDD:TestInputDropdown
 
   constructor(el:protractor.ElementFinder) {
     super(el)
     this.compareDD = new TestInputDropdown(el.element(by.css('.cw-comparator-selector')))
+  }
+
+  /**
+   *
+   * @param to
+   * @param next The target to navigate to after setting the seach, in order to trigger a change event.
+   * @returns {webdriver.promise.Promise<void>}
+   */
+  setComparison(to:string, next:ElementFinder):webdriver.promise.Promise<void>{
+    this.compareDD.setSearch(to)
+    return next.click()
   }
 }
 
@@ -219,6 +246,10 @@ export class TestRequestHeaderCondition extends TestConditionComponent {
     super(el);
     this.headerKeyTF = new TestInputText(this.parameterEls.first())
     this.headerValueTF = new TestInputText(this.parameterEls.last())
+  }
+
+  setHeaderValue(val:string){
+    this.headerValueTF.setValue(val)
   }
 }
 

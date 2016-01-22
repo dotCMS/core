@@ -1,6 +1,5 @@
-import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import { Component, View, EventEmitter, Input, Output} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
-import * as Rx from 'rxjs/Rx'
 
 
 import {ConditionComponent} from './rule-condition-component';
@@ -8,8 +7,6 @@ import {ConditionComponent} from './rule-condition-component';
 import {ApiRoot} from '../../../api/persistence/ApiRoot'
 import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
-import {RuleModel} from "../../../api/rule-engine/Rule";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 

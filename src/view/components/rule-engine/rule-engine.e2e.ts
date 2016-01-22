@@ -1,7 +1,10 @@
 import ElementArrayFinder = protractor.ElementArrayFinder;
 import ElementFinder = protractor.ElementFinder;
 import {Page} from "../../../e2e/CwProtractor";
-import {RulePage, TestRuleComponent, TestRequestHeaderCondition} from "../../../e2e/view/rule-engine/rule-engine-page";
+import {
+    RulePage, TestRuleComponent, TestRequestHeaderCondition,
+    TestConditionComponent
+} from "../../../e2e/view/rule-engine/rule-engine-page";
 
 class RobotsTxtPage extends Page {
   private TestUtil
@@ -126,22 +129,30 @@ export function initSpec(TestUtil) {
 
     it('should save a valid condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
-        let conditionDef = new TestRequestHeaderCondition(rule.firstGroup().conditionEls.first())
-        conditionDef.typeSelect.setSearch("Request Hea").then(()=> {
-          rule.fireOn.el.click().then(() => {
-            conditionDef.compareDD.setSearch("Is")
-            conditionDef.headerValueTF.setValue("AbcDef")
-            rule.fireOn.el.click()
+        let conditionDef = rule.newRequestHeaderCondition()
+        browser.sleep(250) // async save
+        rulePage.navigateTo() // reload the page
+        rule.expand().then(()=> {
+          expect(rule.firstGroup().first().typeSelect.getValueText()).toEqual("Request Header Value", "Should have persisted.")
+        })
+      })
+    })
 
-            browser.sleep(250) // async save
-            rulePage.navigateTo() // reload the page
-
-            rule.expand().then(()=> {
-              expect(rule.firstGroup().first().typeSelect.getValueText()).toEqual("Request Header Value", "Should have persisted.")
-            })
+    it('should allow a comparison change on a valid Request Header Condition.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let conditionDef = rule.newRequestHeaderCondition()
+        browser.sleep(250) // async save
+        rulePage.navigateTo() // reload the page
+        rule.expand().then(()=> {
+          conditionDef = <TestRequestHeaderCondition>rule.firstCondition()
+          conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.name.el)
+          browser.sleep(250)
+          rulePage.navigateTo()
+          rule.expand().then(()=>{
+            var cond3 = <TestRequestHeaderCondition>rule.firstCondition()
+            expect(cond3.compareDD.getValueText()).toEqual("Is not", "Should have persisted.")
           })
         })
-        //expect(rule.toggleEnable.value()).toEqual(!value, "Enabled state should have been toggled.")
       })
     })
 
@@ -188,6 +199,6 @@ export function initSpec(TestUtil) {
         })
       })
     })
-  })
 
+  })
 }
