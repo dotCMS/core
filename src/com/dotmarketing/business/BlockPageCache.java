@@ -28,7 +28,7 @@ public abstract class BlockPageCache implements Cachable {
 		private String language = null;
 		private String urlMap = null;
 		private String queryString = null;
-
+		private String persona = null;
 		/**
 		 * Creates an object with a series of page-specific parameters to try 
 		 * to uniquely identify a page request.
@@ -42,11 +42,12 @@ public abstract class BlockPageCache implements Cachable {
 		 *            - The current query String in the page URL.
 		 */
 		public PageCacheParameters(String userId, String language,
-				String urlMap, String queryString) {
+				String urlMap, String queryString, String persona) {
 			this.userId = userId;
 			this.language = language;
 			this.urlMap = urlMap;
 			this.queryString = queryString;
+			this.persona = persona;
 		}
 
 		/**
@@ -64,6 +65,9 @@ public abstract class BlockPageCache implements Cachable {
 			}
 			if (StringUtils.isNotBlank(this.queryString)) {
 				sb.append("_").append(this.queryString);
+			}
+			if (StringUtils.isNotBlank(this.persona)) {
+				sb.append("_").append(this.persona);
 			}
 			return sb.toString();
 		}
