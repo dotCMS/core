@@ -7,6 +7,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 
 public class DateTimeType extends DataType {
+
+    private int minLength = 0;
+
     @Override
     public Object convert(String from) {
         return null;
@@ -25,5 +28,10 @@ public class DateTimeType extends DataType {
 
     public DateTimeType() {
         super("dateTime", "api.system.type.datetime");
+    }
+
+    public DateTimeType minLength(int minLength) {
+        this.minLength = minLength;
+        return this;
     }
 }

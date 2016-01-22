@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
+import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
@@ -57,7 +58,7 @@ public class DateTimeConditionlet extends Conditionlet<DateTimeConditionlet.Inst
 
     private static final ParameterDefinition<DateTimeType> dateTime1 = new ParameterDefinition<>(
             3, DATE_TIME_1_KEY,
-            new DateTimeInput<>(new DateTimeType())
+            new DateTimeInput<>(new DateTimeType().minLength(1))
     );
 
     private static final ParameterDefinition<DateTimeType> dateTime2 = new ParameterDefinition<>(
@@ -141,13 +142,15 @@ public class DateTimeConditionlet extends Conditionlet<DateTimeConditionlet.Inst
 
             if(comparison==BETWEEN) {
                 checkState(parameters != null && parameters.size() == 3, "DateTime Condition requires parameters %s, %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY, DATE_TIME_2_KEY);
-                this.dateTime2 = LocalDateTime.parse(parameters.get(DATE_TIME_2_KEY).getValue());
+                String value = parameters.get(DATE_TIME_2_KEY).getValue();
+                this.dateTime2 = !Strings.isBlank(value)?LocalDateTime.parse(value):null;
             } else {
                 checkState(parameters != null && parameters.size() >= 2, "DateTime Condition requires parameters %s and %s.", COMPARISON_KEY, DATE_TIME_1_KEY);
                 this.dateTime2 = null;
             }
 
-            this.dateTime1 = LocalDateTime.parse(parameters.get(DATE_TIME_1_KEY).getValue());
+            String value = parameters.get(DATE_TIME_1_KEY).getValue();
+            this.dateTime1 = !Strings.isBlank(value)?LocalDateTime.parse(value):null;
         }
     }
 }
