@@ -29,7 +29,7 @@ export class TestUtil {
         });
       });
 
-    }).on('error', function (e) {
+    }).on('error', function (e:any) {
       defer.reject("Got http.get error: " + e.message);
     });
 

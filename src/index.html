@@ -41,9 +41,7 @@
       }
     });
     System.import('view/boot')
-        .then(function (p) {
-          console.log("Project load complete.")
-        }, console.error.bind(console));
+        .then(function (p) {}, window.console.error.bind(console));
 
     var __coreweb = {
       build: {
