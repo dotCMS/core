@@ -1,4 +1,4 @@
-import {TestButton, TestInputDropdown} from "../../../../../api/test/CwProtractor";
+import {TestInputDropdown} from "../../../../../e2e/CwProtractor";
 
 class TextInput {
   root:protractor.ElementFinder

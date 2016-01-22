@@ -1,49 +1,6 @@
 import ElementFinder = protractor.ElementFinder;
 
 
-export class TestUtil {
-
-
-// A Protracterized httpGet() promise [curtesy of Leo Galluci ,
-// http://stackoverflow.com/questions/25137881/how-to-use-protractor-to-get-the-response-status-code-and-response-text
-  static httpGet(siteUrl):protractor.promise.Promise<any> {
-    //noinspection TypeScriptUnresolvedFunction
-    var http = require('http');
-    var defer = protractor.promise.defer();
-
-    http.get(siteUrl, function (response) {
-
-      var bodyString = '';
-
-      response.setEncoding('utf8');
-
-      response.on("data", function (chunk) {
-        bodyString += chunk;
-      });
-
-      response.on('end', function () {
-        defer.fulfill({
-          response: response,
-          statusCode: response.statusCode,
-          bodyString: bodyString
-        });
-      });
-
-    }).on('error', function (e) {
-      defer.reject("Got http.get error: " + e.message);
-    });
-
-    return defer.promise;
-  }
-
-// // Example:
-//it('should return 200 and contain proper body', function() {
-//  httpGet("http://localhost:80").then(function(result) {
-//    expect(result.statusCode).toBe(200);
-//    expect(result.bodyString).toContain('Apache');
-//  });
-//});
-}
 export class Page {
 
   url:string
@@ -79,8 +36,8 @@ export class TestButton {
     this.el = el;
   }
 
-  click(){
-    this.el.click()
+  click():webdriver.promise.Promise<void>{
+    return this.el.click()
   }
 }
 

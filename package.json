@@ -44,11 +44,11 @@
     "serve-index": "^1.6.3",
     "serve-static": "~1.10.x",
     "through2": "^2.x.x",
-    "typescript": "^1.7.x"
+    "typescript": "1.8.0-dev.20151218"
   },
   "scripts": {
     "postinstall": "./node_modules/protractor/bin/webdriver-manager update",
-    "tsc": "tsc -p src -w",
+    "tsc": "./node_modules/typescript/bin/tsc -p src -w",
     "tsc-no": "tsc -p src",
     "start": "live-server--port=8180 --open=src",
     "test": "gulp build && gulp serve --open=/build/unit-tests.html",
@@ -67,8 +67,8 @@
     "angular2": "2.0.0-beta.0",
     "core-js": "^1.2.x",
     "jquery": "2.1.4",
-    "rxjs": "^5.0.0-alpha.14",
-    "systemjs": "0.19.x",
+    "rxjs": "5.0.0-beta.0",
+    "systemjs": "0.19.17",
     "whatwg-fetch": "^0.x.x",
     "zone.js": "^0.5.0"
   }

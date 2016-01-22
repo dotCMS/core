@@ -1,10 +1,63 @@
 exports.config = {
   framework: 'jasmine2',
   seleniumAddress: 'http://localhost:4444/wd/hub',
+  /**
+   * This is a hack which allows us to use SystemJS within our Protractor tests. Why do this? So we can share
+   * common code. Some otherwise easy workarounds are not possible for various reason.
+   *  Q: Why not just have a separate compile?
+   *  A: Because tsc defaults to 'tsconfig.json' and we can't override it, so no way to create two config files.
+   *
+   *
+   * @returns {Promise}
+   */
+  onPrepare: function () {
+    "use strict";
+    require('./node_modules/systemjs/dist/system-polyfills.src.js')
+    require('./node_modules/systemjs/dist/system.src.js')
+
+    System.config({
+      packages: {
+        app: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        api: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        view: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        build: {
+          format: 'register',
+          defaultExtension: 'js'
+        },
+        'whatwg-fetch': {
+          format: 'register'
+        }
+      },
+      map: {
+        "whatwg-fetch": "../../thirdparty/whatwg-fetch/fetch.js"
+      }
+    });
+
+    var specFiles = [
+      'build/view/components/rule-engine/rule-engine.e2e'
+    ]
+
+    protractor.__hack = []
+    var p = Promise.all(specFiles.map(function(specFile) {
+      return System.import(specFile).then(function (fn) {
+        protractor.__hack.push(fn)
+      })
+    }))
+
+    module.exports = p
+    return p
+  },
   specs: [
-    //'./build/view/components/rule-engine/condition-types/serverside-condition/serverside-condition.e2e.js',
-    './build/view/components/semantic/elements/input-text/input-text.e2e.js',
-    './build/view/components/rule-engine/rule-engine.e2e.js'
+    './build/e2e/boot.js'
   ],
   multiCapabilities: [
     //{ browserName: 'firefox' },
