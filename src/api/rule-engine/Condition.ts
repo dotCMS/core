@@ -23,7 +23,6 @@ export interface ParameterModel {
 }
 
 export class ConditionModel extends ServerSideFieldModel {
-  comparison:string
   operator:string
   owningGroup:ConditionGroupModel
 
@@ -32,7 +31,7 @@ export class ConditionModel extends ServerSideFieldModel {
   }
 
   isValid() {
-    return !!this.owningGroup && !!this.comparison && super.isValid()
+    return !!this.owningGroup && !!this.getParameterValue('comparison') && super.isValid()
   }
 
   toJson():any {

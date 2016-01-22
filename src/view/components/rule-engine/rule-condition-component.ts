@@ -111,8 +111,8 @@ export class ConditionComponent {
   onTypeChange(value) {
     this.condition.type = this._types[value]
     // @todo ggranum aaaaand this is where we need to move to a Redux style state engine. Business logic is all over the UI at this point. Ugh.
-    if(Verify.empty(this.condition.comparison)) {
-      this.condition.comparison = this.condition.type.parameters['comparison'].defaultValue
+    if(Verify.empty(this.condition.getParameter('comparison'))) {
+      this.condition.setParameter('comparison', this.condition.type.parameters['comparison'].defaultValue)
     }
     this.change.emit(this.condition)
   }

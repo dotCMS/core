@@ -1,17 +1,13 @@
 import {Component, Input, Output, View, Attribute, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
 import {Control, Validators, ControlGroup, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
-import {Observable} from 'rxjs/Rx'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {InputDate} from "../../../semantic/elements/input-date/input-date";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
-import {CwInputDefinition} from "../../../../../api/util/CwInputModel";
-import {CwTextInputModel} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";
 import {ParameterModel} from "../../../../../api/rule-engine/Condition";
-import {CwSpacerInputDefinition} from "../../../../../api/util/CwInputModel";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
@@ -38,7 +34,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
                          [class.cw-last]="islast"
-                         (change)="handleParamValueChange($event, input)">
+                         (change)="handleParamValueChange(input.name, $event)">
         <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
@@ -59,7 +55,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                               [allowAdditions]="input.allowAdditions"
                               [class.cw-comparator-selector]="input.name == 'comparison'"
                               [class.cw-last]="islast"
-                              (change)="handleParamValueChange($event, input)">
+                              (change)="handleParamValueChange(input.name, $event)">
       </cw-input-rest-dropdown>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
@@ -83,7 +79,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                      type="datetime-local"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
-                     (blur)="handleParamValueChange($event, input)"></cw-input-date>
+                     (blur)="handleParamValueChange(input.name, $event)"></cw-input-date>
 
 
     </template>
@@ -203,8 +199,7 @@ export class ServersideCondition {
 
     let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
     control.valueChanges.debounceTime(250).subscribe((value) => {
-      this.componentInstance.setParameter(param.key , value)
-      this.change.emit(this.componentInstance)
+      this.handleParamValueChange(param.key, value)
     })
     return {
       name: param.key,
@@ -308,10 +303,10 @@ export class ServersideCondition {
   }
 
 
-  handleParamValueChange(value:any, input:any) {
-    this.componentInstance.setParameter(input.name, value)
+  handleParamValueChange(name:string, value:any) {
+    this.componentInstance.setParameter(name, value)
     this.change.emit(this.componentInstance)
-    if(ServersideCondition.isComparisonParameter(input)){
+    if(name == 'comparison'){
       this.applyRhsCount(value)
     }
   }
