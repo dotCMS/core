@@ -132,13 +132,11 @@ export class TestRuleComponent {
   remove():Promise<any> {
     return new Promise((a, r)=> {
       this.removeBtn.click()
-      try {
-        browser.switchTo().alert().accept()
-      } catch (e) {
-        console.log("No alert shown?", e)
-        r(e)
-      }
-      a()
+      browser.switchTo().alert().accept().then(()=> {
+        a(true)
+      }, ()=> {
+        a(false)
+      })
     })
   }
 }
