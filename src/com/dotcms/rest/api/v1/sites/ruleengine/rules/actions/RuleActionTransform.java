@@ -1,18 +1,15 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.actions;
 
-import com.dotcms.repackage.com.coremedia.iso.boxes.CompositionTimeToSample.Entry;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class RuleActionTransform {
     private final RulesAPI rulesAPI;

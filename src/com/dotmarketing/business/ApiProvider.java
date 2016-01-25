@@ -3,7 +3,7 @@ package com.dotmarketing.business;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 
 /**
  * Proxy the API Locator behind non-static method calls. This enables the decoupling that is required for proper mocking.

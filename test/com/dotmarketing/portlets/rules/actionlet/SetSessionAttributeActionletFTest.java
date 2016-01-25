@@ -9,7 +9,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;

@@ -24,8 +24,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
@@ -179,7 +180,7 @@ public class ConditionGroupResource  {
             rulesAPI.deleteConditionGroup(group, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
             return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
         }
     }
@@ -209,7 +210,7 @@ public class ConditionGroupResource  {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -225,7 +226,7 @@ public class ConditionGroupResource  {
             return groups.stream().map(groupTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -241,7 +242,7 @@ public class ConditionGroupResource  {
         } catch (DotDataException e) {
             // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -254,7 +255,7 @@ public class ConditionGroupResource  {
             return conditionGroup.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
@@ -268,7 +269,7 @@ public class ConditionGroupResource  {
             return conditionGroup.getId();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
-        } catch (DotSecurityException e) {
+        } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
         }
     }
