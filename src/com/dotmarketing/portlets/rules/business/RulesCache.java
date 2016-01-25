@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.dotmarketing.business.Cachable;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
@@ -55,7 +55,7 @@ public abstract class RulesCache implements Cachable {
 	public abstract void addRule(Rule rule);
 
     /**
-     * Adds a list of {@link Rule} objects under the {@Link Treeable} with the given parentId
+     * Adds a list of {@link Rule} objects under the {@Link Ruleable} with the given parentId
      * and whose 'Fire On' matches the given fireOn
      *
      * @param rules
@@ -66,7 +66,7 @@ public abstract class RulesCache implements Cachable {
     public abstract void addRulesByParentFireOn(Set<Rule> rules, String parentId, Rule.FireOn fireOn);
 
     /**
-     * Returns a list of {@link Rule} objects under the {@Link Treeable} with the given parentId
+     * Returns a list of {@link Rule} objects under the {@Link Ruleable} with the given parentId
      * and whose 'Fire On' matches the given fireOn
      * @param parentId
      * @param fireOn
@@ -89,19 +89,19 @@ public abstract class RulesCache implements Cachable {
 	 * specific site (host).
 	 * 
 	 * @param parent
-	 *            - The {@link Treeable}.
+	 *            - The {@link Ruleable}.
 	 * @return The associated list of {@link Rule} objects.
 	 */
-    public abstract List<String> getRulesIdsByParent(Treeable parent);
+    public abstract List<String> getRulesIdsByParent(Ruleable parent);
 
     /**
      * Puts the list of {@link Rule} objects that have been created for a
      * specific site (parent).
-     * @param parent - The {@link Treeable}.
+     * @param parent - The {@link Ruleable}.
      * @param rules - The list of {@link Rule}.
      */
 
-    public abstract void putRulesByParent(Treeable parent, List<Rule> rules);
+    public abstract void putRulesByParent(Ruleable parent, List<Rule> rules);
 
 	/**
 	 * Removes the {@link Rule} object from the caching structure.

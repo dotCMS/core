@@ -7,7 +7,7 @@ import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 
@@ -83,7 +83,7 @@ public class RulesCacheImpl extends RulesCache {
     }
 
     @Override
-    public void putRulesByParent(Treeable parent, List<Rule> rules) {
+    public void putRulesByParent(Ruleable parent, List<Rule> rules) {
     	parent = checkNotNull(parent, "parent is required");
 
         String parentIdentifier = parent.getIdentifier();
@@ -104,7 +104,7 @@ public class RulesCacheImpl extends RulesCache {
     }
 
     @Override
-    public List<String> getRulesIdsByParent(Treeable parent) {
+    public List<String> getRulesIdsByParent(Ruleable parent) {
     	parent = checkNotNull(parent, "Parent is required");
         String parentIdentifier = parent.getIdentifier();
 
