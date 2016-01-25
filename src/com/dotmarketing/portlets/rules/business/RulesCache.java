@@ -1,14 +1,14 @@
 package com.dotmarketing.portlets.rules.business;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.Cachable;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.rules.model.*;
+import com.dotmarketing.business.Treeable;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
 
 /**
  * Provides a caching mechanism to improve response times regarding the access
@@ -28,7 +28,7 @@ public abstract class RulesCache implements Cachable {
 	protected static final String CONDITIONS_CACHE = "ConditionsCache";
 	protected static final String CONDITION_GROUPS_CACHE = "ConditionsGroupsCache";
 	protected static final String ACTIONS_CACHE = "ActionsCache";
-    protected static final String HOST_RULES_CACHE = "HostRulesCache";
+    protected static final String PARENT_RULES_CACHE = "ParentRulesCache";
     protected static final String RULE_CONDITION_GROUPS = "RuleConditionGroupsCache";
     protected static final String CONDITION_GROUP_CONDITIONS_CACHE = "ConditionsGroupConditionsCache";
     protected static final String RULE_ACTIONS_CACHE = "RuleActionsCache";
@@ -41,7 +41,7 @@ public abstract class RulesCache implements Cachable {
 	@Override
 	public String[] getGroups() {
 		return new String[] { PRIMARY_GROUP, CONDITIONS_CACHE, CONDITION_GROUPS_CACHE, ACTIONS_CACHE
-            , HOST_RULES_CACHE, RULE_CONDITION_GROUPS, CONDITION_GROUP_CONDITIONS_CACHE, RULE_ACTIONS_CACHE};
+            , PARENT_RULES_CACHE, RULE_CONDITION_GROUPS, CONDITION_GROUP_CONDITIONS_CACHE, RULE_ACTIONS_CACHE};
 	}
 
 	/**
@@ -55,24 +55,24 @@ public abstract class RulesCache implements Cachable {
 	public abstract void addRule(Rule rule);
 
     /**
-     * Adds a list of {@link Rule} objects under the {@Link Host} with the given hostId
+     * Adds a list of {@link Rule} objects under the {@Link Treeable} with the given parentId
      * and whose 'Fire On' matches the given fireOn
      *
      * @param rules
-     * @param hostId
+     * @param parentId
      * @param fireOn
      * @return
      */
-    public abstract void addRulesByHostFireOn(Set<Rule> rules, String hostId, Rule.FireOn fireOn);
+    public abstract void addRulesByParentFireOn(Set<Rule> rules, String parentId, Rule.FireOn fireOn);
 
     /**
-     * Returns a list of {@link Rule} objects under the {@Link Host} with the given hostId
+     * Returns a list of {@link Rule} objects under the {@Link Treeable} with the given parentId
      * and whose 'Fire On' matches the given fireOn
-     * @param hostId
+     * @param parentId
      * @param fireOn
      * @return
      */
-    public abstract Set<Rule> getRulesByHostFireOn(String hostId, Rule.FireOn fireOn);
+    public abstract Set<Rule> getRulesByParentFireOn(String parentId, Rule.FireOn fireOn);
 
 
     /**
@@ -88,20 +88,20 @@ public abstract class RulesCache implements Cachable {
 	 * Returns the list of {@link Rule} objects that have been created for a
 	 * specific site (host).
 	 * 
-	 * @param host
-	 *            - The {@link Host}.
+	 * @param parent
+	 *            - The {@link Treeable}.
 	 * @return The associated list of {@link Rule} objects.
 	 */
-    public abstract List<String> getRulesIdsByHost(Host host);
+    public abstract List<String> getRulesIdsByParent(Treeable parent);
 
     /**
      * Puts the list of {@link Rule} objects that have been created for a
-     * specific site (host).
-     * @param host - The {@link Host}.
+     * specific site (parent).
+     * @param parent - The {@link Treeable}.
      * @param rules - The list of {@link Rule}.
      */
 
-    public abstract void putRulesByHost(Host host, List<Rule> rules);
+    public abstract void putRulesByParent(Treeable parent, List<Rule> rules);
 
 	/**
 	 * Removes the {@link Rule} object from the caching structure.

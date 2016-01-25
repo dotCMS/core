@@ -216,7 +216,7 @@ public class RuleResource {
 
     private List<RestRule> getRulesInternal(User user, Host host) {
         try {
-            List<Rule> rules = rulesAPI.getAllRulesByHost(host, user, false);
+            List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
             return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
@@ -233,7 +233,7 @@ public class RuleResource {
     private String createRuleInternal(String siteId, RestRule restRule, User user) {
         try {
             Rule rule = ruleTransform.restToApp(restRule, user);
-            rule.setHost(siteId);
+            rule.setParent(siteId);
             rulesAPI.saveRule(rule, user, false);
             return rule.getId();
         } catch (DotDataException e) {

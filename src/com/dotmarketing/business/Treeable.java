@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-public interface Treeable {
+public interface Treeable extends Permissionable{
 
 	public String getIdentifier();
 

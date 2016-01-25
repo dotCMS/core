@@ -4,11 +4,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.dotcms.repackage.com.google.common.base.Strings;
-import com.dotcms.rest.validation.constraints.FireOn;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.Treeable;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 
@@ -75,22 +74,22 @@ public class RulesCacheImpl extends RulesCache {
         this.cache.remove(rule.getId(), getPrimaryGroup());
 
         for(Rule.FireOn fireOn: Rule.FireOn.values()) {
-            cache.remove(rule.getHost() + ":" + fireOn, getPrimaryGroup());
+            cache.remove(rule.getParent() + ":" + fireOn, getPrimaryGroup());
         }
 
         // let's clean the
-        cache.remove(rule.getHost(), HOST_RULES_CACHE);
+        cache.remove(rule.getParent(), PARENT_RULES_CACHE);
 
     }
 
     @Override
-    public void putRulesByHost(Host host, List<Rule> rules) {
-        host = checkNotNull(host, "Host is required");
+    public void putRulesByParent(Treeable parent, List<Rule> rules) {
+    	parent = checkNotNull(parent, "parent is required");
 
-        String hostIdentifier = host.getIdentifier();
+        String parentIdentifier = parent.getIdentifier();
 
-        if (Strings.isNullOrEmpty(hostIdentifier)) {
-            throw new IllegalArgumentException("Host must have an identifier.");
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Parent must have an identifier.");
         }
 
         rules = checkNotNull(rules, "Rules List is required");
@@ -101,19 +100,19 @@ public class RulesCacheImpl extends RulesCache {
 
         List<String> rulesIds = rules.stream().map(Rule::getId).collect(Collectors.toList());
 
-        cache.put(hostIdentifier, rulesIds, HOST_RULES_CACHE);
+        cache.put(parentIdentifier, rulesIds, PARENT_RULES_CACHE);
     }
 
     @Override
-    public List<String> getRulesIdsByHost(Host host) {
-        host = checkNotNull(host, "Host is required");
-        String hostIdentifier = host.getIdentifier();
+    public List<String> getRulesIdsByParent(Treeable parent) {
+    	parent = checkNotNull(parent, "Parent is required");
+        String parentIdentifier = parent.getIdentifier();
 
-        if (Strings.isNullOrEmpty(hostIdentifier)) {
-            throw new IllegalArgumentException("Host must have an identifier.");
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Parent must have an identifier.");
         }
         try {
-            return (List<String>) cache.get(hostIdentifier, HOST_RULES_CACHE);
+            return (List<String>) cache.get(parentIdentifier, PARENT_RULES_CACHE);
         } catch (DotCacheException e) {
             Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
             return null;
@@ -122,29 +121,29 @@ public class RulesCacheImpl extends RulesCache {
 
 
     @Override
-    public void addRulesByHostFireOn(Set<Rule> rules, String hostIdentifier, Rule.FireOn fireOn) {
+    public void addRulesByParentFireOn(Set<Rule> rules, String parentIdentifier, Rule.FireOn fireOn) {
         rules = checkNotNull(rules, "Rules list is required.");
 
-        if (Strings.isNullOrEmpty(hostIdentifier)) {
-            throw new IllegalArgumentException("Invalid host identifier.");
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Invalid parent identifier.");
         }
 
         fireOn = checkNotNull(fireOn, "FireOn is required.");
 
-        cache.remove(hostIdentifier + ":" + fireOn, getPrimaryGroup());
-        cache.put(hostIdentifier + ":" + fireOn, rules, getPrimaryGroup());
+        cache.remove(parentIdentifier + ":" + fireOn, getPrimaryGroup());
+        cache.put(parentIdentifier + ":" + fireOn, rules, getPrimaryGroup());
     }
 
     @Override
-    public Set<Rule> getRulesByHostFireOn(String hostIdentifier, Rule.FireOn fireOn) {
-        if (Strings.isNullOrEmpty(hostIdentifier)) {
-            throw new IllegalArgumentException("Invalid host identifier.");
+    public Set<Rule> getRulesByParentFireOn(String parentIdentifier, Rule.FireOn fireOn) {
+        if (Strings.isNullOrEmpty(parentIdentifier)) {
+            throw new IllegalArgumentException("Invalid parent identifier.");
         }
 
         fireOn = checkNotNull(fireOn, "FireOn is required.");
 
         try {
-            return (Set<Rule>) cache.get(hostIdentifier + ":" + fireOn, PRIMARY_GROUP);
+            return (Set<Rule>) cache.get(parentIdentifier + ":" + fireOn, PRIMARY_GROUP);
         } catch (DotCacheException e) {
             Logger.debug(RulesCacheImpl.class, e.getMessage(), e);
         }

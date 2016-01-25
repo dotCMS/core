@@ -42,7 +42,7 @@ public class RuleDataGen {
 
         Rule rule = new Rule();
         rule.setName(name);
-        rule.setHost(defaultHost.getIdentifier());
+        rule.setParent(defaultHost.getIdentifier());
         rule.setEnabled(true);
         rule.setFireOn(fireOn);
         return rule;
