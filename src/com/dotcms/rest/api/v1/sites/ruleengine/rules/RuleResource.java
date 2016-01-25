@@ -22,7 +22,9 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
@@ -81,8 +83,8 @@ public class RuleResource {
     public Map<String, RestRule> list(@Context HttpServletRequest request, @PathParam("siteId") String siteId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
-        Host host = getHost(siteId, user);
-        List<RestRule> restRules = getRulesInternal(user, host);
+        Ruleable proxy =  getParent(siteId, user);
+        List<RestRule> restRules = getRulesInternal(user, proxy);
         Map<String, RestRule> hash = Maps.newHashMapWithExpectedSize(restRules.size());
         for (RestRule restRule : restRules) {
             hash.put(restRule.key, restRule);
@@ -104,7 +106,7 @@ public class RuleResource {
     public RestRule self(@Context HttpServletRequest request, @PathParam("siteId") String siteId, @PathParam("ruleId") String ruleId) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         User user = getUser(request);
-        getHost(siteId, user);
+        Ruleable proxy =  getParent(siteId, user);
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         return getRuleInternal(ruleId, user);
     }
@@ -124,8 +126,8 @@ public class RuleResource {
     public Response add(@Context HttpServletRequest request, @PathParam("siteId") String siteId, RestRule restRule) {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site id is required.");
         User user = getUser(request);
-        Host host = getHost(siteId, user);
-        String ruleId = createRuleInternal(host.getIdentifier(), restRule, user);
+        Ruleable proxy =  getParent(siteId, user);
+        String ruleId = createRuleInternal(proxy.getIdentifier(), restRule, user);
 
         try {
             @SuppressWarnings("unused")
@@ -151,7 +153,7 @@ public class RuleResource {
         siteId = checkNotEmpty(siteId, BadRequestException.class, "Site Id is required.");
         ruleId = checkNotEmpty(ruleId, BadRequestException.class, "Rule Id is required.");
         User user = getUser(request);
-        getHost(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
+        Ruleable proxy =  getParent(siteId, user); // forces check that host exists. This should be handled by rulesAPI?
 
         updateRuleInternal(user, new RestRule.Builder().from(restRule).key(ruleId).build());
 
@@ -170,7 +172,7 @@ public class RuleResource {
         User user = getUser(request);
 
         try {
-            getHost(siteId, user);
+            Ruleable proxy =  getParent(siteId, user);
             Rule rule = getRule(ruleId, user);
             HibernateUtil.startTransaction();
             rulesAPI.deleteRule(rule, user, false);
@@ -186,11 +188,19 @@ public class RuleResource {
         }
     }
 
-    private Host getHost(String siteId, User user) {
+    private Ruleable getParent(String identifier, User user) {
 
 
-    	Host proxy  = new Host();
-    	proxy.setIdentifier(siteId);
+	   	 class ParentProxy  extends PermissionableProxy implements Ruleable{
+	   		 
+	
+	   		
+	   	}
+   	
+    	
+	   	ParentProxy proxy = new ParentProxy();
+	   	proxy.setIdentifier(identifier);
+    	
     	return proxy;
     }
 
@@ -214,9 +224,9 @@ public class RuleResource {
         return webResource.init(true, request, true).getUser();
     }
 
-    private List<RestRule> getRulesInternal(User user, Host host) {
+    private List<RestRule> getRulesInternal(User user, Ruleable host) {
         try {
-            List<Rule> rules = rulesAPI.getAllRulesByHost(host, user, false);
+            List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
             return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
@@ -233,7 +243,7 @@ public class RuleResource {
     private String createRuleInternal(String siteId, RestRule restRule, User user) {
         try {
             Rule rule = ruleTransform.restToApp(restRule, user);
-            rule.setHost(siteId);
+            rule.setParent(siteId);
             rulesAPI.saveRule(rule, user, false);
             return rule.getId();
         } catch (DotDataException e) {

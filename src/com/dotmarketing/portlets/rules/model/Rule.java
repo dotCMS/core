@@ -46,7 +46,7 @@ public class Rule implements Permissionable, Serializable {
     private String name;
     private FireOn fireOn = FireOn.EVERY_PAGE;
     private boolean shortCircuit;
-    private String host;
+    private String parent;
     private String folder = "SYSTEM_FOLDER";
     private int priority;
     private boolean enabled;
@@ -56,7 +56,15 @@ public class Rule implements Permissionable, Serializable {
 
 
 
-    public String getId() {
+    public String getParent() {
+		return parent;
+	}
+
+	public void setParent(String parent) {
+		this.parent = parent;
+	}
+
+	public String getId() {
         return id;
     }
 
@@ -86,14 +94,6 @@ public class Rule implements Permissionable, Serializable {
 
     public void setShortCircuit(boolean shortCircuit) {
         this.shortCircuit = shortCircuit;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public void setHost(String host) {
-        this.host = host;
     }
 
     public String getFolder() {
@@ -277,7 +277,7 @@ public class Rule implements Permissionable, Serializable {
     @Override
     public String toString() {
         return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
-               + ", shortCircuit=" + shortCircuit + ", host=" + host
+               + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
     }

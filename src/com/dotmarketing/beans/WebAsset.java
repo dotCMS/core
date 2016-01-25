@@ -6,6 +6,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +20,7 @@ import com.liferay.portal.model.User;
  *
  * @author  maria
  */
-public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable{
+public abstract class WebAsset extends Inode implements Permissionable, Versionable,Treeable, Ruleable{
 	
 	private static final long serialVersionUID = 1L;
 

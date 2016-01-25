@@ -183,7 +183,7 @@ public class RulesAPIFTest extends TestBase {
 		// Create Rule
 		Rule rule = new Rule();
 		rule.setName(fireOn.name() + "Rule");
-		rule.setHost(defaultHost.getIdentifier());
+		rule.setParent(defaultHost.getIdentifier());
 		rule.setEnabled(true);
 		rule.setFireOn(fireOn);
 

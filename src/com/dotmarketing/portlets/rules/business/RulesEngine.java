@@ -44,7 +44,7 @@ public final class RulesEngine {
 
         try {
 
-            Set<Rule> rules = APILocator.getRulesAPI().getRulesByHostFireOn(host.getIdentifier(), systemUser, false, fireOn);
+            Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(host.getIdentifier(), systemUser, false, fireOn);
 
             for (Rule rule : rules) {
                 try {
