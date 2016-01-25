@@ -26,7 +26,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	private static final String SITE_VISITS_KEY = "site-visits";
 	
-	private static final ParameterDefinition<NumericType> siteVisitsValue = new ParameterDefinition<>(1,SITE_VISITS_KEY,new NumericInput<>(new NumericType()));
+	private static final ParameterDefinition<NumericType> siteVisitsValue =
+			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
 	
 	public UsersSiteVisitsConditionlet() {
         super("api.ruleengine.system.conditionlet.SiteVisits",
@@ -38,7 +39,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 	@Override
 	public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 		
-		String siteVisits = UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE);
+		String siteVisits = (UtilMethods.isSet(request.getCookies())) ? UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE) : "1";
 		String siteVisitsValue = instance.siteVisits;
 		
 		return instance.comparison.perform(siteVisits, siteVisitsValue);
@@ -59,7 +60,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
     		this.siteVisits = parameters.get(SITE_VISITS_KEY).getValue();
     		String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
     		try {
-                this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
+				//noinspection unchecked
+				this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {
                 throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",
                                                           comparisonValue,

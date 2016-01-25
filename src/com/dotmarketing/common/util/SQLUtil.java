@@ -2,21 +2,23 @@ package com.dotmarketing.common.util;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-import com.dotcms.repackage.org.apache.logging.log4j.util.Strings;
 import net.sourceforge.squirrel_sql.fw.preferences.BaseQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.preferences.IQueryTokenizerPreferenceBean;
 import net.sourceforge.squirrel_sql.fw.sql.QueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.mssql.prefs.MSSQLPreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.mssql.tokenizer.MSSQLQueryTokenizer;
+import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 import net.sourceforge.squirrel_sql.plugins.oracle.prefs.OraclePreferenceBean;
 import net.sourceforge.squirrel_sql.plugins.oracle.tokenizer.OracleQueryTokenizer;
-import net.sourceforge.squirrel_sql.plugins.mysql.tokenizer.MysqlQueryTokenizer;
 
-
-
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringUtil;
 
@@ -24,9 +26,23 @@ public class SQLUtil {
 
 
 	private static final String[] EVIL_SQL_WORDS = { "select", "insert", "delete", "update", "replace", "create", "distinct", "like", "and ", "or ", "limit",
-			"group", "order", "as ", "count","drop", "alter","truncate", "declair", "where", "exec", "--", "procedure", "pg_", "lock",
+			"group", "order", "as ", "count","drop", "alter","truncate", "declare", "where", "exec", "--", "procedure", "pg_", "lock",
 			"unlock","write", "engine", "null","not ","mode", "set ",";"};
+	
 
+	
+	private final static Set<String> ORDERBY_WHITELIST= ImmutableSet.of(
+			"title","filename", "moddate", "tagname","pageUrl", 
+			"category_name","category_velocity_var_name", 
+			"mod_date","structuretype,upper(name)","upper(name)",
+			"category_key", "page_url","name","velocity_var_name",
+			"description","category_","sort_order","hostName", "keywords"
+			
+			
+			
+			);
+	
+	
 	public static List<String> tokenize(String schema) {
 		List<String> ret=new ArrayList<String>();
 		if (schema!=null) {
@@ -160,38 +176,37 @@ public class SQLUtil {
 	 * @return
 	 */
 	public static String sanitizeSortBy(String parameter){
-		String[] validOrders = {"title", "modDate", "page_url","name","velocity_var_name","description","category_","sort_order","keywords"};
+
 
 
 		
 		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
-		
-		for(String str : EVIL_SQL_WORDS){
-			if(parameter.contains(str)){//check if the order by requested have any other command
-				return "";
-			}
+
+
+		String testParam=parameter.replaceAll(" asc", "").replaceAll(" desc", "").replaceAll("-", "").toLowerCase();
+		if(ORDERBY_WHITELIST.contains(testParam)){
+			return parameter;
 		}
-		
-		for(String str : validOrders){
-			if(parameter.contains(str)){//check if the order by requested is a valid one
-				return parameter;
-			}
-		}
-		
+
+		Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+		Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
+		SecurityLogger.logDebug(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter);
 		return "";
 	}
 
 	public static String sanitizeParameter(String parameter){
 
 
-		if(Strings.isBlank(parameter)){//check if is not null
+		if(!UtilMethods.isSet(parameter)){//check if is not null
 			return "";
 		}
 
 		for(String str : EVIL_SQL_WORDS){
-			if(parameter.contains(str)){//check if the order by requested have any other command
+			if(parameter.toLowerCase().contains(str)){//check if the order by requested have any other command
+				Exception e = new DotStateException("Invalid or pernicious sql parameter passed in : " + parameter);
+				Logger.error(SQLUtil.class, "Invalid or pernicious sql parameter passed in : " + parameter, e);
 				return "";
 			}
 		}

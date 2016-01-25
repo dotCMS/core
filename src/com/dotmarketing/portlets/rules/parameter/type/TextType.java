@@ -14,11 +14,11 @@ public class TextType extends DataType {
     private String defaultValue = "";
 
     public TextType() {
-        super("text");
+        this("text");
     }
 
     public TextType(String id) {
-        super(id);
+        super(id, "api.system.type.text");
     }
 
     public int getMinLength() {

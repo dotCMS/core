@@ -2,11 +2,8 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import com.dotcms.repackage.com.google.common.base.Objects;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
-import java.time.LocalDate;
-import java.time.chrono.ChronoLocalDateTime;
 import java.util.Collection;
 
 public class Comparison<T> {
