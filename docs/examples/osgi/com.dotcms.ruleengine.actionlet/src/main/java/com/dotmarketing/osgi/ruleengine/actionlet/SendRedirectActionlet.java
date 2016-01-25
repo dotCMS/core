@@ -1,67 +1,71 @@
 package com.dotmarketing.osgi.ruleengine.actionlet;
 
 import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.com.google.common.collect.ImmutableList;
-import com.dotmarketing.portlets.rules.actionlet.ActionParameterDefinition;
-import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
+import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class SendRedirectActionlet extends RuleActionlet {
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
 
-    private static final String I18N_BASE_KEY = "com.dotmarketing.osgi.ruleengine.actionlet.send_redirect";
+public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.Instance> {
+
     private static final String INPUT_URL_KEY = "URL";
 
-    private static final List<ActionParameterDefinition> PARAMS = ImmutableList.of(new ActionParameterDefinition(INPUT_URL_KEY));
 
-    /**
-     * Don't forget that Actionlets are effectively singletons! Any required state should be initialized before exiting the constructor,
-     * and assume long term caching with arbitrary refresh intervals.
-     */
     public SendRedirectActionlet() {
-        super(I18N_BASE_KEY, PARAMS);
+        super("com.dotmarketing.osgi.ruleengine.actionlet.send_redirect",
+              new ParameterDefinition<>(1, INPUT_URL_KEY, new TextInput<>(new TextType().minLength(1))));
     }
 
     @Override
-    public void validateActionInstance(RuleAction actionInstance) {
-        Map<String, ParameterModel> params = actionInstance.getParameterMap();
-        ParameterModel urlParam = Preconditions.checkNotNull(params.get(INPUT_URL_KEY),
-                                                             "SendRedirectActionlet requires a 'URL' parameter to be provided.");
-        try {
-            URI uri = URI.create(urlParam.getValue());
-        } catch (IllegalStateException | NullPointerException e) {
-            /* It isn't necessary to wrap and re-throw exceptions, but doing so can help provide more readable stack traces. */
-            throw new InvalidActionInstanceException(e, "SendRedirectActionlet: '%1$s' is not a valid URI", urlParam.getValue());
-        }
-        /* @todo ggranum: Blank shouldn't be allowed, but until we send out the validation info with the definitions there's no way to even know that on
-        * the client side.  */
-        /* A blank URI is a legitimate URI, but as far as redirects go it tends to generate infinite loops. */
-//        Preconditions.checkArgument(StringUtils.isNotBlank(urlParam.getValue()), "URL parameter cannot be blank for SendRedirectActionlet.");
-        /* While '.' might be valid, we probably shouldn't accept it as a redirect target either. */
-        Preconditions.checkArgument(!".".equals(urlParam.getValue()), "URL parameter cannot refer to self for SendRedirectActionlet.");
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+        return new Instance(parameters);
     }
 
     @Override
-    public void executeAction(HttpServletRequest request, HttpServletResponse response, Map<String, ParameterModel> params) {
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        boolean success = false;
         try {
-        	
-   
-            
             response.setStatus(HttpServletResponse.SC_MOVED_PERMANENTLY);
-            response.setHeader("Location", params.get(INPUT_URL_KEY).getValue());
-            
+            response.setHeader("Location", instance.redirectToUrl);
             response.flushBuffer();
-            
+            success = true;
         } catch (IOException e) {
             Logger.error(SendRedirectActionlet.class, "Error executing Redirect Actionlet.", e);
+        }
+        return success;
+    }
+
+    public class Instance implements RuleComponentInstance {
+
+        private final String redirectToUrl;
+
+        public Instance(Map<String, ParameterModel> parameters) {
+            checkState(parameters != null && parameters.size() == 1,
+                       "Send Redirect Condition Type requires parameter '%s'.", INPUT_URL_KEY);
+            assert parameters != null;
+            this.redirectToUrl = parameters.get(INPUT_URL_KEY).getValue();
+
+            try {
+                //noinspection unused
+                URI uri = URI.create(this.redirectToUrl);
+            } catch (IllegalStateException | NullPointerException e) {
+                /* It isn't necessary to wrap and re-throw exceptions, but doing so can help provide more readable stack traces. */
+                throw new InvalidActionInstanceException(e, "SendRedirectActionlet: '%s' is not a valid URI", redirectToUrl);
+            }
+            /* A blank URI is a legitimate URI, but as far as redirects go it tends to generate infinite loops. */
+            /* While '.' might be valid, we probably shouldn't accept it as a redirect target either. */
+            Preconditions.checkArgument(!".".equals(this.redirectToUrl), "URL parameter cannot refer to self for SendRedirectActionlet.");
         }
     }
 }

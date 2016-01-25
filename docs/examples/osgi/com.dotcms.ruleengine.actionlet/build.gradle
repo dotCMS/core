@@ -1,11 +1,12 @@
 apply plugin: 'osgi'
+apply plugin: 'eclipse'
 apply plugin: 'java'
 
 task wrapper(type: Wrapper) {
     gradleVersion = '2.6'
 }
 
-version = '0.1'
+version = '0.2'
 
 /* This plugin uses Java 1.8 */
 sourceCompatibility = '1.8'
@@ -23,7 +24,6 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'src/main/resources/libs', include: '*.jar')
     compile(group: 'com.dotcms', name: 'dotcms', version: '3.5') {
         transitive = true
     }
