@@ -58,7 +58,7 @@ public class Comparison<T> {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with one argument value.");
     }
 
-    public boolean perform(T argA, T argB) {
+    public boolean perform(T expect, T argB) {
         throw new NotImplementedException("Comparison '" + getId() + "' cannot be performed with two argument values.");
     }
 

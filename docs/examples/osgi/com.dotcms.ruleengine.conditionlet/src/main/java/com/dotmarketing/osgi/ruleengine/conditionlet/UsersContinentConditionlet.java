@@ -1,40 +1,30 @@
 package com.dotmarketing.osgi.ruleengine.conditionlet;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
-import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.portlets.rules.conditionlet.EntryOption;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletInputValue;
-import com.dotmarketing.portlets.rules.conditionlet.Comparison;
-import com.dotmarketing.portlets.rules.conditionlet.ConditionletInput;
-
-import com.dotmarketing.portlets.rules.model.ParameterModel;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
 import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
 import com.dotcms.util.GeoIp2CityDbUtil;
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.conditionlet.ComparisonParameterDefinition;
+import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
 import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-import static com.dotmarketing.portlets.rules.conditionlet.Comparison.*;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 
 /**
  * This conditionlet will allow CMS users to check the continent a user request
@@ -57,22 +47,35 @@ public class UsersContinentConditionlet extends Conditionlet<UsersContinentCondi
 
     private static final long serialVersionUID = 1L;
 
-    private static final String INPUT_ID = "country";
+    private static final String CONTINENT_CODE_KEY = "country";
 
     private static final String I18N_BASE = "com.dotmarketing.osgi.ruleengine.conditionlet";
-    private static final String CONDITIONLET_COUNTRY_AFRICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.africa";
-    private static final String CONDITIONLET_COUNTRY_ANTARCTICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.antarctica";
-    private static final String CONDITIONLET_COUNTRY_ASIA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.asia";
-    private static final String CONDITIONLET_COUNTRY_EUROPE = "com.dotmarketing.osgi.ruleengine.conditionlet.country.europe";
-    private static final String CONDITIONLET_COUNTRY_NORTH_AMERICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.northamerica";
-    private static final String CONDITIONLET_COUNTRY_OCEANIA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.oceania";
-    private static final String CONDITIONLET_COUNTRY_SOUTH_AMERICA = "com.dotmarketing.osgi.ruleengine.conditionlet.country.southamerica";
+    private static final String CONDITIONLET_COUNTRY_AFRICA = I18N_BASE + ".country.africa";
+    private static final String CONDITIONLET_COUNTRY_ANTARCTICA = I18N_BASE + ".country.antarctica";
+    private static final String CONDITIONLET_COUNTRY_ASIA = I18N_BASE + ".country.asia";
+    private static final String CONDITIONLET_COUNTRY_EUROPE = I18N_BASE + ".country.europe";
+    private static final String CONDITIONLET_COUNTRY_NORTH_AMERICA = I18N_BASE + ".country.northamerica";
+    private static final String CONDITIONLET_COUNTRY_OCEANIA = I18N_BASE + ".country.oceania";
+    private static final String CONDITIONLET_COUNTRY_SOUTH_AMERICA = I18N_BASE + ".country.southamerica";
 
-    private static final String ISO_CODE = "isoCode";
 
-    private Set<Comparison> comparisons = ImmutableSet.of(IS, IS_NOT);
-    private Map<String, ConditionletInput> inputValues = null;
     private final GeoIp2CityDbUtil geoIp2Util;
+
+    private static final ParameterDefinition<TextType> continentKey = new ParameterDefinition<>(
+        1, CONTINENT_CODE_KEY,
+        new DropdownInput()
+            .minSelections(1)
+            .option("AF", CONDITIONLET_COUNTRY_AFRICA)
+            .option("AN", CONDITIONLET_COUNTRY_ANTARCTICA)
+            .option("AS", CONDITIONLET_COUNTRY_ASIA)
+            .option("EU", CONDITIONLET_COUNTRY_EUROPE)
+            .option("NA", CONDITIONLET_COUNTRY_NORTH_AMERICA)
+            .option("OC", CONDITIONLET_COUNTRY_OCEANIA)
+            .option("SA", CONDITIONLET_COUNTRY_SOUTH_AMERICA),
+        "NA"
+    );
+
+
 
     public UsersContinentConditionlet() {
         this(GeoIp2CityDbUtil.getInstance());
@@ -80,112 +83,63 @@ public class UsersContinentConditionlet extends Conditionlet<UsersContinentCondi
 
     @VisibleForTesting
     protected UsersContinentConditionlet(GeoIp2CityDbUtil geoIp2Util) {
-        super(I18N_BASE, ImmutableSet.<Comparison>of(IS, Comparison.IS_NOT));
+        super("api.system.ruleengine.conditionlet.RequestHeader",
+              new ComparisonParameterDefinition(2, IS, IS_NOT),
+              continentKey);
         this.geoIp2Util = geoIp2Util;
-    }
-
-    protected ValidationResult validate(Comparison comparison,
-                                        ConditionletInputValue inputValue) {
-        ValidationResult validationResult = new ValidationResult();
-        String inputId = inputValue.getConditionletInputId();
-        if(UtilMethods.isSet(inputId)) {
-            String selectedValue = inputValue.getValue();
-            if(this.inputValues == null
-               || this.inputValues.get(inputId) == null) {
-                getInputs(comparison.getId());
-            }
-            ConditionletInput inputField = this.inputValues.get(inputId);
-            validationResult.setConditionletInputId(inputId);
-            Set<EntryOption> inputOptions = inputField.getData();
-            for (EntryOption option : inputOptions) {
-                if(option.getId().equals(selectedValue)) {
-                    validationResult.setValid(true);
-                    break;
-                }
-            }
-            if(!validationResult.isValid()) {
-                validationResult.setErrorMessage("Invalid value for input '"
-                                                 + inputId + "': '" + selectedValue + "'");
-            }
-        }
-        return validationResult;
-    }
-
-    @Override
-    public Collection<ConditionletInput> getInputs(String comparisonId) {
-        if(this.inputValues == null) {
-            ConditionletInput inputField = new ConditionletInput();
-            // Set field configuration and available options
-            inputField.setId(INPUT_ID);
-            inputField.setMultipleSelectionAllowed(true);
-            inputField.setDefaultValue("NA");
-            inputField.setMinNum(1);
-            Set<EntryOption> options = new LinkedHashSet<>();
-            options.add(new EntryOption("AF", CONDITIONLET_COUNTRY_AFRICA));
-            options.add(new EntryOption("AN", CONDITIONLET_COUNTRY_ANTARCTICA));
-            options.add(new EntryOption("AS", CONDITIONLET_COUNTRY_ASIA));
-            options.add(new EntryOption("EU", CONDITIONLET_COUNTRY_EUROPE));
-            options.add(new EntryOption("NA", CONDITIONLET_COUNTRY_NORTH_AMERICA));
-            options.add(new EntryOption("OC", CONDITIONLET_COUNTRY_OCEANIA));
-            options.add(new EntryOption("SA", CONDITIONLET_COUNTRY_SOUTH_AMERICA));
-            inputField.setData(options);
-            this.inputValues = new LinkedHashMap<>();
-            this.inputValues.put(inputField.getId(), inputField);
-        }
-        return this.inputValues.values();
     }
 
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
 
-        //        String country = null;
-        //        try {
-        //            InetAddress address = HttpRequestDataUtil.getIpAddress(request);
-        //            String ipAddress = address.getHostAddress();
-        //            country = geoIp2Util.getCountryIsoCode(ipAddress);
-        //        } catch (IOException | GeoIp2Exception e) {
-        //            Logger.error(this,
-        //                "An error occurred when retrieving the IP address from request: "
-        //                    + request.getRequestURL());
-        //        }
-        //        if (StringUtils.isEmpty(country)) {
-        //            return false;
-        //        }
-        //        String continent = continentCountryMap.get(country);
-        //        if (StringUtils.isEmpty(continent)) {
-        //            return false;
-        //        }
-        //        Set<ConditionletInputValue> inputValues = new LinkedHashSet<>();
-        //        for (ParameterModel value : values) {
-        //            if(value.getKey().equals(ISO_CODE))
-        //                inputValues.add(new ConditionletInputValue(INPUT_ID, value
-        //                    .getValue()));
-        //        }
-        //        ValidationResults validationResults = validate(comparison, inputValues);
-        //        if (validationResults.hasErrors()) {
-        //            return false;
-        //        }
-        //
-        //        if (comparison == Comparison.IS) {
-        //            for (ParameterModel value : values) {
-        //                if (value.getValue().equalsIgnoreCase(continent)) {
-        //                    return true;
-        //                }
-        //            }
-        //        } else if (comparison == IS_NOT) {
-        //            for (ParameterModel value : values) {
-        //                if (value.getValue().equalsIgnoreCase(continent)) {
-        //                    return false;
-        //                }
-        //            }
-        //            return true;
-        //        }
-        return false;
+        String visitorsCountryCode = getVisitorsCountryCode(request);
+        String visitorContinent = continentCountryMap.get(visitorsCountryCode);
+        if(visitorContinent == null) {
+            throw new ContinentCouldNotBeDeterminedException(visitorsCountryCode);
+        }
+        //noinspection unchecked
+        return instance.comparison.perform(visitorContinent, instance.continentCode);
+    }
+
+    private String getVisitorsCountryCode(HttpServletRequest request) {
+        String country = null;
+        try {
+            InetAddress address = HttpRequestDataUtil.getIpAddress(request);
+            String ipAddress = address.getHostAddress();
+            country = geoIp2Util.getCountryIsoCode(ipAddress);
+        } catch (IOException | GeoIp2Exception e) {
+            Logger.error(this,
+                         "An error occurred when retrieving the IP address from request: "
+                         + request.getRequestURL());
+        }
+        return country;
     }
 
     @Override
-    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
-        return new Instance(comparison, values);
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+        return new Instance(this, parameters);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+
+        public final String continentCode;
+        public final Comparison comparison;
+
+        public Instance(Conditionlet definition, Map<String, ParameterModel> parameters) {
+            checkState(parameters != null && parameters.size() == 2,
+                       "Visitor's Continent Condition requires parameters %s and %s.", COMPARISON_KEY, CONTINENT_CODE_KEY);
+            assert parameters != null;
+            this.continentCode = parameters.get(CONTINENT_CODE_KEY).getValue();
+            String comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+
+            try {
+                this.comparison = ((ComparisonParameterDefinition)definition.getParameterDefinitions().get(COMPARISON_KEY)).comparisonFrom(comparisonValue);
+            } catch (ComparisonNotPresentException e) {
+                throw new ComparisonNotSupportedException("The comparison '%s' is not supported on Condition type '%s'",
+                                                          comparisonValue,
+                                                          definition.getId());
+            }
+        }
     }
 
     static final Map<String, String> continentCountryMap = ImmutableMap.<String, String>builder()
@@ -439,11 +393,4 @@ public class UsersContinentConditionlet extends Conditionlet<UsersContinentCondi
         .put("ZM", "AF")
         .put("ZW", "AF")
         .build();
-
-    public static class Instance implements RuleComponentInstance {
-
-        private Instance(Comparison comparison, List<ParameterModel> values) {
-
-        }
-    }
 }

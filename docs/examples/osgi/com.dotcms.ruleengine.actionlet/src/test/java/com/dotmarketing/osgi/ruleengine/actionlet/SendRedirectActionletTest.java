@@ -23,7 +23,7 @@ public class SendRedirectActionletTest {
     public void testGeneralConfiguration() throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
         assertThat(actionlet.getI18nKey(), is("com.dotmarketing.osgi.ruleengine.actionlet.send_redirect"));
-        assertThat("There is only one parameter.", actionlet.getParameters().size(), is(1));
+        assertThat("There is only one parameter.", actionlet.getParameterDefinitions().size(), is(1));
         assertThat(actionlet.getId(), is("SendRedirectActionlet"));
     }
 
@@ -37,7 +37,7 @@ public class SendRedirectActionletTest {
         actionInstance.setParameters(list);
         Exception exception = null;
         try {
-            actionlet.validateActionInstance(actionInstance);
+            actionlet.instanceFrom(actionInstance.getParameters());
         } catch (Exception e) {
             exception = e;
         }
@@ -51,13 +51,14 @@ public class SendRedirectActionletTest {
     public void testExecuteAction() throws Exception {
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        String url = "For performance reasons validation is not performed on execute. Any value is fine for testing.";
+        String url = "//foo";
         ParameterModel param = new ParameterModel(URL_KEY, url);
         Map<String, ParameterModel> params = new HashMap<>();
         params.put(URL_KEY, param);
 
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
-        actionlet.executeAction(null, response, params);
+        SendRedirectActionlet.Instance instance = actionlet.instanceFrom(params);
+        actionlet.evaluate(null, response, instance);
 
         Mockito.verify(response).setStatus(301);
         Mockito.verify(response).setHeader("Location",url);
