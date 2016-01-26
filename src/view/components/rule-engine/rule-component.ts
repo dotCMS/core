@@ -1,4 +1,4 @@
-import { Component, Directive, View, Inject, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
+import { Component, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
 import {
     CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
     ControlGroup
@@ -11,19 +11,15 @@ import {RuleActionComponent} from './rule-action-component';
 import {ConditionGroupComponent} from './rule-condition-group-component';
 
 import {InputToggle} from '../../../view/components/input/toggle/InputToggle'
-import {ApiRoot} from '../../../api/persistence/ApiRoot';
 
 import {RuleService, RuleModel} from "../../../api/rule-engine/Rule";
 import {ActionService, ActionModel} from "../../../api/rule-engine/Action";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
-import {EntityMeta} from "../../../api/persistence/EntityBase";
 import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText} from "../semantic/elements/input-text/input-text";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
-import {ObservableHack} from "../../../api/util/ObservableHack";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'

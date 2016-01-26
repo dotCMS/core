@@ -22,6 +22,9 @@ export class RulePage extends Page {
     this.ruleEls = element.all(by.tagName('rule'))
   }
 
+  waitForSave():webdriver.promise.Promise<void> {
+    return browser.sleep(250)
+  }
 
   addRule():webdriver.promise.Promise<TestRuleComponent> {
     return this.addRuleButton.click().then(()=> {
@@ -119,14 +122,42 @@ export class TestRuleComponent {
   }
 
   newRequestHeaderCondition():TestRequestHeaderCondition {
-    let conditionDef:TestRequestHeaderCondition = <TestRequestHeaderCondition>this.firstCondition()
+    let conditionDef:TestRequestHeaderCondition = new TestRequestHeaderCondition(this.firstCondition().el)
     conditionDef.typeSelect.setSearch("Request Hea")
     this.fireOn.el.click()
     conditionDef.setComparison(TestConditionComponent.COMPARE_IS, this.fireOn.el)
     conditionDef.setHeaderValue("AbcDef")
     this.fireOn.el.click()
     return conditionDef
+  }
 
+
+  newSetResponseHeaderAction(key?:string, value?:string):TestResponseHeaderAction {
+    let actionDef:TestResponseHeaderAction= new TestResponseHeaderAction(this.firstAction().el)
+    actionDef.typeSelect.setSearch("Set Response Header")
+    this.fireOn.el.click()
+    if(key){
+       actionDef.setHeaderKey(key)
+    }
+    if(value){
+      actionDef.setHeaderValue(value)
+    }
+    this.fireOn.el.click()
+    return actionDef
+  }
+
+  newSetRequestAttributeAction(key?:string, value?:string):TestSetRequestAttributeAction {
+    let actionDef:TestSetRequestAttributeAction= new TestSetRequestAttributeAction(this.firstAction().el)
+    actionDef.typeSelect.setSearch("Set Request Attribute")
+    this.fireOn.el.click()
+    if(key){
+      actionDef.setAttributeKey(key)
+    }
+    if(value){
+      actionDef.setAttributeValue(value)
+    }
+    this.fireOn.el.click()
+    return actionDef
   }
 
   remove():Promise<any> {
@@ -191,6 +222,10 @@ export class TestRuleInputRow {
     })
   }
 
+  setType(typeName:string):void {
+    this.typeSelect.setSearch(typeName + '\t')
+   }
+
   static inputFromElName(el:ElementFinder, name:string) {
     let component:TestInputComponent
     if (name == 'cw-input-text') {
@@ -246,8 +281,8 @@ export class TestRequestHeaderCondition extends TestConditionComponent {
     this.headerValueTF = new TestInputText(this.parameterEls.last())
   }
 
-  setHeaderValue(val:string){
-    this.headerValueTF.setValue(val)
+  setHeaderValue(val:string):webdriver.promise.Promise<void>{
+    return this.headerValueTF.setValue(val)
   }
 }
 
@@ -262,12 +297,59 @@ export class TestActionComponent extends TestRuleInputRow {
 
 export class TestResponseHeaderAction extends TestActionComponent {
 
-  headerKeyDD:TestInputDropdown
+  static TYPE_NAME:string = "Set Response Header"
+  headerKeyTF:TestInputText
   headerValueTF:TestInputText
 
   constructor(el:protractor.ElementFinder) {
     super(el);
-    this.headerKeyDD = new TestInputDropdown(this.parameterEls.first())
+    this.headerKeyTF = new TestInputText(this.parameterEls.first())
     this.headerValueTF = new TestInputText(this.parameterEls.last())
   }
+
+  getKey():webdriver.promise.Promise<string>{
+    return this.headerKeyTF.getValue()
+  }
+
+  getValue():webdriver.promise.Promise<string>{
+    return this.headerValueTF.getValue()
+  }
+  setHeaderKey(val:string):webdriver.promise.Promise<void>{
+    return this.headerKeyTF.setValue(val)
+  }
+
+  setHeaderValue(val:string):webdriver.promise.Promise<void>{
+    return this.headerValueTF.setValue(val)
+  }
+
+
+}
+
+export class TestSetRequestAttributeAction extends TestActionComponent {
+
+  static TYPE_NAME:string = "Set Request Attribute"
+  attributeKeyTF:TestInputText
+  attributeValueTF:TestInputText
+
+  constructor(el:protractor.ElementFinder) {
+    super(el);
+    this.attributeKeyTF = new TestInputText(this.parameterEls.first())
+    this.attributeValueTF = new TestInputText(this.parameterEls.last())
+  }
+
+  getKey():webdriver.promise.Promise<string>{
+    return this.attributeKeyTF.getValue()
+  }
+
+  getValue():webdriver.promise.Promise<string>{
+    return this.attributeValueTF.getValue()
+  }
+  setAttributeKey(val:string):webdriver.promise.Promise<void>{
+    return this.attributeKeyTF.setValue(val)
+  }
+
+  setAttributeValue(val:string):webdriver.promise.Promise<void>{
+    return this.attributeValueTF.setValue(val)
+  }
+
 }

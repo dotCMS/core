@@ -3,7 +3,7 @@ import ElementFinder = protractor.ElementFinder;
 import {Page} from "../../../e2e/CwProtractor";
 import {
     RulePage, TestRuleComponent, TestRequestHeaderCondition,
-    TestConditionComponent
+    TestConditionComponent, TestResponseHeaderAction, TestSetRequestAttributeAction
 } from "../../../e2e/view/rule-engine/rule-engine-page";
 
 class RobotsTxtPage extends Page {
@@ -36,7 +36,7 @@ export function initSpec(TestUtil) {
       rulePage.navigateTo()
     })
 
-    afterEach(()=>{
+    afterEach(()=> {
       rulePage.removeAllRules()
     })
 
@@ -78,7 +78,7 @@ export function initSpec(TestUtil) {
       var name = "e2e-" + new Date().getTime();
       rule.name.setValue(name)
       rule.fireOn.el.click()
-      browser.sleep(250) // async save
+      rulePage.waitForSave() // async save
       rulePage.navigateTo() // reload the page
       rulePage.ruleCount().then(count2 => {
         expect(count1).toEqual(count2 - 1, "The rule should still exist.")
@@ -107,7 +107,7 @@ export function initSpec(TestUtil) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         rule.fireOn.setSearch('every r')
         rule.name.el.click()
-        browser.sleep(250) // async save
+        rulePage.waitForSave() // async save
         rulePage.navigateTo() // reload the page
         expect(rule.fireOn.getValueText()).toEqual('Every Request', "FireOn value should have been saved and restored.")
       })
@@ -142,7 +142,7 @@ export function initSpec(TestUtil) {
     it('should save a valid condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let conditionDef = rule.newRequestHeaderCondition()
-        browser.sleep(250) // async save
+        rulePage.waitForSave() // async save
         rulePage.navigateTo() // reload the page
         rule.expand().then(()=> {
           expect(rule.firstGroup().first().typeSelect.getValueText()).toEqual("Request Header Value", "Should have persisted.")
@@ -153,14 +153,14 @@ export function initSpec(TestUtil) {
     it('should allow a comparison change on a valid Request Header Condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let conditionDef = rule.newRequestHeaderCondition()
-        browser.sleep(250) // async save
+        rulePage.waitForSave() // async save
         rulePage.navigateTo() // reload the page
         rule.expand().then(()=> {
           conditionDef = <TestRequestHeaderCondition>rule.firstCondition()
           conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.name.el)
-          browser.sleep(250)
+          rulePage.waitForSave()
           rulePage.navigateTo()
-          rule.expand().then(()=>{
+          rule.expand().then(()=> {
             var cond3 = <TestRequestHeaderCondition>rule.firstCondition()
             expect(cond3.compareDD.getValueText()).toEqual("Is not", "Should have persisted.")
           })
@@ -201,7 +201,7 @@ export function initSpec(TestUtil) {
             rule.fireOn.setSearch("Every Req")
             rule.toggleEnable.setValue(true)
             rule.fireOn.el.click()
-            browser.sleep(250).then(()=> {
+            rulePage.waitForSave().then(()=> {
               let robots = new RobotsTxtPage(TestUtil)
               let respName:any = robots.getResponseHeader(name)
               browser.driver.wait(respName, 1000, 'bummer')
@@ -213,4 +213,66 @@ export function initSpec(TestUtil) {
     })
 
   })
+
+
+  describe('Rule Engine Actions', function () {
+    var rulePage:RulePage
+
+    beforeEach(()=> {
+      rulePage = new RulePage()
+      rulePage.navigateTo()
+    })
+
+    afterEach(()=> {
+      rulePage.removeAllRules()
+    })
+
+    it('should allow a value change on a valid Set Request Header Action.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let actionDef = rule.newSetResponseHeaderAction("someHeaderKey", "someHeaderValue")
+        rulePage.waitForSave()
+        rulePage.navigateTo() // reload the page
+        rule.expand().then(()=> {
+          actionDef = new TestResponseHeaderAction(rule.firstAction().el)
+          expect(actionDef.getKey()).toEqual("someHeaderKey", "Key should have persisted.")
+          expect(actionDef.getValue()).toEqual("someHeaderValue", "Value should have persisted.")
+          actionDef.setHeaderKey("someHeaderKey2")
+          actionDef.setHeaderValue("someHeaderValue2")
+          rulePage.waitForSave()
+          rulePage.navigateTo()
+          rule.expand().then(()=> {
+            let actionDef = new TestResponseHeaderAction(rule.firstAction().el)
+            expect(actionDef.getKey()).toEqual("someHeaderKey2", "Key change should have persisted.")
+            expect(actionDef.getValue()).toEqual("someHeaderValue2", "Value change should have persisted.")
+          })
+        })
+      })
+    })
+
+
+    it('should allow action type to be changed to a Set Attribute Header from Set Response Header.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let headerActionDef = rule.newSetResponseHeaderAction("someHeaderKey", "someHeaderValue")
+        rulePage.waitForSave()
+        rulePage.navigateTo() // reload the page
+        rule.expand().then(()=> {
+          let headerActionDef = new TestResponseHeaderAction(rule.firstAction().el)
+          headerActionDef.setType(TestSetRequestAttributeAction.TYPE_NAME)
+          let attributeActionDef = new TestSetRequestAttributeAction(headerActionDef.el)
+          attributeActionDef.setAttributeKey("someAttributeKey")
+          attributeActionDef.setAttributeValue("someAttributeValue")
+          rulePage.waitForSave()
+          rulePage.navigateTo()
+          rule.expand().then(()=> {
+            let attributeActionDef = new TestSetRequestAttributeAction(rule.firstAction().el)
+            expect(attributeActionDef.getKey()).toEqual("someAttributeKey", "Key change should have persisted.")
+            expect(attributeActionDef.getValue()).toEqual("someAttributeValue", "Value change should have persisted.")
+          })
+        })
+      })
+    })
+
+
+  })
+
 }
