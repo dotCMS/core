@@ -84,15 +84,6 @@
 		</init-param>
 	</filter>
 	
-	<filter>
-		<filter-name>Secure AxisServlet Filter</filter-name>
-		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
-		<init-param>
-			<param-name>portal_property_prefix</param-name>
-			<param-value>axis.servlet.</param-value>
-		</init-param>
-	</filter>
-	
     <filter>
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
@@ -165,11 +156,7 @@
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
-	
-	<filter-mapping>
-		<filter-name>Secure AxisServlet Filter</filter-name>
-		<url-pattern>/webxservices/*</url-pattern>
-	</filter-mapping>
+
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
 	
 	
