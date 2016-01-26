@@ -1,172 +1,118 @@
-//package com.dotmarketing.portlets.rules.conditionlet;
-//
-//import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-//import com.dotcms.repackage.com.google.common.collect.Sets;
-//import com.dotmarketing.portlets.rules.RuleComponentInstance;
-//import com.dotmarketing.portlets.rules.ValidationResult;
-//import com.dotmarketing.portlets.rules.model.ParameterModel;
-//import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-//import java.util.Collection;
-//import java.util.LinkedHashMap;
-//import java.util.LinkedHashSet;
-//import java.util.List;
-//import java.util.Map;
-//import java.util.regex.Pattern;
-//import java.util.regex.PatternSyntaxException;
-//
-//import javax.servlet.http.HttpServletRequest;
-//import javax.servlet.http.HttpServletResponse;
-//
-//import com.dotmarketing.util.Logger;
-//import com.dotmarketing.util.UtilMethods;
-//
-//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
-//
-///**
-// * This conditionlet will allow CMS users to check the current URL in a request.
-// * The comparison of URLs is case-insensitive, except for the regular expression
-// * comparison. This {@link Conditionlet} provides a drop-down menu with the
-// * available comparison mechanisms, and a text field to enter the value to
-// * compare.
-// *
-// * @author Jose Castro
-// * @version 1.0
-// * @since 04-27-2015
-// *
-// */
-//public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlConditionlet.Instance> {
-//
-//	private static final long serialVersionUID = 1L;
-//
-//	private static final String INPUT_ID = "current-url";
-//	private static final String CONDITIONLET_NAME = "User's Current URL";
-//
-//	private static final String COMPARISON_IS = "is";
-//	private static final String COMPARISON_ISNOT = "isNot";
-//	private static final String COMPARISON_STARTSWITH = "startsWith";
-//	private static final String COMPARISON_ENDSWITH = "endsWith";
-//	private static final String COMPARISON_CONTAINS = "contains";
-//	private static final String COMPARISON_REGEX = "regex";
-//
-//	private LinkedHashSet<Comparison> comparisons = null;
-//	private Map<String, ConditionletInput> inputValues = null;
-//
-//	public UsersCurrentUrlConditionlet() {
-//		super(CONDITIONLET_NAME, ImmutableSet.of(IS,
-//                                                 Comparison.IS_NOT,
-//                                                 Comparison.STARTS_WITH,
-//                                                 Comparison.ENDS_WITH,
-//                                                 Comparison.CONTAINS,
-//                                                 Comparison.REGEX), Sets.newHashSet());
-//	}
-//
-//	protected ValidationResult validate(Comparison comparison,
-//			ConditionletInputValue inputValue) {
-//		ValidationResult validationResult = new ValidationResult();
-//		String inputId = inputValue.getConditionletInputId();
-//		if (UtilMethods.isSet(inputId)) {
-//			String selectedValue = inputValue.getValue();
-//			String comparisonId = comparison.getId();
-//			if (comparisonId.equals(COMPARISON_IS)
-//					|| comparisonId.equals(COMPARISON_ISNOT)
-//					|| comparisonId.equals(COMPARISON_STARTSWITH)
-//					|| comparisonId.equals(COMPARISON_ENDSWITH)
-//					|| comparisonId.equals(COMPARISON_CONTAINS)) {
-//				if (UtilMethods.isSet(selectedValue)) {
-//					validationResult.setValid(true);
-//				}
-//			} else if (comparisonId.equals(COMPARISON_REGEX)) {
-//				try {
-//					Pattern.compile(selectedValue);
-//					validationResult.setValid(true);
-//				} catch (PatternSyntaxException e) {
-//					Logger.debug(this, "Invalid RegEx " + selectedValue);
-//				}
-//			}
-//			if (!validationResult.isValid()) {
-//				validationResult.setErrorMessage("Invalid value for input '"
-//						+ inputId + "': '" + selectedValue + "'");
-//			}
-//		}
-//		return validationResult;
-//	}
-//
-//	@Override
-//	public Collection<ConditionletInput> getInputs(String comparisonId) {
-//		if (this.inputValues == null) {
-//			ConditionletInput inputField = new ConditionletInput();
-//			inputField.setId(INPUT_ID);
-//			inputField.setUserInputAllowed(true);
-//			inputField.setMultipleSelectionAllowed(false);
-//			inputField.setMinNum(1);
-//			this.inputValues = new LinkedHashMap<String, ConditionletInput>();
-//			this.inputValues.put(inputField.getId(), inputField);
-//		}
-//		return this.inputValues.values();
-//	}
-//
-//	@Override
-//    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-////        String requestUri = null;
-////		try {
-////			requestUri = HttpRequestDataUtil.getUri(request);
-////		} catch (UnsupportedEncodingException e) {
-////			Logger.error(this, "Could not retrieved a valid URI from request: "
-////					+ request.getRequestURL());
-////		}
-////		if (!UtilMethods.isSet(requestUri)) {
-////			return false;
-////		}
-////		Set<ConditionletInputValue> inputValues = new LinkedHashSet<ConditionletInputValue>();
-////		String inputValue = values.get(0).getValue();
-////		inputValues.add(new ConditionletInputValue(INPUT_ID, inputValue));
-////		ValidationResults validationResults = validate(comparison, inputValues);
-////		if (validationResults.hasErrors()) {
-////			return false;
-////		}
-////		if (!comparison.getId().equals(COMPARISON_REGEX)) {
-////			requestUri = requestUri.toLowerCase();
-////			inputValue = inputValue.toLowerCase();
-////		}
-////		if (comparison.getId().equals(COMPARISON_IS)) {
-////			if (requestUri.equalsIgnoreCase(inputValue)) {
-////				return true;
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_ISNOT)) {
-////			if (!requestUri.equalsIgnoreCase(inputValue)) {
-////				return true;
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_STARTSWITH)) {
-////			if (requestUri.startsWith(inputValue)) {
-////				return true;
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_ENDSWITH)) {
-////			if (requestUri.endsWith(inputValue)) {
-////				return true;
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_CONTAINS)) {
-////			if (requestUri.contains(inputValue)) {
-////				return true;
-////			}
-////		} else if (comparison.getId().equals(COMPARISON_REGEX)) {
-////			Pattern pattern = Pattern.compile(inputValue);
-////			Matcher matcher = pattern.matcher(requestUri);
-////			if (matcher.find()) {
-////				return true;
-////			}
-////		}
-//		return false;
-//	}
-//
-//    @Override
-//    public Instance instanceFrom(Comparison comparison, List<ParameterModel> values) {
-//        return new Instance(comparison, values);
-//    }
-//
-//    public static class Instance implements RuleComponentInstance {
-//
-//        private Instance(Comparison comparison, List<ParameterModel> values) {
-//        }
-//    }
-//
-//}
+package com.dotmarketing.portlets.rules.conditionlet;
+
+import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.dotcms.repackage.com.google.common.collect.Sets;
+import com.dotcms.rest.exception.InvalidConditionParameterException;
+import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.portlets.rules.RuleComponentInstance;
+import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Instance;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
+import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
+import com.dotmarketing.portlets.rules.parameter.display.TextInput;
+import com.dotmarketing.portlets.rules.parameter.type.TextType;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
+//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
+
+/**
+ * This conditionlet will allow CMS users to check the current URL in a request.
+ * The comparison of URLs is case-insensitive, except for the regular expression
+ * comparison. This {@link Conditionlet} provides a drop-down menu with the
+ * available comparison mechanisms, and a text field to enter the value to
+ * compare.
+ *
+ */
+public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlConditionlet.Instance> {
+
+	private static final long serialVersionUID = 1L;
+
+	public static final String PATTERN_URL_INPUT_KEY = "current-url";
+
+	public UsersCurrentUrlConditionlet() {
+		super("api.ruleengine.system.conditionlet.UsersCurrentUrl", new ComparisonParameterDefinition(2, IS, IS_NOT,
+                //STARTS_WITH, ENDS_WITH, CONTAINS, REGEX), patternUrl);
+				STARTS_WITH, ENDS_WITH, CONTAINS), patternUrl);
+	}
+
+	private static final ParameterDefinition<TextType> patternUrl = new ParameterDefinition<>(3, PATTERN_URL_INPUT_KEY,
+            new LocalUrlTextInput(new TextType()));
+
+	@Override
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+        String requestUri = null;
+		try {
+			requestUri = HttpRequestDataUtil.getUri(request);
+		} catch (UnsupportedEncodingException e) {
+			Logger.error(this, "Could not retrieved a valid URI from request: "
+					+ request.getRequestURL());
+		}
+		if (!UtilMethods.isSet(requestUri)) {
+			return false;
+		}
+		return instance.comparison.perform(requestUri, instance.patternUrl);
+	}
+
+    @Override
+    public Instance instanceFrom(Map<String, ParameterModel> parameters) {
+    	return new Instance(this, parameters);
+    }
+
+    public static class Instance implements RuleComponentInstance {
+    	private final String patternUrl;
+        private final Comparison<String> comparison;
+        private final String comparisonValue;
+
+        private Instance(UsersCurrentUrlConditionlet definition, Map<String, ParameterModel> parameters) {
+            this.patternUrl = parameters.get(PATTERN_URL_INPUT_KEY).getValue();
+            this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
+
+            try {
+                // noinspection unchecked
+                this.comparison = ((ComparisonParameterDefinition) definition.getParameterDefinitions().get(
+                        COMPARISON_KEY)).comparisonFrom(comparisonValue);
+            } catch (ComparisonNotPresentException e) {
+                throw new ComparisonNotSupportedException(
+                        "The comparison '%s' is not supported on Condition type '%s'", comparisonValue,
+                        definition.getId());
+            }
+        }
+    }
+
+    private static class LocalUrlTextInput extends TextInput<TextType>{
+
+		public LocalUrlTextInput(TextType dataType) {
+			super(dataType);
+		}
+
+		/**
+	     * Validates the parameter context for the conditionlet. Each input will implement this validation if required.
+	     * @param value parameter value
+	     * @throws InvalidConditionParameterException
+	     */
+	    public void checkValid(String value)  throws InvalidConditionParameterException{
+
+	    	String url = value.indexOf("?")>0?value.substring(0,value.indexOf("?")):value;
+	    	if(!url.startsWith("/"))
+	    		throw new InvalidConditionParameterException("URL parameter '%s' is malformed, should start with '/'",value);
+	    	if(url.contains(" "))
+	    		throw new InvalidConditionParameterException("URL parameter '%s' should not have white spaces",value);
+	    	return;
+	    }
+    }
+}
