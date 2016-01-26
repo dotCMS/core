@@ -672,7 +672,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 ContentletSearch conwrapper= new ContentletSearch();
                 conwrapper.setIdentifier(sh.field("identifier").getValue().toString());
                 conwrapper.setInode(sh.field("inode").getValue().toString());
-
+                conwrapper.setScore(sh.getScore());
+                
                 list.add(conwrapper);
             }
             catch(Exception e){

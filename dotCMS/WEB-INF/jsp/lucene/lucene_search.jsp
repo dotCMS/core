@@ -176,7 +176,11 @@ String referer = new URLEncoder().encode("/c/portal/layout?p_l_id=" + layout.get
 			<div><strong><%= LanguageUtil.get(pageContext, "The-total-results-are") %> : </strong><%=iresults == null ? "0" : iresults.size()%></div> 
 	
 			<% for (ContentletSearch r : iresults){%>
-				<div id="result" style="padding-left:10px;"><strong><%= LanguageUtil.get(pageContext, "INODE") %> : </strong><%= r.getInode() %> <strong><%= LanguageUtil.get(pageContext, "IDENTIFIER") %> : </strong><%= r.getIdentifier() %></div>
+				<div id="result" style="padding-left:10px;"><strong><%= LanguageUtil.get(pageContext, "INODE") %> : </strong><%= r.getInode() %> <strong><%= LanguageUtil.get(pageContext, "IDENTIFIER") %> : </strong><%= r.getIdentifier() %>
+				
+				<strong><%= LanguageUtil.get(pageContext, "score") %> : </strong><%= r.getScore() %>
+				
+				</div>
 			<% } %>
 			<%if(iresults.size() >0){ %>
 				<div>&nbsp</div>
