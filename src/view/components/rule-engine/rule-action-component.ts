@@ -1,18 +1,12 @@
-import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
+import { Component, EventEmitter, Input, Output} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
 
-import {Observable} from 'rxjs/Rx'
-
-import {ActionModel} from "../../../api/rule-engine/Action";
 import {ActionTypeService} from "../../../api/rule-engine/ActionType";
-import {ActionService} from "../../../api/rule-engine/Action";
+import {ActionService, ActionModel} from "../../../api/rule-engine/Action";
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
-import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {ServersideCondition} from "./condition-types/serverside-condition/serverside-condition";
-import {ConditionModel} from "../../../api/rule-engine/Condition";
-import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 @Component({
   selector: 'rule-action',
@@ -51,10 +45,10 @@ import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldMode
 })
 export class RuleActionComponent {
 
-  @Input()  action:ServerSideFieldModel
+  @Input()  action:ActionModel
   @Input()  index:number
-  @Output() change:EventEmitter<ServerSideFieldModel>
-  @Output() remove:EventEmitter<ServerSideFieldModel>
+  @Output() change:EventEmitter<ActionModel>
+  @Output() remove:EventEmitter<ActionModel>
 
   typeDropdown:any
 
@@ -101,7 +95,7 @@ export class RuleActionComponent {
   onTypeChange(value) {
     this.action.type = this._types[value]
     // required to force change detection on child that doesn't reference type.
-    this.action = new ServerSideFieldModel(this.action.key, this.action.type, this.action.priority)
+    this.action = new ActionModel(this.action.key, this.action.type, this.action.owningRule, this.action.priority)
     this.change.emit(this.action)
   }
 

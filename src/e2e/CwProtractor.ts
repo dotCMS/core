@@ -64,15 +64,16 @@ export class TestInputText extends TestInputComponent{
     return this.valueInput.click()
   }
 
-  placeholder(){
+  placeholder():webdriver.promise.Promise<string>{
     return this.valueInput.getAttribute('placeholder')
   }
 
-  getValue(){
+  getValue():webdriver.promise.Promise<string>{
     return this.valueInput.getAttribute('value')
   }
 
   setValue(value:string):webdriver.promise.Promise<void>{
+    this.valueInput.clear()
     return this.valueInput.sendKeys(value)
   }
 }
@@ -94,6 +95,7 @@ export class TestInputDropdown extends TestInputComponent {
   }
 
   setSearch(value:string):webdriver.promise.Promise<void>{
+    this.search.clear()
     return this.search.sendKeys(value)
   }
 
