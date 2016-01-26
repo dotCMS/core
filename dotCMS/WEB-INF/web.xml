@@ -4,8 +4,8 @@
     xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
     version="2.4">
     <display-name>dotCMS</display-name>
-<!-- Don't ever delete the following comment tags, it will break the build -->
-<!-- BEGIN JSPS --> <!-- END JSPS -->
+	<!-- Don't ever delete the following comment tags, it will break the build -->
+	<!-- BEGIN JSPS --> <!-- END JSPS -->
 	<context-param>
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
@@ -24,66 +24,57 @@
 		<filter-name>CookiesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CookiesFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>ThreadNameFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.ThreadNameFilter</filter-class>
 	</filter>
-	<filter>
-		<filter-name>SalesForceFilter</filter-name>
-		<filter-class>com.dotcms.enterprise.salesforce.SalesForceFilter</filter-class>
-		<init-param>
-			<param-name>com.dotmarketing.filters.salesforce.filter.serverName</param-name>
-			<param-value>localhost</param-value>
-		</init-param>
-	</filter>
+	
 	<filter>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 	</filter>
+	
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>FixCmisFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.FixCmis.FixCmisFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>URLMapFilter</filter-name>
 		<filter-class>com.dotmarketing.cms.urlmap.filters.URLMapFilter</filter-class>
 	</filter>
-<!--
-	<filter>
-    	<filter-name>Compress</filter-name>
-    	<filter-class>com.dotmarketing.filters.compression.GZIPFilter</filter-class>
-    </filter>
--->
+
 	 <filter>
 		<filter-name>CacheImagesFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CacheImagesFilter</filter-class>
 	</filter>
-<filter>
+	
+	<filter>
 		<filter-name>CMSFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.CMSFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>AutoLoginFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.AutoLoginFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 	</filter>
-	<!--
-	<filter>
-		<filter-name>JBossRulesFilter</filter-name>
-		<filter-class>com.dotmarketing.filters.JBossRulesFilter</filter-class>
-	</filter>
-	 -->
+
 	<filter>
 		<filter-name>NoCacheFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.NoCacheFilter</filter-class>
 	</filter>
+	
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -92,6 +83,7 @@
 			<param-value>main.servlet.</param-value>
 		</init-param>
 	</filter>
+	
 	<filter>
 		<filter-name>Secure AxisServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -100,188 +92,92 @@
 			<param-value>axis.servlet.</param-value>
 		</init-param>
 	</filter>
+	
     <filter>
         <filter-name>UrlRewriteFilter</filter-name>
         <filter-class>com.dotmarketing.filters.DotUrlRewriteFilter</filter-class>
     </filter>
 	<!--END DOTMARKETING FILTERS-->
+	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN FILTERS -->
- <!-- END FILTERS -->
-	<!-- compression Mappings -->
-<!--
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.html</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.jsp</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.html</url-pattern>
-  </filter-mapping>
-  -->
-  <filter-mapping>
+ 	<!-- END FILTERS -->
+
+
+	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
+	<!-- BEGIN FILTER-MAPPINGS -->
+ 	<!-- END FILTER-MAPPINGS -->
+ 	
+	<!--DOTMARKETING FILTER-MAPPINGS-->
+	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>CookiesFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 	
-	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
-	<!-- BEGIN FILTER-MAPPINGS -->
- <!-- END FILTER-MAPPINGS -->
-	<!--DOTMARKETING FILTER-MAPPINGS-->
+
 	<filter-mapping>
-		<filter-name>SalesForceFilter</filter-name>
-		<url-pattern>/dotCMS/login</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>SalesForceFilter</filter-name>
-		<url-pattern>/admin</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>SalesForceFilter</filter-name>
-		<url-pattern>/c</url-pattern>
-	</filter-mapping>
-  <filter-mapping>
 		<filter-name>TimeMachineFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-  <filter-mapping>
+	
+	<filter-mapping>
 		<filter-name>FixCmisFilter</filter-name>
 		<url-pattern>/cmis</url-pattern>
 	</filter-mapping>
-<!--
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.css</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.js</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>Compress</filter-name>
-    <url-pattern>*.dwr</url-pattern>
-  </filter-mapping>
--->
-	<filter-mapping>
-		<filter-name>URLMapFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>*.gif</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>*.png</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>/dwr/*</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>*.jpg</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>*.PNG</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>/image/company_logo</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>/icon</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>/titleServlet</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>*.swf</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CacheImagesFilter</filter-name>
-		<url-pattern>/thumbnail</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>AutoLoginFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-	<!--
-	<filter-mapping>
-		<filter-name>JBossRulesFilter</filter-name>
-		<url-pattern>*.html</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>JBossRulesFilter</filter-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</filter-mapping>
-	-->
-	<filter-mapping>
-		<filter-name>NoCacheFilter</filter-name>
-		<url-pattern>/dotCMS/*</url-pattern>
-	</filter-mapping>
-	<filter-mapping>
-		<filter-name>CMSFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
+	
     <filter-mapping>
         <filter-name>UrlRewriteFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-	<!--
-	<filter>
-  		<filter-name>Compression Filter</filter-name>
-  		<filter-class>com.dotcms.repackage.com.liferay.filters.compression.CompressionFilter</filter-class>
- 	</filter>
+    
 	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>/c/*</url-pattern>
+		<filter-name>URLMapFilter</filter-name>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.css</url-pattern>
+		<filter-name>AutoLoginFilter</filter-name>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
 	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.html</url-pattern>
+		<filter-name>NoCacheFilter</filter-name>
+		<url-pattern>/dotCMS/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.js</url-pattern>
+		<filter-name>CMSFilter</filter-name>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	<filter-mapping>
-		<filter-name>Compression Filter</filter-name>
-		<url-pattern>*.jsp</url-pattern>
-	</filter-mapping>
-	-->
+
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
 	</filter-mapping>
+	
 	<filter-mapping>
 		<filter-name>Secure AxisServlet Filter</filter-name>
 		<url-pattern>/webxservices/*</url-pattern>
 	</filter-mapping>
 	<!--END DOTMARKETING FILTER-MAPPINGS-->
+	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN LISTENERS -->
     <!-- END LISTENERS -->
+    
+    
 	<!-- DOTMARKETING LISTENERS -->
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
@@ -306,44 +202,9 @@
 	  <listener-class>com.dotmarketing.listeners.HibernateSessionsListener</listener-class>
 	</listener>
 	<!-- END DOTMARKETING LISTENERS -->
+	
+	
 	<!-- DOTMARKETING SERVLETS -->
-	<!-- <servlet>
-		<servlet-name>log4j-init</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.Log4JInitializationServlet</servlet-class>
-		<init-param>
-			<param-name>log4j-init-file</param-name>
-			<param-value>true</param-value>
-		</init-param>
-	    <load-on-startup>0</load-on-startup>
-	</servlet> -->
-	<servlet>
-		<servlet-name>PdfServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.PdfServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>HTMLPDFServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.HTMLPDFServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>JRImageServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.ImageServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>XlsServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.XlsServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>JExcelApiServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.JExcelApiServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>RtfServlet</servlet-name>
-		<servlet-class>net.sf.jasperreports.j2ee.servlets.RtfServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>ResizeImageServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.image.ResizeImageServlet</servlet-class>
-	</servlet>
 	<servlet>
 		<servlet-name>
 			UpdateQuartzCronJobs
@@ -355,76 +216,54 @@
 			98
 		</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>Init</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.InitServlet</servlet-class>
 		<load-on-startup>8</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>
 		<servlet-class>com.dotmarketing.velocity.ClientVelocityServlet</servlet-class>
 		<load-on-startup>10</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>FileServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.FileServlet</servlet-class>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.SpeedyAssetServlet</servlet-class>
 	</servlet>
+	
 	<servlet>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<servlet-class>com.dotmarketing.servlets.AjaxFileUploadServlet</servlet-class>
     </servlet>
-	<servlet>
-		<servlet-name>PermalinkServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.PermalinkServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>icon</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.IconServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>CampaignReportingServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.CampaignReportingServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>AdminControlServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.AdminControlServlet</servlet-class>
-	</servlet>
+    
 	<servlet>
 		<servlet-name>RedirectURLServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.RedirectURLServlet</servlet-class>
 	</servlet>
-	<servlet>
-		<servlet-name>TitleServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.image.TitleImage</servlet-class>
-	</servlet>
+
 	<servlet>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
 	</servlet>
-	<servlet>
-		<servlet-name>ThumbnailServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.image.ThumbnailImage</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>XSPFServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.XSPFServlet</servlet-class>
-	</servlet>
-	<servlet>
-		<servlet-name>SlideShowServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.SlideShowServlet</servlet-class>
-	</servlet>
+	
 	<servlet>
 		<servlet-name>login_edit_mode</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.LoginEditModeServlet</servlet-class>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>TailLogServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.taillog.TailLogServlet</servlet-class>
 	</servlet>
+	
 	<servlet>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <servlet-class>com.dotmarketing.servlets.DwrWrapperServlet</servlet-class>
@@ -441,86 +280,7 @@
 	      <param-value>false</param-value>
 	   </init-param>
 	</servlet>
-	<servlet>
-		<servlet-name>Captcha</servlet-name>
-		<servlet-class>com.dotcms.repackage.nl.captcha.servlet.SimpleCaptchaServlet</servlet-class>
-				<!--border around captcha. Legal values are yes or no. Defaults to yes Other values will be ignored-->
-		<init-param>
-			<param-name>cap.border</param-name>
-			<param-value>yes</param-value>
-		</init-param>
-		<!--color of the border. Legal values are r,g,b(and optional alpaha) or white,black,etc. Other values will be ignored-->
-		<init-param>
-			<param-name>cap.border.c</param-name>
-			<param-value>black</param-value>
-		</init-param>
-		<!--thickness of the border around captcha. Legal values are > 0 other values will be ignored. Defaults to one-->
-		<init-param>
-			<param-name>cap.border.th</param-name>
-			<param-value>1</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.obscurificator</param-name>
-			<!--<param-value>nl.captcha.obscurity.imp.ShadowGimpyImp</param-value>-->
-			<!--<param-value>nl.captcha.obscurity.imp.WaterRiple</param-value>-->
-			<param-value>nl.captcha.sandbox.TestGimpyImp</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.cap.producer</param-name>
-			<param-value>nl.captcha.obscurity.DefaultCaptchaIml</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.word.imp</param-name>
-			<param-value>nl.captcha.text.imp.DefaultWordRenderer</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.text.producer</param-name>
-			<!--<param-value>nl.captcha.sandbox.ChineseTextProducer</param-value>-->
-			<param-value>nl.captcha.text.imp.FiveLetterFirstNameTextCreator</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.char.arr</param-name>
-			<param-value>2,3,4,6,7,8,a,b,c,d,e,f,g,h,k,o,r,s,t,x,y</param-value>
-		</init-param>
-		<!--if default captcha producer is slelected this value represents the amount of chars that are supplied in the captcha. values below 2 are not exepted when omitted defaults to 5-->
-		<init-param>
-			<param-name>cap.char.arr.l</param-name>
-			<param-value>6</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.font.arr</param-name>
-			<param-value>Arial,Helvetica,Courier,TimesRoman</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.font.size</param-name>
-			<param-value>40</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.font.color</param-name>
-			<param-value>black</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.bg.imp</param-name>
-			<param-value>nl.captcha.obscurity.imp.DefaultBackgroundImp</param-value>
-		</init-param>
-		<!--values can be either red,yellow,blue,cya etc or r,g,b,alpha value-->
-		<init-param>
-			<param-name>cap.background.c.to</param-name>
-			<param-value>255,255,255</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.background.c.from</param-name>
-			<param-value>154,154,154</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.noise.imp</param-name>
-			<param-value>nl.captcha.obscurity.imp.DefaultNoiseImp</param-value>
-		</init-param>
-		<init-param>
-			<param-name>cap.noise.c</param-name>
-			<param-value>20,61,85</param-value>
-		</init-param>
-	</servlet>
+	
 	<servlet>
 		<servlet-name>InitServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.InitServlet</servlet-class>
@@ -531,6 +291,7 @@
 		<servlet-class>com.dotmarketing.servlets.image.ImageToolAjaxServlet</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>MainServlet</servlet-name>
 		<servlet-class>com.liferay.portal.servlet.MainServlet</servlet-class>
@@ -556,11 +317,7 @@
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
-	<servlet>
-		<servlet-name>ImageServlet</servlet-name>
-		<servlet-class>com.liferay.portal.servlet.ImageServlet</servlet-class>
-		<load-on-startup>4</load-on-startup>
-	</servlet>
+	
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
 		<servlet-class>com.dotcms.repackage.com.bradmcevoy.http.MiltonServlet</servlet-class>
@@ -569,6 +326,7 @@
 				<param-value>com.dotmarketing.webdav.ResourceFactorytImpl</param-value>
 		</init-param>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>CMIS</servlet-name>
 		<servlet-class>com.dotcms.repackage.org.apache.chemistry.opencmis.server.impl.atompub.CmisAtomPubServlet</servlet-class>
@@ -578,51 +336,38 @@
 		</init-param>
 		<load-on-startup>2</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>ScheduledJobs</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.RunScheduledJobServlet</servlet-class>
 	</servlet>
-	<servlet>
-        <servlet-name>AudioCaptcha</servlet-name>
-        <servlet-class>com.dotmarketing.servlets.AudioCaptchaServlet</servlet-class>
-        <load-on-startup>0</load-on-startup>
-    </servlet>
-	<servlet>
-		<servlet-name>ChainsServlet</servlet-name>
-		<servlet-class>com.dotmarketing.portlets.chains.ChainServlet</servlet-class>
-	</servlet>
+
 	<servlet>
 		<servlet-name>BinaryExporterServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.BinaryExporterServlet</servlet-class>
 	    <load-on-startup>100</load-on-startup>
 	</servlet>
+	
 	<servlet>
 		<servlet-name>AjaxDirector</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ajax.AjaxDirectorServlet</servlet-class>
 	</servlet>
+	
 	 <servlet>
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.JSONTagsServlet</servlet-class>
 	</servlet>
-	<!--JMySpell SpellChecker-->
-    <servlet>
-        <description>A spell checking servlet that accepts JSON requests and processes them using JMySpell</description>
-        <servlet-name>jmyspell-spellchecker</servlet-name>
-        <servlet-class>org.tinymce.spellchecker.JMySpellCheckerServlet</servlet-class>
-        <init-param>
-          <param-name>preloadedLanguages</param-name>
-          <param-value>en_US;es_ES</param-value>
-        </init-param>
-        <load-on-startup>100</load-on-startup>
-    </servlet>
+
     <servlet>
        <servlet-name>springmvc</servlet-name>
        <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
     </servlet>
+    
     <servlet>
     	<servlet-name>CSSPreProcessServlet</servlet-name>
     	<servlet-class>com.dotcms.csspreproc.CSSPreProcessServlet</servlet-class>
     </servlet>
+    
     <!-- REST -->
     <servlet>
 		<servlet-name>RESTAPI</servlet-name>
@@ -635,262 +380,195 @@
 		</init-param>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
+	
     <servlet>
         <servlet-name>proxy</servlet-name>
-        <!--<servlet-class>com.dotcms.repackage.org.apache.felix.http.proxy.ProxyServlet</servlet-class>-->
         <servlet-class>com.dotmarketing.osgi.OSGIProxyServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>20</load-on-startup>
     </servlet>
+    
     <servlet>
 		<servlet-name>XMLSitemapServlet</servlet-name>
 		<servlet-class>com.dotcms.xmlsitemap.XMLSitemapServlet</servlet-class>
 	</servlet>
+	
+    <servlet>
+    	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
+    	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
+    </servlet>
+    
 	<!--END DOTMARKETING SERVLETS-->
+	
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
- <!-- END SERVLETS -->
+ 	<!-- END SERVLETS -->
+ 	
+ 	
     <!-- TEST FRAMEWORK SERVLETS -->                                            
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
        </servlet>
+       
        <servlet-mapping>
          <servlet-name>ServletTestRunner</servlet-name>
          <url-pattern>/servlet/test</url-pattern>
       </servlet-mapping>
 	<!-- END OF TEST FRAMEWORK SERVLETS -->
-	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
-    <servlet>
-    	<description>Provides the drawed template preview functionality</description>
-    	<display-name>PreviewDesignTemplateServlet</display-name>
-    	<servlet-name>PreviewDesignTemplateServlet</servlet-name>
-    	<servlet-class>com.dotmarketing.portlets.templates.design.servlets.PreviewDesignTemplateServlet</servlet-class>
-    </servlet>
-    <!-- END GRAZIANO issue-12-dnd-template -->
+	
+
+
+
     <!-- DOTCMS SERVLET-MAPPINGS -->
     <servlet-mapping>
         <servlet-name>proxy</servlet-name>
         <url-pattern>/app/*</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
       <servlet-name>springmvc</servlet-name>
       <url-pattern>/spring/*</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTLESS/*</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
         <servlet-name>AjaxDirector</servlet-name>
         <url-pattern>/DotAjaxDirector/*</url-pattern>
     </servlet-mapping>
-	<servlet-mapping>
-        <servlet-name>jmyspell-spellchecker</servlet-name>
-        <url-pattern>/servlets/jmyspell-spellchecker</url-pattern>
-    </servlet-mapping>
+
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit/*</url-pattern>
     </servlet-mapping>
+    
 	<servlet-mapping>
         <servlet-name>ImageToolAjaxServlet</servlet-name>
         <url-pattern>/servlet/dotImageToolAjax</url-pattern>
     </servlet-mapping>
+    
 	<servlet-mapping>
         <servlet-name>ImageToolAjaxServlet</servlet-name>
         <url-pattern>/servlet/dotImageToolAjax/*</url-pattern>
     </servlet-mapping>
+    
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin/*</url-pattern>
     </servlet-mapping>
+    
     <servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/edit</url-pattern>
     </servlet-mapping>
+    
 	<servlet-mapping>
         <servlet-name>login_edit_mode</servlet-name>
         <url-pattern>/admin</url-pattern>
     </servlet-mapping>
+    
 	<servlet-mapping>
 		<servlet-name>ScheduledJobs</servlet-name>
 		<url-pattern>/dotScheduledJobs</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>TailLogServlet</servlet-name>
 		<url-pattern>/dotTailLogServlet/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>CMIS</servlet-name>
 		<url-pattern>/cmis/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/autopub/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>WebDav</servlet-name>
 		<url-pattern>/webdav/nonpub/*</url-pattern>
 	</servlet-mapping>
-	<!--
-	<servlet-mapping>
-		<servlet-name>Webdav1</servlet-name>
-		<url-pattern>/webdav/*</url-pattern>
-	</servlet-mapping>
-	 -->
-	<servlet-mapping>
-		<servlet-name>PdfServlet</servlet-name>
-		<url-pattern>/servlets/pdf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>HTMLPDFServlet</servlet-name>
-		<url-pattern>/servlets/htmlpdf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JRImageServlet</servlet-name>
-		<url-pattern>/servlets/jrimage</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>XlsServlet</servlet-name>
-		<url-pattern>/servlets/xls</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>JExcelApiServlet</servlet-name>
-		<url-pattern>/servlets/jxl</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>RtfServlet</servlet-name>
-		<url-pattern>/servlets/rtf</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-	    <servlet-name>ResizeImageServlet</servlet-name>
-	    <url-pattern>/resize_image</url-pattern>
-	</servlet-mapping>
+
 	<servlet-mapping>
     	<servlet-name>AjaxFileUploadServlet</servlet-name>
     	<url-pattern>/servlets/ajax_file_upload</url-pattern>
     </servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>icon</servlet-name>
-		<url-pattern>/icon</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>SlideShowServlet</servlet-name>
-		<url-pattern>/dot_slideshow</url-pattern>
-	</servlet-mapping>
-	<!--  
-	<servlet-mapping>
-		<servlet-name>VelocityServlet</servlet-name>
-		<url-pattern>*.html</url-pattern>
-	</servlet-mapping>
-	-->
+
 	<servlet-mapping>
 		<servlet-name>VelocityServlet</servlet-name>
 		<url-pattern>/servlets/VelocityServlet</url-pattern>
 	</servlet-mapping>
-	
-	
-	<servlet-mapping>
-		<servlet-name>FileServlet</servlet-name>
-		<url-pattern>/dot/*</url-pattern>
-	</servlet-mapping>
+
 	<servlet-mapping>
 		<servlet-name>SpeedyAssetServlet</servlet-name>
 		<url-pattern>/dotAsset/*</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>PermalinkServlet</servlet-name>
-		<url-pattern>/permalink/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>CampaignReportingServlet</servlet-name>
-		<url-pattern>/imageShim</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>AdminControlServlet</servlet-name>
-		<url-pattern>/controlGif</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>RedirectURLServlet</servlet-name>
-		<url-pattern>/redirect</url-pattern>
-	</servlet-mapping>
-	<!-- title Servlet -->
-	<servlet-mapping>
-		<servlet-name>TitleServlet</servlet-name>
-		<url-pattern>/titleServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>TitleServlet</servlet-name>
-		<url-pattern>/TitleServlet</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>ThumbnailServlet</servlet-name>
-		<url-pattern>/thumbnail</url-pattern>
-	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/dotCMS/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 	  <servlet-name>dwr-invoker</servlet-name>
 	  <url-pattern>/dwr/*</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>Captcha</servlet-name>
-		<url-pattern>/Captcha.jpg</url-pattern>
-	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>MainServlet</servlet-name>
 		<url-pattern>/c/*</url-pattern>
 	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>ImageServlet</servlet-name>
-		<url-pattern>/image/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-        <servlet-name>AudioCaptcha</servlet-name>
-        <url-pattern>/audioCaptcha.wav</url-pattern>
-    </servlet-mapping>
-	<servlet-mapping>
-        <servlet-name>ChainsServlet</servlet-name>
-        <url-pattern>/servlets/chains/*</url-pattern>
-    </servlet-mapping>
+
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>CategoriesServlet</servlet-name>
 		<url-pattern>/categoriesServlet</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>JSONTagsServlet</servlet-name>
 		<url-pattern>/JSONTags/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>RESTAPI</servlet-name>
 		<url-pattern>/api/*</url-pattern>
 	</servlet-mapping>
+	
 	<servlet-mapping>
 		<servlet-name>XMLSitemapServlet</servlet-name>
 		<url-pattern>/sitemap_index.xml</url-pattern>
 	</servlet-mapping>
-	<!-- BEGIN GRAZIANO issue-12-dnd-template -->
+	
 	<servlet-mapping>
 		<servlet-name>PreviewDesignTemplateServlet</servlet-name>
 		<url-pattern>/servlets/template/design/preview</url-pattern>
 	</servlet-mapping>
-	<!-- END GRAZIANO issue-12-dnd-template -->
 	<!--END DOTMARKETING SERVLET-MAPPING-->
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
- <!-- END SERVLET-MAPPINGS -->
+ 	<!-- END SERVLET-MAPPINGS -->
+ 	
+ 	
 	<!-- TEST FRAMEWORK SERVLETS-MAPPING -->
-<!--
+	<!--
 	<servlet-mapping>
 	    <servlet-name>ServletRedirector</servlet-name>
 	    <url-pattern>/servlets/ServletRedirector</url-pattern>
@@ -899,62 +577,77 @@
 	    <servlet-name>ServletTestRunner</servlet-name>
 	    <url-pattern>/servlets/ServletTestRunner</url-pattern>
 	</servlet-mapping>
--->
+	-->
 	<!-- END OF TEST FRAMEWORK SERVLETS-MAPPING -->
+	
+	
 	<session-config>
 		<session-timeout>30</session-timeout>
 	</session-config>
+	
 	<mime-mapping>
 		<extension>vtl</extension>
 		<mime-type>text/velocity</mime-type>
 	</mime-mapping>
+	
 	<mime-mapping>
 		<extension>xsl</extension>
 		<mime-type>application/xml</mime-type>
 	</mime-mapping>
+	
 	<mime-mapping>
 		<extension>sass</extension>
 		<mime-type>text/plain</mime-type>
 	</mime-mapping>
+	
 	<mime-mapping>
         <extension>scss</extension>
         <mime-type>text/plain</mime-type>
     </mime-mapping>
+    
 	<mime-mapping>
 		<extension>less</extension>
 		<mime-type>text/plain</mime-type>
 	</mime-mapping>
+	
 	<welcome-file-list>
 		<welcome-file>index.html</welcome-file>
 		<welcome-file>index.jsp</welcome-file>
 	</welcome-file-list>
+	
 	<error-page>
 	   <error-code>404</error-code>
 	   <location>/portal/404.jsp</location>
 	</error-page>
+	
 	<error-page>
 	   <error-code>401</error-code>
 	   <location>/portal/401.jsp</location>
 	</error-page>
+	
 	<error-page>
 	   <error-code>403</error-code>
 	   <location>/portal/403.jsp</location>
 	</error-page>
+	
 	<error-page>
 	   <error-code>500</error-code>
 	   <location>/portal/500.jsp</location>
 	</error-page>
+	
 	<error-page>
 	   <error-code>503</error-code>
 	   <location>/portal/503.jsp</location>
 	</error-page>
+	
 	<jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>
 			<el-ignored>true</el-ignored>
 		</jsp-property-group>
 	</jsp-config>
-	 <!-- Prevent access to /dot_secure area.  Here we place files that are too numerous to be stored in WEB-INF, since Tomcat will scan all files in WEB-INF at startup -->
+	
+	<!-- Prevent access to /dot_secure area.  Here we place files that are too numerous to be stored in WEB-INF, since Tomcat will scan all files in WEB-INF at startup -->
 	<security-constraint>
 		<display-name>Secure area</display-name>
 		<web-resource-collection>
@@ -964,7 +657,9 @@
 		<auth-constraint>
 		</auth-constraint>
 	</security-constraint>
+	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SECURITY-CONSTRAINTS -->
     <!-- END SECURITY-CONSTRAINTS -->
+    
 </web-app>
