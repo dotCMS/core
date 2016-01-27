@@ -1019,6 +1019,8 @@
 		<property name="tagName" column="tagName" type="string" />
 		<property name="hostId" column="host_id" type="string" length="255" />
 		<property name="userId" column="user_id" type="string" length="255" />
+		<property name="persona" column="persona"  type="boolean" not-null="false" />
+		<property name="modDate" column="mod_date" type="java.util.Date" />
 	</class>
 
 	<class name="com.dotmarketing.tag.model.TagInode" table="tag_inode">
@@ -1026,6 +1028,7 @@
 			<key-property name="tagId" column="tag_id" type="string" length="100" />
 			<key-property name="inode" column="inode" length="100" type="string" />
 		</composite-id>
+		<property name="modDate" column="mod_date" type="java.util.Date" />
 	</class>
 
 	<class name="com.dotmarketing.beans.ChallengeQuestion" table="challenge_question">

@@ -1347,6 +1347,8 @@ create table tag (
    tagname varchar2(255),
    host_id varchar2(255),
    user_id varchar2(255),
+   persona number(1,0) default 0,
+   mod_date date,
    primary key (tag_id)
 );
 create table user_comments (
@@ -1924,6 +1926,7 @@ create table workflow_task (
 create table tag_inode (
    tag_id varchar2(100) not null,
    inode varchar2(100) not null,
+   mod_date date,
    primary key (tag_id, inode)
 );
 create table click (

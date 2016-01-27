@@ -1,16 +1,5 @@
 package com.dotmarketing.tag.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
@@ -30,12 +19,18 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.struts.ActionException;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
+
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
+import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
+
 public class TagAPIImpl implements TagAPI{
 
 	private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
 	/**
-	 * @param permissionAPI the permissionAPI to set
+	 * @param permissionAPIRef the permissionAPI to set
 	 */
 	public void setPermissionAPI(PermissionAPI permissionAPIRef) {
 		permissionAPI = permissionAPIRef;
@@ -49,11 +44,11 @@ public class TagAPIImpl implements TagAPI{
 		try {
 			HibernateUtil dh = new HibernateUtil(Tag.class);
 			dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag");
-            List list = dh.list();
-        	return list;
+			return dh.list();
+		} catch ( Exception e ) {
+			Logger.error(e, "Error retrieving all tags");
 		}
-		catch (Exception e) {}
-		return new ArrayList();
+		return new ArrayList<>();
 	}
 
 
@@ -63,7 +58,7 @@ public class TagAPIImpl implements TagAPI{
 	 */
 	public java.util.List<String> getAllTagsName() {
 		try {
-			List<String> result = new ArrayList<String>();
+			List<String> result = new ArrayList<>();
 
 			List<Tag> tags = getAllTags();
 			for (Tag tag: tags) {
@@ -71,9 +66,10 @@ public class TagAPIImpl implements TagAPI{
 			}
 
 			return result;
+		} catch ( Exception e ) {
+			Logger.error(e, "Error retrieving all tags names");
 		}
-		catch (Exception e) {}
-		return new ArrayList();
+		return new ArrayList<>();
 	}
 
 	/**
@@ -89,13 +85,12 @@ public class TagAPIImpl implements TagAPI{
             dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagName) = ?");
             dh.setParam(name.toLowerCase());
 
-            List list = dh.list();
-        	return list;
-        } catch (Exception e) {
-            Logger.warn(Tag.class, "getTagByName failed:" + e, e);
-        }
-        return new ArrayList();
-    }
+			return dh.list();
+		} catch ( Exception e ) {
+			Logger.warn(Tag.class, "getTagByName failed:" + e, e);
+		}
+		return new ArrayList<>();
+	}
 
 	/**
 	 * Gets all the tag created by an user
@@ -108,19 +103,21 @@ public class TagAPIImpl implements TagAPI{
             dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where user_id = ?");
             dh.setParam(userId);
 
-            List list = dh.list();
-
-        	return list;
-        } catch (Exception e) {
-            Logger.warn(Tag.class, "getTagByUser failed:" + e, e);
-        }
-        return new java.util.ArrayList();
+			return dh.list();
+		} catch ( Exception e ) {
+			Logger.warn(Tag.class, "getTagByUser failed:" + e, e);
+		}
+		return new java.util.ArrayList<>();
 	}
 
 	/**
 	 * Gets all tags filtered by tag name and/or host name
 	 * @param tagName tag name
-	 * @param hostName host name
+	 * @param hostFilter
+	 * @param globalTagsFilter
+	 * @param sort
+	 * @param start
+	 * @param count
 	 * @return a list of tags filtered by tag name or host name
 	 */
 	public java.util.List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count) {
@@ -208,7 +205,7 @@ public class TagAPIImpl implements TagAPI{
         } catch (Exception e) {
             Logger.warn(Tag.class, "getFilteredTags failed:" + e, e);
         }
-        return new java.util.ArrayList();
+		return new java.util.ArrayList<>();
 	}
 
 	/**
@@ -288,6 +285,7 @@ public class TagAPIImpl implements TagAPI{
 
 	private void updateTagInode(TagInode tagInode, String tagId) throws DotHibernateException {
 		tagInode.setTagId(tagId);
+		tagInode.setModDate(new Date());
 		HibernateUtil.saveOrUpdate(tagInode);
 
 	}
@@ -305,9 +303,7 @@ public class TagAPIImpl implements TagAPI{
     	dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tag_id = ?");
         dh.setParam(tagId);
 
-        Tag tag = (Tag) dh.load();
-
-        return tag;
+		return (Tag) dh.load();
 	}
 	/**
 	 * Gets a Tag by a tagId and a hostId.
@@ -324,9 +320,7 @@ public class TagAPIImpl implements TagAPI{
         dh.setParam(tagId);
         dh.setParam(hostId);
 
-        Tag tag = (Tag) dh.load();
-
-        return tag;
+		return (Tag) dh.load();
 	}
 
 	/**
@@ -341,8 +335,9 @@ public class TagAPIImpl implements TagAPI{
 
     	Tag tag = new Tag();
     	//creates new Tag
-    	tag.setTagName(tagName);
-    	tag.setUserId(userId);
+		tag.setTagName(tagName.toLowerCase());
+		tag.setUserId(userId);
+		tag.setModDate(new Date());
 
     	Host host = null;
 
@@ -410,7 +405,7 @@ public class TagAPIImpl implements TagAPI{
 		boolean tagAlreadyExistsForNewTagStorage = false;
 
 		//This block of code prevent saving duplicated tags when editing tag storage from host
-		List<Tag> tags = getTagByName(tagName.toLowerCase());
+		List<Tag> tags = getTagByName(tagName);
 
 		for(Tag t: tags){
 			if(t.getHostId().equals(hostId)){
@@ -425,12 +420,14 @@ public class TagAPIImpl implements TagAPI{
 
 		//update selected tag if it's set and if previous tag storage is different.
     	if(UtilMethods.isSet(tag.getTagId())&&!tagAlreadyExistsForNewTagStorage){
-    		tag.setTagName(tagName);
+			tag.setTagName(tagName.toLowerCase());
 			tag.setUserId("");
 			if(updateTagReference){
 				if(UtilMethods.isSet(hostId))
 					tag.setHostId(hostId);
 			}
+
+			tag.setModDate(new Date());
 			HibernateUtil.saveOrUpdate(tag);
     	}
 
@@ -451,9 +448,8 @@ public class TagAPIImpl implements TagAPI{
 
     /**
      * Deletes a tag
-     * @param tagName name of the tag to be deleted
-     * @param userId id of the tag owner
-     */
+	 * @param tagId The id of the tag to delete
+	 */
 	public void deleteTag(String tagId)  throws DotHibernateException  {
 		Tag tag = getTagByTagId(tagId);
 		deleteTag(tag);
@@ -475,11 +471,13 @@ public class TagAPIImpl implements TagAPI{
 			for (int i = 0; it.hasNext(); i++) {
 				Tag tag = (Tag)it.next();
 
-				tag.setTagName(tagName);
+				tag.setTagName(tagName.toLowerCase());
+				tag.setModDate(new Date());
 				HibernateUtil.saveOrUpdate(tag);
 			}
+		} catch ( Exception e ) {
+			Logger.error(e, "Error editing Tag");
 		}
-		catch (Exception e) {}
 	}
 
 	/**
@@ -540,8 +538,9 @@ public class TagAPIImpl implements TagAPI{
 			}
 
 			return matchesArray;
+		} catch ( Exception e ) {
+			Logger.error(e, "Error retrieving tags");
 		}
-		catch (Exception e) {}
 
 		return new ArrayList();
 	}
@@ -567,8 +566,9 @@ public class TagAPIImpl implements TagAPI{
 			java.util.List allTags = dh.list();
 
 			return allTags;
+		} catch ( Exception e ) {
+			Logger.error(e, "Error retrieving tag by name");
 		}
-		catch (Exception e) {}
 
 		return new ArrayList();
 	}
@@ -621,7 +621,8 @@ public class TagAPIImpl implements TagAPI{
 				Logger.error(this, "Unable to get Long value from " + inode, e);
 			}*/
 	    	tagInode.setInode(inode);
-	        HibernateUtil.saveOrUpdate(tagInode);
+			tagInode.setModDate(new Date());
+			HibernateUtil.saveOrUpdate(tagInode);
 
 	        return tagInode;
     	}
@@ -662,13 +663,12 @@ public class TagAPIImpl implements TagAPI{
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
             dh.setParam(tagId);
 
-            List list = dh.list();
-        	return list;
+			return dh.list();
 
         } catch (Exception e) {
             Logger.warn(Tag.class, "getTagInodeByTagId failed:" + e, e);
         }
-        return new ArrayList();
+		return new ArrayList<>();
 	}
 
 	/**
@@ -744,52 +744,29 @@ public class TagAPIImpl implements TagAPI{
 		try {
 			name = escapeSingleQuote(name);
 
-			String currentHostId = "";
-		   	Host currentHost = null;
-		   	String hostId = "";
-
-	    	//if there's a host field on form, retrieve it
-	    	Host hostOnForm = null;
-	    	if(UtilMethods.isSet(selectedHostId)){
-	    		try{
-	    			hostOnForm = APILocator.getHostAPI().find(selectedHostId,APILocator.getUserAPI().getSystemUser(), true);
-	    			selectedHostId=hostOnForm.getMap().get("tagStorage").toString();
-		    	}
-		    	catch (Exception e) {
+			//if there's a host field on form, retrieve it
+			Host hostOnForm;
+			if ( UtilMethods.isSet(selectedHostId) ) {
+				try {
+					hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
+					selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
+				} catch (Exception e) {
 		    		Logger.error(this, "Unable to load current host.");
 		    	}
 	    	}
-			/*
-	    	try{
-
-	    		currentHostId = request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID).toString();
-	    		currentHost = APILocator.getHostAPI().find(currentHostId,APILocator.getUserAPI().getSystemUser(), true);
-	    		hostId=currentHost.getMap().get("tagStorage").toString();
-
-	    	}
-	    	catch (Exception e) {
-	    		Logger.error(this, "Unable to load current host.");
-	    	}*/
 
 			HibernateUtil dh = new HibernateUtil(Tag.class);
 			dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where lower(tagname) like ? and (host_id like ? OR host_id like ?)");
 	        dh.setParam(name.toLowerCase() + "%");
-	        /*
-	        if(UtilMethods.isSet(selectedHostId)){
-		        //if structure has a host field, search in selected host
-		        dh.setParam(selectedHostId);
-	        } else {
-		        //search in tag storage for current host
-		        dh.setParam(hostId);
-	        }*/
-	        //search global
-	        dh.setParam(selectedHostId);
-	        dh.setParam(Host.SYSTEM_HOST);
-            List<Tag> list = dh.list();
-        	return list;
+
+			//search global
+			dh.setParam(selectedHostId);
+			dh.setParam(Host.SYSTEM_HOST);
+			return dh.list();
+		} catch ( Exception e ) {
+			Logger.error(e, "Error retrieving suggested tags");
 		}
-		catch (Exception e) {}
-		return new ArrayList<Tag>();
+		return new ArrayList<>();
 	}
 
 	/**
@@ -834,25 +811,25 @@ public class TagAPIImpl implements TagAPI{
                 	try{
                 		if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)){
                     		//copy old tag to host with new tag storage
-                    		tag = saveTag(tag.getTagName(), "", hostIdentifier);
-                    	}else if(newTagStorageId.equals(Host.SYSTEM_HOST)){
-                    		//update old tag to global tags
-                    		tag = getTag(tag.getTagName(), "", Host.SYSTEM_HOST);
-                    	}else if(hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId)) {			
-                    		// update old tag with new tag storage
-                    		updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
+							saveTag(tag.getTagName(), "", hostIdentifier);
+						} else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+							//update old tag to global tags
+							getTag(tag.getTagName(), "", Host.SYSTEM_HOST);
+						} else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
+							// update old tag with new tag storage
+							updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     	}
 
                 	}catch (Exception e){
-
-                	}
-                }
+						Logger.error(e, "Error updating Tag references");
+					}
+				}
             }
 
 
+		} catch ( Exception e ) {
+			Logger.error(e, "Error updating Tag references");
 		}
-		catch (Exception e) {}
-
 
     }
 
@@ -864,8 +841,7 @@ public class TagAPIImpl implements TagAPI{
             		    " where tagi.tagId=tag.tagId and tagi.inode = ?");
             dh.setParam(inode);
 
-            List list = dh.list();
-            return list;
+			return dh.list();
 
         } catch (Exception e) {
             Logger.warn(Tag.class, "getTagInodeByInode failed:" + e, e);

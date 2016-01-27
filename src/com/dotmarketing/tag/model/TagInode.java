@@ -1,6 +1,7 @@
 package com.dotmarketing.tag.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -18,6 +19,9 @@ public class TagInode implements Serializable {
 
     /** persistent field */
     private String tagId;
+
+	/** persistent field */
+	private Date modDate;
 
 	/**
 	 * @return the tagId
@@ -41,6 +45,14 @@ public class TagInode implements Serializable {
 			return inode;
 
 		return "";
+	}
+
+	public Date getModDate () {
+		return modDate;
+	}
+
+	public void setModDate ( Date modDate ) {
+		this.modDate = modDate;
 	}
 
 	/**
