@@ -40,6 +40,8 @@ public class Visitor implements Serializable {
 
     private final Map<String, Serializable> map = new HashMap<>();
 
+    private final Set<String> pagesViewed = new HashSet<>();
+
     //private VisitorsJourney journey;
 
     public static Visitor newInstance(HttpServletRequest request) {
@@ -177,5 +179,13 @@ public class Visitor implements Serializable {
                 ", lastRequestDate=" + lastRequestDate +
                 ", map=" + map +
                 '}';
+    }
+
+    public void addPagesViewed(String uri){
+        pagesViewed.add(uri);
+    }
+
+    public int getNumberPagesViewed(){
+        return pagesViewed.size();
     }
 }

@@ -386,8 +386,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 	    LicenseUtil.startLiveMode();
 	    try {
-
-    		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
+			String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
 
 			//Find the current language
@@ -432,6 +431,10 @@ public abstract class VelocityServlet extends HttpServlet {
     		Logger.debug(VelocityServlet.class, "VELOCITY HTML INODE=" + ident.getInode());
 
 			Optional<Visitor> visitor = visitorAPI.getVisitor(request);
+
+			if(visitor.isPresent()) {
+				visitor.get().addPagesViewed( request.getRequestURI() );
+			}
 
 			boolean newVisitor = false;
 			boolean newVisit = false;
