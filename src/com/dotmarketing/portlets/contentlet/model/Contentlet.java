@@ -24,6 +24,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
@@ -49,7 +50,7 @@ import com.liferay.portal.model.User;
  * @author David Tores
  *
  */
-public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Exportable, Importable,Treeable  {
+public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Exportable, Importable,Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
     public static final String INODE_KEY = "inode";

@@ -13,8 +13,8 @@ public class EqualComparison extends Comparison<Comparable> {
     }
 
     @Override
-    public boolean perform(Comparable argA, Comparable argB) {
-        return argA.compareTo(argB) == 0;
+    public boolean perform(Comparable expect, Comparable argB) {
+        return expect.compareTo(argB) == 0;
     }
 }
  

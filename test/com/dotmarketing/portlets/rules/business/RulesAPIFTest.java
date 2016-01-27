@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.enterprise.rules.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -24,12 +26,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
-import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 
 import static com.dotcms.repackage.org.junit.Assert.*;
@@ -184,7 +183,7 @@ public class RulesAPIFTest extends TestBase {
 		// Create Rule
 		Rule rule = new Rule();
 		rule.setName(fireOn.name() + "Rule");
-		rule.setHost(defaultHost.getIdentifier());
+		rule.setParent(defaultHost.getIdentifier());
 		rule.setEnabled(true);
 		rule.setFireOn(fireOn);
 

@@ -30,7 +30,7 @@ public class RulesCacheFTest {
     private List<Rule> rulesToRemove = new ArrayList<>();
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenCachedRuleOnSameHostIsUpdated() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenCachedRuleOnSameHostIsUpdated() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -42,19 +42,19 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's update the rule
         rule.setName("UpdatedRuleName");
         ruleDataGen.persist(rule);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionGroupOfCachedRuleOnSameHostIsUpdated() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionGroupOfCachedRuleOnSameHostIsUpdated() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -65,19 +65,19 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's update the condition
         group.setPriority(100);
         FactoryLocator.getRulesFactory().saveConditionGroup(group);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionOfCachedRuleOnSameHostIsUpdated() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionOfCachedRuleOnSameHostIsUpdated() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -89,19 +89,19 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's update the condition
         condition.setName("UpdatedConditionName");
         FactoryLocator.getRulesFactory().saveCondition(condition);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionValueOfCachedRuleOnSameHostIsUpdated() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionValueOfCachedRuleOnSameHostIsUpdated() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -117,7 +117,7 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's update the condition value
         value.setOwnerId(condition.getId());
@@ -125,12 +125,12 @@ public class RulesCacheFTest {
         FactoryLocator.getRulesFactory().saveConditionValue(value);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionGroupOfCachedRuleOnSameHostIsDeleted() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionGroupOfCachedRuleOnSameHostIsDeleted() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -141,18 +141,18 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's delete the condition
         FactoryLocator.getRulesFactory().deleteConditionGroup(group);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionsOfCachedRuleOnSameHostAreDeletedByGroup() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionsOfCachedRuleOnSameHostAreDeletedByGroup() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -164,18 +164,18 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's delete the conditions by group
         FactoryLocator.getRulesFactory().deleteConditionsByGroup(group);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionOfCachedRuleOnSameHostIsDeleted() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionOfCachedRuleOnSameHostIsDeleted() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -187,18 +187,18 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's delete the condition
         FactoryLocator.getRulesFactory().deleteCondition(condition);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionValueOfCachedRuleOnSameHostIsDeleted() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionValueOfCachedRuleOnSameHostIsDeleted() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -215,18 +215,18 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's delete the condition value
         FactoryLocator.getRulesFactory().deleteConditionValue(value);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     @Test
-    public void testGetRulesByHostFireOnReturnsNullWhenConditionValuesOfCachedRuleOnSameHostIsDeleted() throws Exception {
+    public void testgetRulesByParentFireOnReturnsNullWhenConditionValuesOfCachedRuleOnSameHostIsDeleted() throws Exception {
 
         Rule rule = ruleDataGen.nextPersisted();
         rulesToRemove.add(rule);
@@ -243,20 +243,20 @@ public class RulesCacheFTest {
         addRuleToHostFireOnCache(rule);
 
         // we should get a set with our rule
-        assertNotNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's delete the condition value
         FactoryLocator.getRulesFactory().deleteConditionValues(condition);
 
         // let's check the cache returns null after the update
-        assertNull(cache.getRulesByHostFireOn(rule.getHost(), fireOn));
+        assertNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
     }
 
     private void addRuleToHostFireOnCache(Rule rule) {
         Set<Rule> ruleSet = new HashSet<>();
         ruleSet.add(rule);
-        cache.addRulesByHostFireOn(ruleSet, rule.getHost(), fireOn);
+        cache.addRulesByParentFireOn(ruleSet, rule.getParent(), fireOn);
     }
 
     @After

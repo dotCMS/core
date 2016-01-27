@@ -1,8 +1,8 @@
-package com.dotmarketing.osgi.ruleengine.actionlet;
+package com.dotmarketing.osgi.ruleengine.slowruleactionlet;
 
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.osgi.GenericBundleActivator;
-import com.dotmarketing.osgi.ruleengine.actionlet.SlowRuleActionlet;
+import com.dotmarketing.osgi.ruleengine.slowruleactionlet.SlowRuleActionlet;
 
 /**
  * This plugin helps to test the slow rule engine message

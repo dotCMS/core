@@ -1,20 +1,16 @@
 package com.dotcms.content.elasticsearch.business;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.structure.model.Structure;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+
+import java.util.*;
+
+import static com.dotcms.repackage.org.junit.Assert.*;
 
 public class ESContentFactoryImplTest {
     
@@ -69,4 +65,38 @@ public class ESContentFactoryImplTest {
         } catch (Exception e) {
         }
     }
+
+    @Test
+    public void testScore () {
+
+        //+++++++++++++++++++++++++++
+        //Executing a simple query filtering by score
+        SearchHits searchHits = instance.indexSearch("+contenttype:blog", 20, 0, "score");
+
+        //Starting some validations
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits() > 0);
+
+        float maxScore = searchHits.getMaxScore();
+        //With this query all the results must have the same score
+        for ( SearchHit searchHit : searchHits.getHits() ) {
+            assertTrue(searchHit.getScore() == maxScore);
+        }
+
+        //+++++++++++++++++++++++++++
+        //Executing a simple query filtering by score
+        searchHits = instance.indexSearch("+contenttype:blog blog.title:bullish*", 20, 0, "score");
+
+        //Starting some validations
+        assertNotNull(searchHits.getTotalHits());
+        assertTrue(searchHits.getTotalHits() > 0);
+
+        maxScore = searchHits.getMaxScore();
+        //With this query the first result must have a higher score than the others
+        assertTrue(maxScore == searchHits.getHits()[0].getScore());
+        //The second record should have a lower score
+        assertTrue(maxScore != searchHits.getHits()[1].getScore());
+        assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
+    }
+
 }

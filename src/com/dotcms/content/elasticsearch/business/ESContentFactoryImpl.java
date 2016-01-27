@@ -1226,7 +1226,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
      * @return
      */
     private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
-        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)) {
+    	
+        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && !"score".equalsIgnoreCase(sortBy)) {
 
             if("random".equals(sortBy)){
                 return client.prepareSearch()
@@ -1276,7 +1277,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(offset>0)
                 srb.setFrom(offset);
 
-            if(UtilMethods.isSet(sortBy)) {
+            if(UtilMethods.isSet(sortBy) && !"score".equalsIgnoreCase(sortBy)) {
             	if(sortBy.endsWith("-order")) {
             	    // related content ordering
             	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
@@ -1305,6 +1306,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					}
             	}
             }
+            
+            
             try{
             	resp = srb.execute().actionGet();
             }catch (SearchPhaseExecutionException e) {

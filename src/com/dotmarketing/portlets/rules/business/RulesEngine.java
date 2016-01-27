@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -17,6 +18,11 @@ public final class RulesEngine {
 	private static int SLOW_RULE_LOG_MIN=Config.getIntProperty("SLOW_RULE_LOG_MIN", 100);
 
     public static void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
+
+        //Check for the proper license level, the rules engine is an enterprise feature only
+        if ( LicenseUtil.getLevel() < 200 ) {
+            return;
+        }
 
         Host host;
 
@@ -38,7 +44,7 @@ public final class RulesEngine {
 
         try {
 
-            Set<Rule> rules = APILocator.getRulesAPI().getRulesByHostFireOn(host.getIdentifier(), systemUser, false, fireOn);
+            Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(host.getIdentifier(), systemUser, false, fireOn);
 
             for (Rule rule : rules) {
                 try {

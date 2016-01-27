@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.rules;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 //import com.dotmarketing.portlets.rules.conditionlet.MockTrueConditionlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.liferay.portal.model.User;
@@ -42,7 +42,7 @@ public class RuleDataGen {
 
         Rule rule = new Rule();
         rule.setName(name);
-        rule.setHost(defaultHost.getIdentifier());
+        rule.setParent(defaultHost.getIdentifier());
         rule.setEnabled(true);
         rule.setFireOn(fireOn);
         return rule;

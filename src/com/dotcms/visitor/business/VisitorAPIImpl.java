@@ -80,7 +80,7 @@ public class VisitorAPIImpl implements VisitorAPI {
 				Visitor visitor = visitorOpt.get();
 				try{		
 					User user = com.liferay.portal.util.PortalUtil.getUser(request);
-					Persona p = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, false);
+					Persona p = APILocator.getPersonaAPI().find(request.getParameter(WebKeys.CMS_PERSONA_PARAMETER), user, true);
 					visitor.setPersona(p);
 				}
 				catch(Exception e){

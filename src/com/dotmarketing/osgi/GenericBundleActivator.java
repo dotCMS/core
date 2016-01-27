@@ -23,7 +23,7 @@ import com.dotmarketing.filters.DotUrlRewriteFilter;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionletOSGIService;
-import com.dotmarketing.portlets.rules.business.RulesAPI;
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ConditionletOSGIService;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;

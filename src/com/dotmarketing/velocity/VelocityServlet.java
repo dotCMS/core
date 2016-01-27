@@ -590,7 +590,14 @@ public abstract class VelocityServlet extends HttpServlet {
     		String language = String.valueOf(currentLanguageId);
     		String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
     		String queryString = request.getQueryString();
-			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString);
+    		String persona = null;
+    		Optional<Visitor> v = APILocator.getVisitorAPI().getVisitor(request, false);
+    		if(v.isPresent() && v.get().getPersona() !=null){
+    			persona=v.get().getPersona().getKeyTag();
+    		}
+
+    				
+			PageCacheParameters cacheParameters = new BlockPageCache.PageCacheParameters(userId, language, urlMap, queryString, persona);
 
     		boolean buildCache = false;
     		String key = VelocityUtil.getPageCacheKey(request, response);
@@ -632,7 +639,7 @@ public abstract class VelocityServlet extends HttpServlet {
     			String trimmedPage = out.toString().trim();
     			response.getWriter().write(trimmedPage);
     			response.getWriter().close();
-    			synchronized (key) {
+    			synchronized (key.intern()) {
     				//CacheLocator.getHTMLPageCache().remove(page);
     				CacheLocator.getBlockPageCache().add(page, trimmedPage, cacheParameters);
     			}

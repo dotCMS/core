@@ -30,8 +30,8 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private String actionlet;
     private Date modDate;
     private List<ParameterModel> parameters;
-    private RuleActionlet actionDef;
-    private RuleComponentInstance instance;
+    private transient RuleActionlet actionDef;
+    private transient RuleComponentInstance instance;
 
     public String getId() {
         return id;

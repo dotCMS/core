@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
+import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotmarketing.portlets.rules.parameter.type.DataType;
 
 /**
@@ -22,5 +23,14 @@ public class Input<T extends DataType> {
     public T getDataType() {
         return dataType;
     }
+
+    /**
+     * Validates the parameter context for the conditionlet. Each input will implement this validation if required.
+     * @param value parameter value
+     * @throws InvalidConditionParameterException
+     */
+    public void checkValid(String value)  throws InvalidConditionParameterException{
+    	return;
+    }
 }
- 
+

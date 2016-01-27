@@ -12,8 +12,8 @@ public class Is extends Comparison<Comparable> {
     }
 
     @Override
-    public boolean perform(Comparable left, Comparable right) {
-        return MatcherCheck.verifyThat(left, equalTo(right));
+    public boolean perform(Comparable expect, Comparable right) {
+        return MatcherCheck.verifyThat(expect, equalTo(right));
     }
 }
  
