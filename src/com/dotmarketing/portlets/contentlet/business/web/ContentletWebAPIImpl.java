@@ -375,7 +375,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			WorkflowAPI wapi = APILocator.getWorkflowAPI();
 			String wfActionId = (String) contentletFormData.get("wfActionId");
-			if(wfActionId!= null){
+			if(UtilMethods.isSet(wfActionId)){
 				WorkflowAction action = null;
 				try{
 					action = APILocator.getWorkflowAPI().findAction(wfActionId, user);
