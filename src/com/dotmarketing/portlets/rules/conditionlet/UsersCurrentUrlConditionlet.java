@@ -1,11 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
-import com.dotcms.repackage.com.google.common.collect.Sets;
-import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Instance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -27,7 +23,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CO
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
-//import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.REGEX;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
 /**
@@ -35,7 +31,13 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ST
  * The comparison of URLs is case-insensitive, except for the regular expression
  * comparison. This {@link Conditionlet} provides a drop-down menu with the
  * available comparison mechanisms, and a text field to enter the value to
- * compare.
+ * compare. The URL input value is required.
+ *
+ * As part of dotCMS functionality the 'CMS_INDEX_PAGE' property is used to imply the 'index'
+ * value of a directory, so if a directory such as '/contact-us/' is used on the
+ * conditionlet remember to by check if the directory has an index page set, if
+ * it does the conditionlet should test against '/contact-us/index' to evaluate
+ * the URL correctly
  *
  */
 public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlConditionlet.Instance> {
@@ -46,12 +48,11 @@ public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlCon
 
 	public UsersCurrentUrlConditionlet() {
 		super("api.ruleengine.system.conditionlet.UsersCurrentUrl", new ComparisonParameterDefinition(2, IS, IS_NOT,
-                //STARTS_WITH, ENDS_WITH, CONTAINS, REGEX), patternUrl);
-				STARTS_WITH, ENDS_WITH, CONTAINS), patternUrl);
+                STARTS_WITH, ENDS_WITH, CONTAINS, REGEX), patternUrl);
 	}
 
 	private static final ParameterDefinition<TextType> patternUrl = new ParameterDefinition<>(3, PATTERN_URL_INPUT_KEY,
-            new LocalUrlTextInput(new TextType()));
+            new TextInput<TextType>(new TextType().minLength(1)));
 
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
@@ -83,7 +84,6 @@ public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlCon
             this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
 
             try {
-                // noinspection unchecked
                 this.comparison = ((ComparisonParameterDefinition) definition.getParameterDefinitions().get(
                         COMPARISON_KEY)).comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {
@@ -92,27 +92,5 @@ public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlCon
                         definition.getId());
             }
         }
-    }
-
-    private static class LocalUrlTextInput extends TextInput<TextType>{
-
-		public LocalUrlTextInput(TextType dataType) {
-			super(dataType);
-		}
-
-		/**
-	     * Validates the parameter context for the conditionlet. Each input will implement this validation if required.
-	     * @param value parameter value
-	     * @throws InvalidConditionParameterException
-	     */
-	    public void checkValid(String value)  throws InvalidConditionParameterException{
-
-	    	String url = value.indexOf("?")>0?value.substring(0,value.indexOf("?")):value;
-	    	if(!url.startsWith("/"))
-	    		throw new InvalidConditionParameterException("URL parameter '%s' is malformed, should start with '/'",value);
-	    	if(url.contains(" "))
-	    		throw new InvalidConditionParameterException("URL parameter '%s' should not have white spaces",value);
-	    	return;
-	    }
     }
 }
