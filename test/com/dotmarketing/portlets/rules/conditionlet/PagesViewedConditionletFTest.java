@@ -1,0 +1,214 @@
+package com.dotmarketing.portlets.rules.conditionlet;
+
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.org.junit.After;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.After;
+import com.dotcms.repackage.org.junit.Test;
+import com.dotmarketing.portlets.rules.ParameterDataGen;
+import com.dotmarketing.portlets.rules.RuleDataGen;
+import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
+import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
+import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.portlets.rules.model.RuleAction;
+import com.dotmarketing.servlets.test.ServletTestRunner;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.List;
+import java.util.Random;
+
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
+
+/**
+ * Created by freddy on 27/01/16.
+ */
+public class PagesViewedConditionletFTest {
+
+    private Random random = new Random();
+    private HttpServletRequest request;
+
+    private List<Rule> rulesToRemove = Lists.newArrayList();
+    private RuleDataGen ruleDataGen;
+
+    private ConditionDataGen conditionDataGen = new ConditionDataGen();
+    private ConditionletTestUtil conditionletTestUtil = new ConditionletTestUtil();
+
+    @Before
+    public void init () {
+        request = ServletTestRunner.localRequest.get();
+        HttpSession session = request.getSession(false);
+        if ( session != null ) {
+            session.invalidate();
+        }
+    }
+
+    @After
+    public void tearDown () throws Exception {
+        conditionletTestUtil.clear();
+    }
+
+    @Test
+    public void testEqualsComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+        Condition condition = getCondition(EQUAL.getId(), "3");
+
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testNotEqualsComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+
+        Condition condition = getCondition(NOT_EQUAL.getId(), "2");
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testLessThanComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+
+        Condition condition = getCondition(LESS_THAN.getId(), "2");
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("about-us/index");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testGreaterThanComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+
+        Condition condition = getCondition(GREATER_THAN.getId(), "2");
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testLessThanOrEqualsComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+
+        Condition condition = getCondition(LESS_THAN_OR_EQUAL.getId(), "2");
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("about-us/index");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertEquals("Specified response header should be NOT present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+    }
+
+    @Test
+    public void testGreaterThanOrEqualsComparison () throws IOException {
+
+        String randomKey = "test-" + random.nextInt();
+        String value = randomKey + "-value";
+
+        Condition condition = getCondition(GREATER_THAN_OR_EQUAL.getId(), "2");
+
+        //Persist the Conditionlet
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+
+        //Execute some requests and validate the responses
+        ApiRequest apiRequest = new ApiRequest(request);
+
+        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("about-us/index");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("products/");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+        conn = apiRequest.makeRequest("contact-us/");
+        assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
+    }
+
+    private Condition getCondition(String id, String value) {
+        //Creating the Conditionlet for the Browser language
+        Condition condition = conditionDataGen.next();
+        condition.setConditionletId(PagesViewedConditionalet.class.getSimpleName());
+        condition.setName("Pages Viewed");
+        condition.addValue(Conditionlet.COMPARISON_KEY, id);
+        condition.addValue(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, value);
+        return condition;
+    }
+
+}

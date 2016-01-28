@@ -1,10 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.repackage.org.junit.Assert;
-//import com.dotcms.repackage.org.junit.Before;
-//import com.dotcms.repackage.org.junit.Test;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import com.dotcms.repackage.org.junit.Before;
+import com.dotcms.repackage.org.junit.Test;
+
 import com.dotcms.repackage.org.mockito.Mockito;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.WebKeys;
@@ -21,14 +20,14 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddy on 26/01/16.
  */
-public class PagesViewedConditionalletTest {
+public class PagesViewedConditionletTest {
 
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession httpSessionMock;
     private PagesViewedConditionalet conditionlet = new PagesViewedConditionalet();
 
-    @BeforeMethod
+    @Before
     public void before () {
         // Mock the request
         request = Mockito.mock(HttpServletRequest.class);
@@ -37,8 +36,6 @@ public class PagesViewedConditionalletTest {
         response = Mockito.mock(HttpServletResponse.class);
 
         //Mock the session
-        request.getSession().getAttribute(WebKeys.VISITOR);
-
         httpSessionMock = Mockito.mock(HttpSession.class);
         Mockito.when(request.getSession()).thenReturn(httpSessionMock);
 
@@ -99,7 +96,7 @@ public class PagesViewedConditionalletTest {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
         PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
 
@@ -109,7 +106,7 @@ public class PagesViewedConditionalletTest {
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -121,7 +118,7 @@ public class PagesViewedConditionalletTest {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "5"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
 
@@ -131,7 +128,7 @@ public class PagesViewedConditionalletTest {
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "5"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -143,7 +140,7 @@ public class PagesViewedConditionalletTest {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
         PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
 
@@ -163,7 +160,7 @@ public class PagesViewedConditionalletTest {
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -175,7 +172,7 @@ public class PagesViewedConditionalletTest {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
 
@@ -195,7 +192,7 @@ public class PagesViewedConditionalletTest {
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
         parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
         instance = conditionlet.instanceFrom(parameters);
 
