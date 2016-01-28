@@ -4,6 +4,7 @@ import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -12,6 +13,8 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
@@ -75,33 +78,50 @@ public class RuleTransform {
         return groups;
     }
 
-    public RestRule appToRest(Rule app) {
-        return toRest.apply(app);
-    }
+    public RestRule appToRest(Rule app, User user) {
+        RestRule restRule = toRest.apply(app);
 
-    public Function<Rule, RestRule> appToRestFn() {
-        return toRest;
+        //If the RestRule is null, toRest failed somehow, we need to disable the rule.
+        if(restRule == null){
+            try{
+                APILocator.getRulesAPI().disableRule(app, user);
+            } catch (DotDataException|DotSecurityException e){
+                Logger.error(this, "Error trying to disable Rule: " + app.getId(), e);
+            }
+        }
+
+        return restRule;
     }
 
     private final Function<Rule, RestRule> toRest = (app) -> {
-        Map<String, RestConditionGroup> groups = app.getGroups()
-                                                    .stream()
-                                                    .collect(Collectors.toMap(ConditionGroup::getId, groupTransform.appToRestFn()));
+        RestRule restRule = null;
 
-        Map<String, Boolean> ruleActions = app.getRuleActions()
-                                                         .stream()
-                                                         .collect(Collectors.toMap(RuleAction::getId, ruleAction -> true));
+        try{
+            Map<String, RestConditionGroup> groups = app.getGroups()
+                    .stream()
+                    .collect(Collectors.toMap(ConditionGroup::getId, groupTransform.appToRestFn()));
 
-        return new RestRule.Builder()
-                .key(app.getId())
-                .name(app.getName())
-                .fireOn(app.getFireOn().toString())
-                .shortCircuit(app.isShortCircuit())
-                .priority(app.getPriority())
-                .enabled(app.isEnabled())
-                .conditionGroups(groups)
-                .ruleActions(ruleActions)
-                .build();
+            Map<String, Boolean> ruleActions = app.getRuleActions()
+                    .stream()
+                    .collect(Collectors.toMap(RuleAction::getId, ruleAction -> true));
+
+            restRule = new RestRule.Builder()
+                    .key(app.getId())
+                    .name(app.getName())
+                    .fireOn(app.getFireOn().toString())
+                    .shortCircuit(app.isShortCircuit())
+                    .priority(app.getPriority())
+                    .enabled(app.isEnabled())
+                    .conditionGroups(groups)
+                    .ruleActions(ruleActions)
+                    .build();
+
+        } catch (Exception e) {
+            String ruleName = UtilMethods.isSet(app.getName()) ? app.getName() : "N/A";
+            Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST", e);
+        }
+
+        return restRule;
     };
 
 }

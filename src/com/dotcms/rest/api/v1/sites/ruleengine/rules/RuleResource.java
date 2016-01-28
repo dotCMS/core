@@ -34,6 +34,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.net.URI;
@@ -189,14 +190,7 @@ public class RuleResource {
     }
 
     private Ruleable getParent(String identifier, User user) {
-
-
-	   	 class ParentProxy  extends PermissionableProxy implements Ruleable{
-	   		 
-	
-	   		
-	   	}
-   	
+        class ParentProxy  extends PermissionableProxy implements Ruleable{ }
     	
 	   	ParentProxy proxy = new ParentProxy();
 	   	proxy.setIdentifier(identifier);
@@ -227,7 +221,10 @@ public class RuleResource {
     private List<RestRule> getRulesInternal(User user, Ruleable host) {
         try {
             List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
-            return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
+            return rules.stream()
+                        .map(rule -> ruleTransform.appToRest(rule, user))
+                        .filter(rule -> UtilMethods.isSet(rule))
+                        .collect(Collectors.toList());
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
@@ -237,7 +234,13 @@ public class RuleResource {
 
     private RestRule getRuleInternal(String ruleId, User user) {
         Rule input = getRule(ruleId, user);
-        return ruleTransform.appToRest(input);
+        RestRule restRule = ruleTransform.appToRest(input, user);
+
+        if(restRule == null) {
+            throw new NotFoundException("Rule not found: '%s'", ruleId);
+        }
+
+        return restRule;
     }
 
     private String createRuleInternal(String siteId, RestRule restRule, User user) {
