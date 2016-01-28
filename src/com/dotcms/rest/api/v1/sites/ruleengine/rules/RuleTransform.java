@@ -14,7 +14,6 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.json.JSONException;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;

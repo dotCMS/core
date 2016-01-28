@@ -21,7 +21,6 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Ruleable;
