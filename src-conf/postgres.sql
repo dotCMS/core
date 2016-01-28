@@ -2471,6 +2471,7 @@ ALTER TABLE campaign ALTER active SET DEFAULT false;
 insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, passwordReset, firstName, middleName, lastName, male, birthday, emailAddress, skinId, dottedSkins, roundedSkins, greeting, layoutIds, loginDate, failedLoginAttempts, agreedToTermsOfUse, active_) values ('dotcms.org.default', 'default', current_timestamp, 'password', 'f', 'f', '', '', '', 't', '01/01/1970', 'default@dotcms.org', '01', 'f', 'f', 'Welcome!', '', current_timestamp, 0, 'f', 't');
 create index addres_userid_index on address(userid);
 create index tag_user_id_index on tag(user_id);
+create index tag_is_persona_index on tag(persona);
 create index tag_inode_tagid on tag_inode(tag_id);
 create index tag_inode_inode on tag_inode(inode);
 -- These two indexes are here instead of the hibernate file because Oracle by default creates an index on a unique field.  So creating an index would try to create the same index twice.

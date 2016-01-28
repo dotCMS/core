@@ -24,7 +24,8 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
     public String getPostgresScript () {
         return "ALTER TABLE tag ADD COLUMN persona BOOLEAN DEFAULT FALSE;\n" +
                 "ALTER TABLE tag ADD COLUMN mod_date TIMESTAMP;\n" +
-                "ALTER TABLE tag_inode ADD COLUMN mod_date TIMESTAMP;";
+                "ALTER TABLE tag_inode ADD COLUMN mod_date TIMESTAMP;\n" +
+                "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
     /**
@@ -36,7 +37,8 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
     public String getMySQLScript () {
         return "ALTER TABLE tag ADD persona BOOLEAN DEFAULT FALSE;\n" +
                 "ALTER TABLE tag ADD mod_date DATETIME;\n" +
-                "ALTER TABLE tag_inode ADD mod_date DATETIME;";
+                "ALTER TABLE tag_inode ADD mod_date DATETIME;\n" +
+                "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
     /**
@@ -48,7 +50,8 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
     public String getOracleScript () {
         return "ALTER TABLE tag ADD persona number(1,0) default 0;\n" +
                 "ALTER TABLE tag ADD mod_date DATE;\n" +
-                "ALTER TABLE tag_inode ADD mod_date DATE;";
+                "ALTER TABLE tag_inode ADD mod_date DATE;\n" +
+                "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
     /**
@@ -60,7 +63,8 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
     public String getMSSQLScript () {
         return "ALTER TABLE tag ADD persona TINYINT DEFAULT 0;\n" +
                 "ALTER TABLE tag ADD COLUMN mod_date DATETIME NULL;\n" +
-                "ALTER TABLE tag_inode ADD COLUMN mod_date DATETIME NULL;";
+                "ALTER TABLE tag_inode ADD COLUMN mod_date DATETIME NULL;\n" +
+                "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
     /**
@@ -72,7 +76,8 @@ public class Task03520AlterTagsForPersonas extends AbstractJDBCStartupTask {
     public String getH2Script () {
         return "ALTER TABLE tag ADD COLUMN persona BOOLEAN DEFAULT FALSE;\n" +
                 "ALTER TABLE tag ADD COLUMN mod_date TIMESTAMP;\n" +
-                "ALTER TABLE tag_inode ADD COLUMN mod_date TIMESTAMP;";
+                "ALTER TABLE tag_inode ADD COLUMN mod_date TIMESTAMP;\n" +
+                "CREATE INDEX tag_is_persona_index ON tag(persona);";
     }
 
     @Override

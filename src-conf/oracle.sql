@@ -2526,6 +2526,7 @@ insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, 
 
 create index addres_userid_index on address(userid);
 create index tag_user_id_index on tag(user_id);
+create index tag_is_persona_index on tag(persona);
 create index tag_inode_tagid on tag_inode(tag_id);
 create index tag_inode_inode on tag_inode(inode);
 CREATE TABLE "DIST_JOURNAL" ( "ID" INTEGER NOT NULL ,
