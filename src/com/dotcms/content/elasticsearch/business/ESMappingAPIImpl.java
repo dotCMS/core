@@ -131,13 +131,6 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 
 
-	private Map<String, Object> getFieldJson(Field f) throws DotMappingException {
-		Map<String, Object> fieldProps = getDefaultFieldMap();
-		fieldProps.put("type", getElasticType(f));
-		return fieldProps;
-
-	}
-
 	private Map<String, Object> getDefaultFieldMap() {
 
 		Map<String, Object> fieldProps = new HashMap<String, Object>();
@@ -147,69 +140,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 	}
 
-	private Map<String, Object> getDefaultContentletFields() {
-		Map<String, Object> m = new HashMap<String, Object>();
-		Map<String, Object> fields = new HashMap<String, Object>();
-		// required fields
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("identifier", m);
 
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("inode", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("modUser", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "date");
-		fields.put("modDate", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("host", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("stInode", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("folder", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "integer");
-		fields.put("languageId", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "string");
-		fields.put("owner", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "date");
-		fields.put("lastReview", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "date");
-		fields.put("nextReview", m);
-
-		m = getDefaultFieldMap();
-		m.put("type", "title");
-		fields.put("title", m);
-
-		m = getDefaultFieldMap();
-        m.put("type", "date");
-        fields.put("pubdate", m);
-
-        m = getDefaultFieldMap();
-        m.put("type", "date");
-        fields.put("expdate", m);
-
-		return fields;
-
-	}
 
 	private String getElasticType(Field f) throws DotMappingException {
 		if (f.getFieldType().equals(Field.FieldType.TAG.toString())) {
@@ -571,9 +502,11 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 	}
                 } else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
                     StringBuilder tagg=new StringBuilder();
-                    for(Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode()))
+                    for(Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode())){
                         tagg.append(t.getTagName()).append(' ');
+                    }
                     m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), tagg.toString());
+                    m.put("tags", tagg.toString());
                 } else {
                     if (f.getFieldContentlet().startsWith("bool")) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());
