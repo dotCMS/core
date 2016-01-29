@@ -127,7 +127,9 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 	    //Setting a different active object (for example, a folder two levels above the current URI, would need to be done in HTML Code
 	    String reqURI = req.getRequestURI();
             String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
-	    return !isCodeLink() && parentPath.equalsIgnoreCase(href);
+            if(!parentPath.endsWith("/"))
+                parentPath = parentPath + "/";
+            return !isCodeLink() && href.startsWith(parentPath);
 	}
         else
             return false;
