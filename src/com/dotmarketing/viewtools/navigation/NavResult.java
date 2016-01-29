@@ -122,8 +122,13 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
     public boolean isActive() {
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
-        if(req!=null)
-            return !isCodeLink() && req.getRequestURI().startsWith(href);
+        if(req!=null){
+	    //We should exclude the page name from the Request URI so we can check if page's parent object is the real active object
+	    //Setting a different active object (for example, a folder two levels above the current URI, would need to be done in HTML Code
+	    String reqURI = req.getRequestURI();
+            String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
+	    return !isCodeLink() && parentPath.equalsIgnoreCase(href);
+	}
         else
             return false;
     }
