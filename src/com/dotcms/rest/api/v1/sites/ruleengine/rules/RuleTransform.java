@@ -4,6 +4,7 @@ import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.InternalServerException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
@@ -17,10 +18,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
@@ -78,33 +78,19 @@ public class RuleTransform {
     }
 
     public RestRule appToRest(Rule app, User user) {
-        RestRule restRule = toRest.apply(app);
-
-        //If the RestRule is null, toRest failed somehow, we need to disable the rule.
-        if(restRule == null){
-            try{
-                APILocator.getRulesAPI().disableRule(app, user);
-            } catch (DotDataException|DotSecurityException e){
-                Logger.error(this, "Error trying to disable Rule: " + app.getId(), e);
-            }
-        }
-
-        return restRule;
-    }
-
-    private final Function<Rule, RestRule> toRest = (app) -> {
-        RestRule restRule = null;
-
         try{
-            Map<String, RestConditionGroup> groups = app.getGroups()
-                    .stream()
-                    .collect(Collectors.toMap(ConditionGroup::getId, groupTransform.appToRestFn()));
+            Map<String, RestConditionGroup> groups = new HashMap<>();
+            Map<String, Boolean> ruleActions = new HashMap<>();
 
-            Map<String, Boolean> ruleActions = app.getRuleActions()
-                    .stream()
-                    .collect(Collectors.toMap(RuleAction::getId, ruleAction -> true));
+            for (ConditionGroup conditionGroup : app.getGroups()) {
+                groups.put(conditionGroup.getId(), groupTransform.appToRest(conditionGroup));
+            }
 
-            restRule = new RestRule.Builder()
+            for (RuleAction ruleAction : app.getRuleActions()) {
+                ruleActions.put(ruleAction.getId(), true);
+            }
+
+            return new RestRule.Builder()
                     .key(app.getId())
                     .name(app.getName())
                     .fireOn(app.getFireOn().toString())
@@ -116,12 +102,15 @@ public class RuleTransform {
                     .build();
 
         } catch (Exception e) {
-            String ruleName = UtilMethods.isSet(app.getName()) ? app.getName() : "N/A";
-            Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST", e);
-        }
+            try{
+                APILocator.getRulesAPI().disableRule(app, user);
+            } catch (DotDataException|DotSecurityException dse){
+                Logger.error(this, "Error trying to disable Rule: " + app.getId(), dse);
+            }
 
-        return restRule;
-    };
+            throw new InternalServerException(e, "Could not create ReST Rule from Server, Rule id '%s'", app.getId());
+        }
+    }
 
 }
 

@@ -8,8 +8,6 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ConditionGroupTransform {
     private final RulesAPI rulesAPI;
@@ -33,20 +31,12 @@ public class ConditionGroupTransform {
     }
 
     public RestConditionGroup appToRest(ConditionGroup app) {
-        return toRest.apply(app);
-    }
-
-    public Function<ConditionGroup, RestConditionGroup> appToRestFn() {
-        return toRest;
-    }
-
-    public final Function<ConditionGroup, RestConditionGroup> toRest = (app) -> {
-
         Map<String, Boolean> restConditionMap = new HashMap<>();
 
         if(app.getConditions()!=null && !app.getConditions().isEmpty()) {
-            restConditionMap = app.getConditions().stream()
-                .collect(Collectors.toMap(Condition::getId, c -> Boolean.TRUE));
+            for (Condition condition : app.getConditions()) {
+                restConditionMap.put(condition.getId(), true);
+            }
         }
 
         RestConditionGroup rest = new RestConditionGroup.Builder()
@@ -57,8 +47,7 @@ public class ConditionGroupTransform {
                 .build();
 
         return rest;
-    };
-
+    }
 
 }
 

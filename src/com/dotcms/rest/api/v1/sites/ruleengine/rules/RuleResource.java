@@ -38,6 +38,7 @@ import com.liferay.portal.model.User;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -219,11 +220,19 @@ public class RuleResource {
 
     private List<RestRule> getRulesInternal(User user, Ruleable host) {
         try {
+            List<RestRule> restRules = new ArrayList<>();
+
             List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
-            return rules.stream()
-                        .map(rule -> ruleTransform.appToRest(rule, user))
-                        .filter(rule -> UtilMethods.isSet(rule))
-                        .collect(Collectors.toList());
+            for (Rule rule : rules) {
+                try{
+                    restRules.add(ruleTransform.appToRest(rule, user));
+                } catch (Exception transEx) {
+                    String ruleName = UtilMethods.isSet(rule.getName()) ? rule.getName() : "N/A";
+                    Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST");
+                }
+            }
+            return restRules;
+
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
@@ -234,11 +243,6 @@ public class RuleResource {
     private RestRule getRuleInternal(String ruleId, User user) {
         Rule input = getRule(ruleId, user);
         RestRule restRule = ruleTransform.appToRest(input, user);
-
-        if(restRule == null) {
-            throw new NotFoundException("Rule not found: '%s'", ruleId);
-        }
-
         return restRule;
     }
 
