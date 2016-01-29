@@ -85,6 +85,9 @@ var project = {
       'core-js/client/': [
         { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
       ],
+      'es6-shim/': [
+        { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
+      ],
       'jquery/dist/': [
         { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
         { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }

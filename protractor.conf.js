@@ -53,6 +53,11 @@ exports.config = {
       })
     }))
 
+    /* The following lets us use the browsername in our tests */
+    browser.getCapabilities().then(function (cap) {
+      browser.browserName = cap.caps_.browserName;
+    });
+
     module.exports = p
     return p
   },
@@ -60,9 +65,12 @@ exports.config = {
     './build/e2e/boot.js'
   ],
   multiCapabilities: [
-    //{ browserName: 'firefox' },
     {
       browserName: 'chrome',
+      loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
+    },
+    {
+      browserName: 'safari',
       loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
     }
   ],

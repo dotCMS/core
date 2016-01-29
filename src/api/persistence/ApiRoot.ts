@@ -36,10 +36,16 @@ export class ApiRoot {
       console.log('Proxy server Base URL set to ', baseUrl)
       this.setBaseUrl(baseUrl) // if null, just uses the base of the current URL
       this.resourceRef = this.root.child('system/i18n')
+      this.configureUser(query, authUser)
     } catch (e) {
       console.log("Could not set baseUrl automatically.")
     }
     instanceOfApiRoot = this;
+  }
+
+  private configureUser(query:string, user:UserModel):void {
+    let suppressAlerts = ApiRoot.parseQueryParam(query, "suppressAlerts") === 'true'
+    user.suppressAlerts = suppressAlerts
   }
 
   getDefaultRequestOptions():RequestOptions {

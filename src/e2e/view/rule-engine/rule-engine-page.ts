@@ -16,10 +16,17 @@ export class RulePage extends Page {
   ruleEls:ElementArrayFinder
 
   constructor(locale:string = null) {
-    super('http://localhost:9000/build/index.html' + (locale != null ? '?locale=' + locale : ''), '(Dev) dotCMS Core-Web');
+    super('http://localhost:9000/build/index.html', '(Dev) dotCMS Core-Web');
+    if(locale){
+      this.queryParams['locale'] = locale
+    }
     this.filterBox = element(by.css('.filter.icon + INPUT'))
     this.addRuleButton = new TestButton(element(by.css('.cw-button-add')))
     this.ruleEls = element.all(by.tagName('rule'))
+  }
+
+  suppressAlerts(value:boolean){
+    this.queryParams['suppressAlerts'] = value ? 'true' : 'false'
   }
 
   waitForSave():webdriver.promise.Promise<void> {
@@ -29,8 +36,8 @@ export class RulePage extends Page {
   addRule():webdriver.promise.Promise<TestRuleComponent> {
     return this.addRuleButton.click().then(()=> {
       let rule = this.firstRule()
-      var name = "e2e-" + new Date().getTime();
-      rule.name.setValue(name)
+      var name = "e2e-" + browser['browserName'] + '-' + new Date().getTime();
+      rule.setName(name)
       rule.fireOn.el.click()
       return rule
     })
@@ -42,6 +49,11 @@ export class RulePage extends Page {
 
   firstRule():TestRuleComponent {
     return new TestRuleComponent(this.ruleEls.first())
+  }
+
+  findRule(name:string):TestRuleComponent {
+    let rule = element(by.xpath("//input[@value='"+ name + "']/ancestor::rule"))
+    return new TestRuleComponent(rule)
   }
 
   rules():Promise<TestRuleComponent[]> {
@@ -71,7 +83,8 @@ export class TestRuleComponent {
   el:ElementFinder
   header:ElementFinder
   mainBody:ElementFinder
-  name:TestInputText
+  name:string
+  nameEl:TestInputText
   fireOn:TestInputDropdown
   toggleEnable:TestInputToggle
   removeBtn:TestButton
@@ -86,13 +99,24 @@ export class TestRuleComponent {
     this.mainBody = root.element(by.css('.cw-accordion-body'))
     this.header = root.element(by.css('.cw-header'))
     this.expandoCaret = this.header.element(by.css('.cw-rule-caret'))
-    this.name = new TestInputText(root.element(by.css('.cw-rule-name-input')))
+    this.nameEl = new TestInputText(root.element(by.css('.cw-rule-name-input')))
     this.fireOn = new TestInputDropdown(root.element(by.css('.cw-fire-on-dropdown')))
     this.toggleEnable = new TestInputToggle(root.element(by.tagName('cw-toggle-input')))
     this.removeBtn = new TestButton(root.element(by.css('.cw-delete-rule')))
     this.addGroup = new TestButton(root.element(by.css('.cw-add-group')))
     this.conditionGroupEls = root.all(by.tagName('condition-group'))
     this.actionEls = root.all(by.tagName('rule-action'))
+  }
+
+  setName(name:string):webdriver.promise.Promise<void>{
+    this.name = name
+    return this.nameEl.setValue(name)
+  }
+
+  getName():webdriver.promise.Promise<string>{
+    let v = this.nameEl.getValue()
+    v.then( name => this.name = name)
+    return v
   }
 
   isShowingBody():webdriver.promise.Promise<boolean> {
@@ -160,15 +184,14 @@ export class TestRuleComponent {
     return actionDef
   }
 
-  remove():Promise<any> {
-    return new Promise((a, r)=> {
-      this.removeBtn.click()
-      browser.switchTo().alert().accept().then(()=> {
-        a(true)
-      }, ()=> {
-        a(false)
-      })
-    })
+  remove():webdriver.promise.Promise<any> {
+    let result
+    if (browser['browserName'].indexOf('safari') !== -1 ) {
+      result = this.removeBtn.click()
+    } else {
+      result = this.removeBtn.optShiftClick()
+    }
+    return result
   }
 }
 

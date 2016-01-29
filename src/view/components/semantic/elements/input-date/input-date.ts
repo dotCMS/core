@@ -26,7 +26,6 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     (blur)="validate($event.target.value); onBlur($event.target.value)"
     (focus)="onFocus($event.target.value)">
   <i [ngClass]="icon" *ngIf="icon"></i>
-  <div class="ui small red message" *ngIf="errorMessage">{{errorMessage}}</div>
 </div>
   `,
   directives: [CORE_DIRECTIVES]
