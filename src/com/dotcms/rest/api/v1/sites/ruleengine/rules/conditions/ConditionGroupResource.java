@@ -180,9 +180,12 @@ public class ConditionGroupResource  {
             rulesAPI.deleteConditionGroup(group, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
+
     }
 
     @VisibleForTesting

@@ -178,13 +178,10 @@ public class RuleResource {
             rulesAPI.deleteRule(rule, user, false);
             HibernateUtil.commitTransaction();
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(RuleResource.class, "Error while rolling back transaction", e);
-            }
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 
