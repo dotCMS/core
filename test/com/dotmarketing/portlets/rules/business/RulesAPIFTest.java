@@ -25,7 +25,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
-import com.dotmarketing.portlets.rules.actionlet.CountRequestsActionlet;
+import com.dotmarketing.portlets.rules.actionlet.CountRulesActionlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
@@ -48,18 +48,18 @@ public class RulesAPIFTest extends TestBase {
 		indexUrl = String.format("http://%s:%s/", serverName, serverPort);
         ruleId = "";
 	}
-	
-	
+
+
 	@Test
 	public void testFireOnEveryRequest() throws Exception {
 
 		createRule(Rule.FireOn.EVERY_REQUEST);
 
 		makeRequest(robotsTxtUrl + System.currentTimeMillis());
-		Integer count = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
+		Integer count = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_REQUEST.getCamelCaseName());
 
 		makeRequest(robotsTxtUrl + System.currentTimeMillis());
-		Integer newCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_REQUEST.name());
+		Integer newCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_REQUEST.getCamelCaseName());
 
 		assertTrue(newCount > count);
 
@@ -70,17 +70,18 @@ public class RulesAPIFTest extends TestBase {
 
 		createRule(Rule.FireOn.EVERY_PAGE);
 		makeRequest(indexUrl);
-		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
+		Integer firstCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_PAGE.getCamelCaseName());
 
 		makeRequest(robotsTxtUrl + System.currentTimeMillis());
-		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
+		Integer secondCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_PAGE.getCamelCaseName());
 
 		assertEquals(firstCount, secondCount);
 
 		makeRequest(indexUrl);
-		Integer thirdCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.EVERY_PAGE.name());
+		Integer thirdCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.EVERY_PAGE.getCamelCaseName());
 
 		assertTrue(thirdCount > secondCount);
+
 	}
 
 	@Test
@@ -92,10 +93,10 @@ public class RulesAPIFTest extends TestBase {
 
 		String oncePerVisitCookie = getCookie(conn, com.dotmarketing.util.WebKeys.ONCE_PER_VISIT_COOKIE);
 
-		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
+		Integer firstCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.ONCE_PER_VISIT.getCamelCaseName());
 
 		makeRequest(indexUrl, oncePerVisitCookie);
-		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISIT.name());
+		Integer secondCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.ONCE_PER_VISIT.getCamelCaseName());
 
 		assertEquals(firstCount, secondCount);
 
@@ -110,10 +111,10 @@ public class RulesAPIFTest extends TestBase {
 
 		String longLivedCookie = getCookie(conn, com.dotmarketing.util.WebKeys.LONG_LIVED_DOTCMS_ID_COOKIE);
 
-		Integer firstCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
+		Integer firstCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.ONCE_PER_VISITOR.getCamelCaseName());
 
 		makeRequest(indexUrl, longLivedCookie);
-		Integer secondCount = (Integer) request.getServletContext().getAttribute(Rule.FireOn.ONCE_PER_VISITOR.name());
+		Integer secondCount = (Integer) request.getServletContext().getAttribute("count-" + Rule.FireOn.ONCE_PER_VISITOR.getCamelCaseName());
 
 		assertEquals(firstCount, secondCount);
 
@@ -188,18 +189,18 @@ public class RulesAPIFTest extends TestBase {
 		rule.setFireOn(fireOn);
 
 		rulesAPI.saveRule(rule, user, false);
-		
+
 		ruleId = rule.getId();
 
 		RuleAction action = new RuleAction();
-		action.setActionlet(CountRequestsActionlet.class.getSimpleName());
+		action.setActionlet(CountRulesActionlet.class.getSimpleName());
 		action.setRuleId(rule.getId());
 		action.setName(fireOn.getCamelCaseName() + "Actionlet");
 
 		ParameterModel fireOnParam = new ParameterModel();
 		fireOnParam.setOwnerId(action.getId());
-		fireOnParam.setKey("fireOn");
-		fireOnParam.setValue(fireOn.name());
+		fireOnParam.setKey(CountRulesActionlet.PARAMETER_NAME);
+		fireOnParam.setValue("count-" + fireOn.getCamelCaseName());
 
 		List<ParameterModel> params = new ArrayList<>();
 		params.add(fireOnParam);
