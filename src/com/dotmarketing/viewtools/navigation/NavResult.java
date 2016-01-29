@@ -126,10 +126,14 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
 	    //We should exclude the page name from the Request URI so we can check if page's parent object is the real active object
 	    //Setting a different active object (for example, a folder two levels above the current URI, would need to be done in HTML Code
 	    String reqURI = req.getRequestURI();
-            String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
-            if(!parentPath.endsWith("/"))
-                parentPath = parentPath + "/";
-            return !isCodeLink() && href.startsWith(parentPath);
+        String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
+        if(!parentPath.endsWith("/"))
+            parentPath = parentPath + "/";
+        if(isFolder() && !href.endsWith("/")){
+            String tempHref = href + "/";
+            return parentPath.equalsIgnoreCase(tempHref);
+        } else
+            return !isCodeLink() && parentPath.startsWith(href);
 	}
         else
             return false;
