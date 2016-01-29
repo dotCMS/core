@@ -1,7 +1,10 @@
 package com.dotmarketing.viewtools.content;
 
+import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -10,6 +13,9 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
+
+import com.dotcms.visitor.domain.Visitor;
+import com.dotcms.visitor.domain.Visitor.AccruedTag;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -18,6 +24,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.personas.model.IPersona;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -165,6 +172,7 @@ public class ContentTool implements ViewTool {
     	    for(Contentlet cc : cons) {
     	    	ret.add(new ContentMap(cc,user,EDIT_OR_PREVIEW_MODE,currentHost,context));
     	    }
+    	    ret.setQuery(cons.getQuery());
     		return ret;
 	    }
 	    catch(Throwable ex) {
@@ -402,6 +410,45 @@ public class ContentTool implements ViewTool {
         }
 	}
 	
+	public List<ContentMap> pullPersonalized(String query, int limit, int offset, String secondarySort) {	
+		try {
+			
+			query=addPersonalizationToQuery(query);
+			String sort = secondarySort==null ? "score" : "score " + secondarySort;
+			return pull(query, offset, limit, sort);
+			
+		}
+		catch(Throwable ex) {
+            if(Config.getBooleanProperty("ENABLE_FRONTEND_STACKTRACE", false)) {
+                Logger.error(this,"error in ContentTool.pullRelated. URL: "+req.getRequestURL().toString(),ex);
+            }
+            throw new RuntimeException(ex);
+        }
+	
+	}
+	
+	public List<ContentMap> pullPersonalized(String query, int limit) {	
+		return pullPersonalized(query, limit, 0, null);
+	}
+	
+	public List<ContentMap> pullPersonalized(String query, int limit, String secondarySort) {	
+		return pullPersonalized(query, limit, 0, secondarySort);
+	}
+	public List<ContentMap> pullPersonalized(String query, String limitStr, String secondarySort) {	
+		
+		
+		int limit = Integer.parseInt(limitStr);
+		
+		return pullPersonalized(query, limit, 0, secondarySort);
+		
+	}
+	public List<ContentMap> pullPersonalized(String query, String limitStr) {	
+		
+		int limit = Integer.parseInt(limitStr);
+		
+		return pullPersonalized(query, limit, 0, null);
+	}
+	
 	private String addDefaultsToQuery(String query){
 		String q = "";
 		
@@ -432,7 +479,55 @@ public class ContentTool implements ViewTool {
 	  	return q;
 	}
 	
+	private String addPersonalizationToQuery(String query){
+		Optional<Visitor> opt = APILocator.getVisitorAPI().getVisitor(this.req);
+		if(!opt.isPresent() || query==null ){
+			return query;
+		}
+		query=query.toLowerCase();
+		
+		// if we are already personalized
+		if(query.indexOf(" tags:")>-1){
+			return query;
+		}
+		
 
+		StringWriter buff  = new StringWriter().append(query);
+		Visitor visitor = opt.get();
+		IPersona p = visitor.getPersona();
+		List<AccruedTag> tags = visitor.getAccruedTags();
+		if(p==null && (tags==null || tags.size()==0)){
+			return query;
+		}
+		
+		
+		
+		int maxBoost = 10;
+		
+		if(tags.size()>0){
+			maxBoost = tags.get(0).getCount() + maxBoost;
+		}
+		if(p!=null){
+			buff.append(" tags:" + p.getKeyTag().toLowerCase() + "*^" + maxBoost);
+		}
+		
+		for(AccruedTag tag : tags){
+			buff.append(" tags:" + tag.getTag().toLowerCase() + "*^" + (tag.getCount()+1) + " ");
+		}
+		
+
+		
+		
+		
+		
+	
+		
+		
+		
+
+	  	return buff.toString();
+	}
+	
     /**
      * Gets the top viewed contents identifiers and numberOfViews  for a particular structure for a specified date interval
      * 
