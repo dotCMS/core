@@ -61,8 +61,10 @@ public class UsersBrowserLanguageConditionletFTest {
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en");
 
+        String ruleName = String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt());
+
         //Persist the Conditionlet
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request, UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER);
@@ -89,7 +91,8 @@ public class UsersBrowserLanguageConditionletFTest {
         condition.addValue(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en");
 
         //Persist the Conditionlet
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+        String ruleName = String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt());
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
