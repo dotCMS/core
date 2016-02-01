@@ -253,6 +253,4 @@ public class PersonaAPIImpl implements PersonaAPI {
 		return defaultStr;
 	}
 
-	
-
 }
