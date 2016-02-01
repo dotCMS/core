@@ -55,6 +55,7 @@
     "dev": "gulp serve --open=/build/index.html",
     "itest": "gulp serve --open=/build/integration-tests.html",
     "e2e": "protractor ./protractor.conf.js || true",
+    "e2e-win7": "protractor ./protractor-win7.conf.js || true",
     "idemo": "gulp serve --open=/build/integration-demo.html",
     "build": "gulp package",
     "publish": "gulp publish",
