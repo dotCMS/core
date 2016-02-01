@@ -75,6 +75,7 @@ export class InputText implements ControlValueAccessor {
 
   writeValue(value:any) {
     this._modelValue = isBlank(value) ? '' : value
+    this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 
   registerOnChange(fn) { this.onChange = fn; }

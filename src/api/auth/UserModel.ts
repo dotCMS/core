@@ -5,6 +5,7 @@ export class UserModel {
   username: string
   password: string
   locale: string
+  suppressAlerts:boolean = false
 
   constructor(){
     if(top.location.port && Number.parseInt(top.location.port) >= 9000) {

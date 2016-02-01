@@ -68,11 +68,14 @@ exports.config = {
     {
       browserName: 'chrome',
       loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
-    },
-    {
-      browserName: 'safari',
+    },{
+      browserName: 'internet explorer',
       loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
-    }
+    },
+    //{
+    //  browserName: 'safari',
+    //  loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
+    //}
   ],
   useAllAngular2AppRoots: true,
 

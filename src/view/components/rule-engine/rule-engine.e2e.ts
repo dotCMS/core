@@ -16,7 +16,7 @@ class RobotsTxtPage extends Page {
 
   getResponseHeader(key:string):protractor.promise.Promise<string> {
     var defer = protractor.promise.defer()
-    this.TestUtil.httpGet(this.url).then((result:any) => {
+    this.TestUtil.httpGet(this.getFullUrl()).then((result:any) => {
       let resp = result.response
       let headers = resp.headers
       defer.fulfill(headers[key])
@@ -33,11 +33,9 @@ export function initSpec(TestUtil) {
 
     beforeEach(()=> {
       rulePage = new RulePage()
+      rulePage.suppressAlerts(browser['browserName'] != 'chrome')
       rulePage.navigateTo()
-    })
 
-    afterEach(()=> {
-      rulePage.removeAllRules()
     })
 
     it('should have a title.', function () {
@@ -50,8 +48,10 @@ export function initSpec(TestUtil) {
     });
 
     it('should have translations for the filter box placeholder text.', function () {
-      rulePage = new RulePage("es").navigateTo()
-      expect(rulePage.filterBox.getAttribute('placeholder')).toEqual('Empieza a escribir para filtrar reglas...');
+      rulePage = new RulePage("es")
+      rulePage.navigateTo().then(()=>{
+        expect(rulePage.filterBox.getAttribute('placeholder')).toEqual('Empieza a escribir para filtrar reglas...');
+      })
     });
 
     it('should have an Add Rule button..', function () {
@@ -63,31 +63,25 @@ export function initSpec(TestUtil) {
       rulePage.addRuleButton.click()
       rulePage.ruleCount().then(count2 => {
         expect(count1).toEqual(count2 - 1, "Should have added 1 rule.")
+        // @todo ggranum: verify that various actions are disabled
       })
-      rulePage.navigateTo()
-      rulePage.ruleCount().then(count3 => {
-        expect(count1).toEqual(count3, "The rule should not be persisted unless a name was typed.")
-      })
+
     });
 
     it('should save a rule when a name is typed', function () {
-      let count1 = rulePage.ruleCount()
-      rulePage.addRuleButton.click()
-      let rule = rulePage.firstRule()
-      expect(rule.name.getValue()).toEqual('', "Rule should have been added to the top of the list.")
-      var name = "e2e-" + new Date().getTime();
-      rule.name.setValue(name)
-      rule.fireOn.el.click()
-      rulePage.waitForSave() // async save
-      rulePage.navigateTo() // reload the page
-      rulePage.ruleCount().then(count2 => {
-        expect(count1).toEqual(count2 - 1, "The rule should still exist.")
+      rulePage.addRule().then((rule:TestRuleComponent) => {
+        var name = rule.name;
+        rulePage.waitForSave()
+        rulePage.navigateTo().then(()=> {
+          rule = rulePage.findRule(name)
+          expect(rule.getName()).toEqual(name, "Rule should still exist.")
+          rule.remove()
+        })
       })
-      expect(rule.name.getValue()).toEqual(name, "Rule should still exist, and should still be first.")
     });
 
 
-    it('should remove a rule with no alert no conditionlets.', function (done) {
+    it('should remove a rule with no alert when it has no conditionlets or actionlets.', function (done) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         rule.removeBtn.click()
         let hadAlert = null
@@ -105,21 +99,32 @@ export function initSpec(TestUtil) {
 
     it('should save the fire-on value when changed.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        var name = rule.name
         rule.fireOn.setSearch('every r')
-        rule.name.el.click()
-        rulePage.waitForSave() // async save
-        rulePage.navigateTo() // reload the page
-        expect(rule.fireOn.getValueText()).toEqual('Every Request', "FireOn value should have been saved and restored.")
+        rulePage.filterBox.click()
+        rulePage.waitForSave()
+        rulePage.navigateTo().then(()=>{
+          rule = rulePage.findRule(name)
+          expect(rule.fireOn.getValueText()).toEqual('Every Request', "FireOn value should have been saved and restored.")
+          rule.remove()
+        })
       })
     });
 
     it('should save the enabled value when changed.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         rule.toggleEnable.value().then(value=> {
-          rule.toggleEnable.toggle()
-          browser.sleep(500) // async save
-          rulePage.navigateTo() // reload the page
-          expect(rule.toggleEnable.value()).toEqual(!value, "Enabled state should have been toggled.")
+          rule.toggleEnable.toggle().then(()=>{
+            browser.sleep(500)
+            rulePage.navigateTo().then(()=>{
+              rule = rulePage.findRule(name)
+              browser.sleep(500)
+
+              expect(rule.toggleEnable.value()).toEqual(!value, "Enabled state should have been toggled.")
+              rule.remove()
+            })
+          })
         })
       })
     });
@@ -128,6 +133,7 @@ export function initSpec(TestUtil) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         rule.expand()
         expect(rule.isShowingBody()).toEqual(true)
+        rule.remove()
       })
     })
 
@@ -135,41 +141,55 @@ export function initSpec(TestUtil) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         rule.expand()
         expect(rule.isShowingBody()).toEqual(true)
+        rule.remove()
       })
     })
 
 
     it('should save a valid condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let conditionDef = rule.newRequestHeaderCondition()
-        rulePage.waitForSave() // async save
-        rulePage.navigateTo() // reload the page
-        rule.expand().then(()=> {
-          expect(rule.firstGroup().first().typeSelect.getValueText()).toEqual("Request Header Value", "Should have persisted.")
+        rulePage.waitForSave()
+        rulePage.navigateTo().then(()=>{
+          rule = rulePage.findRule(name)
+          rule.expand().then(()=> {
+            expect(rule.firstGroup().first().typeSelect.getValueText()).toEqual("Request Header Value", "Should have persisted.")
+            rule.remove()
+          })
         })
+
       })
     })
 
     it('should allow a comparison change on a valid Request Header Condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let conditionDef = rule.newRequestHeaderCondition()
-        rulePage.waitForSave() // async save
-        rulePage.navigateTo() // reload the page
-        rule.expand().then(()=> {
-          conditionDef = <TestRequestHeaderCondition>rule.firstCondition()
-          conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.name.el)
-          rulePage.waitForSave()
-          rulePage.navigateTo()
+        rulePage.waitForSave()
+        rulePage.navigateTo().then(()=>{
+          rule = rulePage.findRule(name)
           rule.expand().then(()=> {
-            var cond3 = <TestRequestHeaderCondition>rule.firstCondition()
-            expect(cond3.compareDD.getValueText()).toEqual("Is not", "Should have persisted.")
+            conditionDef = <TestRequestHeaderCondition>rule.firstCondition()
+            conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.nameEl.el)
+            rulePage.waitForSave()
+            rulePage.navigateTo()
+            rule = rulePage.findRule(name)
+            rule.expand().then(()=> {
+              var cond3 = <TestRequestHeaderCondition>rule.firstCondition()
+              expect(cond3.compareDD.getValueText()).toEqual("Is not", "Should have persisted.")
+              rule.remove()
+            })
           })
+
         })
+
       })
     })
 
     it('should save a valid Response Header action.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let actionDef = new TestRequestHeaderCondition(rule.actionEls.first())
         actionDef.typeSelect.setSearch("Set Response").then(()=> {
           rule.fireOn.el.click().then(() => {
@@ -177,25 +197,25 @@ export function initSpec(TestUtil) {
             actionDef.headerValueTF.setValue("value-AbcDef")
             rule.fireOn.el.click()
 
-            browser.sleep(500) // async save
-            rulePage.navigateTo() // reload the page
-
+            browser.sleep(500)
+            rulePage.navigateTo()
+            rule = rulePage.findRule(name)
             rule.expand().then(()=> {
               expect(rule.firstAction().typeSelect.getValueText()).toEqual("Set Response Header", "Should have persisted.")
+              rule.remove()
             })
 
           })
         })
-        //expect(rule.toggleEnable.value()).toEqual(!value, "Enabled state should have been toggled.")
       })
     })
 
     it('should fire when enabled with no condition and one Set Response Header action.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let actionDef = new TestRequestHeaderCondition(rule.actionEls.first())
         actionDef.typeSelect.setSearch("Set Response").then(()=> {
           rule.fireOn.el.click().then(() => {
-            let name = 'e2e-header-key-' + new Date().getTime()
             actionDef.headerKeyTF.setValue(name)
             actionDef.headerValueTF.setValue("value-AbcDef")
             rule.fireOn.setSearch("Every Req")
@@ -206,6 +226,7 @@ export function initSpec(TestUtil) {
               let respName:any = robots.getResponseHeader(name)
               browser.driver.wait(respName, 1000, 'bummer')
               expect(respName).toEqual("value-AbcDef")
+              rule.remove()
             })
           })
         })
@@ -220,18 +241,18 @@ export function initSpec(TestUtil) {
 
     beforeEach(()=> {
       rulePage = new RulePage()
+      rulePage.suppressAlerts(browser['browserName'] != 'chrome')
       rulePage.navigateTo()
     })
 
-    afterEach(()=> {
-      rulePage.removeAllRules()
-    })
 
     it('should allow a value change on a valid Set Request Header Action.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let actionDef = rule.newSetResponseHeaderAction("someHeaderKey", "someHeaderValue")
         rulePage.waitForSave()
-        rulePage.navigateTo() // reload the page
+        rulePage.navigateTo()
+        rule = rulePage.findRule(name)
         rule.expand().then(()=> {
           actionDef = new TestResponseHeaderAction(rule.firstAction().el)
           expect(actionDef.getKey()).toEqual("someHeaderKey", "Key should have persisted.")
@@ -240,10 +261,12 @@ export function initSpec(TestUtil) {
           actionDef.setHeaderValue("someHeaderValue2")
           rulePage.waitForSave()
           rulePage.navigateTo()
+          rule = rulePage.findRule(name)
           rule.expand().then(()=> {
             let actionDef = new TestResponseHeaderAction(rule.firstAction().el)
             expect(actionDef.getKey()).toEqual("someHeaderKey2", "Key change should have persisted.")
             expect(actionDef.getValue()).toEqual("someHeaderValue2", "Value change should have persisted.")
+            rule.remove()
           })
         })
       })
@@ -252,9 +275,11 @@ export function initSpec(TestUtil) {
 
     it('should allow action type to be changed to a Set Attribute Header from Set Response Header.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
         let headerActionDef = rule.newSetResponseHeaderAction("someHeaderKey", "someHeaderValue")
         rulePage.waitForSave()
-        rulePage.navigateTo() // reload the page
+        rulePage.navigateTo()
+        rule = rulePage.findRule(name)
         rule.expand().then(()=> {
           let headerActionDef = new TestResponseHeaderAction(rule.firstAction().el)
           headerActionDef.setType(TestSetRequestAttributeAction.TYPE_NAME)
@@ -263,10 +288,12 @@ export function initSpec(TestUtil) {
           attributeActionDef.setAttributeValue("someAttributeValue")
           rulePage.waitForSave()
           rulePage.navigateTo()
+          rule = rulePage.findRule(name)
           rule.expand().then(()=> {
             let attributeActionDef = new TestSetRequestAttributeAction(rule.firstAction().el)
             expect(attributeActionDef.getKey()).toEqual("someAttributeKey", "Key change should have persisted.")
             expect(attributeActionDef.getValue()).toEqual("someAttributeValue", "Value change should have persisted.")
+            rule.remove()
           })
         })
       })

@@ -20,6 +20,7 @@ import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText} from "../semantic/elements/input-text/input-text";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
+import {UserModel} from "../../../api/auth/UserModel";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -131,16 +132,19 @@ class RuleComponent {
 
   private fireOn:any
   private _rsrcCache:{[key:string]:Observable<string>}
+  private _user:UserModel
   resources:I18nService
 
   formModel:ControlGroup
 
   constructor(fb:FormBuilder,
+              user:UserModel,
               elementRef:ElementRef,
               ruleService:RuleService,
               actionService:ActionService,
               groupService:ConditionGroupService,
               resources:I18nService) {
+    this._user = user
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
     this.elementRef = elementRef
@@ -303,7 +307,7 @@ class RuleComponent {
 
   removeRule(event:any) {
     event.stopPropagation()
-    let noWarn = (event.altKey && event.shiftKey)
+    let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey)
     if (!noWarn) {
       noWarn = this.actions.length === 1 && !this.actions[0].isPersisted()
       noWarn = noWarn && this.groups.length === 1

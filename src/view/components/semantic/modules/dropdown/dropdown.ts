@@ -80,7 +80,7 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
     this.name = "dd-" + new Date().getTime() + Math.random()
 
     this._initDebounce = new EventEmitter()
-    this._initDebounce.debounceTime(100).subscribe(()=>{
+    this._initDebounce.debounceTime(10).subscribe(()=>{
       this.initDropdown()
     })
   }

@@ -85,6 +85,9 @@ var project = {
       'core-js/client/': [
         { dev: 'shim.js', prod: 'shim.min.js', out: 'shim.js' }
       ],
+      'es6-shim/': [
+        { dev: 'es6-shim.js', prod: 'es6-shim.min.js', out: 'es6-shim.js' }
+      ],
       'jquery/dist/': [
         { dev: 'jquery.js', prod: 'jquery.min.js', out: 'jquery.js' },
         { dev: 'jquery.min.map', prod: null, out: 'jquery.min.map' }
@@ -212,20 +215,21 @@ var project = {
       })
     })
   },
-
+  catchError: function(msg){
+    return function(e){
+      console.log(msg || "Error: ", e)
+    }
+  },
   watch: function () {
-
     project.watchTs()
-
-
-    gulp.watch('./src/**/*.html', ['compile-templates'])
-    gulp.watch('./src/**/*.js', ['compile-templates'])
-    return gulp.watch('./src/**/*.scss', ['compile-styles'])
+    gulp.watch('./src/**/*.html', ['compile-templates']).on('error', project.catchError("Error watching HTML files"))
+    gulp.watch('./src/**/*.js', ['compile-templates']).on('error', project.catchError("Error watching JS files"))
+    return gulp.watch('./src/**/*.scss', ['compile-styles']).on('error', project.catchError("Error watching SCSS files"))
   },
 
   watchTs: function(){
-    var spawn = require('child_process').spawn
-    var tsc = spawn('npm', ['run', 'tsc'])
+    var spawn = require('cross-spawn')
+    var tsc = spawn('npm', ['run', 'tsc']).on('error', project.catchError("Error running typescript compiler."))
     tsc.stdout.on('data', function (data) {
       console.log('tsc: ' + data)
     })
@@ -243,6 +247,8 @@ var project = {
    * Configure the proxy and start the webserver.
    */
   startServer: function () {
+    console.log("startServer ")
+
     var http = require('http');
     var proxy = require('proxy-middleware');
     var connect = require('connect');
@@ -261,7 +267,6 @@ var project = {
     ]
 
     var app = connect();
-
     // proxy API requests to the node server
     proxyBasePaths.forEach(function (pathSegment) {
       var target = config.proxyHost + '/' + pathSegment;
@@ -280,19 +285,20 @@ var project = {
     app.use(serveStatic('./'))
     app.use(serveIndex('./'))
 
-    project.server = http.createServer(app)
-        .listen(config.appPort)
-        .on('listening', function () {
-          console.log('Started connect web server on ' + config.appHost)
-          if (config.args.open) {
-            var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
-            console.log('Opening default browser to ' + openTo)
-            open(config.appHost + openTo)
-          }
-          else {
-            console.log("add the '-o' flag to automatically open the default browser")
-          }
-        })
+    project.server = http.createServer(app);
+    project.server.on('error', project.catchError("Error connecting to httpServer"));
+    project.server.on('listening', function () {
+      console.log('Started connect web server on ' + config.appHost)
+      if (config.args.open) {
+        var openTo = config.args.open === true ? '/index-dev.html' : config.args.open
+        console.log('Opening default browser to ' + openTo)
+        open(config.appHost + openTo)
+      }
+      else {
+        console.log("add the '-o' flag to automatically open the default browser")
+      }
+    });
+    project.server.listen(config.appPort)
   },
 
   stopServer: function (callback) {
@@ -536,7 +542,6 @@ gulp.task('copy-dist-main', [], function (done) {
 
 })
 
-
 gulp.task('copy-dist-all', ['copy-dist-main'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
@@ -544,7 +549,6 @@ gulp.task('copy-dist-all', ['copy-dist-main'], function () {
 gulp.task('compile-ts', function (cb) {
   project.compileTypescript(cb)
 });
-
 
 gulp.task('copy-node-files', function (cb) {
   project.copyNodeFiles(cb)
