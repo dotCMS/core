@@ -163,6 +163,7 @@ public class ContentUtils {
 		
 		public static PaginatedArrayList<Contentlet> pull(String query, int offset,int limit, String sort, User user, String tmDate){
 		    PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<Contentlet>();
+		    
 			try {
 				//need to send the query with the defaults --- 
 			    List<Contentlet> contentlets=null;
@@ -181,7 +182,7 @@ public class ContentUtils {
 		            
 		            PaginatedArrayList<Contentlet> wc=(PaginatedArrayList<Contentlet>)conAPI.search(wquery, limit, offset, sort, user, true);
 		            PaginatedArrayList<Contentlet> lc=(PaginatedArrayList<Contentlet>)conAPI.search(lquery, limit, offset, sort, user, true);
-		            
+		            ret.setQuery(lquery);
 		            // merging both results avoiding repeated inodes
 		            Set<String> inodes=new HashSet<String>();
 		            contentlets=new ArrayList<Contentlet>();
@@ -230,6 +231,7 @@ public class ContentUtils {
 			        // normal query
 			        PaginatedArrayList<Contentlet> conts=(PaginatedArrayList<Contentlet>)conAPI.search(query, limit, offset, sort, user, true);
 			        ret.setTotalResults(conts.getTotalResults());
+			        ret.setQuery(query);
 			        contentlets=conts;
 			    }
 				for(Contentlet c : contentlets)

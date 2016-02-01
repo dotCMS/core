@@ -1,18 +1,27 @@
 package com.dotcms.visitor.domain;
 
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.servlet.http.HttpServletRequest;
+
+import com.dotcms.repackage.com.google.common.collect.HashMultiset;
+import com.dotcms.repackage.com.google.common.collect.Multiset;
+import com.dotcms.repackage.com.google.common.collect.Multisets;
 import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.IPersona;
 
 import eu.bitwalker.useragentutils.UserAgent;
-
-import javax.servlet.http.HttpServletRequest;
-
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.*;
 
 public class Visitor implements Serializable {
 
@@ -26,8 +35,10 @@ public class Visitor implements Serializable {
 
     private IPersona persona;
 
-    private Set<String> accruedTags = new HashSet<>();
-
+    private Multiset<String> _accruedTags = HashMultiset.create();
+    		
+    		
+    		
     private UserAgent userAgent;
 
     private UUID dmid;
@@ -80,14 +91,70 @@ public class Visitor implements Serializable {
         this.persona = persona;
     }
 
-    public Set<String> getAccruedTags() {
-        return accruedTags;
+    
+   public class AccruedTag implements Serializable {
+
+	   private static final long serialVersionUID = 1L;
+	   final String tag;
+	   final int count;
+	   public AccruedTag ( String tag,  int count){
+		   	this.tag = tag;
+	   		this.count=count;
+	   }
+	   public String getTag() {
+		   return tag;
+	   }
+	   public int getCount() {
+		   return count;
+	   }
+		@Override
+		public boolean equals(Object obj) {
+			if(obj instanceof AccruedTag){
+				AccruedTag tag2=(AccruedTag)obj;
+				if(tag2.getTag().equals(this.tag) && this.count== tag2.count){
+					return true;
+				}
+			}
+			return false;
+		}
+		@Override
+		public String toString() {
+			return "{\"tag\":\"" + tag + "\", \"count\":" + count + "}";
+			
+		}
+		
+    }
+   
+    public List<AccruedTag> getAccruedTags() {
+    	List<AccruedTag> tags = new ArrayList<>();
+		for (String key : Multisets.copyHighestCountFirst(_accruedTags).elementSet()) {
+			AccruedTag tag = new AccruedTag(key,_accruedTags.count(key) );
+		    tags.add(tag);
+		}
+		return tags;
     }
 
-    public void setAccruedTags(Set<String> accruedTags) {
-        this.accruedTags = accruedTags;
+    public void addAccruedTags(Set<String> tags){
+    	for(String tag : tags){
+    		addTag(tag);
+    	}
+    	//_accruedTags.addAll(tags);
+    }
+    public void addTag(String tag){
+    	if(tag==null) return;
+    	_accruedTags.add(tag);
+    }
+    
+    public void addTag(String tag, int count){
+    	if(tag==null) return;
+    	_accruedTags.add(tag, count);
+    }
+    public void removeTag(String tag){
+    	_accruedTags.remove(tag);
     }
 
+
+    
     public UserAgent getUserAgent() {
         return userAgent;
     }
@@ -170,7 +237,7 @@ public class Visitor implements Serializable {
                 ", selectedLanguage=" + selectedLanguage +
                 ", locale=" + locale +
                 ", persona=" + persona +
-                ", accruedTags=" + accruedTags +
+                ", accruedTags=" + _accruedTags +
                 ", userAgent=" + userAgent +
                 ", device=" + getDevice() +
                 ", dmid=" + dmid +
