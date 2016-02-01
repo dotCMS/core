@@ -44,7 +44,6 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -721,7 +720,7 @@ public class ContentImportThread implements Job{
 							value instanceof String) {
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
-							TagFactory.addTagInode((String)tag.trim(), cont.getInode(), "");
+							APILocator.getTagAPI().addTagInode((String)tag.trim(), cont.getInode(), "");
 						}
 					}
 				}

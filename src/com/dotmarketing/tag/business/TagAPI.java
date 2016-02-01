@@ -5,6 +5,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.beans.Inode;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.tag.model.Tag;
@@ -34,8 +35,17 @@ public interface TagAPI {
 	 * @param name name of the tag to get
 	 * @return tag
 	 */
-	public java.util.List<Tag> getTagByName(String name);
+	public java.util.List<Tag> getTagByName(String name) throws DotCacheException, DotDataException;
 
+	/**
+	 * Gets a Tag by a tagId retrieved from a TagInode.
+	 *
+	 * @param tagId the tag id to get
+	 * @return tag
+	 */
+	public Tag getTagByTagId ( String tagId ) throws DotDataException, DotCacheException;
+
+	public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException;
 
 	/**
 	 * Gets all the tag created by an user
@@ -52,8 +62,6 @@ public interface TagAPI {
 	 * @return a list of tags filtered by tag name or host name
 	 */
 	public java.util.List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count);
-	
-		
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
@@ -62,16 +70,7 @@ public interface TagAPI {
 	 * @return tag
 	 * @throws Exception
 	 */
-	public Tag getTag(String name, String userId, String hostId) throws Exception;
-
-
-	/**
-	 * Gets a Tag by a tagId retrieved from a TagInode.
-	 * @param tagId the tag id to get
-	 * @return tag
-	 */
-	public Tag getTagByTagId(String tagId)  throws DotHibernateException ;
-
+	public Tag getTagAndCreate ( String name, String userId, String hostId) throws Exception;
 
 	/**
 	 * Creates a new tag
@@ -95,6 +94,7 @@ public interface TagAPI {
 	 */
 	public List addTag(String tagName, String userId, String inode) throws Exception;
 
+	public void updateTag ( String tagId, String tagName ) throws DotDataException, DotCacheException;
 
 	/**
 	 * Updates an existing tag.
@@ -103,14 +103,14 @@ public interface TagAPI {
 	 * @param hostId the storage host id
 	 * @throws Exception
 	 */
-	public void updateTag(String tagId, String tagName, boolean updateTagReference, String hostId) throws Exception;
+	public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException, DotCacheException;
 
 
 	/**
      * Deletes a tag
      * @param tag tag to be deleted
      */
-    public void deleteTag(Tag tag)  throws DotHibernateException ;
+    public void deleteTag(Tag tag) throws DotDataException, DotCacheException;
 
 
     /**
@@ -118,7 +118,7 @@ public interface TagAPI {
      * @param tagName name of the tag to be deleted
      * @param userId id of the tag owner
      */
-	public void deleteTag(String tagId)  throws DotHibernateException ;
+	public void deleteTag(String tagId) throws DotDataException, DotCacheException;
 
 
 	/**
@@ -145,19 +145,6 @@ public interface TagAPI {
 	 * @return the tag with the owner information
 	 */
 	public List getTagInfoByName(String name);
-
-
-	/**
-	 * Checks the permission access of an user over an object
-	 * @param webAsset object to validates access
-	 * @param user user to validate access
-	 * @param permission read or write permission to validates
-	 * @throws ActionException
-	 * @throws DotDataException
-	 */
-	public void _checkUserPermissions(Inode webAsset, User user,
-			int permission) throws ActionException, DotDataException;
-
 
 	/**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created

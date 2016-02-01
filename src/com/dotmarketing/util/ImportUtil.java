@@ -54,7 +54,6 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
@@ -1247,14 +1246,14 @@ public class ImportUtil {
 										hostId = Host.SYSTEM_HOST;
 									}
 									for (String tag : tags) {
-										TagFactory.addTagInode((String)tag.trim(), cont.getInode(), hostId);
+										APILocator.getTagAPI().addTagInode((String)tag.trim(), cont.getInode(), hostId);
 									}
 								}
 								else {
 									for (String tagName : tags)
 										try {
                                             if ( tagName != null && !tagName.trim().isEmpty() ) {
-                                                TagFactory.addTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST );
+												APILocator.getTagAPI().addTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST );
                                             }
                                         } catch (Exception e) {
 											e.printStackTrace();

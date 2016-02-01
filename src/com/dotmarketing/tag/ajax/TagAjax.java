@@ -1,7 +1,6 @@
 package com.dotmarketing.tag.ajax;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -11,7 +10,6 @@ import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -20,16 +18,14 @@ import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -55,8 +51,6 @@ public class TagAjax {
     	List<String> saveTagErrors = new ArrayList<String>();
     	Map<String,Object> callbackData = new HashMap<String,Object>();
 
-    	Tag tag = new Tag();
-
     	hostId=hostId.trim();
     	
     	StringTokenizer tagNameToken = new StringTokenizer(tagNames, ",");
@@ -66,8 +60,8 @@ public class TagAjax {
 
 	    		try{
 
-	    			tag = TagFactory.getTag(tagName, userId, hostId);
-	    			String tagStorageForHost = "";
+					Tag tag = APILocator.getTagAPI().getTagAndCreate(tagName, userId, hostId);
+					String tagStorageForHost = "";
 	    			Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 
 	    			if(host==null) {
@@ -131,8 +125,8 @@ public class TagAjax {
     	hostId=hostId.trim();
 
         try{
-        	TagFactory.updateTag(tagId, tagName, false, hostId);
-        }catch(Exception e){
+			APILocator.getTagAPI().updateTag(tagId, tagName, false, hostId);
+		}catch(Exception e){
         	saveTagErrors.add("There was an error saving the tag.");
         	SessionMessages.clear(req.getSession());
         }finally{
@@ -171,7 +165,7 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				TagFactory.addTag(tagName, userId, inode);
+				APILocator.getTagAPI().addTag(tagName, userId, inode);
 			}
 		}
 		catch(Exception ex)
@@ -187,7 +181,7 @@ public class TagAjax {
 	 * @return a list of all the tags created
 	 */
 	public List<Tag> getTagByUser(String userId) {
-		return TagFactory.getTagByUser(userId);
+		return APILocator.getTagAPI().getTagByUser(userId);
 	}
 
 	/**
@@ -196,7 +190,7 @@ public class TagAjax {
 	 * @return a Map with a list of all the tags created
 	 */
 	public Map<String, List<Tag>> getTagsByUser(String userId) {
-		List<Tag> tags =  TagFactory.getTagByUser(userId);
+		List<Tag> tags = APILocator.getTagAPI().getTagByUser(userId);
 		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
 		map.put("tags", tags);
 		return map;
@@ -208,13 +202,8 @@ public class TagAjax {
 	 * @param userId id of the tag owner
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
-	public void deleteTag(String tagId) {
-		try {
-			tagAPI.deleteTag(tagId);
-		} catch (DotHibernateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	public void deleteTag(String tagId) throws DotCacheException, DotDataException {
+		tagAPI.deleteTag(tagId);
 	}
 
 	/**
@@ -224,15 +213,15 @@ public class TagAjax {
 	 * information
 	 */
 	public List getAllTag(String userId) {
-		return TagFactory.getAllTag(userId);
+		return APILocator.getTagAPI().getAllTag(userId);
 	}
 	/**
 	 * Gets a tag with the owner information, searching by name
 	 * @param name name of the tag
 	 * @return the tag with the owner information
 	 */
-	public static List<Tag> getTagByName(String tagName) {
-		return TagFactory.getTagByName(tagName);
+	public static List<Tag> getTagByName(String tagName) throws DotCacheException, DotDataException {
+		return APILocator.getTagAPI().getTagByName(tagName);
 	}
 
 	/**
@@ -241,7 +230,7 @@ public class TagAjax {
 	 * @return the tag with the owner information
 	 */
 	public List getTagInfoByName(String tagName) {
-		return TagFactory.getTagInfoByName(tagName);
+		return APILocator.getTagAPI().getTagInfoByName(tagName);
 	}
 
 	/**
@@ -250,7 +239,7 @@ public class TagAjax {
 	 * @return list of all the TagInode where the tags are associated to the object
 	 */
 	public static List getTagInodeByInode(String inode) {
-		return TagFactory.getTagInodeByInode(inode);
+		return APILocator.getTagAPI().getTagInodeByInode(inode);
 	}
 
 	/**
@@ -259,8 +248,8 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return a list of all tags assigned to an object
 	 */
-	public List deleteTagInode(String tagName, String inode) {
-		return TagFactory.deleteTagInode(tagName, inode);
+	public List deleteTagInode ( String tagName, String inode ) throws Exception {
+		return APILocator.getTagAPI().deleteTagInode(tagName, inode);
 	}
 
 	/**
@@ -269,34 +258,55 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return a list of all tags assigned to a user
 	 */
-	public Map<String, List<Tag>> deleteTag(String tagNameOrId, String userId) {
+	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotCacheException {
+
 		Tag tag = new Tag();
 		try {
 			tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
-		} catch (DotHibernateException e1) {}
-		if(!UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()))
-			tag = TagFactory.getTag(tagNameOrId, userId);
-		String newUserId = "";
-		StringTokenizer userIdToken = new StringTokenizer(tag.getUserId(), ",");
-    	if (userIdToken.hasMoreTokens()) {
-	    	for (; userIdToken.hasMoreTokens();) {
-	    		String userIds = userIdToken.nextToken().trim();
-	    		if(!(userIds.equals(userId))){
-	    			newUserId = userIds+","+newUserId;
-	    		}
-	    	}
-    	}
-    	if(!(newUserId.equals(userId))){
-            try{
-            	TagFactory.updateTag(tag.getTagId(), newUserId);
-            }catch(Exception e){
-            	Logger.error(this, e.getMessage());
-            }
-    	}else{
-    		TagFactory.deleteTag(TagFactory.getTag(tagNameOrId, userId));
-    	}
-		List<Tag> tags = TagFactory.getTagByUser(userId);
-		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
+		} catch ( Exception e1 ) {
+			Logger.error(this, "Error retriaving tag", e1);
+		}
+
+		if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
+			List<Tag> foundTags = APILocator.getTagAPI().getTagByName(tagNameOrId);
+
+			//FIXME: Fix this!!!, searching by name can return multiple tags, this code assumes just one
+			if ( foundTags != null && !foundTags.isEmpty() ) {
+				tag = foundTags.get(0);
+			}
+			//FIXME: Fix this!!!, searching by name can return multiple tags, this code assumes just one
+		}
+
+		if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
+			//We found nothing, do nothing
+		} else {
+
+			//If it is related with multiple clients remove the relation
+			String newUserId = "";
+			StringTokenizer userIdToken = new StringTokenizer(tag.getUserId(), ",");
+			if (userIdToken.hasMoreTokens()) {
+				for (; userIdToken.hasMoreTokens();) {
+					String userIds = userIdToken.nextToken().trim();
+					if(!(userIds.equals(userId))){
+						newUserId = userIds+","+newUserId;
+					}
+				}
+			}
+
+			if(!(newUserId.equals(userId))){
+				try{
+					APILocator.getTagAPI().updateTag(tag.getTagId(), newUserId);
+				}catch(Exception e){
+					Logger.error(this, e.getMessage());
+				}
+			}else{
+				APILocator.getTagAPI().deleteTag(tag);
+			}
+
+		}
+
+		List<Tag> tags = APILocator.getTagAPI().getTagByUser(userId);
+		Map<String, List<Tag>> map = new HashMap<>();
 		map.put("tags", tags);
 		return map;
 	}
@@ -319,7 +329,7 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				TagFactory.deleteTagInode(tagName, inode);
+				APILocator.getTagAPI().deleteTagInode(tagName, inode);
 			}
 		}
 		catch(Exception ex)
@@ -345,7 +355,7 @@ public class TagAjax {
 		}catch(Exception e){
 			Logger.error(TagAjax.class,e.getMessage());
 		}
-		return TagFactory.getSuggestedTag(req, tagName, selectedHostOrFolderId);
+		return APILocator.getTagAPI().getSuggestedTag(req, tagName, selectedHostOrFolderId);
 	}
 
 	/**
@@ -353,7 +363,7 @@ public class TagAjax {
 	 * @return list of all tags created
 	 */
 	public List<Tag> getAllTags() {
-		return TagFactory.getAllTags();
+		return APILocator.getTagAPI().getAllTags();
 	}
 
 
@@ -381,7 +391,7 @@ public class TagAjax {
 
 			}
 
-			ret = TagFactory.getAllTagsForUsers(userIds);
+			ret = APILocator.getTagAPI().getAllTagsForUsers(userIds);
 		}
 		catch(Exception ex)
 		{
@@ -415,8 +425,8 @@ public class TagAjax {
 		    	if(!tagName.toLowerCase().contains("tag name") && !hostId.toLowerCase().contains("host id")){
 		    		tagName = tagName.replaceAll("\'|\"", "");
 		    		hostId = hostId.replaceAll("\'|\"", "");
-		    		TagFactory.getTag(tagName, "", hostId);
-		    	}
+					APILocator.getTagAPI().getTagAndCreate(tagName, "", hostId);
+				}
 		    }
 
 			br.close();

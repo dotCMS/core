@@ -12,7 +12,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -38,7 +37,7 @@ public class TagsWebAPI implements ViewTool {
 				Logger.error(this, e.getMessage(), e);
 				return new ArrayList();
 			}	
-			tagsUser = TagFactory.getTagInodeByInode(String.valueOf(up.getInode()));
+			tagsUser = APILocator.getTagAPI().getTagInodeByInode(String.valueOf(up.getInode()));
 			request.getSession().setAttribute(WebKeys.LOGGED_IN_USER_TAGS, tagsUser);
 		}
 		return tagsUser;

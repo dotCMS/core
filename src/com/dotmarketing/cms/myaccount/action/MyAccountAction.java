@@ -26,7 +26,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Config;
@@ -134,13 +133,13 @@ public class MyAccountAction extends DispatchAction {
 		APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 		HibernateUtil.saveOrUpdate(userProxy);
 
-		List<TagInode> tags = TagFactory.getTagInodeByInode(userProxy.getInode());
+		List<TagInode> tags = APILocator.getTagAPI().getTagInodeByInode(userProxy.getInode());
 		for (TagInode tag: tags) {
-			Tag tempTag = TagFactory.getTagByTagId(tag.getTagId());
-			TagFactory.deleteTagInode(tempTag.getTagName(), userProxy.getInode());
+			Tag tempTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
+			APILocator.getTagAPI().deleteTagInode(tempTag.getTagName(), userProxy.getInode());
 		}
 		if(tags.size() > 0){
-			TagFactory.addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
+			APILocator.getTagAPI().addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
 		}
 		
 		CategoryAPI categoryAPI = APILocator.getCategoryAPI();
@@ -222,11 +221,11 @@ public class MyAccountAction extends DispatchAction {
 		// Extra user info
 		form.setEmailAddress(user.getEmailAddress());
 
-		List<TagInode> tags = TagFactory.getTagInodeByInode(userProxy.getInode());
+		List<TagInode> tags = APILocator.getTagAPI().getTagInodeByInode(userProxy.getInode());
 		StringBuilder tagsString = new StringBuilder(128);
 		tagsString.ensureCapacity(32);
 		for (TagInode tag: tags) {
-			Tag retrievedTag = TagFactory.getTagByTagId(tag.getTagId());
+			Tag retrievedTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
 			if (0 < tagsString.length())
 				tagsString.append(", " + retrievedTag.getTagName());
 			else
