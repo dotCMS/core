@@ -30,6 +30,7 @@ public class ConditionletTestUtil {
         //Create the rule
         ruleDataGen = new RuleDataGen(Rule.FireOn.EVERY_REQUEST).name(String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt()));
         Rule rule = ruleDataGen.nextPersisted();
+        rulesToRemove.add(rule);
 
         //Creating the conditionlets group
         ConditionGroup group = conditionGroupDataGen.ruleId(rule.getId()).nextPersisted();

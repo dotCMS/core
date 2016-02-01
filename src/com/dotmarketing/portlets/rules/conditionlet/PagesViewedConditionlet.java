@@ -21,7 +21,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddy on 26/01/16.
  */
-public class PagesViewedConditionalet extends Conditionlet<PagesViewedConditionalet.Instance>{
+public class PagesViewedConditionlet extends Conditionlet<PagesViewedConditionlet.Instance>{
 
     public static final String NUMBER_PAGES_VIEWED_INPUT_KEY = "number-pages-viewed-input-key";
     public static final String Pages_VIEWED_KEY = "api.ruleengine.system.conditionlet.PagesViewed";
@@ -29,7 +29,7 @@ public class PagesViewedConditionalet extends Conditionlet<PagesViewedConditiona
     private static final ParameterDefinition<NumericType> NUMBER_PAGES_VIEWED = new ParameterDefinition<>(3, NUMBER_PAGES_VIEWED_INPUT_KEY,
             new NumericInput<>(new NumericType()));
 
-    public PagesViewedConditionalet() {
+    public PagesViewedConditionlet() {
         super(Pages_VIEWED_KEY, new ComparisonParameterDefinition(2, NUMERIC_COMPARATION), NUMBER_PAGES_VIEWED);
     }
 
@@ -50,7 +50,7 @@ public class PagesViewedConditionalet extends Conditionlet<PagesViewedConditiona
         private final Comparison<Number> comparison;
         private final String comparisonValue;
 
-        private Instance(PagesViewedConditionalet definition, Map<String, ParameterModel> parameters) {
+        private Instance(PagesViewedConditionlet definition, Map<String, ParameterModel> parameters) {
             this.numberPagesViewedInput = Integer.parseInt( parameters.get(NUMBER_PAGES_VIEWED_INPUT_KEY).getValue() );
             this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
 

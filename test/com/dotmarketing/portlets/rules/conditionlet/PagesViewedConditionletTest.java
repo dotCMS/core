@@ -25,7 +25,7 @@ public class PagesViewedConditionletTest {
     private HttpServletRequest request;
     private HttpServletResponse response;
     private HttpSession httpSessionMock;
-    private PagesViewedConditionalet conditionlet = new PagesViewedConditionalet();
+    private PagesViewedConditionlet conditionlet = new PagesViewedConditionlet();
 
     @Before
     public void before () {
@@ -50,10 +50,10 @@ public class PagesViewedConditionletTest {
     public void testEvaluateEquals() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
@@ -61,8 +61,8 @@ public class PagesViewedConditionletTest {
 
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -73,18 +73,18 @@ public class PagesViewedConditionletTest {
     public void testEvaluateNotEquals() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, NOT_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, NOT_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -95,18 +95,18 @@ public class PagesViewedConditionletTest {
     public void testEvaluateLessThan() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
         //-------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -117,18 +117,18 @@ public class PagesViewedConditionletTest {
     public void testEvaluateGreaterThan() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "5"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "5"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -139,18 +139,18 @@ public class PagesViewedConditionletTest {
     public void testEvaluateLessThanOrEquals() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -159,8 +159,8 @@ public class PagesViewedConditionletTest {
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, LESS_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -171,18 +171,18 @@ public class PagesViewedConditionletTest {
     public void testEvaluateGreaterThanOrEquals() {
         Map<String, ParameterModel> parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "2"));
 
-        PagesViewedConditionalet.Instance instance = conditionlet.instanceFrom(parameters);
+        PagesViewedConditionlet.Instance instance = conditionlet.instanceFrom(parameters);
 
         Assert.assertTrue(conditionlet.evaluate(request, response, instance));
 
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "3"));
 
         instance = conditionlet.instanceFrom(parameters);
 
@@ -191,8 +191,8 @@ public class PagesViewedConditionletTest {
         //------------------------------------------------------------------------------------------------------------
         parameters = new HashMap<>();
         parameters.put(Conditionlet.COMPARISON_KEY, new ParameterModel(Conditionlet.COMPARISON_KEY, GREATER_THAN_OR_EQUAL.getId()));
-        parameters.put(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY,
-                new ParameterModel(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
+        parameters.put(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY,
+                new ParameterModel(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, "4"));
 
         instance = conditionlet.instanceFrom(parameters);
 

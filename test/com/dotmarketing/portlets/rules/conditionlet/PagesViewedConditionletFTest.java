@@ -3,25 +3,18 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Test;
-import com.dotmarketing.portlets.rules.ParameterDataGen;
-import com.dotmarketing.portlets.rules.RuleDataGen;
-import com.dotmarketing.portlets.rules.actionlet.RuleActionDataGen;
-import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
 import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
+import com.dotmarketing.util.WebKeys;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
 import java.util.Random;
+import com.dotcms.visitor.domain.Visitor;
 
 import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 import static com.dotcms.repackage.org.junit.Assert.assertNull;
@@ -35,19 +28,21 @@ public class PagesViewedConditionletFTest {
     private Random random = new Random();
     private HttpServletRequest request;
 
-    private List<Rule> rulesToRemove = Lists.newArrayList();
-    private RuleDataGen ruleDataGen;
-
     private ConditionDataGen conditionDataGen = new ConditionDataGen();
     private ConditionletTestUtil conditionletTestUtil = new ConditionletTestUtil();
 
     @Before
     public void init () {
         request = ServletTestRunner.localRequest.get();
+
         HttpSession session = request.getSession(false);
+
         if ( session != null ) {
             session.invalidate();
         }
+
+        session = request.getSession(true);
+        session.setAttribute(WebKeys.VISITOR, new Visitor());
     }
 
     @After
@@ -204,10 +199,10 @@ public class PagesViewedConditionletFTest {
     private Condition getCondition(String id, String value) {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(PagesViewedConditionalet.class.getSimpleName());
+        condition.setConditionletId(PagesViewedConditionlet.class.getSimpleName());
         condition.setName("Pages Viewed");
         condition.addValue(Conditionlet.COMPARISON_KEY, id);
-        condition.addValue(PagesViewedConditionalet.NUMBER_PAGES_VIEWED_INPUT_KEY, value);
+        condition.addValue(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, value);
         return condition;
     }
 
