@@ -59,6 +59,7 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPITest;
 import com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest;
 import com.dotmarketing.util.ImportUtilTest;
 import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionTest;
+import com.dotmarketing.tag.business.TagAPITest;
 import com.dotmarketing.webdav.WebDavTest;
 
 /**
@@ -125,7 +126,8 @@ import com.dotmarketing.webdav.WebDavTest;
     VisitedUrlConditionletTest.class,
     VisitedUrlConditionletFTest.class,
 	CurrentSessionLanguageConditionletFTest.class,
-	CurrentSessionLanguageConditionletTest.class
+	CurrentSessionLanguageConditionletTest.class,
+	TagAPITest.class
 })
 public class AllTestsSuite {
 
