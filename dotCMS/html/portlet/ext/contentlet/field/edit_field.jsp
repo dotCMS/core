@@ -1,5 +1,4 @@
 
-<%@page import="com.dotmarketing.tag.model.Tag"%>
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -596,20 +595,9 @@
     //TAG kind of field rendering
 
     } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-    	
-    	StringBuilder tagg=new StringBuilder();
-        for(Tag t : APILocator.getTagAPI().getTagsByInode(contentlet.getInode())){
-            tagg.append(t.getTagName()).append(", ");
-        }
-        String val = tagg.toString();
-        if(val.endsWith(", ")){
-        	val=val.substring(0, val.length()-2);
-        }
-   
-    	
-    	
-        String tagJSFunction = "suggestTagsForSearch(this, '" + field.getVelocityVarName() + "suggestedTagsDiv');";
-        String textValue = UtilMethods.isSet(val) ? val : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+        String tagJSFunction = "suggestTagsForSearch(this, '"
+                + field.getVelocityVarName() + "suggestedTagsDiv');";
+        String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
  %>
  <!-- display -->
     <div id="<%=field.getVelocityVarName()%>Wrapper">
