@@ -4,6 +4,8 @@ import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTransform;
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.InternalServerException;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -12,13 +14,13 @@ import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static com.dotcms.rest.validation.Preconditions.checkNotNull;
 
@@ -75,34 +77,40 @@ public class RuleTransform {
         return groups;
     }
 
-    public RestRule appToRest(Rule app) {
-        return toRest.apply(app);
+    public RestRule appToRest(Rule app, User user) {
+        try{
+            Map<String, RestConditionGroup> groups = new HashMap<>();
+            Map<String, Boolean> ruleActions = new HashMap<>();
+
+            for (ConditionGroup conditionGroup : app.getGroups()) {
+                groups.put(conditionGroup.getId(), groupTransform.appToRest(conditionGroup));
+            }
+
+            for (RuleAction ruleAction : app.getRuleActions()) {
+                ruleActions.put(ruleAction.getId(), true);
+            }
+
+            return new RestRule.Builder()
+                    .key(app.getId())
+                    .name(app.getName())
+                    .fireOn(app.getFireOn().toString())
+                    .shortCircuit(app.isShortCircuit())
+                    .priority(app.getPriority())
+                    .enabled(app.isEnabled())
+                    .conditionGroups(groups)
+                    .ruleActions(ruleActions)
+                    .build();
+
+        } catch (Exception e) {
+            try{
+                APILocator.getRulesAPI().disableRule(app, user);
+            } catch (DotDataException|DotSecurityException dse){
+                Logger.error(this, "Error trying to disable Rule: " + app.getId(), dse);
+            }
+
+            throw new InternalServerException(e, "Could not create ReST Rule from Server, Rule id '%s'", app.getId());
+        }
     }
-
-    public Function<Rule, RestRule> appToRestFn() {
-        return toRest;
-    }
-
-    private final Function<Rule, RestRule> toRest = (app) -> {
-        Map<String, RestConditionGroup> groups = app.getGroups()
-                                                    .stream()
-                                                    .collect(Collectors.toMap(ConditionGroup::getId, groupTransform.appToRestFn()));
-
-        Map<String, Boolean> ruleActions = app.getRuleActions()
-                                                         .stream()
-                                                         .collect(Collectors.toMap(RuleAction::getId, ruleAction -> true));
-
-        return new RestRule.Builder()
-                .key(app.getId())
-                .name(app.getName())
-                .fireOn(app.getFireOn().toString())
-                .shortCircuit(app.isShortCircuit())
-                .priority(app.getPriority())
-                .enabled(app.isEnabled())
-                .conditionGroups(groups)
-                .ruleActions(ruleActions)
-                .build();
-    };
 
 }
 
