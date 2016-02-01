@@ -23,7 +23,7 @@ public class TagAPIImpl implements TagAPI {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () {
+    public java.util.List<Tag> getAllTags () throws DotCacheException, DotDataException {
         return tagFactory.getAllTags();
     }
 

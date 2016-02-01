@@ -20,7 +20,7 @@ public interface TagAPI {
 	 * Get a list of all the tags created
 	 * @return list of all tags created
 	 */
-	public java.util.List<Tag> getAllTags();
+	public java.util.List<Tag> getAllTags() throws DotCacheException, DotDataException;
 
 	/**
 	 * Gets a Tag by name

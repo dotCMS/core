@@ -344,7 +344,7 @@ public class TagAjax {
 	 * Get a list of all the tags created
 	 * @return list of all tags created
 	 */
-	public List<Tag> getAllTags() {
+	public List<Tag> getAllTags() throws DotCacheException, DotDataException {
 		return APILocator.getTagAPI().getAllTags();
 	}
 

@@ -225,7 +225,7 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
 
     public static TagFactory getTagFactory(){
-        return (TagFactory) getInstance(FactoryIndex.RULES_FACTORY);
+        return (TagFactory) getInstance(FactoryIndex.TAG_FACTORY);
     }
     
     public static PersonaFactory getPersonaFactory(){

@@ -50,17 +50,23 @@ public class TagFactoryImpl implements TagFactory {
      * Get a list of all the tags created
      *
      * @return list of all tags created
-     * FIXME: Needs cache
      */
-    public java.util.List<Tag> getAllTags () {
-        try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag");
-            return dh.list();
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving all tags");
+    public java.util.List<Tag> getAllTags () throws DotDataException, DotCacheException {
+
+        HibernateUtil dh = new HibernateUtil(Tag.class);
+        dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag");
+
+        //Search
+        List<Tag> tags = dh.list();
+
+        //And add the results to the cache
+        for ( Tag tag : tags ) {
+            if ( tagCache.get(tag.getTagId()) == null ) {
+                tagCache.put(tag);
+            }
         }
-        return new ArrayList<>();
+
+        return tags;
     }
 
     /**
@@ -121,7 +127,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException {
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException, DotCacheException {
 
         name = escapeSingleQuote(name);
 
@@ -132,7 +138,18 @@ public class TagFactoryImpl implements TagFactory {
         //search global
         dh.setParam(hostId);
         dh.setParam(Host.SYSTEM_HOST);
-        return dh.list();
+
+        //Search
+        List<Tag> tags = dh.list();
+
+        //And add the results to the cache
+        for ( Tag tag : tags ) {
+            if ( tagCache.get(tag.getTagId()) == null ) {
+                tagCache.put(tag);
+            }
+        }
+
+        return tags;
     }
 
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException {

@@ -15,7 +15,7 @@ public interface TagFactory {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags ();
+    public java.util.List<Tag> getAllTags () throws DotDataException, DotCacheException;
 
     /**
      * Gets a Tag by name
@@ -27,7 +27,7 @@ public interface TagFactory {
 
     public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException, DotCacheException;
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException;
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException, DotCacheException;
 
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException;
 
