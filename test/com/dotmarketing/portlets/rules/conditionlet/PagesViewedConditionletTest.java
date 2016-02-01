@@ -20,6 +20,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 /**
  * Created by freddy on 26/01/16.
  */
+
 public class PagesViewedConditionletTest {
 
     private HttpServletRequest request;
