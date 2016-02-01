@@ -33,7 +33,7 @@ export function initSpec(TestUtil) {
 
     beforeEach(()=> {
       rulePage = new RulePage()
-      rulePage.suppressAlerts(browser['browserName'] == 'safari')
+      rulePage.suppressAlerts(browser['browserName'] != 'chrome')
       rulePage.navigateTo()
 
     })
@@ -241,7 +241,7 @@ export function initSpec(TestUtil) {
 
     beforeEach(()=> {
       rulePage = new RulePage()
-      rulePage.suppressAlerts(browser['browserName'] == 'safari')
+      rulePage.suppressAlerts(browser['browserName'] != 'chrome')
       rulePage.navigateTo()
     })
 

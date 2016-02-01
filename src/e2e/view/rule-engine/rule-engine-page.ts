@@ -186,7 +186,7 @@ export class TestRuleComponent {
 
   remove():webdriver.promise.Promise<any> {
     let result
-    if (browser['browserName'].indexOf('safari') !== -1 ) {
+    if ((browser['browserName'].indexOf('safari') !== -1) || (browser['browserName'].indexOf('internet explorer') !== -1)) {
       result = this.removeBtn.click()
     } else {
       result = this.removeBtn.optShiftClick()

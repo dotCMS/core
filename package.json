@@ -10,6 +10,7 @@
     "connect": "^3.3.4",
     "connect-livereload": "^0.5.4",
     "connect-modrewrite": "^0.8.1",
+    "cross-spawn": "^2.1.5",
     "del": "^2.x.x",
     "git-rev": "^0.2.1",
     "glob": "^6.0.x",
@@ -28,6 +29,7 @@
     "karma": "^0.13.x",
     "karma-chrome-launcher": "^0.2.x",
     "karma-firefox-launcher": "^0.1.7",
+    "karma-ie-launcher": "^0.2.0",
     "karma-jasmine": "^0.3.x",
     "karma-junit-reporter": "^0.3.8",
     "karma-safari-launcher": "^0.1.1",
@@ -45,21 +47,20 @@
     "typescript": "^1.7.5"
   },
   "scripts": {
-    "postinstall": "./node_modules/protractor/bin/webdriver-manager update",
-    "tsc": "./node_modules/typescript/bin/tsc -p src -w",
-    "tsc-no": "./node_modules/typescript/bin/tsc -p src",
+    "tsc": "tsc -p src -w",
+    "tsc-no": "tsc -p src",
     "start": "live-server--port=8180 --open=src",
     "test": "gulp build && gulp serve --open=/build/unit-tests.html",
     "serve": "gulp serve || true",
     "dev": "gulp serve --open=/build/index.html",
     "itest": "gulp serve --open=/build/integration-tests.html",
-    "e2e": "./node_modules/protractor/bin/protractor ./protractor.conf.js || true",
+    "e2e": "protractor ./protractor.conf.js || true",
     "idemo": "gulp serve --open=/build/integration-demo.html",
     "build": "gulp package",
     "publish": "gulp publish",
     "publish-snapshot": "gulp publish-snapshot",
-    "webdriver-update": "./node_modules/protractor/bin/webdriver-manager update",
-    "webdriver-start": "./node_modules/protractor/bin/webdriver-manager start"
+    "webdriver-update": "webdriver-manager update",
+    "webdriver-start": "webdriver-manager start"
   },
   "dependencies": {
     "angular2": "2.0.0-beta.0",
