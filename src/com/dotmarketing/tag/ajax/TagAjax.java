@@ -1,28 +1,13 @@
 package com.dotmarketing.tag.ajax;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import com.dotcms.repackage.org.directwebremoting.WebContext;
-
 import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
@@ -32,6 +17,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.servlet.SessionMessages;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.*;
 
 public class TagAjax {
 
@@ -222,15 +213,6 @@ public class TagAjax {
 	 */
 	public static List<Tag> getTagByName(String tagName) throws DotCacheException, DotDataException {
 		return APILocator.getTagAPI().getTagByName(tagName);
-	}
-
-	/**
-	 * Gets a tag with the owner information, searching by name
-	 * @param name name of the tag
-	 * @return the tag with the owner information
-	 */
-	public List getTagInfoByName(String tagName) {
-		return APILocator.getTagAPI().getTagInfoByName(tagName);
 	}
 
 	/**

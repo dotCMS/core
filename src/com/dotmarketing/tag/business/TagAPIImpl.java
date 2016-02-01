@@ -28,27 +28,6 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-     * Get a list of all the tags name created
-     *
-     * @return list of all tags name created
-     */
-    public java.util.List<String> getAllTagsName () {
-        try {
-            List<String> result = new ArrayList<>();
-
-            List<Tag> tags = getAllTags();
-            for ( Tag tag : tags ) {
-                result.add(tag.getTagName());
-            }
-
-            return result;
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving all tags names");
-        }
-        return new ArrayList<>();
-    }
-
-    /**
      * Gets a Tag by name
      *
      * @param name name of the tag to get
@@ -171,21 +150,27 @@ public class TagAPIImpl implements TagAPI {
         return tagFactory.getTagByNameAndHost(name, hostId);
     }
 
+    public Tag saveTag ( String tagName, String userId, String hostId ) throws Exception {
+        return saveTag(tagName, userId, hostId, false);
+    }
+
     /**
      * Creates a new tag
      *
      * @param tagName name of the new tag
      * @param userId  owner of the new tag
      * @param hostId
+     * @param persona
      * @return new tag created
      * @throws DotHibernateException
      */
-    public Tag saveTag ( String tagName, String userId, String hostId ) throws Exception {
+    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws Exception {
 
         Tag tag = new Tag();
         //creates new Tag
         tag.setTagName(tagName.toLowerCase());
         tag.setUserId(userId);
+        tag.setPersona(persona);
         tag.setModDate(new Date());
 
         Host host = null;
@@ -344,17 +329,6 @@ public class TagAPIImpl implements TagAPI {
     public List getAllTag ( String userId ) {
         return tagFactory.getAllTag(userId);
     }
-
-    /**
-     * Gets a tag with the owner information, searching by name
-     *
-     * @param name name of the tag
-     * @return the tag with the owner information
-     */
-    public List getTagInfoByName ( String name ) {
-        return tagFactory.getTagInfoByName(name);
-    }
-
 
     /**
      * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created

@@ -429,39 +429,11 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
-     * Gets a tag with the owner information, searching by name
-     *
-     * @param name name of the tag
-     * @return the tag with the owner information
-     */
-    public List getTagInfoByName ( String name ) {
-        try {
-            name = SQLUtil.sanitizeParameter(escapeSingleQuote(name));
-
-            HibernateUtil dh = new HibernateUtil();
-            StringBuffer sb = new StringBuffer();
-            sb.append("select Tag.*, User_.firstName, User_.lastName from Tag, User_ ");
-            sb.append("where Tag.user_id = User_.userid and ");
-            sb.append("Tag.tagName like '%" + name.toLowerCase() + "%' ");
-            sb.append("order by Tag.user_id");
-
-            dh.setQuery(sb.toString());
-
-            java.util.List allTags = dh.list();
-
-            return allTags;
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving tag by name");
-        }
-
-        return new ArrayList();
-    }
-
-    /**
      * Gets all tags associated to an object
      *
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
+     * FIXME: Needs cache
      */
     public List<TagInode> getTagInodeByInode ( String inode ) {
         try {
@@ -481,6 +453,7 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
+     * FIXME: Needs cache
      */
     public List<TagInode> getTagInodeByTagId ( String tagId ) {
         try {
@@ -502,6 +475,7 @@ public class TagFactoryImpl implements TagFactory {
      * @param tagId id of the tag
      * @param inode inode of the object tagged
      * @return the tagInode
+     * FIXME: Needs cache
      */
     public TagInode getTagInode ( String tagId, String inode ) throws DotHibernateException {
         // getting the tag inode record
@@ -544,6 +518,7 @@ public class TagFactoryImpl implements TagFactory {
      * @param userIds the user id's associated with the tags
      * @return a complete list of all the tags, with the owner information and the respective permission
      * information
+     * FIXME: Needs cache???
      */
     @SuppressWarnings ( "unchecked" )
     public List<Tag> getAllTagsForUsers ( List<String> userIds ) {
@@ -560,7 +535,7 @@ public class TagFactoryImpl implements TagFactory {
 
                 //Checks each of the tag to see if match any of the users in the list.
                 for ( int i = 0; i < results.size(); i++ ) {
-                    Map<String, Object> hash = (Map<String, Object>) results.get(i);
+                    Map<String, Object> hash = results.get(i);
 
                     if ( !hash.isEmpty() ) {
                         String tagUserID = (String) hash.get("user_id");
@@ -611,6 +586,11 @@ public class TagFactoryImpl implements TagFactory {
         return false;
     }
 
+    /**
+     * FIXME: Needs cache
+     * @param inode
+     * @return
+     */
     @Override
     public List<Tag> getTagsByInode ( String inode ) {
         try {

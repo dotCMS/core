@@ -95,14 +95,6 @@ public interface TagFactory {
     public List getAllTag ( String userId );
 
     /**
-     * Gets a tag with the owner information, searching by name
-     *
-     * @param name name of the tag
-     * @return the tag with the owner information
-     */
-    public List getTagInfoByName ( String name );
-
-    /**
      * Gets all tags associated to an object
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object

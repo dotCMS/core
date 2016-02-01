@@ -22,14 +22,6 @@ public interface TagAPI {
 	 */
 	public java.util.List<Tag> getAllTags();
 
-
-	/**
-	 * Get a list of all the tags name created
-	 * @return list of all tags name created
-	 */
-	public java.util.List<String> getAllTagsName();
-
-
 	/**
 	 * Gets a Tag by name
 	 * @param name name of the tag to get
@@ -80,6 +72,8 @@ public interface TagAPI {
 	 * @throws Exception
 	 */
     public Tag saveTag(String tagName, String userId, String hostId) throws Exception;
+
+	public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws Exception;
 
 
 	/**
@@ -137,14 +131,6 @@ public interface TagAPI {
 	 * information
 	 */
 	public List getAllTag(String userId);
-
-
-	/**
-	 * Gets a tag with the owner information, searching by name
-	 * @param name name of the tag
-	 * @return the tag with the owner information
-	 */
-	public List getTagInfoByName(String name);
 
 	/**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
