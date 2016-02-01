@@ -59,9 +59,7 @@ public interface PersonaAPI {
 	Persona fromContentlet(Contentlet con) throws DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException;
 
 	Structure getDefaultPersonaStructure() throws DotSecurityException, DotDataException;
-
-
-
+	
 	List<Field> getBasePersonaFields(Structure structure);
 
 	void validatePersona(Contentlet c) throws DotContentletValidationException;

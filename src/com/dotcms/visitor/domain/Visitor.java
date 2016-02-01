@@ -131,7 +131,12 @@ public class Visitor implements Serializable {
 		}
 		return tags;
     }
+    
+    public List<AccruedTag> getTags() {
 
+		return getAccruedTags();
+    }
+    
     public void addAccruedTags(Set<String> tags){
     	for(String tag : tags){
     		addTag(tag);
@@ -151,8 +156,10 @@ public class Visitor implements Serializable {
     	_accruedTags.remove(tag);
     }
 
+    public void clearTags(){
+    	_accruedTags = HashMultiset.create();
+    }
 
-    
     public UserAgent getUserAgent() {
         return userAgent;
     }
