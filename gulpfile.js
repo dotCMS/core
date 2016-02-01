@@ -222,14 +222,14 @@ var project = {
   },
   watch: function () {
     project.watchTs()
-    gulp.watch('./src/**/*.html', ['compile-templates']).on('error', project.catchError)
-    gulp.watch('./src/**/*.js', ['compile-templates']).on('error', project.catchError)
-    return gulp.watch('./src/**/*.scss', ['compile-styles']).on('error', project.catchError)
+    gulp.watch('./src/**/*.html', ['compile-templates']).on('error', project.catchError("Error watching HTML files"))
+    gulp.watch('./src/**/*.js', ['compile-templates']).on('error', project.catchError("Error watching JS files"))
+    return gulp.watch('./src/**/*.scss', ['compile-styles']).on('error', project.catchError("Error watching SCSS files"))
   },
 
   watchTs: function(){
     var spawn = require('cross-spawn')
-    var tsc = spawn('npm', ['run', 'tsc']).on('error', project.catchError("Is tsc on your path? Try installing tsc globally."))
+    var tsc = spawn('npm', ['run', 'tsc']).on('error', project.catchError("Error running typescript compiler."))
     tsc.stdout.on('data', function (data) {
       console.log('tsc: ' + data)
     })
@@ -266,13 +266,7 @@ var project = {
       'DotAjaxDirector'
     ]
 
-    console.log("Attempting connection: ")
-    try {
-      var app = connect();
-    }
-    catch(e){
-      console.log("Error: ", e)
-    }
+    var app = connect();
     // proxy API requests to the node server
     proxyBasePaths.forEach(function (pathSegment) {
       var target = config.proxyHost + '/' + pathSegment;
@@ -292,10 +286,7 @@ var project = {
     app.use(serveIndex('./'))
 
     project.server = http.createServer(app);
-    project.server.on('error', function (e) {
-          debugger
-          console.log("Error connecting!", e)
-        });
+    project.server.on('error', project.catchError("Error connecting to httpServer"));
     project.server.on('listening', function () {
       console.log('Started connect web server on ' + config.appHost)
       if (config.args.open) {
@@ -551,7 +542,6 @@ gulp.task('copy-dist-main', [], function (done) {
 
 })
 
-
 gulp.task('copy-dist-all', ['copy-dist-main'], function () {
   return gulp.src(['./build/*.js', './build/*.map']).pipe(replace("./dist/core-web.sfx.js", './core-web.sfx.js')).pipe(gulp.dest(config.distDir))
 })
@@ -559,11 +549,6 @@ gulp.task('copy-dist-all', ['copy-dist-main'], function () {
 gulp.task('compile-ts', function (cb) {
   project.compileTypescript(cb)
 });
-
-gulp.task('watch-ts', function (cb) {
-  project.watchTs()
-});
-
 
 gulp.task('copy-node-files', function (cb) {
   project.copyNodeFiles(cb)
