@@ -196,11 +196,11 @@
 	}
 	function clearSuggestTagsForSearch() {
 		if ((suggestedTag != null) && (suggestedTag != "")) {
-			
+
 			if(dojo.byId(suggestedTag+"suggestedTagsWrapper")) {
 				dojo.style(suggestedTag+"suggestedTagsWrapper", "display", "none");
 			}
-			
+
 			var tagDiv = document.getElementById(suggestedDiv);
 			tagDiv.innerHTML = "";
 			suggestedTag = "";
@@ -327,6 +327,3 @@
 	{
 	   return RTrim(LTrim(str));
 	}
-
-
-

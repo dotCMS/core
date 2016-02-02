@@ -163,8 +163,8 @@
         	<%if(toggleOn){ %>
         	aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
         	<%} %>
-        });	
-</script>	
+        });
+</script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
     <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
@@ -388,7 +388,7 @@
                         	document.forms["fm"].elements["fieldNeverExpire"].value ="false";
                         }
                       	dijit.byId(velocityVarName+"Date").disabled = never;
-                      	dijit.byId(velocityVarName+"Time").disabled = never;  
+                      	dijit.byId(velocityVarName+"Time").disabled = never;
                     }
 
                         dojo.addOnLoad(function() {
@@ -772,12 +772,12 @@
     <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>Checkbox() {
             var valuesList = [];
-            
+
             var checkedInputs = dojo.query("input:checkbox[name^='<%=fieldName%>Checkbox']:checked");
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            
+
             $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
         }
 
