@@ -65,6 +65,17 @@ public class TagAPIImpl implements TagAPI {
      * Gets a Tag by name, validates the existence of the tag, if it doesn't exists then is created
      *
      * @param name   name of the tag to get
+     * @param hostId
+     * @return tag
+     */
+    public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException {
+        return getTagAndCreate(name, "", hostId);
+    }
+
+    /**
+     * Gets a Tag by name, validates the existence of the tag, if it doesn't exists then is created
+     *
+     * @param name   name of the tag to get
      * @param userId owner of the tag
      * @param hostId
      * @return tag
@@ -358,7 +369,7 @@ public class TagAPIImpl implements TagAPI {
         //validates the tagInode already exists
         TagInode existingTagInode = getTagInode(tag.getTagId(), inode);
 
-        if ( existingTagInode.getTagId() == null ) {
+        if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
 
             //the tagInode does not exists, so creates a new TagInode
             TagInode tagInode = new TagInode();

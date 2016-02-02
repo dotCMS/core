@@ -170,7 +170,9 @@ public class TagFactoryImpl implements TagFactory {
             tag = (Tag) dh.load();
 
             //And add the result to the cache
-            tagCache.put(tag);
+            if ( tag != null && tag.getTagId() != null ) {
+                tagCache.put(tag);
+            }
         }
 
         return tag;
@@ -196,7 +198,9 @@ public class TagFactoryImpl implements TagFactory {
             tag = (Tag) dh.load();
 
             //And add the result to the cache
-            tagCache.put(tag);
+            if ( tag != null && tag.getTagId() != null ) {
+                tagCache.put(tag);
+            }
         }
 
         return tag;
@@ -538,7 +542,9 @@ public class TagFactoryImpl implements TagFactory {
             tagInode = (TagInode) dh.load();
 
             //And add the result to the cache
-            tagInodeCache.put(tagInode);
+            if ( tagInode != null && tagInode.getTagId() != null ) {
+                tagInodeCache.put(tagInode);
+            }
         }
 
         return tagInode;

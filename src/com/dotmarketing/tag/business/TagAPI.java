@@ -59,6 +59,8 @@ public interface TagAPI {
 	 */
 	public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException;
 
+	public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException;
+
 	/**
 	 * Creates a new tag
 	 * @param tagName name of the new tag
