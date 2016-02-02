@@ -1,7 +1,5 @@
 package com.dotmarketing.tag.business;
 
-import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -15,7 +13,7 @@ public interface TagFactory {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () throws DotDataException, DotCacheException;
+    public java.util.List<Tag> getAllTags () throws DotHibernateException;
 
     /**
      * Gets a Tag by name
@@ -23,13 +21,13 @@ public interface TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException, DotCacheException;
+    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException;
 
-    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException, DotCacheException;
+    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotHibernateException;
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException, DotCacheException;
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException;
 
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException;
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException;
 
     /**
      * Gets a Tag by a tagId retrieved from a TagInode.
@@ -38,7 +36,7 @@ public interface TagFactory {
      * @return tag
      * @throws DotHibernateException
      */
-    public Tag getTagByTagId ( String tagId ) throws DotDataException, DotCacheException;
+    public Tag getTagByTagId ( String tagId ) throws DotHibernateException;
 
     /**
      * Gets all the tag created by an user
@@ -61,7 +59,7 @@ public interface TagFactory {
      */
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count );
 
-    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException, DotCacheException;
+    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotHibernateException;
 
     /**
      * Creates a new tag
@@ -72,11 +70,11 @@ public interface TagFactory {
      * @return new tag created
      * @throws DotHibernateException
      */
-    public Tag saveTag ( Tag tag ) throws Exception;
+    public Tag saveTag ( Tag tag ) throws DotHibernateException;
 
-    public TagInode saveTagInode ( TagInode tagInode ) throws Exception;
+    public TagInode saveTagInode ( TagInode tagInode ) throws DotHibernateException;
 
-    public void updateTag ( Tag tag ) throws DotDataException, DotCacheException;
+    public void updateTag ( Tag tag ) throws DotHibernateException;
 
     /**
      * Deletes a tag
@@ -84,7 +82,7 @@ public interface TagFactory {
      * @param tag tag to be deleted
      * @throws DotHibernateException
      */
-    public void deleteTag ( Tag tag ) throws DotDataException, DotCacheException;
+    public void deleteTag ( Tag tag ) throws DotHibernateException;
 
     /**
      * Gets all the tags created, with the respective owner and permission information
@@ -99,14 +97,14 @@ public interface TagFactory {
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByInode ( String inode );
+    public List<TagInode> getTagInodeByInode ( String inode ) throws DotHibernateException;
 
     /**
      * Gets all tags associated to an object
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByTagId ( String tagId );
+    public List<TagInode> getTagInodeByTagId ( String tagId ) throws DotHibernateException;
 
     /**
      * Gets a tagInode by name and inode
@@ -140,6 +138,6 @@ public interface TagFactory {
      */
     public List<Tag> getAllTagsForUsers ( List<String> userIds );
 
-    public List<Tag> getTagsByInode ( String inode );
+    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException;
 
 }

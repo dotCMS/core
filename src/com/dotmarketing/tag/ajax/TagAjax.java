@@ -4,10 +4,10 @@ import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
@@ -39,8 +39,8 @@ public class TagAjax {
 	public static Map<String,Object> addTag(String tagNames, String userId, String hostId) {
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-    	List<String> saveTagErrors = new ArrayList<String>();
-    	Map<String,Object> callbackData = new HashMap<String,Object>();
+		List<String> saveTagErrors = new ArrayList<>();
+		Map<String, Object> callbackData = new HashMap<>();
 
     	hostId=hostId.trim();
     	
@@ -51,7 +51,7 @@ public class TagAjax {
 
 	    		try{
 
-					Tag tag = APILocator.getTagAPI().getTagAndCreate(tagName, userId, hostId);
+					Tag createdTag = APILocator.getTagAPI().getTagAndCreate(tagName, userId, hostId);
 					String tagStorageForHost = "";
 	    			Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 
@@ -61,9 +61,8 @@ public class TagAjax {
 	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
-	    			tagAPI.addTagInode(tagName, 
-	    					APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode(),
-	    					hostId);
+					tagAPI.addTagInode(createdTag,
+							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -76,8 +75,8 @@ public class TagAjax {
 	    			}
 
 	    			if (UtilMethods.isSet(tagStorageForHost)){
-	    				if (!tag.getHostId().equals(tagStorageForHost) && tag.getHostId().equals(Host.SYSTEM_HOST)) {
-	    					saveTagErrors.add("Global Tag Already Exists");
+						if ( !createdTag.getHostId().equals(tagStorageForHost) && createdTag.getHostId().equals(Host.SYSTEM_HOST) ) {
+							saveTagErrors.add("Global Tag Already Exists");
 	    					SessionMessages.clear(req.getSession());
 	    				}
 
@@ -193,7 +192,7 @@ public class TagAjax {
 	 * @param userId id of the tag owner
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
-	public void deleteTag(String tagId) throws DotCacheException, DotDataException {
+	public void deleteTag ( String tagId ) throws DotHibernateException {
 		tagAPI.deleteTag(tagId);
 	}
 
@@ -211,7 +210,7 @@ public class TagAjax {
 	 * @param name name of the tag
 	 * @return the tag with the owner information
 	 */
-	public static List<Tag> getTagByName(String tagName) throws DotCacheException, DotDataException {
+	public static List<Tag> getTagByName ( String tagName ) throws DotDataException {
 		return APILocator.getTagAPI().getTagByName(tagName);
 	}
 
@@ -220,7 +219,7 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
 	 */
-	public static List getTagInodeByInode(String inode) {
+	public static List getTagInodeByInode ( String inode ) throws DotHibernateException {
 		return APILocator.getTagAPI().getTagInodeByInode(inode);
 	}
 
@@ -240,7 +239,7 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return a list of all tags assigned to a user
 	 */
-	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotCacheException {
+	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException {
 
 		Tag tag = new Tag();
 		try {
@@ -322,29 +321,32 @@ public class TagAjax {
 	}
 
 	/**
-	 * Gets a suggested tag(s), by name
-	 * @param name name of the tag searched
+	 * Gets a suggested tag(s), by name and host
+	 * @param tagName Fragment of the name we are looking for
+	 * @param selectedHostOrFolderId Host where to search for the tags (Including SYSTEM_HOST)
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag(String tagName, String selectedHostOrFolderId) {
+	public List<Tag> getSuggestedTag ( String tagName, String selectedHostOrFolderId ) {
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		try{
+
+		try {
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
-			if(!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode())){
+			if ( UtilMethods.isSet(host) && UtilMethods.isSet(host.getInode()) ) {
 				selectedHostOrFolderId = APILocator.getFolderAPI().find(selectedHostOrFolderId, currentUser, false).getHostId();
 			}
-		}catch(Exception e){
-			Logger.error(TagAjax.class,e.getMessage());
+		} catch ( Exception e ) {
+			Logger.error(TagAjax.class, e.getMessage(), e);
 		}
-		return APILocator.getTagAPI().getSuggestedTag(req, tagName, selectedHostOrFolderId);
+
+		return APILocator.getTagAPI().getSuggestedTag(tagName, selectedHostOrFolderId);
 	}
 
 	/**
 	 * Get a list of all the tags created
 	 * @return list of all tags created
 	 */
-	public List<Tag> getAllTags() throws DotCacheException, DotDataException {
+	public List<Tag> getAllTags () throws DotDataException {
 		return APILocator.getTagAPI().getAllTags();
 	}
 

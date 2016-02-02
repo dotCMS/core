@@ -2,16 +2,15 @@ package com.dotmarketing.tag.business;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.*;
 
 public class TagAPIImpl implements TagAPI {
@@ -23,7 +22,7 @@ public class TagAPIImpl implements TagAPI {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () throws DotCacheException, DotDataException {
+    public java.util.List<Tag> getAllTags () throws DotHibernateException {
         return tagFactory.getAllTags();
     }
 
@@ -33,7 +32,7 @@ public class TagAPIImpl implements TagAPI {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotCacheException, DotDataException {
+    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException {
         return tagFactory.getTagByName(name);
     }
 
@@ -70,7 +69,7 @@ public class TagAPIImpl implements TagAPI {
      * @param hostId
      * @return tag
      */
-    public Tag getTagAndCreate ( String name, String userId, String hostId ) throws Exception {
+    public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException {
 
         Tag newTag = new Tag();
 
@@ -142,15 +141,15 @@ public class TagAPIImpl implements TagAPI {
      * @return tag
      * @throws DotHibernateException
      */
-    public Tag getTagByTagId ( String tagId ) throws DotDataException, DotCacheException {
+    public Tag getTagByTagId ( String tagId ) throws DotHibernateException {
         return tagFactory.getTagByTagId(tagId);
     }
 
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException {
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException {
         return tagFactory.getTagByNameAndHost(name, hostId);
     }
 
-    public Tag saveTag ( String tagName, String userId, String hostId ) throws Exception {
+    public Tag saveTag ( String tagName, String userId, String hostId ) throws DotHibernateException {
         return saveTag(tagName, userId, hostId, false);
     }
 
@@ -164,7 +163,7 @@ public class TagAPIImpl implements TagAPI {
      * @return new tag created
      * @throws DotHibernateException
      */
-    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws Exception {
+    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotHibernateException {
 
         Tag tag = new Tag();
         //creates new Tag
@@ -217,23 +216,23 @@ public class TagAPIImpl implements TagAPI {
      * @return a list of all tags assigned to an object
      * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
      */
-    public List addTag ( String tagName, String userId, String inode ) throws Exception {
+    public List addTag ( String tagName, String userId, String inode ) throws DotDataException, DotSecurityException {
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
         if ( tagNameToken.hasMoreTokens() ) {
             for (; tagNameToken.hasMoreTokens(); ) {
                 String tagTokenized = tagNameToken.nextToken().trim();
-                getTagAndCreate(tagTokenized, userId, "");
-                addTagInode(tagTokenized, inode, "");
+                Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
+                addTagInode(createdTag, inode);
             }
         }
         return getTagInodeByInode(inode);
     }
 
-    public void updateTag ( String tagId, String tagName ) throws DotDataException, DotCacheException {
+    public void updateTag ( String tagId, String tagName ) throws DotHibernateException {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
-    public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException, DotCacheException {
+    public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotHibernateException {
 
         Tag tag = getTagByTagId(tagId);
         boolean tagAlreadyExistsForNewTagStorage = false;
@@ -273,7 +272,7 @@ public class TagAPIImpl implements TagAPI {
      * @param tag tag to be deleted
      * @throws DotHibernateException
      */
-    public void deleteTag ( Tag tag ) throws DotDataException, DotCacheException {
+    public void deleteTag ( Tag tag ) throws DotHibernateException {
         List<TagInode> tagInodes = getTagInodeByTagId(tag.getTagId());
         for ( TagInode t : tagInodes ) {
             deleteTagInode(t);
@@ -287,7 +286,7 @@ public class TagAPIImpl implements TagAPI {
      *
      * @param tagId The id of the tag to delete
      */
-    public void deleteTag ( String tagId ) throws DotDataException, DotCacheException {
+    public void deleteTag ( String tagId ) throws DotHibernateException {
         Tag tag = getTagByTagId(tagId);
         deleteTag(tag);
     }
@@ -338,20 +337,32 @@ public class TagAPIImpl implements TagAPI {
      * @param hostId  the identifier of host that storage the tag
      * @return a tagInode
      */
-
-    public TagInode addTagInode ( String tagName, String inode, String hostId ) throws Exception {
+    public TagInode addTagInode ( String tagName, String inode, String hostId ) throws DotDataException, DotSecurityException {
 
         //Ensure the tag exists in the tag table
         Tag existingTag = getTagAndCreate(tagName, "", hostId);
 
+        //Create the the tag inode
+        return addTagInode(existingTag, inode);
+    }
+
+    /**
+     * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
+     *
+     * @param tag
+     * @param inode inode of the object tagged
+     * @return a tagInode
+     */
+    public TagInode addTagInode ( Tag tag, String inode ) throws DotHibernateException {
+
         //validates the tagInode already exists
-        TagInode existingTagInode = getTagInode(existingTag.getTagId(), inode);
+        TagInode existingTagInode = getTagInode(tag.getTagId(), inode);
 
         if ( existingTagInode.getTagId() == null ) {
 
             //the tagInode does not exists, so creates a new TagInode
             TagInode tagInode = new TagInode();
-            tagInode.setTagId(existingTag.getTagId());
+            tagInode.setTagId(tag.getTagId());
             tagInode.setInode(inode);
             tagInode.setModDate(new Date());
 
@@ -368,7 +379,7 @@ public class TagAPIImpl implements TagAPI {
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByInode ( String inode ) {
+    public List<TagInode> getTagInodeByInode ( String inode ) throws DotHibernateException {
         return tagFactory.getTagInodeByInode(inode);
     }
 
@@ -378,7 +389,7 @@ public class TagAPIImpl implements TagAPI {
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByTagId ( String tagId ) {
+    public List<TagInode> getTagInodeByTagId ( String tagId ) throws DotHibernateException {
         return tagFactory.getTagInodeByTagId(tagId);
     }
 
@@ -410,7 +421,7 @@ public class TagAPIImpl implements TagAPI {
      * @return a list of all tags assigned to an object
      */
 
-    public List deleteTagInode ( String tagName, String inode ) throws Exception {
+    public List deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException {
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
         if ( tagNameToken.hasMoreTokens() ) {
             for (; tagNameToken.hasMoreTokens(); ) {
@@ -443,7 +454,7 @@ public class TagAPIImpl implements TagAPI {
      * @return list of suggested tags
      */
     @SuppressWarnings ( "unchecked" )
-    public List<Tag> getSuggestedTag ( HttpServletRequest request, String name, String selectedHostId ) {
+    public List<Tag> getSuggestedTag ( String name, String selectedHostId ) {
         try {
             name = escapeSingleQuote(name);
 
@@ -525,12 +536,12 @@ public class TagAPIImpl implements TagAPI {
     }
 
     @Override
-    public List<Tag> getTagsByInode ( String inode ) {
+    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException {
         return tagFactory.getTagsByInode(inode);
     }
 
     @Override
-    public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws Exception {
+    public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException {
         List<Tag> tags = new ArrayList<>();
         String[] tagNames = text.split("[,\\n\\t\\r]");
         for ( String tagname : tagNames ) {

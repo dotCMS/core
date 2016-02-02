@@ -1246,7 +1246,7 @@ public class ImportUtil {
 										hostId = Host.SYSTEM_HOST;
 									}
 									for (String tag : tags) {
-										APILocator.getTagAPI().addTagInode((String)tag.trim(), cont.getInode(), hostId);
+										APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), hostId);
 									}
 								}
 								else {

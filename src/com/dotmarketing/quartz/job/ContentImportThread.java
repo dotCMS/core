@@ -720,7 +720,7 @@ public class ContentImportThread implements Job{
 							value instanceof String) {
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
-							APILocator.getTagAPI().addTagInode((String)tag.trim(), cont.getInode(), "");
+							APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), "");
 						}
 					}
 				}

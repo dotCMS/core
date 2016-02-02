@@ -21,7 +21,9 @@ public abstract class TagCache implements Cachable {
      * @throws DotDataException
      * @throws DotCacheException
      */
-    abstract protected void remove ( Tag object ) throws DotDataException, DotCacheException;
+    abstract protected void remove ( Tag object );
+
+    abstract protected void removeByInode ( String inode );
 
     /**
      * This method get a category object from the cache based
@@ -32,9 +34,9 @@ public abstract class TagCache implements Cachable {
      * @return
      * @throws DotDataException
      */
-    abstract protected Tag get ( String tagId ) throws DotDataException;
+    abstract protected Tag get ( String tagId );
 
-    abstract protected Tag get ( String name, String hostId ) throws DotDataException;
+    abstract protected Tag get ( String name, String hostId );
 
     /**
      * This method get a category object from the cache based
@@ -45,13 +47,17 @@ public abstract class TagCache implements Cachable {
      * @return
      * @throws DotDataException
      */
-    abstract protected List<Tag> getByName ( String name ) throws DotDataException;
+    abstract protected List<Tag> getByName ( String name );
 
-    abstract protected List<Tag> getByHost ( String hostId ) throws DotDataException;
+    abstract protected List<Tag> getByHost ( String hostId );
 
-    abstract protected void putForName ( String name, List<Tag> tags ) throws DotDataException;
+    abstract protected List<Tag> getByInode ( String inode );
 
-    abstract protected void putForHost ( String hostId, List<Tag> tags ) throws DotDataException;
+    abstract protected void putForInode ( String inode, List<Tag> tags );
+
+    abstract protected void putForName ( String name, List<Tag> tags );
+
+    abstract protected void putForHost ( String hostId, List<Tag> tags );
 
     /**
      * This method puts a category object in cache
@@ -62,12 +68,7 @@ public abstract class TagCache implements Cachable {
      * @throws DotDataException
      * @throws DotCacheException
      */
-    abstract protected void put ( Tag object ) throws DotDataException, DotCacheException;
-
-    /**
-     * Removes all entries from cache
-     */
-    public abstract void clearCache ();
+    abstract protected void put ( Tag object );
 
     /**
      * use to get the group name used in the cache
@@ -77,6 +78,8 @@ public abstract class TagCache implements Cachable {
     abstract public String getTagsByNameGroup ();
 
     abstract public String getTagsByHostGroup ();
+
+    abstract public String getTagsByInodeGroup ();
 
     abstract public String getTagByNameHostGroup ();
 

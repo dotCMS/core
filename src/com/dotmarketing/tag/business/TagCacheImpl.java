@@ -3,7 +3,6 @@ package com.dotmarketing.tag.business;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
-import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Logger;
 
@@ -20,6 +19,7 @@ public class TagCacheImpl extends TagCache {
     private String primaryGroup = "TagCache";
     private String byNameCacheGroup = "tagsByNameCache";
     private String byNameAndHostCacheGroup = "tagByNameAndHostCache";
+    private String byInodeCacheGroup = "tagsByInodeCache";
     private String byHostCacheGroup = "tagsByHostCache";
 
     //Region's name for the cache
@@ -30,7 +30,7 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    protected Tag get ( String tagId ) throws DotDataException {
+    protected Tag get ( String tagId ) {
         try {
             return (Tag) cache.get(getPrimaryGroup() + tagId, getPrimaryGroup());
         } catch ( DotCacheException e ) {
@@ -40,7 +40,7 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    protected Tag get ( String name, String hostId ) throws DotDataException {
+    protected Tag get ( String name, String hostId ) {
 
         name = name.toLowerCase();
 
@@ -53,7 +53,7 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    protected List<Tag> getByName ( String name ) throws DotDataException {
+    protected List<Tag> getByName ( String name ) {
 
         name = name.toLowerCase();
 
@@ -66,7 +66,7 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    protected List<Tag> getByHost ( String hostId ) throws DotDataException {
+    protected List<Tag> getByHost ( String hostId ) {
         try {
             return (List<Tag>) cache.get(getTagsByHostGroup() + hostId, getTagsByHostGroup());
         } catch ( DotCacheException e ) {
@@ -76,24 +76,39 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    protected void putForName ( String name, List<Tag> tags ) throws DotDataException {
+    protected List<Tag> getByInode ( String inode ) {
+        try {
+            return (List<Tag>) cache.get(getTagsByInodeGroup() + inode, getTagsByInodeGroup());
+        } catch ( DotCacheException e ) {
+            Logger.debug(this, "Cache Entry not found", e);
+            return null;
+        }
+    }
+
+    @Override
+    protected void putForInode ( String inode, List<Tag> tags ) {
+        cache.put(getTagsByInodeGroup() + inode, tags, getTagsByInodeGroup());
+    }
+
+    @Override
+    protected void putForName ( String name, List<Tag> tags ) {
         name = name.toLowerCase();
         cache.put(getTagsByNameGroup() + name, tags, getTagsByNameGroup());
     }
 
     @Override
-    protected void putForHost ( String hostId, List<Tag> tags ) throws DotDataException {
+    protected void putForHost ( String hostId, List<Tag> tags ) {
         cache.put(getTagsByHostGroup() + hostId, tags, getTagsByHostGroup());
     }
 
     @Override
-    protected void put ( Tag object ) throws DotDataException, DotCacheException {
+    protected void put ( Tag object ) {
         //Adding the tag by id
         cache.put(getPrimaryGroup() + object.getTagId(), object, getPrimaryGroup());
     }
 
     @Override
-    protected void remove ( Tag object ) throws DotDataException, DotCacheException {
+    protected void remove ( Tag object ) {
         //Removing by id
         cache.remove(getPrimaryGroup() + object.getTagId(), getPrimaryGroup());
         //Removing by name and host
@@ -105,17 +120,25 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
+    protected void removeByInode ( String inode ) {
+        cache.remove(getTagsByInodeGroup() + inode, getTagsByInodeGroup());
+    }
+
+    @Override
     public void clearCache () {
         cache.flushGroup(getPrimaryGroup());
         cache.flushGroup(getTagByNameHostGroup());
         cache.flushGroup(getTagsByNameGroup());
         cache.flushGroup(getTagsByHostGroup());
+        cache.flushGroup(getTagsByInodeGroup());
     }
 
+    @Override
     public String[] getGroups () {
         return groupNames;
     }
 
+    @Override
     public String getPrimaryGroup () {
         return primaryGroup;
     }
@@ -128,6 +151,11 @@ public class TagCacheImpl extends TagCache {
     @Override
     public String getTagsByHostGroup () {
         return byHostCacheGroup;
+    }
+
+    @Override
+    public String getTagsByInodeGroup () {
+        return byInodeCacheGroup;
     }
 
     @Override

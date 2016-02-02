@@ -34,9 +34,11 @@ public class TagFactoryImpl implements TagFactory {
 
     private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private TagCache tagCache;
+    private TagInodeCache tagInodeCache;
 
     public TagFactoryImpl () {
         tagCache = CacheLocator.getTagCache();
+        tagInodeCache = CacheLocator.getTagInodeCache();
     }
 
     /**
@@ -51,7 +53,7 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () throws DotDataException, DotCacheException {
+    public java.util.List<Tag> getAllTags () throws DotHibernateException {
 
         HibernateUtil dh = new HibernateUtil(Tag.class);
         dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag");
@@ -75,7 +77,7 @@ public class TagFactoryImpl implements TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException, DotCacheException {
+    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException {
 
         List<Tag> tags = tagCache.getByName(name);
         if ( tags == null ) {
@@ -101,7 +103,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException, DotCacheException {
+    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotHibernateException {
 
         List<Tag> tags = tagCache.getByHost(hostId);
         if ( tags == null ) {
@@ -127,7 +129,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException, DotCacheException {
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException {
 
         name = escapeSingleQuote(name);
 
@@ -152,7 +154,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException, DotCacheException {
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException {
 
         Tag tag = tagCache.get(name, hostId);
         if ( tag == null ) {
@@ -181,7 +183,7 @@ public class TagFactoryImpl implements TagFactory {
      * @return tag
      * @throws DotHibernateException
      */
-    public Tag getTagByTagId ( String tagId ) throws DotDataException, DotCacheException {
+    public Tag getTagByTagId ( String tagId ) throws DotHibernateException {
 
         Tag tag = tagCache.get(tagId);
         if ( tag == null ) {
@@ -321,13 +323,20 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
-     * FIXME: Needs cache
      * @param tagInode
      * @param tagId
      * @throws DotDataException
      * @throws DotCacheException
      */
-    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException, DotCacheException {
+    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotHibernateException {
+
+        //First lets clean up the cache
+        List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tagInode.getTagId());
+        for ( TagInode cachedTagInode : cachedTagInodes ) {
+            tagCache.removeByInode(cachedTagInode.getInode());
+        }
+        tagInodeCache.remove(tagInode);
+
         tagInode.setTagId(tagId);
         tagInode.setModDate(new Date());
         HibernateUtil.saveOrUpdate(tagInode);
@@ -339,40 +348,43 @@ public class TagFactoryImpl implements TagFactory {
      * @return
      * @throws Exception
      */
-    public Tag saveTag ( Tag tag ) throws Exception {
+    public Tag saveTag ( Tag tag) throws DotHibernateException {
 
-        //FIXME: Remove the lists of caches of find where to add it!!???
-        //FIXME: Remove the lists of caches of find where to add it!!???
-        //FIXME: Remove the lists of caches of find where to add it!!???
-        //FIXME: Remove the lists of caches of find where to add it!!???
+        //FIXME: Remove the lists of caches or find where to add it!!???
+        //FIXME: Remove the lists of caches or find where to add it!!???
+        //FIXME: Remove the lists of caches or find where to add it!!???
+        //FIXME: Remove the lists of caches or find where to add it!!???
 
         HibernateUtil.save(tag);
         return tag;
     }
 
-    /**
-     * FIXME: Needs cache
-     * @param tagInode
-     * @return
-     * @throws Exception
-     */
-    public TagInode saveTagInode ( TagInode tagInode ) throws Exception {
+    public TagInode saveTagInode ( TagInode tagInode ) throws DotHibernateException {
         HibernateUtil.save(tagInode);
         return tagInode;
     }
 
-    public void updateTag ( Tag tag ) throws DotDataException, DotCacheException {
+    public void updateTag ( Tag tag ) throws DotHibernateException {
 
         //First lets clean up the cache
+        List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
+        for ( TagInode cachedTagInode : cachedTagInodes ) {
+            tagCache.removeByInode(cachedTagInode.getInode());
+        }
         tagCache.remove(tag);
 
         HibernateUtil.saveOrUpdate(tag);
     }
 
-    public void deleteTag ( Tag tag ) throws DotDataException, DotCacheException {
+    public void deleteTag ( Tag tag ) throws DotHibernateException {
 
         //First lets clean up the cache
+        List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
+        for ( TagInode cachedTagInode : cachedTagInodes ) {
+            tagCache.removeByInode(cachedTagInode.getInode());
+        }
         tagCache.remove(tag);
+        tagInodeCache.removeByTagId(tag.getTagId());
 
         HibernateUtil.delete(tag);
     }
@@ -450,19 +462,29 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
-     * FIXME: Needs cache
      */
-    public List<TagInode> getTagInodeByInode ( String inode ) {
-        try {
+    public List<TagInode> getTagInodeByInode ( String inode ) throws DotHibernateException {
+
+        List<TagInode> tagInodes = tagInodeCache.getByInode(inode);
+        if ( tagInodes == null ) {
+
             HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where inode = ?");
             dh.setParam(inode);
 
-            return dh.list();
-        } catch ( Exception e ) {
-            Logger.warn(Tag.class, "getTagInodeByInode failed:" + e, e);
+            //Search
+            tagInodes = dh.list();
+
+            //And add the results to the cache
+            for ( TagInode tagInode : tagInodes ) {
+                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode()) == null ) {
+                    tagInodeCache.put(tagInode);
+                }
+            }
+            tagInodeCache.putForInode(inode, tagInodes);
         }
-        return new ArrayList<>();
+
+        return tagInodes;
     }
 
     /**
@@ -470,20 +492,29 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
-     * FIXME: Needs cache
      */
-    public List<TagInode> getTagInodeByTagId ( String tagId ) {
-        try {
+    public List<TagInode> getTagInodeByTagId ( String tagId ) throws DotHibernateException {
+
+        List<TagInode> tagInodes = tagInodeCache.getByTagId(tagId);
+        if ( tagInodes == null ) {
+
             HibernateUtil dh = new HibernateUtil(TagInode.class);
             dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
             dh.setParam(tagId);
 
-            return dh.list();
+            //Search
+            tagInodes = dh.list();
 
-        } catch ( Exception e ) {
-            Logger.warn(Tag.class, "getTagInodeByTagId failed:" + e, e);
+            //And add the results to the cache
+            for ( TagInode tagInode : tagInodes ) {
+                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode()) == null ) {
+                    tagInodeCache.put(tagInode);
+                }
+            }
+            tagInodeCache.putForTagId(tagId, tagInodes);
         }
-        return new ArrayList<>();
+
+        return tagInodes;
     }
 
     /**
@@ -492,21 +523,24 @@ public class TagFactoryImpl implements TagFactory {
      * @param tagId id of the tag
      * @param inode inode of the object tagged
      * @return the tagInode
-     * FIXME: Needs cache
      */
     public TagInode getTagInode ( String tagId, String inode ) throws DotHibernateException {
-        // getting the tag inode record
-        HibernateUtil dh = new HibernateUtil(TagInode.class);
-        dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
-        dh.setParam(tagId);
-        dh.setParam(inode);
 
-        TagInode tagInode;
-        try {
+        TagInode tagInode = tagInodeCache.get(tagId, inode);
+        if ( tagInode == null ) {
+
+            // getting the tag inode record
+            HibernateUtil dh = new HibernateUtil(TagInode.class);
+            dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
+            dh.setParam(tagId);
+            dh.setParam(inode);
+
             tagInode = (TagInode) dh.load();
-        } catch ( Exception ex ) {
-            tagInode = new TagInode();
+
+            //And add the result to the cache
+            tagInodeCache.put(tagInode);
         }
+
         return tagInode;
     }
 
@@ -516,6 +550,11 @@ public class TagFactoryImpl implements TagFactory {
      * @param tagInode TagInode to delete
      */
     public void deleteTagInode ( TagInode tagInode ) throws DotHibernateException {
+
+        //First lets clean up the cache
+        tagInodeCache.remove(tagInode);
+        tagCache.removeByInode(tagInode.getInode());
+
         HibernateUtil.delete(tagInode);
     }
 
@@ -603,25 +642,38 @@ public class TagFactoryImpl implements TagFactory {
         return false;
     }
 
-    /**
-     * FIXME: Needs cache
-     * @param inode
-     * @return
-     */
     @Override
-    public List<Tag> getTagsByInode ( String inode ) {
-        try {
+    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException {
+
+        List<Tag> tags = tagCache.getByInode(inode);
+        if ( tags == null ) {
+
             HibernateUtil dh = new HibernateUtil(Tag.class);
             dh.setQuery("select tag from com.dotmarketing.tag.model.TagInode tagi, com.dotmarketing.tag.model.Tag tag " +
                     " where tagi.tagId=tag.tagId and tagi.inode = ?");
             dh.setParam(inode);
 
-            return dh.list();
+            //Search
+            tags = dh.list();
 
-        } catch ( Exception e ) {
-            Logger.warn(Tag.class, "getTagInodeByInode failed:" + e, e);
-            throw new RuntimeException(e);
+            //And add the results to the cache
+            for ( Tag tag : tags ) {
+
+                if ( tagInodeCache.get(tag.getTagId(), inode) == null ) {
+                    TagInode tagInode = new TagInode();
+                    tagInode.setTagId(tag.getTagId());
+                    tagInode.setInode(inode);
+                    tagInodeCache.put(tagInode);
+                }
+
+                if ( tagCache.get(tag.getTagId()) == null ) {
+                    tagCache.put(tag);
+                }
+            }
+            tagCache.putForInode(inode, tags);
         }
+
+        return tags;
     }
 
     /**
