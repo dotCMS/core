@@ -33,6 +33,8 @@ public class ActionResourceFTest extends TestBase {
 	private final WebTarget target;
 	private String ruleId;
 
+	private static final String ACTIONLET="CountRulesActionlet";
+
 	private List<Rule> rulesToRemove = Lists.newArrayList();
 
     public ActionResourceFTest() {
@@ -50,13 +52,13 @@ public class ActionResourceFTest extends TestBase {
     	ruleId = createRule("Save Valid Action");
 		Response response = createAction(ruleId, "MyAction");
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
+
     	//response
     	String responseStr = response.readEntity(String.class);
     	JSONObject responseJSON = new JSONObject(responseStr);
     	String action = (String)responseJSON.get("id");
 		assertFalse(Strings.isNullOrEmpty(action));
-    	
+
     }
 
     /**
@@ -89,7 +91,7 @@ public class ActionResourceFTest extends TestBase {
         Response response = createAction(ruleId, "MyAction", "NonExistingActionlet");
         assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
     }
-    
+
     /**
      * Save Action with missing attribute "owningRule"... return 400
      */
@@ -99,15 +101,15 @@ public class ActionResourceFTest extends TestBase {
     	JSONObject actionJSON = new JSONObject();
     	actionJSON.put("name", "Test Action Rest");
     	actionJSON.put("actionlet", "something");
-    	    	
+
     	//create
     	Response response = target.path(actionletEndpointUrl)
 				.request(MediaType.APPLICATION_JSON_TYPE)
     			.post(Entity.json(actionJSON.toString()));
-    	
+
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
     }
-    
+
     /**
      * Get Action... return 200
      */
@@ -116,14 +118,14 @@ public class ActionResourceFTest extends TestBase {
     	//Creation of the Rule
     	ruleId = createRule("Get Action");
 		Response response = createAction(ruleId, "MyAction");
-    	
+
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
+
     	//response
     	String responseStr = response.readEntity(String.class);
     	JSONObject responseJSON = new JSONObject(responseStr);
     	String action = (String)responseJSON.get("id");
-    	
+
     	//get
     	response = target.path(actionletEndpointUrl + action)
 				.request(MediaType.APPLICATION_JSON_TYPE)
@@ -140,7 +142,7 @@ public class ActionResourceFTest extends TestBase {
 				.request(MediaType.APPLICATION_JSON_TYPE)
 				.get();
     	assertTrue(response.getStatus() == HttpStatus.SC_NOT_FOUND);
-    	
+
     }
 
     /**
@@ -151,20 +153,20 @@ public class ActionResourceFTest extends TestBase {
     	ruleId = createRule("Delete Action");
 		Response response = createAction(ruleId, "MyAction");
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
+
     	//response
     	String responseStr = response.readEntity(String.class);
     	JSONObject responseJSON = new JSONObject(responseStr);
     	String action = (String)responseJSON.get("id");
-    	
+
     	//delete
     	response = target.path(actionletEndpointUrl + action)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
-    	
+
     	assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
     }
-    
+
     /**
      * Delete non-existent action... return 404
      */
@@ -173,10 +175,10 @@ public class ActionResourceFTest extends TestBase {
         Response response = target.path(actionletEndpointUrl + "00000000-0000-0000-0000-000000000000")
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .delete();
-        
+
         assertTrue(response.getStatus() == HttpStatus.SC_NOT_FOUND);
     }
-    
+
     /**
      * Update an action... return 200
      */
@@ -185,28 +187,28 @@ public class ActionResourceFTest extends TestBase {
     	//Creation of the Rule
     	ruleId = createRule("Update Action");
 		Response response = createAction(ruleId, "MyAction");
-    	
+
     	assertTrue(response.getStatus() == HttpStatus.SC_OK);
-    	
+
     	//response
     	String responseStr = response.readEntity(String.class);
     	JSONObject responseJSON = new JSONObject(responseStr);
     	String action = (String)responseJSON.get("id");
-    	
+
         JSONObject updateJSON = new JSONObject();
         updateJSON.put("name", "Updated Name");
         updateJSON.put("owningRule", ruleId);
-        updateJSON.put("actionlet", "CountRequestsActionlet");
+        updateJSON.put("actionlet", ACTIONLET);
 
 		JSONObject parametersJSON = new JSONObject();
 
 		JSONObject fireOnJSON = new JSONObject();
-		fireOnJSON.put("key", "fireOn");
+		fireOnJSON.put("key", "attribute");
 		fireOnJSON.put("value", Rule.FireOn.EVERY_PAGE.toString());
-		parametersJSON.put("fireOn", fireOnJSON);
+		parametersJSON.put("attribute", fireOnJSON);
 
 		updateJSON.put("parameters", parametersJSON);
-        
+
         response = target.path(actionletEndpointUrl + action)
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .put(Entity.json(updateJSON.toString()));
@@ -240,13 +242,13 @@ public class ActionResourceFTest extends TestBase {
 	}
 
 	private Response createAction(String ruleId, String name) throws JSONException  {
-		return createAction(ruleId, name, "CountRequestsActionlet");
+		return createAction(ruleId, name, ACTIONLET);
 	}
 
 	private Response createAction(String ruleId, String name, String actionletName) throws JSONException  {
 		List<Map<String, String>> parameters = new ArrayList<>();
 		HashMap<String, String> parameter = new HashMap<>();
-		parameter.put("key", "fireOn");
+		parameter.put("key", "attribute");
 		parameter.put("value", Rule.FireOn.EVERY_PAGE.name());
 		parameters.add(parameter);
 		return createAction(ruleId, name, actionletName , parameters);
@@ -265,7 +267,7 @@ public class ActionResourceFTest extends TestBase {
 				JSONObject fireOnJSON = new JSONObject();
 				fireOnJSON.put("key", parameter.get("key"));
 				fireOnJSON.put("value", parameter.get("value"));
-				parametersJSON.put("fireOn", fireOnJSON);
+				parametersJSON.put("attribute", fireOnJSON);
 			}
 
 			actionJSON.put("parameters", parametersJSON);
