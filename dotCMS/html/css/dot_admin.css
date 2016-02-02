@@ -747,3 +747,140 @@ table.bgThumbnail td div a{border:1px solid #a0a0a0;padding:2px;display:block;}
 /* Help Dialog */
 div#_dotHelpMenu{color:red;}
 #_dotHelpResults{margin-left:230px;border-left:1px solid #ccc; padding-left:15px;}
+
+/*Tags fields*/
+
+.tagsOptions {
+	border: 1px solid #b3b3b3;
+	position: absolute;
+	background: white;
+	z-index: 1;
+}
+
+.tagsOptions:before {
+	background-color: #f2f2f2;
+	border-left: solid 1px #b3b3b3;
+	border-top: solid 1px #b3b3b3;
+	content: "";
+	height: 10px;
+	left: 5px;
+	position: absolute;
+	top: -6px;
+	transform: rotate(45deg);
+	width: 10px;
+}
+
+.dijitTextBoxFocused + .tagsOptions {
+	border-color: #406b9b;
+}
+
+.tagsOptions h3 {
+	padding: 5px 10px;
+	background-color: #f2f2f2;
+	border-bottom: 1px solid #b3b3b3;
+}
+
+.tagsOptions a {
+	cursor: pointer;
+	display: block;
+	padding: 5px 10px;
+	border-bottom: 1px solid #b3b3b3;
+	text-decoration: none;
+}
+
+.dijitTextBoxFocused + .tagsOptions a,
+.dijitTextBoxFocused + .tagsOptions h3 {
+	border-color: #406b9b;
+}
+
+.dijitTextBoxFocused + .tagsOptions:before {
+	border-color: #406b9b;
+}
+
+.tagsOptions a:last-child {
+	border-bottom: none;
+}
+
+.tagLink {
+	border: solid 1px #ddd;
+	border-radius: 10px;
+	display: inline-block;
+	font-size: 12px;
+	margin: 0 5px 2px 0;
+	padding: 3px 25px 4px 5px;
+	position: relative;
+	text-decoration: none;
+	vertical-align: middle;
+}
+
+.tagLink.persona {
+	padding: 3px 25px 4px;
+}
+
+.tagLink.persona:before {
+	content: "";
+	width: 18px;
+	height: 18px;
+	background: url("/html/images/icons/dotcms-sprite.png") no-repeat no-repeat -1px -460px;
+	display: block;
+	position: absolute;
+	left: 3px;
+	top: 1px;
+}
+
+.tagLink:after {
+	background: #f2f2f2;
+	border-bottom-right-radius: 9px;
+	border-top-right-radius: 9px;
+	color: gray;
+	content: "\2715";
+	font-size: 10px;
+	font-weight: bold;
+	height: 22px;
+	line-height: 21px;
+	position: absolute;
+	right: 0px;
+	text-align: center;
+	top: 0px;
+	width: 20px;
+}
+
+.tagLink:hover {
+	color: #cc0000;
+}
+
+.fieldValue {
+	float: none;
+}
+
+.tagsWrapper {
+	width: auto;
+	box-sizing: border-box;
+	padding-right: 20px;
+	position: relative;
+}
+
+.tagsWrapper .dijitTextBox {
+	background: none;
+	box-sizing: border-box;
+	width: 100%;
+	margin: 0;
+	position: relative;
+	padding: 2px 2px 0;
+}
+
+.tagsWrapper .dijitInputField {
+	height: auto;
+	cursor: text;
+	display: inline-block;
+	vertical-align: middle;
+	position: static;
+}
+
+.tagsWrapper .dijitInputField input {
+	float: none;
+	padding: 0;
+	height: 20px;
+	border: none;
+	width: auto !important;
+}
