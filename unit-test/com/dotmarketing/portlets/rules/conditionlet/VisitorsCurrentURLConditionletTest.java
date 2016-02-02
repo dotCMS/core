@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
@@ -11,7 +11,6 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -30,7 +29,7 @@ import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 
-public class UsersCurrentURLConditionletTest {
+public class VisitorsCurrentURLConditionletTest {
 
     @DataProvider(name = "cases")
     public Object[][] compareCases() throws Exception {
@@ -139,7 +138,7 @@ public class UsersCurrentURLConditionletTest {
 
     @Test
     public void testUriProcessing() throws Exception {
-        UsersCurrentUrlConditionlet conditionlet = new UsersCurrentUrlConditionlet();
+        VisitorsCurrentUrlConditionlet conditionlet = new VisitorsCurrentUrlConditionlet();
         assertEquals(conditionlet.processUrl("/products/", "index"),"/products/index");
         assertEquals(conditionlet.processUrl("/products/?some=property", "index"),"/products/index");
         assertEquals(conditionlet.processUrl("/products?", "index"),"/products");
@@ -173,7 +172,7 @@ public class UsersCurrentURLConditionletTest {
 
     private class TestCase {
 
-        public final UsersCurrentUrlConditionlet conditionlet;
+        public final VisitorsCurrentUrlConditionlet conditionlet;
 
         private final HttpServletRequest request ;
         private final HttpServletResponse response;
@@ -190,7 +189,7 @@ public class UsersCurrentURLConditionletTest {
             this.testDescription = testDescription;
             this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
-            conditionlet = new UsersCurrentUrlConditionlet();
+            conditionlet = new VisitorsCurrentUrlConditionlet();
         }
 
         TestCase shouldBeTrue() {
