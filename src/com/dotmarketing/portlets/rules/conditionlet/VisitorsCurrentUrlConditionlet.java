@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.util.HttpRequestDataUtil;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
@@ -17,8 +18,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.CONTAINS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ENDS_WITH;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
@@ -40,14 +41,14 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.ST
  * the URL correctly
  *
  */
-public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlConditionlet.Instance> {
+public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrentUrlConditionlet.Instance> {
 
 	private static final long serialVersionUID = 1L;
 
 	public static final String PATTERN_URL_INPUT_KEY = "current-url";
 
-	public UsersCurrentUrlConditionlet() {
-		super("api.ruleengine.system.conditionlet.UsersCurrentUrl", new ComparisonParameterDefinition(2, IS, IS_NOT,
+	public VisitorsCurrentUrlConditionlet() {
+		super("api.ruleengine.system.conditionlet.VisitorsCurrentUrl", new ComparisonParameterDefinition(2, IS, IS_NOT,
                 STARTS_WITH, ENDS_WITH, CONTAINS, REGEX), patternUrl);
 	}
 
@@ -57,16 +58,40 @@ public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlCon
 	@Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
         String requestUri = null;
+
 		try {
 			requestUri = HttpRequestDataUtil.getUri(request);
 		} catch (UnsupportedEncodingException e) {
 			Logger.error(this, "Could not retrieved a valid URI from request: "
 					+ request.getRequestURL());
 		}
-		if (!UtilMethods.isSet(requestUri)) {
-			return false;
-		}
-		return instance.comparison.perform(requestUri, instance.patternUrl);
+
+		String index = CMSFilter.CMS_INDEX_PAGE;
+		String pattern = processUrl(instance.patternUrl,index);
+
+		return evaluate(request, instance, requestUri, pattern);
+	}
+
+	public boolean evaluate(HttpServletRequest request, Instance instance, String requestUri, String pattern) {
+		return instance.comparison.perform(requestUri, pattern);
+	}
+
+	/**
+	 * Process the baseUrl to comply with:
+	 * <ul><li>Does not include query params</li>
+	 * <li>If a person enters a string that .endsWith(“/”) , e.g. is a folder,
+	 * we need to evaluate against the path + the Config variable for CMS_INDEX_PAGE, whatever that is,
+	 * e.g. /news-events/news/ checks against /news-events/news/index</li></ul>
+	 * @param baseUrl
+	 * @return
+	 */
+	public String processUrl(String baseUrl, String index){
+		String processedUrl = baseUrl;
+		if(processedUrl.indexOf("?") > 0)
+			processedUrl = processedUrl.substring(0,processedUrl.indexOf("?"));
+		if(processedUrl.endsWith("/"))
+			processedUrl = processedUrl + index;
+		return processedUrl;
 	}
 
     @Override
@@ -79,7 +104,9 @@ public class UsersCurrentUrlConditionlet extends Conditionlet<UsersCurrentUrlCon
         private final Comparison<String> comparison;
         private final String comparisonValue;
 
-        private Instance(UsersCurrentUrlConditionlet definition, Map<String, ParameterModel> parameters) {
+        private Instance(VisitorsCurrentUrlConditionlet definition, Map<String, ParameterModel> parameters) {
+        	checkState(parameters != null && parameters.size() == 2, "Current URL Condition requires parameters %s and %s.", COMPARISON_KEY, PATTERN_URL_INPUT_KEY);
+            assert parameters != null;
             this.patternUrl = parameters.get(PATTERN_URL_INPUT_KEY).getValue();
             this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
 
