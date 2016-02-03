@@ -123,18 +123,22 @@ public class NavResult implements Iterable<NavResult>, Permissionable, Serializa
         Context ctx=(VelocityContext) VelocityServlet.velocityCtx.get();
         HttpServletRequest req=(HttpServletRequest) ctx.get("request");
         if(req!=null){
-	    //We should exclude the page name from the Request URI so we can check if page's parent object is the real active object
-	    //Setting a different active object (for example, a folder two levels above the current URI, would need to be done in HTML Code
-	    String reqURI = req.getRequestURI();
-        String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
-        if(!parentPath.endsWith("/"))
-            parentPath = parentPath + "/";
-        if(isFolder() && !href.endsWith("/")){
-            String tempHref = href + "/";
-            return parentPath.equalsIgnoreCase(tempHref);
-        } else
-            return !isCodeLink() && parentPath.startsWith(href);
-	}
+            //We exclude the page name from the Request URI so we can check if page's parent object is the real active object
+            String reqURI = req.getRequestURI();
+            String parentPath = reqURI.substring(0,reqURI.lastIndexOf("/"));
+            if(!parentPath.endsWith("/"))
+                //Adding a slash at the end of the path, so it avoids false positives
+                //when two or more paths from the same level starts with the same name
+                parentPath = parentPath + "/";
+            //If the current item is a folder, we check if it's part of current URI
+            if(isFolder() && !href.endsWith("/")){
+                String tempHref = href + "/";
+                return parentPath.startsWith(tempHref);
+            } else {
+                //If it's a page, we check instead if it's the current URI 
+                return !isCodeLink() && href.equalsIgnoreCase(reqURI);
+            }
+        }
         else
             return false;
     }
