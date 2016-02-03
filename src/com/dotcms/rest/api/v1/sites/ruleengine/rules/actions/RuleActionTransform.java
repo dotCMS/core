@@ -8,6 +8,7 @@ import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -35,7 +36,7 @@ public class RuleActionTransform {
 	    	}
     	}
     	// rest the parameters, adding the rest params
-    	app.setParameters(new ArrayList<>());
+    	app.setParameters(new HashMap<>());
 
         app.setId(rest.id);
         app.setRuleId(rest.owningRule);
@@ -43,7 +44,7 @@ public class RuleActionTransform {
         app.setActionlet(rest.actionlet);
         app.setPriority(rest.priority);
         if(rest.parameters!=null)
-            app.setParameters(Lists.newArrayList(rest.parameters.values()));
+            app.setParameters(rest.parameters);
         return app;
     }
 

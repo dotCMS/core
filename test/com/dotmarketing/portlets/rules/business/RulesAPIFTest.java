@@ -205,7 +205,7 @@ public class RulesAPIFTest extends TestBase {
 		List<ParameterModel> params = new ArrayList<>();
 		params.add(fireOnParam);
 
-		action.setParameters(params);
+		action.setValues(params);
 
 		rulesAPI.saveRuleAction(action, user, false);
 

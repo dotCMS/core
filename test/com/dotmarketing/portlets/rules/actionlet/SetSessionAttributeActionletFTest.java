@@ -256,7 +256,7 @@ public class SetSessionAttributeActionletFTest extends TestBase {
         params.add(timeKeyParam);
         params.add(timeValueParam);
 
-        action.setParameters(params);
+        action.setValues(params);
 
         rulesAPI.saveRuleAction(action, user, false);
     }

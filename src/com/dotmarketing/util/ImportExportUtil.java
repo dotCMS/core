@@ -51,6 +51,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.logConsole.model.LogMapperRow;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.ejb.CompanyManagerUtil;
@@ -114,6 +115,7 @@ public class ImportExportUtil {
     private List<File> workFlowTaskFilesXML = new ArrayList<File>();
     private List<File> tagFiles = new ArrayList<File>();
     private File workflowSchemaFile = null;
+    private File ruleFile = null;
 
     public ImportExportUtil() {
         MaintenanceUtil.flushCache();
@@ -314,6 +316,8 @@ public class ImportExportUtil {
 	        	tagFiles.add(tagFiles.size(),_importFile);
             }else if(_importFile.getName().contains("WorkflowSchemeImportExportObject.json")){
             	workflowSchemaFile = _importFile;
+            }else if(_importFile.getName().contains("RuleImportExportObject.json")){
+                ruleFile = _importFile;
             }else if(_importFile.getName().endsWith(".xml")){
                 try {
                     doXMLFileImport(_importFile, out);
@@ -743,8 +747,13 @@ public class ImportExportUtil {
 
         }
 
-
-
+        if(ruleFile != null){
+            try{
+                RulesImportExportUtil.getInstance().importRules(ruleFile);
+            }catch(Exception e){
+                Logger.error(this, "Unable to import ruleFile: " + e.getMessage(), e);
+            }
+        }
 
         for (File file : permissionXMLs) {
             try{

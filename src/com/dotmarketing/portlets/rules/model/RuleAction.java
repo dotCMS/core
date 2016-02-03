@@ -29,7 +29,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private int priority;
     private String actionlet;
     private Date modDate;
-    private List<ParameterModel> parameters;
+    private List<ParameterModel> values;
     private transient RuleActionlet actionDef;
     private transient RuleComponentInstance instance;
 
@@ -81,21 +81,29 @@ public class RuleAction implements RuleComponentModel, Serializable {
         this.modDate = modDate;
     }
 
-    public void setParameters(List<ParameterModel> parameters) {
-        this.parameters = parameters;
+    public void setValues(List<ParameterModel> values) {
+        this.values = values;
+    }
+
+    public List<ParameterModel> getValues() {
+        return values;
+    }
+
+    public void setParameters(Map<String, ParameterModel> parameters) {
+        this.values = new ArrayList<ParameterModel>(parameters.values());
     }
 
     public void addParameter(ParameterModel parameter) {
-        if(parameters==null)
-            parameters = new ArrayList<>();
+        if(values==null)
+            values = new ArrayList<>();
 
-        this.parameters.add(parameter);
+        this.values.add(parameter);
     }
 
     public Map<String, ParameterModel> getParameters(){
-    	parameters = (parameters==null) ? new ArrayList<>() : parameters; 
+        values = (values==null) ? new ArrayList<>() : values;
         Map<String, ParameterModel> params = Maps.newHashMap();
-        for (ParameterModel param : parameters) {
+        for (ParameterModel param : values) {
             params.put(param.getKey(), param);
         }
         return params;
@@ -122,13 +130,11 @@ public class RuleAction implements RuleComponentModel, Serializable {
         return actionDef;
     }
 
-
 	@Override
 	public String toString() {
 		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
 				+ ", priority=" + priority + ", actionlet=" + actionlet
 				+ ", modDate=" + modDate + "]";
 	}
-
 
 }
