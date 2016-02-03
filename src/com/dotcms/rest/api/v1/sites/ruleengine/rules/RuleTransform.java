@@ -5,6 +5,7 @@ import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.ConditionGroupTr
 import com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions.RestConditionGroup;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.InternalServerException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.exception.DotDataException;
@@ -87,7 +88,12 @@ public class RuleTransform {
             }
 
             for (RuleAction ruleAction : app.getRuleActions()) {
-                ruleActions.put(ruleAction.getId(), true);
+                if (rulesAPI.findActionlet(ruleAction.getActionlet()) != null) {
+                    ruleActions.put(ruleAction.getId(), true);
+                } else {
+                    Logger.error(this, "Actionlet not found: " + ruleAction.getActionlet());
+                    throw new NotFoundException("Actionlet not found: '%s'", ruleAction.getActionlet());
+                }
             }
 
             return new RestRule.Builder()

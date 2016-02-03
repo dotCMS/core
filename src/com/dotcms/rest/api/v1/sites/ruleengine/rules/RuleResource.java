@@ -224,7 +224,7 @@ public class RuleResource {
                     restRules.add(ruleTransform.appToRest(rule, user));
                 } catch (Exception transEx) {
                     String ruleName = UtilMethods.isSet(rule.getName()) ? rule.getName() : "N/A";
-                    Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST");
+                    Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST: " + transEx.getMessage());
                 }
             }
             return restRules;
