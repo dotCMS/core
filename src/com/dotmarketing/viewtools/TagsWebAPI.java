@@ -2,7 +2,7 @@ package com.dotmarketing.viewtools;
 
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -26,7 +26,7 @@ public class TagsWebAPI implements ViewTool {
 		ctx = context.getVelocityContext();
 	}
 	
-	public List getTagsByUser(User user) throws DotHibernateException {
+	public List getTagsByUser(User user) throws DotDataException {
 		List tagsUser = (List) request.getSession().getAttribute(WebKeys.LOGGED_IN_USER_TAGS);
 		if (!UtilMethods.isSet(tagsUser) || tagsUser.size() == 0) {
 			UserProxy up;

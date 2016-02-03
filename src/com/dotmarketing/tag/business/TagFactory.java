@@ -1,6 +1,6 @@
 package com.dotmarketing.tag.business;
 
-import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 
@@ -13,7 +13,7 @@ public interface TagFactory {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () throws DotHibernateException;
+    public java.util.List<Tag> getAllTags () throws DotDataException;
 
     /**
      * Gets a Tag by name
@@ -21,22 +21,22 @@ public interface TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException;
+    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException;
 
-    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotHibernateException;
+    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException;
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException;
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException;
 
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException;
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException;
 
     /**
      * Gets a Tag by a tagId retrieved from a TagInode.
      *
      * @param tagId the tag id to get
      * @return tag
-     * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public Tag getTagByTagId ( String tagId ) throws DotHibernateException;
+    public Tag getTagByTagId ( String tagId ) throws DotDataException;
 
     /**
      * Gets all the tag created by an user
@@ -44,7 +44,7 @@ public interface TagFactory {
      * @param userId id of the user
      * @return a list of all the tags created
      */
-    public java.util.List<Tag> getTagForUserByUserInode ( String userInode ) throws DotHibernateException;
+    public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException;
 
     /**
      * Gets all tags filtered by tag name and/or host name
@@ -59,7 +59,7 @@ public interface TagFactory {
      */
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count );
 
-    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotHibernateException;
+    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException;
 
     /**
      * Creates a new tag
@@ -68,43 +68,35 @@ public interface TagFactory {
      * @param userId  owner of the new tag
      * @param hostId
      * @return new tag created
-     * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public Tag saveTag ( Tag tag ) throws DotHibernateException;
+    public Tag createTag ( Tag tag ) throws DotDataException;
 
-    public TagInode saveTagInode ( TagInode tagInode ) throws DotHibernateException;
+    public TagInode createTagInode ( TagInode tagInode ) throws DotDataException;
 
-    public void updateTag ( Tag tag ) throws DotHibernateException;
+    public void updateTag ( Tag tag ) throws DotDataException;
 
     /**
      * Deletes a tag
      *
      * @param tag tag to be deleted
-     * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public void deleteTag ( Tag tag ) throws DotHibernateException;
-
-    /**
-     * Gets all the tags created, with the respective owner and permission information
-     * @param userId id of the user that searches the tag
-     * @return a complete list of all the tags, with the owner information and the respective permission
-     * information
-     */
-    public List getAllTag ( String userId );
+    public void deleteTag ( Tag tag ) throws DotDataException;
 
     /**
      * Gets all tags associated to an object
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByInode ( String inode ) throws DotHibernateException;
+    public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException;
 
     /**
      * Gets all tags associated to an object
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByTagId ( String tagId ) throws DotHibernateException;
+    public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException;
 
     /**
      * Gets a tagInode by name and inode
@@ -113,31 +105,15 @@ public interface TagFactory {
      * @param inode inode of the object tagged
      * @return the tagInode
      */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotHibernateException;
+    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException;
 
     /**
      * Deletes a TagInode
      *
      * @param tagInode TagInode to delete
      */
-    public void deleteTagInode ( TagInode tagInode ) throws DotHibernateException;
+    public void deleteTagInode ( TagInode tagInode ) throws DotDataException;
 
-    /**
-     * Escape a single quote
-     *
-     * @param tagName string with single quotes
-     * @return single quote string escaped
-     */
-    public String escapeSingleQuote ( String tagName );
-
-    /**
-     * Gets all the tags given a user List
-     * @param userIds the user id's associated with the tags
-     * @return a complete list of all the tags, with the owner information and the respective permission
-     * information
-     */
-    public List<Tag> getAllTagsForUsers ( List<String> userIds );
-
-    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException;
+    public List<Tag> getTagsByInode ( String inode ) throws DotDataException;
 
 }

@@ -2,16 +2,12 @@ package com.dotmarketing.tag.business;
 
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Inode;
-import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -23,14 +19,22 @@ import com.liferay.portal.struts.ActionException;
 
 import java.util.*;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_WRITE;
-
 /**
  * @author Jonathan Gamba
  *         Date: 1/28/16
  */
 public class TagFactoryImpl implements TagFactory {
+
+    private static final String TAG_COLUMN_TAG_ID = "tag_id";
+    private static final String TAG_COLUMN_TAGNAME = "tagname";
+    private static final String TAG_COLUMN_HOST_ID = "host_id";
+    private static final String TAG_COLUMN_USER_ID = "user_id";
+    private static final String TAG_COLUMN_PERSONA = "persona";
+    private static final String TAG_COLUMN_MOD_DATE = "mod_date";
+
+    private static final String TAG_INODE_COLUMN_TAG_ID = "tag_id";
+    private static final String TAG_INODE_COLUMN_INODE = "inode";
+    private static final String TAG_INODE_COLUMN_MOD_DATE = "mod_date";
 
     private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private TagCache tagCache;
@@ -53,13 +57,13 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @return list of all tags created
      */
-    public java.util.List<Tag> getAllTags () throws DotHibernateException {
+    public List<Tag> getAllTags () throws DotDataException {
 
-        HibernateUtil dh = new HibernateUtil(Tag.class);
-        dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag");
+        //Execute the search
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT * FROM tag");
 
-        //Search
-        List<Tag> tags = dh.list();
+        List<Tag> tags = convertForTags(dc.loadObjectResults());
 
         //And add the results to the cache
         for ( Tag tag : tags ) {
@@ -77,19 +81,19 @@ public class TagFactoryImpl implements TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException {
+    public List<Tag> getTagByName ( String name ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByName(name);
         if ( tags == null ) {
 
             name = escapeSingleQuote(name);
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tagname = ?");
-            dh.setParam(name.toLowerCase());
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag WHERE tagname = ?");
+            dc.addParam(name.toLowerCase());
 
-            //Search
-            tags = dh.list();
+            tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
             for ( Tag tag : tags ) {
@@ -103,19 +107,19 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotHibernateException {
+    public List<Tag> getTagByHost ( String hostId ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByHost(hostId);
         if ( tags == null ) {
 
             hostId = escapeSingleQuote(hostId);
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where host_id = ?");
-            dh.setParam(hostId);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag WHERE host_id = ?");
+            dc.addParam(hostId);
 
-            //Search
-            tags = dh.list();
+            tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
             for ( Tag tag : tags ) {
@@ -129,20 +133,18 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotHibernateException {
+    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException {
 
         name = escapeSingleQuote(name);
 
-        HibernateUtil dh = new HibernateUtil(Tag.class);
-        dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tagname like ? and (host_id like ? OR host_id like ?)");
-        dh.setParam(name.toLowerCase() + "%");
+        //Execute the search
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?)");
+        dc.addParam(name.toLowerCase() + "%");
+        dc.addParam(hostId);
+        dc.addParam(Host.SYSTEM_HOST);
 
-        //search global
-        dh.setParam(hostId);
-        dh.setParam(Host.SYSTEM_HOST);
-
-        //Search
-        List<Tag> tags = dh.list();
+        List<Tag> tags = convertForTags(dc.loadObjectResults());
 
         //And add the results to the cache
         for ( Tag tag : tags ) {
@@ -154,20 +156,23 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException {
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
 
         Tag tag = tagCache.get(name, hostId);
         if ( tag == null ) {
 
             name = escapeSingleQuote(name);
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tagname = ? and host_id like ?");
-            dh.setParam(name.toLowerCase());
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag WHERE tagname = ? AND host_id = ?");
+            dc.addParam(name.toLowerCase());
+            dc.addParam(hostId);
 
-            //search global
-            dh.setParam(hostId);
-            tag = (Tag) dh.load();
+            List<Map<String, Object>> sqlResults = dc.loadObjectResults();
+            if ( sqlResults != null && !sqlResults.isEmpty() ) {
+                tag = convertForTag(sqlResults.get(0));
+            }
 
             //And add the result to the cache
             if ( tag != null && tag.getTagId() != null ) {
@@ -183,19 +188,22 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @param tagId the tag id to get
      * @return tag
-     * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public Tag getTagByTagId ( String tagId ) throws DotHibernateException {
+    public Tag getTagByTagId ( String tagId ) throws DotDataException {
 
         Tag tag = tagCache.get(tagId);
         if ( tag == null ) {
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag WHERE tag_id = ?");
+            dc.addParam(tagId);
 
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tag_id = ?");
-            dh.setParam(tagId);
-
-            tag = (Tag) dh.load();
+            List<Map<String, Object>> sqlResults = dc.loadObjectResults();
+            if ( sqlResults != null && !sqlResults.isEmpty() ) {
+                tag = convertForTag(sqlResults.get(0));
+            }
 
             //And add the result to the cache
             if ( tag != null && tag.getTagId() != null ) {
@@ -206,7 +214,7 @@ public class TagFactoryImpl implements TagFactory {
         return tag;
     }
 
-    public java.util.List<Tag> getTagForUserByUserInode ( String userInode ) throws DotHibernateException {
+    public List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return getTagsByInode(userInode);
     }
 
@@ -220,15 +228,14 @@ public class TagFactoryImpl implements TagFactory {
      * @param start
      * @param count
      * @return a list of tags filtered by tag name or host name
-     * FIXME: Needs cache???
      */
-    public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
+    public List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
         try {
 
             sort = SQLUtil.sanitizeSortBy(sort);
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            List list;
+            //Execute the update
+            final DotConnect dc = new DotConnect();
 
             Host host = null;
             try {
@@ -253,56 +260,52 @@ public class TagFactoryImpl implements TagFactory {
                 //if tag name and host name are set as filters
                 //search by name, global tags and current host.
                 if ( UtilMethods.isSet(tagName) && globalTagsFilter ) {
-                    dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tagname like ? and (host_id = ? or host_id = ?) " + sortStr);
-                    dh.setParam("%" + tagName.toLowerCase() + "%");
+                    dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ? OR host_id = ?) " + sortStr + limitAndOffset(start, count));
+                    dc.addParam("%" + tagName.toLowerCase() + "%");
                     try {
-                        dh.setParam(host.getMap().get("tagStorage").toString());
+                        dc.addParam(host.getMap().get("tagStorage").toString());
                     } catch ( NullPointerException e ) {
-                        dh.setParam(Host.SYSTEM_HOST);
+                        dc.addParam(Host.SYSTEM_HOST);
                     }
-                    dh.setParam(Host.SYSTEM_HOST);
+                    dc.addParam(Host.SYSTEM_HOST);
                 }
                 //if global host is not set as unique filter but tag name is set, search in current host
                 else if ( UtilMethods.isSet(tagName) && !globalTagsFilter ) {
-                    dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where tagname like ? and (host_id = ?) " + sortStr);
-                    dh.setParam("%" + tagName.toLowerCase() + "%");
+                    dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ?) " + sortStr + limitAndOffset(start, count));
+                    dc.addParam("%" + tagName.toLowerCase() + "%");
                     try {
-                        dh.setParam(host.getMap().get("tagStorage").toString());
+                        dc.addParam(host.getMap().get("tagStorage").toString());
                     } catch ( NullPointerException e ) {
-                        dh.setParam(Host.SYSTEM_HOST);
+                        dc.addParam(Host.SYSTEM_HOST);
                     }
                 } else if ( !UtilMethods.isSet(tagName) && globalTagsFilter ) {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
-                    dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where " +
-                            "(host_id = ? or host_id = ? ) " + sortStr);
+                    dc.setSQL("SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + sortStr + limitAndOffset(start, count));
 
                     try {
-                        dh.setParam(host.getMap().get("tagStorage").toString());
+                        dc.addParam(host.getMap().get("tagStorage").toString());
                     } catch ( NullPointerException e ) {
-                        dh.setParam(Host.SYSTEM_HOST);
+                        dc.addParam(Host.SYSTEM_HOST);
                     }
-                    dh.setParam(Host.SYSTEM_HOST);
+                    dc.addParam(Host.SYSTEM_HOST);
                 } else {
                     //check all current host tags.
-                    String sql = "from tag in class com.dotmarketing.tag.model.Tag ";
+                    String sql = "SELECT * FROM tag ";
 
                     Object tagStorage = host.getMap().get("tagStorage");
 
                     if ( UtilMethods.isSet(tagStorage) ) {
-                        sql = sql + "where ( host_id = ? ) " + sortStr;
-                        dh.setQuery(sql);
-                        dh.setParam(tagStorage.toString());
+                        sql = sql + "WHERE ( host_id = ? ) " + sortStr + limitAndOffset(start, count);
+                        dc.setSQL(sql);
+                        dc.addParam(tagStorage.toString());
                     } else {
-                        dh.setQuery(sql);
+                        dc.setSQL(sql);
                     }
                 }
 
-                dh.setFirstResult(start);
-
-                list = dh.list();
-
-                return list;
+                //Execute and return the result of the query
+                return convertForTags(dc.loadObjectResults());
             }
         } catch ( Exception e ) {
             Logger.warn(Tag.class, "getFilteredTags failed:" + e, e);
@@ -310,13 +313,20 @@ public class TagFactoryImpl implements TagFactory {
         return new java.util.ArrayList<>();
     }
 
-    /**
-     * @param tagInode
-     * @param tagId
-     * @throws DotDataException
-     * @throws DotCacheException
-     */
-    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotHibernateException {
+    private String limitAndOffset ( int start, int limit ) {
+
+        String currentSql = "";
+        if ( start != -1 ) {
+            currentSql = currentSql.concat(" OFFSET ").concat(String.valueOf(start));
+        }
+        if ( limit > 0 ) {
+            currentSql = currentSql.concat(" LIMIT ").concat(String.valueOf(limit));
+        }
+
+        return currentSql;
+    }
+
+    public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tagInode.getTagId());
@@ -327,28 +337,57 @@ public class TagFactoryImpl implements TagFactory {
         }
         tagInodeCache.remove(tagInode);
 
-        tagInode.setTagId(tagId);
-        tagInode.setModDate(new Date());
-        HibernateUtil.saveOrUpdate(tagInode);
+        //Execute the update
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("UPDATE tag SET tag_id = ?, mod_date = ? WHERE tag_id = ? AND inode = ?");
+        dc.addParam(tagId);
+        dc.addParam(new Date());
+        dc.addParam(tagInode.getTagId());
+        dc.addParam(tagInode.getInode());
+
+        dc.loadResult();
     }
 
-    public Tag saveTag ( Tag tag) throws DotHibernateException {
+    public Tag createTag ( Tag tag ) throws DotDataException {
 
-        HibernateUtil.save(tag);
+        if ( !UtilMethods.isSet(tag.getTagId()) ) {
+            tag.setTagId(UUID.randomUUID().toString());
+        }
+
+        //Execute the insert
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("INSERT INTO tag (tag_id, tagname, host_id, user_id, persona, mod_date) VALUES (?,?,?,?,?,?)");
+        dc.addParam(tag.getTagId());
+        dc.addParam(tag.getTagName());
+        dc.addParam(tag.getHostId());
+        dc.addParam(tag.getUserId());
+        dc.addParam(tag.isPersona());
+        dc.addParam(new Date());
+
+        dc.loadResult();
+
         return tag;
     }
 
-    public TagInode saveTagInode ( TagInode tagInode ) throws DotHibernateException {
+    public TagInode createTagInode ( TagInode tagInode ) throws DotDataException {
 
         //First lets clean up the cache
         tagCache.removeByInode(tagInode.getInode());
         tagInodeCache.remove(tagInode);
 
-        HibernateUtil.save(tagInode);
+        //Execute the insert
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("INSERT INTO tag_inode (tag_id, inode, mod_date) VALUES (?,?,?)");
+        dc.addParam(tagInode.getTagId());
+        dc.addParam(tagInode.getInode());
+        dc.addParam(new Date());
+
+        dc.loadResult();
+
         return tagInode;
     }
 
-    public void updateTag ( Tag tag ) throws DotHibernateException {
+    public void updateTag ( Tag tag ) throws DotDataException {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
@@ -359,10 +398,20 @@ public class TagFactoryImpl implements TagFactory {
         }
         tagCache.remove(tag);
 
-        HibernateUtil.saveOrUpdate(tag);
+        //Execute the update
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("UPDATE tag SET tagname = ?, host_id = ?, user_id = ?, persona = ?, mod_date = ? WHERE tag_id = ?");
+        dc.addParam(tag.getTagName());
+        dc.addParam(tag.getHostId());
+        dc.addParam(tag.getUserId());
+        dc.addParam(tag.isPersona());
+        dc.addParam(tag.getModDate());
+        dc.addParam(tag.getTagId());
+
+        dc.loadResult();
     }
 
-    public void deleteTag ( Tag tag ) throws DotHibernateException {
+    public void deleteTag ( Tag tag ) throws DotDataException {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
@@ -374,75 +423,12 @@ public class TagFactoryImpl implements TagFactory {
         tagCache.remove(tag);
         tagInodeCache.removeByTagId(tag.getTagId());
 
-        HibernateUtil.delete(tag);
-    }
+        //Execute the update
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag WHERE tag_id = ?");
+        dc.addParam(tag.getTagId());
 
-    /**
-     * Gets all the tags created, with the respective owner and permission information
-     *
-     * @param userId id of the user that searches the tag
-     * @return a complete list of all the tags, with the owner information and the respective permission
-     * information
-     *
-     * FIXME: Needs cache
-     */
-    public List getAllTag ( String userId ) {
-        try {
-            User searcherUser = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
-
-            HibernateUtil dh = new HibernateUtil();
-            StringBuffer sb = new StringBuffer();
-            sb.append("select Tag.*, User_.firstName, User_.lastName from Tag, User_ ");
-            sb.append("where Tag.user_id = User_.userid ");
-            sb.append("order by Tag.user_id");
-            dh.setQuery(sb.toString());
-
-            List allTags = dh.list();
-
-            java.util.List matchesArray = new ArrayList();
-            Iterator it = allTags.iterator();
-            for ( int i = 0; it.hasNext(); i++ ) {
-                User user = null;
-
-                Map map = (Map) it.next();
-
-                String user_Id = (String) map.get("user_id");
-                String tagName = (String) map.get("tagname");
-                String firstName = (String) map.get("firstname");
-                String lastName = (String) map.get("lastname");
-                user = APILocator.getUserAPI().loadUserById(user_Id, APILocator.getUserAPI().getSystemUser(), false);
-                UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user, APILocator.getUserAPI().getSystemUser(), false);
-
-                String[] match = new String[6];
-                match[0] = (user_Id == null) ? "" : user_Id;
-                match[1] = (tagName == null) ? "" : tagName;
-                match[2] = (firstName == null) ? "" : firstName;
-                match[3] = (lastName == null) ? "" : lastName;
-
-                // adding read permission
-                try {
-                    _checkUserPermissions(userProxy, searcherUser, PERMISSION_READ);
-                    match[4] = "true";
-                } catch ( ActionException ae ) {
-                    match[4] = "false";
-                }
-
-                // adding write permission
-                try {
-                    _checkUserPermissions(userProxy, searcherUser, PERMISSION_WRITE);
-                    match[5] = "true";
-                } catch ( ActionException ae ) {
-                    match[5] = "false";
-                }
-                matchesArray.add(match);
-            }
-
-            return matchesArray;
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving tags");
-        }
-
-        return new ArrayList();
+        dc.loadResult();
     }
 
     /**
@@ -451,17 +437,17 @@ public class TagFactoryImpl implements TagFactory {
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByInode ( String inode ) throws DotHibernateException {
+    public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
 
         List<TagInode> tagInodes = tagInodeCache.getByInode(inode);
         if ( tagInodes == null ) {
 
-            HibernateUtil dh = new HibernateUtil(TagInode.class);
-            dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where inode = ?");
-            dh.setParam(inode);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag_inode WHERE inode = ?");
+            dc.addParam(inode);
 
-            //Search
-            tagInodes = dh.list();
+            tagInodes = convertForTagInodes(dc.loadObjectResults());
 
             //And add the results to the cache
             for ( TagInode tagInode : tagInodes ) {
@@ -481,17 +467,17 @@ public class TagFactoryImpl implements TagFactory {
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-    public List<TagInode> getTagInodeByTagId ( String tagId ) throws DotHibernateException {
+    public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
 
         List<TagInode> tagInodes = tagInodeCache.getByTagId(tagId);
         if ( tagInodes == null ) {
 
-            HibernateUtil dh = new HibernateUtil(TagInode.class);
-            dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ?");
-            dh.setParam(tagId);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag_inode where tag_id = ?");
+            dc.addParam(tagId);
 
-            //Search
-            tagInodes = dh.list();
+            tagInodes = convertForTagInodes(dc.loadObjectResults());
 
             //And add the results to the cache
             for ( TagInode tagInode : tagInodes ) {
@@ -512,18 +498,21 @@ public class TagFactoryImpl implements TagFactory {
      * @param inode inode of the object tagged
      * @return the tagInode
      */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotHibernateException {
+    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException {
 
         TagInode tagInode = tagInodeCache.get(tagId, inode);
         if ( tagInode == null ) {
 
-            // getting the tag inode record
-            HibernateUtil dh = new HibernateUtil(TagInode.class);
-            dh.setQuery("from tag_inode in class com.dotmarketing.tag.model.TagInode where tag_id = ? and inode = ?");
-            dh.setParam(tagId);
-            dh.setParam(inode);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT * FROM tag_inode WHERE tag_id = ? AND inode = ?");
+            dc.addParam(tagId);
+            dc.addParam(inode);
 
-            tagInode = (TagInode) dh.load();
+            List<Map<String, Object>> sqlResults = dc.loadObjectResults();
+            if ( sqlResults != null && !sqlResults.isEmpty() ) {
+                tagInode = convertForTagInode(sqlResults.get(0));
+            }
 
             //And add the result to the cache
             if ( tagInode != null && tagInode.getTagId() != null ) {
@@ -539,112 +528,33 @@ public class TagFactoryImpl implements TagFactory {
      *
      * @param tagInode TagInode to delete
      */
-    public void deleteTagInode ( TagInode tagInode ) throws DotHibernateException {
+    public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
 
         //First lets clean up the cache
         tagInodeCache.remove(tagInode);
         tagCache.removeByInode(tagInode.getInode());
 
-        HibernateUtil.delete(tagInode);
-    }
+        //Execute the update
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ?");
+        dc.addParam(tagInode.getTagId());
+        dc.addParam(tagInode.getInode());
 
-    /**
-     * Escape a single quote
-     *
-     * @param tagName string with single quotes
-     * @return single quote string escaped
-     */
-    public String escapeSingleQuote ( String tagName ) {
-        return tagName.replace("'", "''");
-    }
-
-    /**
-     * Gets all the tags given a user List
-     *
-     * @param userIds the user id's associated with the tags
-     * @return a complete list of all the tags, with the owner information and the respective permission
-     * information
-     * FIXME: Needs cache???
-     */
-    @SuppressWarnings ( "unchecked" )
-    public List<Tag> getAllTagsForUsers ( List<String> userIds ) {
-
-        List<Tag> tags = new ArrayList<>();
-
-        try {
-            if ( userIds != null && !userIds.isEmpty() ) {
-                DotConnect dc = new DotConnect();
-                dc.setSQL("select tagname, user_id from tag where user_id is not null");
-
-                //Gets all the tags from DB that are not null.
-                List<Map<String, Object>> results = (ArrayList<Map<String, Object>>) dc.loadResults();
-
-                //Checks each of the tag to see if match any of the users in the list.
-                for ( int i = 0; i < results.size(); i++ ) {
-                    Map<String, Object> hash = results.get(i);
-
-                    if ( !hash.isEmpty() ) {
-                        String tagUserID = (String) hash.get("user_id");
-                        String tagName = (String) hash.get("tagname");
-
-                        //Creates the tag only if the tagUserID is in the userIds list.
-                        if ( belongsToUser(userIds, tagUserID, tagName) ) {
-                            Tag tag = new Tag();
-                            tag.setTagName(tagName);
-                            tag.setUserId(tagUserID);
-                            tags.add(tag);
-                        }
-                    }
-                }
-            }
-        } catch ( Exception e ) {
-            Logger.warn(TagFactory.class, "getAllTagsForUsers failed:" + e, e);
-        }
-
-        return tags;
-    }
-
-    /**
-     * Checks is the tagUserID belongs to one of the users in List userIds
-     *
-     * @param userIds   List with all the users
-     * @param tagUserID
-     * @param tagName
-     * @return
-     */
-    private boolean belongsToUser ( List<String> userIds, String tagUserID, String tagName ) {
-        if ( UtilMethods.isSet(tagUserID) && UtilMethods.isSet(tagName) ) {
-            //The tagUserID from DB can contains several user IDs separated by commas.
-            String[] tagUserIds = tagUserID.split(",");
-
-            //Have to check under each tagUserIds
-            for ( String tagUserIDAux : tagUserIds ) {
-
-                //Have to check ALSO under each userIds
-                for ( String userID : userIds ) {
-
-                    if ( userID.equals(tagUserIDAux) ) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        dc.loadResult();
     }
 
     @Override
-    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException {
+    public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByInode(inode);
         if ( tags == null ) {
 
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("select tag from com.dotmarketing.tag.model.TagInode tagi, com.dotmarketing.tag.model.Tag tag " +
-                    " where tagi.tagId=tag.tagId and tagi.inode = ?");
-            dh.setParam(inode);
+            //Execute the search
+            final DotConnect dc = new DotConnect();
+            dc.setSQL("SELECT tag.* FROM tag_inode tagInode, tag tag WHERE tagInode.tag_id=tag.tag_id AND tagInode.inode = ?");
+            dc.addParam(inode);
 
-            //Search
-            tags = dh.list();
+            tags = convertForTags(dc.loadObjectResults());
 
             //And add the results to the cache
             for ( Tag tag : tags ) {
@@ -667,6 +577,16 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
+     * Escape a single quote
+     *
+     * @param tagName string with single quotes
+     * @return single quote string escaped
+     */
+    private String escapeSingleQuote ( String tagName ) {
+        return tagName.replace("'", "''");
+    }
+
+    /**
      * Checks the permission access of an user over an object
      *
      * @param webAsset   object to validates access
@@ -684,6 +604,65 @@ public class TagFactoryImpl implements TagFactory {
                 user) ) {
             throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
         }
+    }
+
+    private List<Tag> convertForTags ( List<Map<String, Object>> sqlResults ) {
+
+        List<Tag> tags = new ArrayList<>();
+
+        if ( sqlResults != null ) {
+
+            for ( Map<String, Object> row : sqlResults ) {
+                Tag tag = convertForTag(row);
+                tags.add(tag);
+            }
+        }
+
+        return tags;
+    }
+
+    private List<TagInode> convertForTagInodes ( List<Map<String, Object>> sqlResults ) {
+
+        List<TagInode> tagInodes = new ArrayList<>();
+
+        if ( sqlResults != null ) {
+
+            for ( Map<String, Object> row : sqlResults ) {
+                TagInode tagInode = convertForTagInode(row);
+                tagInodes.add(tagInode);
+            }
+        }
+
+        return tagInodes;
+    }
+
+    private Tag convertForTag ( Map<String, Object> sqlResult ) {
+
+        Tag tag = null;
+        if ( sqlResult != null ) {
+            tag = new Tag();
+            tag.setTagId((String) sqlResult.get(TAG_COLUMN_TAG_ID));
+            tag.setTagName((String) sqlResult.get(TAG_COLUMN_TAGNAME));
+            tag.setHostId((String) sqlResult.get(TAG_COLUMN_HOST_ID));
+            tag.setUserId((String) sqlResult.get(TAG_COLUMN_USER_ID));
+            tag.setPersona((boolean) sqlResult.get(TAG_COLUMN_PERSONA));
+            tag.setModDate((Date) sqlResult.get(TAG_COLUMN_MOD_DATE));
+        }
+
+        return tag;
+    }
+
+    private TagInode convertForTagInode ( Map<String, Object> sqlResult ) {
+
+        TagInode tagInode = null;
+        if ( sqlResult != null ) {
+            tagInode = new TagInode();
+            tagInode.setTagId((String) sqlResult.get(TAG_INODE_COLUMN_TAG_ID));
+            tagInode.setInode((String) sqlResult.get(TAG_INODE_COLUMN_INODE));
+            tagInode.setModDate((Date) sqlResult.get(TAG_INODE_COLUMN_MOD_DATE));
+        }
+
+        return tagInode;
     }
 
 }

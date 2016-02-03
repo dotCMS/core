@@ -4,8 +4,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -22,7 +22,7 @@ public class TagAPIImpl implements TagAPI {
 	 * Get a list of all the tags created
 	 * @return list of all tags created
 	 */
-    public java.util.List<Tag> getAllTags () throws DotHibernateException {
+    public java.util.List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
     }
 
@@ -31,7 +31,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @param name name of the tag to get
 	 * @return tag
 	 */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotHibernateException {
+    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException {
         return tagFactory.getTagByName(name);
     }
 
@@ -55,10 +55,10 @@ public class TagAPIImpl implements TagAPI {
 	 * Get the list of tags by the users TagInode inode
 	 * @param userInode Users TagInode inode
 	 * @return List<Tag>
-	 * @throws DotHibernateException
-	 */
-    public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotHibernateException {
-        return tagFactory.getTagForUserByUserInode(userInode);
+     * @throws DotDataException
+     */
+    public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
+        return tagFactory.getTagsForUserByUserInode(userInode);
     }
 
     /**
@@ -96,59 +96,79 @@ public class TagAPIImpl implements TagAPI {
 	 */
     public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException {
 
-        Tag newTag = new Tag();
+        boolean localTransaction = false;
 
-        //Search for tags with this given name
-        Tag tag = tagFactory.getTagByNameAndHost(name, hostId);
+        try {
 
-        // if doesn't exists then the tag is created
-        if ( tag == null || !UtilMethods.isSet(tag.getTagId()) ) {
-            // creating tag
-            return saveTag(name, userId, hostId);
-        } else {
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            String existHostId;
+            Tag newTag = new Tag();
 
-            //check if global tag already exists
-            boolean globalTagExists = false;
+            //Search for tags with this given name
+            Tag tag = tagFactory.getTagByNameAndHost(name, hostId);
 
-            //check if tag exists with same tag name but for a different host
-            boolean tagExists = false;
-
-            Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
-            if ( host.getMap().get("tagStorage") == null ) {
-                existHostId = host.getMap().get("identifier").toString();
+            // if doesn't exists then the tag is created
+            if ( tag == null || !UtilMethods.isSet(tag.getTagId()) ) {
+                // creating tag
+                return saveTag(name, userId, hostId);
             } else {
-                existHostId = host.getMap().get("tagStorage").toString();
-            }
 
-            if ( isGlobalTag(tag) ) {
-                newTag = tag;
-                globalTagExists = true;
-            }
-            if ( tag.getHostId().equals(existHostId) ) {
-                newTag = tag;
-                tagExists = true;
-            }
+                String existHostId;
 
-            if ( !globalTagExists ) {
-                //if global doesn't exist, then save the tag and after it checks if it was stored as a global tag
-                if ( !tagExists ) {
-                    newTag = saveTag(name, userId, hostId);
+                //check if global tag already exists
+                boolean globalTagExists = false;
+
+                //check if tag exists with same tag name but for a different host
+                boolean tagExists = false;
+
+                Host host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
+                if ( host.getMap().get("tagStorage") == null ) {
+                    existHostId = host.getMap().get("identifier").toString();
+                } else {
+                    existHostId = host.getMap().get("tagStorage").toString();
                 }
 
-                if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
-                    //move references of non-global tags to new global tag and delete duplicate non global tags
-                    List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
-                    for ( TagInode tagInode : tagInodes ) {
-                        tagFactory.updateTagInode(tagInode, newTag.getTagId());
+                if ( isGlobalTag(tag) ) {
+                    newTag = tag;
+                    globalTagExists = true;
+                }
+                if ( tag.getHostId().equals(existHostId) ) {
+                    newTag = tag;
+                    tagExists = true;
+                }
+
+                if ( !globalTagExists ) {
+                    //if global doesn't exist, then save the tag and after it checks if it was stored as a global tag
+                    if ( !tagExists ) {
+                        newTag = saveTag(name, userId, hostId);
                     }
-                    deleteTag(tag);
+
+                    if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
+                        //move references of non-global tags to new global tag and delete duplicate non global tags
+                        List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
+                        for ( TagInode tagInode : tagInodes ) {
+                            tagFactory.updateTagInode(tagInode, newTag.getTagId());
+                        }
+                        deleteTag(tag);
+                    }
                 }
             }
+
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
+            return newTag;
+
+        } catch ( Exception e ) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
 
-        return newTag;
     }
 
     /**
@@ -157,7 +177,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @param tagId the tag id to get
 	 * @return tag
 	 */
-    public Tag getTagByTagId ( String tagId ) throws DotHibernateException {
+    public Tag getTagByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagByTagId(tagId);
     }
 
@@ -166,9 +186,9 @@ public class TagAPIImpl implements TagAPI {
 	 * @param name Tag name
 	 * @param hostId Host identifier
 	 * @return Tag
-	 * @throws DotHibernateException
-	 */
-    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
         return tagFactory.getTagByNameAndHost(name, hostId);
     }
 
@@ -180,7 +200,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @return Tag
 	 * @throws Exception
 	 */
-    public Tag saveTag ( String tagName, String userId, String hostId ) throws DotHibernateException {
+    public Tag saveTag ( String tagName, String userId, String hostId ) throws DotDataException {
         return saveTag(tagName, userId, hostId, false);
     }
 
@@ -193,47 +213,60 @@ public class TagAPIImpl implements TagAPI {
 	 * @return Tag
 	 * @throws Exception
 	 */
-    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotHibernateException {
+    public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotDataException {
 
-        Tag tag = new Tag();
-        //creates new Tag
-        tag.setTagName(tagName.toLowerCase());
-        tag.setUserId(userId);
-        tag.setPersona(persona);
-        tag.setModDate(new Date());
+        boolean localTransaction = false;
 
-        Host host = null;
+        try {
 
-        if ( UtilMethods.isSet(hostId) && !hostId.equals(Host.SYSTEM_HOST) ) {
-            try {
-                if ( !UtilMethods.isSet(hostId) ) {
-                    host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true);
-                } else {
-                    host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+            Tag tag = new Tag();
+            //creates new Tag
+            tag.setTagName(tagName.toLowerCase());
+            tag.setUserId(userId);
+            tag.setPersona(persona);
+            tag.setModDate(new Date());
+
+            Host host = null;
+
+            if ( UtilMethods.isSet(hostId) && !hostId.equals(Host.SYSTEM_HOST) ) {
+                try {
+                    if ( !UtilMethods.isSet(hostId) ) {
+                        host = APILocator.getHostAPI().findDefaultHost(APILocator.getUserAPI().getSystemUser(), true);
+                    } else {
+                        host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(), true);
+                    }
+                } catch ( Exception e ) {
+                    Logger.error(this, "Unable to load host.");
                 }
-            } catch ( Exception e ) {
-                Logger.error(this, "Unable to load host.");
-            }
 
-            if ( host.getMap().get("tagStorage") == null ) {
-                hostId = host.getMap().get("identifier").toString();
+                if ( host.getMap().get("tagStorage") == null ) {
+                    hostId = host.getMap().get("identifier").toString();
+                } else {
+                    hostId = host.getMap().get("tagStorage").toString();
+                }
+
             } else {
-                hostId = host.getMap().get("tagStorage").toString();
+                hostId = Host.SYSTEM_HOST;
+            }
+            tag.setHostId(hostId);
+
+            Tag createdTag = tagFactory.createTag(tag);
+
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
             }
 
-    		/*try {
-                hostId=host.getMap().get("tagStorage").toString();
-    		} catch(NullPointerException e) {
-    			hostId = Host.SYSTEM_HOST;
-    			Logger.info(this, "No tag storage for Host, chosing global");
-    		}*/
-
-        } else {
-            hostId = Host.SYSTEM_HOST;
+            return createdTag;
+        } catch ( Exception e ) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
-        tag.setHostId(hostId);
-
-        return tagFactory.saveTag(tag);
     }
 
     /**
@@ -247,24 +280,46 @@ public class TagAPIImpl implements TagAPI {
 	 * @throws Exception
 	 */
     public List addTag ( String tagName, String userId, String inode ) throws DotDataException, DotSecurityException {
-        StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
-        if ( tagNameToken.hasMoreTokens() ) {
-            for (; tagNameToken.hasMoreTokens(); ) {
-                String tagTokenized = tagNameToken.nextToken().trim();
-                Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
-                addTagInode(createdTag, inode);
+
+        boolean localTransaction = false;
+
+        try {
+
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+            StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
+            if ( tagNameToken.hasMoreTokens() ) {
+                for (; tagNameToken.hasMoreTokens(); ) {
+                    String tagTokenized = tagNameToken.nextToken().trim();
+                    Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
+                    addTagInode(createdTag, inode);
+                }
             }
+
+            List<TagInode> tagInodes = getTagInodesByInode(inode);
+
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
+            return tagInodes;
+        } catch ( Exception e ) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
-        return getTagInodesByInode(inode);
     }
 
     /**
 	 * Updates an existing tag.
 	 * @param tagId tag to update
 	 * @param tagName owner of the tag
-	 * @throws DotHibernateException
-	 */
-    public void updateTag ( String tagId, String tagName ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public void updateTag ( String tagId, String tagName ) throws DotDataException {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
@@ -276,7 +331,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @param hostId the storage host id
 	 * @throws Exception
 	 */
-    public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotHibernateException {
+    public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException {
 
         Tag tag = getTagByTagId(tagId);
         boolean tagAlreadyExistsForNewTagStorage = false;
@@ -313,9 +368,9 @@ public class TagAPIImpl implements TagAPI {
     /**
 	 * Deletes a tag
 	 * @param tag tag to be deleted
-	 * @throws DotHibernateException
-	 */
-    public void deleteTag ( Tag tag ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public void deleteTag ( Tag tag ) throws DotDataException {
         List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
         for ( TagInode t : tagInodes ) {
             deleteTagInode(t);
@@ -327,9 +382,9 @@ public class TagAPIImpl implements TagAPI {
     /**
      * Deletes a tag
      * @param tagId tagId of the tag to be deleted
-     * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public void deleteTag ( String tagId ) throws DotHibernateException {
+    public void deleteTag ( String tagId ) throws DotDataException {
         Tag tag = getTagByTagId(tagId);
         deleteTag(tag);
     }
@@ -361,16 +416,6 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Gets all the tags created, with the respective owner and permission information
-	 * @param userId id of the user that searches the tag
-	 * @return a complete list of all the tags, with the owner information and the respective permission
-	 * information
-	 */
-    public List<Tag> getAllTag ( String userId ) {
-        return tagFactory.getAllTag(userId);
-    }
-
-    /**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
 	 *
 	 * @param tagName name of the tag
@@ -394,9 +439,9 @@ public class TagAPIImpl implements TagAPI {
 	 * @param tag
 	 * @param inode inode of the object tagged
 	 * @return TagInode
-	 * @throws DotHibernateException
-	 */
-    public TagInode addTagInode ( Tag tag, String inode ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public TagInode addTagInode ( Tag tag, String inode ) throws DotDataException {
 
         //validates the tagInode already exists
         TagInode existingTagInode = getTagInode(tag.getTagId(), inode);
@@ -409,7 +454,7 @@ public class TagAPIImpl implements TagAPI {
             tagInode.setInode(inode);
             tagInode.setModDate(new Date());
 
-            return tagFactory.saveTagInode(tagInode);
+            return tagFactory.createTagInode(tagInode);
         } else {
             // returning the existing tagInode
             return existingTagInode;
@@ -420,20 +465,20 @@ public class TagAPIImpl implements TagAPI {
 	 * Gets all tagInode associated to an object
      * @param inode inode of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
-	 * @throws DotHibernateException
-	 */
-    public List<TagInode> getTagInodesByInode ( String inode ) throws DotHibernateException {
-        return tagFactory.getTagInodeByInode(inode);
+     * @throws DotDataException
+     */
+    public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
+        return tagFactory.getTagInodesByInode(inode);
     }
 
     /**
 	 * Gets all tags associated to an object
 	 * @param tagId tagId of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
-	 * @throws DotHibernateException
-	 */
-    public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotHibernateException {
-        return tagFactory.getTagInodeByTagId(tagId);
+     * @throws DotDataException
+     */
+    public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
+        return tagFactory.getTagInodesByTagId(tagId);
     }
 
     /**
@@ -441,18 +486,18 @@ public class TagAPIImpl implements TagAPI {
 	 * @param name name of the tag
 	 * @param inode inode of the object tagged
 	 * @return the tagInode
-	 * @throws DotHibernateException
-	 */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException {
         return tagFactory.getTagInode(tagId, inode);
     }
 
     /**
 	 * Deletes a TagInode
 	 * @param tagInode TagInode to delete
-	 * @throws DotHibernateException
-	 */
-    public void deleteTagInode ( TagInode tagInode ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
         tagFactory.deleteTagInode(tagInode);
     }
 
@@ -460,46 +505,65 @@ public class TagAPIImpl implements TagAPI {
 	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
 	 * @param tagId TagId
 	 * @param inode inode of the object tagged
-	 * @throws DotHibernateException
+     * @throws DotDataException
      */
-    public void removeTagRelationAndTagWhenPossible ( String tagId, String inode ) throws DotHibernateException {
+    public void removeTagRelationAndTagWhenPossible ( String tagId, String inode ) throws DotDataException {
 
-        Boolean existRelationship = false;
-        //Get the tag inode we want to remove
-        TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode);
-        if ( UtilMethods.isSet(tagInodeToRemove) && UtilMethods.isSet(tagInodeToRemove.getTagId()) ) {
-            existRelationship = true;
-        }
+        boolean localTransaction = false;
 
-        //Get the tag we want to remove
-        Tag tagToRemove = tagFactory.getTagByTagId(tagId);
+        try {
 
-        //First lets search for the relationships of this tag
-        List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByTagId(tagId);
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-        if ( tagInodes != null && !tagInodes.isEmpty() ) {
+            Boolean existRelationship = false;
+            //Get the tag inode we want to remove
+            TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode);
+            if ( UtilMethods.isSet(tagInodeToRemove) && UtilMethods.isSet(tagInodeToRemove.getTagId()) ) {
+                existRelationship = true;
+            }
 
-            if ( !existRelationship && tagInodes.size() > 0 ) {
-                //This mean we can NOT remove the tag as it is still related with other inodes
-                return;
-            } else if ( existRelationship && tagInodes.size() > 1 ) {//Current relation and more??
+            //Get the tag we want to remove
+            Tag tagToRemove = tagFactory.getTagByTagId(tagId);
 
+            //First lets search for the relationships of this tag
+            List<TagInode> tagInodes = APILocator.getTagAPI().getTagInodesByTagId(tagId);
+
+            if ( tagInodes != null && !tagInodes.isEmpty() ) {
+
+                if ( !existRelationship && tagInodes.size() > 0 ) {
+                    //This mean we can NOT remove the tag as it is still related with other inodes
+                    return;
+                } else if ( existRelationship && tagInodes.size() > 1 ) {//Current relation and more??
+
+                    //Delete the tag inode relationship
+                    tagFactory.deleteTagInode(tagInodeToRemove);
+
+                    //And this mean we can NOT remove the tag as it is still related with other inodes
+                    return;
+                }
+            }
+
+            if ( existRelationship ) {
                 //Delete the tag inode relationship
                 tagFactory.deleteTagInode(tagInodeToRemove);
-
-                //And this mean we can NOT remove the tag as it is still related with other inodes
-                return;
             }
-        }
 
-        if ( existRelationship ) {
-            //Delete the tag inode relationship
-            tagFactory.deleteTagInode(tagInodeToRemove);
-        }
+            //If this tag has not relationships remove it
+            if ( UtilMethods.isSet(tagToRemove) && UtilMethods.isSet(tagToRemove.getTagId()) ) {
+                tagFactory.deleteTag(tagToRemove);
+            }
 
-        //If this tag has not relationships remove it
-        if ( UtilMethods.isSet(tagToRemove) && UtilMethods.isSet(tagToRemove.getTagId()) ) {
-            tagFactory.deleteTag(tagToRemove);
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
+        } catch ( Exception e ) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
 
     }
@@ -508,9 +572,9 @@ public class TagAPIImpl implements TagAPI {
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
-	 * @throws DotHibernateException
-	 */
-    public void deleteTagInode ( Tag tag, String inode ) throws DotHibernateException {
+     * @throws DotDataException
+     */
+    public void deleteTagInode ( Tag tag, String inode ) throws DotDataException {
 
         TagInode tagInode = getTagInode(tag.getTagId(), inode);
         if ( tagInode != null && UtilMethods.isSet(tagInode.getTagId()) ) {
@@ -584,17 +648,6 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Gets all the tags given a user List
-	 * @param userIds the user id's associated with the tags
-	 * @return a complete list of all the tags, with the owner information and the respective permission
-	 * information
-	 */
-    @SuppressWarnings ( "unchecked" )
-    public List<Tag> getAllTagsForUsers ( List<String> userIds ) {
-        return tagFactory.getAllTagsForUsers(userIds);
-    }
-
-    /**
 	 * Check if tag is global
 	 * @param tag
 	 * @return boolean
@@ -611,10 +664,17 @@ public class TagAPIImpl implements TagAPI {
 	 * @param oldTagStorageId
 	 * @param newTagStorageId
 	 */
-    public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) {
+    public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException {
+
+        boolean localTransaction = false;
 
         try {
+
             if ( !oldTagStorageId.equals(Host.SYSTEM_HOST) && !oldTagStorageId.equals(newTagStorageId) ) {
+
+                //Check for a transaction and start one if required
+                localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
                 //copy or update tags if the tag storage id has changed when editing the host
                 //or if the previous tag storage was global
                 List<Tag> list = tagFactory.getTagByHost(oldTagStorageId);
@@ -638,9 +698,17 @@ public class TagAPIImpl implements TagAPI {
                         Logger.error(e, "Error updating Tag references");
                     }
                 }
+
+                //Everything ok..., committing the transaction
+                if ( localTransaction ) {
+                    HibernateUtil.commitTransaction();
+                }
             }
         } catch ( Exception e ) {
-            Logger.error(e, "Error updating Tag references");
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
 
     }
@@ -649,10 +717,10 @@ public class TagAPIImpl implements TagAPI {
 	 * Gets all tags associated to an object
 	 * @param inode object inode
 	 * @return List<Tag>
-	 * @throws DotHibernateException
-	 */
+     * @throws DotDataException
+     */
     @Override
-    public List<Tag> getTagsByInode ( String inode ) throws DotHibernateException {
+    public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagsByInode(inode);
     }
 

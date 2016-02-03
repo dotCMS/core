@@ -86,8 +86,10 @@ public class TagInodeCacheImpl extends TagInodeCache {
     @Override
     protected void removeByTagId ( String tagId ) {
         List<TagInode> cachedObjects = getByTagId(tagId);
-        for ( TagInode cachedObject : cachedObjects ) {
-            remove(cachedObject);
+        if ( cachedObjects != null && !cachedObjects.isEmpty() ) {
+            for ( TagInode cachedObject : cachedObjects ) {
+                remove(cachedObject);
+            }
         }
     }
 

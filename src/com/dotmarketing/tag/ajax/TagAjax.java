@@ -8,7 +8,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
@@ -198,19 +197,10 @@ public class TagAjax {
 	 * @param userId id of the tag owner
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
-	public void deleteTag ( String tagId ) throws DotHibernateException {
+	public void deleteTag ( String tagId ) throws DotDataException {
 		tagAPI.deleteTag(tagId);
 	}
 
-	/**
-	 * Gets all the tags created, with the respective owner and permission information
-	 * @param userId id of the user that searches the tag
-	 * @return a complete list of all the tags, with the owner information and the respective permission
-	 * information
-	 */
-	public List getAllTag(String userId) {
-		return APILocator.getTagAPI().getAllTag(userId);
-	}
 	/**
 	 * Gets a tag with the owner information, searching by name
 	 * @param name name of the tag
@@ -225,7 +215,7 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
 	 */
-	public static List getTagInodeByInode ( String inode ) throws DotHibernateException {
+	public static List getTagInodeByInode ( String inode ) throws DotDataException {
 		return APILocator.getTagAPI().getTagInodesByInode(inode);
 	}
 
@@ -333,40 +323,6 @@ public class TagAjax {
 		return APILocator.getTagAPI().getAllTags();
 	}
 
-
-	public List<Tag> getUsersTags() {
-		List<Tag> ret =  new ArrayList<Tag>();
-		try
-		{
-			HttpSession session = WebContextFactory.get().getSession();
-			HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
-			List<String> userIds =  new ArrayList<String>();
-
-			//Get all the user of the filter
-			UserManagerListSearchForm searchFormFullCommand = (UserManagerListSearchForm) session.getAttribute(WebKeys.USERMANAGERLISTPARAMETERS);
-			searchFormFullCommand.setStartRow(0);
-			searchFormFullCommand.setMaxRow(0);
-			List matches = UserManagerListBuilderFactory.doSearch(searchFormFullCommand);
-
-			//Get the Iterator and the userIds
-			Iterator it = matches.iterator();
-			for (int i = 0; it.hasNext(); i++)
-			{
-				String userTagId = (String) ((Map) it.next()).get("userid");
-				userIds.add(userTagId);
-
-			}
-
-			ret = APILocator.getTagAPI().getAllTagsForUsers(userIds);
-		}
-		catch(Exception ex)
-		{
-			String message = ex.toString();
-			Logger.debug(TagAjax.class,message);
-		}
-		return ret;
-	}
 	public static Map<String,Object> importTags(byte[] uploadFile) {
 
 		Map<String,Object> callbackData = new HashMap<String,Object>();

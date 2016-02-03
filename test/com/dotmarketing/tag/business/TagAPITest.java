@@ -259,21 +259,6 @@ public class TagAPITest extends TestBase {
 	}
 
 	/**
-	 * Test the getAllTag method of the tagAPI
-	 * @throws Exception
-	 */
-	@Test
-	public void getAllTag() throws Exception{
-		String tagName ="testapi12"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tagAPI.saveTag ( tagName, testUser.getUserId(), defaultHostId, false );
-		List<Tag> tags = tagAPI.getAllTag(testUser.getUserId());
-		assertTrue(tags.size() >= 1);
-		for(Tag t : tags){
-			assertTrue(t.getUserId().equals(testUser.getUserId()));
-		}
-	}
-
-	/**
 	 * Test the two addTagInode methods of the tagAPI
 	 * @throws Exception
 	 */
