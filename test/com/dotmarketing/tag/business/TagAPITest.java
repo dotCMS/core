@@ -49,13 +49,20 @@ public class TagAPITest extends TestBase {
         defaulHostId=defaultHost.getIdentifier();
     }
     
-	
+    /**
+	 * Test the getAllTags method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getAllTags () throws Exception {		
 		List<Tag> tags = tagAPI.getAllTags();
 		assertTrue( tags.size() >= 125 );
 	}
 
+	/**
+	 * Test the getTagByName method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getTagByName() throws Exception {
         String tagName="china";
@@ -66,6 +73,10 @@ public class TagAPITest extends TestBase {
 		}
 	}
 	
+	/**
+	 * Test the getTagByUser method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getTagByUser() throws Exception{
 		List<Tag> tags = tagAPI.getTagByUser(systemUser.getUserId());
@@ -79,6 +90,10 @@ public class TagAPITest extends TestBase {
 		assertTrue(tags.contains(tg));		
 	}
 		
+	/**
+	 * Test the getFilteredTags method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getFilteredTags() throws Exception{
 		String tagName ="test";
@@ -89,6 +104,10 @@ public class TagAPITest extends TestBase {
 		}
     }
 
+	/**
+	 * Test the getTagAndCreate method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getTagAndCreate() throws Exception{
 		String tagName ="testapi2"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
@@ -97,6 +116,10 @@ public class TagAPITest extends TestBase {
 		assertTrue(UtilMethods.isSet(tag) && tag.equals(newTag));
 	}
 	
+	/**
+	 * Test the getTagByTagId method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getTagByTagId() throws Exception{
 		String tagId = tagAPI.getAllTags().get(0).getTagId();
@@ -106,6 +129,10 @@ public class TagAPITest extends TestBase {
 		assertTrue(tag.getTagId().equals(tagId));
 	}
 	
+	/**
+	 * Test the getTagByNameAndHost method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void getTagByNameAndHost() throws Exception{
 		String tagName="inflation";
@@ -115,21 +142,29 @@ public class TagAPITest extends TestBase {
 		assertTrue(tag.getTagName().equals(tagName));
 	}
 
+	/**
+	 * Test the two saveTag methods from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void saveTag() throws Exception {
 		//save tag first implementation  saveTag ( String tagName, String userId, String hostId )
 		String tagName ="testapi3"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		Tag newTag = tagAPI.saveTag ( tagName, testUser.getUserId(), defaulHostId );
+		tagAPI.saveTag ( tagName, testUser.getUserId(), defaulHostId );
 		Tag tag = tagAPI.getTagByNameAndHost(tagName, defaulHostId);
 		assertTrue(UtilMethods.isSet(tag) && tag.getTagName().equals(tagName));
 		
 		//save tag second implementation saveTag ( String tagName, String userId, String hostId, boolean persona )
 		String tagName2 ="testapi4"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		Tag newTag2 = tagAPI.saveTag ( tagName2, testUser.getUserId(), defaulHostId, false );
+		tagAPI.saveTag ( tagName2, testUser.getUserId(), defaulHostId, false );
 		Tag tag2 = tagAPI.getTagByNameAndHost(tagName2, defaulHostId);
 		assertTrue(UtilMethods.isSet(tag2) && tag2.getTagName().equals(tagName2) && tag2.isPersona()==false);
 	}
 	
+	/**
+	 * Test the addTag method from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void addTag() throws Exception {
 		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
@@ -141,6 +176,10 @@ public class TagAPITest extends TestBase {
 		assertTrue(tag.getTagName().equals(tagName));
 	}
 	
+	/**
+	 * Test the two updateTag methods from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
 	public void updateTag () throws Exception{
 		
@@ -164,8 +203,12 @@ public class TagAPITest extends TestBase {
 		assertTrue(tag.getHostId().equals(host.getIdentifier()));
 	}
 	
+	/**
+	 * Test the two deleteTag methods from the tagAPI
+	 * @throws Exception
+	 */
 	@Test
-	public void deleteHost() throws Exception{
+	public void deleteTag() throws Exception{
 		String tagName ="testapi9"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.saveTag ( tagName, testUser.getUserId(), defaulHostId, false );
 		String tagId = tag.getTagId();
@@ -182,4 +225,20 @@ public class TagAPITest extends TestBase {
 		assertTrue(!UtilMethods.isSet(tag.getTagId()));
 	}
 
+	/**
+	 * Test the editTag method of the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void editTag() throws Exception {
+		String oldTagName ="testapi9"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag = tagAPI.saveTag ( oldTagName, testUser.getUserId(), defaulHostId, false );
+		
+		String tagName ="testapi10"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		tagAPI.editTag ( tagName, oldTagName, testUser.getUserId());
+		
+		tag = tagAPI.getTagByTagId(tag.getTagId());
+		assertTrue(!UtilMethods.isSet(tag.getTagId()));
+		assertTrue(tag.getTagName().equals(tagName));
+	}
 }
