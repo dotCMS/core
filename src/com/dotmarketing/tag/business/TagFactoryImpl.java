@@ -320,8 +320,10 @@ public class TagFactoryImpl implements TagFactory {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tagInode.getTagId());
-        for ( TagInode cachedTagInode : cachedTagInodes ) {
-            tagCache.removeByInode(cachedTagInode.getInode());
+        if ( cachedTagInodes != null && !cachedTagInodes.isEmpty() ) {
+            for ( TagInode cachedTagInode : cachedTagInodes ) {
+                tagCache.removeByInode(cachedTagInode.getInode());
+            }
         }
         tagInodeCache.remove(tagInode);
 
@@ -350,8 +352,10 @@ public class TagFactoryImpl implements TagFactory {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
-        for ( TagInode cachedTagInode : cachedTagInodes ) {
-            tagCache.removeByInode(cachedTagInode.getInode());
+        if ( cachedTagInodes != null && !cachedTagInodes.isEmpty() ) {
+            for ( TagInode cachedTagInode : cachedTagInodes ) {
+                tagCache.removeByInode(cachedTagInode.getInode());
+            }
         }
         tagCache.remove(tag);
 
@@ -362,8 +366,10 @@ public class TagFactoryImpl implements TagFactory {
 
         //First lets clean up the cache
         List<TagInode> cachedTagInodes = tagInodeCache.getByTagId(tag.getTagId());
-        for ( TagInode cachedTagInode : cachedTagInodes ) {
-            tagCache.removeByInode(cachedTagInode.getInode());
+        if ( cachedTagInodes != null && !cachedTagInodes.isEmpty() ) {
+            for ( TagInode cachedTagInode : cachedTagInodes ) {
+                tagCache.removeByInode(cachedTagInode.getInode());
+            }
         }
         tagCache.remove(tag);
         tagInodeCache.removeByTagId(tag.getTagId());
