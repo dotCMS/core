@@ -36,7 +36,7 @@ public class TagsWebAPI implements ViewTool {
 				Logger.error(this, e.getMessage(), e);
 				return new ArrayList();
 			}	
-			tagsUser = APILocator.getTagAPI().getTagInodeByInode(String.valueOf(up.getInode()));
+			tagsUser = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(up.getInode()));
 			request.getSession().setAttribute(WebKeys.LOGGED_IN_USER_TAGS, tagsUser);
 		}
 		return tagsUser;

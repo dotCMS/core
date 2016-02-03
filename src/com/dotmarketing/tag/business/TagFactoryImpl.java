@@ -206,24 +206,8 @@ public class TagFactoryImpl implements TagFactory {
         return tag;
     }
 
-    /**
-     * Gets all the tag created by an user
-     *
-     * @param userId id of the user
-     * @return a list of all the tags created
-     * FIXME: Needs cache
-     */
-    public java.util.List<Tag> getTagByUser ( String userId ) {
-        try {
-            HibernateUtil dh = new HibernateUtil(Tag.class);
-            dh.setQuery("from tag in class com.dotmarketing.tag.model.Tag where user_id = ?");
-            dh.setParam(userId);
-
-            return dh.list();
-        } catch ( Exception e ) {
-            Logger.warn(Tag.class, "getTagByUser failed:" + e, e);
-        }
-        return new java.util.ArrayList<>();
+    public java.util.List<Tag> getTagForUserByUserInode ( String userInode ) throws DotHibernateException {
+        return getTagsByInode(userInode);
     }
 
     /**
@@ -346,24 +330,18 @@ public class TagFactoryImpl implements TagFactory {
         HibernateUtil.saveOrUpdate(tagInode);
     }
 
-    /**
-     * FIXME: Needs cache
-     * @param tag
-     * @return
-     * @throws Exception
-     */
     public Tag saveTag ( Tag tag) throws DotHibernateException {
-
-        //FIXME: Remove the lists of caches or find where to add it!!???
-        //FIXME: Remove the lists of caches or find where to add it!!???
-        //FIXME: Remove the lists of caches or find where to add it!!???
-        //FIXME: Remove the lists of caches or find where to add it!!???
 
         HibernateUtil.save(tag);
         return tag;
     }
 
     public TagInode saveTagInode ( TagInode tagInode ) throws DotHibernateException {
+
+        //First lets clean up the cache
+        tagCache.removeByInode(tagInode.getInode());
+        tagInodeCache.remove(tagInode);
+
         HibernateUtil.save(tagInode);
         return tagInode;
     }

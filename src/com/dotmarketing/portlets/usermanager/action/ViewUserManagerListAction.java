@@ -593,7 +593,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
         UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 
         //delete user tags
-        List<TagInode> userTagsList = APILocator.getTagAPI().getTagInodeByInode(String.valueOf(userProxy.getInode()));
+        List<TagInode> userTagsList = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(userProxy.getInode()));
         for (TagInode tag : userTagsList) {
             Tag retrievedTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
             APILocator.getTagAPI().deleteTagInode(tag);
@@ -1575,7 +1575,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
 
                 //delete user tags
                 String userId = user.getUserId();
-                List<TagInode> userTagsList = APILocator.getTagAPI().getTagInodeByInode(String.valueOf(userProxy.getInode()));
+                List<TagInode> userTagsList = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(userProxy.getInode()));
                 for (TagInode tag : userTagsList) {
                     Tag retrievedTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
                     APILocator.getTagAPI().deleteTagInode(tag);

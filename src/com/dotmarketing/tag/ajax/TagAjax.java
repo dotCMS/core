@@ -3,11 +3,13 @@ package com.dotmarketing.tag.ajax;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFactory;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
@@ -36,7 +38,11 @@ public class TagAjax {
 	 * @param inode object to tag
 	 * @return a list of all tags assigned to an object
 	 */
-	public static Map<String,Object> addTag(String tagNames, String userId, String hostId) {
+	public static Map<String, Object> addTag ( String tagNames, String userId, String hostId ) throws DotDataException, DotSecurityException {
+
+		if ( !UtilMethods.isSet(hostId) ) {
+			hostId = Host.SYSTEM_HOST;
+		}
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 		List<String> saveTagErrors = new ArrayList<>();
@@ -170,8 +176,8 @@ public class TagAjax {
 	 * @param userId id of the user
 	 * @return a list of all the tags created
 	 */
-	public List<Tag> getTagByUser(String userId) {
-		return APILocator.getTagAPI().getTagByUser(userId);
+	public List<Tag> getTagByUser ( String userId ) throws DotSecurityException, DotDataException {
+		return APILocator.getTagAPI().getTagsForUserByUserId(userId);
 	}
 
 	/**
@@ -179,8 +185,8 @@ public class TagAjax {
 	 * @param userId id of the user
 	 * @return a Map with a list of all the tags created
 	 */
-	public Map<String, List<Tag>> getTagsByUser(String userId) {
-		List<Tag> tags = APILocator.getTagAPI().getTagByUser(userId);
+	public Map<String, List<Tag>> getTagsByUser ( String userId ) throws DotSecurityException, DotDataException {
+		List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
 		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
 		map.put("tags", tags);
 		return map;
@@ -220,7 +226,7 @@ public class TagAjax {
 	 * @return list of all the TagInode where the tags are associated to the object
 	 */
 	public static List getTagInodeByInode ( String inode ) throws DotHibernateException {
-		return APILocator.getTagAPI().getTagInodeByInode(inode);
+		return APILocator.getTagAPI().getTagInodesByInode(inode);
 	}
 
 	/**
@@ -229,64 +235,41 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return a list of all tags assigned to an object
 	 */
-	public List deleteTagInode ( String tagName, String inode ) throws Exception {
-		return APILocator.getTagAPI().deleteTagInode(tagName, inode);
+	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
+		APILocator.getTagAPI().deleteTagInode(tagName, inode);
 	}
 
 	/**
-	 * Deletes an object tag assignment(s)
-	 * @param tagName name(s) of the tag(s)
-	 * @param inode inode of the object tagged
+	 * Deletes an object tag assignment
+	 * @param tagNameOrId name/id of the tag to remove
+	 * @param userId user related with the tag
 	 * @return a list of all tags assigned to a user
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
-	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException {
+	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotSecurityException {
 
-		Tag tag = new Tag();
-		try {
-			tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
-		} catch ( Exception e1 ) {
-			Logger.error(this, "Error retriaving tag", e1);
-		}
+		Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
 
 		if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
-			List<Tag> foundTags = APILocator.getTagAPI().getTagByName(tagNameOrId);
-
-			//FIXME: Fix this!!!, searching by name can return multiple tags, this code assumes just one
-			if ( foundTags != null && !foundTags.isEmpty() ) {
-				tag = foundTags.get(0);
-			}
-			//FIXME: Fix this!!!, searching by name can return multiple tags, this code assumes just one
+			tag = APILocator.getTagAPI().getTagByNameAndHost(tagNameOrId, Host.SYSTEM_HOST);
 		}
 
 		if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
-			//We found nothing, do nothing
+			Logger.warn(this, "Requested Tag [" + tagNameOrId + "] for deletion was not found");
 		} else {
 
-			//If it is related with multiple clients remove the relation
-			String newUserId = "";
-			StringTokenizer userIdToken = new StringTokenizer(tag.getUserId(), ",");
-			if (userIdToken.hasMoreTokens()) {
-				for (; userIdToken.hasMoreTokens();) {
-					String userIds = userIdToken.nextToken().trim();
-					if(!(userIds.equals(userId))){
-						newUserId = userIds+","+newUserId;
-					}
-				}
-			}
+			//Retrieve the user
+			UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
 
-			if(!(newUserId.equals(userId))){
-				try{
-					APILocator.getTagAPI().updateTag(tag.getTagId(), newUserId);
-				}catch(Exception e){
-					Logger.error(this, e.getMessage());
-				}
-			}else{
-				APILocator.getTagAPI().deleteTag(tag);
-			}
-
+			/*
+			Removes the relationship between a tag and an inode.
+			 NOTE: if the tag does not have more relationships the Tag itself will be remove it.
+			 */
+			APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode());
 		}
 
-		List<Tag> tags = APILocator.getTagAPI().getTagByUser(userId);
+		List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
 		Map<String, List<Tag>> map = new HashMap<>();
 		map.put("tags", tags);
 		return map;

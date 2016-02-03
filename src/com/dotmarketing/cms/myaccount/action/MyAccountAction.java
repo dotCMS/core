@@ -133,10 +133,10 @@ public class MyAccountAction extends DispatchAction {
 		APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 		HibernateUtil.saveOrUpdate(userProxy);
 
-		List<TagInode> tags = APILocator.getTagAPI().getTagInodeByInode(userProxy.getInode());
+		List<TagInode> tags = APILocator.getTagAPI().getTagInodesByInode(userProxy.getInode());
 		for (TagInode tag: tags) {
 			Tag tempTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
-			APILocator.getTagAPI().deleteTagInode(tempTag.getTagName(), userProxy.getInode());
+			APILocator.getTagAPI().deleteTagInode(tempTag, userProxy.getInode());
 		}
 		if(tags.size() > 0){
 			APILocator.getTagAPI().addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
@@ -221,7 +221,7 @@ public class MyAccountAction extends DispatchAction {
 		// Extra user info
 		form.setEmailAddress(user.getEmailAddress());
 
-		List<TagInode> tags = APILocator.getTagAPI().getTagInodeByInode(userProxy.getInode());
+		List<TagInode> tags = APILocator.getTagAPI().getTagInodesByInode(userProxy.getInode());
 		StringBuilder tagsString = new StringBuilder(128);
 		tagsString.ensureCapacity(32);
 		for (TagInode tag: tags) {

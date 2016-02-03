@@ -44,7 +44,7 @@ public interface TagFactory {
      * @param userId id of the user
      * @return a list of all the tags created
      */
-    public java.util.List<Tag> getTagByUser ( String userId );
+    public java.util.List<Tag> getTagForUserByUserInode ( String userInode ) throws DotHibernateException;
 
     /**
      * Gets all tags filtered by tag name and/or host name

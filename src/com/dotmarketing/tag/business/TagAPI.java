@@ -34,12 +34,9 @@ public interface TagAPI {
 
 	public Tag getTagByNameAndHost ( String name, String hostId ) throws DotHibernateException;
 
-	/**
-	 * Gets all the tag created by an user
-	 * @param userId id of the user
-	 * @return a list of all the tags created
-	 */
-	public java.util.List<Tag> getTagByUser(String userId);
+	public java.util.List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException;
+
+	public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotHibernateException;
 
 	/**
 	 * Gets all tags filtered by tag namd and/or host name
@@ -153,7 +150,7 @@ public interface TagAPI {
      * @param inode inode of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-	public List<TagInode> getTagInodeByInode(String inode) throws DotHibernateException;
+	public List<TagInode> getTagInodesByInode(String inode) throws DotHibernateException;
 	
 	/**
 	 * Gets all tags associated to an object
@@ -168,7 +165,7 @@ public interface TagAPI {
      * @param tagId tagId of the object tagged
      * @return list of all the TagInode where the tags are associated to the object
      */
-	public List getTagInodeByTagId(String tagId) throws DotHibernateException;
+	public List getTagInodesByTagId(String tagId) throws DotHibernateException;
 
 
 	/**
@@ -186,6 +183,15 @@ public interface TagAPI {
 	 */
 	public void deleteTagInode ( TagInode tagInode ) throws DotHibernateException;
 
+	public void deleteTagInode ( Tag tag, String inode ) throws DotHibernateException;
+
+	/**
+	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
+	 * @param tagId
+	 * @param inode
+	 * @throws DotHibernateException
+     */
+	public void removeTagRelationAndTagWhenPossible ( String tagId, String inode ) throws DotHibernateException;
 
 	/**
 	 * Deletes an object tag assignment(s)
@@ -194,15 +200,7 @@ public interface TagAPI {
 	 * @return a list of all tags assigned to an object
 	 * @throws Exception
 	 */
-	public List deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException;
-
-	/**
-	 * Escape a single quote
-	 * @param tagName string with single quotes
-	 * @return single quote string escaped
-	 */
-	public String escapeSingleQuote(String tagName);
-
+	public void deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Gets a suggested tag(s), by name
