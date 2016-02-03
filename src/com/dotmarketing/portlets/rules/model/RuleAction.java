@@ -112,13 +112,8 @@ public class RuleAction implements RuleComponentModel, Serializable {
 
     public RuleActionlet getActionDefinition(){
         if(actionDef == null) {
-            try {
-                actionDef = APILocator.getRulesAPI().findActionlet(actionlet);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(this, "Unable to load action definition for id: " + actionlet);
-            }
+            actionDef = APILocator.getRulesAPI().findActionlet(actionlet);
         }
-
         return actionDef;
     }
 
