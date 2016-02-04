@@ -265,6 +265,7 @@ class RuleComponent {
   onActionChange(action:ActionModel) {
     if (action.isValid()) {
       if (!action.isPersisted()) {
+        this.actions[this.actions.length -1 ] = action
         action.owningRule = this.rule
         this.actionService.add(action)
       } else {

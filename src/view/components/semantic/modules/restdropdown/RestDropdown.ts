@@ -8,23 +8,23 @@ import {Observable} from 'rxjs/Rx'
 import {Dropdown, InputOption} from '../dropdown/dropdown'
 import {Verify} from "../../../../../api/validation/Verify";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
+import {Observer} from "rxjs/Observer";
 
 @Component({
   selector: 'cw-input-rest-dropdown',
-  viewProviders: [HTTP_PROVIDERS]
-  //changeDetection: ChangeDetectionStrategy.OnPush
+  viewProviders: [HTTP_PROVIDERS],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 @View({
   template: `
-  <cw-input-dropdown [value]="value" name="{{name}}" placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)">
-        <cw-input-option *ngFor="#opt of _options" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
+  <cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)">
+        <cw-input-option *ngFor="#opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
       </cw-input-dropdown>`,
   directives: [CORE_DIRECTIVES, Dropdown, InputOption]
 })
 export class RestDropdown {
 
   @Input() value:string
-  @Input() name:string
   @Input() placeholder:string
   @Input() allowAdditions:boolean
   @Input() minSelections:number
@@ -36,7 +36,7 @@ export class RestDropdown {
   @Output() change:EventEmitter<any>
 
   private _http
-  private _options:any[]
+  private _options:Observer<any>
   private _apiRoot:ApiRoot
 
   constructor(http:Http, apiRoot: ApiRoot) {
@@ -49,7 +49,6 @@ export class RestDropdown {
     this.minSelections = 0
     this.maxSelections = 1
     this.change = new EventEmitter()
-    this.name = "dd-" + new Date().getTime() + Math.random()
   }
 
   handleParamValueChange(event) {
@@ -59,13 +58,8 @@ export class RestDropdown {
   ngOnChanges(change) {
     if (change.optionUrl) {
       let requestOptionArgs = this._apiRoot.getDefaultRequestOptions()
-      this._http.get(change.optionUrl.currentValue, requestOptionArgs)
-          // Call map on the response observable to get the parsed people object
+      this._options = this._http.get(change.optionUrl.currentValue, requestOptionArgs)
           .map((res:any)=> this.jsonEntriesToOptions(res))
-          .subscribe(options => {
-                this._options = options
-              }
-          );
     }
   }
 
