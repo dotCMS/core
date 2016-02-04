@@ -207,7 +207,7 @@ public class TagAjax {
 	 * @return the tag with the owner information
 	 */
 	public static List<Tag> getTagByName ( String tagName ) throws DotDataException {
-		return APILocator.getTagAPI().getTagByName(tagName);
+		return APILocator.getTagAPI().getTagsByName(tagName);
 	}
 
 	/**

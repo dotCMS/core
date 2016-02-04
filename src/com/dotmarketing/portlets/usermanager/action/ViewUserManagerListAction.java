@@ -842,7 +842,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
             if (tagNameToken.hasMoreTokens()) {
                 for (; tagNameToken.hasMoreTokens();) {
                     String tagTokenized = tagNameToken.nextToken().trim();
-                    List<Tag> foundTags = APILocator.getTagAPI().getTagByName(tagTokenized);
+                    List<Tag> foundTags = APILocator.getTagAPI().getTagsByName(tagTokenized);
                     if ( foundTags == null || foundTags.isEmpty() ) {
                         APILocator.getTagAPI().saveTag(tagTokenized, userLoader.getUserId(), Host.SYSTEM_HOST);
                     }

@@ -1,5 +1,7 @@
 package com.dotmarketing.tag.business;
 
+import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static com.dotcms.repackage.org.junit.Assert.assertNull;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
 
 import java.util.Date;
@@ -82,7 +84,7 @@ public class TagAPITest extends TestBase {
 	@Test
 	public void getTagByName() throws Exception {
 		String tagName="china";
-		List<Tag> tags = tagAPI.getTagByName(tagName);
+		List<Tag> tags = tagAPI.getTagsByName(tagName);
 		assertTrue( tags.size() == 1 );
 		for(Tag tag : tags){
 			assertTrue(tag.getTagName().equals(tagName));
@@ -95,15 +97,20 @@ public class TagAPITest extends TestBase {
 	 */
 	@Test
 	public void getTagsForUserByUserId() throws Exception{
-		List<Tag> tags = tagAPI.getTagsForUserByUserId(systemUser.getUserId());
-		assertTrue(tags.size() == 0);
+
+		List<Tag> tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
+		assertNotNull(tags);
+		assertTrue(tags.size() > 0);
 
 		String tagName = "testapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
-		Tag tg = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
+		Tag createdTag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
+		tagAPI.addTagInode(createdTag,
+				APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(), APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 		tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
-		assertTrue(tags.size() >= 1);
-		assertTrue(tags.contains(tg));		
+		assertNotNull(tags);
+		assertTrue(tags.size() > 0);
+		assertTrue(tags.contains(createdTag));
 	}
 	
 	/**
@@ -253,14 +260,14 @@ public class TagAPITest extends TestBase {
 		//testing first implementation of public void deleteTag ( Tag tag )
 		tagAPI.deleteTag(tag);
 		tag = tagAPI.getTagByTagId(tagId);
-		assertTrue(!UtilMethods.isSet(tag.getTagId()));
+		assertNull(tag);
 
 		tag = tagAPI.saveTag ( tagName, testUser.getUserId(), defaultHostId, false );
 		tagId = tag.getTagId();
 		//testing first implementation of public void deleteTag ( String tagId )
 		tagAPI.deleteTag (tag.getTagId());
 		tag = tagAPI.getTagByTagId(tagId);
-		assertTrue(!UtilMethods.isSet(tag.getTagId()));
+		assertNull(tag);
 	}
 
 	/**
@@ -276,7 +283,8 @@ public class TagAPITest extends TestBase {
 		tagAPI.editTag ( tagName, oldTagName, testUser.getUserId());
 
 		tag = tagAPI.getTagByTagId(tag.getTagId());
-		assertTrue(!UtilMethods.isSet(tag.getTagId()));
+		assertNotNull(tag);
+		assertNotNull(tag.getTagId());
 		assertTrue(tag.getTagName().equals(tagName));
 	}
 
@@ -306,7 +314,7 @@ public class TagAPITest extends TestBase {
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
 		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId);
 
-		TagInode tInode = tagAPI.getTagInode(tagName, tagInode.getInode());
+		TagInode tInode = tagAPI.getTagInode(tag.getTagId(), tagInode.getInode());
 		assertTrue(UtilMethods.isSet(tInode.getInode()) && tInode.getInode().equals(tagInode.getInode()) && tInode.getTagId().equals(tag.getTagId()));
 
 		//testing second implementation of public TagInode addTagInode ( Tag tag, String inode )
@@ -314,7 +322,7 @@ public class TagAPITest extends TestBase {
 		Tag tag2 = tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
 		TagInode tagInode2 = tagAPI.addTagInode ( tag2, contentAsset.getInode());
 
-		TagInode tInode2 = tagAPI.getTagInode(tagName, tagInode.getInode());
+		TagInode tInode2 = tagAPI.getTagInode(tag2.getTagId(), tagInode2.getInode());
 		assertTrue(UtilMethods.isSet(tInode2.getInode()) && tInode2.getInode().equals(tagInode2.getInode()) && tInode2.getTagId().equals(tag2.getTagId()));
 	}
 
@@ -420,8 +428,12 @@ public class TagAPITest extends TestBase {
 
 		TagInode tagInode2 = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
 
+		assertNotNull(tagInode);
+		assertNotNull(tagInode2);
+		assertTrue(UtilMethods.isSet(tagInode.getTagId()));
 		assertTrue(UtilMethods.isSet(tagInode2.getTagId()));
-		assertTrue(tagInode2.equals(tagInode));
+		assertTrue(tagInode.getTagId().equals(tagInode2.getTagId()));
+		assertTrue(tagInode.getInode().equals(tagInode2.getInode()));
 	}
 
 	/**
@@ -452,6 +464,6 @@ public class TagAPITest extends TestBase {
 
 		TagInode tagInode2 = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
 
-		assertTrue(!UtilMethods.isSet(tagInode2.getTagId()));
+		assertNull(tagInode2);
 	}
 }

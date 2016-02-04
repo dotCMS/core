@@ -81,7 +81,7 @@ public class TagFactoryImpl implements TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public List<Tag> getTagByName ( String name ) throws DotDataException {
+    public List<Tag> getTagsByName ( String name ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByName(name);
         if ( tags == null ) {

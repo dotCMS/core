@@ -21,7 +21,7 @@ public interface TagFactory {
      * @param name name of the tag to get
      * @return tag
      */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException;
+    public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException;
 
     public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException;
 

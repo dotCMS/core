@@ -21,7 +21,7 @@ public interface TagAPI {
 	 * @param name name of the tag to get
 	 * @return tag
 	 */
-	public java.util.List<Tag> getTagByName ( String name ) throws DotDataException;
+	public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException;
 
 	/**
 	 * Gets a Tag by a tagId retrieved from a TagInode.
@@ -212,12 +212,12 @@ public interface TagAPI {
 
 	/**
 	 * Gets a tagInode by name and inode
-	 * @param name name of the tag
+	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
 	 * @return the tagInode
 	 * @throws DotDataException
 	 */
-	public TagInode getTagInode ( String name, String inode ) throws DotDataException;
+	public TagInode getTagInode ( String tagId, String inode ) throws DotDataException;
 
 
 	/**

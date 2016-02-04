@@ -31,8 +31,8 @@ public class TagAPIImpl implements TagAPI {
 	 * @param name name of the tag to get
 	 * @return tag
 	 */
-    public java.util.List<Tag> getTagByName ( String name ) throws DotDataException {
-        return tagFactory.getTagByName(name);
+    public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException {
+        return tagFactory.getTagsByName(name);
     }
 
     /**
@@ -337,7 +337,7 @@ public class TagAPIImpl implements TagAPI {
         boolean tagAlreadyExistsForNewTagStorage = false;
 
         //This block of code prevent saving duplicated tags when editing tag storage from host
-        List<Tag> tags = getTagByName(tagName);
+        List<Tag> tags = getTagsByName(tagName);
 
         for ( Tag t : tags ) {
             if ( t.getHostId().equals(hostId) ) {
@@ -400,7 +400,7 @@ public class TagAPIImpl implements TagAPI {
             tagName = escapeSingleQuote(tagName);
             oldTagName = escapeSingleQuote(oldTagName);
 
-            List tagToEdit = getTagByName(oldTagName);
+            List<Tag> tagToEdit = getTagsByName(oldTagName);
             Iterator it = tagToEdit.iterator();
             for ( int i = 0; it.hasNext(); i++ ) {
                 Tag tag = (Tag) it.next();
@@ -483,7 +483,7 @@ public class TagAPIImpl implements TagAPI {
 
     /**
 	 * Gets a tagInode by name and inode
-	 * @param name name of the tag
+	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
 	 * @return the tagInode
      * @throws DotDataException
