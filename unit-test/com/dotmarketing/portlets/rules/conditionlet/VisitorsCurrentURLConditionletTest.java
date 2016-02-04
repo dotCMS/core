@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import static com.dotmarketing.portlets.rules.conditionlet.Conditionlet.COMPARISON_KEY;
-import static com.dotmarketing.portlets.rules.conditionlet.ReferringURLConditionlet.REFERRING_URL_KEY;
+import static com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.IS_NOT;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
@@ -11,7 +11,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.List;
@@ -29,7 +29,7 @@ import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
 
-public class UsersCurrentURLConditionletTest {
+public class VisitorsCurrentURLConditionletTest {
 
     @DataProvider(name = "cases")
     public Object[][] compareCases() throws Exception {
@@ -40,91 +40,91 @@ public class UsersCurrentURLConditionletTest {
         /* Is */
             data.add(new TestCase("If /products/ is set and the current URL is /products/, evaluate to true.")
                          .withComparison(IS)
-                         .withReferrer("/products/")
-                         .withMockReferrer("/products/")
+                         .withURI("/products/index")
+                         .withPattern("/products/index")
                          .shouldBeTrue()
             );
 
-            data.add(new TestCase("Ignores case - If /Products/ is set and current URL is /products/ , evaluate to true.")
+            data.add(new TestCase("Case sencitive- If /Products/ is set and current URL is /products/ , evaluate to false.")
                          .withComparison(IS)
-                         .withReferrer("/Products/")
-                         .withMockReferrer("/products/")
-                         .shouldBeTrue()
+                         .withURI("/products/index")
+                         .withPattern("/Products/index")
+                         .shouldBeFalse()
             );
 
             data.add(new TestCase("If /products/ set and current URL is /about-us/ , evaluate to false.")
                          .withComparison(IS)
-                         .withReferrer("/products/")
-                         .withMockReferrer("/about-us/")
+                         .withURI("/about-us/")
+                         .withPattern("/products/index")
                          .shouldBeFalse()
             );
 
             /* Is Not*/
             data.add(new TestCase("Is Not: If /products/ set and current URL is /about-us/ , evaluate to true.")
                         .withComparison(IS_NOT)
-                        .withReferrer("/products/")
-                        .withMockReferrer("/about-us/")
+                        .withURI("/about-us/")
+                        .withPattern("/products/index")
                         .shouldBeTrue()
             );
 
             data.add(new TestCase("Is Not: If /products/ set and current URL is /products/ , evaluate to false.")
                          .withComparison(IS_NOT)
-                         .withReferrer("/products/")
-                         .withMockReferrer("/products/")
+                         .withURI("/products/index")
+                         .withPattern("/products/index")
                          .shouldBeFalse()
             );
 
             data.add(new TestCase("Starts with: If /prod set and current URL is /products/ , evaluate to true.")
                     .withComparison(STARTS_WITH)
-                    .withReferrer("/prod")
-                    .withMockReferrer("/products/")
+                    .withURI("/products/index")
+                    .withPattern("/prod")
                     .shouldBeTrue()
             );
 
             data.add(new TestCase("Starts with: If /prod set and current URL is /about-us/ , evaluate to true.")
                     .withComparison(STARTS_WITH)
-                    .withReferrer("/prod")
-                    .withMockReferrer("/about-us/")
+                    .withURI("/about-us/index")
+                    .withPattern("/prod")
                     .shouldBeFalse()
             );
 
             data.add(new TestCase("Ends with: If ducts/ set and current URL is /products/ , evaluate to true.")
                     .withComparison(ENDS_WITH)
-                    .withReferrer("ducts/")
-                    .withMockReferrer("/products/")
+                    .withURI("/products/index")
+                    .withPattern("ducts/index")
                     .shouldBeTrue()
             );
 
             data.add(new TestCase("Ends with: If ducts/ set and current URL is /about-us/ , evaluate to true.")
                     .withComparison(ENDS_WITH)
-                    .withReferrer("ducts/")
-                    .withMockReferrer("/about-us/")
+                    .withURI("/about-us/index")
+                    .withPattern("ducts/index")
                     .shouldBeFalse()
             );
             data.add(new TestCase("Contains: If product set and current URL is /products/ , evaluate to true.")
                     .withComparison(CONTAINS)
-                    .withReferrer("product")
-                    .withMockReferrer("/products/")
+                    .withURI("/products/index")
+                    .withPattern("product")
                     .shouldBeTrue()
             );
 
             data.add(new TestCase("Contains: If product set and current URL is /about-us/ , evaluate to true.")
                     .withComparison(CONTAINS)
-                    .withReferrer("product")
-                    .withMockReferrer("/about-us/")
+                    .withURI("/about-us/index")
+                    .withPattern("product")
                     .shouldBeFalse()
             );
             data.add(new TestCase("Regexp: If \\/pro.* set and current URL is /products/ , evaluate to true.")
                     .withComparison(REGEX)
-                    .withReferrer("\\/pro.*")
-                    .withMockReferrer("/products/")
+                    .withURI("/products/index")
+                    .withPattern("\\/pro.*")
                     .shouldBeTrue()
             );
 
             data.add(new TestCase("Regexp: If \\/pro.* set and current URL is /about-us/ , evaluate to true.")
                     .withComparison(REGEX)
-                    .withReferrer("\\/pro.*")
-                    .withMockReferrer("/about-us/")
+                    .withURI("/about-us/index")
+                    .withPattern("\\/pro.*")
                     .shouldBeFalse()
             );
 
@@ -136,13 +136,22 @@ public class UsersCurrentURLConditionletTest {
         }
     }
 
+    @Test
+    public void testUriProcessing() throws Exception {
+        VisitorsCurrentUrlConditionlet conditionlet = new VisitorsCurrentUrlConditionlet();
+        assertEquals(conditionlet.processUrl("/products/", "index"),"/products/index");
+        assertEquals(conditionlet.processUrl("/products/?some=property", "index"),"/products/index");
+        assertEquals(conditionlet.processUrl("/products?", "index"),"/products");
+        assertEquals(conditionlet.processUrl("/products?some=property", "index"),"/products");
+    }
+
     @Test(dataProvider = "cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
     }
 
     private boolean runCase(TestCase aCase) {
-        return aCase.conditionlet.evaluate(aCase.request, aCase.response, aCase.conditionlet.instanceFrom(aCase.params));
+        return aCase.conditionlet.evaluate(aCase.request, aCase.conditionlet.instanceFrom(aCase.params), aCase.uri,aCase.pattern);
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -163,10 +172,13 @@ public class UsersCurrentURLConditionletTest {
 
     private class TestCase {
 
-        public final ReferringURLConditionlet conditionlet;
+        public final VisitorsCurrentUrlConditionlet conditionlet;
 
         private final HttpServletRequest request ;
         private final HttpServletResponse response;
+        private String uri;
+        private String pattern;
+        private String index;
 
         private final Map<String, ParameterModel> params = Maps.newLinkedHashMap();
         private final String testDescription;
@@ -177,7 +189,7 @@ public class UsersCurrentURLConditionletTest {
             this.testDescription = testDescription;
             this.request = mock(HttpServletRequest.class);
             this.response = mock(HttpServletResponse.class);
-            conditionlet = new ReferringURLConditionlet();
+            conditionlet = new VisitorsCurrentUrlConditionlet();
         }
 
         TestCase shouldBeTrue() {
@@ -195,13 +207,19 @@ public class UsersCurrentURLConditionletTest {
             return this;
         }
 
-        TestCase withMockReferrer(String mockReferrer) throws IOException{
-            when(request.getHeader("referer")).thenReturn(mockReferrer);
+        TestCase withPattern(String mockReferrer) throws IOException{
+        	params.put(PATTERN_URL_INPUT_KEY, new ParameterModel(PATTERN_URL_INPUT_KEY, mockReferrer));
+        	pattern = mockReferrer;
             return this;
         }
 
-        TestCase withReferrer(String referrer) {
-            params.put(REFERRING_URL_KEY, new ParameterModel(REFERRING_URL_KEY, referrer));
+        TestCase withURI(String referrer) {
+            uri = referrer;
+            return this;
+        }
+
+        TestCase withIndex(String index) {
+        	this.index = index;
             return this;
         }
 

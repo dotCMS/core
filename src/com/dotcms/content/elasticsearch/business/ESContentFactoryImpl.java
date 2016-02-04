@@ -1227,7 +1227,10 @@ public class ESContentFactoryImpl extends ContentletFactory {
      */
     private SearchRequestBuilder createRequest(Client client, String query, String sortBy) {
     	
-        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && !"score".equalsIgnoreCase(sortBy)) {
+    	
+    	
+    	
+        if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false) && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
                 return client.prepareSearch()
@@ -1277,7 +1280,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             if(offset>0)
                 srb.setFrom(offset);
 
-            if(UtilMethods.isSet(sortBy) && !"score".equalsIgnoreCase(sortBy)) {
+            if(UtilMethods.isSet(sortBy) ) {
+            	sortBy = sortBy.toLowerCase();
             	if(sortBy.endsWith("-order")) {
             	    // related content ordering
             	    int ind0=sortBy.indexOf('-'); // relationships tipicaly have a format stname1-stname2
@@ -1296,6 +1300,24 @@ public class ESContentFactoryImpl extends ContentletFactory {
             	        }
             	    }
             	}
+            	else if(sortBy.startsWith("score")){
+            		String[] test = sortBy.split("\\s+");
+            		String defualtSecondarySort = "moddate";
+            		SortOrder defaultSecondardOrder = SortOrder.DESC;
+            		
+            		if(test.length>2){
+            			if(test[2].equalsIgnoreCase("desc"))
+            				defaultSecondardOrder = SortOrder.DESC;
+            			else
+            				defaultSecondardOrder = SortOrder.ASC;
+            		}
+            		if(test.length>1){
+            			defualtSecondarySort= test[1];
+            		}
+
+            		srb.addSort("_score", SortOrder.DESC);
+            		srb.addSort(defualtSecondarySort, defaultSecondardOrder);
+            	}
             	else if(!sortBy.startsWith("undefined") && !sortBy.startsWith("undefined_dotraw") && !sortBy.equals("random")) {
             		String[] sortbyArr=sortBy.split(",");
 	            	for (String sort : sortbyArr) {
@@ -1306,6 +1328,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
 					}
             	}
             }
+            
             
             
             try{

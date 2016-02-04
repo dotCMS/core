@@ -18,7 +18,7 @@ public class PaginatedArrayList<E> extends ArrayList<E>{
 	 */
 	private static final long serialVersionUID = -7345046002562313843L;
 	private long totalResults;
-	
+	private String query;
 	/**
 	 * @return the totalResults
 	 */
@@ -30,6 +30,12 @@ public class PaginatedArrayList<E> extends ArrayList<E>{
 	 */
 	public void setTotalResults(long totalResults) {
 		this.totalResults = totalResults;
+	}
+	public String getQuery() {
+		return query;
+	}
+	public void setQuery(String query) {
+		this.query = query;
 	}
 
 }

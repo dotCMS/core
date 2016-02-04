@@ -10,6 +10,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.STARTS_WITH;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.List;
@@ -32,7 +33,7 @@ import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 
-public class UsersCurrentUrlConditionletFTest {
+public class VisitorsCurrentUrlConditionletFTest {
 
     private Random random = new Random();
     private HttpServletRequest request;
@@ -65,10 +66,10 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Is Users Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
@@ -82,22 +83,22 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Is Not Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
         URLConnection conn = apiRequest.makeRequest("about-us/index");
         assertEquals("Specified response header should be present in the Response: ", value,
                 conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("products/");
+        conn = apiRequest.makeRequest("products/index");
         assertEquals("Specified response header should be present in the Response: ", value,
                 conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("services/investment-banking");
+        conn = apiRequest.makeRequest("services/wealth-managers");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("contact-us/");
+        conn = apiRequest.makeRequest("contact-us/index");
         assertNull("Specified response header should be not present in the Response.", conn.getHeaderField(randomKey));
     }
 
@@ -107,10 +108,10 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Starts With Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
@@ -128,10 +129,10 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Ends With Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
@@ -148,10 +149,10 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Contains Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
@@ -170,10 +171,10 @@ public class UsersCurrentUrlConditionletFTest {
         final String value = randomKey + "-value";
 
         Condition condition = conditionDataGen.next();
-        condition.setConditionletId(UsersCurrentUrlConditionlet.class.getSimpleName());
+        condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
         condition.setName("Regex Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, REGEX.getId());
-        condition.addValue(UsersCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
+        condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);

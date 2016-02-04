@@ -33,6 +33,7 @@ import com.liferay.portal.model.User;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -180,9 +181,12 @@ public class ConditionGroupResource  {
             rulesAPI.deleteConditionGroup(group, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
+
     }
 
     @VisibleForTesting
@@ -222,8 +226,15 @@ public class ConditionGroupResource  {
 
     private List<RestConditionGroup> getGroupsInternal(User user, Rule rule) {
         try {
+            List<RestConditionGroup> restConditionGroups = new ArrayList<>();
+
             List<ConditionGroup> groups = rulesAPI.getConditionGroupsByRule(rule.getId(), user, false);
-            return groups.stream().map(groupTransform.appToRestFn()).collect(Collectors.toList());
+            for (ConditionGroup group : groups) {
+                restConditionGroups.add(groupTransform.appToRest(group));
+            }
+
+            return restConditionGroups;
+
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
@@ -240,7 +251,8 @@ public class ConditionGroupResource  {
             }
             return group;
         } catch (DotDataException e) {
-            // @todo ggranum: These messages potentially expose internal details to consumers, via response headers. See Note 1 in HttpStatusCodeException.
+            // @todo ggranum: These messages potentially expose internal details to consumers,
+            // @todo via response headers. See Note 1 in HttpStatusCodeException.
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
