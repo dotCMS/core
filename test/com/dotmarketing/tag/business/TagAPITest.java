@@ -112,20 +112,20 @@ public class TagAPITest extends TestBase {
 		assertTrue(tags.size() > 0);
 		assertTrue(tags.contains(createdTag));
 	}
-	
+
 	/**
 	 * Test the getTagsForUserByUserInode method from the tagAPI
 	 * @throws Exception
 	 */
 	@Test
-    public void getTagsForUserByUserInode() throws Exception{
-    	UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
+	public void getTagsForUserByUserInode() throws Exception{
+		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
 		String tagName ="testapi2"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		tagAPI.addTag ( tagName, testUser.getUserId(), userProxy.getInode() );
 
-    	List<Tag> tags =  tagAPI.getTagsForUserByUserInode(userProxy.getInode());    
-    	assertTrue(tags.size() > 1);
-    	boolean hasUserInodeTags=false;
+		List<Tag> tags =  tagAPI.getTagsForUserByUserInode(userProxy.getInode());    
+		assertTrue(tags.size() > 1);
+		boolean hasUserInodeTags=false;
 		for(Tag tag : tags){
 			if(tag.getTagName().equals(tagName)){
 				hasUserInodeTags=true;
@@ -133,7 +133,7 @@ public class TagAPITest extends TestBase {
 			}			                                                        
 		}
 		assertTrue(hasUserInodeTags);
-    }
+	}
 
 	/**
 	 * Test the getFilteredTags method from the tagAPI
@@ -359,7 +359,7 @@ public class TagAPITest extends TestBase {
 				existTagInode=true;
 				break;
 			}
-			
+
 		}
 		assertTrue(existTagInode);
 	}
@@ -396,7 +396,7 @@ public class TagAPITest extends TestBase {
 				existTagInode=true;
 				break;
 			}
-			
+
 		}
 		assertTrue(existTagInode);
 	}
@@ -437,7 +437,7 @@ public class TagAPITest extends TestBase {
 	}
 
 	/**
-	 * Test the getTagInode method of the tagAPI
+	 * Test the three deleteTagInode methods of the tagAPI
 	 * @throws Exception
 	 */
 	@Test
@@ -459,11 +459,70 @@ public class TagAPITest extends TestBase {
 		String tagName ="testapi18"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
 		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId);
-
+		//testing second implementation of public TagInode addTagInode ( TagInode tagInode )
 		tagAPI.deleteTagInode( tagInode );
 
-		TagInode tagInode2 = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
-
+		tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
+		assertNull(tagInode);
+		
+		String tagName2 ="testapi19"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag2 = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+		TagInode tagInode2 = tagAPI.addTagInode (tagName, contentAsset.getInode(), defaultHostId);
+		//testing second implementation of public TagInode addTagInode ( Tag tag, String inode )
+		tagAPI.deleteTagInode( tag2, contentAsset.getInode());
+		
+		tagInode2 = tagAPI.getTagInode(tag2.getTagId(), contentAsset.getInode());
 		assertNull(tagInode2);
+		
+		tag2 = tagAPI.getTagByTagId(tag2.getTagId());
+		assertNotNull(tag2);
+		
+		//testing third implementation of public TagInode addTagInode ( String tagName, String inode )
+		String tagName3 ="testapi20"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag3 = tagAPI.getTagAndCreate(tagName3, testUser.getUserId(), defaultHostId);
+		TagInode tagInode3 = tagAPI.addTagInode (tagName3, contentAsset.getInode(), defaultHostId);
+		tagAPI.deleteTagInode( tag3.getTagName(), contentAsset.getInode());
+		
+		tagInode3 = tagAPI.getTagInode(tag3.getTagId(), contentAsset.getInode());
+		assertNull(tagInode3);
+		
+		tag3 = tagAPI.getTagByTagId(tag3.getTagId());
+		assertNotNull(tag3);
+	}
+
+	/**
+	 * Test the removeTagRelationAndTagWhenPossible method of the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void removeTagRelationAndTagWhenPossible() throws Exception {
+
+		Contentlet contentAsset=new Contentlet();
+		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
+		contentAsset.setStructureInode(st.getInode());
+		contentAsset.setHost(defaultHostId);
+		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+		String name="testtagapi21"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+		contentAsset.setProperty(WIKI_URL_VARNAME, name);
+		contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+		contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset=conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+
+		String tagName ="testapi21"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+		tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId);
+
+		TagInode tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
+		assertNotNull(tagInode);		
+		tagAPI.removeTagRelationAndTagWhenPossible(tag.getTagId(), contentAsset.getInode());
+
+		tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
+		assertNull(tagInode);	
+
+		tag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNull(tag);	
 	}
 }
