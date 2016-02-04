@@ -162,7 +162,7 @@ public interface TagAPI {
 	 * @param oldTagName current tag name
 	 * @param userId owner of the tag
 	 */
-	public void editTag(String tagName,String oldTagName, String userId);
+	public void editTag(String tagName,String oldTagName, String userId) throws DotDataException;
 
 	/**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created

@@ -395,23 +395,20 @@ public class TagAPIImpl implements TagAPI {
 	 * @param oldTagName current tag name
 	 * @param userId owner of the tag
 	 */
-    public void editTag ( String tagName, String oldTagName, String userId ) {
-        try {
-            tagName = escapeSingleQuote(tagName);
-            oldTagName = escapeSingleQuote(oldTagName);
+    public void editTag ( String tagName, String oldTagName, String userId ) throws DotDataException {
 
-            List<Tag> tagToEdit = getTagsByName(oldTagName);
-            Iterator it = tagToEdit.iterator();
-            for ( int i = 0; it.hasNext(); i++ ) {
-                Tag tag = (Tag) it.next();
+        tagName = escapeSingleQuote(tagName);
+        oldTagName = escapeSingleQuote(oldTagName);
 
-                tag.setTagName(tagName.toLowerCase());
-                tag.setModDate(new Date());
+        List<Tag> tagToEdit = getTagsByName(oldTagName);
+        Iterator it = tagToEdit.iterator();
+        while ( it.hasNext() ) {
+            Tag tag = (Tag) it.next();
 
-                tagFactory.updateTag(tag);
-            }
-        } catch ( Exception e ) {
-            Logger.error(e, "Error editing Tag");
+            tag.setTagName(tagName.toLowerCase());
+            tag.setModDate(new Date());
+
+            tagFactory.updateTag(tag);
         }
     }
 
@@ -583,12 +580,13 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Deletes an object tag assignment
-	 * @param tagName name of the tag
-	 * @param inode inode of the object tagged
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
+     * Deletes an object tag assignment
+     *
+     * @param tagName name of the tag
+     * @param inode   inode of the object tagged
+     * @throws DotSecurityException
+     * @throws DotDataException
+     */
     public void deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException {
 
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
@@ -598,11 +596,14 @@ public class TagAPIImpl implements TagAPI {
 
                 String tagTokenized = tagNameToken.nextToken().trim();
 
-                //Find the tag
-                Tag tag = getTagByNameAndHost(tagTokenized, Host.SYSTEM_HOST);
-                //Delete the related tag inode
-                if ( tag != null && UtilMethods.isSet(tag.getTagId()) ) {
-                    deleteTagInode(tag, inode);
+                //Search for tags with the given name
+                List<Tag> foundTags = getTagsByName(tagTokenized);
+                if ( foundTags != null && !foundTags.isEmpty() ) {
+
+                    for ( Tag foundTag : foundTags ) {
+                        //Delete the related tag inode
+                        deleteTagInode(foundTag, inode);
+                    }
                 }
             }
         }

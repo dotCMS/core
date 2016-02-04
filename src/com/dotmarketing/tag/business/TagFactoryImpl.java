@@ -316,11 +316,11 @@ public class TagFactoryImpl implements TagFactory {
     private String limitAndOffset ( int start, int limit ) {
 
         String currentSql = "";
-        if ( start != -1 ) {
-            currentSql = currentSql.concat(" OFFSET ").concat(String.valueOf(start));
-        }
         if ( limit > 0 ) {
             currentSql = currentSql.concat(" LIMIT ").concat(String.valueOf(limit));
+        }
+        if ( start != -1 ) {
+            currentSql = currentSql.concat(" OFFSET ").concat(String.valueOf(start));
         }
 
         return currentSql;
