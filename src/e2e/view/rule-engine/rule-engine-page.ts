@@ -92,6 +92,7 @@ export class TestRuleComponent {
   expandoCaret:ElementFinder
   conditionGroupEls:ElementArrayFinder
   actionEls:ElementArrayFinder
+  addActionButtonEl:TestButton
 
 
   constructor(root:ElementFinder) {
@@ -106,6 +107,8 @@ export class TestRuleComponent {
     this.addGroup = new TestButton(root.element(by.css('.cw-add-group')))
     this.conditionGroupEls = root.all(by.tagName('condition-group'))
     this.actionEls = root.all(by.tagName('rule-action'))
+    this.addActionButtonEl = new TestButton(this.el.element(by.css(".cw-action-row .cw-button-add-item")))
+
   }
 
   setName(name:string):webdriver.promise.Promise<void>{
@@ -137,8 +140,16 @@ export class TestRuleComponent {
     return new TestConditionGroupComponent(this.conditionGroupEls.first())
   }
 
+  addAction():webdriver.promise.Promise<void> {
+    return this.addActionButtonEl.click()
+  }
+
   firstAction():TestActionComponent {
     return new TestActionComponent(this.actionEls.first())
+  }
+
+  lastAction():TestActionComponent {
+    return new TestActionComponent(this.actionEls.last())
   }
 
   firstCondition():TestConditionComponent{
@@ -165,6 +176,17 @@ export class TestRuleComponent {
     }
     if(value){
       actionDef.setHeaderValue(value)
+    }
+    this.fireOn.el.click()
+    return actionDef
+  }
+
+  newSetPersonaAction(value?:string):TestPersonaAction{
+    let actionDef:TestPersonaAction= new TestPersonaAction(this.actionEls.last())
+    actionDef.typeSelect.setSearch(TestPersonaAction.TYPE_NAME)
+    this.fireOn.el.click()
+    if(value){
+      actionDef.setPersona(value)
     }
     this.fireOn.el.click()
     return actionDef
@@ -344,8 +366,6 @@ export class TestResponseHeaderAction extends TestActionComponent {
   setHeaderValue(val:string):webdriver.promise.Promise<void>{
     return this.headerValueTF.setValue(val)
   }
-
-
 }
 
 export class TestSetRequestAttributeAction extends TestActionComponent {
@@ -375,4 +395,34 @@ export class TestSetRequestAttributeAction extends TestActionComponent {
     return this.attributeValueTF.setValue(val)
   }
 
+}
+
+export class TestPersonaAction extends TestActionComponent {
+
+  static TYPE_NAME:string = "Set Persona"
+  static STARTER_VALUES = {
+    "FirstTimeInvestor": {label: "First Time Investor", value: "34c720cd-4b46-4a67-9e4b-2117071d01f1"},
+    "Retiree": {label: "Retiree", value: "914c93c2-800a-4638-8832-349c221cc87a"},
+    "WealthyProspect": {label: "Wealthy Prospect", value: "d4ffa84f-8746-46f8-ac29-1f8ca2c7eaeb"},
+    "GlobalInvestor": {label: "Global Investor", value: "1c56ba62-1f41-4b81-bd62-b6eacff3ad23"},
+  }
+  personaDD:TestInputDropdown
+
+  constructor(el:protractor.ElementFinder) {
+    super(el);
+    this.personaDD = new TestInputDropdown(el.element(by.css('.cw-condition-component-body cw-input-dropdown')))
+
+  }
+
+  getPersonaName():webdriver.promise.Promise<string>{
+    return this.personaDD.getValueText()
+  }
+
+  getPersonaValue():webdriver.promise.Promise<string>{
+    return this.personaDD.getValueText()
+  }
+
+  setPersona(value:string):webdriver.promise.Promise<void> {
+    return this.personaDD.setSearch(value)
+  }
 }

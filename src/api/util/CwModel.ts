@@ -1,8 +1,3 @@
-import {Inject, EventEmitter} from 'angular2/core';
-import {CwChangeEvent} from "./CwEvent";
-import {TreeNode} from "../system/locale/I18n";
-
-
 
 export class CwModel {
 

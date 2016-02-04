@@ -3,7 +3,7 @@ import ElementFinder = protractor.ElementFinder;
 import {Page} from "../../../e2e/CwProtractor";
 import {
     RulePage, TestRuleComponent, TestRequestHeaderCondition,
-    TestConditionComponent, TestResponseHeaderAction, TestSetRequestAttributeAction
+    TestConditionComponent, TestResponseHeaderAction, TestSetRequestAttributeAction, TestPersonaAction
 } from "../../../e2e/view/rule-engine/rule-engine-page";
 
 class RobotsTxtPage extends Page {
@@ -298,6 +298,56 @@ export function initSpec(TestUtil) {
         })
       })
     })
+
+      it('should allow multiple actions to be added if all existing actions are valid', function () {
+        rulePage.addRule().then((rule:TestRuleComponent)=> {
+          let name = rule.name
+          rule.newSetPersonaAction(TestPersonaAction.STARTER_VALUES.Retiree.label)
+          rule.addAction()
+          let actionDef = rule.newSetPersonaAction(TestPersonaAction.STARTER_VALUES.GlobalInvestor.label)
+          expect(actionDef.el.isPresent()).toBe(true)
+          expect(rule.actionEls.count()).toBe(2)
+          rule.remove()
+        })
+      })
+  })
+
+  describe('Rule Engine - Persona Action Type', function () {
+    var rulePage:RulePage
+
+    beforeEach(()=> {
+      rulePage = new RulePage()
+      rulePage.suppressAlerts(browser['browserName'] != 'chrome')
+      rulePage.navigateTo()
+    })
+
+
+    it('should have four values', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        let actionDef = rule.newSetPersonaAction()
+        expect(actionDef.personaDD.items.count()).toEqual(4)
+        rule.remove()
+      })
+    })
+
+    it('should save when a value is selected', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        let actionDef = rule.newSetPersonaAction(TestPersonaAction.STARTER_VALUES.Retiree.label)
+        rulePage.waitForSave()
+        rulePage.navigateTo()
+        rule = rulePage.findRule(name)
+        rule.expand().then(()=> {
+          actionDef = new TestPersonaAction(rule.firstAction().el)
+          browser.sleep(2500)
+          expect(actionDef.el.isPresent()).toBe(true)
+          expect(actionDef.getPersonaName()).toBe(TestPersonaAction.STARTER_VALUES.Retiree.label)
+          rule.remove()
+        })
+      })
+    })
+
 
 
   })
