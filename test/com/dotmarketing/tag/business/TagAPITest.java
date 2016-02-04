@@ -464,28 +464,28 @@ public class TagAPITest extends TestBase {
 
 		tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode() );
 		assertNull(tagInode);
-		
+
 		String tagName2 ="testapi19"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag2 = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
 		TagInode tagInode2 = tagAPI.addTagInode (tagName, contentAsset.getInode(), defaultHostId);
 		//testing second implementation of public TagInode addTagInode ( Tag tag, String inode )
 		tagAPI.deleteTagInode( tag2, contentAsset.getInode());
-		
+
 		tagInode2 = tagAPI.getTagInode(tag2.getTagId(), contentAsset.getInode());
 		assertNull(tagInode2);
-		
+
 		tag2 = tagAPI.getTagByTagId(tag2.getTagId());
 		assertNotNull(tag2);
-		
+
 		//testing third implementation of public TagInode addTagInode ( String tagName, String inode )
 		String tagName3 ="testapi20"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag3 = tagAPI.getTagAndCreate(tagName3, testUser.getUserId(), defaultHostId);
 		TagInode tagInode3 = tagAPI.addTagInode (tagName3, contentAsset.getInode(), defaultHostId);
 		tagAPI.deleteTagInode( tag3.getTagName(), contentAsset.getInode());
-		
+
 		tagInode3 = tagAPI.getTagInode(tag3.getTagId(), contentAsset.getInode());
 		assertNull(tagInode3);
-		
+
 		tag3 = tagAPI.getTagByTagId(tag3.getTagId());
 		assertNotNull(tag3);
 	}
@@ -524,5 +524,72 @@ public class TagAPITest extends TestBase {
 
 		tag = tagAPI.getTagByTagId(tag.getTagId());
 		assertNull(tag);	
+	}
+
+	/**
+	 * Test the getSuggestedTag method of the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void getSuggestedTag() throws Exception{
+		String tagName="test";
+		List<Tag> tags = tagAPI.getSuggestedTag (tagName, defaultHostId);
+		assertTrue(tags.size() > 1);
+		for(Tag tag : tags){
+			assertTrue(tag.getTagName().indexOf(tagName) != -1);
+		}
+	}
+
+	/* public void updateTagReferences() throws Exception{
+
+		 tagAPI.updateTagReferences( String hostIdentifier, String oldTagStorageId, String newTagStorageId );
+	 }
+	 */
+
+	/**
+	 * Test the getTagsByInode method of the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void getTagsByInode() throws Exception{
+		Contentlet contentAsset=new Contentlet();
+		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
+		contentAsset.setStructureInode(st.getInode());
+		contentAsset.setHost(defaultHostId);
+		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+		String name="testtagapi22"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+		contentAsset.setProperty(WIKI_URL_VARNAME, name);
+		contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+		contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset=conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+
+		String tagName ="testapi22"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+		tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId);
+
+		String tagName2 ="testapi23"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag2 = tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
+		tagAPI.addTagInode ( tagName2, contentAsset.getInode(), defaultHostId);
+
+		List<Tag> tags = tagAPI.getTagsByInode( contentAsset.getInode());
+		assertNotNull(tags);
+		assertTrue(tags.size() == 2);
+		assertTrue(tags.contains(tag));
+		assertTrue(tags.contains(tag2));
+	}
+
+	/**
+	 * Test the getTagsByInode method of the tagAPI
+	 * @throws Exception
+	 */
+	@Test
+	public void getTagsInText() throws Exception{
+		String text="test1, test 2, test number three,another\n testing\t to'do\r now"; 
+		List<Tag> tags = tagAPI.getTagsInText (text, testUser.getUserId(), defaultHostId);
+		assertNotNull(tags);
+		assertTrue(tags.size()==7);
 	}
 }
