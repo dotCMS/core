@@ -1,7 +1,7 @@
 import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/core';
 import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
 import { CORE_DIRECTIVES,  } from 'angular2/common';
-import {Observable} from 'rxjs/Rx'
+import {BehaviorSubject} from 'rxjs/Rx'
 
 
 /**
@@ -28,8 +28,8 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
 
 @Component({
   selector: 'cw-input-dropdown',
-  //changeDetection: ChangeDetectionStrategy.OnPush
- template: `<div class="ui fluid selection dropdown search ng-valid"
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `<div class="ui fluid selection dropdown search ng-valid"
      [ngClass]="{required:minSelections > 0, multiple: maxSelections > 1}"
      tabindex="0"
      (change)="stopNativeEvents($event)"
@@ -38,7 +38,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   <i class="dropdown icon"></i>
   <div class="default text">{{placeholder}}</div>
   <div class="menu" tabindex="-1">
-    <div *ngFor="var opt of _options" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
+    <div *ngFor="var opt of _options | async" class="item" [attr.data-value]="opt.value" [attr.data-text]="opt.label">
       <i [ngClass]="opt.icon" ></i>
       {{opt.label}}
     </div>
@@ -47,7 +47,7 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   `,
   directives: [CORE_DIRECTIVES]
 })
-export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
+export class Dropdown implements AfterViewInit, OnDestroy {
 
   @Input() value:string
   @Input() name:string
@@ -58,13 +58,10 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
 
   @Output() change:EventEmitter<any>
 
-  private _options:InputOption[]
+  private _optionsAry:InputOption[] = []
+  private _options:BehaviorSubject<InputOption[]>
   private elementRef:ElementRef
-  private _updateView:boolean
-  private _viewIsInitialized:boolean
   private _$dropdown:any
-
-  private _initDebounce:EventEmitter<any>
 
   constructor(elementRef:ElementRef) {
     this.placeholder = ""
@@ -72,47 +69,35 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
     this.minSelections = 0
     this.maxSelections = 1
     this.change = new EventEmitter()
-    this._options = []
-
+    this._options = new BehaviorSubject(this._optionsAry);
     this.elementRef = elementRef
-    this._updateView = false
-    this._viewIsInitialized = false
-    this.name = "dd-" + new Date().getTime() + Math.random()
-
-    this._initDebounce = new EventEmitter()
-    this._initDebounce.debounceTime(10).subscribe(()=>{
-      this.initDropdown()
-    })
   }
 
   ngOnChanges(change) {
     if (change.value ) {
       if (this._$dropdown) {
         this._$dropdown.dropdown('set selected', this.value)
-      } else {
-        this._updateView = true
-        this._initDebounce.emit(1)
       }
     }
   }
 
   addOption(option:InputOption) {
-    this._options.push(option)
-    this._initDebounce.emit(1)
+    this._optionsAry = this._optionsAry.concat(option)
+    this._options.next(this._optionsAry)
+    if(option.value === this.value){
+      this.refreshDisplayText(option.label)
+    }
+  }
+
+  updateOption(option:InputOption){
+    this._optionsAry = this._optionsAry.filter((opt)=>{
+      return opt !== option
+    })
+    this.addOption(option)
   }
 
   ngAfterViewInit() {
-    this._viewIsInitialized = true
-    if (this._options.length > 0) {
-      this._initDebounce.emit(1)
-    } // else 'wait for options to be set'
-
-  }
-
-  ngAfterViewChecked() {
-    if (this._updateView === true) {
-      this._initDebounce.emit(1)
-    }
+    this.initDropdown()
   }
 
   ngOnDestroy(){
@@ -128,8 +113,6 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
   }
 
   initDropdown() {
-    if (this._viewIsInitialized) {
-      this._updateView = false
       var self = this;
       let config:any = {
         allowAdditions: this.allowAdditions,
@@ -165,12 +148,10 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
         config.maxSelections = this.maxSelections
       }
 
-
       var el = this.elementRef.nativeElement
       this._$dropdown = $(el).children('.ui.dropdown');
       this._$dropdown.dropdown(config)
       this._applyArrowNavFix(this._$dropdown);
-    }
   }
 
   private isMultiSelect():boolean {
@@ -206,7 +187,6 @@ export class Dropdown implements AfterViewInit, AfterViewChecked, OnDestroy {
     this.value = value
     if (this.change) {
       if (this.isMultiSelect()) {
-        debugger
         this.change.emit(this.value.split[','])
       } else {
         this.change.emit(this.value)
@@ -290,13 +270,12 @@ export class InputOption {
     if (!this._isRegistered) {
       this._dropdown.addOption(this);
       this._isRegistered = true;
-    } else if (change.label && this._dropdown.value === this.value) {
-      let label = change.label.currentValue
-      if (label) {
-        this._dropdown.refreshDisplayText(label)
+    } else {
+      if(!this.label){
+        this.label = this.value
       }
+      this._dropdown.updateOption(this)
     }
-
   }
 }
 

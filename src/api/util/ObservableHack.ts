@@ -1,4 +1,4 @@
-import {Observable} from "rxjs/Rx";
+import {Observable, Scheduler} from "rxjs/Rx";
 
 
 export class ObservableHack {
@@ -8,7 +8,9 @@ export class ObservableHack {
    * @param value
    * @returns {Observable<string>}
    */
-  static of(value:string) {
-    return Observable.timer(10).map(x => value)
+  static of(value:string):Observable<string> {
+    return Observable.create(subscriber => {
+      subscriber.next(value);
+    }).subscribeOn(Scheduler.asap);
   }
 }
