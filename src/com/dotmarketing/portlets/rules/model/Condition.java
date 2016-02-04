@@ -137,13 +137,8 @@ public class Condition implements RuleComponentModel, Serializable {
 
     public Conditionlet getConditionlet() {
         if(conditionlet==null) {
-            try {
-                conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
-            } catch (DotDataException | DotSecurityException e) {
-                Logger.error(this, "Unable to load conditionlet for condition with id: " + id);
-            }
+            conditionlet = APILocator.getRulesAPI().findConditionlet(conditionletId);
         }
-
         return conditionlet;
     }
 
