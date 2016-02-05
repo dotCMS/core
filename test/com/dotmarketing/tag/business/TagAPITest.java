@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -534,17 +535,83 @@ public class TagAPITest extends TestBase {
 	public void getSuggestedTag() throws Exception{
 		String tagName="test";
 		List<Tag> tags = tagAPI.getSuggestedTag (tagName, defaultHostId);
-		assertTrue(tags.size() > 1);
+		int tagSize = tags.size();
+		assertTrue(tagSize > 1);
 		for(Tag tag : tags){
 			assertTrue(tag.getTagName().indexOf(tagName) != -1);
 		}
+
+		tagName="testing";
+		tags = tagAPI.getSuggestedTag (tagName, defaultHostId);
+		assertTrue(tags.size() >= 1);
+		for(Tag tag : tags){
+			assertTrue(tag.getTagName().indexOf(tagName) != -1);
+		}
+
+		assertTrue(tags.size() < tagSize);
 	}
 
-	/* public void updateTagReferences() throws Exception{
-
-		 tagAPI.updateTagReferences( String hostIdentifier, String oldTagStorageId, String newTagStorageId );
-	 }
+	/**
+	 * Test the updateTagReferences method of the tagAPI
+	 * @throws Exception
 	 */
+	@Test
+	public void updateTagReferences() throws Exception{
+
+		Contentlet contentAsset=new Contentlet();
+		Structure st = structureAPI.findByVarName("Host", systemUser);
+		contentAsset.setStructureInode(st.getInode());
+		String hostName="testtagapiHost"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		contentAsset.setProperty(Host.HOST_NAME_KEY, hostName);
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset=conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+
+		Host newHost = hostAPI.findByName(hostName, systemUser, false);
+		contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
+		contentAsset.setInode(null);
+		contentAsset=conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+
+		TagFactory tagFactory = FactoryLocator.getTagFactory();
+		List<Tag> tags = tagFactory.getTagByHost(defaultHostId);
+		int initialNumberOfTagsDemo =tags.size();
+		assertNotNull(tags);
+		assertTrue(initialNumberOfTagsDemo > 0);
+
+		tags = tagFactory.getTagByHost(newHost.getIdentifier());
+		int initialNumberOfTagsNewHost =tags.size();
+		assertNotNull(tags);
+		assertTrue(initialNumberOfTagsNewHost >= 0);
+
+		//Move tags to other host
+		tagAPI.updateTagReferences( defaultHostId, defaultHostId, newHost.getIdentifier() );
+		
+		//to refresh cache
+		tagCache.clearCache();
+
+		List<Tag> newHostTags = tagFactory.getTagByHost(newHost.getIdentifier());
+		assertTrue(newHostTags.size() > initialNumberOfTagsNewHost);
+
+		List<Tag> tagsAfterUpdate = tagFactory.getTagByHost(defaultHostId);
+		assertTrue(tagsAfterUpdate.size() < initialNumberOfTagsDemo);
+
+
+		//return tags to original host
+		tagAPI.updateTagReferences( defaultHostId, newHost.getIdentifier(), defaultHostId );
+		tagCache.clearCache();
+		
+		tagsAfterUpdate = tagFactory.getTagByHost(defaultHostId);
+		assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
+		
+		newHostTags = tagFactory.getTagByHost(newHost.getIdentifier());
+		assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
+		
+		//delete host
+		conAPI.unpublish(newHost, systemUser, false);
+		conAPI.archive(newHost, systemUser, false);
+		conAPI.delete(newHost, systemUser, false);
+	}
 
 	/**
 	 * Test the getTagsByInode method of the tagAPI
