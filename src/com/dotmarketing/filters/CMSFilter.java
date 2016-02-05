@@ -14,9 +14,11 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
+import com.dotmarketing.util.*;
 import org.apache.commons.logging.LogFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -29,10 +31,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.util.Xss;
 
 public class CMSFilter implements Filter {
@@ -69,12 +67,6 @@ public class CMSFilter implements Filter {
 
 		final String uri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
-
-
-		Optional<Visitor> visitor = visitorAPI.getVisitor(request);
-		if(visitor.isPresent()) {
-			visitor.get().addPagesViewed( request.getRequestURI() );
-		}
 
 		String xssRedirect = xssCheck(uri, request.getQueryString());
 		if(xssRedirect!=null){
@@ -188,6 +180,10 @@ public class CMSFilter implements Filter {
 			}
 		}
 
+		if(iAm == IAm.PAGE){
+			countPageVisit(request);
+		}
+
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
@@ -240,9 +236,25 @@ public class CMSFilter implements Filter {
 
 	}
 
-	
-	
-	
+	private void countPageVisit(HttpServletRequest request) {
+
+		HttpSession session = request.getSession(false);
+		boolean PAGE_MODE = true;
+
+		if(session != null){
+			PAGE_MODE = PageRequestModeUtil.isPageMode(session);
+		}
+
+		if (PAGE_MODE) {
+			Optional<Visitor> visitor = visitorAPI.getVisitor(request);
+
+			if (visitor.isPresent()) {
+				visitor.get().addPagesViewed(request.getRequestURI());
+			}
+		}
+	}
+
+
 	public void init(FilterConfig config) throws ServletException {
 		this.ASSET_PATH = APILocator.getFileAPI().getRelativeAssetsRootPath();
 	}

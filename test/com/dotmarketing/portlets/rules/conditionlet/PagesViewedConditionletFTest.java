@@ -71,10 +71,27 @@ public class PagesViewedConditionletFTest {
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
+        //Admin page dont have to count
+        conn = apiRequest.makeRequest("admin/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
+        //Folder request dont have to count
+        conn = apiRequest.makeRequest("about-us/");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
+        //File request dont have to count
+        conn = apiRequest.makeRequest("images/404.jpg");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
+        //vanityUrl request dont have to count
+        conn = apiRequest.makeRequest("images/404.jpg");
+        assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
         conn = apiRequest.makeRequest("contact-us/");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
     }
-
+/*
     @Test
     public void testNotEqualsComparison () throws IOException {
 
@@ -201,7 +218,7 @@ public class PagesViewedConditionletFTest {
         conn = apiRequest.makeRequest("contact-us/");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
     }
-
+*/
     private Condition getCondition(String id, String value) {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
