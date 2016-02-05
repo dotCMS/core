@@ -362,11 +362,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(tag.getTagName());
         dc.addParam(tag.getHostId());
         dc.addParam(tag.getUserId());
-        if ( tag.isPersona() ) {
-            dc.addParam(DbConnectionFactory.getDBTrue());
-        } else {
-            dc.addParam(DbConnectionFactory.getDBFalse());
-        }
+        dc.addParam(tag.isPersona());
         dc.addParam(new Date());
 
         dc.loadResult();
@@ -409,11 +405,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(tag.getTagName());
         dc.addParam(tag.getHostId());
         dc.addParam(tag.getUserId());
-        if ( tag.isPersona() ) {
-            dc.addParam(DbConnectionFactory.getDBTrue());
-        } else {
-            dc.addParam(DbConnectionFactory.getDBFalse());
-        }
+        dc.addParam(tag.isPersona());
         dc.addParam(tag.getModDate());
         dc.addParam(tag.getTagId());
 

@@ -105,6 +105,7 @@ public class TagCacheImpl extends TagCache {
     protected void put ( Tag object ) {
         //Adding the tag by id
         cache.put(getPrimaryGroup() + object.getTagId(), object, getPrimaryGroup());
+        cache.put(getTagByNameHostGroup() + object.getTagName().toLowerCase() + "_" + object.getHostId(), object, getTagByNameHostGroup());
     }
 
     @Override
