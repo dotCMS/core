@@ -16,12 +16,5 @@
     
 -->
 <!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:hello.world -->
-<rule>
-	<from>^/dotCMSPluginsRcool$</from>
-	<to type="redirect">/yesTheyAre/</to>
-</rule>
-
-<!-- END PLUGIN:hello.world -->
 <!-- END PLUGINS -->
 </urlrewrite>

@@ -5,18 +5,5 @@
 		<put name="portlet_content" value="/portlet/ext/merchant/product/edit_product.jsp" />
 	</definition>
 	<!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:hello.world -->
-<!-- You this file to override or add tiles for backend struts actions. 
-It will add definition tags looking for the name attribute as the key if override is needed-->
-
-<definition name="portlet.ext.plugins.hello.world.struts" extends="portal">
-	<put name="content" value="/plugins/hello.world/strutshelloworld/view.jsp" />
-</definition>
-
-<definition name="portlet.ext.plugins.hello.world.struts.max" extends="portal">
-	<put name="content" value="/plugins/hello.world/strutshelloworld/view_hello.jsp" />
-</definition>
-
-<!-- END PLUGIN:hello.world -->
 	<!-- END PLUGINS -->
 </tiles-definitions>

@@ -384,6 +384,7 @@
 		<scope>request</scope>
 		<class>com.dotmarketing.viewtools.ESContentTool</class>
 	</tool>
+
 	<tool>
 		<key>sql</key>
 		<scope>request</scope>
@@ -402,13 +403,5 @@
 	<!-- Dotmarketing View Tools End -->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
-<!-- BEGIN PLUGIN:hello.world -->
-<tool>
-		<key>helloWorld</key>
-		<scope>application</scope>
-		<class>com.dotmarketing.plugins.hello.world.HelloViewTool</class>
-	</tool>
-
-<!-- END PLUGIN:hello.world -->
  	<!-- END PLUGINS -->
 </toolbox>

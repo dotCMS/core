@@ -10,10 +10,12 @@
 		<param-name>company_id</param-name>
 		<param-value>dotcms.org</param-value>
 	</context-param>
+
 	<context-param>
 		<param-name>isLog4jAutoInitializationDisabled</param-name>
 		<param-value>true</param-value>
 	</context-param>
+
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN CONTEXT-PARAMS -->
     <!-- END CONTEXT-PARAMS -->
@@ -646,14 +648,8 @@
 	<!--END DOTMARKETING SERVLETS-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLETS -->
-<!-- BEGIN PLUGIN-SERVLET:hello.world -->
-<servlet>
-	<servlet-name>HelloWorldServlet</servlet-name>
-	<servlet-class>com.dotmarketing.plugins.hello.world.HelloWorldServlet</servlet-class>
-</servlet>
-<!-- END PLUGIN-SERVLET:hello.world -->
  <!-- END SERVLETS -->
-    <!-- TEST FRAMEWORK SERVLETS -->                                                                  
+    <!-- TEST FRAMEWORK SERVLETS -->                                            
        <servlet>
          <servlet-name>ServletTestRunner</servlet-name>
          <servlet-class>com.dotmarketing.servlets.test.ServletTestRunner</servlet-class>
@@ -892,12 +888,6 @@
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SERVLET-MAPPINGS -->
-<!-- BEGIN PLUGIN-SERVLET-MAPPING:hello.world -->
-<servlet-mapping>
-	<servlet-name>HelloWorldServlet</servlet-name>
-	<url-pattern>/servlets/plugins/hello.world/hello</url-pattern>
-</servlet-mapping>
-<!-- END PLUGIN-SERVLET-MAPPING:hello.world -->
  <!-- END SERVLET-MAPPINGS -->
 	<!-- TEST FRAMEWORK SERVLETS-MAPPING -->
 <!--
@@ -976,17 +966,5 @@
 	</security-constraint>
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN SECURITY-CONSTRAINTS -->
-<!-- BEGIN PLUGIN-SECURITY-CONSTRAINT:hello.world -->
-<security-constraint>
-		<web-resource-collection>
-	             <web-resource-name>Portal Login</web-resource-name>
-	             <description>Secure the login page</description>
-	             <url-pattern>/c/portal_public/layout</url-pattern>
-	     </web-resource-collection>
-	     <user-data-constraint>
-	             <transport-guarantee>CONFIDENTIAL</transport-guarantee>
-	     </user-data-constraint>
-</security-constraint>
-<!-- END PLUGIN-SECURITY-CONSTRAINT:hello.world -->
     <!-- END SECURITY-CONSTRAINTS -->
 </web-app>

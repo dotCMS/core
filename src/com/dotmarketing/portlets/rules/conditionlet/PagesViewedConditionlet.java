@@ -19,12 +19,7 @@ import java.util.Map;
 import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 
 /**
- * This {@link Conditionlet} will allow CMS users to execute Actionlets based on the Number of page visited,
- * the users can insert one number to compare.
- *
- * @author Freddy Rodriguez
- *         Date: 26/01/16.
-
+ * Created by freddy on 26/01/16.
  */
 public class PagesViewedConditionlet extends Conditionlet<PagesViewedConditionlet.Instance>{
 

@@ -59,8 +59,7 @@ public class PagesViewedConditionletFTest {
 
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
@@ -84,8 +83,7 @@ public class PagesViewedConditionletFTest {
         Condition condition = getCondition(NOT_EQUAL.getId(), "2");
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
@@ -109,8 +107,7 @@ public class PagesViewedConditionletFTest {
         Condition condition = getCondition(LESS_THAN.getId(), "2");
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
@@ -134,8 +131,7 @@ public class PagesViewedConditionletFTest {
         Condition condition = getCondition(GREATER_THAN.getId(), "2");
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
@@ -161,8 +157,7 @@ public class PagesViewedConditionletFTest {
         Condition condition = getCondition(LESS_THAN_OR_EQUAL.getId(), "2");
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);
@@ -186,8 +181,7 @@ public class PagesViewedConditionletFTest {
         Condition condition = getCondition(GREATER_THAN_OR_EQUAL.getId(), "2");
 
         //Persist the Conditionlet
-        String ruleName = String.format("PagesViewedConditionletFTest - fireOnEveryRequest %s", random.nextInt());
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request);

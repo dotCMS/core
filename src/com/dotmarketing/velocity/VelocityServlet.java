@@ -432,6 +432,10 @@ public abstract class VelocityServlet extends HttpServlet {
 
 			Optional<Visitor> visitor = visitorAPI.getVisitor(request);
 
+			if(visitor.isPresent()) {
+				visitor.get().addPagesViewed( request.getRequestURI() );
+			}
+
 			boolean newVisitor = false;
 			boolean newVisit = false;
 
