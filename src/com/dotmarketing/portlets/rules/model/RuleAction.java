@@ -29,7 +29,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private int priority;
     private String actionlet;
     private Date modDate;
-    private List<ParameterModel> values;
+    private Map<String, ParameterModel> parameters;
     private transient RuleActionlet actionDef;
     private transient RuleComponentInstance instance;
 
@@ -81,32 +81,25 @@ public class RuleAction implements RuleComponentModel, Serializable {
         this.modDate = modDate;
     }
 
-    public void setValues(List<ParameterModel> values) {
-        this.values = values;
-    }
-
-    public List<ParameterModel> getValues() {
-        return values;
-    }
-
     public void setParameters(Map<String, ParameterModel> parameters) {
-        this.values = new ArrayList<ParameterModel>(parameters.values());
+        this.parameters = parameters;
+    }
+
+    @JsonIgnore
+    public void setParameters(List<ParameterModel> params) {
+        Map<String, ParameterModel> finalParameters = Maps.newHashMap();
+        for (ParameterModel parameter : params) {
+            finalParameters.put(parameter.getKey(), parameter);
+        }
+        this.parameters = finalParameters;
     }
 
     public void addParameter(ParameterModel parameter) {
-        if(values==null)
-            values = new ArrayList<>();
-
-        this.values.add(parameter);
+        this.parameters.put(parameter.getKey(), parameter);
     }
 
     public Map<String, ParameterModel> getParameters(){
-        values = (values==null) ? new ArrayList<>() : values;
-        Map<String, ParameterModel> params = Maps.newHashMap();
-        for (ParameterModel param : values) {
-            params.put(param.getKey(), param);
-        }
-        return params;
+        return parameters;
     }
 
     public void checkValid() {

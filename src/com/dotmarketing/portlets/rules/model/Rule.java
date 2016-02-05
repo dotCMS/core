@@ -15,6 +15,7 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONIgnore;
 import com.liferay.portal.model.User;
 
 import java.io.Serializable;
@@ -198,19 +199,20 @@ public class Rule implements Permissionable, Serializable {
         return null;
     }
 
+    @JSONIgnore
     public Permissionable getParentPermissionable() throws DotDataException {
 		try {
 
 			User systemUser = APILocator.getUserAPI().getSystemUser();
-			
+
 			Identifier iden = APILocator.getIdentifierAPI().find(getParent());
-			
+
 			if(iden.getAssetType().equals("folder")){
 	        	return APILocator.getFolderAPI().find(getParent(),systemUser,false);
 	        }else{
 	        	return APILocator.getContentletAPI().findContentletByIdentifier(getParent(), false,
 	    				APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-	        } 
+	        }
 
 		} catch (DotSecurityException e) {
 			Logger.error(Rule.class, e.getMessage(), e);

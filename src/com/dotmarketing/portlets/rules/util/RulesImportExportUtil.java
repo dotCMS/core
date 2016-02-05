@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
@@ -75,14 +76,21 @@ public class RulesImportExportUtil {
 				sw.append(str);
 			}
 
-			RulesImportExportObject importer = mapper.readValue((String)sw.toString(), RulesImportExportObject.class);
+			RulesImportExportObject importer = mapper.readValue(sw.toString(), RulesImportExportObject.class);
 
+			//Saving the rules.
 			for (Rule rule : importer.getRules()) {
 				rapi.saveRule(rule, user, false);
 
+				//Saving the Condition Groups.
 				for (ConditionGroup group : rule.getGroups()) {
 					rapi.saveConditionGroup(group, user, false);
+					//Saving the Condition for each group.
+					for (Condition condition : group.getConditions()) {
+						rapi.saveCondition(condition, user, false);
+					}
 				}
+				//Saving the Action.
 				for (RuleAction action : rule.getRuleActions()) {
 					rapi.saveRuleAction(action, user, false);
 				}
