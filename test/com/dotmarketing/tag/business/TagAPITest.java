@@ -574,12 +574,12 @@ public class TagAPITest extends TestBase {
 		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
 
 		TagFactory tagFactory = FactoryLocator.getTagFactory();
-		List<Tag> tags = tagFactory.getTagByHost(defaultHostId);
+		List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
 		int initialNumberOfTagsDemo =tags.size();
 		assertNotNull(tags);
 		assertTrue(initialNumberOfTagsDemo > 0);
 
-		tags = tagFactory.getTagByHost(newHost.getIdentifier());
+		tags = tagFactory.getTagsByHost(newHost.getIdentifier());
 		int initialNumberOfTagsNewHost =tags.size();
 		assertNotNull(tags);
 		assertTrue(initialNumberOfTagsNewHost >= 0);
@@ -590,10 +590,10 @@ public class TagAPITest extends TestBase {
 		//to refresh cache
 		tagCache.clearCache();
 
-		List<Tag> newHostTags = tagFactory.getTagByHost(newHost.getIdentifier());
+		List<Tag> newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
 		assertTrue(newHostTags.size() > initialNumberOfTagsNewHost);
 
-		List<Tag> tagsAfterUpdate = tagFactory.getTagByHost(defaultHostId);
+		List<Tag> tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
 		assertTrue(tagsAfterUpdate.size() < initialNumberOfTagsDemo);
 
 
@@ -601,10 +601,10 @@ public class TagAPITest extends TestBase {
 		tagAPI.updateTagReferences( defaultHostId, newHost.getIdentifier(), defaultHostId );
 		tagCache.clearCache();
 		
-		tagsAfterUpdate = tagFactory.getTagByHost(defaultHostId);
+		tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
 		assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
 		
-		newHostTags = tagFactory.getTagByHost(newHost.getIdentifier());
+		newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
 		assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
 		
 		//delete host
