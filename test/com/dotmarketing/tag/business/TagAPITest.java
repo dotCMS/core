@@ -86,7 +86,7 @@ public class TagAPITest extends TestBase {
 	public void getTagByName() throws Exception {
 		String tagName="china";
 		List<Tag> tags = tagAPI.getTagsByName(tagName);
-		assertTrue( tags.size() == 1 );
+		assertTrue( tags.size() >= 1 );
 		for(Tag tag : tags){
 			assertTrue(tag.getTagName().equals(tagName));
 		}
@@ -565,13 +565,14 @@ public class TagAPITest extends TestBase {
 		contentAsset.setProperty(Host.HOST_NAME_KEY, hostName);
 		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
 		contentAsset=conAPI.checkin(contentAsset, testUser, false);
-		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
-
+		conAPI.publish(contentAsset, testUser, false);
+        assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), 100));
+        
 		Host newHost = hostAPI.findByName(hostName, systemUser, false);
 		contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
 		contentAsset.setInode(null);
 		contentAsset=conAPI.checkin(contentAsset, testUser, false);
-		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+		conAPI.publish(contentAsset, testUser, false);
 
 		TagFactory tagFactory = FactoryLocator.getTagFactory();
 		List<Tag> tags = tagFactory.getTagsByHost(defaultHostId);
