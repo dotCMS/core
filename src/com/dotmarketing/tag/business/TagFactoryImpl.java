@@ -654,7 +654,7 @@ public class TagFactoryImpl implements TagFactory {
             tag.setTagName((String) sqlResult.get(TAG_COLUMN_TAGNAME));
             tag.setHostId((String) sqlResult.get(TAG_COLUMN_HOST_ID));
             tag.setUserId((String) sqlResult.get(TAG_COLUMN_USER_ID));
-            if ( DbConnectionFactory.isMsSql() ) {
+            if ( DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle() ) {
                 tag.setPersona(Boolean.valueOf(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
             } else {
                 tag.setPersona((boolean) sqlResult.get(TAG_COLUMN_PERSONA));
