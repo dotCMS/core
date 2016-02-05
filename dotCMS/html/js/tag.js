@@ -108,14 +108,14 @@ var suggestedDiv;
 var tagsContainer;
 var tagsMap = {};
 
-function suggestTagsForSearch(e, element, divToSuggest) {
+function suggestTagsForSearch(e) {
 		if (!tagVelocityVarName || tagVelocityVarName == "") {
-				tagVelocityVarName = element.id;
+				tagVelocityVarName = e.target.id;
 		}
 		if (!tagsContainer || tagsContainer == "") {
 				tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 		}
-		suggestedDiv = divToSuggest;
+		suggestedDiv = tagVelocityVarName + "suggestedTagsDiv";
 		var inputTags = document.getElementById(tagVelocityVarName).value;
 		inputTags = RTrim(inputTags);
 		inputTags = LTrim(inputTags);
@@ -309,7 +309,7 @@ function createTagLink(tag) {
 		node.href = "#";
 		node.onclick = clearTag;
 		node.id = tagId;
-		node.innerText = tagsMap[tagVelocityVarName][tagId].title;
+		node.innerText = node.textContent = tagsMap[tagVelocityVarName][tagId].title;
 		return node;
 }
 
