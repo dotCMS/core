@@ -3,6 +3,7 @@ package com.dotmarketing.tag.business;
 import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
 import static com.dotcms.repackage.org.junit.Assert.assertNull;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertEquals;
 import static com.dotcms.repackage.org.junit.Assert.assertFalse;
 
 import java.util.Date;
@@ -19,6 +20,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -568,8 +570,8 @@ public class TagAPITest extends TestBase {
 		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
 		contentAsset=conAPI.checkin(contentAsset, testUser, false);
 		conAPI.publish(contentAsset, testUser, false);
-        assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), 100));
-        
+		assertTrue(conAPI.isInodeIndexed(contentAsset.getInode(), 100));
+
 		Host newHost = hostAPI.findByName(hostName, systemUser, false);
 		contentAsset.setProperty(Host.TAG_STORAGE, newHost.getIdentifier());
 		contentAsset.setInode(null);
@@ -589,7 +591,7 @@ public class TagAPITest extends TestBase {
 
 		//Move tags to other host
 		tagAPI.updateTagReferences( defaultHostId, defaultHostId, newHost.getIdentifier() );
-		
+
 		//to refresh cache
 		tagCache.clearCache();
 
@@ -603,16 +605,16 @@ public class TagAPITest extends TestBase {
 		//return tags to original host
 		tagAPI.updateTagReferences( defaultHostId, newHost.getIdentifier(), defaultHostId );
 		tagCache.clearCache();
-		
+
 		tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
 		assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
 		/*here the amount is not 0 because is entering in the condition 
-		* if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
-		* saveTag(tag.getTagName(), "", hostIdentifier);
-        */
+		 * if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
+		 * saveTag(tag.getTagName(), "", hostIdentifier);
+		 */
 		newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
 		assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
-		
+
 		//delete host
 		conAPI.unpublish(newHost, systemUser, false);
 		conAPI.archive(newHost, systemUser, false);
@@ -665,14 +667,14 @@ public class TagAPITest extends TestBase {
 		assertNotNull(tags);
 		assertTrue(tags.size()==7);
 	}
-	
+
 	/**
 	 * Test the Personas tags functionality
 	 * @throws Exception
 	 */
 	@Test
 	public void validatePersonaTags() throws Exception {
-		
+
 		Contentlet persona = new Contentlet();
 		persona.setStructureInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
 		persona.setHost(defaultHostId);
@@ -686,7 +688,7 @@ public class TagAPITest extends TestBase {
 		persona=conAPI.checkin(persona, testUser, false);
 		conAPI.publish(persona, testUser, false);
 		assertTrue(conAPI.isInodeIndexed(persona.getInode(), 500));
-		
+
 		/*if the persona is publish, the tag should be mark as persona
 		 * in the tag table 
 		 */
@@ -694,12 +696,12 @@ public class TagAPITest extends TestBase {
 		assertNotNull(tag);
 		assertTrue(tag.isPersona());
 		assertTrue(tag.getTagName().equals(name));
-		
+
 		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
 		assertNotNull(tag);
 		assertFalse(tag.isPersona());
 		assertTrue(tag.getTagName().equals(othertags));
-		
+
 		/*if the persona is not publish, the tag should not be mark as persona
 		 * in the tag table 
 		 */
@@ -708,31 +710,133 @@ public class TagAPITest extends TestBase {
 		assertNotNull(tag);
 		assertFalse(tag.isPersona());
 		assertTrue(tag.getTagName().equals(name));
-		
+
 		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
 		assertNotNull(tag);
 		assertFalse(tag.isPersona());
 		assertTrue(tag.getTagName().equals(othertags));		
-		
+
 		//republish persona and check tags
 		conAPI.publish(persona, systemUser, false);
 		tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
 		assertNotNull(tag);
 		assertTrue(tag.isPersona());
 		assertTrue(tag.getTagName().equals(name));
-		
+
 		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
 		assertNotNull(tag);
 		assertFalse(tag.isPersona());
 		assertTrue(tag.getTagName().equals(othertags));
 	}
-	
+
 	/**
 	 * Test the tags cache functionality
 	 * @throws Exception
 	 */
 	@Test
 	public void validateTagCache() throws Exception {
+		/*
+		 * Test cache by TagId
+		 */
+		String tagName ="testapi24"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		Tag tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
+
+		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
+		Tag cachedTag = tagCache.get(tag.getTagId());
+		assertNull( cachedTag );
+
+		//The find should add the category to the cache
+		Tag foundTag = tagAPI.getTagByTagId(tag.getTagId());
+		assertNotNull( foundTag );
+
+		cachedTag = tagCache.get(tag.getTagId());
+		assertNotNull( cachedTag );
+		assertEquals( cachedTag, tag );
+
+		/*
+		 * test cache by tagname and hostid
+		 */
+		tagName ="testapi25"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
+
+		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
+		cachedTag = tagCache.get(tag.getTagName(), defaultHostId);
+		assertNull( cachedTag );
+
+		//The find should add the category to the cache
+		foundTag = tagAPI.getTagByNameAndHost(tag.getTagName(), defaultHostId);
+		assertNotNull( foundTag );
+
+		cachedTag = tagCache.get(tag.getTagName(), defaultHostId);
+		assertNotNull( cachedTag );
+		assertEquals( cachedTag, tag );
+
+		/*
+		 * Test cache by TagName
+		 */
+		tagName ="testapi26"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
+
+		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
+		List<Tag> cachedTags = tagCache.getByName(tagName);
+		assertNull( cachedTags );
+
+		//The find should add the category to the cache
+		List<Tag> foundTags = tagAPI.getTagsByName(tag.getTagName());
+		assertNotNull( foundTags );
+
+		cachedTags = tagCache.getByName(tagName);
+		assertNotNull( cachedTags );
+		assertEquals( cachedTags, foundTags );
+
+		/*
+		 * Test cache by Inode
+		 */
+		Contentlet contentAsset=new Contentlet();
+		Structure st = structureAPI.findByVarName(WIKI_STRUCTURE_VARNAME, systemUser);
+		contentAsset.setStructureInode(st.getInode());
+		contentAsset.setHost(defaultHostId);
+		contentAsset.setProperty(WIKI_SYSPUBLISHDATE_VARNAME, new Date());
+		String name="testtagapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		contentAsset.setProperty(WIKI_TITLE_VARNAME, name);
+		contentAsset.setProperty(WIKI_URL_VARNAME, name);
+		contentAsset.setProperty(WIKI_BYLINEL_VARNAME, "test");
+		contentAsset.setProperty(WIKI_STORY_VARNAME, "test");
+		contentAsset.setLanguageId(langAPI.getDefaultLanguage().getId());
+		contentAsset=conAPI.checkin(contentAsset, testUser, false);
+		APILocator.getContentletAPI().publish(contentAsset, testUser, false);
+
+		tagName ="testapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
+		tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
+		tagAPI.addTagInode( tagName, contentAsset.getInode(), defaultHostId);
+
+		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
+		cachedTags = tagCache.getByInode(contentAsset.getInode());
+		assertNull( cachedTags );
+
+		//The find should add the category to the cache
+		foundTags = tagAPI.getTagsByInode(contentAsset.getInode());
+		assertNotNull( foundTags );
+
+		cachedTags = tagCache.getByInode(contentAsset.getInode());
+		assertNotNull( cachedTags );
+		assertEquals( cachedTags, foundTags );
 		
+		/*
+		 * Test cache by hostId
+		 */
+		tagCache.clearCache();
+		
+		cachedTags = tagCache.getByHost(defaultHostId);
+		assertNull( cachedTags );
+
+		
+		TagFactory tagFactory = FactoryLocator.getTagFactory();
+		foundTags = tagFactory.getTagsByHost(defaultHostId);
+		assertNotNull( foundTags );
+		
+		cachedTags = tagCache.getByHost(defaultHostId);
+		assertNotNull( cachedTags );
+		assertEquals( cachedTags, foundTags );
 	}
 }
