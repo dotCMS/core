@@ -30,6 +30,7 @@ public class FileAssetMap extends FileAsset {
         FileAsset fa = APILocator.getFileAssetAPI().fromContentlet(c);
 
         FileAssetMap fam = new FileAssetMap();
+        fam.setHost(fa.getHost());
         fam.setBinary(FileAssetAPI.BINARY_FIELD, fa.getFileAsset());
         BeanUtils.copyProperties(fam, fa);
 
