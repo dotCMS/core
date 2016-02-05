@@ -386,8 +386,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 	    LicenseUtil.startLiveMode();
 	    try {
-
-    		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
+			String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
 
 			//Find the current language
