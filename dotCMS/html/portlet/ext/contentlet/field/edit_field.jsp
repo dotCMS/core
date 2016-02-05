@@ -1,3 +1,4 @@
+
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
@@ -594,14 +595,12 @@
     //TAG kind of field rendering
 
     } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-        String tagJSFunction = "suggestTagsForSearch(event, this, '"
-                + field.getVelocityVarName() + "suggestedTagsDiv');";
         String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
  %>
  <!-- display -->
     <div class="tagsWrapper" id="<%=field.getVelocityVarName()%>Wrapper">
       <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=textValue%>" />
-      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" onkeyup="<%= tagJSFunction %>" />
+      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
       <div class="tagsOptions" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
         <div id="<%=field.getVelocityVarName()%>suggestedTagsDiv"></div>
       </div>
@@ -609,6 +608,7 @@
 
     <script>
       dojo.addOnLoad(function() {
+        dojo.connect(dojo.byId("<%=field.getVelocityVarName()%>"), "onkeyup", suggestTagsForSearch);
         var textValue = "<%=textValue%>";
         if (textValue != "") {
           fillExistingTags("<%=field.getVelocityVarName()%>", textValue);
