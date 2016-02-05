@@ -61,8 +61,10 @@ public class UsersBrowserLanguageConditionletFTest {
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en");
 
+        String ruleName = String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt());
+
         //Persist the Conditionlet
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
 
         //Execute some requests and validate the responses
         ApiRequest apiRequest = new ApiRequest(request, UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER);
@@ -89,17 +91,18 @@ public class UsersBrowserLanguageConditionletFTest {
         condition.addValue(UsersBrowserLanguageConditionlet.LANGUAGE_INPUT_KEY, "en");
 
         //Persist the Conditionlet
-        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value);
+        String ruleName = String.format("SetResponseHeaderActionletFTest - fireOnEveryRequest %s", random.nextInt());
+        conditionletTestUtil.createRandomSetResponseHeaderRule(condition, randomKey, value, ruleName);
 
         //Execute some requests and validate the responses
-        ApiRequest apiRequest = new ApiRequest(request);
-
+        ApiRequest apiRequest = new ApiRequest(request, UsersBrowserLanguageConditionlet.BROWSER_LANGUAGE_HEADER);
         URLConnection conn = apiRequest.makeRequest("about-us/index", "nso,xh;q=0.8,es-CR;q=0.5,es;q=0.3");
         assertEquals("Specified response header should be present in the Response.", value, conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/", "nso,xh;q=0.8,en-US;q=0.5,en;q=0.3");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("contact-us/", "nso,xh;q=0.8,en-US;q=0.5,en;q=0.3");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
+
     }
 
 

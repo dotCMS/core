@@ -3,6 +3,7 @@ package com.dotmarketing.filters;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.URLDecoder;
+import java.util.Optional;
 import java.util.Set;
 
 import javax.servlet.Filter;
@@ -13,6 +14,9 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import com.dotcms.visitor.business.VisitorAPI;
+import com.dotcms.visitor.domain.Visitor;
 import org.apache.commons.logging.LogFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -56,6 +60,8 @@ public class CMSFilter implements Filter {
 	public static final String CMS_FILTER_IDENTITY = "CMS_FILTER_IDENTITY";
 	public static final String CMS_FILTER_URI_OVERRIDE = "CMS_FILTER_URLMAP_OVERRIDE";
 
+	private static VisitorAPI visitorAPI = APILocator.getVisitorAPI();
+
 	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
 
 		HttpServletRequest request = (HttpServletRequest) req;
@@ -63,6 +69,12 @@ public class CMSFilter implements Filter {
 
 		final String uri = (request.getAttribute(CMS_FILTER_URI_OVERRIDE) != null) ? (String) request.getAttribute(CMS_FILTER_URI_OVERRIDE)
 				: URLDecoder.decode(request.getRequestURI(), "UTF-8");
+
+
+		Optional<Visitor> visitor = visitorAPI.getVisitor(request);
+		if(visitor.isPresent()) {
+			visitor.get().addPagesViewed( request.getRequestURI() );
+		}
 
 		String xssRedirect = xssCheck(uri, request.getQueryString());
 		if(xssRedirect!=null){
