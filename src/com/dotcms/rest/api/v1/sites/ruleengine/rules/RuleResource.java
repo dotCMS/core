@@ -21,7 +21,6 @@ import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.InternalServerException;
 import com.dotcms.rest.exception.NotFoundException;
-import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Ruleable;
@@ -34,13 +33,14 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -178,25 +178,15 @@ public class RuleResource {
             rulesAPI.deleteRule(rule, user, false);
             HibernateUtil.commitTransaction();
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException e) {
-            try {
-                HibernateUtil.rollbackTransaction();
-            } catch (DotHibernateException e1) {
-                Logger.error(RuleResource.class, "Error while rolling back transaction", e);
-            }
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 
     private Ruleable getParent(String identifier, User user) {
-
-
-	   	 class ParentProxy  extends PermissionableProxy implements Ruleable{
-	   		 
-	
-	   		
-	   	}
-   	
+        class ParentProxy  extends PermissionableProxy implements Ruleable{ }
     	
 	   	ParentProxy proxy = new ParentProxy();
 	   	proxy.setIdentifier(identifier);
@@ -226,8 +216,19 @@ public class RuleResource {
 
     private List<RestRule> getRulesInternal(User user, Ruleable host) {
         try {
+            List<RestRule> restRules = new ArrayList<>();
+
             List<Rule> rules = rulesAPI.getAllRulesByParent(host, user, false);
-            return rules.stream().map(ruleTransform.appToRestFn()).collect(Collectors.toList());
+            for (Rule rule : rules) {
+                try{
+                    restRules.add(ruleTransform.appToRest(rule, user));
+                } catch (Exception transEx) {
+                    String ruleName = UtilMethods.isSet(rule.getName()) ? rule.getName() : "N/A";
+                    Logger.error(this, "Error parsing Rule named: " + ruleName + " to ReST: " + transEx.getMessage());
+                }
+            }
+            return restRules;
+
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
@@ -237,7 +238,8 @@ public class RuleResource {
 
     private RestRule getRuleInternal(String ruleId, User user) {
         Rule input = getRule(ruleId, user);
-        return ruleTransform.appToRest(input);
+        RestRule restRule = ruleTransform.appToRest(input, user);
+        return restRule;
     }
 
     private String createRuleInternal(String siteId, RestRule restRule, User user) {

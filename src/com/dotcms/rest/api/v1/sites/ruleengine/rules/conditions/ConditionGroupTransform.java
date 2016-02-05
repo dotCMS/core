@@ -1,15 +1,15 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.ApiProvider;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.util.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ConditionGroupTransform {
     private final RulesAPI rulesAPI;
@@ -33,20 +33,20 @@ public class ConditionGroupTransform {
     }
 
     public RestConditionGroup appToRest(ConditionGroup app) {
-        return toRest.apply(app);
-    }
-
-    public Function<ConditionGroup, RestConditionGroup> appToRestFn() {
-        return toRest;
-    }
-
-    public final Function<ConditionGroup, RestConditionGroup> toRest = (app) -> {
-
         Map<String, Boolean> restConditionMap = new HashMap<>();
 
         if(app.getConditions()!=null && !app.getConditions().isEmpty()) {
-            restConditionMap = app.getConditions().stream()
-                .collect(Collectors.toMap(Condition::getId, c -> Boolean.TRUE));
+            for (Condition condition : app.getConditions()) {
+
+                if (rulesAPI.findConditionlet(condition.getConditionletId()) != null){
+                    restConditionMap.put(condition.getId(), true);
+                } else {
+                    //In case the conditionlet from DB no longer exists in the List of Server Conditionlets.
+                    //This case mostly for custom conditionlets (OSGI).
+                    Logger.error(this, "Conditionlet not found: " + condition.getConditionletId());
+                    throw new NotFoundException("Conditionlet not found: '%s'", condition.getConditionletId());
+                }
+            }
         }
 
         RestConditionGroup rest = new RestConditionGroup.Builder()
@@ -57,8 +57,7 @@ public class ConditionGroupTransform {
                 .build();
 
         return rest;
-    };
-
+    }
 
 }
 

@@ -103,9 +103,10 @@ public class ConditionValueResource {
             ParameterModel value = rulesAPI.getConditionValueById(valueId, user, false);
             RestConditionValue restConditionValue = parameterModelTransform.toRest.apply(value);
             return Response.ok(restConditionValue).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            Logger.error(this, "Error getting Condition", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 
@@ -190,9 +191,11 @@ public class ConditionValueResource {
             rulesAPI.deleteConditionValue(value, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
-        }
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
+        } 
     }
 
     @VisibleForTesting

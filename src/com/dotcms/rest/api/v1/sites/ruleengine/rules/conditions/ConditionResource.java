@@ -86,9 +86,10 @@ public class ConditionResource {
                 , BadRequestException.class, "Not valid Condition");
             RestCondition restCondition = conditionTransform.appToRest(condition);
             return Response.ok(restCondition).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            Logger.error(this, "Error getting Condition", e);
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         } 
     }
 
@@ -160,8 +161,10 @@ public class ConditionResource {
             rulesAPI.deleteCondition(condition, user, false);
 
             return Response.status(HttpStatus.SC_NO_CONTENT).build();
-        } catch (DotDataException | DotSecurityException | InvalidLicenseException e) {
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity(e.getMessage()).build();
+        } catch (DotDataException e) {
+            throw new BadRequestException(e, e.getMessage());
+        } catch (DotSecurityException | InvalidLicenseException e) {
+            throw new ForbiddenException(e, e.getMessage());
         }
     }
 

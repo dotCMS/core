@@ -1,13 +1,22 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -190,7 +199,23 @@ public class Rule implements Permissionable, Serializable {
     }
 
     public Permissionable getParentPermissionable() throws DotDataException {
-        return null;
+		try {
+
+			User systemUser = APILocator.getUserAPI().getSystemUser();
+			
+			Identifier iden = APILocator.getIdentifierAPI().find(getParent());
+			
+			if(iden.getAssetType().equals("folder")){
+	        	return APILocator.getFolderAPI().find(getParent(),systemUser,false);
+	        }else{
+	        	return APILocator.getContentletAPI().findContentletByIdentifier(getParent(), false,
+	    				APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+	        } 
+
+		} catch (DotSecurityException e) {
+			Logger.error(Rule.class, e.getMessage(), e);
+			throw new DotRuntimeException(e.getMessage(), e);
+		}
     }
 
     public String getPermissionType() {
