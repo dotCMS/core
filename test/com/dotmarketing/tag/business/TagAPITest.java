@@ -3,6 +3,7 @@ package com.dotmarketing.tag.business;
 import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
 import static com.dotcms.repackage.org.junit.Assert.assertNull;
 import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static com.dotcms.repackage.org.junit.Assert.assertFalse;
 
 import java.util.Date;
 import java.util.List;
@@ -22,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
+import com.dotmarketing.portlets.personas.business.PersonaAPI;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
@@ -604,7 +606,10 @@ public class TagAPITest extends TestBase {
 		
 		tagsAfterUpdate = tagFactory.getTagsByHost(defaultHostId);
 		assertTrue(tagsAfterUpdate.size() == initialNumberOfTagsDemo);
-		
+		/*here the amount is not 0 because is entering in the condition 
+		* if((hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST)) {
+		* saveTag(tag.getTagName(), "", hostIdentifier);
+        */
 		newHostTags = tagFactory.getTagsByHost(newHost.getIdentifier());
 		assertTrue(newHostTags.size() == initialNumberOfTagsDemo);
 		
@@ -659,5 +664,75 @@ public class TagAPITest extends TestBase {
 		List<Tag> tags = tagAPI.getTagsInText (text, testUser.getUserId(), defaultHostId);
 		assertNotNull(tags);
 		assertTrue(tags.size()==7);
+	}
+	
+	/**
+	 * Test the Personas tags functionality
+	 * @throws Exception
+	 */
+	@Test
+	public void validatePersonaTags() throws Exception {
+		
+		Contentlet persona = new Contentlet();
+		persona.setStructureInode(PersonaAPI.DEFAULT_PERSONAS_STRUCTURE_INODE);
+		persona.setHost(defaultHostId);
+		persona.setLanguageId(langAPI.getDefaultLanguage().getId());
+		String name="testtagapipersona1"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		String othertags="testapipersona_1"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
+		persona.setProperty(PersonaAPI.NAME_FIELD, name);
+		persona.setProperty(PersonaAPI.KEY_TAG_FIELD, name);
+		persona.setProperty(PersonaAPI.TAGS_FIELD, othertags);
+		persona.setProperty(PersonaAPI.DESCRIPTION_FIELD,"test to delete");
+		persona=conAPI.checkin(persona, testUser, false);
+		conAPI.publish(persona, testUser, false);
+		assertTrue(conAPI.isInodeIndexed(persona.getInode(), 500));
+		
+		/*if the persona is publish, the tag should be mark as persona
+		 * in the tag table 
+		 */
+		Tag tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
+		assertNotNull(tag);
+		assertTrue(tag.isPersona());
+		assertTrue(tag.getTagName().equals(name));
+		
+		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
+		assertNotNull(tag);
+		assertFalse(tag.isPersona());
+		assertTrue(tag.getTagName().equals(othertags));
+		
+		/*if the persona is not publish, the tag should not be mark as persona
+		 * in the tag table 
+		 */
+		conAPI.unpublish(persona, systemUser, false);
+		tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
+		assertNotNull(tag);
+		assertFalse(tag.isPersona());
+		assertTrue(tag.getTagName().equals(name));
+		
+		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
+		assertNotNull(tag);
+		assertFalse(tag.isPersona());
+		assertTrue(tag.getTagName().equals(othertags));		
+		
+		//republish persona and check tags
+		conAPI.publish(persona, systemUser, false);
+		tag = tagAPI.getTagByNameAndHost(name, defaultHostId);
+		assertNotNull(tag);
+		assertTrue(tag.isPersona());
+		assertTrue(tag.getTagName().equals(name));
+		
+		tag = tagAPI.getTagByNameAndHost(othertags, defaultHostId);
+		assertNotNull(tag);
+		assertFalse(tag.isPersona());
+		assertTrue(tag.getTagName().equals(othertags));
+	}
+	
+	/**
+	 * Test the tags cache functionality
+	 * @throws Exception
+	 */
+	@Test
+	public void validateTagCache() throws Exception {
+		
 	}
 }
