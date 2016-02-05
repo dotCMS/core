@@ -81,6 +81,29 @@ public interface TagAPI {
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
+	 *
+	 * @param name    name of the tag to get
+	 * @param hostId  host identifier
+	 * @param persona True if is a persona key tag
+	 * @return Tag
+	 * @throws Exception
+	 */
+	public Tag getTagAndCreate ( String name, String hostId, boolean persona ) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
+	 *
+	 * @param name    name of the tag to get
+	 * @param userId  owner of the tag
+	 * @param hostId  host identifier
+	 * @param persona True if is a persona key tag
+	 * @return Tag
+	 * @throws Exception
+	 */
+	public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
 	 * @param name name of the tag to get
 	 * @param hostId host identifier
 	 * @return Tag
@@ -139,6 +162,15 @@ public interface TagAPI {
 	 * @throws Exception
 	 */
 	public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException;
+
+	/**
+	 * Updates the persona attribute of a given tag
+	 *
+	 * @param tagId
+	 * @param enableAsPersona
+	 * @throws DotDataException
+	 */
+	public void enableDisablePersonaTag ( String tagId, boolean enableAsPersona ) throws DotDataException;
 
 	/**
 	 * Deletes a tag
@@ -273,7 +305,18 @@ public interface TagAPI {
 	 * @param oldTagStorageId
 	 * @param newTagStorageId
 	 */
-	public void updateTagReferences (String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException;
+	public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException;
+
+	/**
+	 * Extract tag names in the specified text and return the list
+	 * of Tag Object found
+	 *
+	 * @param text   tag name to search
+	 * @param hostId Host identifier
+	 * @return list of tag found
+	 * @throws Exception
+	 */
+	public List<Tag> getTagsInText ( String text, String hostId ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Extract tag names in the specified text and return the list 

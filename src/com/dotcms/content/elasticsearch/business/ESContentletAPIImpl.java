@@ -401,6 +401,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             CacheLocator.getNavToolCache().removeNav(ident.getHostId(), folder.getInode());
                         }
                     }
+
+                    //"Enable" and/or create a tag for this Persona key tag
+                    if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
+                        //If not exist create a tag based on this persona key tag
+                        APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, true);
+                    }
                 }
 
             } catch(DotDataException | DotStateException | DotSecurityException e) {
@@ -1834,6 +1840,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         	APILocator.getVersionableAPI().removeLive(contentlet);
 
+            //"Disable" the tag created for this Persona key tag
+            if ( Structure.STRUCTURE_TYPE_PERSONA == contentlet.getStructure().getStructureType() ) {
+                //Mark the tag created based in the Persona tag key as a regular tag
+                APILocator.getPersonaAPI().enableDisablePersonaTag(contentlet, false);
+            }
+
         	indexAPI.addContentToIndex(contentlet);
         	indexAPI.removeContentFromLiveIndex(contentlet);
 
@@ -2578,10 +2590,58 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     removeURLFromContentlet( contentlet );
                 }
 
+                boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
+
+                //Preparing the tags info to be related to this contentlet
+                List<String> tagsValues = new ArrayList<>();
+                String tagsHost = Host.SYSTEM_HOST;
+
+                List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
+                for ( Field field : fields ) {
+                    if ( field.getFieldType().equals(Field.FieldType.TAG.toString()) ) {
+
+                        String value = null;
+                        if ( contentlet.getStringProperty(field.getVelocityVarName()) != null ) {
+                            value = contentlet.getStringProperty(field.getVelocityVarName()).trim();
+                        }
+
+                        if ( UtilMethods.isSet(value) ) {
+
+                            if ( structureHasAHostField ) {
+                                Host host = null;
+                                try {
+                                    host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
+                                } catch ( Exception e ) {
+                                    Logger.error(this, "Unable to get contentlet host", e);
+                                }
+                                if ( host.getIdentifier().equals(Host.SYSTEM_HOST) )
+                                    tagsHost = Host.SYSTEM_HOST;
+                                else
+                                    tagsHost = host.getIdentifier();
+                            }
+                            //Add these tags to a tempral list in order to relate them later to this contentlet
+                            tagsValues.add(value);
+
+                            //We should not store the tags inside the field, the relation must only exist on the tag_inode table
+                            contentlet.setStringProperty(field.getVelocityVarName(), "");
+                        }
+                    }
+                }
+
 				if(saveWithExistingID)
 				    contentlet = conFac.save(contentlet, existingInode);
 				else
 				    contentlet = conFac.save(contentlet);
+
+                //Relate the tags with the saved contentlet
+                for ( String tagsValue : tagsValues ) {
+                    //From the given CSV tags names list search for the tag objects and if does not exist create them
+                    List<Tag> list = tagAPI.getTagsInText(tagsValue, tagsHost);
+                    for ( Tag tag : list ) {
+                        //Relate the found/created tag with this contentlet
+                        tagAPI.addTagInode(tag, contentlet.getInode());
+                    }
+                }
 
 				if (!InodeUtils.isSet(contentlet.getIdentifier())) {
 
@@ -2649,39 +2709,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				}
 
 				APILocator.getVersionableAPI().setWorking(contentlet);
-
-				boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
-
-				List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
-				for (Field field : fields) {
-				    if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-				    	String value= null;
-				    	if(contentlet.getStringProperty(field.getVelocityVarName()) != null)
-				    		value=contentlet.getStringProperty(field.getVelocityVarName()).trim();
-
-				        if(UtilMethods.isSet(value)) {
-    				        String hostId = Host.SYSTEM_HOST;
-    				        if(structureHasAHostField){
-    				            Host host = null;
-    				            try{
-    				                host = APILocator.getHostAPI().find(contentlet.getHost(), user, true);
-    				            }catch(Exception e){
-    				                Logger.error(this, "Unable to get contentlet host");
-    				                Logger.debug(this, "Unable to get contentlet host", e);
-    				            }
-    				            if(host.getIdentifier().equals(Host.SYSTEM_HOST))
-    				                hostId = Host.SYSTEM_HOST;
-    				            else
-    				                hostId = host.getIdentifier();
-
-    				        }
-    				        List<Tag> list=tagAPI.getTagsInText(value, "", hostId);
-    				        for(Tag tag : list)
-    				            tagAPI.addTagInode(tag, contentlet.getInode());
-				        }
-				    }
-
-				}
 
 
 				if (workingContentlet == null) {

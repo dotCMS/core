@@ -23,7 +23,7 @@ public interface TagFactory {
      */
     public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException;
 
-    public java.util.List<Tag> getTagByHost ( String hostId ) throws DotDataException;
+    public java.util.List<Tag> getTagsByHost ( String hostId ) throws DotDataException;
 
     public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException;
 

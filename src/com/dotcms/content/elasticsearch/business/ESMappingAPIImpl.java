@@ -501,12 +501,26 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
                 			        m.put(st.getVelocityVarName() + "." + f.getVelocityVarName() + "." + key, (String)keyValueMap.get(key));
                 	}
                 } else if(f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-                    StringBuilder tagg=new StringBuilder();
-                    for(Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode())){
+
+                    StringBuilder personaTags = new StringBuilder();
+                    StringBuilder tagg = new StringBuilder();
+                    for ( Tag t : APILocator.getTagAPI().getTagsByInode(con.getInode()) ) {
                         tagg.append(t.getTagName()).append(' ');
+
+                        if ( t.isPersona() ) {
+                            personaTags.append(t.getTagName()).append(' ');
+                        }
                     }
                     m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), tagg.toString());
                     m.put("tags", tagg.toString());
+
+                    if ( Structure.STRUCTURE_TYPE_PERSONA != con.getStructure().getStructureType() ) {
+                        if ( personaTags.length() > 0 ) {
+                            m.put(st.getVelocityVarName() + ".personas", personaTags.toString());
+                            m.put("personas", personaTags.toString());
+                        }
+                    }
+
                 } else {
                     if (f.getFieldContentlet().startsWith("bool")) {
                         m.put(st.getVelocityVarName() + "." + f.getVelocityVarName(), valueObj.toString());

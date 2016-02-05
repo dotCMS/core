@@ -107,7 +107,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    public List<Tag> getTagByHost ( String hostId ) throws DotDataException {
+    public List<Tag> getTagsByHost ( String hostId ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByHost(hostId);
         if ( tags == null ) {

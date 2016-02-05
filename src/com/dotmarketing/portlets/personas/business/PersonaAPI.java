@@ -60,17 +60,21 @@ public interface PersonaAPI {
 
 	Structure getDefaultPersonaStructure() throws DotSecurityException, DotDataException;
 
-
-
 	List<Field> getBasePersonaFields(Structure structure);
 
 	void validatePersona(Contentlet c) throws DotContentletValidationException;
 
+	/**
+	 * A Persona key tag should be persist as a Tag, when the @enable param is true the tag will be created if does not
+	 * already exist.
+	 *
+	 * @param personaContentlet
+	 * @param enable            When false the tag created based on the Persona key tag will be handle as a regular tag
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void enableDisablePersonaTag ( Contentlet personaContentlet, boolean enable ) throws DotDataException, DotSecurityException;
+
 	void createDefaultPersonaStructure() throws DotDataException;
-
-
-
-
-
 
 }
