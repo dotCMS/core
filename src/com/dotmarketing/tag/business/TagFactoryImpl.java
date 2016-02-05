@@ -7,6 +7,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
@@ -361,7 +362,11 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(tag.getTagName());
         dc.addParam(tag.getHostId());
         dc.addParam(tag.getUserId());
-        dc.addParam(tag.isPersona());
+        if ( tag.isPersona() ) {
+            dc.addParam(DbConnectionFactory.getDBTrue());
+        } else {
+            dc.addParam(DbConnectionFactory.getDBFalse());
+        }
         dc.addParam(new Date());
 
         dc.loadResult();
@@ -404,7 +409,11 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(tag.getTagName());
         dc.addParam(tag.getHostId());
         dc.addParam(tag.getUserId());
-        dc.addParam(tag.isPersona());
+        if ( tag.isPersona() ) {
+            dc.addParam(DbConnectionFactory.getDBTrue());
+        } else {
+            dc.addParam(DbConnectionFactory.getDBFalse());
+        }
         dc.addParam(tag.getModDate());
         dc.addParam(tag.getTagId());
 
@@ -645,7 +654,11 @@ public class TagFactoryImpl implements TagFactory {
             tag.setTagName((String) sqlResult.get(TAG_COLUMN_TAGNAME));
             tag.setHostId((String) sqlResult.get(TAG_COLUMN_HOST_ID));
             tag.setUserId((String) sqlResult.get(TAG_COLUMN_USER_ID));
-            tag.setPersona((boolean) sqlResult.get(TAG_COLUMN_PERSONA));
+            if ( DbConnectionFactory.isMsSql() ) {
+                tag.setPersona(Boolean.valueOf(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
+            } else {
+                tag.setPersona((boolean) sqlResult.get(TAG_COLUMN_PERSONA));
+            }
             tag.setModDate((Date) sqlResult.get(TAG_COLUMN_MOD_DATE));
         }
 
