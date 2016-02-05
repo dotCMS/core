@@ -4,13 +4,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -50,6 +44,8 @@ public class Visitor implements Serializable {
     private LocalDateTime lastRequestDate;
 
     private final Map<String, Serializable> map = new HashMap<>();
+
+    private final Set<String> pagesViewed = new HashSet<>();
 
     //private VisitorsJourney journey;
 
@@ -251,5 +247,23 @@ public class Visitor implements Serializable {
                 ", lastRequestDate=" + lastRequestDate +
                 ", map=" + map +
                 '}';
+    }
+
+    /**
+     * Add uri as a visited page.
+     *
+     * @param uri
+     */
+    public void addPagesViewed(String uri){
+        pagesViewed.add(uri);
+    }
+
+    /**
+     * Return the number og page visited by the current user.
+     *
+     * @return
+     */
+    public int getNumberPagesViewed(){
+        return pagesViewed.size();
     }
 }

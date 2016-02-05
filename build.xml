@@ -835,7 +835,7 @@
     </target>
 
     <target name="generate-move-clean-projects-tomcat">
-        <antcall target="generate-move-clean-license-tomcat"/>
+        <!--<antcall target="generate-move-clean-license-tomcat"/>-->
         <antcall target="generate-move-clean-enterprise-tomcat"/>
     </target>
 
