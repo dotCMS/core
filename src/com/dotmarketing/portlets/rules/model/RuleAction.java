@@ -1,23 +1,19 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-
-
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.util.Logger;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class RuleAction implements RuleComponentModel, Serializable {
 
@@ -81,6 +77,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
         this.modDate = modDate;
     }
 
+    @JsonProperty("parameters")
     public void setParameters(Map<String, ParameterModel> parameters) {
         this.parameters = parameters;
     }

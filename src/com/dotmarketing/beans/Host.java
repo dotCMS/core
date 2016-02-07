@@ -1,20 +1,15 @@
 package com.dotmarketing.beans;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.PermissionSummary;
-import com.dotmarketing.business.Permissionable;
-import com.dotmarketing.business.Treeable;
-import com.dotmarketing.db.DbConnectionFactory;
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -148,6 +143,7 @@ public class Host extends Contentlet implements Permissionable,Treeable {
 		return accepted;
 	}
 
+	@JsonIgnore
 	@Override
 	public Permissionable getParentPermissionable() throws DotDataException {
 		if (this.isSystemHost())

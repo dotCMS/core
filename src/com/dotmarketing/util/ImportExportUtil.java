@@ -747,14 +747,6 @@ public class ImportExportUtil {
 
         }
 
-        if(ruleFile != null){
-            try{
-                RulesImportExportUtil.getInstance().importRules(ruleFile);
-            }catch(Exception e){
-                Logger.error(this, "Unable to import ruleFile: " + e.getMessage(), e);
-            }
-        }
-
         for (File file : permissionXMLs) {
             try{
 				HibernateUtil.closeSession();
@@ -779,6 +771,14 @@ public class ImportExportUtil {
                 doXMLFileImport(file, out);
             } catch (Exception e) {
                 Logger.error(this, "Unable to load " + file.getName() + " : " + e.getMessage(), e);
+            }
+        }
+        // We install rules after Version info.
+        if(ruleFile != null){
+            try{
+                RulesImportExportUtil.getInstance().importRules(ruleFile);
+            }catch(Exception e){
+                Logger.error(this, "Unable to import ruleFile: " + e.getMessage(), e);
             }
         }
         for (File file : workFlowTaskXML) {

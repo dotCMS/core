@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.dotcms.sync.Exportable;
@@ -55,6 +56,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 	private String expireDateVar;
 	private Date modDate;
 
+	@JsonIgnore
 	public List<Exportable> getDependencies() {
 		// TODO Auto-generated method stub
 		List<Exportable> ret =new ArrayList<Exportable>();
@@ -272,6 +274,7 @@ public class Structure extends Inode implements Permissionable, Exportable, Impo
 		return accepted;
 	}
 
+	@JsonIgnore
 	public Permissionable getParentPermissionable() throws DotDataException {
 		try {
 
