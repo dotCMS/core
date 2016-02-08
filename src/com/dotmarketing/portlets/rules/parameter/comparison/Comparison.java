@@ -24,6 +24,9 @@ public class Comparison<T> {
     public static final Comparison<Comparable<Object>> GREATER_THAN_OR_EQUAL = new GreaterThanOrEqualComparison();
     public static final Comparison<String> NETMASK = new NetmaskComparison();
 
+    public static final Comparison[] NUMERIC_COMPARATION = {EQUAL, NOT_EQUAL, LESS_THAN, GREATER_THAN, LESS_THAN_OR_EQUAL,
+             GREATER_THAN_OR_EQUAL};
+
     private final String id;
 
     private final int rightHandArgCount;

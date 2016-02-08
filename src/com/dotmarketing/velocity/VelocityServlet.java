@@ -13,6 +13,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.net.URLDecoder;
 import java.util.*;
+import java.util.Calendar;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -28,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.business.DotContentletStateException
 
 import com.dotmarketing.portlets.rules.business.RulesEngine;
 import com.dotmarketing.portlets.rules.model.Rule;
+import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageException;
 import org.apache.velocity.Template;
 import org.apache.velocity.context.Context;
@@ -68,14 +70,6 @@ import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.htmlpages.business.HTMLPageAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.CookieUtil;
-import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.VelocityProfiler;
-import com.dotmarketing.util.VelocityUtil;
-import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.viewtools.DotTemplateTool;
 import com.dotmarketing.viewtools.RequestWrapper;
 import com.dotmarketing.viewtools.content.ContentMap;
@@ -191,15 +185,13 @@ public abstract class VelocityServlet extends HttpServlet {
 
 
 			HttpSession session = request.getSession(false);
-			boolean timemachine=false;
 			boolean ADMIN_MODE=false;
 			boolean PREVIEW_MODE=false;
 			boolean EDIT_MODE=false;
 			if(session!=null){
-				timemachine=session.getAttribute("tm_date")!=null;
-				ADMIN_MODE = !timemachine && session!=null && (session.getAttribute(com.dotmarketing.util.WebKeys.ADMIN_MODE_SESSION) != null);
-				PREVIEW_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.PREVIEW_MODE_SESSION) != null);
-				EDIT_MODE = !timemachine && ADMIN_MODE && (session.getAttribute(com.dotmarketing.util.WebKeys.EDIT_MODE_SESSION) != null);
+				ADMIN_MODE = PageRequestModeUtil.isAdminMode(session);
+				PREVIEW_MODE = PageRequestModeUtil.isPreviewMode(session);
+				EDIT_MODE = PageRequestModeUtil.isEditMode(session);
 			}
 
 			String value = request.getHeader("X-Requested-With");
@@ -386,8 +378,7 @@ public abstract class VelocityServlet extends HttpServlet {
 	public void doLiveMode(HttpServletRequest request, HttpServletResponse response) throws Exception {
 	    LicenseUtil.startLiveMode();
 	    try {
-
-    		String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
+			String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
     		Host host = (Host)request.getAttribute("host");
 
 			//Find the current language
