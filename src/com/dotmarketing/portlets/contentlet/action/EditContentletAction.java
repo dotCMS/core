@@ -6,15 +6,8 @@ import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -82,6 +75,8 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.HostUtil;
@@ -1039,7 +1034,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				contentlet.setInode("");
 				//http://jira.dotmarketing.net/browse/DOTCMS-5802
 				Structure structure = contentlet.getStructure();
-				List<Field> list = (List<Field>) FieldsCache.getFieldsByStructureInode(structure.getInode());
+				List<Field> list = FieldsCache.getFieldsByStructureInode(structure.getInode());
 				for (Field field : list) {
 					if(field.getFieldContentlet().startsWith("binary")){
 						httpReq.getSession().setAttribute(field.getFieldContentlet() + "-sibling", sib+","+field.getVelocityVarName());
@@ -1079,6 +1074,44 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
     		else {
     		    contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
     		}
+		}
+
+		//Return the tags related to this Contentlet in order to show them in the edit window
+		HashMap<String, StringBuilder> contentletTags = new HashMap<>();
+		List<TagInode> foundTagInodes = APILocator.getTagAPI().getTagInodesByInode(contentlet.getInode());
+		if ( foundTagInodes != null && !foundTagInodes.isEmpty() ) {
+
+			for ( TagInode foundTagInode : foundTagInodes ) {
+
+				StringBuilder contentletTagsBuilder = new StringBuilder();
+				String fieldVarName = foundTagInode.getFieldVarName();
+
+				if ( UtilMethods.isSet(fieldVarName) ) {
+					//Getting the related tag object
+					Tag relatedTag = APILocator.getTagAPI().getTagByTagId(foundTagInode.getTagId());
+
+					if ( contentletTags.containsKey(fieldVarName) ) {
+						contentletTagsBuilder = contentletTags.get(fieldVarName);
+					}
+					if ( contentletTagsBuilder.length() > 0 ) {
+						contentletTagsBuilder.append(",");
+					}
+					contentletTagsBuilder.append(relatedTag.getTagName());
+
+					contentletTags.put(fieldVarName, contentletTagsBuilder);
+				} else {
+					Logger.error(this, "Found Tag with id [" + foundTagInode.getTagId() + "] related with Contentlet " +
+							"[" + foundTagInode.getInode() + "] without an associated Field var name.");
+				}
+			}
+
+			//Now we need to populate the contentlet tag fields with the related tags info for the edit mode
+			if ( !contentletTags.isEmpty() ) {
+				for ( Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
+					//We should not store the tags inside the field, the relation must only exist on the tag_inode table
+					contentlet.setStringProperty(tagsList.getKey(), tagsList.getValue().toString());
+				}
+			}
 		}
 
 		GregorianCalendar cal = new GregorianCalendar();

@@ -5,6 +5,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 import java.util.List;
 
@@ -28,9 +29,14 @@ public class TagInodeCacheImpl extends TagInodeCache {
     }
 
     @Override
-    protected TagInode get ( String tagId, String inode ) {
+    protected TagInode get ( String tagId, String inode, String fieldVarName ) {
         try {
-            return (TagInode) cache.get(getPrimaryGroup() + tagId + "_" + inode, getPrimaryGroup());
+
+            if ( fieldVarName == null ) {
+                fieldVarName = "";
+            }
+
+            return (TagInode) cache.get(getPrimaryGroup() + tagId + "_" + inode + "_" + fieldVarName, getPrimaryGroup());
         } catch ( DotCacheException e ) {
             Logger.debug(this, "Cache Entry not found", e);
             return null;
@@ -39,8 +45,14 @@ public class TagInodeCacheImpl extends TagInodeCache {
 
     @Override
     protected void put ( TagInode object ) {
+
+        String fieldVarName = "";
+        if ( UtilMethods.isSet(object.getFieldVarName()) ) {
+            fieldVarName = object.getFieldVarName();
+        }
+
         //Adding the tag inode using the ids
-        cache.put(getPrimaryGroup() + object.getTagId() + "_" + object.getInode(), object, getPrimaryGroup());
+        cache.put(getPrimaryGroup() + object.getTagId() + "_" + object.getInode() + "_" + fieldVarName, object, getPrimaryGroup());
     }
 
     @Override
@@ -75,8 +87,14 @@ public class TagInodeCacheImpl extends TagInodeCache {
 
     @Override
     protected void remove ( TagInode object ) {
+
+        String fieldVarName = "";
+        if ( UtilMethods.isSet(object.getFieldVarName()) ) {
+            fieldVarName = object.getFieldVarName();
+        }
+
         //Removing by id
-        cache.remove(getPrimaryGroup() + object.getTagId() + "_" + object.getInode(), getPrimaryGroup());
+        cache.remove(getPrimaryGroup() + object.getTagId() + "_" + object.getInode() + "_" + fieldVarName, getPrimaryGroup());
         //Removing by tag id
         cache.remove(getTagInodesByTagIdGroup() + object.getTagId(), getTagInodesByTagIdGroup());
         //Removing by inode

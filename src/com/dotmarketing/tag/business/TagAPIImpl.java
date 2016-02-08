@@ -302,11 +302,13 @@ public class TagAPIImpl implements TagAPI {
 	 * @param tagName tag(s) to create
 	 * @param userId owner of the tag
 	 * @param inode object to tag
-	 * @return a list of all tags assigned to an object
-	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
-	 * @throws Exception
-	 */
-    public List addTag ( String tagName, String userId, String inode ) throws DotDataException, DotSecurityException {
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
+     * @return a list of all tags assigned to an object
+     * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
+     * @throws Exception
+     */
+    public List addTag ( String tagName, String userId, String inode, String fieldVarName ) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -320,7 +322,7 @@ public class TagAPIImpl implements TagAPI {
                 for (; tagNameToken.hasMoreTokens(); ) {
                     String tagTokenized = tagNameToken.nextToken().trim();
                     Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
-                    addTagInode(createdTag, inode);
+                    addTagInode(createdTag, inode, fieldVarName);
                 }
             }
 
@@ -405,8 +407,11 @@ public class TagAPIImpl implements TagAPI {
         Tag foundTag = getTagByTagId(tagId);
         if ( foundTag != null && UtilMethods.isSet(foundTag.getTagId()) ) {
 
-            foundTag.setPersona(enableAsPersona);
+            if ( foundTag.isPersona() == enableAsPersona ) {
+                return;//Nothing to update
+            }
 
+            foundTag.setPersona(enableAsPersona);
             //Update the tag
             tagFactory.updateTag(foundTag);
         }
@@ -465,30 +470,34 @@ public class TagAPIImpl implements TagAPI {
 	 * @param tagName name of the tag
 	 * @param inode   inode of the object tagged
 	 * @param hostId  the identifier of host that storage the tag
-	 * @return TagInode
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-    public TagInode addTagInode ( String tagName, String inode, String hostId ) throws DotDataException, DotSecurityException {
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
+     * @return TagInode
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public TagInode addTagInode ( String tagName, String inode, String hostId, String fieldVarName ) throws DotDataException, DotSecurityException {
 
         //Ensure the tag exists in the tag table
         Tag existingTag = getTagAndCreate(tagName, "", hostId);
 
         //Create the the tag inode
-        return addTagInode(existingTag, inode);
+        return addTagInode(existingTag, inode, fieldVarName);
     }
 
     /**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
 	 * @param tag
 	 * @param inode inode of the object tagged
-	 * @return TagInode
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
+     * @return TagInode
      * @throws DotDataException
      */
-    public TagInode addTagInode ( Tag tag, String inode ) throws DotDataException {
+    public TagInode addTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
         //validates the tagInode already exists
-        TagInode existingTagInode = getTagInode(tag.getTagId(), inode);
+        TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
 
         if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
 
@@ -496,6 +505,7 @@ public class TagAPIImpl implements TagAPI {
             TagInode tagInode = new TagInode();
             tagInode.setTagId(tag.getTagId());
             tagInode.setInode(inode);
+            tagInode.setFieldVarName(fieldVarName);
             tagInode.setModDate(new Date());
 
             return tagFactory.createTagInode(tagInode);
@@ -529,11 +539,13 @@ public class TagAPIImpl implements TagAPI {
 	 * Gets a tagInode by name and inode
 	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
-	 * @return the tagInode
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
+     * @return the tagInode
      * @throws DotDataException
      */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException {
-        return tagFactory.getTagInode(tagId, inode);
+    public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
+        return tagFactory.getTagInode(tagId, inode, fieldVarName);
     }
 
     /**
@@ -549,9 +561,11 @@ public class TagAPIImpl implements TagAPI {
 	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
 	 * @param tagId TagId
 	 * @param inode inode of the object tagged
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
      * @throws DotDataException
      */
-    public void removeTagRelationAndTagWhenPossible ( String tagId, String inode ) throws DotDataException {
+    public void removeTagRelationAndTagWhenPossible ( String tagId, String inode, String fieldVarName ) throws DotDataException {
 
         boolean localTransaction = false;
 
@@ -562,7 +576,7 @@ public class TagAPIImpl implements TagAPI {
 
             Boolean existRelationship = false;
             //Get the tag inode we want to remove
-            TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode);
+            TagInode tagInodeToRemove = tagFactory.getTagInode(tagId, inode, fieldVarName);
             if ( UtilMethods.isSet(tagInodeToRemove) && UtilMethods.isSet(tagInodeToRemove.getTagId()) ) {
                 existRelationship = true;
             }
@@ -616,11 +630,13 @@ public class TagAPIImpl implements TagAPI {
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
      * @throws DotDataException
      */
-    public void deleteTagInode ( Tag tag, String inode ) throws DotDataException {
+    public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
-        TagInode tagInode = getTagInode(tag.getTagId(), inode);
+        TagInode tagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
         if ( tagInode != null && UtilMethods.isSet(tagInode.getTagId()) ) {
             deleteTagInode(tagInode);
         }
@@ -631,10 +647,12 @@ public class TagAPIImpl implements TagAPI {
      *
      * @param tagName name of the tag
      * @param inode   inode of the object tagged
+     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+     *                     send null
      * @throws DotSecurityException
      * @throws DotDataException
      */
-    public void deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException {
+    public void deleteTagInode ( String tagName, String inode, String fieldVarName ) throws DotSecurityException, DotDataException {
 
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
         if ( tagNameToken.hasMoreTokens() ) {
@@ -649,7 +667,7 @@ public class TagAPIImpl implements TagAPI {
 
                     for ( Tag foundTag : foundTags ) {
                         //Delete the related tag inode
-                        deleteTagInode(foundTag, inode);
+                        deleteTagInode(foundTag, inode, fieldVarName);
                     }
                 }
             }

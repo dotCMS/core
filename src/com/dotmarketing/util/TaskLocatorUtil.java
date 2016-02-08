@@ -144,6 +144,7 @@ public class TaskLocatorUtil {
 		ret.add(Task03515AlterPasswordColumnFromUserTable.class);
 		ret.add(Task03520AlterTagsForPersonas.class);
 		ret.add(Task03525LowerTagsTagname.class);
+		ret.add(Task03530AlterTagInode.class);
         return ret;
     }
 

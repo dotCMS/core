@@ -707,7 +707,7 @@ public class ContentImportThread implements Job{
 
 						String[] tags = ((String)value).split(",");
 						for (String tag : tags) {
-							APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), "");
+							APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), "", field.getVelocityVarName());
 						}
 
 						//We should not store the tags inside the field, the relation must only exist on the tag_inode table

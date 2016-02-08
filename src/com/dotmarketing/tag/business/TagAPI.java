@@ -9,7 +9,6 @@ import java.util.List;
 
 public interface TagAPI {
 
-
 	/**
 	 * Get a list of all the tags created
 	 * @return list of all tags created
@@ -132,18 +131,19 @@ public interface TagAPI {
 	 */
 	public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotDataException;
 
-
 	/**
 	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
 	 * and then tags the object
 	 * @param tagName tag(s) to create
 	 * @param userId owner of the tag
 	 * @param inode object to tag
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @return a list of all tags assigned to an object
 	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
 	 * @throws Exception
 	 */
-	public List addTag ( String tagName, String userId, String inode ) throws DotDataException, DotSecurityException;
+	public List addTag ( String tagName, String userId, String inode, String fieldVarName ) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Updates an existing tag.
@@ -202,20 +202,24 @@ public interface TagAPI {
 	 * @param tagName name of the tag
 	 * @param inode   inode of the object tagged
 	 * @param hostId  the identifier of host that storage the tag
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @return TagInode
 	 * @throws DotDataException
 	 * @throws DotSecurityException
 	 */
-	public TagInode addTagInode ( String tagName, String inode, String hostId ) throws DotDataException, DotSecurityException;
+	public TagInode addTagInode ( String tagName, String inode, String hostId, String fieldVarName ) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
 	 * @param tag
 	 * @param inode inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @return TagInode
 	 * @throws DotDataException
 	 */
-	public TagInode addTagInode ( Tag tag, String inode ) throws DotDataException;
+	public TagInode addTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException;
 
     /**
 	 * Gets all tagInode associated to an object
@@ -241,16 +245,16 @@ public interface TagAPI {
 	 */
 	public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException;
 
-
 	/**
 	 * Gets a tagInode by name and inode
 	 * @param tagId id of the tag
 	 * @param inode inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @return the tagInode
 	 * @throws DotDataException
 	 */
-	public TagInode getTagInode ( String tagId, String inode ) throws DotDataException;
-
+	public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException;
 
 	/**
 	 * Deletes a TagInode
@@ -263,26 +267,33 @@ public interface TagAPI {
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @throws DotDataException
 	 */
-	public void deleteTagInode ( Tag tag, String inode ) throws DotDataException;
+	public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException;
 
 	/**
 	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
 	 * @param tagId TagId
 	 * @param inode inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @throws DotDataException
 	 */
-	public void removeTagRelationAndTagWhenPossible ( String tagId, String inode ) throws DotDataException;
+	public void removeTagRelationAndTagWhenPossible ( String tagId, String inode, String fieldVarName ) throws DotDataException;
 
 	/**
 	 * Deletes an object tag assignment
+	 *
 	 * @param tagName name of the tag
-	 * @param inode inode of the object tagged
+	 * @param inode   inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
+	 *                     send null
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public void deleteTagInode ( String tagName, String inode ) throws DotSecurityException, DotDataException;
+	public void deleteTagInode ( String tagName, String inode, String fieldVarName ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Gets a suggested tag(s), by name

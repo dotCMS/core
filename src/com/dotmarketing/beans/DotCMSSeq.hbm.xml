@@ -1030,6 +1030,7 @@
 		<composite-id unsaved-value="any">
 			<key-property name="tagId" column="tag_id" type="string" length="100" />
 			<key-property name="inode" column="inode" length="100" type="string" />
+			<key-property name="fieldVarName" column="field_var_name" length="255" type="string" />
 		</composite-id>
 		<property name="modDate" column="mod_date" type="java.util.Date" />
 	</class>

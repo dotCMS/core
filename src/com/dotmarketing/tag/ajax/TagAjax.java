@@ -67,7 +67,7 @@ public class TagAjax {
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
 					tagAPI.addTagInode(createdTag,
-							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode());
+							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode(), null);
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -160,7 +160,7 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().addTag(tagName, userId, inode);
+				APILocator.getTagAPI().addTag(tagName, userId, inode, null);
 			}
 		}
 		catch(Exception ex)
@@ -226,7 +226,7 @@ public class TagAjax {
 	 * @return a list of all tags assigned to an object
 	 */
 	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
-		APILocator.getTagAPI().deleteTagInode(tagName, inode);
+		APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
 	}
 
 	/**
@@ -256,7 +256,7 @@ public class TagAjax {
 			Removes the relationship between a tag and an inode.
 			 NOTE: if the tag does not have more relationships the Tag itself will be remove it.
 			 */
-			APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode());
+			APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode(), null);
 		}
 
 		List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
@@ -283,7 +283,7 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().deleteTagInode(tagName, inode);
+				APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
 			}
 		}
 		catch(Exception ex)
@@ -305,7 +305,7 @@ public class TagAjax {
 		try {
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
-			if ( UtilMethods.isSet(host) && UtilMethods.isSet(host.getInode()) ) {
+			if ( !UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()) ) {
 				selectedHostOrFolderId = APILocator.getFolderAPI().find(selectedHostOrFolderId, currentUser, false).getHostId();
 			}
 		} catch ( Exception e ) {

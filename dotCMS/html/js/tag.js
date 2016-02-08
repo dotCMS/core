@@ -153,37 +153,6 @@ function suggestTagsForSearch(e) {
 }
 
 function showTagsForSearch(result) {
-		result = [{
-				hostId: "SYSTEM_HOST",
-				tagId: "2332701d-67c4-4d9c-955a-9a6840d2d162",
-				tagName: "Persona 1",
-				userId: "",
-				persona: true
-		}, {
-				hostId: "SYSTEM_HOST",
-				tagId: "30f960be-da72-4ab1-b60e-ed9725d7a32a",
-				tagName: "Persona 2",
-				userId: "",
-				persona: true
-		}, {
-				hostId: "SYSTEM_HOST",
-				tagId: "2332701d-67c4-4d9c-955a-9a6840d2d162",
-				tagName: "blog entry test",
-				userId: "",
-				persona: false
-		}, {
-				hostId: "SYSTEM_HOST",
-				tagId: "30f960be-da72-4ab1-b60e-ed9725d7a32a",
-				tagName: "test",
-				userId: "",
-				persona: false
-		}, {
-				hostId: "SYSTEM_HOST",
-				tagId: "bf8e4b34-2151-4494-be98-b2c40ed18099",
-				tagName: "testing",
-				userId: "",
-				persona: false
-		}];
 
 		if (result.length > 0) {
 				var tags = "<h3>Tags</h3>";
@@ -320,7 +289,7 @@ function fillExistingTags(elementId, value) {
 		if (!tagsContainer) {
 				tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 		}
-		var existingTags = value.split(", ");
+		var existingTags = value.split(",");
 		fillExistingTagsMap(existingTags);
 		fillExistingTagsLinks(existingTags);
 		tagVelocityVarName = null;
@@ -329,12 +298,20 @@ function fillExistingTags(elementId, value) {
 
 function fillExistingTagsMap(tags) {
 		tags.forEach(function(tag) {
+
+				tag = RTrim(tag);
+				tag = LTrim(tag);
+
 				addTagToMap(tag);
 		});
 }
 
 function fillExistingTagsLinks(tags) {
 		tags.forEach(function(tag) {
+
+				tag = RTrim(tag);
+				tag = LTrim(tag);
+
 				addTagLink(tag);
 		});
 }
@@ -361,12 +338,20 @@ function isTagAdded(tag) {
 }
 
 function removeTagValue(tagToRemove) {
+
+        tagToRemove = RTrim(tagToRemove);
+        tagToRemove = LTrim(tagToRemove);
+
 		var tagValues = document.getElementById(tagVelocityVarName + "Content");
 		if (tagValues.value.length) {
-				var tagsExisting = tagValues.value.split(", ");
+				var tagsExisting = tagValues.value.split(",");
 				var updatedTagValues = [];
 				tagsExisting.forEach(function(tag) {
-						if (tag != tagToRemove) {
+
+						tag = RTrim(tag);
+						tag = LTrim(tag);
+
+						if (tag.toString() != tagToRemove.toString()) {
 								updatedTagValues.push(tag);
 						}
 				});

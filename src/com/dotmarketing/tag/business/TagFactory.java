@@ -105,7 +105,7 @@ public interface TagFactory {
      * @param inode inode of the object tagged
      * @return the tagInode
      */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException;
+    public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException;
 
     /**
      * Deletes a TagInode

@@ -1,10 +1,9 @@
 package com.dotmarketing.tag.model;
 
+import com.dotmarketing.util.InodeUtils;
+
 import java.io.Serializable;
 import java.util.Date;
-
-import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.InodeUtils;
 
 public class TagInode implements Serializable {
 
@@ -19,6 +18,11 @@ public class TagInode implements Serializable {
 
     /** persistent field */
     private String tagId;
+
+    /**
+     * persistent field
+     */
+    private String fieldVarName;
 
 	/** persistent field */
 	private Date modDate;
@@ -35,7 +39,18 @@ public class TagInode implements Serializable {
 	 */
 	public void setTagId(String tagId) {
 		this.tagId = tagId;
-	}
+    }
+
+    public String getFieldVarName() {
+        if (fieldVarName == null) {
+            return "";
+        }
+        return fieldVarName;
+    }
+
+    public void setFieldVarName(String fieldVarName) {
+        this.fieldVarName = fieldVarName;
+    }
 
 	/**
 	 * @return the userId

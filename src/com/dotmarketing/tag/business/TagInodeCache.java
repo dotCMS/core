@@ -11,7 +11,7 @@ import java.util.List;
  */
 public abstract class TagInodeCache implements Cachable {
 
-    abstract protected TagInode get ( String tagId, String inode );
+    abstract protected TagInode get ( String tagId, String inode, String fieldVarName );
 
     abstract protected void put ( TagInode object );
 

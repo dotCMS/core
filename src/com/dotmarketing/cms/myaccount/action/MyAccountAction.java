@@ -136,10 +136,10 @@ public class MyAccountAction extends DispatchAction {
 		List<TagInode> tags = APILocator.getTagAPI().getTagInodesByInode(userProxy.getInode());
 		for (TagInode tag: tags) {
 			Tag tempTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
-			APILocator.getTagAPI().deleteTagInode(tempTag, userProxy.getInode());
+			APILocator.getTagAPI().deleteTagInode(tempTag, userProxy.getInode(), null);
 		}
 		if(tags.size() > 0){
-			APILocator.getTagAPI().addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
+			APILocator.getTagAPI().addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode(), null);
 		}
 		
 		CategoryAPI categoryAPI = APILocator.getCategoryAPI();

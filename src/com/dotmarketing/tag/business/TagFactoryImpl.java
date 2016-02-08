@@ -1,22 +1,16 @@
 package com.dotmarketing.tag.business;
 
 import com.dotmarketing.beans.Host;
-import com.dotmarketing.beans.Inode;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
-import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
-import com.liferay.portal.model.User;
-import com.liferay.portal.struts.ActionException;
 
 import java.util.*;
 
@@ -35,22 +29,15 @@ public class TagFactoryImpl implements TagFactory {
 
     private static final String TAG_INODE_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_INODE_COLUMN_INODE = "inode";
+    private static final String TAG_INODE_COLUMN_FIELD_VAR_NAME = "field_var_name";
     private static final String TAG_INODE_COLUMN_MOD_DATE = "mod_date";
 
-    private PermissionAPI permissionAPI = APILocator.getPermissionAPI();
     private TagCache tagCache;
     private TagInodeCache tagInodeCache;
 
     public TagFactoryImpl () {
         tagCache = CacheLocator.getTagCache();
         tagInodeCache = CacheLocator.getTagInodeCache();
-    }
-
-    /**
-     * @param permissionAPIRef the permissionAPI to set
-     */
-    public void setPermissionAPI ( PermissionAPI permissionAPIRef ) {
-        permissionAPI = permissionAPIRef;
     }
 
     /**
@@ -314,19 +301,6 @@ public class TagFactoryImpl implements TagFactory {
         return new java.util.ArrayList<>();
     }
 
-    private String limitAndOffset ( int start, int limit ) {
-
-        String currentSql = "";
-        if ( limit > 0 ) {
-            currentSql = currentSql.concat(" LIMIT ").concat(String.valueOf(limit));
-        }
-        if ( start != -1 ) {
-            currentSql = currentSql.concat(" OFFSET ").concat(String.valueOf(start));
-        }
-
-        return currentSql;
-    }
-
     public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException {
 
         //First lets clean up the cache
@@ -340,11 +314,12 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the update
         final DotConnect dc = new DotConnect();
-        dc.setSQL("UPDATE tag SET tag_id = ?, mod_date = ? WHERE tag_id = ? AND inode = ?");
+        dc.setSQL("UPDATE tag_inode SET tag_id = ?, mod_date = ? WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
         dc.addParam(tagId);
         dc.addParam(new Date());
         dc.addParam(tagInode.getTagId());
         dc.addParam(tagInode.getInode());
+        dc.addParam(tagInode.getFieldVarName());
 
         dc.loadResult();
     }
@@ -378,9 +353,10 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the insert
         final DotConnect dc = new DotConnect();
-        dc.setSQL("INSERT INTO tag_inode (tag_id, inode, mod_date) VALUES (?,?,?)");
+        dc.setSQL("INSERT INTO tag_inode (tag_id, inode, field_var_name, mod_date) VALUES (?,?,?,?)");
         dc.addParam(tagInode.getTagId());
         dc.addParam(tagInode.getInode());
+        dc.addParam(tagInode.getFieldVarName());
         dc.addParam(new Date());
 
         dc.loadResult();
@@ -452,7 +428,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //And add the results to the cache
             for ( TagInode tagInode : tagInodes ) {
-                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode()) == null ) {
+                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode(), tagInode.getFieldVarName()) == null ) {
                     tagInodeCache.put(tagInode);
                 }
             }
@@ -482,7 +458,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //And add the results to the cache
             for ( TagInode tagInode : tagInodes ) {
-                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode()) == null ) {
+                if ( tagInodeCache.get(tagInode.getTagId(), tagInode.getInode(), tagInode.getFieldVarName()) == null ) {
                     tagInodeCache.put(tagInode);
                 }
             }
@@ -499,16 +475,17 @@ public class TagFactoryImpl implements TagFactory {
      * @param inode inode of the object tagged
      * @return the tagInode
      */
-    public TagInode getTagInode ( String tagId, String inode ) throws DotDataException {
+    public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
 
-        TagInode tagInode = tagInodeCache.get(tagId, inode);
+        TagInode tagInode = tagInodeCache.get(tagId, inode, fieldVarName);
         if ( tagInode == null ) {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT * FROM tag_inode WHERE tag_id = ? AND inode = ?");
+            dc.setSQL("SELECT * FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
             dc.addParam(tagId);
             dc.addParam(inode);
+            dc.addParam(fieldVarName);
 
             List<Map<String, Object>> sqlResults = dc.loadObjectResults();
             if ( sqlResults != null && !sqlResults.isEmpty() ) {
@@ -537,9 +514,10 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the update
         final DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ?");
+        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
         dc.addParam(tagInode.getTagId());
         dc.addParam(tagInode.getInode());
+        dc.addParam(tagInode.getFieldVarName());
 
         dc.loadResult();
     }
@@ -559,14 +537,6 @@ public class TagFactoryImpl implements TagFactory {
 
             //And add the results to the cache
             for ( Tag tag : tags ) {
-
-                if ( tagInodeCache.get(tag.getTagId(), inode) == null ) {
-                    TagInode tagInode = new TagInode();
-                    tagInode.setTagId(tag.getTagId());
-                    tagInode.setInode(inode);
-                    tagInodeCache.put(tagInode);
-                }
-
                 if ( tagCache.get(tag.getTagId()) == null ) {
                     tagCache.put(tag);
                 }
@@ -585,26 +555,6 @@ public class TagFactoryImpl implements TagFactory {
      */
     private String escapeSingleQuote ( String tagName ) {
         return tagName.replace("'", "''");
-    }
-
-    /**
-     * Checks the permission access of an user over an object
-     *
-     * @param webAsset   object to validates access
-     * @param user       user to validate access
-     * @param permission read or write permission to validates
-     * @throws ActionException
-     * @throws DotDataException
-     */
-    private void _checkUserPermissions ( Inode webAsset, User user, int permission ) throws ActionException, DotDataException {
-        // Checking permissions
-        if ( !InodeUtils.isSet(webAsset.getInode()) )
-            return;
-
-        if ( !permissionAPI.doesUserHavePermission(webAsset, permission,
-                user) ) {
-            throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
-        }
     }
 
     private List<Tag> convertForTags ( List<Map<String, Object>> sqlResults ) {
@@ -664,6 +614,7 @@ public class TagFactoryImpl implements TagFactory {
             tagInode = new TagInode();
             tagInode.setTagId((String) sqlResult.get(TAG_INODE_COLUMN_TAG_ID));
             tagInode.setInode((String) sqlResult.get(TAG_INODE_COLUMN_INODE));
+            tagInode.setFieldVarName((String) sqlResult.get(TAG_INODE_COLUMN_FIELD_VAR_NAME));
             tagInode.setModDate((Date) sqlResult.get(TAG_INODE_COLUMN_MOD_DATE));
         }
 

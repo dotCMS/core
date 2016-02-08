@@ -1,4 +1,3 @@
-
 create table ABContact (
 	contactId varchar(100) not null primary key,
 	userId varchar(100) not null,
@@ -1864,8 +1863,9 @@ create table workflow_task (
 create table tag_inode (
    tag_id varchar(100) not null,
    inode varchar(100) not null,
+   field_var_name varchar(255) DEFAULT '',
    mod_date timestamp,
-   primary key (tag_id, inode)
+   primary key (tag_id, inode, field_var_name)
 );
 create table click (
    inode varchar(36) not null,

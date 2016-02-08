@@ -1246,14 +1246,14 @@ public class ImportUtil {
 										hostId = Host.SYSTEM_HOST;
 									}
 									for (String tag : tags) {
-										APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), hostId);
+										APILocator.getTagAPI().addTagInode(tag.trim(), cont.getInode(), hostId, field.getVelocityVarName());
 									}
 								}
 								else {
 									for (String tagName : tags)
 										try {
                                             if ( tagName != null && !tagName.trim().isEmpty() ) {
-												APILocator.getTagAPI().addTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST );
+												APILocator.getTagAPI().addTagInode( tagName.trim(), cont.getInode(), Host.SYSTEM_HOST, field.getVelocityVarName() );
                                             }
                                         } catch (Exception e) {
 											e.printStackTrace();

@@ -2593,7 +2593,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 boolean structureHasAHostField = hasAHostField(contentlet.getStructureInode());
 
                 //Preparing the tags info to be related to this contentlet
-                List<String> tagsValues = new ArrayList<>();
+                HashMap<String, String> tagsValues = new HashMap<>();
                 String tagsHost = Host.SYSTEM_HOST;
 
                 List<Field> fields = FieldsCache.getFieldsByStructureInode(contentlet.getStructureInode());
@@ -2619,8 +2619,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 else
                                     tagsHost = host.getIdentifier();
                             }
-                            //Add these tags to a tempral list in order to relate them later to this contentlet
-                            tagsValues.add(value);
+
+                            //Add these tags to a temporal list in order to relate them later to this contentlet
+                            tagsValues.put(field.getVelocityVarName(), value);
 
                             //We should not store the tags inside the field, the relation must only exist on the tag_inode table
                             contentlet.setStringProperty(field.getVelocityVarName(), "");
@@ -2634,12 +2635,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
 				    contentlet = conFac.save(contentlet);
 
                 //Relate the tags with the saved contentlet
-                for ( String tagsValue : tagsValues ) {
+                for ( Entry<String, String> tagEntry : tagsValues.entrySet() ) {
                     //From the given CSV tags names list search for the tag objects and if does not exist create them
-                    List<Tag> list = tagAPI.getTagsInText(tagsValue, tagsHost);
+                    List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
                     for ( Tag tag : list ) {
                         //Relate the found/created tag with this contentlet
-                        tagAPI.addTagInode(tag, contentlet.getInode());
+                        tagAPI.addTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                     }
                 }
 
