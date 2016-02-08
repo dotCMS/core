@@ -85,7 +85,7 @@ var rsrc = {
       </div>
     </div>
   </div>
-  <div class="cw-accordion-body" [class.cw-hidden]="collapsed">
+  <!--<div class="cw-accordion-body" [class.cw-hidden]="collapsed">
     <condition-group *ngFor="var group of groups; var i=index"
                      [rule]="rule"
                      [group]="group"
@@ -109,7 +109,7 @@ var rsrc = {
         </div>
       </div>
     </div>
-  </div>
+  </div>-->
 </div>
 </form>
 `,
@@ -165,13 +165,12 @@ class RuleComponent {
       value: 'EVERY_PAGE',
       placeholder: this.rsrc('inputs.fireOn.placeholder', "Select One"),
       options: [
-        {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage')},
+        {value: 'EVERY_PAGE', label: this.rsrc('inputs.fireOn.options.EveryPage', 'x')},
         {value: 'ONCE_PER_VISIT', label: this.rsrc('inputs.fireOn.options.OncePerVisit')},
         {value: 'ONCE_PER_VISITOR', label: this.rsrc('inputs.fireOn.options.OncePerVisitor')},
         {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
       ]
     }
-
     this.initFormModel(fb)
   }
 
@@ -190,11 +189,12 @@ class RuleComponent {
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal )
       this._rsrcCache[subkey] = msgObserver.map(v => {
+        console.log("RuleComponent", "whhaaaat why IE, WHY!?", v)
         return v
       })
     }
-    return msgObserver
 
+    return msgObserver
   }
 
   ngOnChanges(change) {

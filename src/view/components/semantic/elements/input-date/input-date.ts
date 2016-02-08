@@ -17,10 +17,9 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
 })
 @View({
   template: `
-<div class="ui fluid input" [ngClass]="{disabled: disabled, error: errorMessage, icon: icon, required: required}">
-  <input type="{{type}}" name="{{name}}" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
-    class="ng-valid"
-    [required]="false"
+<div class="ui fluid input" [ngClass]="{disabled: disabled, icon: icon, required: required}">
+  <input type="{{type}}" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+    [required]="required"
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
     (blur)="validate($event.target.value); onBlur($event.target.value)"
@@ -38,7 +37,6 @@ export class InputDate implements ControlValueAccessor  {
   onTouched = () => {
   };
 
-  @Input()  name:string = ""
   @Input()  value:string = ""
   @Input()  placeholder:string = ""
   @Input()  icon:string

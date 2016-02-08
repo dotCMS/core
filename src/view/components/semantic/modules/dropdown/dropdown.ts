@@ -74,6 +74,8 @@ export class Dropdown implements AfterViewInit, OnDestroy {
   }
 
   ngOnChanges(change) {
+    console.log("Dropdown", "ngOnChanges", change, change.value)
+
     if (change.value ) {
       if (this._$dropdown) {
         this._$dropdown.dropdown('set selected', this.value)
