@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # -----------------------------------------------------------------------------
-# Start Script for the dotCMS Server
+# Shutdown Script for the dotCMS Server
 # -----------------------------------------------------------------------------
 
 # Better OS/400 detection: see Bugzilla 31132
