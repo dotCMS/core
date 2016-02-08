@@ -574,7 +574,9 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 wff.deleteWorkflowTask(wft);
             }
 
-            
+            //Remove the tag references to this Contentlet
+            APILocator.getTagAPI().deleteTagInodesByInode(con.getInode());
+
             if(InodeUtils.isSet(con.getInode())){
                 APILocator.getPermissionAPI().removePermissions(con);
 

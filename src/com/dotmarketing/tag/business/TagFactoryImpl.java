@@ -502,6 +502,26 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
+     * Deletes TagInodes references by inode
+     *
+     * @param inode inode reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByInode(String inode) throws DotDataException {
+
+        //First lets clean up the cache
+        tagInodeCache.removeByInode(inode);
+        tagCache.removeByInode(inode);
+
+        //Execute the update
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag_inode WHERE inode = ?");
+        dc.addParam(inode);
+
+        dc.loadResult();
+    }
+
+    /**
      * Deletes a TagInode
      *
      * @param tagInode TagInode to delete

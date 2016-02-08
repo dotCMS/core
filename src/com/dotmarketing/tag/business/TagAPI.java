@@ -264,6 +264,14 @@ public interface TagAPI {
 	public void deleteTagInode ( TagInode tagInode ) throws DotDataException;
 
 	/**
+	 * Deletes TagInodes references by inode
+	 *
+	 * @param inode inode reference to delete
+	 * @throws DotDataException
+	 */
+	public void deleteTagInodesByInode(String inode) throws DotDataException;
+
+	/**
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged

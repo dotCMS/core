@@ -27,6 +27,8 @@ public abstract class TagInodeCache implements Cachable {
 
     abstract protected void removeByTagId ( String tagId );
 
+    abstract protected void removeByInode ( String inode );
+
     abstract protected String getTagInodesByTagIdGroup ();
 
     abstract protected String getTagInodesByInodeGroup ();

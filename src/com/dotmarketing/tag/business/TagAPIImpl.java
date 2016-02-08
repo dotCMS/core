@@ -627,6 +627,16 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
+     * Deletes TagInodes references by inode
+     *
+     * @param inode inode reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByInode(String inode) throws DotDataException {
+        tagFactory.deleteTagInodesByInode(inode);
+    }
+
+    /**
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged

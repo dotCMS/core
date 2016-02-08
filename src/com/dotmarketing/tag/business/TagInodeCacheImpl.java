@@ -112,6 +112,16 @@ public class TagInodeCacheImpl extends TagInodeCache {
     }
 
     @Override
+    protected void removeByInode(String inode) {
+        List<TagInode> cachedObjects = getByInode(inode);
+        if (cachedObjects != null && !cachedObjects.isEmpty()) {
+            for (TagInode cachedObject : cachedObjects) {
+                remove(cachedObject);
+            }
+        }
+    }
+
+    @Override
     public void clearCache () {
         cache.flushGroup(getPrimaryGroup());
         cache.flushGroup(getTagInodesByTagIdGroup());
