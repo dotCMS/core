@@ -12,9 +12,12 @@ import java.util.List;
 import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -80,6 +83,7 @@ public class RulesImportExportUtil {
 
 			//Saving the rules.
 			for (Rule rule : importer.getRules()) {
+				rule.setParentPermissionable(RulePermissionableUtil.findParentPermissionable(rule.getParent()));
 				rapi.saveRule(rule, user, false);
 
 				//Saving the Condition Groups.
@@ -107,7 +111,7 @@ public class RulesImportExportUtil {
 
 		RulesAPIImpl rapi = (RulesAPIImpl) APILocator.getRulesAPI();
 		User user = APILocator.getUserAPI().getSystemUser();
-		
+
 		List<Rule> rules = (parent == null) ? rapi.getAllRules(user, false) : rapi.getAllRulesByParent(parent, user, false);
 
 		RulesImportExportObject export = new RulesImportExportObject();
@@ -115,4 +119,5 @@ public class RulesImportExportUtil {
 
 		return export;
 	}
+
 }

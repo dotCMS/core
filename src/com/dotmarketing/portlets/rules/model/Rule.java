@@ -1,11 +1,13 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.*;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
+import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -54,8 +56,7 @@ public class Rule implements Permissionable, Serializable {
     private Date modDate;
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
-
-
+    private Permissionable parentPermissionable;
 
     public String getParent() {
 		return parent;
@@ -167,7 +168,6 @@ public class Rule implements Permissionable, Serializable {
         return ruleActions;
     }
     // Beginning Permissionable methods
-
     public String getPermissionId() {
         return this.getId();
     }
@@ -177,6 +177,7 @@ public class Rule implements Permissionable, Serializable {
     }
 
     public void setOwner(String owner) {
+        //TODO
     }
 
     public List<PermissionSummary> acceptedPermissions() {
@@ -190,22 +191,22 @@ public class Rule implements Permissionable, Serializable {
         return null;
     }
 
+    @JsonIgnore
     public Permissionable getParentPermissionable() throws DotDataException {
-		try {
-			User systemUser = APILocator.getUserAPI().getSystemUser();
-			Identifier iden = APILocator.getIdentifierAPI().find(getParent());
+        Permissionable pp;
 
-			if(iden.getAssetType().equals("folder")){
-	        	return APILocator.getFolderAPI().find(getParent(),systemUser,false);
-	        }else{
-	        	return APILocator.getContentletAPI()
-                        .findContentletByIdentifier(getParent(), false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-	        }
+        if(parentPermissionable != null){
+            pp = parentPermissionable;
+        } else {
+            pp = RulePermissionableUtil.findParentPermissionable(getParent());
+        }
 
-		} catch (DotSecurityException e) {
-			Logger.error(Rule.class, e.getMessage(), e);
-			throw new DotRuntimeException(e.getMessage(), e);
-		}
+        return pp;
+    }
+
+    @JsonIgnore
+    public void setParentPermissionable(Permissionable parentPermissionable){
+        this.parentPermissionable = parentPermissionable;
     }
 
     public String getPermissionType() {
