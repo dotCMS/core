@@ -1,23 +1,19 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-
-
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
-import com.dotmarketing.util.Logger;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class RuleAction implements RuleComponentModel, Serializable {
 
@@ -29,7 +25,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private int priority;
     private String actionlet;
     private Date modDate;
-    private List<ParameterModel> parameters;
+    private Map<String, ParameterModel> parameters;
     private transient RuleActionlet actionDef;
     private transient RuleComponentInstance instance;
 
@@ -81,24 +77,26 @@ public class RuleAction implements RuleComponentModel, Serializable {
         this.modDate = modDate;
     }
 
-    public void setParameters(List<ParameterModel> parameters) {
+    @JsonProperty("parameters")
+    public void setParameters(Map<String, ParameterModel> parameters) {
         this.parameters = parameters;
     }
 
-    public void addParameter(ParameterModel parameter) {
-        if(parameters==null)
-            parameters = new ArrayList<>();
+    @JsonIgnore
+    public void setParameters(List<ParameterModel> params) {
+        Map<String, ParameterModel> finalParameters = Maps.newHashMap();
+        for (ParameterModel parameter : params) {
+            finalParameters.put(parameter.getKey(), parameter);
+        }
+        this.parameters = finalParameters;
+    }
 
-        this.parameters.add(parameter);
+    public void addParameter(ParameterModel parameter) {
+        this.parameters.put(parameter.getKey(), parameter);
     }
 
     public Map<String, ParameterModel> getParameters(){
-    	parameters = (parameters==null) ? new ArrayList<>() : parameters; 
-        Map<String, ParameterModel> params = Maps.newHashMap();
-        for (ParameterModel param : parameters) {
-            params.put(param.getKey(), param);
-        }
-        return params;
+        return parameters;
     }
 
     public void checkValid() {
@@ -117,13 +115,11 @@ public class RuleAction implements RuleComponentModel, Serializable {
         return actionDef;
     }
 
-
 	@Override
 	public String toString() {
 		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
 				+ ", priority=" + priority + ", actionlet=" + actionlet
 				+ ", modDate=" + modDate + "]";
 	}
-
 
 }

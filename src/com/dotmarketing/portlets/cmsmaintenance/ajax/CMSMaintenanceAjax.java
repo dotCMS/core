@@ -21,6 +21,7 @@ import java.util.zip.ZipOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 
+import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import org.quartz.JobExecutionContext;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
@@ -764,6 +765,10 @@ public class CMSMaintenanceAjax {
 				//backup workflow
 				File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 				WorkflowImportExportUtil.getInstance().exportWorkflows(file);
+
+				//Backup Rules.
+				file = new File(backupTempFilePath + "/RuleImportExportObject.json");
+				RulesImportExportUtil.getInstance().export(file);
 
 			} catch (HibernateException e) {
 				Logger.error(this,e.getMessage(),e);

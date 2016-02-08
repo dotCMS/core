@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.sync.Exportable;
 import com.dotcms.sync.Importable;
@@ -143,6 +144,7 @@ public class Field extends Inode implements Exportable, Importable
 		return false;
 	}
 
+	@JsonIgnore
 	public List<Exportable> getDependencies() {
 		List<Exportable> ret =new ArrayList<Exportable>();
 		ret.add(this);
