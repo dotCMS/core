@@ -261,7 +261,7 @@ public class TagFactoryImpl implements TagFactory {
                 //if tag name and host name are set as filters
                 //search by name, global tags and current host.
                 if ( UtilMethods.isSet(tagName) && globalTagsFilter ) {
-                    dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ? OR host_id = ?) " + sortStr + limitAndOffset(start, count));
+                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ? OR host_id = ?) " + sortStr,start, count));
                     dc.addParam("%" + tagName.toLowerCase() + "%");
                     try {
                         dc.addParam(host.getMap().get("tagStorage").toString());
@@ -272,7 +272,7 @@ public class TagFactoryImpl implements TagFactory {
                 }
                 //if global host is not set as unique filter but tag name is set, search in current host
                 else if ( UtilMethods.isSet(tagName) && !globalTagsFilter ) {
-                    dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ?) " + sortStr + limitAndOffset(start, count));
+                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ?) " + sortStr ,start, count));
                     dc.addParam("%" + tagName.toLowerCase() + "%");
                     try {
                         dc.addParam(host.getMap().get("tagStorage").toString());
@@ -282,7 +282,7 @@ public class TagFactoryImpl implements TagFactory {
                 } else if ( !UtilMethods.isSet(tagName) && globalTagsFilter ) {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
-                    dc.setSQL("SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + sortStr + limitAndOffset(start, count));
+                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + sortStr ,start, count));
 
                     try {
                         dc.addParam(host.getMap().get("tagStorage").toString());
@@ -297,8 +297,8 @@ public class TagFactoryImpl implements TagFactory {
                     Object tagStorage = host.getMap().get("tagStorage");
 
                     if ( UtilMethods.isSet(tagStorage) ) {
-                        sql = sql + "WHERE ( host_id = ? ) " + sortStr + limitAndOffset(start, count);
-                        dc.setSQL(sql);
+                        sql = sql + "WHERE ( host_id = ? ) " + sortStr;
+                        dc.setSQL(SQLUtil.addLimits(sql,start,count));
                         dc.addParam(tagStorage.toString());
                     } else {
                         dc.setSQL(sql);
