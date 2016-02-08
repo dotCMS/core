@@ -7,27 +7,22 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.util.EnumSet;
 import java.util.List;
-import java.util.Map;
-
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
 
 import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Treeable;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
-import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.rules.model.RuleAction;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
@@ -40,19 +35,15 @@ public class RulesImportExportUtil {
 			synchronized ("RulesImportExportUtil.class") {
 				if (rulesImportExportUtil == null) {
 					rulesImportExportUtil = new RulesImportExportUtil();
-
 				}
 			}
-
 		}
 		return rulesImportExportUtil;
-
 	}
 
 	public String exportToJson() throws IOException, DotDataException, DotSecurityException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(buildExportObject(null));
-
 	}
 
 	public void export(File file) throws IOException {
@@ -67,17 +58,8 @@ public class RulesImportExportUtil {
 		} catch (Exception e) {// Catch exception if any
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 		} finally {
-
 			out.close();
-
 		}
-		FilterRegistration fr = Config.CONTEXT.addFilter("DynamicFilter","com.sample.TestFilter");
-		fr.setInitParameter("filterInitName", "filterInitValue");
-		fr.addMappingForServletNames(EnumSet.of(DispatcherType.REQUEST),
-		                                     true, "DynamicServlet");
-		
-		
-		
 	}
 
 	public void importRules(File file) throws IOException {
@@ -97,86 +79,45 @@ public class RulesImportExportUtil {
 				sw.append(str);
 			}
 
-			RulesImportExportObject importer = mapper.readValue((String) sw.toString(), RulesImportExportObject.class);
+			RulesImportExportObject importer = mapper.readValue(sw.toString(), RulesImportExportObject.class);
 
+			//Saving the rules.
 			for (Rule rule : importer.getRules()) {
+				rule.setParentPermissionable(RulePermissionableUtil.findParentPermissionable(rule.getParent()));
 				rapi.saveRule(rule, user, false);
-			}
-			for (ConditionGroup group : importer.getConditionGroups()) {
-				rapi.saveConditionGroup(group, user, false);
-			}
 
-			for (Condition condition : importer.getConditions()) {
-				rapi.saveCondition(condition, user, false);
-			}
-			for (Condition condition : importer.getConditions()) {
-				for (ParameterModel param : importer.getParameters()) {
-					if (param.getOwnerId().equals(condition.getId())) {
-						condition.addValue(param);
+				//Saving the Condition Groups.
+				for (ConditionGroup group : rule.getGroups()) {
+					rapi.saveConditionGroup(group, user, false);
+					//Saving the Condition for each group.
+					for (Condition condition : group.getConditions()) {
+						rapi.saveCondition(condition, user, false);
 					}
 				}
-				rapi.saveCondition(condition, user, false);
-			}
-
-			for (RuleAction action : importer.getRuleActions()) {
-
-				for (ParameterModel param : importer.getParameters()) {
-					if (param.getOwnerId().equals(action.getId())) {
-						action.addParameter(param);
-					}
+				//Saving the Action.
+				for (RuleAction action : rule.getRuleActions()) {
+					rapi.saveRuleAction(action, user, false);
 				}
-
-				rapi.saveRuleAction(action, user, false);
 			}
 
-		} catch (Exception e) {// Catch exception if any
+		} catch (Exception e) {
 			Logger.error(this.getClass(), "Error: " + e.getMessage(), e);
 		} finally {
-
 			in.close();
-
 		}
 	}
 
-	public RulesImportExportObject buildExportObject(Treeable parent) throws DotDataException, DotSecurityException {
+	public RulesImportExportObject buildExportObject(Ruleable parent) throws DotDataException, DotSecurityException {
 
-		RulesImportExportObject obj = new RulesImportExportObject();
 		RulesAPIImpl rapi = (RulesAPIImpl) APILocator.getRulesAPI();
 		User user = APILocator.getUserAPI().getSystemUser();
-		
-		List<Rule> rules = null;//(parent == null) ? rapi.getAllRules(user, false) : rapi.getAllRulesByParent(parent, user, false);
-		obj.setRules(rules);
 
-		List<ConditionGroup> groups = Lists.newArrayList();
-		List<Condition> conditions 	= Lists.newArrayList();
-		List<RuleAction> actions 	= Lists.newArrayList();
-		List<ParameterModel> params = Lists.newArrayList();
-
-		for (Rule r : rules) {
-			for (ConditionGroup group : rapi.getConditionGroupsByRule(r.getId(), user, false)) {
-				groups.add(group);
-				for (Condition condition : rapi.getConditionsByConditionGroup(group.getId(), user, false)) {
-					conditions.add(condition);
-					for (Map.Entry<String, ParameterModel> param : condition.getParameters().entrySet()) {
-						params.add(param.getValue());
-					}
-				}
-			}
-			for (RuleAction action : rapi.getRuleActionsByRule(r.getId(), user, false)) {
-				actions.add(action);
-				for (Map.Entry<String, ParameterModel> param : action.getParameters().entrySet()) {
-					params.add(param.getValue());
-				}
-			}
-		}
+		List<Rule> rules = (parent == null) ? rapi.getAllRules(user, false) : rapi.getAllRulesByParent(parent, user, false);
 
 		RulesImportExportObject export = new RulesImportExportObject();
 		export.setRules(rules);
-		export.setConditions(conditions);
-		export.setConditionGroups(groups);
-		export.setParameters(params);
-		export.setRuleActions(actions);
-		return export;
 
+		return export;
 	}
+
 }

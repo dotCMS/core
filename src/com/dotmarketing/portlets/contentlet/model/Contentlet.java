@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotcms.repackage.org.apache.commons.lang.builder.HashCodeBuilder;
 import com.dotcms.repackage.org.apache.commons.lang.builder.ToStringBuilder;
 import com.dotcms.sync.Exportable;
@@ -109,6 +110,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     	//setHost(HostFactory.SYSTEM_HOST);//http://jira.dotmarketing.net/browse/DOTCMS-3232
     	//setFolder(FolderFactory.SYSTEM_FOLDER);
     }
+
+	@JsonIgnore
 	public List<Exportable> getDependencies() {
 		// TODO Auto-generated method stub
 		List<Exportable> ret =new ArrayList<Exportable>();

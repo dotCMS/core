@@ -67,6 +67,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotReindexStateException;
 import com.dotmarketing.portlets.dashboard.model.DashboardSummary404;
 import com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences;
+import com.dotmarketing.portlets.rules.util.RulesImportExportUtil;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -888,6 +889,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			
 			File file = new File(backupTempFilePath + "/WorkflowSchemeImportExportObject.json");
 			WorkflowImportExportUtil.getInstance().exportWorkflows(file);
+
+			file = new File(backupTempFilePath + "/RuleImportExportObject.json");
+			RulesImportExportUtil.getInstance().export(file);
 			
 			IndiciesInfo info=APILocator.getIndiciesAPI().loadIndicies();
 
