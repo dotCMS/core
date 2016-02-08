@@ -120,7 +120,7 @@ public class CMSFilter implements Filter {
 		} else if (urlUtil.isFolder(uri, host)) {
 			iAm = IAm.FOLDER;
 		}
-		
+
 		String rewrite = null;
 		String queryString = request.getQueryString();
 		// if a vanity URL
@@ -182,6 +182,7 @@ public class CMSFilter implements Filter {
 
 		if(iAm == IAm.PAGE){
 			countPageVisit(request);
+
 		}
 
 		// if we are not rewriting anything, use the uri
@@ -251,7 +252,10 @@ public class CMSFilter implements Filter {
 			if (visitor.isPresent()) {
 				visitor.get().addPagesViewed(request.getRequestURI());
 			}
+
 		}
+
+
 	}
 
 
