@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.org.junit.After;
 import com.dotcms.repackage.org.junit.Assert;
+import com.dotcms.repackage.org.junit.BeforeClass;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -49,6 +51,11 @@ import java.util.List;
  *
  */
 public class PersonaActionletFTest extends TestBase {
+
+	@BeforeClass
+	public static void prepare () throws Exception {
+		LicenseTestUtil.getLicense();
+	}
 
 	private static FolderAPI folderAPI = APILocator.getFolderAPI();
 	private static TemplateAPI templateAPI = APILocator.getTemplateAPI();
@@ -113,13 +120,10 @@ public class PersonaActionletFTest extends TestBase {
 		boolean isPersonaBIndexed = contentletAPI.isInodeIndexed(persona2.getInode(), 500);
 		Assert.assertTrue(isPersonaBIndexed);
 
-		/*check if the personas were created */
-		List<Persona> personas = personaAPI.getPersonas(host, true, false, sysuser, true);
-
-		Assert.assertTrue("Error the number of personas created does not match the amount", personas.size() == 2);
-		for(Persona p : personas){
-			Assert.assertTrue(p.getIdentifier().equals(personaA.getIdentifier()) || p.getIdentifier().equals(personaB.getIdentifier()));
-		}
+		Assert.assertTrue("PersonaA was not created succesfully",
+				UtilMethods.isSet(personaAPI.find(personaA.getIdentifier(), sysuser, false)));
+		Assert.assertTrue("PersonaB was not created succesfully",
+				UtilMethods.isSet(personaAPI.find(personaB.getIdentifier(), sysuser, false)));
 
 		/*
 		 * Test 1:

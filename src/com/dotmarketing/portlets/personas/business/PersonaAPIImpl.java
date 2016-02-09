@@ -228,7 +228,7 @@ public class PersonaAPIImpl implements PersonaAPI {
 		Contentlet con = APILocator.getContentletAPI().findContentletByIdentifier(id, false,
 				APILocator.getLanguageAPI().getDefaultLanguage().getId(), user, respectFrontEndRoles);
 
-		return fromContentlet(con);
+		return UtilMethods.isSet(con) ? fromContentlet(con) : null;
 	}
 
 	@Override
