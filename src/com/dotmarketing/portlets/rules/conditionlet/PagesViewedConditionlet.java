@@ -29,7 +29,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.*;
 public class PagesViewedConditionlet extends Conditionlet<PagesViewedConditionlet.Instance>{
 
     public static final String NUMBER_PAGES_VIEWED_INPUT_KEY = "number-pages-viewed-input-key";
-    public static final String Pages_VIEWED_KEY = "api.ruleengine.system.conditionlet.PagesViewed";
+    public static final String Pages_VIEWED_KEY = "api.system.ruleengine.conditionlet.PagesViewed";
 
     private static final ParameterDefinition<NumericType> NUMBER_PAGES_VIEWED = new ParameterDefinition<>(3, NUMBER_PAGES_VIEWED_INPUT_KEY,
             new NumericInput<>(new NumericType()));
