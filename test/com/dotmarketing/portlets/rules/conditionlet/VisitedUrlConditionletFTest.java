@@ -104,7 +104,7 @@ public class VisitedUrlConditionletFTest {
         conn = apiRequest.makeRequest("contact-us/");
         assertEquals("Specified response header should be present in the Response: ", value,
                 conn.getHeaderField(randomKey));
-        conn = apiRequest.makeRequest("services/investment-banking");
+        conn = apiRequest.makeRequest("services/first-time-investors");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
     }
 
