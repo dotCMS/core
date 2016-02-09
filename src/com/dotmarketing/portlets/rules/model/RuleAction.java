@@ -92,6 +92,10 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public void addParameter(ParameterModel parameter) {
+        if (this.parameters == null){
+            this.parameters = Maps.newHashMap();
+        }
+
         this.parameters.put(parameter.getKey(), parameter);
     }
 
