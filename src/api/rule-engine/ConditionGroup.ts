@@ -82,9 +82,6 @@ export class ConditionGroupService {
         }
       }
     }, 50)
-    ee.subscribe((d)=> {
-      console.log("ConditionGroupService", "eh?")
-    })
     return ee
   }
 
