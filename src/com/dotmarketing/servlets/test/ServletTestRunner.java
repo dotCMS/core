@@ -3,6 +3,7 @@ package com.dotmarketing.servlets.test;
 import com.dotmarketing.listeners.TestTextRingingListener;
 import com.dotmarketing.listeners.TestXmlRingingListener;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.ConfigUtils;
 import com.liferay.util.FileUtil;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
@@ -107,7 +108,7 @@ public class ServletTestRunner extends HttpServlet {
         JUnitCore jUnitCore = new JUnitCore();
 
         //Preparing the reports folder
-        String logsDirectory = Config.CONTEXT.getRealPath( "/dotsecure/logs/test/" );
+        String logsDirectory = ConfigUtils.getDynamicContentPath() + "/logs/test/";
         File reportDirectory = new File( logsDirectory );
         FileUtils.deleteDirectory( reportDirectory );
         reportDirectory.mkdirs();
