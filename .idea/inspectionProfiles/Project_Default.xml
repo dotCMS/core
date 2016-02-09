@@ -2,6 +2,7 @@
   <profile version="1.0">
     <option name="myName" value="Project Default" />
     <option name="myLocal" value="true" />
+    <inspection_tool class="CheckTagEmptyBody" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="DefaultFileTemplate" enabled="false" level="WARNING" enabled_by_default="false">
       <option name="CHECK_FILE_HEADER" value="true" />
       <option name="CHECK_TRY_CATCH_SECTION" value="true" />
@@ -80,6 +81,8 @@
       <option name="myCustomValuesEnabled" value="true" />
     </inspection_tool>
     <inspection_tool class="JSMethodCanBeStatic" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="JSUnusedGlobalSymbols" enabled="false" level="WARNING" enabled_by_default="false" />
+    <inspection_tool class="JSUnusedLocalSymbols" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="JavaDoc" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="TOP_LEVEL_CLASS_OPTIONS">
         <value>

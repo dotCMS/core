@@ -9,8 +9,15 @@
 </head>
 <body>
 
-<script src="thirdparty/system/dist/system.src.js"></script>
-<script src="thirdparty/angular2/bundles/angular2.dev.js"></script>
+<script src="thirdparty/systemjs/dist/system.js"></script>
+<script src="thirdparty/angular2/bundles/angular2-polyfills.js"></script>
+<script  src="thirdparty/es6-shim/es6-shim.js"></script>
+<script src="thirdparty/rxjs/bundles/Rx.js"></script>
+<script src="thirdparty/angular2/bundles/angular2.js"></script>
+<script src="thirdparty/angular2/bundles/http.js"></script>
+<script src="thirdparty/jquery/dist/jquery.js"></script>
+<script src="thirdparty/semantic/dist/semantic.min.js"></script>
+<script src="thirdparty/core-js/client/shim.js"></script>
 
 <script>
 
@@ -20,14 +27,20 @@
 
     },
     packages: {
-      'api': {defaultExtension: 'js'},
-      'view': {defaultExtension: 'js'},
-      'rxjs': {
+      app: {
+        format: 'register',
+        defaultExtension: 'js'
+      },
+      api: {
+        format: 'register',
+        defaultExtension: 'js'
+      },
+      view: {
+        format: 'register',
         defaultExtension: 'js'
       }
     },
     map: {
-      "rxjs": "thirdparty/rxjs",
       "whatwg-fetch": "thirdparty/whatwg-fetch/fetch.js"
     }
   });

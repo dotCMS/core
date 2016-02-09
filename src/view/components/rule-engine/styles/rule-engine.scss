@@ -12,21 +12,27 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
-.ng-valid input,
-input.ng-valid,
-.ui.input input.ng-valid,
-.ng-valid .ui.input input,
-.ui.dropdown.ng-valid,
-.ui.selection.dropdown.ng-valid,
-.required.ui.dropdown.ng-valid {
-  border-left: 5px solid $primary-one;
-}
+.ng-dirty {
+  &.ng-valid input:focus, &input:focus.ng-valid, &.ui.input input:focus.ng-valid, &.ng-valid .ui.input input:focus,
+  &.ui.dropdown.ng-valid, &.ui.selection.dropdown.ng-valid, &.required.ui.dropdown.ng-valid {
+    border-left: 5px solid $primary-one;
+    transition-property: border-left;
+    transition-delay: 0s;
+    transition-duration: 0s;
+}}
 
-.ng-invalid input,
-input.ng-invalid,
-.ui.input input.ng-invalid,
-.ng-invalid .ui.input input,
-.ui.selection.dropdown.ng-invalid {
+.ng-dirty {
+  &.ng-valid input, &input.ng-valid, &.ui.input input.ng-valid, &.ng-valid .ui.input input,
+  &.ui.dropdown.ng-valid, &.ui.selection.dropdown.ng-valid, &.required.ui.dropdown.ng-valid {
+    border-left: 1px solid rgba(34, 36, 38, 0.15);
+    transition-property: border-left, border-left-width;
+    transition-delay: 1s;
+    transition-duration: 600ms;
+    transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+  }}
+
+.ng-invalid input, input.ng-invalid, .ui.input input.ng-invalid, .ng-invalid .ui.input input, .ui.selection.dropdown.ng-invalid {
   border-left: 5px solid $warn
 }
 

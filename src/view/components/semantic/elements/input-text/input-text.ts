@@ -20,7 +20,7 @@ import {isBlank} from 'angular2/src/facade/lang';
   selector: 'cw-input-text',
   host: {'role': 'text'},
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<div flex layout="row" layout-wrap class="ui fluid input" [ngClass]="{disabled: disabled, icon: icon, required: required}">
+  template: `<div flex layout="row" layout-wrap class="ui fluid input"  [ngClass]="{disabled: disabled, icon: icon, required: required}">
     <input flex
            type="{{type}}"
            [value]="_modelValue"
@@ -28,6 +28,7 @@ import {isBlank} from 'angular2/src/facade/lang';
            placeholder="{{placeholder}}"
            (blur)="onTouched()"
            (change)="$event.stopPropagation()"
+
            (input)="onChange($event.target.value)" />
     <i [ngClass]="icon" *ngIf="icon"></i>
 </div>

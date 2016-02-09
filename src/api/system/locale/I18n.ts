@@ -4,6 +4,7 @@ import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../../persistence/ApiRoot";
 import {Verify} from "../../validation/Verify";
+import {Observer} from "rxjs/Observer";
 
 export class TreeNode {
   [key:string]: TreeNode | any
@@ -134,10 +135,11 @@ export class I18nService {
       cNode.$markAsLoading(promise)
     }
     return Observable.defer(()=> {
-      return Observable.create((obs)=> {
+      return Observable.create((obs:Observer<string>  )=> {
         if (cNode._loading == null) {
           console.log("I18n", "Failed: ", msgKey, "=", cNode)
           obs.next("-I18nLoadFailed-")
+          obs.complete()
         } else {
           cNode._loading.then(()=> {
             let v
@@ -153,6 +155,7 @@ export class I18nService {
             }
             //console.log("I18n", "Providing: ", msgKey, "=", v)
             obs.next(v)
+            obs.complete()
           })
         }
       })

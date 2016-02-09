@@ -1,7 +1,7 @@
 import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/core';
 import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
 import { CORE_DIRECTIVES,  } from 'angular2/common';
-import {BehaviorSubject} from 'rxjs/Rx'
+import {BehaviorSubject, Observable} from 'rxjs/Rx'
 
 
 /**
@@ -75,11 +75,19 @@ export class Dropdown implements AfterViewInit, OnDestroy {
 
   ngOnChanges(change) {
     if (change.value ) {
-      if (this._$dropdown) {
+      Observable.interval(10).takeWhile(()=>{
+        return this._$dropdown == null
+      }).subscribe(()=>{
+        console.log("Dropdown", "fireThingy")
+      }, (e)=>{
+        console.log("Dropdown", "Error", e)
+      }, ()=>{
+        console.log("Dropdown", "onComplete")
         this._$dropdown.dropdown('set selected', this.value)
-      }
+      })
     }
   }
+
 
   addOption(option:InputOption) {
     this._optionsAry = this._optionsAry.concat(option)

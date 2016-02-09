@@ -171,7 +171,6 @@ class RuleComponent {
         {value: 'EVERY_REQUEST', label: this.rsrc('inputs.fireOn.options.EveryRequest')}
       ]
     }
-
     this.initFormModel(fb)
   }
 
@@ -189,12 +188,10 @@ class RuleComponent {
     let msgObserver = this._rsrcCache[subkey]
     if (!msgObserver) {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal )
-      this._rsrcCache[subkey] = msgObserver.map(v => {
-        return v
-      })
+      this._rsrcCache[subkey] = msgObserver
     }
-    return msgObserver
 
+    return msgObserver
   }
 
   ngOnChanges(change) {
