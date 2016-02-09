@@ -48,9 +48,6 @@ public class TagInode implements Serializable {
         this.fieldVarName = fieldVarName;
     }
 
-	/**
-	 * @return the userId
-	 */
 	public String getInode() {
 		if(InodeUtils.isSet(inode))
 			return inode;
@@ -66,9 +63,6 @@ public class TagInode implements Serializable {
 		this.modDate = modDate;
 	}
 
-	/**
-	 * @param userId the userId to set
-	 */
 	public void setInode(String inode) {
 		this.inode = inode;
 	}
@@ -107,6 +101,11 @@ public class TagInode implements Serializable {
 			if (InodeUtils.isSet(inode))
 				return false;
 		} else if (inode.equalsIgnoreCase(other.getInode()))
+			return false;
+		if (fieldVarName == null) {
+			if (other.fieldVarName != null)
+				return false;
+		} else if (!fieldVarName.equals(other.fieldVarName))
 			return false;
 		return true;
 	}

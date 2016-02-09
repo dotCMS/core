@@ -70,12 +70,13 @@ public interface TagFactory {
      * @param tagName Tag name
      * @param hostFilter Host identifier
      * @param globalTagsFilter Is a global tag filter
+     * @param excludePersonas True if Persona Tags should be exlude from the returning results
      * @param sort Tag field to order the results
      * @param start first record to get
      * @param count max amount of records to get
      * @return  a list of tags filtered by tag name or host name
      */
-    public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count );
+    public List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas, String sort, int start, int count);
 
     /**
      * Update the specified tagInode related to a tag
@@ -87,13 +88,12 @@ public interface TagFactory {
 
     /**
      * Creates a new tag
-     * @param tagName name of the new tag
-     * @param userId  owner of the new tag
-     * @param hostId host identifier of the new tag
-     * @return new tag created
+     *
+     * @param tag Tag to insert
+     * @return Created tag
      * @throws DotDataException
      */
-    public Tag createTag ( Tag tag ) throws DotDataException;
+    public Tag createTag(Tag tag) throws DotDataException;
 
     /**
      * Create a new TagInode

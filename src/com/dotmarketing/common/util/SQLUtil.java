@@ -134,6 +134,12 @@ public class SQLUtil {
 	}
 	//http://jira.dotmarketing.net/browse/DOTCMS-3689
 	public static String addLimits(String query, long offSet, long limit) {
+
+		if ( offSet == 0 && limit == -1 ) {
+			//Nothing to do...
+			return query;
+		}
+
 		StringBuffer queryString = new StringBuffer();
 		int count = 0;
 		if(query!=null){

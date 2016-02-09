@@ -236,12 +236,13 @@ public class TagFactoryImpl implements TagFactory {
      * @param tagName Tag name
      * @param hostFilter Host identifier
      * @param globalTagsFilter Is a global tag filter
+     * @param excludePersonas True if Persona Tags should be exclude from the returning results
      * @param sort Tag field to order the results
      * @param start first record to get
      * @param count max amount of records to get
      * @return  a list of tags filtered by tag name or host name
      */
-    public List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
+    public List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas, String sort, int start, int count) {
         try {
 
             sort = SQLUtil.sanitizeSortBy(sort);
@@ -269,31 +270,46 @@ public class TagFactoryImpl implements TagFactory {
                     sortStr = "order by tagname";
                 }
 
-                //if tag name and host name are set as filters
-                //search by name, global tags and current host.
-                if ( UtilMethods.isSet(tagName) && globalTagsFilter ) {
-                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ? OR host_id = ?) " + sortStr,start, count));
+                //Filter by tagname, hosts and persona
+                if ( UtilMethods.isSet(tagName) ) {
+
+                    String personaFragment = "";
+                    if ( excludePersonas ) {
+                        personaFragment = " AND persona = ? ";
+                    }
+                    String globalTagsFragment = "";
+                    if ( globalTagsFilter ) {
+                        globalTagsFragment = " AND (host_id = ? OR host_id = ?) ";
+                    } else {
+                        globalTagsFragment = " AND host_id = ? ";
+                    }
+
+                    String sql = "SELECT * FROM tag WHERE tagname LIKE ? " + globalTagsFragment + personaFragment + sortStr;
+
+                    dc.setSQL(SQLUtil.addLimits(sql, start, count));
                     dc.addParam("%" + tagName.toLowerCase() + "%");
                     try {
                         dc.addParam(host.getMap().get("tagStorage").toString());
                     } catch ( NullPointerException e ) {
                         dc.addParam(Host.SYSTEM_HOST);
                     }
-                    dc.addParam(Host.SYSTEM_HOST);
-                }
-                //if global host is not set as unique filter but tag name is set, search in current host
-                else if ( UtilMethods.isSet(tagName) && !globalTagsFilter ) {
-                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id = ?) " + sortStr ,start, count));
-                    dc.addParam("%" + tagName.toLowerCase() + "%");
-                    try {
-                        dc.addParam(host.getMap().get("tagStorage").toString());
-                    } catch ( NullPointerException e ) {
+                    if ( globalTagsFilter ) {
                         dc.addParam(Host.SYSTEM_HOST);
+                    }
+                    if ( excludePersonas ) {
+                        dc.addParam(false);
                     }
                 } else if ( !UtilMethods.isSet(tagName) && globalTagsFilter ) {
                     //check if tag name is not set and if should display global tags
                     //it will check all global tags and current host tags.
-                    dc.setSQL(SQLUtil.addLimits("SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + sortStr ,start, count));
+
+                    String personaFragment = "";
+                    if ( excludePersonas ) {
+                        personaFragment = " AND persona = ? ";
+                    }
+
+                    String sql = "SELECT * FROM tag WHERE (host_id = ? OR host_id = ? ) " + personaFragment + sortStr;
+                    dc.setSQL(SQLUtil.addLimits(sql, start, count));
 
                     try {
                         dc.addParam(host.getMap().get("tagStorage").toString());
@@ -301,6 +317,9 @@ public class TagFactoryImpl implements TagFactory {
                         dc.addParam(Host.SYSTEM_HOST);
                     }
                     dc.addParam(Host.SYSTEM_HOST);
+                    if ( excludePersonas ) {
+                        dc.addParam(false);
+                    }
                 } else {
                     //check all current host tags.
                     String sql = "SELECT * FROM tag ";
@@ -308,11 +327,26 @@ public class TagFactoryImpl implements TagFactory {
                     Object tagStorage = host.getMap().get("tagStorage");
 
                     if ( UtilMethods.isSet(tagStorage) ) {
-                        sql = sql + "WHERE ( host_id = ? ) " + sortStr;
+
+                        String personaFragment = "";
+                        if ( excludePersonas ) {
+                            personaFragment = " AND persona = ? ";
+                        }
+
+                        sql = sql + "WHERE host_id = ? " + personaFragment + sortStr;
                         dc.setSQL(SQLUtil.addLimits(sql,start,count));
                         dc.addParam(tagStorage.toString());
+                        if ( excludePersonas ) {
+                            dc.addParam(false);
+                        }
                     } else {
+                        if ( excludePersonas ) {
+                            sql = sql + "WHERE persona = ? " + sortStr;
+                        }
                         dc.setSQL(sql);
+                        if ( excludePersonas ) {
+                            dc.addParam(false);
+                        }
                     }
                 }
 
@@ -356,13 +390,12 @@ public class TagFactoryImpl implements TagFactory {
 
     /**
      * Creates a new tag
-     * @param tagName name of the new tag
-     * @param userId  owner of the new tag
-     * @param hostId host identifier of the new tag
-     * @return new tag created
+     *
+     * @param tag Tag to insert
+     * @return Created tag
      * @throws DotDataException
      */
-    public Tag createTag ( Tag tag ) throws DotDataException {
+    public Tag createTag(Tag tag) throws DotDataException {
 
         if ( !UtilMethods.isSet(tag.getTagId()) ) {
             tag.setTagId(UUID.randomUUID().toString());

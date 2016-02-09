@@ -312,14 +312,6 @@ public interface TagAPI {
 	public List<Tag> getSuggestedTag ( String name, String selectedHostId );
 
 	/**
-	 * Check if tag is global
-	 * @param tag
-	 * @return boolean
-	 */
-	public boolean isGlobalTag(Tag tag);
-
-
-	/**
 	 * Update, copy or move tags if the hosst changes its tag storage
 	 * @param oldTagStorageId
 	 * @param newTagStorageId

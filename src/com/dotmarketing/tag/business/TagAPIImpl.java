@@ -62,7 +62,7 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Gets all tags filtered by tag name and/or host name paginated
+	 * Gets all tags filtered by tag name and/or host name paginated. <strong>This method excludes Persona Tags by default.</strong>
 	 * @param tagName tag name
 	 * @param hostFilter host name
 	 * @param globalTagsFilter 
@@ -72,7 +72,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @return List<Tag>
 	 */
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
-        return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, sort, start, count);
+        return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
     }
 
     /**
@@ -728,7 +728,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @param tag
 	 * @return boolean
 	 */
-    public boolean isGlobalTag ( Tag tag ) {
+    private boolean isGlobalTag ( Tag tag ) {
         if ( tag.getHostId().equals(Host.SYSTEM_HOST) )
             return true;
         else
