@@ -119,7 +119,7 @@ import com.dotmarketing.webdav.WebDavTest;
 //    UsersCountryConditionletFTest.class,
     ActionResourceFTest.class,
     RulesCacheFTest.class,
-    PersonaActionletFTest.class,
+    PersonaActionletFTest.class, //Needs Enterprise License
 	UsersBrowserLanguageConditionletFTest.class,
 	UsersBrowserLanguageConditionletTest.class,
     VisitedUrlConditionletTest.class,
