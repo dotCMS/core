@@ -61,6 +61,9 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 
 		try {
 			requestUri = HttpRequestDataUtil.getUri(request);
+			Object rewriteOpt = request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE);
+			if(rewriteOpt != null)
+				requestUri = (String) rewriteOpt;
 		} catch (UnsupportedEncodingException e) {
 			Logger.error(this, "Could not retrieved a valid URI from request: "
 					+ request.getRequestURL());
