@@ -113,9 +113,13 @@ export class TestInputDropdown extends TestInputComponent {
     this.items = this.menu.all(by.css('[class~="item"]'))
   }
 
-  setSearch(value:string):webdriver.promise.Promise<void>{
+  setSearch(value:string, el?:protractor.ElementFinder):webdriver.promise.Promise<void>{
     this.search.clear()
-    return this.search.sendKeys(value)
+    let p = this.search.sendKeys(value)
+    if(el){
+      p = el.click()
+    }
+    return p
   }
 
   getValueText():webdriver.promise.Promise<string> {

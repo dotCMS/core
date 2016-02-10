@@ -29,14 +29,17 @@ export class RulePage extends Page {
     this.queryParams['suppressAlerts'] = value ? 'true' : 'false'
   }
 
-  waitForSave():webdriver.promise.Promise<void> {
-    return browser.sleep(250)
+  waitForSave(timeout:number = 250):webdriver.promise.Promise<void> {
+    return browser.sleep(timeout)
   }
 
-  addRule():webdriver.promise.Promise<TestRuleComponent> {
+  addRule(nameSuffix:string=null):webdriver.promise.Promise<TestRuleComponent> {
+    var name = "e2e-" + browser['browserName'] + '-' + new Date().getTime()
+    if(nameSuffix){
+      name = name + '-' + nameSuffix
+    }
     return this.addRuleButton.click().then(()=> {
       let rule = this.firstRule()
-      var name = "e2e-" + browser['browserName'] + '-' + new Date().getTime();
       rule.setName(name)
       rule.fireOn.el.click()
       return rule
@@ -88,7 +91,7 @@ export class TestRuleComponent {
   fireOn:TestInputDropdown
   toggleEnable:TestInputToggle
   removeBtn:TestButton
-  addGroup:TestButton
+  addGroupBtn:TestButton
   expandoCaret:ElementFinder
   conditionGroupEls:ElementArrayFinder
   actionEls:ElementArrayFinder
@@ -104,7 +107,7 @@ export class TestRuleComponent {
     this.fireOn = new TestInputDropdown(root.element(by.css('.cw-fire-on-dropdown')))
     this.toggleEnable = new TestInputToggle(root.element(by.tagName('cw-toggle-input')))
     this.removeBtn = new TestButton(root.element(by.css('.cw-delete-rule')))
-    this.addGroup = new TestButton(root.element(by.css('.cw-add-group')))
+    this.addGroupBtn = new TestButton(root.element(by.css('.cw-add-group')))
     this.conditionGroupEls = root.all(by.tagName('condition-group'))
     this.actionEls = root.all(by.tagName('rule-action'))
     this.addActionButtonEl = new TestButton(this.el.element(by.css(".cw-action-row .cw-button-add-item")))
@@ -140,6 +143,15 @@ export class TestRuleComponent {
     return new TestConditionGroupComponent(this.conditionGroupEls.first())
   }
 
+  lastGroup():TestConditionGroupComponent {
+    return new TestConditionGroupComponent(this.conditionGroupEls.last())
+  }
+
+
+  getGroup(index:number):TestConditionGroupComponent {
+    return new TestConditionGroupComponent(this.conditionGroupEls.get(index))
+  }
+
   addAction():webdriver.promise.Promise<void> {
     return this.addActionButtonEl.click()
   }
@@ -152,17 +164,32 @@ export class TestRuleComponent {
     return new TestActionComponent(this.actionEls.last())
   }
 
-  firstCondition():TestConditionComponent{
-    return new TestRequestHeaderCondition(this.firstGroup().conditionEls.first())
+
+  addGroup(isAnd:boolean=true):protractor.promise.Promise<void>{
+    let p = this.addGroupBtn.click()
+    if(!isAnd){
+      p = p.then( () => this.lastGroup().toggleLogicalOperator() )
+    }
+    return p
   }
 
-  newRequestHeaderCondition():TestRequestHeaderCondition {
-    let conditionDef:TestRequestHeaderCondition = new TestRequestHeaderCondition(this.firstCondition().el)
-    conditionDef.typeSelect.setSearch("Request Hea")
-    this.fireOn.el.click()
-    conditionDef.setComparison(TestConditionComponent.COMPARE_IS, this.fireOn.el)
-    conditionDef.setHeaderValue("AbcDef")
-    this.fireOn.el.click()
+
+
+  createRequestHeaderCondition(key:string = "Accept",
+                               condition:string = TestConditionComponent.COMPARE_IS,
+                               value:string = "AbcDef",
+                               isAnd:boolean =true
+  ):TestRequestHeaderCondition {
+    let condGroup = this.lastGroup()
+    let conditionDef:TestRequestHeaderCondition = new TestRequestHeaderCondition(condGroup.last().el)
+    conditionDef.typeSelect.setSearch("Request Hea", this.fireOn.el)
+    conditionDef.setHeaderKey(key)
+    conditionDef.setComparison(condition, conditionDef.headerValueTF.el)
+    conditionDef.setHeaderValue(value)
+    if(!isAnd){
+      conditionDef.toggleLogicalTest()
+    }
+    condGroup.addCondition()
     return conditionDef
   }
 
@@ -215,21 +242,46 @@ export class TestRuleComponent {
     }
     return result
   }
+
 }
 
 
 export class TestConditionGroupComponent {
   el:ElementFinder
   conditionEls:ElementArrayFinder
+  addConditionBtn:TestButton
+  logicalTestBtn:TestButton
+
 
   constructor(el:protractor.ElementFinder) {
     this.el = el;
     this.conditionEls = el.all(by.tagName('rule-condition'))
+    this.addConditionBtn = new TestButton(el.element(by.css('.cw-condition-row .cw-button-add-item')))
+    this.logicalTestBtn = new TestButton(el.element(by.css('.cw-group-operator')))
   }
 
-  first() {
-    return new TestConditionComponent(this.conditionEls.first())
+  first():TestConditionComponent{
+    return new TestRequestHeaderCondition(this.conditionEls.first())
   }
+
+  last():TestConditionComponent{
+    return new TestRequestHeaderCondition(this.conditionEls.last())
+  }
+
+
+  addCondition():protractor.promise.Promise<void>{
+    return this.addConditionBtn.click()
+  }
+
+  toggleLogicalOperator():protractor.promise.Promise<void>{
+    return this.logicalTestBtn.click()
+  }
+
+  getLogicalOperator():protractor.promise.Promise<string> {
+    return this.logicalTestBtn.el.element(by.tagName('div')).getText()
+  }
+
+
 }
 
 export class TestRuleInputRow {
@@ -297,10 +349,12 @@ export class TestConditionComponent extends TestRuleInputRow {
   static COMPARE_IS:string= "Is"
   static COMPARE_IS_NOT:string= "Is not"
   compareDD:TestInputDropdown
+  logicalTestBtn:TestButton
 
   constructor(el:protractor.ElementFinder) {
     super(el)
     this.compareDD = new TestInputDropdown(el.element(by.css('.cw-comparator-selector')))
+    this.logicalTestBtn = new TestButton(el.element(by.css('.cw-button-toggle-operator')))
   }
 
   /**
@@ -310,24 +364,42 @@ export class TestConditionComponent extends TestRuleInputRow {
    * @returns {webdriver.promise.Promise<void>}
    */
   setComparison(to:string, next:ElementFinder):webdriver.promise.Promise<void>{
-    this.compareDD.setSearch(to)
-    return next.click()
+    return this.compareDD.setSearch(to, next)
+  }
+
+  toggleLogicalTest():protractor.promise.Promise<void>{
+    return this.logicalTestBtn.click()
   }
 }
 
 export class TestRequestHeaderCondition extends TestConditionComponent {
 
-  headerKeyTF:TestInputText
+  static HEADER_KEYS = {
+    Accept: 'Accept',
+    Connection: 'Connection',
+    ContentLength: 'content-length',
+
+  }
+
+  headerKeyDD:TestInputDropdown
   headerValueTF:TestInputText
 
   constructor(el:protractor.ElementFinder) {
     super(el);
-    this.headerKeyTF = new TestInputText(this.parameterEls.first())
+    this.headerKeyDD = new TestInputDropdown(this.parameterEls.first())
     this.headerValueTF = new TestInputText(this.parameterEls.last())
   }
 
   setHeaderValue(val:string):webdriver.promise.Promise<void>{
-    return this.headerValueTF.setValue(val)
+    let p = this.headerValueTF.setValue(val)
+    this.headerKeyDD.el.click()
+    return p
+  }
+
+  setHeaderKey(key:string):webdriver.promise.Promise<void>{
+    let p = this.headerKeyDD.setSearch(key)
+    this.headerValueTF.el.click()
+    return p
   }
 }
 
