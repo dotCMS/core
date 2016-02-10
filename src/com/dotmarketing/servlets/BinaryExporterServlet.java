@@ -696,7 +696,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					from.close();
 				}
 				catch(Exception e){
-					Logger.error(BinaryExporterServlet.class, e.getMessage());
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
 				}
 			}
 
@@ -705,7 +705,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					to.close();
 				}
 				catch(Exception e){
-					Logger.error(BinaryExporterServlet.class, e.getMessage());
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
 				}
 			}
 			
@@ -714,7 +714,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					input.close();
 				}
 				catch(Exception e){
-					Logger.error(BinaryExporterServlet.class, e.getMessage());
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
 				}
 			}
 			
@@ -723,7 +723,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					is.close();
 				}
 				catch(Exception e){
-					Logger.error(BinaryExporterServlet.class, e.getMessage());
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
 				}
 			}
 			
