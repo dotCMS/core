@@ -619,22 +619,13 @@ public class BinaryExporterServlet extends HttpServlet {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} finally {
-					if(to != null)
-						to.close();
-					if(from != null)
-						from.close();
-					if(out != null)
-						out.close();
-					if(input !=null)
-						input.close();
-				}
+				} 
 			}else{
 				is = new FileInputStream(data.getDataFile());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
-	            /**
+	            
 	            if(req.getParameter("testingClientAbortException")!=null){
 		            try {
 						Thread.sleep(50000);
@@ -642,7 +633,7 @@ public class BinaryExporterServlet extends HttpServlet {
 						e.printStackTrace();
 					}
 	            }
-	            **/
+	            
 	            while((count = is.read(buffer)) > 0) {
 	            	out.write(buffer, 0, count);
 	            }
@@ -690,8 +681,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		}
 		// close our resources no matter what
 		finally{
-			
-			if(from!=null && from.isOpen()){
+			if(from!=null){
 				try{
 					from.close();
 				}
@@ -700,7 +690,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			}
 
-			if(to!=null && to.isOpen()){
+			if(to!=null){
 				try{
 					to.close();
 				}
@@ -727,7 +717,14 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			}
 			
-
+			if(out!=null){
+				try{
+					out.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
 			
 			
 		}
