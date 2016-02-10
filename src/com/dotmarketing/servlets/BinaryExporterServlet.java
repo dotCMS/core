@@ -42,6 +42,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.LiveCache;
 import com.dotmarketing.cache.WorkingCache;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -191,6 +192,25 @@ public class BinaryExporterServlet extends HttpServlet {
         }
 
         boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+		ServletOutputStream out = null;
+		FileChannel from = null;
+		WritableByteChannel to = null;
+		RandomAccessFile input = null;
+		FileInputStream is = null;
+
+        
+        
+        
 		try {
 			User user = userWebAPI.getLoggedInUser(req);
 			boolean respectFrontendRoles = !userWebAPI.isLoggedToBackend(req);
@@ -520,10 +540,7 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			String rangeHeader = req.getHeader("range");
 			if(UtilMethods.isSet(rangeHeader)){
-				ServletOutputStream out = null;
-				FileChannel from = null;
-				WritableByteChannel to = null;
-				RandomAccessFile input = null;
+
 				try {
 					out = resp.getOutputStream();
 					from = new FileInputStream(data.getDataFile()).getChannel();
@@ -602,25 +619,25 @@ public class BinaryExporterServlet extends HttpServlet {
 					Logger.warn(this, e + " Error for = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():"") );
 					Logger.debug(this, "Error serving asset = " + req.getRequestURI() + (req.getQueryString() != null?"?"+req.getQueryString():""), e);
 
-				} finally {
-					if(to != null)
-						to.close();
-					if(from != null)
-						from.close();
-					if(out != null)
-						out.close();
-					if(input !=null)
-						input.close();
-				}
+				} 
 			}else{
-				FileInputStream is = new FileInputStream(data.getDataFile());
+				is = new FileInputStream(data.getDataFile());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
-	            OutputStream servletOutput = resp.getOutputStream();
-	            while((count = is.read(buffer)) > 0) {
-	            	servletOutput.write(buffer, 0, count);
+	            out = resp.getOutputStream();
+	            
+	            if(req.getParameter("testingClientAbortException")!=null){
+		            try {
+						Thread.sleep(50000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
 	            }
-	            servletOutput.close();
+	            
+	            while((count = is.read(buffer)) > 0) {
+	            	out.write(buffer, 0, count);
+	            }
+	            
 			}
             
 		} catch (DotContentletStateException e) {
@@ -657,7 +674,61 @@ public class BinaryExporterServlet extends HttpServlet {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
 			Logger.error(BinaryExporterServlet.class, e.getMessage());
 			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+		}catch (Exception e) {
+			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
+			Logger.error(BinaryExporterServlet.class, e.getMessage());
+			resp.sendError(HttpServletResponse.SC_NOT_FOUND);
 		}
+		// close our resources no matter what
+		finally{
+			if(from!=null){
+				try{
+					from.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+
+			if(to!=null){
+				try{
+					to.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+			
+			if(input!=null){
+				try{
+					input.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+			
+			if(is!=null){
+				try{
+					is.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+			
+			if(out!=null){
+				try{
+					out.close();
+				}
+				catch(Exception e){
+					Logger.debug(BinaryExporterServlet.class, e.getMessage());
+				}
+			}
+			
+			
+		}
+		
 	}
 
 	@SuppressWarnings("unchecked")
