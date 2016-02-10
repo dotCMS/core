@@ -1,5 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
@@ -25,7 +27,7 @@ public class SetSessionAttributeActionlet extends RuleActionlet<SetSessionAttrib
     private static final String SESSION_KEY = "sessionKey";
 
     public SetSessionAttributeActionlet() {
-        super(I18N_BASE, new ParameterDefinition<>(1, SESSION_KEY, new TextInput<>(new TextType())),
+        super(I18N_BASE, new ParameterDefinition<>(1, SESSION_KEY, new TextInput<>(new TextType().minLength(1))),
               new ParameterDefinition<>(2, SESSION_VALUE, new TextInput<>(new TextType()))
         );
     }
@@ -49,7 +51,9 @@ public class SetSessionAttributeActionlet extends RuleActionlet<SetSessionAttrib
 
         public Instance(Map<String, ParameterModel> parameters) {
             key = parameters.get(SESSION_KEY).getValue();
-            value = parameters.get(SESSION_VALUE).getValue();
+            String v = parameters.get(SESSION_VALUE).getValue();
+            value = v != null ? v : "";
+            Preconditions.checkArgument(StringUtils.isNotBlank(key), "SetSessionAttributeActionlet requires valid key.");
         }
     }
 }
