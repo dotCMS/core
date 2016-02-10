@@ -188,18 +188,7 @@ public class CMSFilter implements Filter {
 		// if we are not rewriting anything, use the uri
 		rewrite = (rewrite == null) ? uri : rewrite;
 
-		
-		// fire every_request rules
-		if(iAm == IAm.FILE || iAm== IAm.PAGE || rewrite.startsWith("/contentAsset/")){
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-            if(response.isCommitted()){
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                return;
-            }
-		}
-		
-		
-		
+
 		if (iAm == IAm.FILE) {
 			Identifier ident = null;
 			try {
@@ -210,6 +199,11 @@ public class CMSFilter implements Filter {
 				Logger.error(CMSFilter.class, e.getMessage(), e);
 				throw new IOException(e.getMessage());
 			}
+            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+            if(response.isCommitted()){
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                return;
+            }
 			return;
 		}
 
@@ -228,8 +222,22 @@ public class CMSFilter implements Filter {
 				forward.append(queryString);
 			}
 
+			// fire every_request rules
+            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+            if(response.isCommitted()){
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+                return;
+            }
 			request.getRequestDispatcher(forward.toString()).forward(request, response);
 			return;
+		}
+
+		if(rewrite.startsWith("/contentAsset/")){
+	        RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+	        if(response.isCommitted()){
+	            /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+	            return;
+	        }
 		}
 
 		// otherwise, pass
