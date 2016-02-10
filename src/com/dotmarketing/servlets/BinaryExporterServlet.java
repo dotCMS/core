@@ -633,8 +633,8 @@ public class BinaryExporterServlet extends HttpServlet {
 				is = new FileInputStream(data.getDataFile());
 	            int count = 0;
 	            byte[] buffer = new byte[4096];
-	            OutputStream servletOutput = resp.getOutputStream();
-	            
+	            out = resp.getOutputStream();
+	            /**
 	            if(req.getParameter("testingClientAbortException")!=null){
 		            try {
 						Thread.sleep(50000);
@@ -642,15 +642,11 @@ public class BinaryExporterServlet extends HttpServlet {
 						e.printStackTrace();
 					}
 	            }
+	            **/
 	            while((count = is.read(buffer)) > 0) {
-	            	servletOutput.write(buffer, 0, count);
+	            	out.write(buffer, 0, count);
 	            }
 	            
-
-	            
-	            
-	            
-	            servletOutput.close();
 			}
             
 		} catch (DotContentletStateException e) {
@@ -695,7 +691,7 @@ public class BinaryExporterServlet extends HttpServlet {
 		// close our resources no matter what
 		finally{
 			
-			if(from!=null){
+			if(from!=null && from.isOpen()){
 				try{
 					from.close();
 				}
@@ -704,7 +700,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 			}
 
-			if(to!=null){
+			if(to!=null && to.isOpen()){
 				try{
 					to.close();
 				}
