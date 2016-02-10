@@ -98,6 +98,13 @@ public class RequestHeaderConditionletTest {
                      .shouldBeTrue()
         );
 
+        data.add(new TestCase("Comparison 'Is Not' should eval true for header value == null and user value == 'any'.")
+                     .withComparison(Comparison.IS_NOT)
+                     .withMockedActualValue("key", null)
+                     .withHeader("key", "any")
+                     .shouldBeTrue()
+        );
+
         data.add(new TestCase("Comparison 'Is Not' should not be case sensitive - should eval false for header value == 'One' and user value == 'one'.")
                      .withComparison(Comparison.IS_NOT)
                      .withMockedActualValue("key", "One")
