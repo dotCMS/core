@@ -1448,7 +1448,7 @@
 		document.getElementById('cmd').value = '';
 		clearSuggestTagsForSearch();
 		if(currentUser != null)
-			TagAjax.addTag(tagName, currentUser.userId, currentUser.inode, showResult);
+			TagAjax.addTag(tagName, currentUser.userId, "", showResult);
 	}
 	function showResult(result) {
 		DWRUtil.removeAllRows("tags_table");

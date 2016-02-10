@@ -1,23 +1,27 @@
 package com.dotmarketing.tag.model;
 
-import java.io.Serializable;
-
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
+
+import java.io.Serializable;
+import java.util.Date;
 
 public class TagInode implements Serializable {
 
-
-    /**
-	 *
-	 */
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
 	/** persistent field */
     private String inode;
 
     /** persistent field */
     private String tagId;
+
+    /**
+     * persistent field
+     */
+    private String fieldVarName;
+
+	/** persistent field */
+	private Date modDate;
 
 	/**
 	 * @return the tagId
@@ -31,11 +35,19 @@ public class TagInode implements Serializable {
 	 */
 	public void setTagId(String tagId) {
 		this.tagId = tagId;
-	}
+    }
 
-	/**
-	 * @return the userId
-	 */
+    public String getFieldVarName() {
+        if (fieldVarName == null) {
+            return "";
+        }
+        return fieldVarName;
+    }
+
+    public void setFieldVarName(String fieldVarName) {
+        this.fieldVarName = fieldVarName;
+    }
+
 	public String getInode() {
 		if(InodeUtils.isSet(inode))
 			return inode;
@@ -43,9 +55,14 @@ public class TagInode implements Serializable {
 		return "";
 	}
 
-	/**
-	 * @param userId the userId to set
-	 */
+	public Date getModDate () {
+		return modDate;
+	}
+
+	public void setModDate ( Date modDate ) {
+		this.modDate = modDate;
+	}
+
 	public void setInode(String inode) {
 		this.inode = inode;
 	}
@@ -84,6 +101,11 @@ public class TagInode implements Serializable {
 			if (InodeUtils.isSet(inode))
 				return false;
 		} else if (inode.equalsIgnoreCase(other.getInode()))
+			return false;
+		if (fieldVarName == null) {
+			if (other.fieldVarName != null)
+				return false;
+		} else if (!fieldVarName.equals(other.fieldVarName))
 			return false;
 		return true;
 	}

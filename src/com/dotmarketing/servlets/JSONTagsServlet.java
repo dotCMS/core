@@ -131,7 +131,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 
 			Map<String,Object> m = new HashMap<String, Object>();
 			m.put("items", items);
-			m.put("numRows", tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, 0, 0).size());
+			m.put("numRows", tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, 0, -1).size());
 			String s = mapper.writeValueAsString(m);
 			response.setContentType("text/plain");
 			response.getWriter().write(s);

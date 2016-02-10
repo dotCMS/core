@@ -163,8 +163,8 @@
         	<%if(toggleOn){ %>
         	aceText('<%=field.getVelocityVarName()%>','<%=keyValue%>','<%=isWidget%>');
         	<%} %>
-        });	
-</script>	
+        });
+</script>
 	<div id="aceTextArea_<%=field.getVelocityVarName()%>" class="classAce"></div>
     <textarea <%= isReadOnly?"readonly=\"readonly\" style=\"background-color:#eeeeee;\"":"" %> dojoType="dijit.form.SimpleTextarea"  <%=isWidget?"style=\"overflow:auto;width:682px;min-height:362px;max-height: 400px\"":"style=\"overflow:auto;width:450px;min-height:100px;max-height: 600px\""%>
         name="<%=field.getFieldContentlet()%>"
@@ -388,7 +388,7 @@
                         	document.forms["fm"].elements["fieldNeverExpire"].value ="false";
                         }
                       	dijit.byId(velocityVarName+"Date").disabled = never;
-                      	dijit.byId(velocityVarName+"Time").disabled = never;  
+                      	dijit.byId(velocityVarName+"Time").disabled = never;
                     }
 
                         dojo.addOnLoad(function() {
@@ -595,21 +595,26 @@
     //TAG kind of field rendering
 
     } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
-        String tagJSFunction = "suggestTagsForSearch(this, '"
-                + field.getVelocityVarName() + "suggestedTagsDiv');";
         String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
  %>
  <!-- display -->
-    <div id="<%=field.getVelocityVarName()%>Wrapper">
-        <div style="float:left;">
-            <textarea dojoType="dijit.form.Textarea" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>" onkeyup="<%= tagJSFunction %>" <%=field.isReadOnly()?"readonly=\"readonly\"":"" %>  style="width:300px;min-height:100px;"><%=textValue%></textarea>
-        </div>
-        <div class="suggestedTagsWrapper" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
-            <div class="suggestHeading"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></div>
-            <div id="<%=field.getVelocityVarName()%>suggestedTagsDiv" class="suggestedTags"></div>
-        </div>
-        <div class="clear"></div>
+    <div class="tagsWrapper" id="<%=field.getVelocityVarName()%>Wrapper">
+      <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=textValue%>" />
+      <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
+      <div class="tagsOptions" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
+        <div id="<%=field.getVelocityVarName()%>suggestedTagsDiv"></div>
+      </div>
     </div>
+
+    <script>
+      dojo.addOnLoad(function() {
+        dojo.connect(dojo.byId("<%=field.getVelocityVarName()%>"), "onkeyup", suggestTagsForSearch);
+        var textValue = "<%=textValue%>";
+        if (textValue != "") {
+          fillExistingTags("<%=field.getVelocityVarName()%>", textValue);
+        }
+      })
+    </script>
 <!-- end display -->
 <%
     //RADIO kind of field rendering
@@ -772,12 +777,10 @@
     <script type="text/javascript">
         function update<%=field.getVelocityVarName()%>Checkbox() {
             var valuesList = [];
-            
             var checkedInputs = dojo.query("input:checkbox[name^='<%=fieldName%>Checkbox']:checked");
             checkedInputs.forEach(function(checkedInput) {
                 valuesList.push(checkedInput.value);
             });
-            
             $("<%=field.getVelocityVarName()%>").value = valuesList.join(",");
         }
 

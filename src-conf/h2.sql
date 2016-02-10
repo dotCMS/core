@@ -1462,6 +1462,8 @@ create table tag (
    tagname varchar(255),
    host_id varchar(255),
    user_id varchar(255),
+   persona boolean default false,
+   mod_date timestamp,
    primary key (tag_id)
 );
 create table user_comments (
@@ -2027,7 +2029,9 @@ create table workflow_task (
 create table tag_inode (
    tag_id varchar(100) not null,
    inode varchar(100) not null,
-   primary key (tag_id, inode)
+	 field_var_name varchar(255) DEFAULT '',
+   mod_date timestamp,
+   primary key (tag_id, inode, field_var_name)
 );
 create table click (
    inode varchar(36) not null,
@@ -2615,6 +2619,7 @@ insert into User_ (userId, companyId, createDate, password_, passwordEncrypted, 
 create index addres_userid_index on address(userid);
 create index tag_inode_tagid on tag_inode(tag_id);
 create index tag_inode_inode on tag_inode(inode);
+create index tag_is_persona_index on tag(persona);
 
 CREATE TABLE dist_journal
 (

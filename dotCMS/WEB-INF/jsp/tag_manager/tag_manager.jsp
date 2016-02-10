@@ -185,7 +185,8 @@ td {font-size: 100%;}
                     pageStepper : "30em",
                     gotoButton : true,
                     maxPageStep : 7,
-                    position : "bottom"
+                    position : "bottom",
+                    defaultPage: 1, defaultPageSize: 100
                 },
                 search : true,
                 indirectSelection: { headerSelector: true }

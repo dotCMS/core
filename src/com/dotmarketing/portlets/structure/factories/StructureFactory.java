@@ -667,10 +667,7 @@ public class StructureFactory {
 
 		for (Field f : listFields) {
 			if (f.getFieldType().equals(Field.FieldType.TAG.toString())) {
-				String fieldValues = f.getFieldContentlet();
-				if(UtilMethods.isSet(fieldValues)) {
-					tagFields.add(f);
-				}
+				tagFields.add(f);
 			}
 		}
 

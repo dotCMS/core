@@ -13,7 +13,7 @@
 	<import name="com.dotmarketing.factories.UserProxyFactory" />
 	<import name="com.dotmarketing.beans.UserProxy" />
 	<import name="com.dotmarketing.util.UtilMethods" />
-	<import name="com.dotmarketing.tag.factories.TagFactory" />
+	<import name="com.dotmarketing.tag.business.TagFactory" />
 
 <!--
 	<rule name="Test 01">

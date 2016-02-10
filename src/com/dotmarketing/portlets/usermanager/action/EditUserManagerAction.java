@@ -40,7 +40,6 @@ import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerForm;
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
-import com.dotmarketing.tag.factories.TagFactory;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.InodeUtils;
@@ -353,11 +352,11 @@ public class EditUserManagerAction extends DotPortletAction{
 		UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user,APILocator.getUserAPI().getSystemUser(), false);
 
 		//delete user tags
-		List<TagInode> userTagsList = TagFactory.getTagInodeByInode(String.valueOf(userProxy.getInode()));
+		List<TagInode> userTagsList = APILocator.getTagAPI().getTagInodesByInode(String.valueOf(userProxy.getInode()));
 		for(TagInode tag : userTagsList){
-		    Tag retrievedTag = TagFactory.getTagByTagId(tag.getTagId());
-			TagFactory.deleteTagInode(tag);
-			TagFactory.deleteTag(retrievedTag.getTagId());
+		    Tag retrievedTag = APILocator.getTagAPI().getTagByTagId(tag.getTagId());
+			APILocator.getTagAPI().deleteTagInode(tag);
+			APILocator.getTagAPI().deleteTag(retrievedTag.getTagId());
 		}
 		
 		//deletes user proxy

@@ -1,9 +1,5 @@
 package com.dotmarketing.portlets.personas.business;
 
-import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
@@ -12,7 +8,6 @@ import com.dotmarketing.business.Treeable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
-import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -21,10 +16,14 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.InodeUtils;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
+
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 public class PersonaAPIImpl implements PersonaAPI {
 
@@ -205,21 +204,41 @@ public class PersonaAPIImpl implements PersonaAPI {
 				throw new DotContentletValidationException(message);
 			}
 
-			try {
-				// TODO
-				// make the key tag persist as a key tag
-				// Tag tag = APILocator.getTagAPI().getTag(keyTag,
-				// UserAPI.SYSTEM_USER_ID, persona.getHost());
-
-			} catch (Exception e) {
-				Logger.error(this.getClass(), "tag failed to save:" + e.getMessage());
-				throw new DotContentletValidationException(e.getMessage(), e);
-			}
-
 		} catch (DotDataException | DotSecurityException e) {
 			throw new DotContentletValidationException(e.getMessage(), e);
 		}
 
+	}
+
+	/**
+	 * A Persona key tag should be persist as a Tag, when the @enable param is true the tag will be created if does not
+	 * already exist.
+	 *
+	 * @param personaContentlet
+	 * @param enable            When false the tag created based on the Persona key tag will be handle as a regular tag
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
+	public void enableDisablePersonaTag ( Contentlet personaContentlet, boolean enable ) throws DotDataException, DotSecurityException {
+
+		Persona persona = fromContentlet(personaContentlet);
+		String keyTag = persona.getKeyTag();
+
+		//Search for the tag related to this key tag
+		Tag foundPersonaKeyTag = APILocator.getTagAPI().getTagByNameAndHost(keyTag, persona.getHost());
+
+		//Make sure the tag exist for this key tag, if not we need to create it
+		if ( enable && (foundPersonaKeyTag == null || !UtilMethods.isSet(foundPersonaKeyTag.getTagId())) ) {
+
+			//Persist the key tag as a Tag
+			APILocator.getTagAPI().getTagAndCreate(keyTag, persona.getHost(), true);
+			return;
+		}
+
+		if ( foundPersonaKeyTag != null && UtilMethods.isSet(foundPersonaKeyTag.getTagId()) ) {
+			//Disable/enable this tag as Persona tag
+			APILocator.getTagAPI().enableDisablePersonaTag(foundPersonaKeyTag.getTagId(), enable);
+		}
 	}
 
 	@Override

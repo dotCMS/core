@@ -1,6 +1,7 @@
 package com.dotmarketing.tag.model;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import com.dotmarketing.tag.model.Tag;
 
@@ -20,6 +21,12 @@ public class Tag implements Serializable {
 
     /** persistent field */
     private String tagId;
+
+	/** persistent field */
+	private boolean persona;
+
+	/** persistent field */
+	private Date modDate;
 
     /** persistent field */
     private String hostId;
@@ -66,9 +73,25 @@ public class Tag implements Serializable {
 		this.tagId = tagId;
 	}
 
+	public Date getModDate () {
+		return modDate;
+	}
+
+	public void setModDate ( Date modDate ) {
+		this.modDate = modDate;
+	}
+
+	public boolean isPersona () {
+		return persona;
+	}
+
+	public void setPersona ( boolean persona ) {
+		this.persona = persona;
+	}
+
 	/* (non-Javadoc)
-	 * @see java.lang.Object#hashCode()
-	 */
+             * @see java.lang.Object#hashCode()
+             */
 	@Override
 	public int hashCode() {
 		final int PRIME = 31;
