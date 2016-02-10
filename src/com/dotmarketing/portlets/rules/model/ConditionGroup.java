@@ -7,10 +7,11 @@ import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class ConditionGroup implements Serializable {
+public class ConditionGroup implements Serializable, Comparable {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
@@ -60,13 +61,14 @@ public class ConditionGroup implements Serializable {
     }
 
     public List<Condition> getConditions() {
-        if(conditions==null) {
+        if(conditions == null) {
             try {
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
+        Collections.sort(conditions);
         return conditions;
     }
 
@@ -109,4 +111,9 @@ public class ConditionGroup implements Serializable {
 				+ ", priority=" + priority + "]";
 	}
 
+    @Override
+    public int compareTo(Object o) {
+        ConditionGroup c = (ConditionGroup) o;
+        return this.priority - c.getPriority();
+    }
 }
