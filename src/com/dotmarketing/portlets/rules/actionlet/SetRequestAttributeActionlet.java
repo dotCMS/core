@@ -28,7 +28,7 @@ public class SetRequestAttributeActionlet extends RuleActionlet<SetRequestAttrib
 
     public SetRequestAttributeActionlet() {
         super(I18N_BASE,
-              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType())),
+              new ParameterDefinition<>(1, REQUEST_KEY, new TextInput<>(new TextType().minLength(1))),
               new ParameterDefinition<>(2, REQUEST_VALUE, new TextInput<>(new TextType())));
     }
 
@@ -54,7 +54,8 @@ public class SetRequestAttributeActionlet extends RuleActionlet<SetRequestAttrib
 
         public Instance(Map<String, ParameterModel> parameters) {
             key = parameters.get(REQUEST_KEY).getValue();
-            value = parameters.get(REQUEST_VALUE).getValue();
+            String v = parameters.get(REQUEST_VALUE).getValue();
+            value = v != null ? v : "";
             Preconditions.checkArgument(StringUtils.isNotBlank(key), "SetRequestAttributeActionlet requires valid key.");
         }
     }
