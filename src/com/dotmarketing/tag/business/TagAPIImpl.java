@@ -297,18 +297,33 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-	 * and then tags the object
-	 * @param tagName tag(s) to create
-	 * @param userId owner of the tag
-	 * @param inode object to tag
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
+     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
+     * and then tags the User
+     *
+     * @param tagName tag(s) to create
+     * @param userId  owner of the tag
+     * @param inode   User to tag
      * @return a list of all tags assigned to an object
-     * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
      * @throws Exception
+     * @deprecated it doesn't handle host id. Call getTagsInText then addUserTagInode on each
      */
-    public List addTag ( String tagName, String userId, String inode, String fieldVarName ) throws DotDataException, DotSecurityException {
+    public List addUserTag(String tagName, String userId, String inode) throws DotDataException, DotSecurityException {
+        return addContentleTag(tagName, userId, inode, inode);
+    }
+
+    /**
+     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
+     * and then tags the Contentlet
+     *
+     * @param tagName      tag(s) to create
+     * @param userId       owner of the tag
+     * @param inode        Contenlet to tag
+     * @param fieldVarName var name of the tag field related to the given Contentlet inode
+     * @return a list of all tags assigned to an object
+     * @throws Exception
+     * @deprecated it doesn't handle host id. Call getTagsInText then addContentletTagInode on each
+     */
+    public List addContentleTag(String tagName, String userId, String inode, String fieldVarName) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -322,7 +337,7 @@ public class TagAPIImpl implements TagAPI {
                 for (; tagNameToken.hasMoreTokens(); ) {
                     String tagTokenized = tagNameToken.nextToken().trim();
                     Tag createdTag = getTagAndCreate(tagTokenized, userId, "");
-                    addTagInode(createdTag, inode, fieldVarName);
+                    addContentletTagInode(createdTag, inode, fieldVarName);
                 }
             }
 
@@ -465,36 +480,60 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
-	 *
-	 * @param tagName name of the tag
-	 * @param inode   inode of the object tagged
-	 * @param hostId  the identifier of host that storage the tag
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
+     * Creates the TagInode relationship between a given tag name and a given User inode.
+     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
+     *
+     * @param tagName      Tag name of the tag to relate with the Contentlet inode
+     * @param inode        inode of the object tagged
+     * @param hostId       Host id where the tag name must be found
      * @return TagInode
      * @throws DotDataException
-     * @throws DotSecurityException
      */
-    public TagInode addTagInode ( String tagName, String inode, String hostId, String fieldVarName ) throws DotDataException, DotSecurityException {
+    public TagInode addUserTagInode(String tagName, String inode, String hostId) throws DotDataException, DotSecurityException {
+        return addContentletTagInode(tagName, inode, hostId, inode);
+    }
+
+    /**
+     * Creates the TagInode relationship between a given tag name and a given Contentlet inode.
+     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
+     *
+     * @param tagName      Tag name of the tag to relate with the Contentlet inode
+     * @param inode        inode of the object tagged
+     * @param hostId       Host id where the tag name must be found
+     * @param fieldVarName var name of the tag field related to the given Contentlet inode
+     * @return TagInode
+     * @throws DotDataException
+     */
+    public TagInode addContentletTagInode(String tagName, String inode, String hostId, String fieldVarName) throws DotDataException, DotSecurityException {
 
         //Ensure the tag exists in the tag table
         Tag existingTag = getTagAndCreate(tagName, "", hostId);
 
         //Create the the tag inode
-        return addTagInode(existingTag, inode, fieldVarName);
+        return addContentletTagInode(existingTag, inode, fieldVarName);
     }
 
     /**
-	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
-	 * @param tag
-	 * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
+     * Creates the TagInode relationship between a given tag and a given User inode
+     *
+     * @param tag
+     * @param inode inode of the object tagged
      * @return TagInode
      * @throws DotDataException
      */
-    public TagInode addTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
+    public TagInode addUserTagInode(Tag tag, String inode) throws DotDataException {
+        return addContentletTagInode(tag, inode, inode);
+    }
+
+    /**
+     * Creates the TagInode relationship between a given tag and a given Contentlet inode
+     * @param tag Tag to relate with the Contentlet inode
+     * @param inode inode of the object tagged
+     * @param fieldVarName var name of the tag field related to the given Contentlet inode
+     * @return TagInode
+     * @throws DotDataException
+     */
+    public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException {
 
         //validates the tagInode already exists
         TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);

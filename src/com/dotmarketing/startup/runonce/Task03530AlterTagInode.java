@@ -22,9 +22,7 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
      */
     @Override
     public String getPostgresScript () {
-        return "ALTER TABLE tag_inode ADD COLUMN field_var_name varchar(255) DEFAULT '';\n" +
-                "ALTER TABLE tag_inode DROP CONSTRAINT tag_inode_pkey;\n" +
-                "ALTER TABLE tag_inode ADD PRIMARY KEY (tag_id, inode, field_var_name);";
+        return "ALTER TABLE tag_inode ADD COLUMN field_var_name varchar(255);";
     }
 
     /**
@@ -34,9 +32,7 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMySQLScript () {
-        return "ALTER TABLE tag_inode ADD field_var_name varchar(255) DEFAULT '';\n" +
-                "ALTER TABLE tag_inode DROP PRIMARY KEY;\n" +
-                "ALTER TABLE tag_inode ADD PRIMARY KEY (tag_id, inode, field_var_name);";
+        return "ALTER TABLE tag_inode ADD field_var_name varchar(255);";
     }
 
     /**
@@ -46,9 +42,7 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
      */
     @Override
     public String getOracleScript () {
-        return "ALTER TABLE tag_inode ADD field_var_name varchar2(255) DEFAULT '';\n" +
-                "ALTER TABLE tag_inode DROP CONSTRAINT pk_tag_inode;\n" +
-                "ALTER TABLE tag_inode ADD PRIMARY KEY (tag_id, inode, field_var_name);";
+        return "ALTER TABLE tag_inode ADD field_var_name varchar2(255);";
     }
 
     /**
@@ -58,9 +52,7 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
      */
     @Override
     public String getMSSQLScript () {
-        return "ALTER TABLE tag_inode ADD field_var_name varchar(255) DEFAULT '';\n" +
-                "ALTER TABLE tag_inode DROP CONSTRAINT pk_tag_inode;\n" +
-                "ALTER TABLE tag_inode ADD PRIMARY KEY (tag_id, inode, field_var_name);";
+        return "ALTER TABLE tag_inode ADD field_var_name varchar(255);";
     }
 
     /**
@@ -70,9 +62,7 @@ public class Task03530AlterTagInode extends AbstractJDBCStartupTask {
      */
     @Override
     public String getH2Script () {
-        return "ALTER TABLE tag_inode ADD COLUMN field_var_name varchar(255) DEFAULT '';\n" +
-                "ALTER TABLE tag_inode DROP CONSTRAINT pk_tag_inode;\n" +
-                "ALTER TABLE tag_inode ADD PRIMARY KEY (tag_id, inode, field_var_name);";
+        return "ALTER TABLE tag_inode ADD COLUMN field_var_name varchar(255);";
     }
 
     @Override

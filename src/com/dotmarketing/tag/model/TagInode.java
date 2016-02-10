@@ -38,9 +38,6 @@ public class TagInode implements Serializable {
     }
 
     public String getFieldVarName() {
-        if (fieldVarName == null) {
-            return "";
-        }
         return fieldVarName;
     }
 

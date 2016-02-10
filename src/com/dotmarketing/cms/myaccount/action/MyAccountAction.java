@@ -139,7 +139,7 @@ public class MyAccountAction extends DispatchAction {
 			APILocator.getTagAPI().deleteTagInode(tempTag, userProxy.getInode(), null);
 		}
 		if(tags.size() > 0){
-			APILocator.getTagAPI().addTag(form.getTags(), userProxy.getUserId(), userProxy.getInode(), null);
+			APILocator.getTagAPI().addUserTag(form.getTags(), userProxy.getUserId(), userProxy.getInode());
 		}
 		
 		CategoryAPI categoryAPI = APILocator.getCategoryAPI();
