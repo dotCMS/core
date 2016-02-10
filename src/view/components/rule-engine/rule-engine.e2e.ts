@@ -149,7 +149,7 @@ export function initSpec(TestUtil) {
     it('should save a valid condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
-        let conditionDef = rule.newRequestHeaderCondition()
+        let conditionDef = rule.createRequestHeaderCondition()
         rulePage.waitForSave()
         rulePage.navigateTo().then(()=>{
           rule = rulePage.findRule(name)
@@ -165,18 +165,18 @@ export function initSpec(TestUtil) {
     it('should allow a comparison change on a valid Request Header Condition.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
-        let conditionDef = rule.newRequestHeaderCondition()
+        let conditionDef = rule.createRequestHeaderCondition()
         rulePage.waitForSave()
         rulePage.navigateTo().then(()=>{
           rule = rulePage.findRule(name)
           rule.expand().then(()=> {
-            conditionDef = <TestRequestHeaderCondition>rule.firstCondition()
+            conditionDef = <TestRequestHeaderCondition>rule.firstGroup().first()
             conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.nameEl.el)
             rulePage.waitForSave()
             rulePage.navigateTo()
             rule = rulePage.findRule(name)
             rule.expand().then(()=> {
-              var cond3 = <TestRequestHeaderCondition>rule.firstCondition()
+              var cond3 = <TestRequestHeaderCondition>rule.firstGroup().first()
               expect(cond3.compareDD.getValueText()).toEqual("Is not", "Should have persisted.")
               rule.remove()
             })
@@ -190,7 +190,7 @@ export function initSpec(TestUtil) {
     it('should save a valid Response Header action.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
-        let actionDef = new TestRequestHeaderCondition(rule.actionEls.first())
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
         actionDef.typeSelect.setSearch("Set Response").then(()=> {
           rule.fireOn.el.click().then(() => {
             actionDef.headerKeyTF.setValue("key-AbcDef")
@@ -213,7 +213,7 @@ export function initSpec(TestUtil) {
     it('should fire when enabled with no condition and one Set Response Header action.', function () {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
-        let actionDef = new TestRequestHeaderCondition(rule.actionEls.first())
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
         actionDef.typeSelect.setSearch("Set Response").then(()=> {
           rule.fireOn.el.click().then(() => {
             actionDef.headerKeyTF.setValue(name)
@@ -232,6 +232,454 @@ export function initSpec(TestUtil) {
         })
       })
     })
+
+
+    it('should fire when enabled with a Request Header "Connection Is Not" condition and one Set Response Header action.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        let condDef = rule.createRequestHeaderCondition(TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+        actionDef.typeSelect.setSearch("Set Response").then(()=> {
+          rule.fireOn.el.click().then(() => {
+            actionDef.headerKeyTF.setValue(name)
+            actionDef.headerValueTF.setValue("value-AbcDef")
+            rule.fireOn.setSearch("Every Req")
+            rule.toggleEnable.setValue(true)
+            rule.fireOn.el.click()
+            rulePage.waitForSave().then(()=> {
+              let robots = new RobotsTxtPage(TestUtil)
+              let respName:any = robots.getResponseHeader(name)
+              browser.driver.wait(respName, 1000, 'bummer')
+              expect(respName).toEqual("value-AbcDef")
+              rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+    it('should create a second condition.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        let condDef = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+
+        let condDef2 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is not",
+            "fake value"
+        )
+        rule.fireOn.el.click().then(()=> {
+          rulePage.waitForSave()
+          rulePage.navigateTo()
+          rule = rulePage.findRule(name)
+          rule.expand().then(()=> {
+            expect(rule.firstGroup().conditionEls.count()).toBe(2)
+            rule.remove()
+          })
+        })
+      })
+    })
+
+    it('should save group logical condition changes on create.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is not",
+            "fake value A"
+        )
+        rule.addGroup(false).then(()=> {
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value B"
+          )
+          rule.addGroup(false).then(()=> {
+            let condDef2 = rule.createRequestHeaderCondition(
+                TestRequestHeaderCondition.HEADER_KEYS.Accept,
+                "is",
+                "fake value C"
+            )
+            rulePage.waitForSave()
+            rulePage.navigateTo()
+            rule = rulePage.findRule(name)
+            rule.expand().then(()=> {
+              expect(rule.getGroup(1).getLogicalOperator()).toBe("OR")
+              expect(rule.getGroup(2).getLogicalOperator()).toBe("OR")
+              rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+
+    it('should save group logical condition changes on edit', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is not",
+            "fake value A"
+        )
+        rule.addGroup().then(()=> {
+          let condDef2 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value B"
+          )
+          rule.addGroup().then(()=> {
+            let condDef3 = rule.createRequestHeaderCondition(
+                TestRequestHeaderCondition.HEADER_KEYS.Accept,
+                "is",
+                "fake value C"
+            )
+            rulePage.waitForSave()
+            rulePage.navigateTo()
+            rule = rulePage.findRule(name)
+            rule.expand().then(()=> {
+              let condDef1 = rule.getGroup(1)
+              let condDef2 = rule.getGroup(2)
+              expect(condDef1.getLogicalOperator()).toBe("AND")
+              expect(condDef2.getLogicalOperator()).toBe("AND")
+              condDef1.toggleLogicalOperator()
+              condDef2.toggleLogicalOperator()
+              rulePage.waitForSave()
+              rulePage.navigateTo()
+              rule = rulePage.findRule(name)
+              rule.expand().then(()=> {
+                let condDef1 = rule.getGroup(1)
+                let condDef2 = rule.getGroup(2)
+                expect(condDef1.getLogicalOperator()).toBe("OR")
+                expect(condDef2.getLogicalOperator()).toBe("OR")
+                rule.remove()
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fire action for two true conditions ANDed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        let condDef2 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is not",
+            "fake value"
+        )
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+        actionDef.typeSelect.setSearch("Set Response").then(()=> {
+          rule.fireOn.el.click().then(() => {
+            actionDef.headerKeyTF.setValue(name)
+            actionDef.headerValueTF.setValue("value-AbcDef")
+            rule.toggleEnable.setValue(true)
+            rulePage.waitForSave(500).then(()=> {
+              let robots = new RobotsTxtPage(TestUtil)
+              let respName:any = robots.getResponseHeader(name)
+              browser.driver.wait(respName, 1000, 'Wait failed')
+              expect(respName).toEqual("value-AbcDef")
+              rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+
+    it('should fire action for one true and one false condition ORed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        let condDef1 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is",
+            "fake value",
+            false
+        )
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+        actionDef.typeSelect.setSearch("Set Response").then(()=> {
+          rule.fireOn.el.click().then(() => {
+            actionDef.headerKeyTF.setValue(name)
+            actionDef.headerValueTF.setValue("value-AbcDef")
+            rule.toggleEnable.setValue(true)
+            rulePage.waitForSave(500).then(()=> {
+              let robots = new RobotsTxtPage(TestUtil)
+              let respName:any = robots.getResponseHeader(name)
+              browser.driver.wait(respName, 1000, 'Wait failed')
+              expect(respName).toEqual("value-AbcDef")
+                rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+    it('should not fire action for one true and one false condition ANDed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        let condDef1 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is",
+            "fake value"
+        )
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+        actionDef.typeSelect.setSearch("Set Response").then(()=> {
+          rule.fireOn.el.click().then(() => {
+            actionDef.headerKeyTF.setValue(name)
+            actionDef.headerValueTF.setValue("value-AbcDef")
+            rule.toggleEnable.setValue(true)
+            rulePage.waitForSave(500).then(()=> {
+              let robots = new RobotsTxtPage(TestUtil)
+              let respName:any = robots.getResponseHeader(name)
+              browser.driver.wait(respName, 1000, 'Wait failed')
+              expect(respName).toBeUndefined()
+              rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+    it('should not fire action for two false condition ORed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is",
+            "fake value"
+        )
+        let condDef1 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is",
+            "fake value",
+            false
+        )
+        let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+        actionDef.typeSelect.setSearch("Set Response").then(()=> {
+          rule.fireOn.el.click().then(() => {
+            actionDef.headerKeyTF.setValue(name)
+            actionDef.headerValueTF.setValue("value-AbcDef")
+            rule.toggleEnable.setValue(true)
+            rulePage.waitForSave(500).then(()=> {
+              let robots = new RobotsTxtPage(TestUtil)
+              let respName:any = robots.getResponseHeader(name)
+              browser.driver.wait(respName, 1000, 'Wait failed')
+              expect(respName).toBeUndefined()
+              rule.remove()
+            })
+          })
+        })
+      })
+    })
+
+
+    it('should fire action for two true condition groups ANDed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        rule.addGroup().then(()=>{
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value"
+          )
+          let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+          actionDef.typeSelect.setSearch("Set Response").then(()=> {
+            rule.fireOn.el.click().then(() => {
+              actionDef.headerKeyTF.setValue(name)
+              actionDef.headerValueTF.setValue("value-AbcDef")
+              rule.toggleEnable.setValue(true)
+              rulePage.waitForSave(500).then(()=> {
+                let robots = new RobotsTxtPage(TestUtil)
+                let respName:any = robots.getResponseHeader(name)
+                browser.driver.wait(respName, 1000, 'Wait failed')
+                expect(respName).toEqual("value-AbcDef")
+                rule.remove()
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fire action for group logic (true || false).', function () {
+      rulePage.addRule("group - false || true").then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is not",
+            "fake value"
+        )
+        rule.addGroup(false).then(()=>{
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is",
+              "fake value"
+          )
+          let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+          actionDef.typeSelect.setSearch("Set Response").then(()=> {
+            rule.fireOn.el.click().then(() => {
+              actionDef.headerKeyTF.setValue(name)
+              actionDef.headerValueTF.setValue("value-AbcDef")
+              rule.toggleEnable.setValue(true)
+              rulePage.waitForSave(500).then(()=> {
+                let robots = new RobotsTxtPage(TestUtil)
+                let respName:any = robots.getResponseHeader(name)
+                browser.driver.wait(respName, 1000, 'Wait failed')
+                expect(respName).toEqual("value-AbcDef")
+                rule.remove()
+              })
+            })
+          })
+        })
+      })
+    })
+
+    xit('should fire action for group logic (false || true).', function () {
+      rulePage.addRule("group - false || true").then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Connection,
+            "is",
+            "fake value"
+        )
+        rule.addGroup(false).then(()=>{
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value"
+          )
+          let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+          actionDef.typeSelect.setSearch("Set Response").then(()=> {
+            rule.fireOn.el.click().then(() => {
+              actionDef.headerKeyTF.setValue(name)
+              actionDef.headerValueTF.setValue("value-AbcDef")
+              rule.toggleEnable.setValue(true)
+              rulePage.waitForSave(500).then(()=> {
+                let robots = new RobotsTxtPage(TestUtil)
+                let respName:any = robots.getResponseHeader(name)
+                browser.driver.wait(respName, 1000, 'Wait failed')
+                expect(respName).toEqual("value-AbcDef")
+                rule.remove()
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should not fire action for one false and one true condition groups ANDed together.', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is",
+            "fake value A"
+        )
+        rule.addGroup().then(()=>{
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value B"
+          )
+          let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+          actionDef.typeSelect.setSearch("Set Response").then(()=> {
+            rule.fireOn.el.click().then(() => {
+              actionDef.headerKeyTF.setValue(name)
+              actionDef.headerValueTF.setValue("value-AbcDef")
+              rule.toggleEnable.setValue(true)
+              rulePage.waitForSave(500).then(()=> {
+                let robots = new RobotsTxtPage(TestUtil)
+                let respName:any = robots.getResponseHeader(name)
+                browser.driver.wait(respName, 1000, 'Wait failed')
+                expect(respName).toBeUndefined()
+                rule.remove()
+              })
+            })
+          })
+        })
+      })
+    })
+
+    it('should fire action for when group logic is: (true || true && false).', function () {
+      rulePage.addRule().then((rule:TestRuleComponent)=> {
+        let name = rule.name
+        rule.fireOn.setSearch("Every Req")
+        let condDef0 = rule.createRequestHeaderCondition(
+            TestRequestHeaderCondition.HEADER_KEYS.Accept,
+            "is not",
+            "fake value A"
+        )
+        rule.addGroup(false).then(()=>{
+          let condDef1 = rule.createRequestHeaderCondition(
+              TestRequestHeaderCondition.HEADER_KEYS.Accept,
+              "is not",
+              "fake value B"
+          )
+          rule.addGroup(false).then(()=>{
+            let condDef2 = rule.createRequestHeaderCondition(
+                TestRequestHeaderCondition.HEADER_KEYS.Accept,
+                "is",
+                "fake value C"
+            )
+          let actionDef = new TestResponseHeaderAction(rule.actionEls.first())
+          actionDef.typeSelect.setSearch("Set Response").then(()=> {
+            rule.fireOn.el.click().then(() => {
+              actionDef.headerKeyTF.setValue(name)
+              actionDef.headerValueTF.setValue("value-AbcDef")
+              rule.toggleEnable.setValue(true)
+              rulePage.waitForSave(500).then(()=> {
+                let robots = new RobotsTxtPage(TestUtil)
+                let respName:any = robots.getResponseHeader(name)
+                browser.driver.wait(respName, 1000, 'Wait failed')
+                expect(respName).toBe("value-AbcDef")
+                //rule.remove()
+              })
+            })
+            })
+          })
+        })
+      })
+    })
+
+
+
 
   })
 
@@ -347,9 +795,6 @@ export function initSpec(TestUtil) {
         })
       })
     })
-
-
-
   })
 
 }

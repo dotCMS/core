@@ -91,6 +91,7 @@ export class ConditionGroupComponent {
         this._conditionService.listForGroup(group).subscribe(conditions => {
           console.log("ConditionGroupComponent", "list for group", conditions.length, groupKeys.length, conditions)
           this.conditions = conditions
+          this.sort()
         })
       }
     }
@@ -121,6 +122,9 @@ export class ConditionGroupComponent {
 
   toggleGroupOperator() {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
+    if (this.group.isPersisted()) {
+      this._groupService.save(this.group)
+    }
   }
 
   onConditionChange(condition:ConditionModel) {

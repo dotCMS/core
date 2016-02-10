@@ -1,14 +1,11 @@
 import { Component, Directive, View, Inject, EventEmitter, Input, Output} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
-import {Observable} from 'rxjs/Rx'
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
 
 import {Dropdown, InputOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
 import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
-import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Verify} from "../../../api/validation/Verify";
@@ -17,42 +14,42 @@ import {Verify} from "../../../api/validation/Verify";
 @Component({
   selector: 'rule-condition',
   template: `
-<div *ngIf="typeDropdown != null && condition.type != null" flex layout="row" class="cw-condition cw-entry">
-  <div class="cw-btn-group cw-condition-toggle">
+        <div *ngIf="typeDropdown != null && condition.type != null" flex layout="row" class="cw-condition cw-entry">
+            <div class="cw-btn-group cw-condition-toggle">
     <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
-      {{condition.operator}}
-    </button>
-  </div>
-  <cw-input-dropdown
-      flex="25"
-      class="cw-type-dropdown"
-      [value]="condition.type.key"
-      placeholder="{{typeDropdown.placeholder | async}}"
-      (change)="onTypeChange($event)">
-       <cw-input-option
-          *ngFor="#opt of typeDropdown.options"
-          [value]="opt.value"
-          [label]="opt.label | async"
-          icon="{{opt.icon}}"></cw-input-option>
-  </cw-input-dropdown>
-  <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-    <template [ngSwitchWhen]="'NoSelection'">
-      <div class="cw-condition-component"></div>
-    </template>
-    <template ngSwitchDefault>
-      <cw-serverside-condition class="cw-condition-component"
-                               [componentInstance]="condition"
-                               (change)="onConditionChange($event)">
-      </cw-serverside-condition>
-    </template>
-  </div>
-</div>
-<div class="cw-btn-group cw-delete-btn">
-  <div class="ui basic icon buttons">
-    <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
-      <i class="trash icon"></i>
-    </button>
-  </div>
+                    {{condition.operator}}
+                </button>
+            </div>
+            <cw-input-dropdown
+                    flex="25"
+                    class="cw-type-dropdown"
+                    [value]="condition.type.key"
+                    placeholder="{{typeDropdown.placeholder | async}}"
+                    (change)="onTypeChange($event)">
+                <cw-input-option
+                        *ngFor="#opt of typeDropdown.options"
+                        [value]="opt.value"
+                        [label]="opt.label | async"
+                        icon="{{opt.icon}}"></cw-input-option>
+            </cw-input-dropdown>
+            <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
+                <template [ngSwitchWhen]="'NoSelection'">
+                    <div class="cw-condition-component"></div>
+                </template>
+                <template ngSwitchDefault>
+                    <cw-serverside-condition class="cw-condition-component"
+                                             [componentInstance]="condition"
+                                             (change)="onConditionChange($event)">
+                    </cw-serverside-condition>
+                </template>
+            </div>
+        </div>
+        <div class="cw-btn-group cw-delete-btn">
+            <div class="ui basic icon buttons">
+                <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
+                    <i class="trash icon"></i>
+                </button>
+    </div>
 </div>
 `,
   directives: [CORE_DIRECTIVES,
