@@ -114,15 +114,18 @@ public class RequestHeaderConditionlet extends Conditionlet<RequestHeaderConditi
         boolean evalSuccess;
         if(instance.comparison == EXISTS) {
             evalSuccess = EXISTS.perform(headerActualValue);
-        }   else if(headerActualValue==null) {
-        	// header does not exist
-        	return false;
         }
-        else if(instance.comparison != REGEX) {
-            //noinspection unchecked
-            evalSuccess = instance.comparison.perform(headerActualValue.toLowerCase(), instance.headerValue.toLowerCase());
-        } else {
-            evalSuccess = REGEX.perform(headerActualValue, instance.headerValue);
+        else {
+            if(headerActualValue == null) {
+                // treat null and empty string the same, except for 'Exists' case.
+                headerActualValue = "";
+            }
+            if(instance.comparison != REGEX) {
+                //noinspection unchecked
+                evalSuccess = instance.comparison.perform(headerActualValue.toLowerCase(), instance.headerValue.toLowerCase());
+            } else {
+                evalSuccess = REGEX.perform(headerActualValue, instance.headerValue);
+            }
         }
         return evalSuccess;
     }
