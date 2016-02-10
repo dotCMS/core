@@ -3,12 +3,13 @@ package com.dotmarketing.portlets.rules.model;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.dotmarketing.portlets.rules.util.LogicalCondition;
+import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public class ConditionGroup implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -60,7 +61,7 @@ public class ConditionGroup implements Serializable {
     }
 
     public List<Condition> getConditions() {
-        if(conditions==null) {
+        if(conditions == null) {
             try {
                 conditions = FactoryLocator.getRulesFactory().getConditionsByGroup(this.id);
             } catch (DotDataException e) {
@@ -87,19 +88,17 @@ public class ConditionGroup implements Serializable {
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
-        boolean result = true;
 
-        /* @todo ggranum: This also fails for ( A AND B OR C)*/
-        for (Condition condition : conditions) {
-            if(condition.getOperator()== Condition.Operator.AND) {
-                result = result && condition.evaluate(req, res);
+        LogicalStatement statement = new LogicalStatement();
+        for (Condition cond : conditions) {
+            ConditionLogicalCondition logicalCondition = new ConditionLogicalCondition(cond, req, res);
+            if(cond.getOperator() == Condition.Operator.AND) {
+                statement.and(logicalCondition);
             } else {
-                result = result || condition.evaluate(req, res);
+                statement.or(logicalCondition);
             }
-            if(!result) return false;
         }
-
-        return result;
+        return statement.evaluate();
     }
 
     @Override
@@ -108,5 +107,23 @@ public class ConditionGroup implements Serializable {
 				+ ", operator=" + operator + ", modDate=" + modDate
 				+ ", priority=" + priority + "]";
 	}
+
+    private final class ConditionLogicalCondition implements LogicalCondition {
+
+        private final Condition condition;
+        private final HttpServletRequest req;
+        private final HttpServletResponse res;
+
+        public ConditionLogicalCondition(Condition condition, HttpServletRequest req, HttpServletResponse res) {
+            this.condition = condition;
+            this.req = req;
+            this.res = res;
+        }
+
+        @Override
+        public boolean evaluate() {
+            return condition.evaluate(req, res);
+        }
+    }
 
 }
