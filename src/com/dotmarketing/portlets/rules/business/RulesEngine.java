@@ -58,7 +58,11 @@ public final class RulesEngine {
         try {
 
             Set<Rule> rules = APILocator.getRulesAPI().getRulesByParentFireOn(parent.getIdentifier(), systemUser, false, fireOn);
-
+			List<Rule> firedRules = (List<Rule>) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
+        	if(firedRules ==null){
+        		firedRules = new ArrayList<Rule>();
+        		req.setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRules);
+        	}
             for (Rule rule : rules) {
                 try {
                 	long before = System.currentTimeMillis();
@@ -66,17 +70,18 @@ public final class RulesEngine {
                     boolean evaled = rule.evaluate(req, res);
                 	if(evaled){
                     	@SuppressWarnings("unchecked")
-            			List<Rule> firedRules = (List<Rule>) req.getAttribute(WebKeys.RULES_ENGINE_FIRE_LIST);
-                    	if(firedRules ==null){
-                    		firedRules = new ArrayList<Rule>();
-                    	}
+
                     	Rule rCopy = new Rule();
                     	rCopy.setId(rule.getId());
                     	rCopy.setName(rule.getName());
                     	rCopy.setParent(rule.getParent());
                     	rCopy.setFireOn(rule.getFireOn());
+                    	rCopy.setEnabled(rule.isEnabled());
+                    	rCopy.setFolder(rule.getFolder());
+                    	rCopy.setShortCircuit(rule.isShortCircuit());
+                    	rCopy.setModDate(rule.getModDate());
                     	firedRules.add(rCopy);
-                    	req.setAttribute(WebKeys.RULES_ENGINE_FIRE_LIST, firedRules);
+                    	
                 	}
                     long after = System.currentTimeMillis();
         			if((after - before) > SLOW_RULE_LOG_MIN) {

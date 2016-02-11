@@ -1,23 +1,24 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotmarketing.beans.Identifier;
-import com.dotmarketing.business.*;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.rules.exception.RuleEngineException;
-import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
-import com.dotmarketing.util.Logger;
-import com.liferay.portal.model.User;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionSummary;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.RelatedPermissionableGroup;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
+import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
+import com.dotmarketing.util.Logger;
 
 public class Rule implements Permissionable, Serializable {
 
@@ -296,7 +297,7 @@ public class Rule implements Permissionable, Serializable {
 
     @Override
     public String toString() {
-        return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
+        return "Rule [name=" + name + ", id=" + id + ", fireOn=" + fireOn
                + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
