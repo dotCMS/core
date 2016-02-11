@@ -56,11 +56,18 @@ public class PagesViewedConditionlet extends Conditionlet<PagesViewedConditionle
         private final String comparisonValue;
 
         private Instance(PagesViewedConditionlet definition, Map<String, ParameterModel> parameters) {
-            this.numberPagesViewedInput = Integer.parseInt( parameters.get(NUMBER_PAGES_VIEWED_INPUT_KEY).getValue() );
+            String input = parameters.get(NUMBER_PAGES_VIEWED_INPUT_KEY).getValue();
+
+            if (input != null) {
+                this.numberPagesViewedInput = Integer.parseInt(input);
+            }else{
+                this.numberPagesViewedInput = 0;
+            }
+
+
             this.comparisonValue = parameters.get(COMPARISON_KEY).getValue();
 
             try {
-                // noinspection unchecked
                 this.comparison = ((ComparisonParameterDefinition) definition.getParameterDefinitions().get(
                         COMPARISON_KEY)).comparisonFrom(comparisonValue);
             } catch (ComparisonNotPresentException e) {

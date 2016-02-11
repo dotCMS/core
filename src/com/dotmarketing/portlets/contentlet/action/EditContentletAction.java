@@ -1096,7 +1096,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 					if ( contentletTagsBuilder.length() > 0 ) {
 						contentletTagsBuilder.append(",");
 					}
-					contentletTagsBuilder.append(relatedTag.getTagName());
+					if ( relatedTag.isPersona() ) {
+						contentletTagsBuilder.append(relatedTag.getTagName() + ":persona");
+					} else {
+						contentletTagsBuilder.append(relatedTag.getTagName());
+					}
 
 					contentletTags.put(fieldVarName, contentletTagsBuilder);
 				} else {
@@ -1105,7 +1109,10 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 				}
 			}
 
-			//Now we need to populate the contentlet tag fields with the related tags info for the edit mode
+			/*
+			Now we need to populate the contentlet tag fields with the related tags info for the edit mode,
+			this is done only for display purposes.
+			 */
 			if ( !contentletTags.isEmpty() ) {
 				for ( Entry<String, StringBuilder> tagsList : contentletTags.entrySet() ) {
 					//We should not store the tags inside the field, the relation must only exist on the tag_inode table

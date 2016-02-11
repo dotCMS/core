@@ -596,10 +596,11 @@
 
     } else if (field.getFieldType().equals(Field.FieldType.TAG.toString())) {
         String textValue = UtilMethods.isSet(value) ? (String) value : (UtilMethods.isSet(defaultValue) ? defaultValue : "");
+        String hiddenTextValue = textValue.replaceAll(":persona","");
  %>
  <!-- display -->
     <div class="tagsWrapper" id="<%=field.getVelocityVarName()%>Wrapper">
-      <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=textValue%>" />
+      <input type="hidden" name="<%=field.getFieldContentlet()%>" id="<%=field.getVelocityVarName()%>Content" value="<%=hiddenTextValue%>" />
       <input type="text" name="name" value="" dojoType="dijit.form.TextBox" id="<%=field.getVelocityVarName()%>" />
       <div class="tagsOptions" id="<%=field.getVelocityVarName()%>suggestedTagsWrapper" style="display:none;">
         <div id="<%=field.getVelocityVarName()%>suggestedTagsDiv"></div>

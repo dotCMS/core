@@ -17,7 +17,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
-public class Condition implements RuleComponentModel, Serializable {
+public class Condition implements RuleComponentModel, Serializable, Comparable<Condition> {
 
     private static final long serialVersionUID = 1L;
     private transient RuleComponentInstance instance;
@@ -156,5 +156,10 @@ public class Condition implements RuleComponentModel, Serializable {
 				+ values + ", modDate=" + modDate + ", operator=" + operator
 				+ ", priority=" + priority + "]";
 	}
+
+    @Override
+    public int compareTo(Condition c) {
+        return Integer.compare(this.priority, c.getPriority());
+    }
 
 }

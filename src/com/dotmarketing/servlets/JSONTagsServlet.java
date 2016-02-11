@@ -72,7 +72,7 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 			String action = request.getParameter("action");
 
 			if(UtilMethods.isSet(action) && action.equals("export")) {
-				List<Tag> tagsList = tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, 0, 0);
+				List<Tag> tagsList = tagAPI.getFilteredTags(termFilter, hostFilter, globalTagsFilter, sort, 0, -1);
 				exportTags(request,  response,  tagsList);
 				return;
 			}

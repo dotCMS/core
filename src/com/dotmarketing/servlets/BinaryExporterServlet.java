@@ -626,14 +626,6 @@ public class BinaryExporterServlet extends HttpServlet {
 	            byte[] buffer = new byte[4096];
 	            out = resp.getOutputStream();
 	            
-	            if(req.getParameter("testingClientAbortException")!=null){
-		            try {
-						Thread.sleep(50000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-	            }
-	            
 	            while((count = is.read(buffer)) > 0) {
 	            	out.write(buffer, 0, count);
 	            }
