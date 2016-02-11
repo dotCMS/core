@@ -109,7 +109,7 @@ public class TagAPITest extends TestBase {
 
 		String tagName = "testapi"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss");
 		Tag createdTag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId, false);
-		tagAPI.addTagInode(createdTag,APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(), APILocator.getUserAPI().getSystemUser(), false).getInode(),null);
+		tagAPI.addUserTagInode(createdTag, APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(), APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 		tags = tagAPI.getTagsForUserByUserId(testUser.getUserId());
 		assertNotNull(tags);
@@ -124,8 +124,8 @@ public class TagAPITest extends TestBase {
 	@Test
 	public void getTagsForUserByUserInode() throws Exception{
 		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
-		String tagName ="testapi2"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tagAPI.addTag ( tagName, testUser.getUserId(), userProxy.getInode(),null );
+		String tagName = "testapi2" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+		tagAPI.addUserTag(tagName, testUser.getUserId(), userProxy.getInode());
 
 		List<Tag> tags =  tagAPI.getTagsForUserByUserInode(userProxy.getInode());    
 		assertTrue(tags.size() > 1);
@@ -223,8 +223,8 @@ public class TagAPITest extends TestBase {
 	@Test
 	public void addTag() throws Exception {
 		UserProxy userProxy = APILocator.getUserProxyAPI().getUserProxy(testUser.getUserId(),systemUser, false);
-		String tagName ="testapi6"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
-		tagAPI.addTag ( tagName, testUser.getUserId(), userProxy.getInode(),null );
+		String tagName = "testapi6" + UtilMethods.dateToHTMLDate(new Date(), "MMddyyyyHHmmss");
+		tagAPI.addUserTag(tagName, testUser.getUserId(), userProxy.getInode());
 
 		Tag tag = tagAPI.getTagByNameAndHost(tagName, hostAPI.findSystemHost().getIdentifier());
 		assertNotNull(tag);
@@ -322,7 +322,7 @@ public class TagAPITest extends TestBase {
 		String tagName ="testapi13"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		//testing first implementation of public TagInode addTagInode ( String tagName, String inode, String hostId )
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		TagInode tagInode = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		TagInode tInode = tagAPI.getTagInode(tag.getTagId(), tagInode.getInode(),WIKI_TAG_VARNAME);
 		assertTrue(UtilMethods.isSet(tInode.getInode()) && tInode.getInode().equals(tagInode.getInode()) && tInode.getTagId().equals(tag.getTagId()));
@@ -330,7 +330,7 @@ public class TagAPITest extends TestBase {
 		//testing second implementation of public TagInode addTagInode ( Tag tag, String inode )
 		String tagName2 ="testapi14"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag2 = tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
-		TagInode tagInode2 = tagAPI.addTagInode ( tag2, contentAsset.getInode(),WIKI_TAG_VARNAME);
+		TagInode tagInode2 = tagAPI.addContentletTagInode(tag2, contentAsset.getInode(), WIKI_TAG_VARNAME);
 
 		TagInode tInode2 = tagAPI.getTagInode(tag2.getTagId(), tagInode2.getInode(),WIKI_TAG_VARNAME);
 		assertTrue(UtilMethods.isSet(tInode2.getInode()) && tInode2.getInode().equals(tagInode2.getInode()) && tInode2.getTagId().equals(tag2.getTagId()));
@@ -359,7 +359,7 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi15"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		TagInode tagInode = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		List<TagInode> tagInodes = tagAPI.getTagInodesByInode( contentAsset.getInode());
 		assertTrue(tagInodes.size() >=1);
@@ -396,7 +396,7 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi16"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		TagInode tagInode = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		List<TagInode> tagInodes = tagAPI.getTagInodesByTagId(tag.getTagId());
 		assertTrue(tagInodes.size() >=1);
@@ -434,7 +434,7 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi17"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		TagInode tagInode = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		TagInode tagInode2 = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode(),WIKI_TAG_VARNAME);
 
@@ -468,8 +468,8 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi18"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode = tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
-		//testing second implementation of public TagInode addTagInode ( TagInode tagInode )
+		TagInode tagInode = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+		//testing second implementation of public TagInode addContentletTagInode ( TagInode tagInode )
 		tagAPI.deleteTagInode( tagInode );
 
 		tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode(),WIKI_TAG_VARNAME);
@@ -477,8 +477,8 @@ public class TagAPITest extends TestBase {
 
 		String tagName2 ="testapi19"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag2 = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		TagInode tagInode2 = tagAPI.addTagInode (tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
-		//testing second implementation of public TagInode addTagInode ( Tag tag, String inode )
+		TagInode tagInode2 = tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+		//testing second implementation of public TagInode addContentletTagInode ( Tag tag, String inode )
 		tagAPI.deleteTagInode( tag2, contentAsset.getInode(),WIKI_TAG_VARNAME);
 
 		tagInode2 = tagAPI.getTagInode(tag2.getTagId(), contentAsset.getInode(),WIKI_TAG_VARNAME);
@@ -487,10 +487,10 @@ public class TagAPITest extends TestBase {
 		tag2 = tagAPI.getTagByTagId(tag2.getTagId());
 		assertNotNull(tag2);
 
-		//testing third implementation of public TagInode addTagInode ( String tagName, String inode )
+		//testing third implementation of public TagInode addContentletTagInode ( String tagName, String inode )
 		String tagName3 ="testapi20"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag3 = tagAPI.getTagAndCreate(tagName3, testUser.getUserId(), defaultHostId);
-		TagInode tagInode3 = tagAPI.addTagInode (tagName3, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		TagInode tagInode3 = tagAPI.addContentletTagInode(tagName3, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 		tagAPI.deleteTagInode( tag3.getTagName(), contentAsset.getInode(),WIKI_TAG_VARNAME);
 
 		tagInode3 = tagAPI.getTagInode(tag3.getTagId(), contentAsset.getInode(),WIKI_TAG_VARNAME);
@@ -523,7 +523,7 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi21"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		TagInode tagInode = tagAPI.getTagInode ( tag.getTagId(), contentAsset.getInode(),WIKI_TAG_VARNAME);
 		assertNotNull(tagInode);		
@@ -648,11 +648,11 @@ public class TagAPITest extends TestBase {
 
 		String tagName ="testapi22"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
-		tagAPI.addTagInode ( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		String tagName2 ="testapi23"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		Tag tag2 = tagAPI.getTagAndCreate(tagName2, testUser.getUserId(), defaultHostId);
-		tagAPI.addTagInode ( tagName2, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		tagAPI.addContentletTagInode(tagName2, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		List<Tag> tags = tagAPI.getTagsByInode( contentAsset.getInode());
 		assertNotNull(tags);
@@ -813,7 +813,7 @@ public class TagAPITest extends TestBase {
 
 		tagName ="testapi27"+UtilMethods.dateToHTMLDate(new Date(),"MMddyyyyHHmmss"); 
 		tag = tagAPI.saveTag(tagName, testUser.getUserId(), defaultHostId);
-		tagAPI.addTagInode( tagName, contentAsset.getInode(), defaultHostId,WIKI_TAG_VARNAME);
+		tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
 
 		//Verify the cache -> THE SAVE SHOULD ADD NOTHING TO CACHE, JUST THE LOAD
 		cachedTags = tagCache.getByInode(contentAsset.getInode());

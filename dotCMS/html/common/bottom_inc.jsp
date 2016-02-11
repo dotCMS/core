@@ -1,14 +1,18 @@
 
 	<script type="text/javascript">
 		function dotMakeBodVisible(){
-			if(document.location.href.indexOf("#")<0){
+			
+			if(dojo.style(dojo.body(), "visibility") != "visible"){
+				setTimeout( "dotMakeBodVisible()",3000);
 				dojo.style(dojo.body(), "visibility", "visible");
+				
 			}
+
 		}
 		
 		dojo.addOnLoad(dotMakeBodVisible);
-		setTimeout( "dotMakeBodVisible",2000);
-	
+		
+
 	</script>
 </body>
 </html>

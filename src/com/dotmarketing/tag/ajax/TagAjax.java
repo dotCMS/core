@@ -66,8 +66,8 @@ public class TagAjax {
 	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
-					tagAPI.addTagInode(createdTag,
-							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode(), null);
+					tagAPI.addUserTagInode(createdTag,
+							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -160,7 +160,7 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().addTag(tagName, userId, inode, null);
+				APILocator.getTagAPI().addUserTag(tagName, userId, inode);
 			}
 		}
 		catch(Exception ex)

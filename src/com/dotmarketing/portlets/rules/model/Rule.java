@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -139,6 +140,7 @@ public class Rule implements Permissionable, Serializable {
                 throw new RuleEngineException(e, "Could not read groups for Rule %s ", this.toString());
             }
         }
+        Collections.sort(groups);
         return groups;
     }
 

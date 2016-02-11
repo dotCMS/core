@@ -1344,7 +1344,7 @@ create table analytic_summary_pages (
 );
 create table tag (
    tag_id varchar2(100) not null,
-   tagname varchar2(255),
+   tagname varchar2(255) not null,
    host_id varchar2(255),
    user_id varchar2(255),
    persona number(1,0) default 0,
@@ -1926,9 +1926,9 @@ create table workflow_task (
 create table tag_inode (
    tag_id varchar2(100) not null,
    inode varchar2(100) not null,
-	 field_var_name varchar2(255) DEFAULT '',
+	 field_var_name varchar2(255),
    mod_date date,
-   primary key (tag_id, inode, field_var_name)
+   primary key (tag_id, inode)
 );
 create table click (
    inode varchar2(36) not null,

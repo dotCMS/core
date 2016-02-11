@@ -6,12 +6,13 @@ import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class ConditionGroup implements Serializable {
+public class ConditionGroup implements Serializable, Comparable<ConditionGroup> {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
@@ -68,6 +69,7 @@ public class ConditionGroup implements Serializable {
                 throw new RuleEngineException(e, "Could not load conditions for group %s.", this.toString());
             }
         }
+        Collections.sort(conditions);
         return conditions;
     }
 
@@ -107,6 +109,10 @@ public class ConditionGroup implements Serializable {
 				+ ", priority=" + priority + "]";
 	}
 
+    @Override
+    public int compareTo(ConditionGroup c) {
+        return Integer.compare(this.priority, c.getPriority());
+    }
     private final class ConditionLogicalCondition implements LogicalCondition {
 
         private final Condition condition;
