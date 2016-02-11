@@ -1863,9 +1863,9 @@ create table workflow_task (
 create table tag_inode (
    tag_id varchar(100) not null,
    inode varchar(100) not null,
-   field_var_name varchar(255) DEFAULT '',
+   field_var_name varchar(255),
    mod_date timestamp,
-   primary key (tag_id, inode, field_var_name)
+   primary key (tag_id, inode)
 );
 create table click (
    inode varchar(36) not null,
