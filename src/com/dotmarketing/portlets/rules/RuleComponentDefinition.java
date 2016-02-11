@@ -3,13 +3,12 @@ package com.dotmarketing.portlets.rules;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
-import com.dotcms.rest.exception.InvalidConditionParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
-import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
+import com.dotmarketing.util.Logger;
 import java.io.Serializable;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -74,13 +73,41 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
 
     public final boolean doEvaluate(HttpServletRequest request, HttpServletResponse response, T instance) {
+        long mils = System.currentTimeMillis();
         try {
-            return this.evaluate(request, response, instance);
+            if(Logger.isDebugEnabled(this.getClass())) {
+                Logger.debug(this.getClass(), "Evaluating ComponentDefinition " + this.toLogString());
+            }
+            boolean result = this.evaluate(request, response, instance);
+            logEvalSuccess(mils, result);
+
+            return result;
         } catch (RuleEngineException e) {
+            logEvalError(mils);
             throw e;
         } catch (Exception e) {
+            logEvalError(mils);
             throw new RuleEvaluationFailedException(e, "Could not evaluate Condition from model: " + instance);
         }
+    }
+
+    private void logEvalSuccess(long mils, boolean result) {
+        if(Logger.isDebugEnabled(this.getClass())) {
+            Logger.debug(this.getClass(), "Evaluation successful: " + this.toLogString()
+                                          + " -  Duration (ms): " + (System.currentTimeMillis() - mils)
+                                          + " -  Result: " + result);
+        }
+    }
+
+    private void logEvalError(long mils) {
+        if(Logger.isDebugEnabled(this.getClass())) {
+            Logger.debug(this.getClass(), "Evaluation failed: " + this.toLogString()
+                                          + " -  Duration (ms): " + (System.currentTimeMillis() - mils));
+        }
+    }
+
+    public String toLogString(){
+        return this.getClass().getSimpleName();
     }
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, T instance);
