@@ -26,7 +26,7 @@ public class LogicalStatement implements LogicalCondition {
         return this;
     }
 
-    private void addTerm(LogicalOperator op, LogicalCondition condition) {
+    protected void addTerm(LogicalOperator op, LogicalCondition condition) {
         if(!terms.isEmpty()) {
             terms.get(terms.size() - 1).op = op;
         }
@@ -87,7 +87,7 @@ public class LogicalStatement implements LogicalCondition {
         }
     }
 
-    private class BooleanCondition implements LogicalCondition {
+    protected static class BooleanCondition implements LogicalCondition {
 
         boolean value;
 
