@@ -229,10 +229,12 @@ public class Rule implements Permissionable, Serializable {
         }
     }
 
-    public void evaluate(HttpServletRequest req, HttpServletResponse res) {
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         if(this.evaluateConditions(req, res, getGroups())) {
             this.evaluateActions(req, res, getRuleActions());
+            return true;
         }
+        return false;
     }
 
     private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {

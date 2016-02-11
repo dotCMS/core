@@ -358,7 +358,9 @@ public final class WebKeys {
     public static final String RULES_CONDITIONLET_CLASSES = "RULES_CONDITIONLET_CLASSES";
     public static final String RULES_ACTIONLET_CLASSES = "RULES_ACTIONLET_CLASSES";
     public static final String RULES_CONDITIONLET_VISITEDURLS = "RULES_CONDITIONLET_VISITEDURLS";
-
+    public static final String RULES_ENGINE_PARAM = "dotRules";
+    public static final String RULES_ENGINE_FIRE_LIST = "dotRulesFired";
+    
 	//ADMIN CONTROL
     public static final String ADMIN_CONTROL_TOP = "com.dotmarketing.admin.control.top";
     public static final String ADMIN_CONTROL_LEFT = "com.dotmarketing.admin.control.left";
