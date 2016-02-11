@@ -12,6 +12,11 @@ import {TreeNode} from "../system/locale/I18n";
 let noop = (...arg:any[])=> {
 }
 
+// @todo : Adding this meanwhile we move CountRulesActionlet to OSGI. And improve Jenkins to install osgi.
+var DISABLED_ACTION_TYPE_IDS = {
+  CountRulesActionlet: true
+}
+
 interface ActionTypeParameter {
   key:string
   dataType:string,
@@ -47,7 +52,7 @@ export class ActionTypeService {
       this._ref.once('value', (snap:EntitySnapshot) => {
         let types = snap.val()
         let hydratedTypes = []
-        let keys = Object.keys(types)
+        let keys = Object.keys(types).filter(key => DISABLED_ACTION_TYPE_IDS[key] !== true);
         let count = 0
         keys.forEach((key) => {
           let json:any = snap.child(key).val()
