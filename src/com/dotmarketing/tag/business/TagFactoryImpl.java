@@ -27,6 +27,8 @@ public class TagFactoryImpl implements TagFactory {
     private static final String TAG_COLUMN_PERSONA = "persona";
     private static final String TAG_COLUMN_MOD_DATE = "mod_date";
 
+    private static final String TAG_ORDER_BY_DEFAULT = "ORDER BY tagname";
+
     private static final String TAG_INODE_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_INODE_COLUMN_INODE = "inode";
     private static final String TAG_INODE_COLUMN_FIELD_VAR_NAME = "field_var_name";
@@ -49,7 +51,7 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the search
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT * FROM tag");
+        dc.setSQL("SELECT * FROM tag " + TAG_ORDER_BY_DEFAULT);
 
         List<Tag> tags = convertForTags(dc.loadObjectResults());
 
@@ -110,7 +112,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT * FROM tag WHERE host_id = ?");
+            dc.setSQL("SELECT * FROM tag WHERE host_id = ? " + TAG_ORDER_BY_DEFAULT);
             dc.addParam(hostId);
 
             tags = convertForTags(dc.loadObjectResults());
@@ -140,7 +142,7 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the search
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?)");
+        dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) " + TAG_ORDER_BY_DEFAULT);
         dc.addParam(name.toLowerCase() + "%");
         dc.addParam(hostId);
         dc.addParam(Host.SYSTEM_HOST);
@@ -265,9 +267,9 @@ public class TagFactoryImpl implements TagFactory {
 
                     if ( sort.equalsIgnoreCase("hostname") ) sort = "host_id";
 
-                    sortStr = " order by " + sort + " " + sortDirection;
+                    sortStr = "ORDER BY " + sort + " " + sortDirection;
                 } else {
-                    sortStr = "order by tagname";
+                    sortStr = TAG_ORDER_BY_DEFAULT;
                 }
 
                 //Filter by tagname, hosts and persona
@@ -621,10 +623,16 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the update
         final DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
+        if ( UtilMethods.isSet(tagInode.getFieldVarName()) ) {
+            dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
+        } else {
+            dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ?");
+        }
         dc.addParam(tagInode.getTagId());
         dc.addParam(tagInode.getInode());
-        dc.addParam(tagInode.getFieldVarName());
+        if ( UtilMethods.isSet(tagInode.getFieldVarName()) ) {
+            dc.addParam(tagInode.getFieldVarName());
+        }
 
         dc.loadResult();
     }
@@ -643,7 +651,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT tag.* FROM tag_inode tagInode, tag tag WHERE tagInode.tag_id=tag.tag_id AND tagInode.inode = ?");
+            dc.setSQL("SELECT tag.* FROM tag_inode tagInode, tag tag WHERE tagInode.tag_id=tag.tag_id AND tagInode.inode = ? ORDER BY tag.tagname");
             dc.addParam(inode);
 
             tags = convertForTags(dc.loadObjectResults());
@@ -712,7 +720,7 @@ public class TagFactoryImpl implements TagFactory {
 
     /**
      * Convert the SQL tag result into a Tag object
-     * @param sqlResults sql query result
+     * @param sqlResult sql query result
      * @return a Tag object
      */
     private Tag convertForTag ( Map<String, Object> sqlResult ) {
@@ -737,7 +745,7 @@ public class TagFactoryImpl implements TagFactory {
 
     /**
      * Convert the SQL tagInode result into a TagInode object
-     * @param sqlResults sql query result
+     * @param sqlResult sql query result
      * @return a TagInode object
      */
     private TagInode convertForTagInode ( Map<String, Object> sqlResult ) {
