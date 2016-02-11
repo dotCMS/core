@@ -15,7 +15,7 @@ public class ConditionGroup implements Serializable {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
-    private Condition.Operator operator;
+    private LogicalOperator operator;
     private Date modDate;
     private int priority;
     List<Condition> conditions;
@@ -36,11 +36,11 @@ public class ConditionGroup implements Serializable {
         this.ruleId = ruleId;
     }
 
-    public Condition.Operator getOperator() {
+    public LogicalOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Condition.Operator operator) {
+    public void setOperator(LogicalOperator operator) {
         this.operator = operator;
     }
 
@@ -88,11 +88,10 @@ public class ConditionGroup implements Serializable {
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
-
         LogicalStatement statement = new LogicalStatement();
         for (Condition cond : conditions) {
             ConditionLogicalCondition logicalCondition = new ConditionLogicalCondition(cond, req, res);
-            if(cond.getOperator() == Condition.Operator.AND) {
+            if(cond.getOperator() == LogicalOperator.AND) {
                 statement.and(logicalCondition);
             } else {
                 statement.or(logicalCondition);

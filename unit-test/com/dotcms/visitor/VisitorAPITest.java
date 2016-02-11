@@ -18,7 +18,8 @@ import static org.testng.Assert.*;
 
 public class VisitorAPITest {
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+
+    @Test(enabled = false, expectedExceptions = IllegalArgumentException.class)
     public void testGetVisitor_WhenNullRequest_ThrowsException() {
         APILocator.getVisitorAPI().getVisitor(null);
     }

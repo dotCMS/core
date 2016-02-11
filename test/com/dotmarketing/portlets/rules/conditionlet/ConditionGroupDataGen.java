@@ -3,8 +3,8 @@ package com.dotmarketing.portlets.rules.conditionlet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.liferay.portal.model.User;
 
 /**
@@ -24,7 +24,7 @@ public class ConditionGroupDataGen {
     }
 
     private String ruleId;
-    private Condition.Operator operator = Condition.Operator.AND;
+    private LogicalOperator operator = LogicalOperator.AND;
 
     public ConditionGroupDataGen() {
     }
@@ -54,7 +54,7 @@ public class ConditionGroupDataGen {
         return this;
     }
 
-    public ConditionGroupDataGen operator(Condition.Operator operator) {
+    public ConditionGroupDataGen operator(LogicalOperator operator) {
         this.operator = operator;
         return this;
     }

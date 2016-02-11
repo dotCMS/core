@@ -260,7 +260,7 @@ public class Rule implements Permissionable, Serializable {
         LogicalStatement statement = new LogicalStatement();
         for (ConditionGroup group : groups) {
             GroupLogicalCondition logicalCondition = new GroupLogicalCondition(group, req, res);
-            if(group.getOperator() == Condition.Operator.AND) {
+            if(group.getOperator() == LogicalOperator.AND) {
                 statement.and(logicalCondition);
             } else {
                 statement.or(logicalCondition);

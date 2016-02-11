@@ -27,86 +27,86 @@ public class RuleTest {
             );
 
             data.add(new TestCase("Evaluates to true if one 'AND' group that itself is true.")
-                         .withGroup(Condition.Operator.AND, true)
+                         .withGroup(LogicalOperator.AND, true)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("Evaluates to false if one 'AND' group that itself is false.")
-                         .withGroup(Condition.Operator.AND, false)
+                         .withGroup(LogicalOperator.AND, false)
                          .shouldBeFalse()
             );
 
             data.add(new TestCase("Evaluates to true if one 'OR' group that itself is true.")
-                         .withGroup(Condition.Operator.OR, true)
+                         .withGroup(LogicalOperator.OR, true)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("Evaluates to false if one 'OR' group that itself is false.")
-                         .withGroup(Condition.Operator.OR, false)
+                         .withGroup(LogicalOperator.OR, false)
                          .shouldBeFalse()
             );
 
             data.add(new TestCase("(true && true) should be true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.AND, true)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.AND, true)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("(true && false) should be false.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.AND, false)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.AND, false)
                          .shouldBeFalse()
             );
 
             data.add(new TestCase("(true || false) should be true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.OR, false)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.OR, false)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("(false || true) should be true.")
-                         .withGroup(Condition.Operator.AND, false)
-                         .withGroup(Condition.Operator.OR, true)
+                         .withGroup(LogicalOperator.AND, false)
+                         .withGroup(LogicalOperator.OR, true)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("(false || false) should be false.")
-                         .withGroup(Condition.Operator.AND, false)
-                         .withGroup(Condition.Operator.OR, false)
+                         .withGroup(LogicalOperator.AND, false)
+                         .withGroup(LogicalOperator.OR, false)
                          .shouldBeFalse()
             );
 
             data.add(new TestCase("A || B & C should evaluate as ( A || ( B && C) ):  (true || ( true && true ) ) ==> true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.OR, true)
-                         .withGroup(Condition.Operator.AND, true)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.OR, true)
+                         .withGroup(LogicalOperator.AND, true)
                          .shouldBeTrue()
             );
             data.add(new TestCase("A || B & C should evaluate as ( A || ( B && C) ):  (true || ( true && false ) ) ==> true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.OR, true)
-                         .withGroup(Condition.Operator.AND, false)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.OR, true)
+                         .withGroup(LogicalOperator.AND, false)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("A || B & C should evaluate as ( A || ( B && C) ):  (true || ( false && true ) ) ==> true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.OR, false)
-                         .withGroup(Condition.Operator.AND, true)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.OR, false)
+                         .withGroup(LogicalOperator.AND, true)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("A || B & C should evaluate as ( A || ( B && C) ):  (true || ( false && false ) ) ==> true.")
-                         .withGroup(Condition.Operator.AND, true)
-                         .withGroup(Condition.Operator.OR, false)
-                         .withGroup(Condition.Operator.AND, false)
+                         .withGroup(LogicalOperator.AND, true)
+                         .withGroup(LogicalOperator.OR, false)
+                         .withGroup(LogicalOperator.AND, false)
                          .shouldBeTrue()
             );
 
             data.add(new TestCase("A || B & C should evaluate as ( A || ( B && C) ):  (false || ( true && true ) ) ==> true.")
-                         .withGroup(Condition.Operator.AND, false)
-                         .withGroup(Condition.Operator.OR, true)
-                         .withGroup(Condition.Operator.AND, true)
+                         .withGroup(LogicalOperator.AND, false)
+                         .withGroup(LogicalOperator.OR, true)
+                         .withGroup(LogicalOperator.AND, true)
                          .shouldBeTrue()
             );
 
@@ -154,7 +154,7 @@ public class RuleTest {
             return this;
         }
 
-        TestCase withGroup(Condition.Operator op, boolean result) {
+        TestCase withGroup(LogicalOperator op, boolean result) {
             ConditionGroup g = mock(ConditionGroup.class);
             when(g.getOperator()).thenReturn(op);
             when(g.evaluate(Mockito.eq(request), Mockito.eq(response), Mockito.anyListOf(Condition.class))).thenReturn(result);

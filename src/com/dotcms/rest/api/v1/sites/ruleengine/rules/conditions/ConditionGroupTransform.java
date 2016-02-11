@@ -6,6 +6,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.util.Logger;
 
 import java.util.HashMap;
@@ -27,7 +28,7 @@ public class ConditionGroupTransform {
 
     public ConditionGroup applyRestToApp(RestConditionGroup rest, ConditionGroup cgroup) {
     	ConditionGroup app = (ConditionGroup) SerializationUtils.clone(cgroup);
-        app.setOperator(Condition.Operator.valueOf(rest.operator));
+        app.setOperator(LogicalOperator.valueOf(rest.operator));
         app.setPriority(rest.priority);
         return app;
     }

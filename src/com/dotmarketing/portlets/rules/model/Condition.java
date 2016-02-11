@@ -2,12 +2,9 @@ package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;
 import com.dotmarketing.portlets.rules.conditionlet.Conditionlet;
-import com.dotmarketing.util.Logger;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -22,23 +19,13 @@ public class Condition implements RuleComponentModel, Serializable {
     private static final long serialVersionUID = 1L;
     private transient RuleComponentInstance instance;
 
-    public enum Operator {
-        AND,
-        OR;
-
-        @Override
-        public String toString() {
-            return super.name();
-        }
-    }
-
     private String id;
     private String name;
     private String conditionletId;
     private String conditionGroup;
     private List<ParameterModel> values;
     private Date modDate;
-    private Operator operator;
+    private LogicalOperator operator;
     private int priority;
     private transient Conditionlet conditionlet;
 
@@ -115,11 +102,11 @@ public class Condition implements RuleComponentModel, Serializable {
         this.modDate = modDate;
     }
 
-    public Operator getOperator() {
+    public LogicalOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Operator operator) {
+    public void setOperator(LogicalOperator operator) {
         this.operator = operator;
     }
 
