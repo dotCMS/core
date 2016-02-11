@@ -740,26 +740,22 @@ public class TagAPIImpl implements TagAPI {
 	 * @return list of suggested tags
 	 */
     @SuppressWarnings ( "unchecked" )
-    public List<Tag> getSuggestedTag ( String name, String selectedHostId ) {
-        try {
-            name = escapeSingleQuote(name);
+    public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException {
 
-            //if there's a host field on form, retrieve it
-            Host hostOnForm;
-            if ( UtilMethods.isSet(selectedHostId) ) {
-                try {
-                    hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
-                    selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
-                } catch ( Exception e ) {
-                    Logger.error(this, "Unable to load current host.");
-                }
+        name = escapeSingleQuote(name);
+
+        //if there's a host field on form, retrieve it
+        Host hostOnForm;
+        if ( UtilMethods.isSet(selectedHostId) ) {
+            try {
+                hostOnForm = APILocator.getHostAPI().find(selectedHostId, APILocator.getUserAPI().getSystemUser(), true);
+                selectedHostId = hostOnForm.getMap().get("tagStorage").toString();
+            } catch (Exception e) {
+                Logger.error(this, "Unable to load current host.");
             }
-
-            return tagFactory.getTagsLikeNameAndHostIncludingSystemHost(name, selectedHostId);
-        } catch ( Exception e ) {
-            Logger.error(e, "Error retrieving suggested tags");
         }
-        return new ArrayList<>();
+
+        return tagFactory.getSuggestedTags(name, selectedHostId);
     }
 
     /**
@@ -775,11 +771,15 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
-	 * Update, copy or move tags if the hosst changes its tag storage
-	 * @param oldTagStorageId
-	 * @param newTagStorageId
-	 */
-    public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException {
+     * Update, copy or move tags if the hosst changes its tag storage
+     *
+     * @param hostIdentifier
+     * @param oldTagStorageId
+     * @param newTagStorageId
+     * @throws DotDataException
+     * @throws DotSecurityException
+     */
+    public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -797,20 +797,15 @@ public class TagAPIImpl implements TagAPI {
                 List<Tag> hostTagList = tagFactory.getTagsByHost(hostIdentifier);
 
                 for ( Tag tag : list ) {
-                    try {
-                        if ( (hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
-                            //copy old tag to host with new tag storage
-                            saveTag(tag.getTagName(), "", hostIdentifier);
-                        } else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
-                            //update old tag to global tags
-                            getTagAndCreate(tag.getTagName(), Host.SYSTEM_HOST);
-                        } else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
-                            // update old tag with new tag storage
-                            updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
-                        }
-
-                    } catch ( Exception e ) {
-                        Logger.error(e, "Error updating Tag references");
+                    if ( (hostIdentifier.equals(newTagStorageId) && hostTagList.size() == 0) && !newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+                        //copy old tag to host with new tag storage
+                        saveTag(tag.getTagName(), "", hostIdentifier);
+                    } else if ( newTagStorageId.equals(Host.SYSTEM_HOST) ) {
+                        //update old tag to global tags
+                        getTagAndCreate(tag.getTagName(), Host.SYSTEM_HOST);
+                    } else if ( hostIdentifier.equals(newTagStorageId) && hostTagList.size() > 0 || hostIdentifier.equals(oldTagStorageId) ) {
+                        // update old tag with new tag storage
+                        updateTag(tag.getTagId(), tag.getTagName(), true, newTagStorageId);
                     }
                 }
 

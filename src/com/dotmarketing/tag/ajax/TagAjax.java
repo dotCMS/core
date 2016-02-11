@@ -343,11 +343,13 @@ public class TagAjax {
 
 	/**
 	 * Gets a suggested tag(s), by name and host
-	 * @param tagName Fragment of the name we are looking for
+	 *
+	 * @param tagName                Fragment of the name we are looking for
 	 * @param selectedHostOrFolderId Host where to search for the tags (Including SYSTEM_HOST)
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag ( String tagName, String selectedHostOrFolderId ) {
+	public List<Tag> getSuggestedTag(String tagName, String selectedHostOrFolderId) throws DotDataException {
+
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
 		try {

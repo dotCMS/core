@@ -342,14 +342,18 @@ public interface TagAPI {
 	 * @param selectedHostId Host identifier
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag ( String name, String selectedHostId );
+	public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException;
 
 	/**
 	 * Update, copy or move tags if the hosst changes its tag storage
+	 *
+	 * @param hostIdentifier
 	 * @param oldTagStorageId
 	 * @param newTagStorageId
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
-	public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException;
+	public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Extract tag names in the specified text and return the list

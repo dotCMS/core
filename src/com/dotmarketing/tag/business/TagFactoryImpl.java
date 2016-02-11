@@ -130,24 +130,32 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
-     * Gets all the tags containing the tag name specified and the host Identifier is the specified hostId or the system host id
-     * @param name  Tag name
+     * Returns all the suggested tags starting with the given tag name word and within the given host or system host.
+     *
+     * @param name   Tag name
      * @param hostId Host id
      * @return list of tags
      * @throws DotDataException
      */
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException {
+    public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException {
 
         name = escapeSingleQuote(name);
 
         //Execute the search
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) " + TAG_ORDER_BY_DEFAULT);
+        if ( UtilMethods.isSet(hostId) ) {
+            dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) ORDER BY tagname, host_id");
+        } else {
+            dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND host_id LIKE ? ORDER BY tagname, host_id");
+        }
         dc.addParam(name.toLowerCase() + "%");
-        dc.addParam(hostId);
         dc.addParam(Host.SYSTEM_HOST);
+        if ( UtilMethods.isSet(hostId) ) {
+            dc.addParam(hostId);
+        }
 
-        List<Tag> tags = convertForTags(dc.loadObjectResults());
+        //Convert and return the list of found tags excluding tags with the same tag name
+        List<Tag> tags = convertForTagsFilteringDuplicated(dc.loadObjectResults());
 
         //And add the results to the cache
         for ( Tag tag : tags ) {
@@ -676,6 +684,39 @@ public class TagFactoryImpl implements TagFactory {
      */
     private String escapeSingleQuote ( String tagName ) {
         return tagName.replace("'", "''");
+    }
+
+    /**
+     * Convert the SQL tags results into a list of Tags objects.
+     * <p>This method will exclude duplicated Tags, a Tag is duplicated when exist another in the given list with
+     * the same tag name.</p>
+     * <p>What decides what tag is exclude depends on the order of the given elements, as soon as an element
+     * duplicated is found will be exclude it, so the sql that generates this given list matters.</p>
+     *
+     * @param sqlResults sql query results
+     * @return a list of tags objects
+     */
+    private List<Tag> convertForTagsFilteringDuplicated(List<Map<String, Object>> sqlResults) {
+
+        Map<String, Tag> tagsMap = new LinkedHashMap<>();
+
+        if ( sqlResults != null ) {
+
+            for ( Map<String, Object> row : sqlResults ) {
+                Tag tag = convertForTag(row);
+
+                if ( !tagsMap.containsKey(tag.getTagName()) ) {
+                    tagsMap.put(tag.getTagName(), tag);
+                } else {
+                    //Even if this tag is duplicated we want to give preferences to Personas tags
+                    if ( tag.isPersona() ) {
+                        tagsMap.put(tag.getTagName(), tag);
+                    }
+                }
+            }
+        }
+
+        return new ArrayList<>(tagsMap.values());
     }
 
     /**
