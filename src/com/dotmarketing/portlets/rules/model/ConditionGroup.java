@@ -11,7 +11,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-public class ConditionGroup implements Serializable, Comparable {
+public class ConditionGroup implements Serializable, Comparable<ConditionGroup> {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
@@ -112,8 +112,7 @@ public class ConditionGroup implements Serializable, Comparable {
 	}
 
     @Override
-    public int compareTo(Object o) {
-        ConditionGroup c = (ConditionGroup) o;
-        return this.priority - c.getPriority();
+    public int compareTo(ConditionGroup c) {
+        return Integer.compare(this.priority, c.getPriority());
     }
 }
