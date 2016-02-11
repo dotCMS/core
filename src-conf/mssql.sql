@@ -1512,7 +1512,7 @@ create table analytic_summary_pages (
 );
 create table tag (
    tag_id varchar(100) not null,
-   tagname nvarchar(255) null,
+   tagname nvarchar(255) not null,
    host_id varchar(255) null,
    user_id varchar(255) null,
    persona tinyint default 0,

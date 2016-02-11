@@ -1286,7 +1286,7 @@ create table analytic_summary_pages (
 );
 create table tag (
    tag_id varchar(100) not null,
-   tagname varchar(255),
+   tagname varchar(255) not null,
    host_id varchar(255),
    user_id varchar(255),
    persona boolean default false,
