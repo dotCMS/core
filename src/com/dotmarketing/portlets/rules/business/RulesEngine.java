@@ -34,18 +34,11 @@ public final class RulesEngine {
         		return;
         	}
         }
-        // if parent is null, assume the host
-        if(parent==null){
-	        Host host;
-	
-	        try {
-	            host =  WebAPILocator.getHostWebAPI().getCurrentHost(req);
-	            parent=host;
-	        } catch (Exception e) {
-	            Logger.error(RulesEngine.class, "Unable to retrieve current request host for URI ", e);
-	            return;
-	        }
+
+        if(parent ==null){
+        	return;
         }
+        
         User systemUser;
 
         try {
@@ -99,6 +92,15 @@ public final class RulesEngine {
     
     
     public static void fireRules(HttpServletRequest req, HttpServletResponse res, Rule.FireOn fireOn) {
-    	fireRules(req,res, null, fireOn);
+	        Host host;
+	        try {
+	            host =  WebAPILocator.getHostWebAPI().getCurrentHost(req);
+	        } catch (Exception e) {
+	            Logger.error(RulesEngine.class, "Unable to retrieve current request host for URI ", e);
+	            return;
+	        }
+
+    	
+    	fireRules(req,res, host, fireOn);
     }
 }
