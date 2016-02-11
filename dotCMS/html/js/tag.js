@@ -303,7 +303,7 @@ function fillExistingTagsMap(tags) {
 				tag = RTrim(tag);
 				tag = LTrim(tag);
 
-				if (tag.contains(":persona")) {
+				if (tag.indexOf(":persona") != -1) {
 					tag = tag.replace(":persona","");
 					addTagToMap(tag, true);
 				} else {
@@ -319,7 +319,7 @@ function fillExistingTagsLinks(tags) {
 				tag = RTrim(tag);
 				tag = LTrim(tag);
 
-				if (tag.contains(":persona")) {
+				if (tag.indexOf(":persona") != -1) {
 					tag = tag.replace(":persona","");
 				}
 
