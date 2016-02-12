@@ -92,14 +92,16 @@ public interface TagAPI {
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
 	 *
-	 * @param name    name of the tag to get
-	 * @param userId  owner of the tag
-	 * @param hostId  host identifier
-	 * @param persona True if is a persona key tag
+	 * @param name               name of the tag to get
+	 * @param userId             owner of the tag
+	 * @param hostId             host identifier
+	 * @param persona            True if is a persona key tag
+	 * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
+	 *                           name exist or not
 	 * @return Tag
 	 * @throws Exception
 	 */
-	public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException;
+	public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
@@ -305,6 +307,14 @@ public interface TagAPI {
 	public void deleteTagInodesByInode(String inode) throws DotDataException;
 
 	/**
+	 * Deletes TagInodes references by tag id
+	 *
+	 * @param tagId tag reference to delete
+	 * @throws DotDataException
+	 */
+	public void deleteTagInodesByTagId(String tagId) throws DotDataException;
+
+	/**
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
@@ -342,14 +352,18 @@ public interface TagAPI {
 	 * @param selectedHostId Host identifier
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag ( String name, String selectedHostId );
+	public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException;
 
 	/**
 	 * Update, copy or move tags if the hosst changes its tag storage
+	 *
+	 * @param hostIdentifier
 	 * @param oldTagStorageId
 	 * @param newTagStorageId
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
-	public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException;
+	public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Extract tag names in the specified text and return the list

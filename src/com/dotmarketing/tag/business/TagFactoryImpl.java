@@ -27,6 +27,8 @@ public class TagFactoryImpl implements TagFactory {
     private static final String TAG_COLUMN_PERSONA = "persona";
     private static final String TAG_COLUMN_MOD_DATE = "mod_date";
 
+    private static final String TAG_ORDER_BY_DEFAULT = "ORDER BY tagname";
+
     private static final String TAG_INODE_COLUMN_TAG_ID = "tag_id";
     private static final String TAG_INODE_COLUMN_INODE = "inode";
     private static final String TAG_INODE_COLUMN_FIELD_VAR_NAME = "field_var_name";
@@ -49,7 +51,7 @@ public class TagFactoryImpl implements TagFactory {
 
         //Execute the search
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT * FROM tag");
+        dc.setSQL("SELECT * FROM tag " + TAG_ORDER_BY_DEFAULT);
 
         List<Tag> tags = convertForTags(dc.loadObjectResults());
 
@@ -110,7 +112,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT * FROM tag WHERE host_id = ?");
+            dc.setSQL("SELECT * FROM tag WHERE host_id = ? " + TAG_ORDER_BY_DEFAULT);
             dc.addParam(hostId);
 
             tags = convertForTags(dc.loadObjectResults());
@@ -128,24 +130,32 @@ public class TagFactoryImpl implements TagFactory {
     }
 
     /**
-     * Gets all the tags containing the tag name specified and the host Identifier is the specified hostId or the system host id
-     * @param name  Tag name
+     * Returns all the suggested tags starting with the given tag name word and within the given host or system host.
+     *
+     * @param name   Tag name
      * @param hostId Host id
      * @return list of tags
      * @throws DotDataException
      */
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException {
+    public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException {
 
         name = escapeSingleQuote(name);
 
         //Execute the search
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?)");
+        if ( UtilMethods.isSet(hostId) ) {
+            dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND (host_id LIKE ? OR host_id LIKE ?) ORDER BY tagname, host_id");
+        } else {
+            dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND host_id LIKE ? ORDER BY tagname, host_id");
+        }
         dc.addParam(name.toLowerCase() + "%");
-        dc.addParam(hostId);
         dc.addParam(Host.SYSTEM_HOST);
+        if ( UtilMethods.isSet(hostId) ) {
+            dc.addParam(hostId);
+        }
 
-        List<Tag> tags = convertForTags(dc.loadObjectResults());
+        //Convert and return the list of found tags excluding tags with the same tag name
+        List<Tag> tags = convertForTagsFilteringDuplicated(dc.loadObjectResults());
 
         //And add the results to the cache
         for ( Tag tag : tags ) {
@@ -265,9 +275,9 @@ public class TagFactoryImpl implements TagFactory {
 
                     if ( sort.equalsIgnoreCase("hostname") ) sort = "host_id";
 
-                    sortStr = " order by " + sort + " " + sortDirection;
+                    sortStr = "ORDER BY " + sort + " " + sortDirection;
                 } else {
-                    sortStr = "order by tagname";
+                    sortStr = TAG_ORDER_BY_DEFAULT;
                 }
 
                 //Filter by tagname, hosts and persona
@@ -596,14 +606,52 @@ public class TagFactoryImpl implements TagFactory {
      */
     public void deleteTagInodesByInode(String inode) throws DotDataException {
 
-        //First lets clean up the cache
-        tagInodeCache.removeByInode(inode);
-        tagCache.removeByInode(inode);
+        try {
+            //Get the current tagInodes in order to do a proper clean up
+            List<TagInode> currentTagsInodes = getTagInodesByInode(inode);
+            if ( currentTagsInodes != null ) {
+                for ( TagInode tagInode : currentTagsInodes ) {
+                    tagInodeCache.remove(tagInode);
+                    tagCache.removeByInode(tagInode.getInode());
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(this, "Error cleaning up cache.", e);
+        }
 
-        //Execute the update
+        //Execute the delete
         final DotConnect dc = new DotConnect();
         dc.setSQL("DELETE FROM tag_inode WHERE inode = ?");
         dc.addParam(inode);
+
+        dc.loadResult();
+    }
+
+    /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException {
+
+        try {
+            //Get the current tagInodes in order to do a proper clean up
+            List<TagInode> currentTagsInodes = getTagInodesByTagId(tagId);
+            if ( currentTagsInodes != null ) {
+                for ( TagInode tagInode : currentTagsInodes ) {
+                    tagInodeCache.remove(tagInode);
+                    tagCache.removeByInode(tagInode.getInode());
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(this, "Error cleaning up cache.", e);
+        }
+
+        //Execute the delete
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ?");
+        dc.addParam(tagId);
 
         dc.loadResult();
     }
@@ -619,12 +667,18 @@ public class TagFactoryImpl implements TagFactory {
         tagInodeCache.remove(tagInode);
         tagCache.removeByInode(tagInode.getInode());
 
-        //Execute the update
+        //Execute the delete
         final DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
+        if ( UtilMethods.isSet(tagInode.getFieldVarName()) ) {
+            dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");
+        } else {
+            dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ?");
+        }
         dc.addParam(tagInode.getTagId());
         dc.addParam(tagInode.getInode());
-        dc.addParam(tagInode.getFieldVarName());
+        if ( UtilMethods.isSet(tagInode.getFieldVarName()) ) {
+            dc.addParam(tagInode.getFieldVarName());
+        }
 
         dc.loadResult();
     }
@@ -643,7 +697,7 @@ public class TagFactoryImpl implements TagFactory {
 
             //Execute the search
             final DotConnect dc = new DotConnect();
-            dc.setSQL("SELECT tag.* FROM tag_inode tagInode, tag tag WHERE tagInode.tag_id=tag.tag_id AND tagInode.inode = ?");
+            dc.setSQL("SELECT tag.* FROM tag_inode tagInode, tag tag WHERE tagInode.tag_id=tag.tag_id AND tagInode.inode = ? ORDER BY tag.tagname");
             dc.addParam(inode);
 
             tags = convertForTags(dc.loadObjectResults());
@@ -668,6 +722,39 @@ public class TagFactoryImpl implements TagFactory {
      */
     private String escapeSingleQuote ( String tagName ) {
         return tagName.replace("'", "''");
+    }
+
+    /**
+     * Convert the SQL tags results into a list of Tags objects.
+     * <p>This method will exclude duplicated Tags, a Tag is duplicated when exist another in the given list with
+     * the same tag name.</p>
+     * <p>What decides what tag is exclude depends on the order of the given elements, as soon as an element
+     * duplicated is found will be exclude it, so the sql that generates this given list matters.</p>
+     *
+     * @param sqlResults sql query results
+     * @return a list of tags objects
+     */
+    private List<Tag> convertForTagsFilteringDuplicated(List<Map<String, Object>> sqlResults) {
+
+        Map<String, Tag> tagsMap = new LinkedHashMap<>();
+
+        if ( sqlResults != null ) {
+
+            for ( Map<String, Object> row : sqlResults ) {
+                Tag tag = convertForTag(row);
+
+                if ( !tagsMap.containsKey(tag.getTagName()) ) {
+                    tagsMap.put(tag.getTagName(), tag);
+                } else {
+                    //Even if this tag is duplicated we want to give preferences to Personas tags
+                    if ( tag.isPersona() ) {
+                        tagsMap.put(tag.getTagName(), tag);
+                    }
+                }
+            }
+        }
+
+        return new ArrayList<>(tagsMap.values());
     }
 
     /**
@@ -712,7 +799,7 @@ public class TagFactoryImpl implements TagFactory {
 
     /**
      * Convert the SQL tag result into a Tag object
-     * @param sqlResults sql query result
+     * @param sqlResult sql query result
      * @return a Tag object
      */
     private Tag convertForTag ( Map<String, Object> sqlResult ) {
@@ -737,7 +824,7 @@ public class TagFactoryImpl implements TagFactory {
 
     /**
      * Convert the SQL tagInode result into a TagInode object
-     * @param sqlResults sql query result
+     * @param sqlResult sql query result
      * @return a TagInode object
      */
     private TagInode convertForTagInode ( Map<String, Object> sqlResult ) {
