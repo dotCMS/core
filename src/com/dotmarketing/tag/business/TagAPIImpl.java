@@ -584,22 +584,40 @@ public class TagAPIImpl implements TagAPI {
      */
     public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException {
 
-        //validates the tagInode already exists
-        TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
+        boolean localTransaction = false;
 
-        if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
+        try {
 
-            //the tagInode does not exists, so creates a new TagInode
-            TagInode tagInode = new TagInode();
-            tagInode.setTagId(tag.getTagId());
-            tagInode.setInode(inode);
-            tagInode.setFieldVarName(fieldVarName);
-            tagInode.setModDate(new Date());
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
 
-            return tagFactory.createTagInode(tagInode);
-        } else {
-            // returning the existing tagInode
+            //validates the tagInode already exists
+            TagInode existingTagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
+
+            if ( existingTagInode == null || existingTagInode.getTagId() == null ) {
+
+                //the tagInode does not exists, so create a new TagInode
+                TagInode tagInode = new TagInode();
+                tagInode.setTagId(tag.getTagId());
+                tagInode.setInode(inode);
+                tagInode.setFieldVarName(fieldVarName);
+                tagInode.setModDate(new Date());
+
+                existingTagInode = tagFactory.createTagInode(tagInode);
+            }
+
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
             return existingTagInode;
+
+        } catch (Exception e) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
         }
     }
 
@@ -920,22 +938,40 @@ public class TagAPIImpl implements TagAPI {
     @Override
     public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException {
 
-        List<Tag> tags = new ArrayList<>();
+        boolean localTransaction = false;
 
-        //Split the given list of tasks
-        String[] tagNames = text.split("[,\\n\\t\\r]");
-        for ( String tagname : tagNames ) {
-            tagname = tagname.trim();
-            if ( tagname.length() > 0 ) {
-                /*
-                Search for this given tag and create it if does not exist, the search in order to define
-                if the tag exist will include the system host
-                 */
-                tags.add(getTagAndCreate(tagname, userId, hostId, false, true));
+        try {
+
+            //Check for a transaction and start one if required
+            localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+
+            List<Tag> tags = new ArrayList<>();
+
+            //Split the given list of tasks
+            String[] tagNames = text.split("[,\\n\\t\\r]");
+            for ( String tagname : tagNames ) {
+                tagname = tagname.trim();
+                if ( tagname.length() > 0 ) {
+                    /*
+                    Search for this given tag and create it if does not exist, the search in order to define
+                    if the tag exist will include the system host
+                     */
+                    tags.add(getTagAndCreate(tagname, userId, hostId, false, true));
+                }
             }
-        }
 
-        return tags;
+            //Everything ok..., committing the transaction
+            if ( localTransaction ) {
+                HibernateUtil.commitTransaction();
+            }
+
+            return tags;
+        } catch (Exception e) {
+            if ( localTransaction ) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw e;
+        }
     }
 
 }

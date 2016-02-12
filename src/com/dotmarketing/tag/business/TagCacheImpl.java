@@ -103,6 +103,13 @@ public class TagCacheImpl extends TagCache {
 
     @Override
     protected void put ( Tag object ) {
+
+        //First clean up list references to this tag name and host
+        //Removing by name
+        cache.remove(getTagsByNameGroup() + object.getTagName().toLowerCase(), getTagsByNameGroup());
+        //Removing by host
+        cache.remove(getTagsByHostGroup() + object.getHostId(), getTagsByHostGroup());
+
         //Adding the tag by id
         cache.put(getPrimaryGroup() + object.getTagId(), object, getPrimaryGroup());
         cache.put(getTagByNameHostGroup() + object.getTagName().toLowerCase() + "_" + object.getHostId(), object, getTagByNameHostGroup());
