@@ -423,6 +423,9 @@ public class TagFactoryImpl implements TagFactory {
 
         dc.loadResult();
 
+        //Clean up list references to this tag name and host
+        tagCache.remove(tag);
+
         return tag;
     }
 
@@ -447,6 +450,9 @@ public class TagFactoryImpl implements TagFactory {
         dc.addParam(new Date());
 
         dc.loadResult();
+
+        //Clean up list references to this inode
+        tagInodeCache.remove(tagInode);
 
         return tagInode;
     }
