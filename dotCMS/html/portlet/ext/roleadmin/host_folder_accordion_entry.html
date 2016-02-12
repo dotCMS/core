@@ -2,8 +2,8 @@
     <div class="permissionTableWrapper">
         <table class="permissionTable">
             <tr>
-				<td colspan=7 style="padding:5px;padding-left:10px;;font-style:italic">${permissionsOnChildren1} ${name} ${permissionsOnChildren2} </td>
-		    </tr>
+                <td colspan=7 style="padding:5px;padding-left:10px;;font-style:italic">${permissionsOnChildren1} ${name} ${permissionsOnChildren2} </td>
+            </tr>
             <tr style="${hostsPermissionsEntryStyle}">
                 <td class="permissionType">
                     ${hostsWillInherit}
@@ -71,7 +71,7 @@
             </tr>
             <tr style="${templatesPermissionsEntryStyle}">
                 <td class="permissionType">
-                	${templatesWillInherit}
+                    ${templatesWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="templates-view-permission-${id}" onclick="viewPermissionChanged('templates', '${id}')" ${templatesViewPermissionChecked} ${disabledPermissions} />
@@ -92,7 +92,7 @@
             </tr>
             <tr style="${templateLayoutsPermissionsEntryStyle}">
                 <td class="permissionType">
-                	${templateLayoutsWillInherit}
+                    ${templateLayoutsWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="template-layouts-view-permission-${id}" onclick="viewPermissionChanged('template-layouts', '${id}')" ${templateLayoutsViewPermissionChecked} ${disabledPermissions} />
@@ -113,7 +113,7 @@
             </tr>
             <tr>
                 <td class="permissionType">
-                	${pagesWillInherit}
+                    ${pagesWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="pages-view-permission-${id}" onclick="viewPermissionChanged('pages', '${id}')" ${pagesViewPermissionChecked} ${disabledPermissions} />
@@ -135,7 +135,7 @@
             </tr>
             <tr class="legacy_files_row">
                 <td class="permissionType">
-                	${filesWillInherit}
+                    ${filesWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="files-view-permission-${id}" onclick="viewPermissionChanged('files', '${id}')" ${filesViewPermissionChecked} ${disabledPermissions} />
@@ -156,7 +156,7 @@
             </tr>
             <tr>
                 <td class="permissionType">
-                	${linksWillInherit}
+                    ${linksWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="links-view-permission-${id}" onclick="viewPermissionChanged('links', '${id}')" ${linksViewPermissionChecked} ${disabledPermissions} />
@@ -177,7 +177,7 @@
             </tr>
             <tr style="${structuresPermissionsEntryStyle}">
                 <td class="permissionType">
-                	${structuresWillInherit}
+                    ${structuresWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="structures-view-permission-${id}" onclick="viewPermissionChanged('structures', '${id}')" ${structuresViewPermissionChecked} ${disabledPermissions} />
@@ -198,7 +198,7 @@
             </tr>
             <tr>
                 <td class="permissionType">
-                	${contentWillInherit}
+                    ${contentWillInherit}
                 </td>
                 <td>
                     <input type="checkbox" dojoType="dijit.form.CheckBox" id="content-view-permission-${id}" onclick="viewPermissionChanged('content', '${id}')" ${contentViewPermissionChecked} ${disabledPermissions} />
@@ -217,7 +217,7 @@
                 <td>
                 </td>
             </tr>
-            <tr style="${templateLayoutsPermissionsEntryStyle}">
+            <tr>
                 <td class="permissionType">
                     ${rulesWillInherit}
                 </td>
@@ -229,7 +229,7 @@
                 <td>
                 </td>
                 <td>
-                	<input type="checkbox" dojoType="dijit.form.CheckBox" id="rules-publish-permission-${id}" onclick="publishPermissionChanged('rules', '${id}')" ${rulesPublishPermissionChecked} ${disabledPermissions} />
+                    <input type="checkbox" dojoType="dijit.form.CheckBox" id="rules-publish-permission-${id}" onclick="publishPermissionChanged('rules', '${id}')" ${rulesPublishPermissionChecked} ${disabledPermissions} />
                 </td>
                 <td>
                 </td>
@@ -238,12 +238,12 @@
             </tr>
         </table>
     </div>
-	<div class="permissionsActions">
-		<input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox-${id}" ${disabledPermissions} /> ${cascadeChanges}
-		<a href="javascript: ;" id="cascadePermissionsHintHook-${id}">?</a>
-		<button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton-${id}" onClick="applyPermissionChanges('${id}')" ${disabledPermissions}>
-			${applyChanges}
-		</button>
-		<a href="javascript: ;" id="inheritPermissionsHintHook-${id}" style="display: none;"><span class="exclamationIcon"></span></a>
-	</div>
+    <div class="permissionsActions">
+        <input type="checkbox" dojoType="dijit.form.CheckBox" id="cascadeChangesCheckbox-${id}" ${disabledPermissions} /> ${cascadeChanges}
+        <a href="javascript: ;" id="cascadePermissionsHintHook-${id}">?</a>
+        <button dojoType="dijit.form.Button" type="button" class="applyChangesButton" id="applyChangesButton-${id}" onClick="applyPermissionChanges('${id}')" ${disabledPermissions}>
+            ${applyChanges}
+        </button>
+        <a href="javascript: ;" id="inheritPermissionsHintHook-${id}" style="display: none;"><span class="exclamationIcon"></span></a>
+    </div>
 </div>
