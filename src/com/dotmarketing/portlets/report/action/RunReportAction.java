@@ -214,7 +214,7 @@ public class RunReportAction extends DotPortletAction {
 		int day = c.get(Calendar.DATE);
 		int year = c.get(Calendar.YEAR);
 		String date = request.getParameter(par.getName() + "date");
-		if(date.matches(com.dotmarketing.util.Constants.REG_EX_VALIDATION_DATE_WITH_FORWARDSLASH) && date != null){
+		if(date != null && date.matches(com.dotmarketing.util.Constants.REG_EX_VALIDATION_DATE_WITH_FORWARDSLASH)){
 		    String[] splitDate = date.split("/");
 		    month = Integer.valueOf(splitDate[0]) - 1;
 		    day = Integer.valueOf(splitDate[1]);
