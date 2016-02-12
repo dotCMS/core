@@ -27,7 +27,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 	private static String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT STRUCTURE_INODE, VELOCITY_VAR_NAME, FIELD_CONTENTLET FROM FIELD WHERE FIELD_TYPE=?";
 	private static String GET_CONTENT_HOST_ID="SELECT HOST_INODE FROM IDENTIFIER WHERE ID=?";
 	private static String DELETE_OLD_CONTENT_TAG_INODES="DELETE FROM TAG_INODE WHERE inode=?";
-	
+
 	/**
 	 * Update/fix the contentlets tags references in the tag_inode table 
 	 */
@@ -47,19 +47,19 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 			dc.addParam(structureInode);
 			List<Map<String, Object>> contentResults = (List<Map<String, Object>>) dc.loadResults();
 			for(Map<String, Object> content : contentResults){
-				try{
-					HibernateUtil.startTransaction();
+				String content_inode=(String) content.get("inode");
+				String content_identifier=(String) content.get("identifier");
+				String tags=(String) content.get(field_contentlet);
 
-					String content_inode=(String) content.get("inode");
-					String content_identifier=(String) content.get("identifier");
-					String tags=(String) content.get(field_contentlet);
-
-					if(UtilMethods.isSet(tags)){
-						//get content HostId
-						dc.setSQL(GET_CONTENT_HOST_ID);
-						dc.addObject(content_identifier);
-						List<Map<String,Object>> identifier = (List<Map<String, Object>>) dc.loadResults();
-						String hostId = (String) identifier.get(0).get("host_inode");
+				if(UtilMethods.isSet(tags)){
+					//get content HostId
+					dc.setSQL(GET_CONTENT_HOST_ID);
+					dc.addObject(content_identifier);
+					List<Map<String,Object>> identifier = (List<Map<String, Object>>) dc.loadResults();
+					String hostId = (String) identifier.get(0).get("host_inode");
+					
+					try{
+						HibernateUtil.startTransaction();
 
 						//delete old contents tag inodes
 						dc.setSQL(DELETE_OLD_CONTENT_TAG_INODES);
@@ -72,17 +72,17 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 							//Relate the found/created tag with this contentlet
 							tagAPI.addContentletTagInode(tag, content_inode, field_varname);
 						}
-						
+
 						//clean contentlet tag field
 						dc.setSQL("UPDATE CONTENTLET SET "+field_contentlet+"='' WHERE INODE=?");
 						dc.addParam(content_inode);
 						dc.loadResult();
+						HibernateUtil.commitTransaction();
+					}catch(DotSecurityException e){
+						HibernateUtil.rollbackTransaction();
 					}
-					HibernateUtil.commitTransaction();
-				}catch(DotSecurityException e){
-					HibernateUtil.rollbackTransaction();
-					throw new DotRuntimeException(e.getMessage());
 				}
+
 			}
 		}
 	}
