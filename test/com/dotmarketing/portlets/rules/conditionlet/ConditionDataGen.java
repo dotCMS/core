@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.liferay.portal.model.User;
 
 /**
@@ -23,7 +24,7 @@ public class ConditionDataGen {
     }
 
     private String groupId;
-    private Condition.Operator operator = Condition.Operator.AND;
+    private LogicalOperator operator = LogicalOperator.AND;
 
 
     public ConditionDataGen() {
@@ -57,7 +58,7 @@ public class ConditionDataGen {
         return this;
     }
 
-    public ConditionDataGen operator(Condition.Operator operator) {
+    public ConditionDataGen operator(LogicalOperator operator) {
         this.operator = operator;
         return this;
     }

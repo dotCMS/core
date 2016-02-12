@@ -194,17 +194,17 @@ public class CMSFilter implements Filter {
 			try {
 				ident = APILocator.getIdentifierAPI().find(host, rewrite);
 				request.setAttribute(CMS_FILTER_IDENTITY, ident);
+				RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
+				if(response.isCommitted()) {
+                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
+					return;
+				}
 				request.getRequestDispatcher("/dotAsset/").forward(request, response);
 			} catch (DotDataException e) {
 				Logger.error(CMSFilter.class, e.getMessage(), e);
 				throw new IOException(e.getMessage());
 			}
-            RulesEngine.fireRules(request, response, Rule.FireOn.EVERY_REQUEST);
-            if(response.isCommitted()){
-                /* Some form of redirect, error, or the request has already been fulfilled in some fashion by one or more of the actionlets. */
-                return;
-            }
-			return;
+            return;
 		}
 
 		if (iAm == IAm.PAGE) {

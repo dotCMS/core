@@ -32,13 +32,14 @@ public interface TagFactory {
     public java.util.List<Tag> getTagsByHost ( String hostId ) throws DotDataException;
 
     /**
-     * Gets all the tags containing the tag name specified and the host Identifier is the specified hostId or the system host id
-     * @param name  Tag name
+     * Returns all the suggested tags starting with the given tag name word and within the given host or system host.
+     *
+     * @param name   Tag name
      * @param hostId Host id
      * @return list of tags
      * @throws DotDataException
      */
-    public List<Tag> getTagsLikeNameAndHostIncludingSystemHost ( String name, String hostId ) throws DotDataException;
+    public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException;
 
     /**
      * Get all the tags matched by name and hostId
@@ -149,6 +150,14 @@ public interface TagFactory {
      * @throws DotDataException
      */
     public void deleteTagInodesByInode(String inode) throws DotDataException;
+
+    /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException;
 
     /**
      * Deletes a TagInode

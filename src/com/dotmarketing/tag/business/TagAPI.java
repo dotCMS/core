@@ -92,14 +92,16 @@ public interface TagAPI {
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
 	 *
-	 * @param name    name of the tag to get
-	 * @param userId  owner of the tag
-	 * @param hostId  host identifier
-	 * @param persona True if is a persona key tag
+	 * @param name               name of the tag to get
+	 * @param userId             owner of the tag
+	 * @param hostId             host identifier
+	 * @param persona            True if is a persona key tag
+	 * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
+	 *                           name exist or not
 	 * @return Tag
 	 * @throws Exception
 	 */
-	public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException;
+	public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
@@ -133,17 +135,30 @@ public interface TagAPI {
 
 	/**
 	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-	 * and then tags the object
+	 * and then tags the User
+	 *
 	 * @param tagName tag(s) to create
-	 * @param userId owner of the tag
-	 * @param inode object to tag
-	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-	 *                     send null
+	 * @param userId  owner of the tag
+	 * @param inode   User to tag
 	 * @return a list of all tags assigned to an object
-	 * @deprecated it doesn't handle host id. Call getTagsInText then addTagInode on each
 	 * @throws Exception
+	 * @deprecated it doesn't handle host id. Call getTagsInText then addUserTagInode on each
 	 */
-	public List addTag ( String tagName, String userId, String inode, String fieldVarName ) throws DotDataException, DotSecurityException;
+	public List addUserTag(String tagName, String userId, String inode) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
+	 * and then tags the Contentlet
+	 *
+	 * @param tagName      tag(s) to create
+	 * @param userId       owner of the tag
+	 * @param inode        Contenlet to tag
+	 * @param fieldVarName var name of the tag field related to the given Contentlet inode
+	 * @return a list of all tags assigned to an object
+	 * @throws Exception
+	 * @deprecated it doesn't handle host id. Call getTagsInText then addContentletTagInode on each
+	 */
+	public List addContentleTag(String tagName, String userId, String inode, String fieldVarName) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Updates an existing tag.
@@ -197,29 +212,49 @@ public interface TagAPI {
 	public void editTag(String tagName,String oldTagName, String userId) throws DotDataException;
 
 	/**
-	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
+	 * Creates the TagInode relationship between a given tag name and a given User inode.
+	 * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
 	 *
-	 * @param tagName name of the tag
-	 * @param inode   inode of the object tagged
-	 * @param hostId  the identifier of host that storage the tag
-	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-	 *                     send null
+	 * @param tagName      Tag name of the tag to relate with the Contentlet inode
+	 * @param inode        inode of the object tagged
+	 * @param hostId       Host id where the tag name must be found
 	 * @return TagInode
 	 * @throws DotDataException
-	 * @throws DotSecurityException
 	 */
-	public TagInode addTagInode ( String tagName, String inode, String hostId, String fieldVarName ) throws DotDataException, DotSecurityException;
+	public TagInode addUserTagInode(String tagName, String inode, String hostId) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Gets a tagInode and a host identifier, if doesn't exists then the tagInode it's created
-	 * @param tag
-	 * @param inode inode of the object tagged
-	 * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-	 *                     send null
+	 * Creates the TagInode relationship between a given tag name and a given Contentlet inode.
+	 * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
+	 *
+	 * @param tagName      Tag name of the tag to relate with the Contentlet inode
+	 * @param inode        inode of the object tagged
+	 * @param hostId       Host id where the tag name must be found
+	 * @param fieldVarName var name of the tag field related to the given Contentlet inode
 	 * @return TagInode
 	 * @throws DotDataException
 	 */
-	public TagInode addTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException;
+	public TagInode addContentletTagInode(String tagName, String inode, String hostId, String fieldVarName) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Creates the TagInode relationship between a given tag and a given User inode
+	 *
+	 * @param tag
+	 * @param inode inode of the object tagged
+	 * @return TagInode
+	 * @throws DotDataException
+	 */
+	public TagInode addUserTagInode(Tag tag, String inode) throws DotDataException;
+
+	/**
+	 * Creates the TagInode relationship between a given tag and a given Contentlet inode
+	 * @param tag Tag to relate with the Contentlet inode
+	 * @param inode inode of the object tagged
+	 * @param fieldVarName var name of the tag field related to the given Contentlet inode
+	 * @return TagInode
+	 * @throws DotDataException
+	 */
+	public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException;
 
     /**
 	 * Gets all tagInode associated to an object
@@ -272,6 +307,14 @@ public interface TagAPI {
 	public void deleteTagInodesByInode(String inode) throws DotDataException;
 
 	/**
+	 * Deletes TagInodes references by tag id
+	 *
+	 * @param tagId tag reference to delete
+	 * @throws DotDataException
+	 */
+	public void deleteTagInodesByTagId(String tagId) throws DotDataException;
+
+	/**
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
@@ -309,14 +352,18 @@ public interface TagAPI {
 	 * @param selectedHostId Host identifier
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag ( String name, String selectedHostId );
+	public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException;
 
 	/**
 	 * Update, copy or move tags if the hosst changes its tag storage
+	 *
+	 * @param hostIdentifier
 	 * @param oldTagStorageId
 	 * @param newTagStorageId
+	 * @throws DotDataException
+	 * @throws DotSecurityException
 	 */
-	public void updateTagReferences ( String hostIdentifier, String oldTagStorageId, String newTagStorageId ) throws DotDataException;
+	public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Extract tag names in the specified text and return the list

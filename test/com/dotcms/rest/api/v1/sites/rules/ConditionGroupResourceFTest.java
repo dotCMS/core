@@ -8,7 +8,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
-import com.dotmarketing.portlets.rules.model.Condition;
+import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
@@ -73,7 +73,7 @@ public class ConditionGroupResourceFTest extends TestBase {
 
         // condition testing
         JSONObject groupJSON = new JSONObject();
-        groupJSON.put("operator", Condition.Operator.AND.name());
+        groupJSON.put("operator", LogicalOperator.AND.name());
 
         WebTarget target = config.restBaseTarget();
         response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule + "/conditionGroups")
@@ -112,7 +112,7 @@ public class ConditionGroupResourceFTest extends TestBase {
 
         // condition testing
         JSONObject groupJSON = new JSONObject();
-        groupJSON.put("operator", Condition.Operator.AND.name());
+        groupJSON.put("operator", LogicalOperator.AND.name());
         groupJSON.put("priority", originalPriority);
 
         WebTarget target = config.restBaseTarget();

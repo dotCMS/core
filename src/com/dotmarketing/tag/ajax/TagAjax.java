@@ -13,6 +13,7 @@ import com.dotmarketing.portlets.usermanager.factories.UserManagerListBuilderFac
 import com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -32,9 +33,9 @@ public class TagAjax {
 	/**
 	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
 	 * and then tags the object
-	 * @param tagName tag(s) to create
+	 * @param tagNames tag(s) to create
 	 * @param userId owner of the tag
-	 * @param inode object to tag
+	 * @param hostId the storage host id
 	 * @return a list of all tags assigned to an object
 	 */
 	public static Map<String, Object> addTag ( String tagNames, String userId, String hostId ) throws DotDataException, DotSecurityException {
@@ -66,8 +67,8 @@ public class TagAjax {
 	    				hostId = (String) session.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	    				host = APILocator.getHostAPI().find(hostId, APILocator.getUserAPI().getSystemUser(),true);
 	    			}
-					tagAPI.addTagInode(createdTag,
-							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode(), null);
+					tagAPI.addUserTagInode(createdTag,
+							APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false).getInode());
 
 	    			if(host!=null && host.getIdentifier()!=null && host.getIdentifier().equals(Host.SYSTEM_HOST))
 	    				tagStorageForHost = Host.SYSTEM_HOST;
@@ -88,6 +89,9 @@ public class TagAjax {
 	    			}
 
 	    		}catch(Exception e){
+					//Logging the error because DWR tends to swallow the exceptions
+					Logger.error(TagAjax.class, "There was an error saving the tag", e);
+
 	    			saveTagErrors.add("There was an error saving the tag");
 	    			SessionMessages.clear(req.getSession());
 	    		}finally{
@@ -107,8 +111,8 @@ public class TagAjax {
 
 	/**
 	 * Updates an existing tag.
-	 * @param tagName tag to update
-	 * @param userId owner of the tag
+	 * @param tagId tag to update
+	 * @param tagName New tagname to be use
 	 * @param hostId the storage host id
 	 */
 	public static Map<String,Object> updateTag(String tagId, String tagName, String hostId){
@@ -122,7 +126,10 @@ public class TagAjax {
         try{
 			APILocator.getTagAPI().updateTag(tagId, tagName, false, hostId);
 		}catch(Exception e){
-        	saveTagErrors.add("There was an error saving the tag.");
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "There was an error saving the tag", e);
+
+			saveTagErrors.add("There was an error saving the tag.");
         	SessionMessages.clear(req.getSession());
         }finally{
         	if(saveTagErrors != null && saveTagErrors.size() > 0){
@@ -142,8 +149,7 @@ public class TagAjax {
 	 * @param userId owner of the tag
 	 * @return a list of all tags assigned to an object
 	 */
-	public static void addTagFullCommand(String tagName, String userId)
-	{
+	public static void addTagFullCommand(String tagName, String userId) throws DotDataException, DotSecurityException {
 		try
 		{
 			HttpSession session = WebContextFactory.get().getSession();
@@ -160,13 +166,14 @@ public class TagAjax {
 			{
 				String userTagId = (String) ((Map) it.next()).get("userid");
 				String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userTagId,APILocator.getUserAPI().getSystemUser(), false).getInode();
-				APILocator.getTagAPI().addTag(tagName, userId, inode, null);
+				APILocator.getTagAPI().addUserTag(tagName, userId, inode);
 			}
 		}
 		catch(Exception ex)
 		{
-			String message = ex.toString();
-			Logger.debug(TagAjax.class,message);
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error adding tags", ex);
+			throw ex;
 		}
 	}
 
@@ -176,7 +183,13 @@ public class TagAjax {
 	 * @return a list of all the tags created
 	 */
 	public List<Tag> getTagByUser ( String userId ) throws DotSecurityException, DotDataException {
-		return APILocator.getTagAPI().getTagsForUserByUserId(userId);
+		try {
+			return APILocator.getTagAPI().getTagsForUserByUserId(userId);
+		} catch (Exception e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error retrieving tags", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -185,29 +198,46 @@ public class TagAjax {
 	 * @return a Map with a list of all the tags created
 	 */
 	public Map<String, List<Tag>> getTagsByUser ( String userId ) throws DotSecurityException, DotDataException {
-		List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
-		Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
-		map.put("tags", tags);
-		return map;
+		try {
+			List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
+			Map<String, List<Tag>> map = new HashMap<String, List<Tag>>();
+			map.put("tags", tags);
+			return map;
+		} catch (Exception e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error retrieving tags", e);
+			throw e;
+		}
 	}
 
 	/**
 	 * Deletes a tag
-	 * @param tagName name of the tag to be deleted
-	 * @param userId id of the tag owner
+	 * @param tagId id of the tag to be deleted
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
 	public void deleteTag ( String tagId ) throws DotDataException {
-		tagAPI.deleteTag(tagId);
+		try {
+			tagAPI.deleteTag(tagId);
+		} catch (DotDataException e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error deleting tag", e);
+			throw e;
+		}
 	}
 
 	/**
 	 * Gets a tag with the owner information, searching by name
-	 * @param name name of the tag
+	 * @param tagName name of the tag
 	 * @return the tag with the owner information
 	 */
 	public static List<Tag> getTagByName ( String tagName ) throws DotDataException {
-		return APILocator.getTagAPI().getTagsByName(tagName);
+		try {
+			return APILocator.getTagAPI().getTagsByName(tagName);
+		} catch (DotDataException e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error retrieving tag", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -215,8 +245,14 @@ public class TagAjax {
 	 * @param inode inode of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
 	 */
-	public static List getTagInodeByInode ( String inode ) throws DotDataException {
-		return APILocator.getTagAPI().getTagInodesByInode(inode);
+	public static List<TagInode> getTagInodeByInode(String inode) throws DotDataException {
+		try {
+			return APILocator.getTagAPI().getTagInodesByInode(inode);
+		} catch (DotDataException e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error retrieving tags", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -226,7 +262,13 @@ public class TagAjax {
 	 * @return a list of all tags assigned to an object
 	 */
 	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
-		APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
+		try {
+			APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
+		} catch (Exception e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error deleting tag", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -239,34 +281,39 @@ public class TagAjax {
 	 */
 	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotSecurityException {
 
-		Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
+		try {
+			Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
 
-		if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
-			tag = APILocator.getTagAPI().getTagByNameAndHost(tagNameOrId, Host.SYSTEM_HOST);
+			if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
+				tag = APILocator.getTagAPI().getTagByNameAndHost(tagNameOrId, Host.SYSTEM_HOST);
+			}
+
+			if ( tag == null || !UtilMethods.isSet(tag.getTagId()) ) {
+				Logger.warn(this, "Requested Tag [" + tagNameOrId + "] for deletion was not found");
+			} else {
+
+				//Retrieve the user
+				UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
+
+                /*
+				Removes the relationship between a tag and an inode.
+                 NOTE: if the tag does not have more relationships the Tag itself will be remove it.
+                 */
+				APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode(), null);
+			}
+
+			List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
+			Map<String, List<Tag>> map = new HashMap<>();
+			map.put("tags", tags);
+			return map;
+		} catch (Exception e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error deleting tag", e);
+			throw e;
 		}
-
-		if (tag == null || !UtilMethods.isSet(tag.getTagId())) {
-			Logger.warn(this, "Requested Tag [" + tagNameOrId + "] for deletion was not found");
-		} else {
-
-			//Retrieve the user
-			UserProxy user = APILocator.getUserProxyAPI().getUserProxy(userId, APILocator.getUserAPI().getSystemUser(), false);
-
-			/*
-			Removes the relationship between a tag and an inode.
-			 NOTE: if the tag does not have more relationships the Tag itself will be remove it.
-			 */
-			APILocator.getTagAPI().removeTagRelationAndTagWhenPossible(tag.getTagId(), user.getInode(), null);
-		}
-
-		List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
-		Map<String, List<Tag>> map = new HashMap<>();
-		map.put("tags", tags);
-		return map;
 	}
 
-	public static void deleteTagFullCommand(String tagName)
-	{
+	public static void deleteTagFullCommand(String tagName) throws DotDataException, DotSecurityException {
 		try
 		{
 			HttpSession session = WebContextFactory.get().getSession();
@@ -288,31 +335,40 @@ public class TagAjax {
 		}
 		catch(Exception ex)
 		{
-			String message = ex.toString();
-			Logger.debug(TagAjax.class,message);
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error deleting tags", ex);
+			throw ex;
 		}
 	}
 
 	/**
 	 * Gets a suggested tag(s), by name and host
-	 * @param tagName Fragment of the name we are looking for
+	 *
+	 * @param tagName                Fragment of the name we are looking for
 	 * @param selectedHostOrFolderId Host where to search for the tags (Including SYSTEM_HOST)
 	 * @return list of suggested tags
 	 */
-	public List<Tag> getSuggestedTag ( String tagName, String selectedHostOrFolderId ) {
+	public List<Tag> getSuggestedTag(String tagName, String selectedHostOrFolderId) throws DotDataException {
+
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
 
 		try {
 			User currentUser = com.liferay.portal.util.PortalUtil.getUser(req);
 			Host host = APILocator.getHostAPI().find(selectedHostOrFolderId, currentUser, false);
-			if ( !UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()) ) {
+			if ( (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode())) && UtilMethods.isSet(selectedHostOrFolderId) ) {
 				selectedHostOrFolderId = APILocator.getFolderAPI().find(selectedHostOrFolderId, currentUser, false).getHostId();
 			}
 		} catch ( Exception e ) {
 			Logger.error(TagAjax.class, e.getMessage(), e);
 		}
 
-		return APILocator.getTagAPI().getSuggestedTag(tagName, selectedHostOrFolderId);
+		try {
+			return APILocator.getTagAPI().getSuggestedTag(tagName, selectedHostOrFolderId);
+		} catch (Exception e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error retrieving tags", e);
+			throw e;
+		}
 	}
 
 	/**
@@ -320,7 +376,13 @@ public class TagAjax {
 	 * @return list of all tags created
 	 */
 	public List<Tag> getAllTags () throws DotDataException {
-		return APILocator.getTagAPI().getAllTags();
+		try {
+			return APILocator.getTagAPI().getAllTags();
+		} catch (DotDataException e) {
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(this, "Error retrieving tags", e);
+			throw e;
+		}
 	}
 
 	public static Map<String,Object> importTags(byte[] uploadFile) {
@@ -355,7 +417,8 @@ public class TagAjax {
 			br.close();
 
 		} catch(Exception e) {
-			e.printStackTrace();
+			//Logging the error because DWR tends to swallow the exceptions
+			Logger.error(TagAjax.class, "Error importing tags", e);
 		}
 		return callbackData;
 	}

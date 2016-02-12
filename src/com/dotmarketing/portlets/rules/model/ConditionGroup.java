@@ -3,19 +3,20 @@ package com.dotmarketing.portlets.rules.model;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import com.dotmarketing.portlets.rules.util.LogicalCondition;
+import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
-public class ConditionGroup implements Serializable, Comparable {
+public class ConditionGroup implements Serializable, Comparable<ConditionGroup> {
     private static final long serialVersionUID = 1L;
     private String id;
     private String ruleId;
-    private Condition.Operator operator;
+    private LogicalOperator operator;
     private Date modDate;
     private int priority;
     List<Condition> conditions;
@@ -36,11 +37,11 @@ public class ConditionGroup implements Serializable, Comparable {
         this.ruleId = ruleId;
     }
 
-    public Condition.Operator getOperator() {
+    public LogicalOperator getOperator() {
         return operator;
     }
 
-    public void setOperator(Condition.Operator operator) {
+    public void setOperator(LogicalOperator operator) {
         this.operator = operator;
     }
 
@@ -89,19 +90,16 @@ public class ConditionGroup implements Serializable, Comparable {
     }
 
     public boolean evaluate(HttpServletRequest req, HttpServletResponse res, List<Condition> conditions) {
-        boolean result = true;
-
-        /* @todo ggranum: This also fails for ( A AND B OR C)*/
-        for (Condition condition : conditions) {
-            if(condition.getOperator()== Condition.Operator.AND) {
-                result = result && condition.evaluate(req, res);
+        LogicalStatement statement = new LogicalStatement();
+        for (Condition cond : conditions) {
+            ConditionLogicalCondition logicalCondition = new ConditionLogicalCondition(cond, req, res);
+            if(cond.getOperator() == LogicalOperator.AND) {
+                statement.and(logicalCondition);
             } else {
-                result = result || condition.evaluate(req, res);
+                statement.or(logicalCondition);
             }
-            if(!result) return false;
         }
-
-        return result;
+        return statement.evaluate();
     }
 
     @Override
@@ -112,8 +110,25 @@ public class ConditionGroup implements Serializable, Comparable {
 	}
 
     @Override
-    public int compareTo(Object o) {
-        ConditionGroup c = (ConditionGroup) o;
-        return this.priority - c.getPriority();
+    public int compareTo(ConditionGroup c) {
+        return Integer.compare(this.priority, c.getPriority());
     }
+    private final class ConditionLogicalCondition implements LogicalCondition {
+
+        private final Condition condition;
+        private final HttpServletRequest req;
+        private final HttpServletResponse res;
+
+        public ConditionLogicalCondition(Condition condition, HttpServletRequest req, HttpServletResponse res) {
+            this.condition = condition;
+            this.req = req;
+            this.res = res;
+        }
+
+        @Override
+        public boolean evaluate() {
+            return condition.evaluate(req, res);
+        }
+    }
+
 }

@@ -2614,10 +2614,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                                 } catch ( Exception e ) {
                                     Logger.error(this, "Unable to get contentlet host", e);
                                 }
-                                if ( host.getIdentifier().equals(Host.SYSTEM_HOST) )
+                                if ( (!UtilMethods.isSet(host) || !UtilMethods.isSet(host.getInode()))
+                                        || host.getIdentifier().equals(Host.SYSTEM_HOST) ) {
                                     tagsHost = Host.SYSTEM_HOST;
-                                else
+                                } else {
                                     tagsHost = host.getIdentifier();
+                                }
                             }
 
                             //Add these tags to a temporal list in order to relate them later to this contentlet
@@ -2640,7 +2642,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     List<Tag> list = tagAPI.getTagsInText(tagEntry.getValue(), tagsHost);
                     for ( Tag tag : list ) {
                         //Relate the found/created tag with this contentlet
-                        tagAPI.addTagInode(tag, contentlet.getInode(), tagEntry.getKey());
+                        tagAPI.addContentletTagInode(tag, contentlet.getInode(), tagEntry.getKey());
                     }
                 }
 

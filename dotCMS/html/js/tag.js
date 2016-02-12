@@ -292,6 +292,7 @@ function fillExistingTags(elementId, value) {
 		var existingTags = value.split(",");
 		fillExistingTagsMap(existingTags);
 		fillExistingTagsLinks(existingTags);
+
 		tagVelocityVarName = null;
 		tagsContainer = null;
 }
@@ -302,7 +303,13 @@ function fillExistingTagsMap(tags) {
 				tag = RTrim(tag);
 				tag = LTrim(tag);
 
-				addTagToMap(tag);
+				if (tag.indexOf(":persona") != -1) {
+					tag = tag.replace(":persona","");
+					addTagToMap(tag, true);
+				} else {
+					addTagToMap(tag, false);
+				}
+
 		});
 }
 
@@ -311,6 +318,10 @@ function fillExistingTagsLinks(tags) {
 
 				tag = RTrim(tag);
 				tag = LTrim(tag);
+
+				if (tag.indexOf(":persona") != -1) {
+					tag = tag.replace(":persona","");
+				}
 
 				addTagLink(tag);
 		});

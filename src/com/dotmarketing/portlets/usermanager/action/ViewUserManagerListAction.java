@@ -1139,7 +1139,8 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                     if (tagNameToken.hasMoreTokens()) {
                                         for (; tagNameToken.hasMoreTokens();) {
                                             String tagTokenized = tagNameToken.nextToken().trim();
-                                            APILocator.getTagAPI().addTag(tagTokenized, user.getUserId(), "", null);
+                                            String inode = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(user.getUserId(), APILocator.getUserAPI().getSystemUser(), false).getInode();
+                                            APILocator.getTagAPI().addUserTag(tagTokenized, user.getUserId(), inode);
                                         }
                                     }
                                 }
@@ -1301,7 +1302,7 @@ public class ViewUserManagerListAction extends DotPortletAction {
                                         UserProxy userProxy = com.dotmarketing.business.APILocator.getUserProxyAPI().getUserProxy(userDuplicated,APILocator.getUserAPI().getSystemUser(), false);
                                         for (; tagNameToken.hasMoreTokens();) {
                                             String tagTokenized = tagNameToken.nextToken().trim();
-                                            APILocator.getTagAPI().addTagInode(tagTokenized, String.valueOf(userProxy.getUserId()), "", null);
+                                            APILocator.getTagAPI().addUserTagInode(tagTokenized, String.valueOf(userProxy.getUserId()), "");
                                         }
                                     }
                                 }

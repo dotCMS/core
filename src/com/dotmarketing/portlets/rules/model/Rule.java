@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,6 +18,8 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelatedPermissionableGroup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
+import com.dotmarketing.portlets.rules.util.LogicalCondition;
+import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
 
@@ -261,23 +264,17 @@ public class Rule implements Permissionable, Serializable {
      * A && B || C && D     ==> ( A && B ) || ( C && D )
      */
     public boolean evaluateConditions(HttpServletRequest req, HttpServletResponse res, List<ConditionGroup> groups) {
-        /**
-         *  @todo ggranum: this logic fails for three groups where:  (Group1 AND Group2 OR Group3). Also, as written it can be greatly simplified.
-         *  The correct logic cannot be implemented without a stack.
-         **/
-        boolean result = true;
+        LogicalStatement statement = new LogicalStatement();
         for (ConditionGroup group : groups) {
-            boolean groupResult = group.evaluate(req, res, group.getConditions());
-            if(group.getOperator() == Condition.Operator.AND) {
-                result = result && groupResult;
+            GroupLogicalCondition logicalCondition = new GroupLogicalCondition(group, req, res);
+            if(group.getOperator() == LogicalOperator.AND) {
+                statement.and(logicalCondition);
             } else {
-                result = result || groupResult;
+                statement.or(logicalCondition);
             }
-
-            if(!result) { return false; }
         }
 
-        return result;
+        return statement.evaluate();
     }
 
     @Override
@@ -301,5 +298,23 @@ public class Rule implements Permissionable, Serializable {
                + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
+    }
+
+    private final class GroupLogicalCondition implements LogicalCondition {
+
+        private final ConditionGroup group;
+        private final HttpServletRequest req;
+        private final HttpServletResponse res;
+
+        public GroupLogicalCondition(ConditionGroup group, HttpServletRequest req, HttpServletResponse res) {
+            this.group = group;
+            this.req = req;
+            this.res = res;
+        }
+
+        @Override
+        public boolean evaluate() {
+            return group.evaluate(req, res, group.getConditions());
+        }
     }
 }
