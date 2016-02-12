@@ -92,14 +92,16 @@ public interface TagAPI {
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
 	 *
-	 * @param name    name of the tag to get
-	 * @param userId  owner of the tag
-	 * @param hostId  host identifier
-	 * @param persona True if is a persona key tag
+	 * @param name               name of the tag to get
+	 * @param userId             owner of the tag
+	 * @param hostId             host identifier
+	 * @param persona            True if is a persona key tag
+	 * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
+	 *                           name exist or not
 	 * @return Tag
 	 * @throws Exception
 	 */
-	public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException;
+	public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException;
 
 	/**
 	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
@@ -303,6 +305,14 @@ public interface TagAPI {
 	 * @throws DotDataException
 	 */
 	public void deleteTagInodesByInode(String inode) throws DotDataException;
+
+	/**
+	 * Deletes TagInodes references by tag id
+	 *
+	 * @param tagId tag reference to delete
+	 * @throws DotDataException
+	 */
+	public void deleteTagInodesByTagId(String tagId) throws DotDataException;
 
 	/**
 	 * Deletes a TagInode

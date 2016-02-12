@@ -152,6 +152,14 @@ public interface TagFactory {
     public void deleteTagInodesByInode(String inode) throws DotDataException;
 
     /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException;
+
+    /**
      * Deletes a TagInode
      * @param tagInode TagInode to delete
      * @throws DotDataException

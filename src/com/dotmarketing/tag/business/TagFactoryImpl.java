@@ -606,14 +606,52 @@ public class TagFactoryImpl implements TagFactory {
      */
     public void deleteTagInodesByInode(String inode) throws DotDataException {
 
-        //First lets clean up the cache
-        tagInodeCache.removeByInode(inode);
-        tagCache.removeByInode(inode);
+        try {
+            //Get the current tagInodes in order to do a proper clean up
+            List<TagInode> currentTagsInodes = getTagInodesByInode(inode);
+            if ( currentTagsInodes != null ) {
+                for ( TagInode tagInode : currentTagsInodes ) {
+                    tagInodeCache.remove(tagInode);
+                    tagCache.removeByInode(tagInode.getInode());
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(this, "Error cleaning up cache.", e);
+        }
 
-        //Execute the update
+        //Execute the delete
         final DotConnect dc = new DotConnect();
         dc.setSQL("DELETE FROM tag_inode WHERE inode = ?");
         dc.addParam(inode);
+
+        dc.loadResult();
+    }
+
+    /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException {
+
+        try {
+            //Get the current tagInodes in order to do a proper clean up
+            List<TagInode> currentTagsInodes = getTagInodesByTagId(tagId);
+            if ( currentTagsInodes != null ) {
+                for ( TagInode tagInode : currentTagsInodes ) {
+                    tagInodeCache.remove(tagInode);
+                    tagCache.removeByInode(tagInode.getInode());
+                }
+            }
+        } catch (DotDataException e) {
+            Logger.error(this, "Error cleaning up cache.", e);
+        }
+
+        //Execute the delete
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ?");
+        dc.addParam(tagId);
 
         dc.loadResult();
     }
@@ -629,7 +667,7 @@ public class TagFactoryImpl implements TagFactory {
         tagInodeCache.remove(tagInode);
         tagCache.removeByInode(tagInode.getInode());
 
-        //Execute the update
+        //Execute the delete
         final DotConnect dc = new DotConnect();
         if ( UtilMethods.isSet(tagInode.getFieldVarName()) ) {
             dc.setSQL("DELETE FROM tag_inode WHERE tag_id = ? AND inode = ? AND field_var_name = ?");

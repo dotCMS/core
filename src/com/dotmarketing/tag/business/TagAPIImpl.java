@@ -83,7 +83,7 @@ public class TagAPIImpl implements TagAPI {
 	 * @throws Exception
 	 */
     public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, "", hostId, false);
+        return getTagAndCreate(name, "", hostId, false, false);
     }
 
     /**
@@ -96,7 +96,7 @@ public class TagAPIImpl implements TagAPI {
      * @throws Exception
      */
     public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, userId, hostId, false);
+        return getTagAndCreate(name, userId, hostId, false, false);
     }
 
     /**
@@ -109,19 +109,22 @@ public class TagAPIImpl implements TagAPI {
      * @throws Exception
      */
     public Tag getTagAndCreate ( String name, String hostId, boolean persona ) throws DotDataException, DotSecurityException {
-        return getTagAndCreate(name, "", hostId, persona);
+        return getTagAndCreate(name, "", hostId, persona, false);
     }
 
     /**
      * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-	 * @param name name of the tag to get
-	 * @param userId owner of the tag
-	 * @param hostId host identifier
-     * @param persona True if is a persona key tag
+     *
+     * @param name               name of the tag to get
+     * @param userId             owner of the tag
+     * @param hostId             host identifier
+     * @param persona            True if is a persona key tag
+     * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
+     *                           name exist or not
      * @return Tag
      * @throws Exception
      */
-    public Tag getTagAndCreate ( String name, String userId, String hostId, boolean persona ) throws DotDataException, DotSecurityException {
+    public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
 
@@ -133,10 +136,58 @@ public class TagAPIImpl implements TagAPI {
             Tag newTag = new Tag();
 
             //Search for tags with this given name
-            Tag tag = tagFactory.getTagByNameAndHost(name, hostId);
+            Tag existingTag = null;
+
+            //Before to decide if exist or not lets give it a try to the System host
+            if ( searchInSystemHost ) {
+
+                /*
+                When we find multiple possible tags with the same tag name we need to choose what tag to use.
+                First to choose are Persona tags, then the tag with the given host id and finally the tag living in the
+                system host
+                 */
+
+                Tag personaTag = null;
+                Tag hostTag = null;
+                Tag globalTag = null;
+
+                List<Tag> existingTags = tagFactory.getTagsByName(name);
+                if ( existingTags != null ) {
+                    for ( Tag foundTag : existingTags ) {
+
+                        String currentTagHostId = foundTag.getHostId();
+
+                        //Only use tags living in the given and system host
+                        if ( currentTagHostId.equals(Host.SYSTEM_HOST) || currentTagHostId.equals(hostId) ) {
+
+                            if ( currentTagHostId.equals(Host.SYSTEM_HOST) ) {
+                                globalTag = foundTag;
+                            } else if ( currentTagHostId.equals(hostId) ) {
+                                hostTag = foundTag;
+                            }
+
+                            if ( foundTag.isPersona() ) {
+                                personaTag = foundTag;
+                            }
+
+                        }
+                    }
+
+                    if ( personaTag != null ) {
+                        existingTag = personaTag;
+                    } else if ( hostTag != null ) {
+                        existingTag = hostTag;
+                    } else {
+                        existingTag = globalTag;
+                    }
+
+                }
+            } else {
+                existingTag = tagFactory.getTagByNameAndHost(name, hostId);
+            }
 
             // if doesn't exists then the tag is created
-            if ( tag == null || !UtilMethods.isSet(tag.getTagId()) ) {
+            if ( existingTag == null || !UtilMethods.isSet(existingTag.getTagId()) ) {
                 // creating tag
                 return saveTag(name, userId, hostId, persona);
             } else {
@@ -156,12 +207,12 @@ public class TagAPIImpl implements TagAPI {
                     existHostId = host.getMap().get("tagStorage").toString();
                 }
 
-                if ( isGlobalTag(tag) ) {
-                    newTag = tag;
+                if ( isGlobalTag(existingTag) ) {
+                    newTag = existingTag;
                     globalTagExists = true;
                 }
-                if ( tag.getHostId().equals(existHostId) ) {
-                    newTag = tag;
+                if ( existingTag.getHostId().equals(existHostId) ) {
+                    newTag = existingTag;
                     tagExists = true;
                 }
 
@@ -173,11 +224,11 @@ public class TagAPIImpl implements TagAPI {
 
                     if ( newTag.getHostId().equals(Host.SYSTEM_HOST) ) {
                         //move references of non-global tags to new global tag and delete duplicate non global tags
-                        List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
+                        List<TagInode> tagInodes = getTagInodesByTagId(existingTag.getTagId());
                         for ( TagInode tagInode : tagInodes ) {
                             tagFactory.updateTagInode(tagInode, newTag.getTagId());
                         }
-                        deleteTag(tag);
+                        deleteTag(existingTag);
                     }
                 }
             }
@@ -438,11 +489,9 @@ public class TagAPIImpl implements TagAPI {
      * @throws DotDataException
      */
     public void deleteTag ( Tag tag ) throws DotDataException {
-        List<TagInode> tagInodes = getTagInodesByTagId(tag.getTagId());
-        for ( TagInode t : tagInodes ) {
-            deleteTagInode(t);
-        }
-
+        //First delete the references to this tag
+        deleteTagInodesByTagId(tag.getTagId());
+        //And finally remove the tag
         tagFactory.deleteTag(tag);
     }
 
@@ -676,6 +725,16 @@ public class TagAPIImpl implements TagAPI {
     }
 
     /**
+     * Deletes TagInodes references by tag id
+     *
+     * @param tagId tag reference to delete
+     * @throws DotDataException
+     */
+    public void deleteTagInodesByTagId(String tagId) throws DotDataException {
+        tagFactory.deleteTagInodesByTagId(tagId);
+    }
+
+    /**
 	 * Deletes a TagInode
 	 * @param tag Tag related to the object
 	 * @param inode Inode of the object tagged
@@ -868,8 +927,11 @@ public class TagAPIImpl implements TagAPI {
         for ( String tagname : tagNames ) {
             tagname = tagname.trim();
             if ( tagname.length() > 0 ) {
-                //Search for this given tag and create it if does not exist
-                tags.add(getTagAndCreate(tagname, userId, hostId));
+                /*
+                Search for this given tag and create it if does not exist, the search in order to define
+                if the tag exist will include the system host
+                 */
+                tags.add(getTagAndCreate(tagname, userId, hostId, false, true));
             }
         }
 
