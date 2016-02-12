@@ -27,7 +27,7 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 	private static String GET_STRUCTURES_WITH_TAGS_FIELDS="SELECT STRUCTURE_INODE, VELOCITY_VAR_NAME, FIELD_CONTENTLET FROM FIELD WHERE FIELD_TYPE=?";
 	private static String GET_CONTENT_HOST_ID="SELECT HOST_INODE FROM IDENTIFIER WHERE ID=?";
 	private static String DELETE_OLD_CONTENT_TAG_INODES="DELETE FROM TAG_INODE WHERE inode=?";
-
+	
 	/**
 	 * Update/fix the contentlets tags references in the tag_inode table 
 	 */
@@ -72,6 +72,11 @@ public class Task03540UpdateTagInodesReferences extends AbstractJDBCStartupTask 
 							//Relate the found/created tag with this contentlet
 							tagAPI.addContentletTagInode(tag, content_inode, field_varname);
 						}
+						
+						//clean contentlet tag field
+						dc.setSQL("UPDATE CONTENTLET SET "+field_contentlet+"='' WHERE INODE=?");
+						dc.addParam(content_inode);
+						dc.loadResult();
 					}
 					HibernateUtil.commitTransaction();
 				}catch(DotSecurityException e){
