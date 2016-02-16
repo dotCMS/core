@@ -42,11 +42,7 @@ public class TagFactoryImpl implements TagFactory {
         tagInodeCache = CacheLocator.getTagInodeCache();
     }
 
-    /**
-	 * Get a list of all the tags created
-	 * @return list of all tags created
-	 * @throws DotDataException
-	 */
+    @Override
     public List<Tag> getAllTags () throws DotDataException {
 
         //Execute the search
@@ -65,12 +61,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    /**
-     * Gets all the tags matched by name
-     * @param name tag name
-     * @return list of tags
-     * @throws DotDataException
-     */
+    @Override
     public List<Tag> getTagsByName ( String name ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByName(name);
@@ -97,12 +88,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    /**
-     * Gets all the tags matched by hostId 
-     * @param hostId Host Id
-     * @return list of tags
-     * @throws DotDataException
-     */
+    @Override
     public List<Tag> getTagsByHost ( String hostId ) throws DotDataException {
 
         List<Tag> tags = tagCache.getByHost(hostId);
@@ -129,14 +115,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    /**
-     * Returns all the suggested tags starting with the given tag name word and within the given host or system host.
-     *
-     * @param name   Tag name
-     * @param hostId Host id
-     * @return list of tags
-     * @throws DotDataException
-     */
+    @Override
     public List<Tag> getSuggestedTags(String name, String hostId) throws DotDataException {
 
         name = escapeSingleQuote(name);
@@ -167,13 +146,7 @@ public class TagFactoryImpl implements TagFactory {
         return tags;
     }
 
-    /**
-     * Get all the tags matched by name and hostId
-     * @param name  Tag name
-     * @param hostId Host id
-     * @return list of tags
-     * @throws DotDataException
-     */
+    @Override
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
 
         Tag tag = tagCache.get(name, hostId);
@@ -201,12 +174,7 @@ public class TagFactoryImpl implements TagFactory {
         return tag;
     }
 
-    /**
-     * Gets a Tag by a tagId
-     * @param tagId Tag identifer
-     * @return a tag
-     * @throws DotDataException
-     */
+    @Override
     public Tag getTagByTagId ( String tagId ) throws DotDataException {
 
         Tag tag = tagCache.get(tagId);
@@ -231,27 +199,12 @@ public class TagFactoryImpl implements TagFactory {
         return tag;
     }
 
-    /**
-     * Gets all the tags associated to a user by the userproxy inode
-     * @param userInode UserProxy Inode
-     * @return a list of all the tags associated to a user
-     * @throws DotDataException
-     */
+    @Override
     public List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return getTagsByInode(userInode);
     }
 
-    /**
-     * Gets a subset of all tags filtered by tag name and/or host name
-     * @param tagName Tag name
-     * @param hostFilter Host identifier
-     * @param globalTagsFilter Is a global tag filter
-     * @param excludePersonas True if Persona Tags should be exclude from the returning results
-     * @param sort Tag field to order the results
-     * @param start first record to get
-     * @param count max amount of records to get
-     * @return  a list of tags filtered by tag name or host name
-     */
+    @Override
     public List<Tag> getFilteredTags(String tagName, String hostFilter, boolean globalTagsFilter, boolean excludePersonas, String sort, int start, int count) {
         try {
 
@@ -369,12 +322,7 @@ public class TagFactoryImpl implements TagFactory {
         return new java.util.ArrayList<>();
     }
 
-    /**
-     * Update the specified tagInode related to a tag
-     * @param tagInode Tag inode
-     * @param tagId Tag id
-     * @throws DotDataException
-     */
+    @Override
     public void updateTagInode ( TagInode tagInode, String tagId ) throws DotDataException {
 
         //First lets clean up the cache
@@ -398,13 +346,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Creates a new tag
-     *
-     * @param tag Tag to insert
-     * @return Created tag
-     * @throws DotDataException
-     */
+    @Override
     public Tag createTag(Tag tag) throws DotDataException {
 
         if ( !UtilMethods.isSet(tag.getTagId()) ) {
@@ -429,12 +371,7 @@ public class TagFactoryImpl implements TagFactory {
         return tag;
     }
 
-    /**
-     * Create a new TagInode
-     * @param tagInode TagInode to create
-     * @return new TagInode created
-     * @throws DotDataException
-     */
+    @Override
     public TagInode createTagInode ( TagInode tagInode ) throws DotDataException {
 
         //First lets clean up the cache
@@ -457,11 +394,7 @@ public class TagFactoryImpl implements TagFactory {
         return tagInode;
     }
 
-    /**
-     * Update a tag object by tagId
-     * @param tag Tag object to update
-     * @throws DotDataException
-     */
+    @Override
     public void updateTag ( Tag tag ) throws DotDataException {
 
         //First lets clean up the cache
@@ -486,11 +419,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Deletes a tag
-     * @param tag tag to be deleted
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTag ( Tag tag ) throws DotDataException {
 
         //First lets clean up the cache
@@ -511,12 +440,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Gets all TagInodes associated to an object
-     * @param inode inode of the object tagged
-     * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
     public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
 
         List<TagInode> tagInodes = tagInodeCache.getByInode(inode);
@@ -541,12 +465,7 @@ public class TagFactoryImpl implements TagFactory {
         return tagInodes;
     }
 
-    /**
-     * Gets all TagInodes associated to a tag
-     * @param tagId tagId of the object tagged
-     * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
     public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
 
         List<TagInode> tagInodes = tagInodeCache.getByTagId(tagId);
@@ -571,14 +490,7 @@ public class TagFactoryImpl implements TagFactory {
         return tagInodes;
     }
 
-    /**
-     * Gets a tagInode by name and inode
-     * @param tagId id of the tag
-     * @param inode inode of the object tagged
-     * @param fieldVarName varname of the tag field
-     * @return the tagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
 
         TagInode tagInode = tagInodeCache.get(tagId, inode, fieldVarName);
@@ -605,11 +517,7 @@ public class TagFactoryImpl implements TagFactory {
         return tagInode;
     }
 
-    /**
-     * Deletes TagInodes references by inode
-     * @param inode inode reference to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInodesByInode(String inode) throws DotDataException {
 
         try {
@@ -633,12 +541,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Deletes TagInodes references by tag id
-     *
-     * @param tagId tag reference to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInodesByTagId(String tagId) throws DotDataException {
 
         try {
@@ -662,11 +565,7 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Deletes a TagInode
-     * @param tagInode TagInode to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
 
         //First lets clean up the cache
@@ -689,12 +588,6 @@ public class TagFactoryImpl implements TagFactory {
         dc.loadResult();
     }
 
-    /**
-     * Gets all the tags associated to an object
-     * @param inode Inode of the tagged object
-     * @return list of all the tags associated to an object
-     * @throws DotDataException
-     */
     @Override
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
 
@@ -803,11 +696,15 @@ public class TagFactoryImpl implements TagFactory {
         return tagInodes;
     }
 
-    /**
-     * Convert the SQL tag result into a Tag object
-     * @param sqlResult sql query result
-     * @return a Tag object
-     */
+	/**
+	 * Converts the tag information coming from the database into a {@link Tag}
+	 * object with all of its properties. If the information is not present, a 
+	 * <code>null</code> value will be returned.
+	 * 
+	 * @param sqlResult
+	 *            - The data of a specific tag from the database.
+	 * @return The {@link Tag} object.
+	 */
     private Tag convertForTag ( Map<String, Object> sqlResult ) {
 
         Tag tag = null;
@@ -817,11 +714,7 @@ public class TagFactoryImpl implements TagFactory {
             tag.setTagName((String) sqlResult.get(TAG_COLUMN_TAGNAME));
             tag.setHostId((String) sqlResult.get(TAG_COLUMN_HOST_ID));
             tag.setUserId((String) sqlResult.get(TAG_COLUMN_USER_ID));
-            if ( DbConnectionFactory.isMsSql() || DbConnectionFactory.isOracle() ) {
-                tag.setPersona(Boolean.valueOf(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
-            } else {
-                tag.setPersona((boolean) sqlResult.get(TAG_COLUMN_PERSONA));
-            }
+			tag.setPersona(DbConnectionFactory.isDBTrue(sqlResult.get(TAG_COLUMN_PERSONA).toString()));
             tag.setModDate((Date) sqlResult.get(TAG_COLUMN_MOD_DATE));
         }
 

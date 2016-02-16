@@ -18,30 +18,17 @@ public class TagAPIImpl implements TagAPI {
 
     private TagFactory tagFactory = FactoryLocator.getTagFactory();
 
-    /**
-	 * Get a list of all the tags created
-	 * @return list of all tags created
-	 */
+    @Override
     public java.util.List<Tag> getAllTags () throws DotDataException {
         return tagFactory.getAllTags();
     }
 
-    /**
-	 * Gets a Tag by name
-	 * @param name name of the tag to get
-	 * @return tag
-	 */
+    @Override
     public java.util.List<Tag> getTagsByName ( String name ) throws DotDataException {
         return tagFactory.getTagsByName(name);
     }
 
-    /**
-	 * Get the list of tags related to a user by the user Id
-	 * @param userId User id
-	 * @return List<Tag>
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
+    @Override
     public java.util.List<Tag> getTagsForUserByUserId ( String userId ) throws DotDataException, DotSecurityException {
 
         //First lets seach for the user
@@ -51,79 +38,32 @@ public class TagAPIImpl implements TagAPI {
         return getTagsForUserByUserInode(user.getInode());
     }
 
-    /**
-	 * Get the list of tags by the users TagInode inode
-	 * @param userInode Users TagInode inode
-	 * @return List<Tag>
-     * @throws DotDataException
-     */
+    @Override
     public java.util.List<Tag> getTagsForUserByUserInode ( String userInode ) throws DotDataException {
         return tagFactory.getTagsForUserByUserInode(userInode);
     }
 
-    /**
-	 * Gets all tags filtered by tag name and/or host name paginated. <strong>This method excludes Persona Tags by default.</strong>
-	 * @param tagName tag name
-	 * @param hostFilter host name
-	 * @param globalTagsFilter 
-	 * @param sort Tag field to order
-	 * @param start first entry to get
-	 * @param count max amount of entries to show
-	 * @return List<Tag>
-	 */
+    @Override
     public java.util.List<Tag> getFilteredTags ( String tagName, String hostFilter, boolean globalTagsFilter, String sort, int start, int count ) {
         return tagFactory.getFilteredTags(tagName, hostFilter, globalTagsFilter, true, sort, start, count);
     }
 
-    /**
-	 * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-	 * @param name name of the tag to get
-	 * @param hostId host identifier
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag getTagAndCreate ( String name, String hostId ) throws DotDataException, DotSecurityException {
         return getTagAndCreate(name, "", hostId, false, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-     *
-     * @param name   name of the tag to get
-     * @param userId owner of the tag
-     * @param hostId host identifier
-     * @return Tag
-     * @throws Exception
-     */
+    @Override
     public Tag getTagAndCreate ( String name, String userId, String hostId ) throws DotDataException, DotSecurityException {
         return getTagAndCreate(name, userId, hostId, false, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-     *
-     * @param name    name of the tag to get
-     * @param hostId  host identifier
-     * @param persona True if is a persona key tag
-     * @return Tag
-     * @throws Exception
-     */
+    @Override
     public Tag getTagAndCreate ( String name, String hostId, boolean persona ) throws DotDataException, DotSecurityException {
         return getTagAndCreate(name, "", hostId, persona, false);
     }
 
-    /**
-     * Gets a Tag by name, validates the existance of the tag, if it doesn't exists then is created
-     *
-     * @param name               name of the tag to get
-     * @param userId             owner of the tag
-     * @param hostId             host identifier
-     * @param persona            True if is a persona key tag
-     * @param searchInSystemHost True if we want to search in the system host before to decide if a tag with the given
-     *                           name exist or not
-     * @return Tag
-     * @throws Exception
-     */
+    @Override
     public Tag getTagAndCreate(String name, String userId, String hostId, boolean persona, boolean searchInSystemHost) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
@@ -249,48 +189,22 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-	 * Gets a Tag by a tagId retrieved from a TagInode.
-	 *
-	 * @param tagId the tag id to get
-	 * @return tag
-	 */
+    @Override
     public Tag getTagByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagByTagId(tagId);
     }
 
-    /**
-	 * Get the tags seaching by Tag Name and Host identifier 
-	 * @param name Tag name
-	 * @param hostId Host identifier
-	 * @return Tag
-     * @throws DotDataException
-     */
+    @Override
     public Tag getTagByNameAndHost ( String name, String hostId ) throws DotDataException {
         return tagFactory.getTagByNameAndHost(name, hostId);
     }
 
-    /**
-	 * Creates a new tag
-	 * @param tagName name of the new tag
-	 * @param userId owner of the new tag
-	 * @param hostId host identifier
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag saveTag ( String tagName, String userId, String hostId ) throws DotDataException {
         return saveTag(tagName, userId, hostId, false);
     }
 
-    /**
-	 * Creates a new tag
-	 * @param tagName name of the new tag
-	 * @param userId owner of the new tag
-	 * @param hostId host identifier
-	 * @param persona indicate if a persona tag
-	 * @return Tag
-	 * @throws Exception
-	 */
+    @Override
     public Tag saveTag ( String tagName, String userId, String hostId, boolean persona ) throws DotDataException {
 
         boolean localTransaction = false;
@@ -347,33 +261,14 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-     * and then tags the User
-     *
-     * @param tagName tag(s) to create
-     * @param userId  owner of the tag
-     * @param inode   User to tag
-     * @return a list of all tags assigned to an object
-     * @throws Exception
-     * @deprecated it doesn't handle host id. Call getTagsInText then addUserTagInode on each
-     */
+    @Override
+    @Deprecated
     public List addUserTag(String tagName, String userId, String inode) throws DotDataException, DotSecurityException {
         return addContentleTag(tagName, userId, inode, inode);
     }
 
-    /**
-     * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-     * and then tags the Contentlet
-     *
-     * @param tagName      tag(s) to create
-     * @param userId       owner of the tag
-     * @param inode        Contenlet to tag
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return a list of all tags assigned to an object
-     * @throws Exception
-     * @deprecated it doesn't handle host id. Call getTagsInText then addContentletTagInode on each
-     */
+    @Override
+    @Deprecated
     public List addContentleTag(String tagName, String userId, String inode, String fieldVarName) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
@@ -408,24 +303,12 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-	 * Updates an existing tag.
-	 * @param tagId tag to update
-	 * @param tagName owner of the tag
-     * @throws DotDataException
-     */
+    @Override
     public void updateTag ( String tagId, String tagName ) throws DotDataException {
         updateTag(tagId, tagName, false, Host.SYSTEM_HOST);
     }
 
-    /**
-	 * Updates an existing tag.
-	 * @param tagId tag to update
-	 * @param tagName owner of the tag
-	 * @param updateTagReference
-	 * @param hostId the storage host id
-	 * @throws Exception
-	 */
+    @Override
     public void updateTag ( String tagId, String tagName, boolean updateTagReference, String hostId ) throws DotDataException {
 
         Tag tag = getTagByTagId(tagId);
@@ -460,13 +343,7 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-     * Updates the persona attribute of a given tag
-     *
-     * @param tagId
-     * @param enableAsPersona
-     * @throws DotDataException
-     */
+    @Override
     public void enableDisablePersonaTag ( String tagId, boolean enableAsPersona ) throws DotDataException {
 
         //First check if the requested tag exist
@@ -483,11 +360,7 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-	 * Deletes a tag
-	 * @param tag tag to be deleted
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTag ( Tag tag ) throws DotDataException {
         //First delete the references to this tag
         deleteTagInodesByTagId(tag.getTagId());
@@ -495,22 +368,13 @@ public class TagAPIImpl implements TagAPI {
         tagFactory.deleteTag(tag);
     }
 
-    /**
-     * Deletes a tag
-     * @param tagId tagId of the tag to be deleted
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTag ( String tagId ) throws DotDataException {
         Tag tag = getTagByTagId(tagId);
         deleteTag(tag);
     }
 
-    /**
-	 * Renames a tag
-	 * @param tagName new tag name
-	 * @param oldTagName current tag name
-	 * @param userId owner of the tag
-	 */
+    @Override
     public void editTag ( String tagName, String oldTagName, String userId ) throws DotDataException {
 
         tagName = escapeSingleQuote(tagName);
@@ -528,31 +392,12 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag name and a given User inode.
-     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
-     *
-     * @param tagName      Tag name of the tag to relate with the Contentlet inode
-     * @param inode        inode of the object tagged
-     * @param hostId       Host id where the tag name must be found
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addUserTagInode(String tagName, String inode, String hostId) throws DotDataException, DotSecurityException {
         return addContentletTagInode(tagName, inode, hostId, inode);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag name and a given Contentlet inode.
-     * <br><strong>Note: If a tag with the given tag name does not exist a Tag with that name will be created.</strong>
-     *
-     * @param tagName      Tag name of the tag to relate with the Contentlet inode
-     * @param inode        inode of the object tagged
-     * @param hostId       Host id where the tag name must be found
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addContentletTagInode(String tagName, String inode, String hostId, String fieldVarName) throws DotDataException, DotSecurityException {
 
         //Ensure the tag exists in the tag table
@@ -562,26 +407,12 @@ public class TagAPIImpl implements TagAPI {
         return addContentletTagInode(existingTag, inode, fieldVarName);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag and a given User inode
-     *
-     * @param tag
-     * @param inode inode of the object tagged
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addUserTagInode(Tag tag, String inode) throws DotDataException {
         return addContentletTagInode(tag, inode, inode);
     }
 
-    /**
-     * Creates the TagInode relationship between a given tag and a given Contentlet inode
-     * @param tag Tag to relate with the Contentlet inode
-     * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the given Contentlet inode
-     * @return TagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode addContentletTagInode(Tag tag, String inode, String fieldVarName) throws DotDataException {
 
         boolean localTransaction = false;
@@ -621,56 +452,27 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-	 * Gets all tagInode associated to an object
-     * @param inode inode of the object tagged
-	 * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
     public List<TagInode> getTagInodesByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagInodesByInode(inode);
     }
 
-    /**
-	 * Gets all tags associated to an object
-	 * @param tagId tagId of the object tagged
-	 * @return list of all the TagInode where the tags are associated to the object
-     * @throws DotDataException
-     */
+    @Override
     public List<TagInode> getTagInodesByTagId ( String tagId ) throws DotDataException {
         return tagFactory.getTagInodesByTagId(tagId);
     }
 
-    /**
-	 * Gets a tagInode by name and inode
-	 * @param tagId id of the tag
-	 * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @return the tagInode
-     * @throws DotDataException
-     */
+    @Override
     public TagInode getTagInode ( String tagId, String inode, String fieldVarName ) throws DotDataException {
         return tagFactory.getTagInode(tagId, inode, fieldVarName);
     }
 
-    /**
-	 * Deletes a TagInode
-	 * @param tagInode TagInode to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( TagInode tagInode ) throws DotDataException {
         tagFactory.deleteTagInode(tagInode);
     }
 
-    /**
-	 * Removes the relationship between a tag and an inode, ALSO <strong>if the tag does not have more relationships the Tag itself will be remove it.</strong>
-	 * @param tagId TagId
-	 * @param inode inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotDataException
-     */
+    @Override
     public void removeTagRelationAndTagWhenPossible ( String tagId, String inode, String fieldVarName ) throws DotDataException {
 
         boolean localTransaction = false;
@@ -732,34 +534,17 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-     * Deletes TagInodes references by inode
-     *
-     * @param inode inode reference to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInodesByInode(String inode) throws DotDataException {
         tagFactory.deleteTagInodesByInode(inode);
     }
 
-    /**
-     * Deletes TagInodes references by tag id
-     *
-     * @param tagId tag reference to delete
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInodesByTagId(String tagId) throws DotDataException {
         tagFactory.deleteTagInodesByTagId(tagId);
     }
 
-    /**
-	 * Deletes a TagInode
-	 * @param tag Tag related to the object
-	 * @param inode Inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( Tag tag, String inode, String fieldVarName ) throws DotDataException {
 
         TagInode tagInode = getTagInode(tag.getTagId(), inode, fieldVarName);
@@ -768,16 +553,7 @@ public class TagAPIImpl implements TagAPI {
         }
     }
 
-    /**
-     * Deletes an object tag assignment
-     *
-     * @param tagName name of the tag
-     * @param inode   inode of the object tagged
-     * @param fieldVarName var name of the tag field related to the inode if the inode belongs to a Contentlet otherwise
-     *                     send null
-     * @throws DotSecurityException
-     * @throws DotDataException
-     */
+    @Override
     public void deleteTagInode ( String tagName, String inode, String fieldVarName ) throws DotSecurityException, DotDataException {
 
         StringTokenizer tagNameToken = new StringTokenizer(tagName, ",");
@@ -810,12 +586,7 @@ public class TagAPIImpl implements TagAPI {
         return tagName.replace("'", "''");
     }
 
-    /**
-	 * Gets a suggested tag(s), by name
-	 * @param name name of the tag searched
-	 * @param selectedHostId Host identifier
-	 * @return list of suggested tags
-	 */
+    @Override
     @SuppressWarnings ( "unchecked" )
     public List<Tag> getSuggestedTag(String name, String selectedHostId) throws DotDataException {
 
@@ -847,15 +618,7 @@ public class TagAPIImpl implements TagAPI {
             return false;
     }
 
-    /**
-     * Update, copy or move tags if the hosst changes its tag storage
-     *
-     * @param hostIdentifier
-     * @param oldTagStorageId
-     * @param newTagStorageId
-     * @throws DotDataException
-     * @throws DotSecurityException
-     */
+    @Override
     public void updateTagReferences(String hostIdentifier, String oldTagStorageId, String newTagStorageId) throws DotDataException, DotSecurityException {
 
         boolean localTransaction = false;
@@ -900,41 +663,16 @@ public class TagAPIImpl implements TagAPI {
 
     }
 
-    /**
-	 * Gets all tags associated to an object
-	 * @param inode object inode
-	 * @return List<Tag>
-     * @throws DotDataException
-     */
     @Override
     public List<Tag> getTagsByInode ( String inode ) throws DotDataException {
         return tagFactory.getTagsByInode(inode);
     }
 
-    /**
-     * Extract tag names in the specified text and return the list
-     * of Tag Object found
-     *
-     * @param text   tag name to search
-     * @param hostId Host identifier
-     * @return list of tag found
-     * @throws Exception
-     */
     @Override
     public List<Tag> getTagsInText ( String text, String hostId ) throws DotSecurityException, DotDataException {
         return getTagsInText(text, "", hostId);
     }
 
-    /**
-     * Extract tag names in the specified text and return the list
-	 * of Tag Object found
-	 * 
-	 * @param text tag name to search
-	 * @param userId User id
-	 * @param hostId Host identifier
-	 * @return list of tag found
-	 * @throws Exception 
-	 */
     @Override
     public List<Tag> getTagsInText ( String text, String userId, String hostId ) throws DotSecurityException, DotDataException {
 
