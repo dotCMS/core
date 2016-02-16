@@ -115,7 +115,7 @@ function suggestTagsForSearch(e) {
 		if (!tagsContainer || tagsContainer == "") {
 				tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 		}
-		suggestedDiv = tagVelocityVarName + "suggestedTagsDiv";
+		suggestedDiv = tagVelocityVarName + "SuggestedTagsDiv";
 		var inputTags = document.getElementById(tagVelocityVarName).value;
 		inputTags = RTrim(inputTags);
 		inputTags = LTrim(inputTags);
@@ -152,8 +152,42 @@ function suggestTagsForSearch(e) {
 		}
 }
 
-function showTagsForSearch(result) {
+var pos;
+var keyboardEvents;
+var keys = dojo.require("dojo.keys");
+var on = dojo.require("dojo.on");
+var query = dojo.require("dojo.query");
 
+function focusSelectedTag(e) {
+	var tagsOptionsLinks = query("#" + tagVelocityVarName + "SuggestedTagsDiv a");
+	var lastPos = tagsOptionsLinks.length - 1;
+	switch(e.keyCode) {
+		case keys.UP_ARROW:
+			e.preventDefault();
+			if (pos === null) {
+				pos = lastPos;
+			} else if (pos > 0) {
+				pos--;
+			}
+			tagsOptionsLinks[pos].focus();
+			break;
+		case keys.DOWN_ARROW:
+			e.preventDefault();
+
+			if (pos === null) {
+				pos = 0
+			} else if (pos < lastPos) {
+				pos++;
+			}
+			tagsOptionsLinks[pos].focus();
+			break;
+		case keys.ENTER:
+			e.target.click();
+			break;
+	}
+}
+
+function showTagsForSearch(result) {
 		if (result.length > 0) {
 				var tags = "<h3>Tags</h3>";
 				var personasTags = "<h3>Personas</h3>";
@@ -162,9 +196,9 @@ function showTagsForSearch(result) {
 						tagName = RTrim(tagName);
 						tagName = LTrim(tagName);
 						if (tag.persona) {
-								personasTags += "<a class=\"persona\" onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
+								personasTags += "<a href=\"#\" class=\"persona\" onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
 						} else {
-								tags += "<a onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
+								tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
 						}
 				});
 
@@ -172,10 +206,15 @@ function showTagsForSearch(result) {
 						var tagDiv = document.getElementById(suggestedDiv);
 						tagDiv.innerHTML = tags + personasTags;
 
-						if (dojo.byId(tagVelocityVarName + "suggestedTagsWrapper")) {
-								dojo.style(tagVelocityVarName + "suggestedTagsWrapper", "display", "block");
-								dojo.style(tagVelocityVarName + "suggestedTagsWrapper", "left", getInputPosition());
-								dojo.style(tagVelocityVarName + "suggestedTagsWrapper", "top", getInputHeight());
+						if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
+								dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "block");
+								dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "left", getInputPosition());
+								dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "top", getInputHeight());
+						}
+						pos = null;
+						if (!keyboardEvents) {
+							var tagsOptionsLinksWrapper = dojo.byId(tagVelocityVarName + "Wrapper");
+							keyboardEvents = on(tagsOptionsLinksWrapper, "keydown", focusSelectedTag);
 						}
 				}
 		} else {
@@ -185,11 +224,11 @@ function showTagsForSearch(result) {
 
 function clearSuggestTagsForSearch() {
 		if (tagVelocityVarName) {
-
-				if (dojo.byId(tagVelocityVarName + "suggestedTagsWrapper")) {
-						dojo.style(tagVelocityVarName + "suggestedTagsWrapper", "display", "none");
+				if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
+						dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "none");
 				}
 				document.getElementById(suggestedDiv).innerHTML = "";
+				dojo.byId(tagVelocityVarName).focus();
 				tagVelocityVarName = null;
 				suggestedDiv = null;
 				tagsContainer = null;
@@ -291,7 +330,7 @@ function fillExistingTags(elementId, value) {
 		}
 		var existingTags = value.split(",");
 		fillExistingTagsMap(existingTags);
-		fillExistingTagsLinks(existingTags);
+		fillExistingTagsOptionsLinks(existingTags);
 
 		tagVelocityVarName = null;
 		tagsContainer = null;
@@ -313,7 +352,7 @@ function fillExistingTagsMap(tags) {
 		});
 }
 
-function fillExistingTagsLinks(tags) {
+function fillExistingTagsOptionsLinks(tags) {
 		tags.forEach(function(tag) {
 
 				tag = RTrim(tag);
