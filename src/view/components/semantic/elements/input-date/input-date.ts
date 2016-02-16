@@ -18,7 +18,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
 @View({
   template: `
 <div class="ui fluid input" [ngClass]="{disabled: disabled, icon: icon, required: required}">
-  <input type="{{type}}" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
+  <input type="datetime-local" [value]="value" [placeholder]="placeholder" [disabled]="disabled"
     [required]="required"
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
@@ -44,7 +44,6 @@ export class InputDate implements ControlValueAccessor  {
   @Input()  focused:boolean = false
   @Input()  required:boolean = false
   @Input()  errorMessage:string
-  @Input()  type:string
   @Output() change:EventEmitter<any>
   @Output() blur:EventEmitter<any>
   @Output() focus:EventEmitter<any>
@@ -53,21 +52,34 @@ export class InputDate implements ControlValueAccessor  {
     this.change = new EventEmitter()
     this.blur = new EventEmitter()
     this.focus = new EventEmitter()
+    this.value = new Date().toISOString()
   }
 
-  validate(value:string):boolean  {
-    let d = new Date(value)
-
-    if ( Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d.getTime())) {
+  validate(value:string):boolean {
+    let valid
+    try {
+      let d = new Date(value)
+      if (Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d.getTime())) {
+        this.errorMessage = "incomplete"
+        valid = false
+      } else {
+        valid = true
+      }
+    } catch (e) {
       this.errorMessage = "incomplete"
-      return false
+      valid = false
     }
-
     this.errorMessage = null
-    return true
+    return valid
   }
 
   ngOnChanges(change) {
+    if (change.value && !change.value.currentValue) {
+      this.value = ""
+    }
+    if(change.placeholder && !change.placeholder.currentValue){
+      this.placeholder = "Enter an ISO DateTime"
+    }
     if (change.focused) {
       let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
       if (f) {

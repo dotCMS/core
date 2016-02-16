@@ -76,7 +76,6 @@ import {Verify} from "../../../../../api/validation/Verify";
                      class="cw-input"
                      [class.cw-last]="islast"
                      [placeholder]="input.placeholder | async"
-                     type="datetime-local"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
                      (blur)="handleParamValueChange(input.name, $event)"></cw-input-date>

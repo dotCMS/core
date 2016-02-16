@@ -75,10 +75,15 @@ export class Dropdown implements AfterViewInit, OnDestroy {
 
   ngOnChanges(change) {
     if (change.value ) {
+      var count = 0;
       Observable.interval(10).takeWhile(()=>{
+        count++
+        if(count > 100){
+          throw "Dropdown element not found."
+        }
         return this._$dropdown == null
       }).subscribe(()=>{
-        console.log("Dropdown", "fireThingy")
+        // still null!
       }, (e)=>{
         console.log("Dropdown", "Error", e)
       }, ()=>{
