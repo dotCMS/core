@@ -45,7 +45,7 @@
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.ES_SEARCH_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.RULES_ENGINE_PORTLET")%></a>
 				</li>
 
 			</ul>
