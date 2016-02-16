@@ -155,7 +155,6 @@ function suggestTagsForSearch(e) {
 var pos;
 var keyboardEvents;
 var keys = dojo.require("dojo.keys");
-var on = dojo.require("dojo.on");
 var query = dojo.require("dojo.query");
 
 function focusSelectedTag(e) {
@@ -214,7 +213,7 @@ function showTagsForSearch(result) {
 						pos = null;
 						if (!keyboardEvents) {
 							var tagsOptionsLinksWrapper = dojo.byId(tagVelocityVarName + "Wrapper");
-							keyboardEvents = on(tagsOptionsLinksWrapper, "keydown", focusSelectedTag);
+							keyboardEvents = dojo.require("dojo.on")(tagsOptionsLinksWrapper, "keydown", focusSelectedTag);
 						}
 				}
 		} else {
