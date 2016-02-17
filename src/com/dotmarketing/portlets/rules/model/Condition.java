@@ -20,7 +20,6 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
     private transient RuleComponentInstance instance;
 
     private String id;
-    private String name;
     private String conditionletId;
     private String conditionGroup;
     private List<ParameterModel> values;
@@ -35,14 +34,6 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getConditionletId() {
@@ -137,8 +128,7 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
 
 	@Override
 	public String toString() {
-		return "Condition [id=" + id + ", name=" + name
-                + ", conditionletId=" + conditionletId + ", conditionGroup="
+		return "Condition [id=" + id + ", conditionletId=" + conditionletId + ", conditionGroup="
 				+ conditionGroup + ", values="
 				+ values + ", modDate=" + modDate + ", operator=" + operator
 				+ ", priority=" + priority + "]";

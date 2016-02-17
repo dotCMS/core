@@ -40,7 +40,6 @@ public class RuleActionTransform {
 
         app.setId(rest.id);
         app.setRuleId(rest.owningRule);
-        app.setName(rest.name);
         app.setActionlet(rest.actionlet);
         app.setPriority(rest.priority);
         if(rest.parameters!=null)
@@ -67,7 +66,6 @@ public class RuleActionTransform {
 
         RestRuleAction rest = new RestRuleAction.Builder()
                 .id(app.getId())
-                .name(app.getName())
                 .owningRule(app.getRuleId())
                 .actionlet(app.getActionlet())
                 .priority(app.getPriority())

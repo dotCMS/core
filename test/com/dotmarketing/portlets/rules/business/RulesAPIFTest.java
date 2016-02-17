@@ -195,7 +195,6 @@ public class RulesAPIFTest extends TestBase {
 		RuleAction action = new RuleAction();
 		action.setActionlet(CountRulesActionlet.class.getSimpleName());
 		action.setRuleId(rule.getId());
-		action.setName(fireOn.getCamelCaseName() + "Actionlet");
 
 		ParameterModel fireOnParam = new ParameterModel();
 		fireOnParam.setOwnerId(action.getId());

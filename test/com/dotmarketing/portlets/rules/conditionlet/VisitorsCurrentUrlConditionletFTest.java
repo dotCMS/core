@@ -67,7 +67,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Users Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -84,7 +83,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Not Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -109,7 +107,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Starts With Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -130,7 +127,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Ends With Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -150,7 +146,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Contains Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -172,7 +167,6 @@ public class VisitorsCurrentUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitorsCurrentUrlConditionlet.class.getSimpleName());
-        condition.setName("Regex Current Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, REGEX.getId());
         condition.addValue(VisitorsCurrentUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
         createRandomSetResponseHeaderRule(condition, randomKey, value);

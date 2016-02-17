@@ -32,7 +32,6 @@ public class ConditionDataGen {
 
     public Condition next() {
         Condition condition = new Condition();
-        condition.setName("meh");
         condition.setConditionletId(UsersCountryConditionlet.class.getSimpleName());
         condition.setOperator(operator);
         condition.setConditionGroup(groupId);

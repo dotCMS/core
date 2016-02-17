@@ -20,7 +20,6 @@ public class RuleAction implements RuleComponentModel, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String id;
-    private String name;
     private String ruleId;
     private int priority;
     private String actionlet;
@@ -35,14 +34,6 @@ public class RuleAction implements RuleComponentModel, Serializable {
 
     public void setId(String id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getRuleId() {
@@ -121,8 +112,7 @@ public class RuleAction implements RuleComponentModel, Serializable {
 
 	@Override
 	public String toString() {
-		return "RuleAction [id=" + id + ", name=" + name + ", ruleId=" + ruleId
-				+ ", priority=" + priority + ", actionlet=" + actionlet
+		return "RuleAction [id=" + id + ", priority=" + priority + ", actionlet=" + actionlet
 				+ ", modDate=" + modDate + "]";
 	}
 

@@ -18,7 +18,6 @@ public class ConditionTransform {
 
     public Condition applyRestToApp(RestCondition rest, Condition cond) {
     	Condition app = (Condition) SerializationUtils.clone(cond);
-        app.setName(rest.name);
         app.setConditionGroup(rest.owningGroup);
         app.setConditionletId(rest.conditionlet);
         app.setOperator(LogicalOperator.valueOf(rest.operator));
@@ -50,7 +49,6 @@ public class ConditionTransform {
 
         RestCondition rest = new RestCondition.Builder()
                 .id(app.getId())
-                .name(app.getName())
                 .owningGroup(app.getConditionGroup())
                 .conditionlet(app.getConditionletId())
                 .operator(app.getOperator().name())
