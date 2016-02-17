@@ -112,7 +112,7 @@ public class RuleResourceFTest extends TestBase {
     }
 
     /**
-     * Testing duplicate rule creation... should fail, only one rule name for site
+     * Testing duplicate rule creation... should succeed, multiple rule name for site.
      */
     @Test
     public void testRuleDuplicate() throws JSONException {
@@ -149,7 +149,11 @@ public class RuleResourceFTest extends TestBase {
             .post(Entity.json(rule2JSON.toString()));
 
         // response
-        assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        responseStr = response.readEntity(String.class);
+        responseJSON = new JSONObject(responseStr);
+        String rule2 = (String)responseJSON.get("id");
 
         // delete
         response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
@@ -157,10 +161,16 @@ public class RuleResourceFTest extends TestBase {
             .delete();
 
         assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule2)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .delete();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
     }
 
     /**
-     * Testing duplicate rule creation, case sensitive... should fail, only one rule name for site
+     * Testing duplicate rule creation... should succeed, multiple rule name for site.
      */
     //@Test
     public void testRuleDuplicateCaseSensitive() throws JSONException {
@@ -197,12 +207,22 @@ public class RuleResourceFTest extends TestBase {
             .post(Entity.json(rule2JSON.toString()));
 
         // response
-        assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
+        assertTrue(response.getStatus() == HttpStatus.SC_OK);
+
+        responseStr = response.readEntity(String.class);
+        responseJSON = new JSONObject(responseStr);
+        String rule2 = (String)responseJSON.get("id");
 
         // delete
         response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule)
             .request(MediaType.APPLICATION_JSON_TYPE)
             .delete();
+
+        assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
+
+        response = target.path("/sites/" + config.defaultHostId + "/ruleengine/rules/" + rule2)
+                .request(MediaType.APPLICATION_JSON_TYPE)
+                .delete();
 
         assertTrue(response.getStatus() == HttpStatus.SC_NO_CONTENT);
     }

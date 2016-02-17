@@ -33,9 +33,6 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
 
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
 
-			// unique constraint rule table
-            .append("alter table dot_rule add constraint rule_name_parent unique (name, parent_id);")
-
 			// create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
             .append("id varchar(36) primary key,")
@@ -107,12 +104,10 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("priority int default 0,")
             .append("enabled boolean default false,")
-            .append("mod_date timestamp,")
-            .append("unique (name, parent_id)")
+            .append("mod_date timestamp")
             .append(");")
 
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
-
 
 			// create RULE_CONDITION_GROUP table
             .append("create table rule_condition_group(")
@@ -185,8 +180,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority number(10,0) default 0,")
             .append("enabled  number(1,0) default 0,")
             .append("mod_date timestamp,")
-            .append("primary key (id),")
-            .append("unique (name, parent_id)")
+            .append("primary key (id)")
             .append(");")
 
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
@@ -199,7 +193,6 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("priority number(10,0) default 0,")
             .append("mod_date timestamp")
             .append(");")
-
 
 			// create RULE_CONDITION table
             .append("create table rule_condition(")
@@ -262,8 +255,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("priority int default 0,")
             .append("enabled tinyint default 0,")
-            .append("mod_date datetime,")
-            .append("unique (name, parent_id)")
+            .append("mod_date datetime")
             .append(");")
 
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
@@ -338,8 +330,7 @@ public class Task03500RulesEngineDataModel extends AbstractJDBCStartupTask {
             .append("folder varchar(36) not null,")
             .append("priority int default 0,")
             .append("enabled boolean default false,")
-            .append("mod_date timestamp,")
-            .append("unique (name, parent_id)")
+            .append("mod_date timestamp")
             .append(");")
 
             .append("create index idx_rules_fire_on on dot_rule (fire_on);")
