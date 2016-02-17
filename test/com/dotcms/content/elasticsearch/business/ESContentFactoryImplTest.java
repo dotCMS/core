@@ -1,5 +1,6 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.repackage.org.apache.fop.fo.flow.Float;
 import com.dotcms.repackage.org.junit.Assert;
 import com.dotcms.repackage.org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -77,9 +78,10 @@ public class ESContentFactoryImplTest {
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
 
-        float maxScore = searchHits.getMaxScore();
+        SearchHit[] hits = searchHits.getHits();
+        float maxScore = hits[0].getScore();
         //With this query all the results must have the same score
-        for ( SearchHit searchHit : searchHits.getHits() ) {
+        for ( SearchHit searchHit : hits ) {
             assertTrue(searchHit.getScore() == maxScore);
         }
 
@@ -91,12 +93,28 @@ public class ESContentFactoryImplTest {
         assertNotNull(searchHits.getTotalHits());
         assertTrue(searchHits.getTotalHits() > 0);
 
-        maxScore = searchHits.getMaxScore();
+        hits = searchHits.getHits();
+        maxScore = getMaxScore(hits);
+
         //With this query the first result must have a higher score than the others
         assertTrue(maxScore == searchHits.getHits()[0].getScore());
         //The second record should have a lower score
         assertTrue(maxScore != searchHits.getHits()[1].getScore());
         assertTrue(searchHits.getHits()[0].getScore() > searchHits.getHits()[1].getScore());
+    }
+
+    private float getMaxScore(SearchHit[] hits) {
+        float maxScore = java.lang.Float.MIN_VALUE;
+
+        for (SearchHit hit : hits) {
+            float score = hit.getScore();
+
+            if (maxScore < score){
+                maxScore = score;
+            }
+        }
+
+        return maxScore;
     }
 
 }
