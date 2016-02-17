@@ -73,7 +73,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
   it("Can add a new Condition", function(done){
     var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
-    aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("sessionKey", "foo")
     aCondition.setParameter("sessionValue", "bar")
@@ -94,7 +93,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
   it("Is added to the owning rule's list of conditions.", function(done){
     var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
-    aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
     aCondition.setParameter("isoCode", "US")
@@ -113,7 +111,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
 
   it("Condition being added to the owning group is persisted to server.", function(done){
     var aCondition = new ConditionModel(null, new ServerSideTypeModel("UsersCountryConditionlet"))
-    aCondition.name = "pointless_name-" + new Date().getTime()
     aCondition.owningGroup = groupUnderTest
     aCondition.setParameter("comparatorValue", "is")
     aCondition.setParameter("isoCode", "US")

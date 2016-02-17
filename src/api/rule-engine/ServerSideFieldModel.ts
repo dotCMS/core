@@ -15,7 +15,6 @@ export interface ParameterModel {
 }
 
 export class ServerSideFieldModel extends CwModel {
-  name:string // @todo ggranum: vestigial field, kill on server side.
   comparison:string
   operator:string
   private _type:ServerSideTypeModel
@@ -25,7 +24,6 @@ export class ServerSideFieldModel extends CwModel {
 
   constructor(key:string, type:ServerSideTypeModel, priority:number = 1) {
     super(key)
-    this.name = "asdfasdf-" + new Date().getTime()
     this.parameters = {}
     this.parameterDefs = {}
     this.operator = 'AND'
@@ -103,7 +101,6 @@ export class ServerSideFieldModel extends CwModel {
 
   toJson():any {
     return {
-      name: this.name,
       comparison: this.comparison,
       typeId: this._type.i18nKey,
       operator: this.operator,

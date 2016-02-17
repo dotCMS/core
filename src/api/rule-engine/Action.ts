@@ -55,7 +55,6 @@ export class ActionService {
     let val:any = snapshot.val()
     this._typeService.get(val.actionlet, (type)=> {
       let ra = new ActionModel(snapshot.key(), type, rule)
-      ra.name = val.name;
       ra.owningRule = rule
       Object.keys(val.parameters).forEach((key)=> {
         let param = val.parameters[key]
@@ -67,7 +66,6 @@ export class ActionService {
 
   _toJson(action:ActionModel):any {
     let json:any = {}
-    json.name = action.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningRule = action.owningRule.key
     json.actionlet = action.type.key
     json.priority = action.priority
