@@ -66,7 +66,6 @@ export class ConditionService {
       console.log("ConditionService", "count:", count++, snapshot.key())
       try {
         let ra = new ConditionModel(snapshot.key(), type)
-        ra.name = val.name;
         ra.owningGroup = group
         ra.priority = val.priority
         ra.operator = val.operator
@@ -86,7 +85,6 @@ export class ConditionService {
   static toJson(condition:ConditionModel):any {
     let json:any = {}
     json.id = condition.key
-    json.name = condition.name || "fake_name_" + new Date().getTime() + '_' + Math.random()
     json.owningGroup = condition.owningGroup.key
     json.conditionlet = condition.type.key
     json.priority = condition.priority
