@@ -71,17 +71,6 @@ public class ActionResourceFTest extends TestBase {
     	assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
     }
 
-	/**
-	 * Save Action with bad parameter Name empty... return 400
-	 */
-	@Test
-	public void saveActionEmptyName() throws JSONException{
-		ruleId = createRule("Save Action Empty Name");
-		String emptyName = "";
-		Response response = createAction(ruleId, emptyName);
-		assertTrue(response.getStatus() == HttpStatus.SC_BAD_REQUEST);
-	}
-
     /**
      * Save Action with bad parameter Actionlet non existent... return 400
      */
