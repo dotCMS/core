@@ -188,22 +188,22 @@ function focusSelectedTag(e) {
 
 function showTagsForSearch(result) {
 		if (result.length > 0) {
-				var tags = "<h3>Tags</h3>";
-				var personasTags = "<h3>Personas</h3>";
+				var tags = "";
+				var personasTags = "<div style='background-color: #fff;height:7px'></div>";
 				result.each(function(tag) {
 						var tagName = tag.tagName;
 						tagName = RTrim(tagName);
 						tagName = LTrim(tagName);
 						if (tag.persona) {
-								personasTags += "<a href=\"#\" class=\"persona\" onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
+								personasTags += "<a href=\"#\" style=\"white-space:nowrap\" class=\"persona\" onClick=\"useThisTagForSearch(event)\"><span class=\"personaIcon\" style='margin-right:5px;opacity:.7'></span>" + tagName + "</a>";
 						} else {
-								tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\">" + tagName + "</a>";
+								tags += "<a href=\"#\" onClick=\"useThisTagForSearch(event)\"><span class=\"tagIcon\" style='margin-right:5px;opacity:.6'></span>" + tagName + "</a>";
 						}
 				});
 
 				if (tagVelocityVarName) {
 						var tagDiv = document.getElementById(suggestedDiv);
-						tagDiv.innerHTML = tags + personasTags;
+						tagDiv.innerHTML = personasTags + tags;
 
 						if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
 								dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "block");
@@ -237,7 +237,29 @@ function clearSuggestTagsForSearch() {
 function useThisTagForSearch(e) {
 		var tagLink = e.target;
 		var tagSuggested = tagLink.text || tagLink.value;
-		if (tagVelocityVarName && !isTagAdded(tagSuggested)) {
+		var tagExists = isTagAdded(tagSuggested);
+		if(tagExists){
+			var existingTag = dojo.byId(getTagId(tagSuggested));
+
+			var endColor = dojo.style(existingTag, "background-color");
+			console.log(endColor)
+		 	dojo.animateProperty({
+	            node: dojo.byId(getTagId(tagSuggested)),
+	            duration: 1000,
+	            properties: {
+	                backgroundColor: {
+	                    start: "#FA5858",
+	                    end: endColor
+	                },
+
+	            },
+	            onEnd: function() {
+
+	            }
+	        }).play();
+
+		}
+		else if (tagVelocityVarName) {
 				var inputTags = document.getElementById(tagVelocityVarName).value;
 				inputTags = RTrim(inputTags);
 				inputTags = LTrim(inputTags);
@@ -366,7 +388,7 @@ function fillExistingTagsOptionsLinks(tags) {
 }
 
 function getTagId(tag) {
-		return tag.toLowerCase()
+		return "tag-" + tag.toLowerCase()
 				.replace(/ /g, "-")
 				.replace(/[^\w-]+/g, "");
 }
