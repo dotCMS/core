@@ -67,7 +67,6 @@ public class CurrentSessionLanguageConditionletFTest {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(CurrentSessionLanguageConditionlet.class.getSimpleName());
-        condition.setName("Current Session Language");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(CurrentSessionLanguageConditionlet.LANGUAGE_KEY, "en");
 
@@ -94,7 +93,6 @@ public class CurrentSessionLanguageConditionletFTest {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(CurrentSessionLanguageConditionlet.class.getSimpleName());
-        condition.setName("Current Session Language");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
         condition.addValue(CurrentSessionLanguageConditionlet.LANGUAGE_KEY, "en");
 

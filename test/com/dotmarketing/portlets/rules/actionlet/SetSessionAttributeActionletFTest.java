@@ -240,7 +240,6 @@ public class SetSessionAttributeActionletFTest extends TestBase {
         RuleAction action = new RuleAction();
         action.setActionlet(SetSessionAttributeActionlet.class.getSimpleName());
         action.setRuleId(rule.getId());
-        action.setName("SetSessionAttributeActionlet");
 
         ParameterModel timeKeyParam = new ParameterModel();
         timeKeyParam.setOwnerId(action.getId());

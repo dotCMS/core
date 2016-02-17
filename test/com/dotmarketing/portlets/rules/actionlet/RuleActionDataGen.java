@@ -34,7 +34,6 @@ public class RuleActionDataGen {
         next.setActionlet(actionlet.getSimpleName());
         next.setPriority(priority);
         next.setRuleId(ruleId);
-        next.setName("meh");
         return next;
     }
 

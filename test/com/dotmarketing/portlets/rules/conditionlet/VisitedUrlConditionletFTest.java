@@ -66,7 +66,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -89,7 +88,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Is Not Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, IS_NOT.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contact-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -115,7 +113,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Starts With Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, STARTS_WITH.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/contac");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -138,7 +135,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Ends With Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, ENDS_WITH.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "dex");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -158,7 +154,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Contains Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, CONTAINS.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "duct");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
@@ -179,7 +174,6 @@ public class VisitedUrlConditionletFTest {
 
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
-        condition.setName("Regex Visited Url Conditionlet");
         condition.addValue(Conditionlet.COMPARISON_KEY, REGEX.getId());
         condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, ".*-us.*");
         createRandomSetResponseHeaderRule(condition, randomKey, value);

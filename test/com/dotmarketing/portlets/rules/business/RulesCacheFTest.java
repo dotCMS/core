@@ -92,7 +92,7 @@ public class RulesCacheFTest {
         assertNotNull(cache.getRulesByParentFireOn(rule.getParent(), fireOn));
 
         // let's update the condition
-        condition.setName("UpdatedConditionName");
+        condition.setPriority(99);
         FactoryLocator.getRulesFactory().saveCondition(condition);
 
         // let's check the cache returns null after the update
