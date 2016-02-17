@@ -58,6 +58,11 @@ exports.config = {
       browser.browserName = cap.caps_.browserName;
     });
 
+    /* The following lets us grab a hostname for our target test server from a single location. */
+    browser.testLoc = {
+      core: 'http://localhost:8080',
+      coreWeb: 'http://localhost:9000'
+    }
     module.exports = p
     return p
   },
@@ -71,7 +76,7 @@ exports.config = {
     },{
       browserName: 'internet explorer',
       loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}
-    },
+    }
     //{
     //  browserName: 'safari',
     //  loggingPrefs: {"driver": "INFO", "server": "OFF", "browser": "FINE"}

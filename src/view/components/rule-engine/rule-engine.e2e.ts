@@ -10,7 +10,7 @@ class RobotsTxtPage extends Page {
   private TestUtil
 
   constructor(TestUtil) {
-    super('http://localhost:8080/robots.txt', '')
+    super(browser['testLoc']['core'] + '/robots.txt', '')
     this.TestUtil = TestUtil
   }
 

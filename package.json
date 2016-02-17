@@ -61,6 +61,8 @@
     "publish": "gulp publish",
     "publish-snapshot": "gulp publish-snapshot",
     "webdriver-update": "webdriver-manager update",
+    "webdriver-update-ie": "webdriver-manager update --ie",
+    "webdriver-update-ie32": "webdriver-manager update --ie32",
     "webdriver-start": "webdriver-manager start"
   },
   "dependencies": {

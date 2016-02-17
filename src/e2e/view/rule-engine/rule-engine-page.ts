@@ -16,7 +16,7 @@ export class RulePage extends Page {
   ruleEls:ElementArrayFinder
 
   constructor(locale:string = null) {
-    super('http://localhost:9000/build/index.html', '(Dev) dotCMS Core-Web');
+    super(browser['testLoc']['coreWeb'] + '/build/index.html', '(Dev) dotCMS Core-Web');
     if(locale){
       this.queryParams['locale'] = locale
     }
