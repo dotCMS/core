@@ -21,12 +21,12 @@ describe('Unit.validation.Check.notEmpty', function () {
     {args: 0, description: 'the number value zero'},
     {args: null, description: 'a literal null'},
     {args: undefined, description: 'a literal undefined'},
-    {args: /foo/, description: 'a regex'}
+    {args: /foo/, description: 'a regex' }
   ]
 
 
   beforeEach(function () {
-    errorRegex = RegExp(errorMessage, 'ig')
+    errorRegex = RegExp(errorMessage)
   });
 
   validCases.forEach((testCase) => {
@@ -132,7 +132,7 @@ describe('Unit.validation.Check.isString', function () {
 
 
   beforeEach(function () {
-    errorRegex = RegExp(errorMessage, 'ig')
+    errorRegex = RegExp(errorMessage)
   });
 
   validCases.forEach((testCase) => {
