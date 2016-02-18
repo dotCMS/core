@@ -287,7 +287,7 @@ export function initSpec(TestUtil) {
       })
     })
 
-    it('should save group logical condition changes on create.', function () {
+    it('should save group logical condition changes on create.', function (done) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
         rule.fireOn.setSearch("Every Req")
@@ -315,6 +315,7 @@ export function initSpec(TestUtil) {
               expect(rule.getGroup(1).getLogicalOperator()).toBe("OR")
               expect(rule.getGroup(2).getLogicalOperator()).toBe("OR")
               rule.remove()
+              done()
             })
           })
         })
@@ -322,7 +323,7 @@ export function initSpec(TestUtil) {
     })
 
 
-    it('should save group logical condition changes on edit', function () {
+    it('should save group logical condition changes on edit', function (done) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
         rule.fireOn.setSearch("Every Req")
@@ -362,6 +363,7 @@ export function initSpec(TestUtil) {
                 expect(condDef1.getLogicalOperator()).toBe("OR")
                 expect(condDef2.getLogicalOperator()).toBe("OR")
                 rule.remove()
+                done()
               })
             })
           })
@@ -369,7 +371,7 @@ export function initSpec(TestUtil) {
       })
     })
 
-    it('should fire action for two true conditions ANDed together.', function () {
+    it('should fire action for two true conditions ANDed together.', function (done) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
         rule.fireOn.setSearch("Every Req")
@@ -395,6 +397,7 @@ export function initSpec(TestUtil) {
               browser.driver.wait(respName, 1000, 'Wait failed')
               expect(respName).toEqual("value-AbcDef")
               rule.remove()
+              done()
             })
           })
         })
@@ -402,7 +405,7 @@ export function initSpec(TestUtil) {
     })
 
 
-    it('should fire action for one true and one false condition ORed together.', function () {
+    it('should fire action for one true and one false condition ORed together.', function (done) {
       rulePage.addRule().then((rule:TestRuleComponent)=> {
         let name = rule.name
         rule.fireOn.setSearch("Every Req")
@@ -428,7 +431,8 @@ export function initSpec(TestUtil) {
               let respName:any = robots.getResponseHeader(name)
               browser.driver.wait(respName, 1000, 'Wait failed')
               expect(respName).toEqual("value-AbcDef")
-                rule.remove()
+              rule.remove()
+              done()
             })
           })
         })
@@ -796,5 +800,4 @@ export function initSpec(TestUtil) {
       })
     })
   })
-
 }

@@ -12,6 +12,11 @@ $warn: #c85a6a;
 $primary-one: #209021;
 
 
+.ui.fluid.input input:hover {
+  border-color: rgba(34, 36, 38, 0.35);
+  box-shadow: none;
+}
+
 .ng-dirty {
   &.ng-valid input:focus,
   &input:focus.ng-valid,
