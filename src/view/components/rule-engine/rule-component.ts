@@ -157,7 +157,7 @@ class RuleComponent {
     this._groupService = groupService
     this.resources = resources
     this._rsrcCache = {}
-    this.hideFireOn = apiRoot._hideFireOn
+    this.hideFireOn = apiRoot.hideFireOn
 
     this.groups = []
     this.actions = []

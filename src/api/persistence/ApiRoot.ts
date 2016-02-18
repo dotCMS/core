@@ -18,7 +18,7 @@ export class ApiRoot {
   resourceRef:EntityMeta
   dataStore:DataStore
   authToken:string
-  _hideFireOn:boolean = false;
+  hideFireOn:boolean = false;
 
 
   constructor(authUser:UserModel, dataStore:DataStore) {
@@ -35,8 +35,8 @@ export class ApiRoot {
       }
       let hideFireOn = ApiRoot.parseQueryParam(query, "hideFireOn");
       if (hideFireOn) {
-        this._hideFireOn = (hideFireOn === 'true' || hideFireOn === '1')
-        console.log('hideFireOn set to ', this.siteId)
+        this.hideFireOn = (hideFireOn === 'true' || hideFireOn === '1')
+        console.log('hideFireOn set to ', this.hideFireOn)
       }
       let baseUrl = ApiRoot.parseQueryParam(query, 'baseUrl');
       console.log('Proxy server Base URL set to ', baseUrl)
