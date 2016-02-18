@@ -87,7 +87,8 @@ public class Visitor implements Serializable {
     public void setPersona(IPersona persona) {
 
         //Validate if we must accrue the Tags for this "new" Persona
-        if ( !this.persona.getIdentifier().equals(persona.getIdentifier()) ) {
+        if ( persona != null &&
+                (this.persona == null || !this.persona.getIdentifier().equals(persona.getIdentifier())) ) {
 
             try {
                 //The Persona changed for this Visitor, we must accrue the tags associated to this new Persona
