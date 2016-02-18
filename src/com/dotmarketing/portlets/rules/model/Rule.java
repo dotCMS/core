@@ -1,5 +1,15 @@
 package com.dotmarketing.portlets.rules.model;
 
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -12,13 +22,6 @@ import com.dotmarketing.portlets.rules.util.LogicalCondition;
 import com.dotmarketing.portlets.rules.util.LogicalStatement;
 import com.dotmarketing.portlets.rules.util.RulePermissionableUtil;
 import com.dotmarketing.util.Logger;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 public class Rule implements Permissionable, Serializable {
 
@@ -230,10 +233,12 @@ public class Rule implements Permissionable, Serializable {
         }
     }
 
-    public void evaluate(HttpServletRequest req, HttpServletResponse res) {
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         if(this.evaluateConditions(req, res, getGroups())) {
             this.evaluateActions(req, res, getRuleActions());
+            return true;
         }
+        return false;
     }
 
     private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {
@@ -289,7 +294,7 @@ public class Rule implements Permissionable, Serializable {
 
     @Override
     public String toString() {
-        return "Rule [id=" + id + ", name=" + name + ", fireOn=" + fireOn
+        return "Rule [name=" + name + ", id=" + id + ", fireOn=" + fireOn
                + ", shortCircuit=" + shortCircuit + ", parent=" + parent
                + ", folder=" + folder + ", priority=" + priority
                + ", enabled=" + enabled + ", modDate=" + modDate + "]";
