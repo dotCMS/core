@@ -12,6 +12,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.*;
 import org.apache.velocity.runtime.resource.ResourceManager;
 
@@ -120,10 +121,10 @@ public class PageServices {
 		if(st.hasMoreTokens()){
 			pageChannel = st.nextToken();
 		}
-		
-		
-		
-		
+
+		//List of tags found in the contentlets contained by this page
+		List<Tag> pageFoundTags = new ArrayList<>();
+
 		// set the page cache var
 		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() > 99){
 			sb.append("#set($dotPageCacheDate = \"").append( new java.util.Date() ).append("\")");
@@ -273,6 +274,15 @@ public class PageServices {
                 }
                 if(++countFull>=c.getMaxContentlets()) break;
             }
+
+			//We need to get the tags associated to each contentlet on this page
+			for ( Contentlet contentlet : contentletsFull ) {
+				//Search for the tags asocciated to this contentlet inode
+				List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+				if ( contentletFoundTags != null ) {
+					pageFoundTags.addAll(contentletFoundTags);
+				}
+			}
 			
 			sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 			   sb.append(widgetpreeFull);
@@ -289,6 +299,12 @@ public class PageServices {
 			sb.append("#end ");
 			langCounter++;
 
+		}
+
+		//Now we need to use the found tags in order to accrue them each time this page is visited
+		if ( !pageFoundTags.isEmpty() ) {
+			//Velocity call to accrue tags on each request to this page
+			sb.append("$tags.accrueTags(\"" + TagUtil.tagListToString(pageFoundTags) + "\" )");
 		}
 
 		if(htmlPage.isHttpsRequired()){		
