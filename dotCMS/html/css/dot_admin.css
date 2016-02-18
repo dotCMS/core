@@ -759,7 +759,7 @@ div#_dotHelpMenu{color:red;}
 }
 
 .tagsOptions:before {
-	background-color: #f2f2f2;
+	background-color: #ffffff;
 	border-left: solid 1px #b3b3b3;
 	border-top: solid 1px #b3b3b3;
 	content: "";
@@ -815,7 +815,7 @@ div#_dotHelpMenu{color:red;}
 	border-radius: 7px;
 	display: inline-block;
 	font-size: 12px;
-	margin: 0 5px 2px 0;
+	margin: 2px 5px 2px 0px;
 	padding: 3px 25px 4px 5px;
 	position: relative;
 	text-decoration: none;

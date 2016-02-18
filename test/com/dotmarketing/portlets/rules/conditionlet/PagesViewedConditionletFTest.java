@@ -225,7 +225,6 @@ public class PagesViewedConditionletFTest {
         //Creating the Conditionlet for the Browser language
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(PagesViewedConditionlet.class.getSimpleName());
-        condition.setName("Pages Viewed");
         condition.addValue(Conditionlet.COMPARISON_KEY, id);
         condition.addValue(PagesViewedConditionlet.NUMBER_PAGES_VIEWED_INPUT_KEY, value);
         return condition;

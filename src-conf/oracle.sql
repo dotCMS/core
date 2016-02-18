@@ -3443,11 +3443,11 @@ create table cluster_server_action(
 );
 
 -- Rules Engine
-create table dot_rule(id varchar2(36),name varchar2(255) not null,fire_on varchar2(20),short_circuit  number(1,0) default 0,host varchar2(36) not null,folder varchar2(36) not null,priority number(10,0) default 0,enabled  number(1,0) default 0,mod_date timestamp,primary key (id),unique (name, host));
+create table dot_rule(id varchar2(36),name varchar2(255) not null,fire_on varchar2(20),short_circuit  number(1,0) default 0,parent_id varchar2(36) not null,folder varchar2(36) not null,priority number(10,0) default 0,enabled  number(1,0) default 0,mod_date timestamp,primary key (id));
 create table rule_condition_group(id varchar2(36) primary key,rule_id varchar2(36) references dot_rule(id),operator varchar2(10) not null,priority number(10,0) default 0,mod_date timestamp);
-create table rule_condition(id varchar2(36) primary key,name varchar2(255) not null,conditionlet nclob not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar2(36) not null,operator varchar2(10) not null,priority number(10,0) default 0,mod_date timestamp);
+create table rule_condition(id varchar2(36) primary key,conditionlet nclob not null,condition_group varchar(36) references rule_condition_group(id),comparison varchar2(36) not null,operator varchar2(10) not null,priority number(10,0) default 0,mod_date timestamp);
 create table rule_condition_value (id varchar2(36) primary key,condition_id varchar2(36) references rule_condition(id), paramkey varchar2(255) not null, value nclob,priority number(10,0) default 0);
-create table rule_action (id varchar2(36) primary key,name varchar2(255) not null,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
+create table rule_action (id varchar2(36) primary key,rule_id varchar2(36) references dot_rule(id),priority number(10,0) default 0,actionlet nclob not null,mod_date timestamp);
 create table rule_action_pars(id varchar2(36) primary key,rule_action_id varchar2(36) references rule_action(id), paramkey varchar2(255) not null,value nclob);
 create index idx_rules_fire_on on dot_rule (fire_on);
 
