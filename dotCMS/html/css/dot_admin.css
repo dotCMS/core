@@ -751,11 +751,18 @@ div#_dotHelpMenu{color:red;}
 /*Tags fields*/
 
 .tagsOptions {
-	border: 1px solid #b3b3b3;
-	position: absolute;
 	background: white;
-	z-index: 1;
+	border: 1px solid #b3b3b3;
 	min-width:175px;
+	position: absolute;
+	z-index: 1;
+	padding-top: 7px;
+}
+
+.tagsOptions .personaIcon,
+.tagsOptions .tagIcon {
+	margin-right: 5px;
+	opacity: .7;
 }
 
 .tagsOptions:before {
@@ -788,6 +795,7 @@ div#_dotHelpMenu{color:red;}
 	padding: 5px 10px;
 	border-bottom: 1px solid #b3b3b3;
 	text-decoration: none;
+    white-space: nowrap;
 }
 
 .tagsOptions a:focus {
@@ -838,7 +846,6 @@ div#_dotHelpMenu{color:red;}
 }
 
 .tagLink:after {
-
 	border-bottom-right-radius: 9px;
 	border-top-right-radius: 9px;
 	color: gray;
