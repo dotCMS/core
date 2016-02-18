@@ -20,6 +20,17 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * A Rule is composed of a list of conditions that get checked against when a 
+ * visitor requests a page. If the conditions in a rule are met, then one or 
+ * more actions are fired. Rules can be configured from their specific portlet 
+ * in the back-end and via RESTful services as well.
+ * 
+ * @author Daniel Silva
+ * @version 1.0
+ * @since Mar 10, 2015
+ *
+ */
 public class Rule implements Permissionable, Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -230,10 +241,25 @@ public class Rule implements Permissionable, Serializable {
         }
     }
 
-    public void evaluate(HttpServletRequest req, HttpServletResponse res) {
+	/**
+	 * Evaluates the set of conditions that make up this rule based on the
+	 * issued HTTP request. If the final result of such an evaluation is true,
+	 * then a set of one or more actions is executed.
+	 * 
+	 * @param req
+	 *            - The {@link HttpServletRequest} object that is triggering the
+	 *            rules evaluation/execution.
+	 * @param res
+	 *            - The {@link HttpServletResponse} object.
+	 * @return If the given conditions satisfy the rule, returns
+	 *         <code>true</code>. Otherwise, returns <code>false</code>.
+	 */
+    public boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
         if(this.evaluateConditions(req, res, getGroups())) {
             this.evaluateActions(req, res, getRuleActions());
+            return true;
         }
+        return false;
     }
 
     private void evaluateActions(HttpServletRequest req, HttpServletResponse res, List<RuleAction> actions) {
