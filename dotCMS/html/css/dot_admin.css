@@ -886,7 +886,7 @@ div#_dotHelpMenu{color:red;}
 	padding: 2px 2px 0;
 }
 
-.tagsWrapper .dijitInputField {
+.dmundra .tagsWrapper .dijitInputField {
 	height: auto;
 	cursor: text;
 	display: inline-block;
@@ -894,10 +894,11 @@ div#_dotHelpMenu{color:red;}
 	position: static;
 }
 
-.tagsWrapper .dijitInputField input {
+.dmundra .tagsWrapper .dijitInputField .dijitInputInner {
 	float: none;
 	padding: 0;
-	height: 20px;
+	line-height: 28px;
+	height: 28px;
 	border: none;
 	width: auto !important;
 }

@@ -107,6 +107,7 @@ var tagVelocityVarName;
 var suggestedDiv;
 var tagsContainer;
 var tagsMap = {};
+var lastLength = 0;
 
 function suggestTagsForSearch(e) {
 	if (!tagVelocityVarName || tagVelocityVarName == "") {
@@ -145,11 +146,22 @@ function suggestTagsForSearch(e) {
 
 	if (e.keyCode === 13) {
 		useThisTagForSearch(event);
+	} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
+		removeLastTag();
+		lastLength = 0;
 	} else if (tagName.length >= 3) {
 		TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
 	} else {
 		clearSuggestTagsForSearch();
 	}
+
+	lastLength = e.target.value.length;
+}
+
+function removeLastTag() {
+	var tags = query(".tagLink");
+	var tagToRemove = tags[tags.length - 1];
+	clearTag(tagToRemove);
 }
 
 var pos;
@@ -317,6 +329,11 @@ function addTagValue(tag) {
 }
 
 function clearTag(e) {
+	if (!e.target) {
+		var node = e;
+		e = {};
+		e.target = node;
+	}
 	tagVelocityVarName = e.target.dataset.field;
 	removeTagValue(tagsMap[tagVelocityVarName][e.target.id].title);
 	delete tagsMap[tagVelocityVarName][e.target.id];
