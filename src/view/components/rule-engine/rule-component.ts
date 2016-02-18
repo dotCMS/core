@@ -21,6 +21,7 @@ import {InputText} from "../semantic/elements/input-text/input-text";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {UserModel} from "../../../api/auth/UserModel";
+import {ApiRoot} from "../../../api/persistence/ApiRoot";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -51,8 +52,9 @@ var rsrc = {
       </cw-input-text>
       <div flex="50" [hidden]="!fName.touched || fName.valid" class="name cw-warn basic label">Name is required</div>
       </div>
-      <span class="cw-fire-on-label">{{rsrc('inputs.fireOn.label') | async}}</span>
+      <span class="cw-fire-on-label" *ngIf="!hideFireOn">{{rsrc('inputs.fireOn.label') | async}}</span>
       <cw-input-dropdown flex="none"
+                         *ngIf="!hideFireOn"
                          class="cw-fire-on-dropdown"
                          [value]="fireOn.value"
                          placeholder="{{fireOn.placeholder | async}}"
@@ -122,6 +124,7 @@ class RuleComponent {
   @Output() remove:EventEmitter<RuleModel>
 
   collapsed:boolean
+  hideFireOn:boolean
   actions:Array<ActionModel>
   groups:Array<ConditionGroupModel>
 
@@ -143,7 +146,8 @@ class RuleComponent {
               ruleService:RuleService,
               actionService:ActionService,
               groupService:ConditionGroupService,
-              resources:I18nService) {
+              resources:I18nService,
+              apiRoot:ApiRoot) {
     this._user = user
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
@@ -153,6 +157,7 @@ class RuleComponent {
     this._groupService = groupService
     this.resources = resources
     this._rsrcCache = {}
+    this.hideFireOn = apiRoot.hideFireOn
 
     this.groups = []
     this.actions = []
