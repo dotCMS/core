@@ -22,7 +22,7 @@ const CW_TEXT_VALUE_ACCESSOR = CONST_EXPR(new Provider(
     [required]="required"
     (input)="onChange($event.target.value)"
     (change)="$event.stopPropagation(); onChange($event.target.value)"
-    (blur)="validate($event.target.value); onBlur($event.target.value)"
+    (blur)="$event.stopPropagation(); onBlur($event.target.value)"
     (focus)="onFocus($event.target.value)">
   <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
@@ -37,7 +37,8 @@ export class InputDate implements ControlValueAccessor  {
   onTouched = () => {
   };
 
-  @Input()  value:string = ""
+  private static DEFAULT_VALUE:string = InputDate._defaultValue()
+  @Input()  value:string = InputDate.DEFAULT_VALUE
   @Input()  placeholder:string = ""
   @Input()  icon:string
   @Input()  disabled:boolean = false
@@ -49,33 +50,15 @@ export class InputDate implements ControlValueAccessor  {
   @Output() focus:EventEmitter<any>
 
   constructor(private _renderer:Renderer, private _elementRef:ElementRef) {
+
     this.change = new EventEmitter()
     this.blur = new EventEmitter()
     this.focus = new EventEmitter()
-    this.value = new Date().toISOString()
-  }
-
-  validate(value:string):boolean {
-    let valid
-    try {
-      let d = new Date(value)
-      if (Object.prototype.toString.call(d) !== "[object Date]" || isNaN(d.getTime())) {
-        this.errorMessage = "incomplete"
-        valid = false
-      } else {
-        valid = true
-      }
-    } catch (e) {
-      this.errorMessage = "incomplete"
-      valid = false
-    }
-    this.errorMessage = null
-    return valid
   }
 
   ngOnChanges(change) {
-    if (change.value && !change.value.currentValue) {
-      this.value = ""
+    if (change.value && change.value.currentValue === null) {
+      this.value = InputDate.DEFAULT_VALUE
     }
     if(change.placeholder && !change.placeholder.currentValue){
       this.placeholder = "Enter an ISO DateTime"
@@ -119,5 +102,21 @@ export class InputDate implements ControlValueAccessor  {
     }
   }
 
+  private static _defaultValue():string {
+    let d = new Date()
+    d.setHours(0)
+    d.setMinutes(0)
+    d.setSeconds(0)
+    d.setMilliseconds(0)
+    d.setMonth(d.getMonth() + 1)
+    d.setDate(1)
+    let r = d.toISOString()
+    console.log("InputDate", "_defaultValue", r)
+    if(r.endsWith('Z'))
+    {
+      r = r.substring(0, r.length - 1)
+    }
+    return r
+  }
 }
 
