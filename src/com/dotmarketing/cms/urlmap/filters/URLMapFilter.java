@@ -49,12 +49,8 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.RegEX;
-import com.dotmarketing.util.RegExMatch;
-import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.*;
 import com.liferay.portal.model.User;
 
 /**
@@ -260,6 +256,13 @@ public class URLMapFilter implements Filter {
 							if(UtilMethods.isSet(x[i])){
 								request.setAttribute("URL_ARG" + i, x[i]);
 							}
+						}
+
+						//Search for the tags asocciated to this contentlet inode
+						List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(c.getInode());
+						if ( contentletFoundTags != null ) {
+							//Accrue the found tags
+							TagUtil.accrueTags(request, contentletFoundTags);
 						}
 						
 						break;

@@ -1,21 +1,24 @@
 package com.dotcms.visitor.domain;
 
+import com.dotcms.repackage.com.google.common.collect.HashMultiset;
+import com.dotcms.repackage.com.google.common.collect.Multiset;
+import com.dotcms.repackage.com.google.common.collect.Multisets;
+import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.personas.model.IPersona;
+import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.TagUtil;
+import eu.bitwalker.useragentutils.UserAgent;
+
+import javax.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
-
-import javax.servlet.http.HttpServletRequest;
-
-import com.dotcms.repackage.com.google.common.collect.HashMultiset;
-import com.dotcms.repackage.com.google.common.collect.Multiset;
-import com.dotcms.repackage.com.google.common.collect.Multisets;
-import com.dotcms.repackage.eu.bitwalker.useragentutils.DeviceType;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.model.IPersona;
-
-import eu.bitwalker.useragentutils.UserAgent;
 
 public class Visitor implements Serializable {
 
@@ -82,6 +85,24 @@ public class Visitor implements Serializable {
     }
 
     public void setPersona(IPersona persona) {
+
+        //Validate if we must accrue the Tags for this "new" Persona
+        if ( persona != null &&
+                (this.persona == null || !this.persona.getIdentifier().equals(persona.getIdentifier())) ) {
+
+            try {
+                //The Persona changed for this Visitor, we must accrue the tags associated to this new Persona
+                List<Tag> personaTags = APILocator.getTagAPI().getTagsByInode(persona.getInode());
+
+                String foundTags = TagUtil.tagListToString(personaTags);
+                //Accrue these found tags to this visitor object
+                TagUtil.accrueTagsToVisitor(this, foundTags);
+            } catch (DotDataException e) {
+                Logger.error(this, "Unable to retrieve Tags associated to Persona [" + persona.getInode() + "].", e);
+            }
+
+        }
+
         this.persona = persona;
     }
 
