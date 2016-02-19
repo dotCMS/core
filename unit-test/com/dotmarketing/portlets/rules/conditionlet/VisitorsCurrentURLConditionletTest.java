@@ -136,15 +136,6 @@ public class VisitorsCurrentURLConditionletTest {
         }
     }
 
-    @Test
-    public void testUriProcessing() throws Exception {
-        VisitorsCurrentUrlConditionlet conditionlet = new VisitorsCurrentUrlConditionlet();
-        assertEquals(conditionlet.processUrl("/products/", "index"),"/products/index");
-        assertEquals(conditionlet.processUrl("/products/?some=property", "index"),"/products/index");
-        assertEquals(conditionlet.processUrl("/products?", "index"),"/products");
-        assertEquals(conditionlet.processUrl("/products?some=property", "index"),"/products");
-    }
-
     @Test(dataProvider = "cases")
     public void testComparisons(TestCase aCase) throws Exception {
         assertThat(aCase.testDescription, runCase(aCase), is(aCase.expect));
