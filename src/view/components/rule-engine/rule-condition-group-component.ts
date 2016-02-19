@@ -1,4 +1,4 @@
-import { Component, View, EventEmitter, Input, Output} from 'angular2/core';
+import { Component, EventEmitter, Input, Output} from 'angular2/core';
 import {CORE_DIRECTIVES} from 'angular2/common';
 
 
@@ -9,14 +9,14 @@ import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engi
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {I18nService} from "../../../api/system/locale/I18n";
+import {Observable} from "rxjs/Observable";
 
 @Component({
-  selector: 'condition-group'
-})
-@View({
+  selector: 'condition-group',
   template: `<div class="cw-rule-group">
   <div class="cw-condition-group-separator" *ngIf="groupIndex === 0">
-    {{rsrc.inputs.group.whenConditions.label}}
+    {{rsrc('inputs.group.whenConditions.label') | async}}
   </div>
   <div class="cw-condition-group-separator" *ngIf="groupIndex !== 0">
     <div class="ui basic icon buttons">
@@ -24,7 +24,8 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
         <div>{{group.operator}}</div>
       </button>
     </div>
-    <span flex class="cw-header-text">{{rsrc.inputs.group.whenFurtherConditions.label}}</span>
+    <span flex class="cw-header-text">
+    {{rsrc('inputs.group.whenFurtherConditions.label') | async}}</span>
   </div>
   <div flex layout="column" class="cw-conditions">
     <div layout="row"
@@ -51,6 +52,8 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
 })
 export class ConditionGroupComponent {
 
+  private static I8N_BASE:string = 'api.sites.ruleengine.rules'
+
   @Input() group:ConditionGroupModel
   @Input() groupIndex:number
   @Output() change:EventEmitter<ConditionGroupModel>
@@ -58,16 +61,21 @@ export class ConditionGroupComponent {
 
   conditions:Array<ConditionModel>;
   groupCollapsed:boolean
-  rsrc:any
 
   private apiRoot:ApiRoot
   private _groupService:ConditionGroupService;
   private _conditionService:ConditionService;
+  private resources:I18nService
+  private _rsrcCache:{[key:string]:Observable<string>}
 
   constructor(apiRoot:ApiRoot,
               ruleService:RuleService,
               groupService:ConditionGroupService,
-              conditionService:ConditionService) {
+              conditionService:ConditionService,
+              resources:I18nService) {
+    this.resources = resources
+    this._rsrcCache = {}
+
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
     this.apiRoot = apiRoot
@@ -77,10 +85,15 @@ export class ConditionGroupComponent {
     this.conditions = []
     this.groupIndex = 0
 
-    this.rsrc = ruleService.rsrc
-
   }
-
+  rsrc(subkey:string) {
+    let x = this._rsrcCache[subkey]
+    if(!x){
+      x = this.resources.get(ConditionGroupComponent.I8N_BASE + '.' + subkey)
+      this._rsrcCache[subkey] = x
+    }
+    return x
+  }
   ngOnChanges(change) {
     if (change.group) {
       let group:ConditionGroupModel = change.group.currentValue
@@ -89,7 +102,6 @@ export class ConditionGroupComponent {
         this.addCondition()
       } else {
         this._conditionService.listForGroup(group).subscribe(conditions => {
-          console.log("ConditionGroupComponent", "list for group", conditions.length, groupKeys.length, conditions)
           this.conditions = conditions
           this.sort()
         })
@@ -97,10 +109,7 @@ export class ConditionGroupComponent {
     }
   }
 
-
-
   addCondition() {
-    console.log('Adding condition to ConditionsGroup')
     let condition = new ConditionModel(null, new ServerSideTypeModel())
     condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 1
     condition.owningGroup = this.group
