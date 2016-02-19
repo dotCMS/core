@@ -205,7 +205,7 @@ public class JGroupsCacheTransport extends ReceiverAdapter implements CacheTrans
             Logger.info(this, "ACK Received " + new Date());
         } else if ( v.toString().equals("MultiMessageResources.reload") ) {
             MultiMessageResources messages = (MultiMessageResources) Config.CONTEXT.getAttribute(Globals.MESSAGES_KEY);
-            messages.reload();
+            messages.reloadLocally();
         } else if ( v.toString().equals(ChainableCacheAdministratorImpl.DUMMY_TEXT_TO_SEND) ) {
             //Don't do anything is we are only checking sending.
         } else {
