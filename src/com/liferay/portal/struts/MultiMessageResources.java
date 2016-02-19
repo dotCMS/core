@@ -22,6 +22,7 @@
 
 package com.liferay.portal.struts;
 
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.org.apache.struts.util.MessageResourcesFactory;
 import com.dotcms.repackage.com.oroad.stxx.util.PropertyMessageResources;
 import com.dotmarketing.business.APILocator;
@@ -64,7 +65,9 @@ public class MultiMessageResources extends PropertyMessageResources {
 	}
 
 	public Map getMessages() {
-		return messages;
+		synchronized (messages) {
+			return ImmutableMap.copyOf(messages);
+		}
 	}
 
 	public void setServletContext(ServletContext servletContext) {
@@ -176,6 +179,10 @@ public class MultiMessageResources extends PropertyMessageResources {
 
 
 							}
+                            if(props.containsKey(key)){
+                                Logger.warn(this.getClass(),
+                                            String.format("Duplicate resource property definition (key=was ==> is now): %s=%s ==> %s",key, props.get(key), val));
+                            }
 							props.put(key, val);
 						}
 
@@ -208,15 +215,19 @@ public class MultiMessageResources extends PropertyMessageResources {
 	}
 
 	public synchronized void reload() {
-	    locales.clear();
-	    messages.clear();
-	    formats.clear();
+		reloadLocally();
 
-	    ChainableCacheAdministratorImpl dotCache = ((ChainableCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
-	    if(dotCache.isClusteringEnabled()) {
-	    	dotCache.send("MultiMessageResources.reload");
-	    }
-	 }
+		ChainableCacheAdministratorImpl dotCache = ((ChainableCacheAdministratorImpl)CacheLocator.getCacheAdministrator().getImplementationObject());
+		if(dotCache.isClusteringEnabled()) {
+			dotCache.send("MultiMessageResources.reload");
+		}
+	}
+
+	public void reloadLocally() {
+		locales.clear();
+		messages.clear();
+		formats.clear();
+	}
 
 	private static final Log _log =
 		LogFactory.getLog(MultiMessageResources.class);
