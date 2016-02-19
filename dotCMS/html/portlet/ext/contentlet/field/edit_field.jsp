@@ -607,7 +607,9 @@
 
     <script>
       dojo.addOnLoad(function() {
-        dojo.connect(dojo.byId("<%=field.getVelocityVarName()%>"), "onkeyup", suggestTagsForSearch);
+        var tagField = dojo.byId("<%=field.getVelocityVarName()%>");
+        dojo.connect(tagField, "onkeyup", suggestTagsForSearch);
+        dojo.connect(tagField, "onblur", closeSuggetionBox);
         var textValue = "<%=textValue%>";
         if (textValue != "") {
           fillExistingTags("<%=field.getVelocityVarName()%>", textValue);

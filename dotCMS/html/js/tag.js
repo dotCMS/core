@@ -149,6 +149,9 @@ function suggestTagsForSearch(e) {
 	} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
 		removeLastTag();
 		lastLength = 0;
+	} else if (e.keyCode === keys.ESCAPE) {
+		clearSuggestTagsForSearch();
+		e.target.value = "";
 	} else if (tagName.length >= 3) {
 		TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
 	} else {
@@ -156,6 +159,16 @@ function suggestTagsForSearch(e) {
 	}
 
 	lastLength = e.target.value.length;
+}
+
+function closeSuggetionBox(e) {
+	setTimeout(function() {
+		if (document.activeElement.parentElement.id != "tagsSuggestedTagsDiv") {
+			clearSuggestTagsForSearch();
+			e.target.value = "";
+			e.target.blur();
+		}
+	}, 100)
 }
 
 function removeLastTag() {
@@ -179,6 +192,8 @@ function focusSelectedTag(e) {
 				pos = lastPos;
 			} else if (pos > 0) {
 				pos--;
+			} else {
+				return dijit.focus(dojo.byId(tagVelocityVarName));
 			}
 			tagsOptionsLinks[pos].focus();
 			break;
@@ -238,7 +253,7 @@ function clearSuggestTagsForSearch() {
 		if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
 			dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "none");
 		}
-		document.getElementById(suggestedDiv).innerHTML = "";
+		dojo.byId(suggestedDiv).innerHTML = "";
 		dojo.byId(tagVelocityVarName).focus();
 		tagVelocityVarName = null;
 		suggestedDiv = null;
