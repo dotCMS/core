@@ -32,8 +32,8 @@ const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
   template: `<div class="ui fluid selection dropdown search ng-valid"
      [ngClass]="{required:minSelections > 0, multiple: maxSelections > 1}"
      tabindex="0"
-     (change)="stopNativeEvents($event)"
-     (blur)="stopNativeEvents($event)">
+     (change)="$event.stopPropagation()"
+     (blur)="$event.stopPropagation()">
   <input type="hidden" [name]="name" [value]="value" />
   <i class="dropdown icon"></i>
   <div class="default text">{{placeholder}}</div>
@@ -75,22 +75,26 @@ export class Dropdown implements AfterViewInit, OnDestroy {
 
   ngOnChanges(change) {
     if (change.value ) {
-      var count = 0;
-      Observable.interval(10).takeWhile(()=>{
-        count++
-        if(count > 100){
-          throw "Dropdown element not found."
-        }
-        return this._$dropdown == null
-      }).subscribe(()=>{
-        // still null!
-      }, (e)=>{
-        console.log("Dropdown", "Error", e)
-      }, ()=>{
-        console.log("Dropdown", "onComplete")
-        this._$dropdown.dropdown('set selected', this.value)
-      })
+      this.applyValue(this.value)
     }
+  }
+
+  private applyValue(value) {
+    var count = 0;
+    Observable.interval(10).takeWhile(()=> {
+      count++
+      if (count > 100) {
+        throw "Dropdown element not found."
+      }
+      return this._$dropdown == null
+    }).subscribe(()=> {
+      // still null!
+    }, (e)=> {
+      console.log("Dropdown", "Error", e)
+    }, ()=> {
+      console.log("Dropdown", "onComplete")
+      this._$dropdown.dropdown('set selected', value)
+    })
   }
 
 
@@ -126,45 +130,58 @@ export class Dropdown implements AfterViewInit, OnDestroy {
   }
 
   initDropdown() {
-      var self = this;
-      let config:any = {
-        allowAdditions: this.allowAdditions,
-        placeholder: 'auto',
+    var self = this;
+    var badSearch = null
+    let config:any = {
+      allowAdditions: this.allowAdditions,
+      allowTab: true,
+      placeholder: 'auto',
 
-        onChange: (value, text, $choice)=> {
-          return this.onChange(value, text, $choice)
-        },
-        onAdd: (addedValue, addedText, $addedChoice)=> {
-          return this.onAdd(addedValue, addedText, $addedChoice)
-        },
-        onRemove: (removedValue, removedText, $removedChoice)=> {
-          return this.onRemove(removedValue, removedText, $removedChoice)
-        },
-        onLabelCreate: function (value, text) {
-          let $label = this;
-          return self.onLabelCreate($label, value, text)
-        },
-        onLabelSelect: ($selectedLabels)=> {
-          return this.onLabelSelect($selectedLabels)
-        },
-        onNoResults: (searchValue)=> {
-          return this.onNoResults(searchValue)
-        },
-        onShow: ()=> {
-          return this.onShow()
-        },
-        onHide: ()=> {
-          return this.onHide()
+      onChange: (value, text, $choice)=> {
+        badSearch = null
+        return this.onChange(value, text, $choice)
+      },
+      onAdd: (addedValue, addedText, $addedChoice)=> {
+        return this.onAdd(addedValue, addedText, $addedChoice)
+      },
+      onRemove: (removedValue, removedText, $removedChoice)=> {
+        return this.onRemove(removedValue, removedText, $removedChoice)
+      },
+      onLabelCreate: function (value, text) {
+        let $label = this;
+        return self.onLabelCreate($label, value, text)
+      },
+      onLabelSelect: ($selectedLabels)=> {
+        return this.onLabelSelect($selectedLabels)
+      },
+      onNoResults: (searchValue)=> {
+        badSearch = searchValue
+        return this.onNoResults(searchValue)
+      },
+      onShow: ()=> {
+        return this.onShow()
+      },
+      onHide: ()=> {
+        if(badSearch !== null){
+          badSearch = null
+          this._$dropdown.children('input.search')[0].value = ''
+          if(!this.value || (this.value && this.value.length === 0)){
+            this._$dropdown.dropdown('set text', this.placeholder)
+          } else {
+            this._$dropdown.dropdown('set selected', this.value)
+          }
         }
+        return this.onHide()
       }
-      if (this.maxSelections > 1) {
-        config.maxSelections = this.maxSelections
-      }
+    }
+    if (this.maxSelections > 1) {
+      config.maxSelections = this.maxSelections
+    }
 
-      var el = this.elementRef.nativeElement
-      this._$dropdown = $(el).children('.ui.dropdown');
-      this._$dropdown.dropdown(config)
-      this._applyArrowNavFix(this._$dropdown);
+    var el = this.elementRef.nativeElement
+    this._$dropdown = $(el).children('.ui.dropdown');
+    this._$dropdown.dropdown(config)
+    this._applyArrowNavFix(this._$dropdown);
   }
 
   private isMultiSelect():boolean {
@@ -186,9 +203,6 @@ export class Dropdown implements AfterViewInit, OnDestroy {
     })
   };
 
-  stopNativeEvents(event) {
-    event.stopPropagation();
-  }
 
   /**
    * Is called after a dropdown value changes. Receives the name and value of selection and the active menu element

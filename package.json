@@ -1,5 +1,5 @@
 {
-  "version": "3.5.0-alpha",
+  "version": "3.5.0-beta",
   "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
     "type": "git",
