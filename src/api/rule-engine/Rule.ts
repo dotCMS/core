@@ -1,6 +1,6 @@
-import {Http, HTTP_PROVIDERS, BaseRequestOptions} from 'angular2/http'
-import {Inject, EventEmitter, Injectable} from 'angular2/core'
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
+import {Http} from 'angular2/http'
+import {EventEmitter, Injectable} from 'angular2/core'
+import {Observable} from 'rxjs/Rx'
 
 
 import {ConditionGroupService, ConditionGroupModel} from "./ConditionGroup";
@@ -8,9 +8,8 @@ import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {EntityMeta} from "../persistence/EntityBase";
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ActionService, ActionModel} from "./Action";
+import {ActionService} from "./Action";
 import {I18nService} from "../system/locale/I18n";
-import {DevUtil} from "../util/DevUtil";
 
 
 export class RuleModel extends CwModel {
@@ -18,11 +17,8 @@ export class RuleModel extends CwModel {
   name:string
   enabled:boolean
   fireOn:string
-
-
   groups:{ [key: string]: ConditionGroupModel }
   actions:{ [key: string]: boolean }
-
 
   constructor(key:string, name:string = '', fireOn:string = 'EVERY_PAGE') {
     super(key)
@@ -55,73 +51,11 @@ export class RuleModel extends CwModel {
     return rule;
   }
 }
-const RULE_DEFAULT_RSRC = {
-  inputs: {
-    filter: {
-      placeholder: "Start typing to filter rules...",
-      tip: "Show only the rules that match your filter."
-    },
-    fireOn: {
-      label: "Fire On",
-      options: {
-        EveryPage: "Every Page",
-        OncePerVisit: "Once per Visit",
-        OncePerVisitor: "Once per visitor",
-        EveryRequest: "Every Request"
-      }
-    },
-    addRule: {
-      label: "Add Rule",
-      tip: "Create a new rule"
-    },
-    onOff: {
-      tip: "Prevent or allow this rule to execute",
-      on: {
-        label: "On"
-      },
-      off: {
-        label: "Off"
-      }
-    },
-    name: {
-      placeholder: "Describe the rule"
-    },
-    group: {
-      whenConditions: {
-        label: "This rule fires when the following conditions are met:",
-      },
-      whenFurtherConditions: {
-        label: "when the following condition(s) are met:"
-      },
-      andOr: {
-        and: {label: "AND",},
-        or: {label: "OR",}
-      }
-    },
-    condition: {
-      andOr: {
-        and: {label: "AND",},
-        or: {label: "OR",}
-      },
-      type: {
-        placeholder: "Select a Condition"
-      }
-    },
-    action: {
-      firesActions: "This rule sets the following action(s)",
-      type: {
-        placeholder: "Select an Action"
-      }
-    }
-  }
-}
-const RULE_I18N_BASE_KEY = 'api.sites.ruleengine.rules';
+
+
 @Injectable()
 export class RuleService {
   ref:EntityMeta
-
-  rsrc:any = RULE_DEFAULT_RSRC
-
   private _rsrcService:I18nService;
 
   http:Http

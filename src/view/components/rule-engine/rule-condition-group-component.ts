@@ -7,7 +7,6 @@ import {ConditionComponent} from './rule-condition-component';
 import {ApiRoot} from '../../../api/persistence/ApiRoot'
 import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
 import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
-import {RuleService} from "../../../api/rule-engine/Rule";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Observable} from "rxjs/Observable";
@@ -69,7 +68,6 @@ export class ConditionGroupComponent {
   private _rsrcCache:{[key:string]:Observable<string>}
 
   constructor(apiRoot:ApiRoot,
-              ruleService:RuleService,
               groupService:ConditionGroupService,
               conditionService:ConditionService,
               resources:I18nService) {
