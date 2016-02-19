@@ -70,7 +70,7 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 		}
 
 		String index = CMSFilter.CMS_INDEX_PAGE;
-		String pattern = processUrl(instance.patternUrl,index);
+		String pattern = processUrl(instance.patternUrl,index, instance);
 
 		return evaluate(request, instance, requestUri, pattern);
 	}
@@ -82,18 +82,25 @@ public class VisitorsCurrentUrlConditionlet extends Conditionlet<VisitorsCurrent
 	/**
 	 * Process the baseUrl to comply with:
 	 * <ul><li>Does not include query params</li>
-	 * <li>If a person enters a string that .endsWith(“/”) , e.g. is a folder,
-	 * we need to evaluate against the path + the Config variable for CMS_INDEX_PAGE, whatever that is,
-	 * e.g. /news-events/news/ checks against /news-events/news/index</li></ul>
+	 * <li>If a person enters a string that .endsWith(“/”) , e.g. is a folder, we need to
+	 * evaluate against the path + the Config variable for CMS_INDEX_PAGE, whatever that is,
+	 * e.g. /news-events/news/ checks against /news-events/news/index, this happens on IS,
+	 * IS_NOT and ENDS_WITH to ensure that the user can use STARTS_WITH or REGEXP without
+	 * affecting top tier folders structure so STARTS_WITH '/folder/' means everything under
+	 * the folder not only '/folder/index'. </li></ul>
 	 * @param baseUrl
 	 * @return
 	 */
-	public String processUrl(String baseUrl, String index){
+	public String processUrl(String baseUrl, String index, Instance instance){
 		String processedUrl = baseUrl;
 		if(processedUrl.indexOf("?") > 0)
 			processedUrl = processedUrl.substring(0,processedUrl.indexOf("?"));
-		if(processedUrl.endsWith("/"))
-			processedUrl = processedUrl + index;
+		if(instance.comparison.getId().equals(IS.getId())
+				|| instance.comparison.getId().equals(IS_NOT.getId())
+				|| instance.comparison.getId().equals(ENDS_WITH.getId())){
+			if(processedUrl.endsWith("/"))
+				processedUrl = processedUrl + index;
+		}
 		return processedUrl;
 	}
 
