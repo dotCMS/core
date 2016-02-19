@@ -132,20 +132,34 @@ public class SQLUtil {
 		}
 		return bob.toString();
 	}
-	//http://jira.dotmarketing.net/browse/DOTCMS-3689
-	public static String addLimits(String query, long offSet, long limit) {
 
+	/**
+	 * Appends the required SQL code to the existing query to limit the number
+	 * of results returned by such a query. You can also specify the offset if
+	 * paginated results are required. This method will handle all the
+	 * database-specific details related to keywords.
+	 * 
+	 * @param query
+	 *            - The SQL query that will be executed.
+	 * @param offSet
+	 *            - The number of rows to start reading from.
+	 * @param limit
+	 *            - The maximum number of rows to return.
+	 * @return The database-specific SQL statement that will add a row limit
+	 *         and/or offset to the results.
+	 */
+	public static String addLimits(String query, long offSet, long limit) {
 		if ( offSet == 0 && limit == -1 ) {
 			//Nothing to do...
 			return query;
 		}
-
-		StringBuffer queryString = new StringBuffer();
+		StringBuffer queryString = new StringBuffer(); 
 		int count = 0;
 		if(query!=null){
-		  count = StringUtil.count(query.toLowerCase(), "select");
+			query = query.toLowerCase();
+		  count = StringUtil.count(query, "select");
 		}
-		if(!UtilMethods.isSet(query)|| !query.toLowerCase().trim().contains("select")|| count>1){
+		if(!UtilMethods.isSet(query)|| !query.trim().contains("select")|| count>1){
 			return query;
 		}else{
 		     if(DbConnectionFactory.isPostgres()||
@@ -155,10 +169,10 @@ public class SQLUtil {
 
 	         }else if(DbConnectionFactory.isMsSql()){
 	        	 String str = "";
-		    	   if(query.toLowerCase().startsWith("select")){
+		    	   if(query.startsWith("select")){
 					  query = query.substring(6);
 				   }
-		    	   if(query.toLowerCase().contains("order by")){
+		    	   if(query.contains("order by")){
 		  			  str = query.substring(query.indexOf("order by"), query.length());
 		  			  query = query.replace(str,"").trim();
 		  		   }
