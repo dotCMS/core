@@ -1,5 +1,5 @@
-import { ElementRef, Component, View, Directive, ViewContainerRef, TemplateRef, EventEmitter, Attribute} from 'angular2/core';
-import { Host, AfterViewInit, AfterViewChecked, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
+import { ElementRef, Component, Directive, EventEmitter} from 'angular2/core';
+import { Host, AfterViewInit, OnDestroy, Output, Input, ChangeDetectionStrategy } from 'angular2/core';
 import { CORE_DIRECTIVES,  } from 'angular2/common';
 import {BehaviorSubject, Observable} from 'rxjs/Rx'
 
@@ -11,7 +11,6 @@ import {BehaviorSubject, Observable} from 'rxjs/Rx'
  *
  * @todo ggranum: Extract semantic UI components into a separate github repo and include them via npm.
  */
-
 var $ = window['$']
 
 const DO_NOT_SEARCH_ON_THESE_KEY_EVENTS = {
