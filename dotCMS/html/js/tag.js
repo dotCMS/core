@@ -144,18 +144,27 @@ function suggestTagsForSearch(e) {
 		selectedHostOrFolderId = dojo.byId("currentHostIdForTagSuggestion").value;
 	}
 
-	if (e.keyCode === 13) {
-		useThisTagForSearch(event);
-	} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
-		removeLastTag();
-		lastLength = 0;
-	} else if (e.keyCode === keys.ESCAPE) {
-		clearSuggestTagsForSearch();
-		e.target.value = "";
-	} else if (tagName.length >= 3) {
-		TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
-	} else {
-		clearSuggestTagsForSearch();
+	if (e.keyCode !== keys.UP_ARROW && e.keyCode !== keys.DOWN_ARROW) {
+		// semicolon
+		if (e.keyCode === 188) {
+			useThisTagForSearch(e);
+		} else if (e.keyCode === keys.ENTER) {
+			var suggestedTagFocus = query(".suggestedTagFocus");
+			if (suggestedTagFocus.length) {
+				suggestedTagFocus[0].click();
+			} else {
+				useThisTagForSearch(e);
+			}
+		} else if (e.keyCode === keys.BACKSPACE && e.target.value.length === 0 && lastLength === 0) {
+			removeLastTag();
+			lastLength = 0;
+		} else if (e.keyCode === keys.ESCAPE) {
+			clearSuggestTagsForSearch();
+		} else if (tagName.length >= 3) {
+			TagAjax.getSuggestedTag(tagName, selectedHostOrFolderId, showTagsForSearch);
+		} else {
+			clearSuggestTagsForSearch();
+		}
 	}
 
 	lastLength = e.target.value.length;
@@ -195,7 +204,11 @@ function focusSelectedTag(e) {
 			} else {
 				return dijit.focus(dojo.byId(tagVelocityVarName));
 			}
-			tagsOptionsLinks[pos].focus();
+			var item = tagsOptionsLinks[pos];
+			item.className = "suggestedTagFocus";
+			if (item.nextSibling) {
+				item.nextSibling.className = "";
+			}
 			break;
 		case keys.DOWN_ARROW:
 			e.preventDefault();
@@ -205,10 +218,11 @@ function focusSelectedTag(e) {
 			} else if (pos < lastPos) {
 				pos++;
 			}
-			tagsOptionsLinks[pos].focus();
-			break;
-		case keys.ENTER:
-			e.target.click();
+			var item = tagsOptionsLinks[pos];
+			item.className = "suggestedTagFocus";
+			if (item.previousSibling) {
+				item.previousSibling.className = "";
+			}
 			break;
 	}
 }
@@ -280,7 +294,7 @@ function animateExitingTag(tagSuggested) {
 
 function useThisTagForSearch(e) {
 	var tagLink = e.target;
-	var tagSuggested = tagLink.text || tagLink.value;
+	var tagSuggested = tagLink.text || tagLink.value.replace(",", "");
 	var tagExists = isTagAdded(tagSuggested);
 	if (tagExists) {
 		animateExitingTag(tagSuggested);
