@@ -113,7 +113,7 @@ public class LanguageUtil {
     public static String get(String companyId, Locale locale, String key) throws LanguageException {
         Optional<String> optValue = getOpt(companyId, locale, key);
         if(!optValue.isPresent()) {
-            Logger.warn(LanguageUtil.class, key);
+            Logger.debug(LanguageUtil.class, key);
         }
         return optValue.orElse(key);
     }
@@ -145,7 +145,7 @@ public class LanguageUtil {
         }
 
         if(!value.isPresent()) {
-            Logger.warn(LanguageUtil.class, key);
+            Logger.debug(LanguageUtil.class, key);
         }
 
         return value;
