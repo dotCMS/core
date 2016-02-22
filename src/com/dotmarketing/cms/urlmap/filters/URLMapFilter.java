@@ -258,13 +258,17 @@ public class URLMapFilter implements Filter {
 							}
 						}
 
-						//Search for the tags asocciated to this contentlet inode
-						List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(c.getInode());
-						if ( contentletFoundTags != null ) {
-							//Accrue the found tags
-							TagUtil.accrueTags(request, contentletFoundTags);
+						//Check if we want to accrue the tags of URL maps
+						if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_URLMAPS", true) ) {
+
+							//Search for the tags asocciated to this contentlet inode
+							List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(c.getInode());
+							if ( contentletFoundTags != null ) {
+								//Accrue the found tags
+								TagUtil.accrueTags(request, contentletFoundTags);
+							}
 						}
-						
+
 						break;
 					} catch (DotDataException e) {
 						Logger.warn(this, "DotDataException", e);

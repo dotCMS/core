@@ -122,8 +122,17 @@ public class PageServices {
 			pageChannel = st.nextToken();
 		}
 
-		//List of tags found in the contentlets contained by this page
+		//List of tags found in this page
 		List<Tag> pageFoundTags = new ArrayList<>();
+
+		//Check if we want to accrue the tags of this HTMLPage contentlet
+		if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_PAGES", true) ) {
+
+			List<Tag> htmlPageFoundTags = APILocator.getTagAPI().getTagsByInode(htmlPage.getInode());
+			if ( htmlPageFoundTags != null ) {
+				pageFoundTags.addAll(htmlPageFoundTags);
+			}
+		}
 
 		// set the page cache var
 		if(htmlPage.getCacheTTL() > 0 && LicenseUtil.getLevel() > 99){
@@ -275,15 +284,18 @@ public class PageServices {
                 if(++countFull>=c.getMaxContentlets()) break;
             }
 
-			//We need to get the tags associated to each contentlet on this page
-			for ( Contentlet contentlet : contentletsFull ) {
-				//Search for the tags asocciated to this contentlet inode
-				List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
-				if ( contentletFoundTags != null ) {
-					pageFoundTags.addAll(contentletFoundTags);
+			//Check if we want to accrue the tags associated to each contentlet on this page
+			if ( Config.getBooleanProperty("ACCRUE_TAGS_IN_CONTENTS_ON_PAGE", false) ) {
+
+				for ( Contentlet contentlet : contentletsFull ) {
+					//Search for the tags associated to this contentlet inode
+					List<Tag> contentletFoundTags = APILocator.getTagAPI().getTagsByInode(contentlet.getInode());
+					if ( contentletFoundTags != null ) {
+						pageFoundTags.addAll(contentletFoundTags);
+					}
 				}
 			}
-			
+
 			sb.append("#if($UtilMethods.isSet($request.getSession(false)) && $request.session.getAttribute(\"tm_date\"))");
 			   sb.append(widgetpreeFull);
 			   sb.append("#set ($contentletList" ).append( ident.getIdentifier() )
