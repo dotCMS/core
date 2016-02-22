@@ -79,8 +79,8 @@ dojo.declare("dotcms.dijit.FileBrowserDialog", [dijit._Widget, dijit._Templated]
 	_initialized: false,
 	addFileTitle: 'Upload a file',
 	allowFileUpload: true,
-	sortBy: "title",
-	sortByDesc: false,
+	sortBy: "modDate",
+	sortByDesc: true,
 	_browserFolderTree: null,
 
 	postCreate: function () {
