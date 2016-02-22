@@ -1,5 +1,5 @@
-import {Component, Input, Output, View, Attribute, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
-import {Control, Validators, ControlGroup, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
+import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
 import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
@@ -134,7 +134,6 @@ export class ServersideCondition {
             input.argIndex = idx - comparisonIdx - 1
           }
         }
-
       })
       if(comparison){
         this.applyRhsCount(comparison.value)

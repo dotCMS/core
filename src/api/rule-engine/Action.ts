@@ -1,12 +1,9 @@
-import {Component, Input, Output, EventEmitter, Injectable} from 'angular2/core';
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
-
+import {EventEmitter, Injectable} from 'angular2/core';
+import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel} from "../util/CwModel";
 import {RuleModel} from "./Rule";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {ActionTypeService} from "./ActionType";
-import {ParameterDefinition} from "../util/CwInputModel";
 import {ServerSideFieldModel} from "./ServerSideFieldModel";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
@@ -91,7 +88,7 @@ export class ActionService {
       })
       if(keys.length === 0){
         /* @todo ggranum remove stupid hack (ee returning after an emit means no fire on subscribe) */
-        window.setTimeout(() => ee.emit([]), 500)
+        window.setTimeout(() => ee.emit([]), 250)
       }
     }
     return ee
@@ -110,7 +107,6 @@ export class ActionService {
 
   add(model:ActionModel, cb:Function = noop) {
     console.log("api.rule-engine.ActionService", "add", model)
-
     let json = this._toJson(model)
     this.ref.push(json, (e, result) => {
       if (e) {

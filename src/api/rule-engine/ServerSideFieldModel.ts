@@ -1,12 +1,5 @@
-import {EventEmitter, Injectable} from 'angular2/core';
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
-
-import {RuleModel} from "./Rule";
 import {CwModel} from "../util/CwModel";
-import {ApiRoot} from "../persistence/ApiRoot";
-import {CwChangeEvent} from "../util/CwEvent";
 import {ParameterDefinition} from "../util/CwInputModel";
-import {CwInputDefinition} from "../util/CwInputModel";
 
 export interface ParameterModel {
   key:string
@@ -53,7 +46,7 @@ export class ServerSideFieldModel extends CwModel {
 
   setParameter(key:string, value:any, priority:number = 1) {
     if (this.parameterDefs[key] === undefined) {
-      console.log("Unsupported parameter: ", key)
+      console.log("Unsupported parameter: ", key, "Valid parameters: ", Object.keys(this.parameterDefs))
       return;
     }
     this.parameters[key] = {key: key, value: value, priority: priority}

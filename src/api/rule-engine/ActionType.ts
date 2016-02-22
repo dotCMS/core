@@ -38,8 +38,8 @@ export class ActionTypeService {
     this._cacheMap = {}
   }
 
-  list(cb:Function = noop):Observable<ServerSideTypeModel[]> {
-    return Observable.defer(() => this._list(cb))
+  list():Observable<ServerSideTypeModel[]> {
+    return Observable.defer(() => this._list())
   }
 
   private _list(cb:Function = noop):Observable<ServerSideTypeModel[]> {

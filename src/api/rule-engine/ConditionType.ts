@@ -1,12 +1,8 @@
-import {Inject, EventEmitter, Injectable} from 'angular2/core';
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
-
+import {EventEmitter, Injectable} from 'angular2/core';
+import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
-import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService} from "../system/locale/I18n";
-import {ParameterDefinition} from "../util/CwInputModel";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 
 let noop = (...arg:any[])=> {
@@ -27,8 +23,8 @@ export class ConditionTypeService {
   }
 
 
-  list(cb:Function = noop):Observable<ServerSideTypeModel[]> {
-    return Observable.defer(() => this._list(cb))
+  list():Observable<ServerSideTypeModel[]> {
+    return Observable.defer(() => this._list())
   }
 
   private _list(cb:Function = noop):Observable<ServerSideTypeModel[]> {

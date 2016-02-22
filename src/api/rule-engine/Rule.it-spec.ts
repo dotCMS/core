@@ -1,24 +1,16 @@
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
-import {ConditionService, ConditionModel} from '../../api/rule-engine/Condition';
-
+import {ConditionService} from '../../api/rule-engine/Condition';
 import {Injector, Provider} from 'angular2/core';
-
 import {DataStore} from '../../api/persistence/DataStore'
-import {LocalDataStore} from '../../api/persistence/LocalDataStore';
 import {RestDataStore} from '../../api/persistence/RestDataStore';
-
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
-import {EntityMeta, EntitySnapshot} from '../../api/persistence/EntityBase';
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
-
-
 import {ActionService} from '../../api/rule-engine/Action';
 import {ActionTypeService} from "./ActionType";
-
-import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/ConditionGroup';
-import {CwChangeEvent} from '../../api/util/CwEvent';
+import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
 import {I18nService} from "../system/locale/I18n";
+import {HTTP_PROVIDERS} from "angular2/http";
 
 
 var injector = Injector.resolveAndCreate([
@@ -31,6 +23,7 @@ var injector = Injector.resolveAndCreate([
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,
+  HTTP_PROVIDERS,
   new Provider(DataStore, {useClass: RestDataStore})
 ])
 
