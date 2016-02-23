@@ -1,8 +1,8 @@
 package com.dotcms.cmis;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -11,7 +11,7 @@ import java.util.List;
 
 import com.dotcms.enterprise.cmis.utils.CMISUtils;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.data.ObjectList;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

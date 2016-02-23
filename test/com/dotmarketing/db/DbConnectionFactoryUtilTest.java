@@ -1,10 +1,10 @@
 package com.dotmarketing.db;
 
 import com.dotcms.repackage.junit.framework.Assert;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 

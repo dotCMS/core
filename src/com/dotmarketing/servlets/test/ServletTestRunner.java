@@ -9,7 +9,7 @@ import com.liferay.util.FileUtil;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import com.dotcms.repackage.org.junit.runner.JUnitCore;
+import org.junit.runner.JUnitCore;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;

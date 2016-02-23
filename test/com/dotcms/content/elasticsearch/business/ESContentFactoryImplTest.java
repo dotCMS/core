@@ -1,8 +1,8 @@
 package com.dotcms.content.elasticsearch.business;
 
 import com.dotcms.repackage.org.apache.fop.fo.flow.Float;
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Assert;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -11,7 +11,7 @@ import org.elasticsearch.search.SearchHits;
 
 import java.util.*;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 public class ESContentFactoryImplTest {
     

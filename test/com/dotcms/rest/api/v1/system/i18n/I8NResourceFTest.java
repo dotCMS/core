@@ -5,7 +5,7 @@ import com.dotcms.repackage.javax.ws.rs.client.ClientBuilder;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.jackson.JacksonFeature;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 
 /**

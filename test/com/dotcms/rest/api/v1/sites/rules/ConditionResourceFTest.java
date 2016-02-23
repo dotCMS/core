@@ -6,7 +6,7 @@
 //import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 //import com.dotcms.repackage.javax.ws.rs.core.Response;
 //import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-//import com.dotcms.repackage.org.junit.Test;
+//import org.junit.Test;
 //import com.dotcms.rest.api.FunctionalTestConfig;
 //import com.dotmarketing.portlets.rules.conditionlet.UsersCountryConditionlet;
 //import com.dotmarketing.portlets.rules.model.Condition;
@@ -14,7 +14,7 @@
 //import com.dotmarketing.util.json.JSONException;
 //import com.dotmarketing.util.json.JSONObject;
 //
-//import static com.dotcms.repackage.org.junit.Assert.assertTrue;
+//import static org.junit.Assert.assertTrue;
 //
 //public class ConditionResourceFTest extends TestBase {
 //

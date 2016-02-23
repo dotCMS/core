@@ -5,10 +5,10 @@ import java.util.List;
 
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

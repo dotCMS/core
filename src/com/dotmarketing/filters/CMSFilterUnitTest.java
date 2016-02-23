@@ -22,9 +22,9 @@ import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
 
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.repackage.org.mockito.Mockito;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.Mockito;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotHibernateException;

@@ -3,8 +3,8 @@ package com.dotmarketing.util;
 import com.dotcms.TestBase;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.com.csvreader.CsvReader;
-import com.dotcms.repackage.org.junit.BeforeClass;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -25,7 +25,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba

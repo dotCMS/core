@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.UtilMethods;

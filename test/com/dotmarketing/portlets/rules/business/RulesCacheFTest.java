@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.business;
 
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Test;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
@@ -16,8 +16,8 @@ import com.dotmarketing.portlets.rules.model.Rule;
 
 import java.util.*;
 
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class RulesCacheFTest {
 

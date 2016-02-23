@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.dotcms.repackage.junit.framework.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.repackage.org.junit.After;
+import org.junit.Test;
+import org.junit.After;
 import com.dotmarketing.portlets.rules.ApiRequest;
 import com.dotmarketing.portlets.rules.ParameterDataGen;
 import com.dotmarketing.portlets.rules.RuleDataGen;
@@ -22,8 +22,8 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 /**
  * jUnit test used to verify the results of calling the actionlets provided

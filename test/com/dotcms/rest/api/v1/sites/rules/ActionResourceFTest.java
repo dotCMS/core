@@ -8,8 +8,8 @@ import com.dotcms.repackage.javax.ws.rs.client.WebTarget;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
 import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Test;
 import com.dotcms.rest.api.FunctionalTestConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 public class ActionResourceFTest extends TestBase {
 

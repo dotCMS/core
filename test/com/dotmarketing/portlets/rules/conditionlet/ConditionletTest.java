@@ -18,9 +18,9 @@
 //
 //import com.dotcms.TestBase;
 //import com.dotcms.repackage.com.maxmind.geoip2.exception.GeoIp2Exception;
-//import com.dotcms.repackage.org.junit.Assert;
-//import com.dotcms.repackage.org.junit.Test;
-//import com.dotcms.repackage.org.mockito.Mockito;
+//import org.junit.Assert;
+//import org.junit.Test;
+//import org.mockito.Mockito;
 //import com.dotcms.util.GeoIp2CityDbUtil;
 //import com.dotmarketing.beans.Clickstream;
 //import com.dotmarketing.beans.ClickstreamRequest;

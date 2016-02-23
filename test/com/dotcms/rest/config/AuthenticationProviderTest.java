@@ -12,9 +12,9 @@
 //import org.junit.Test;
 //
 //import static com.dotcms.repackage.org.hamcrest.CoreMatchers.is;
-//import static com.dotcms.repackage.org.junit.Assert.assertThat;
-//import static com.dotcms.repackage.org.mockito.Mockito.mock;
-//import static com.dotcms.repackage.org.mockito.Mockito.when;
+//import static org.junit.Assert.assertThat;
+//import static org.mockito.Mockito.mock;
+//import static org.mockito.Mockito.when;
 //
 //public class AuthenticationProviderTest {
 //

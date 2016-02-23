@@ -1,7 +1,7 @@
 package com.dotmarketing.webdav;
 
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -17,7 +17,7 @@ import com.dotcms.repackage.com.ibm.icu.util.Calendar;
 import com.dotcms.repackage.junit.framework.Assert;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

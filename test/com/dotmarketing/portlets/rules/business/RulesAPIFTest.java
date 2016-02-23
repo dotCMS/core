@@ -18,8 +18,8 @@ import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotcms.TestBase;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -31,7 +31,7 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.servlets.test.ServletTestRunner;
 import com.liferay.portal.model.User;
 
-import static com.dotcms.repackage.org.junit.Assert.*;
+import static org.junit.Assert.*;
 
 public class RulesAPIFTest extends TestBase {
 

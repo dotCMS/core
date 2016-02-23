@@ -1,9 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.repackage.org.mockito.Mockito;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.util.WebKeys;
