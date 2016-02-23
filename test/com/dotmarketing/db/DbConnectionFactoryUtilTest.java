@@ -1,6 +1,6 @@
 package com.dotmarketing.db;
 
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

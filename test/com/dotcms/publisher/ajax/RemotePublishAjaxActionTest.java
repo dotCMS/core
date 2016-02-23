@@ -39,7 +39,7 @@ import com.dotcms.repackage.javax.ws.rs.core.Response;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.FormDataMultiPart;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.MultiPartFeature;
 import com.dotcms.repackage.org.glassfish.jersey.media.multipart.file.FileDataBodyPart;

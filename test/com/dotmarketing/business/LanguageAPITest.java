@@ -1,6 +1,6 @@
 package com.dotmarketing.business;
 
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import org.junit.Test;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 

@@ -5,7 +5,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;

@@ -14,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.TestBase;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.repackage.com.ibm.icu.util.Calendar;
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
 import com.dotcms.repackage.org.apache.commons.io.IOUtils;
 import org.junit.Test;

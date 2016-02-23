@@ -3,7 +3,7 @@ package com.dotmarketing.db;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.dotcms.repackage.junit.framework.Assert;
+import junit.framework.Assert;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 import org.junit.After;
 import org.junit.Before;
