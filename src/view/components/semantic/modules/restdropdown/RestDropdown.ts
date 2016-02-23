@@ -17,7 +17,8 @@ import {Observer} from "rxjs/Observer";
 })
 @View({
   template: `
-  <cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)">
+  <cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)" [maxSelections]="maxSelections"
+        [minSelections]="minSelections" [allowAdditions]="allowAdditions">
         <cw-input-option *ngFor="#opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
       </cw-input-dropdown>`,
   directives: [CORE_DIRECTIVES, Dropdown, InputOption]
@@ -60,6 +61,10 @@ export class RestDropdown {
       let requestOptionArgs = this._apiRoot.getDefaultRequestOptions()
       this._options = this._http.get(change.optionUrl.currentValue, requestOptionArgs)
           .map((res:any)=> this.jsonEntriesToOptions(res))
+    }
+
+    if(change.value && change.value.currentValue && change.value.currentValue.indexOf(',') > -1){
+        this.value = change.value.currentValue.split(',')
     }
   }
 
