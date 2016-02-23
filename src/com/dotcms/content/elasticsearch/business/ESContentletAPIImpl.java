@@ -4069,10 +4069,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
 							List<Contentlet> relatedCon = getRelatedContent(
 									con, rel, APILocator.getUserAPI()
 											.getSystemUser(), true);
+							// If there's a 1-N relationship and the parent 
+							// content is relating to a child that already has 
+							// a parent...
 							if (rel.getCardinality() == 0
 									&& relatedCon.size() > 0
 									&& !relatedCon.get(0).getIdentifier()
 											.equals(contentlet.getIdentifier())) {
+								StringBuilder error = new StringBuilder();
+								error.append("ERROR! Parent content [").append(contentlet.getIdentifier())
+										.append("] cannot be related to child content [").append(con.getIdentifier())
+										.append("] because it is already related to parent content [")
+										.append(relatedCon.get(0).getIdentifier()).append("]");
+								Logger.error(this, error.toString());
 								hasError = true;
 								cve.addBadCardinalityRelationship(rel, cons);
 							}
@@ -4093,7 +4102,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 						hasError = true;
 						cve.addRequiredRelationship(rel, cons);
 					}
+					// If there's a 1-N relationship and the child content is  
+					// trying to relate to one more parent...
 					if (rel.getCardinality() == 0 && cons.size() > 1) {
+						StringBuilder error = new StringBuilder();
+						error.append("ERROR! Child content [").append(contentlet.getIdentifier())
+								.append("] is already related to another parent content [");
+						for (Contentlet con : cons) {
+							error.append(con.getIdentifier()).append(", ");
+						}
+						error.append("]");
+						Logger.error(this, error.toString());
 						hasError = true;
 						cve.addBadCardinalityRelationship(rel, cons);
 					}
