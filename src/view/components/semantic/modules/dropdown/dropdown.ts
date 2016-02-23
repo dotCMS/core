@@ -213,11 +213,7 @@ export class Dropdown implements AfterViewInit, OnDestroy {
   onChange(value, text, $choice) {
     this.value = value
     if (this.change) {
-      if (this.isMultiSelect()) {
-        this.change.emit(this.value.split[','])
-      } else {
         this.change.emit(this.value)
-      }
     }
   }
 
