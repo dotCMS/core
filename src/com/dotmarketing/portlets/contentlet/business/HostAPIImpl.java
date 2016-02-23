@@ -21,6 +21,7 @@ import com.dotmarketing.business.query.SQLQueryFactory;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.VirtualLinksCache;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -472,7 +473,7 @@ public class HostAPIImpl implements HostAPI {
 				createSystemHost();
 			} else {
 			    final String systemHostId = (String) rs.get(0).get("id");
-			    this.systemHost =  APILocator.getHostAPI().DBSearch(systemHostId, user, respectFrontendRoles);
+			    this.systemHost = DBSearch(systemHostId, user, respectFrontendRoles);
 			}
 			if(rs.size() > 1){
 				Logger.fatal(this, "There is more than one working version of the system host!!");
@@ -856,7 +857,8 @@ public class HostAPIImpl implements HostAPI {
 		if (!UtilMethods.isSet(id))
 			return null;
 
-		String languageIdColumn = "language_id";
+		final String languageIdColumn = "language_id";
+		final String isDefaultColumn = "isDefault";
 
 		Structure st = CacheLocator.getContentTypeCache().getStructureByVelocityVarName("Host");
 		List<Field> fields = FieldsCache.getFieldsByStructureInode(st.getInode());
@@ -870,7 +872,7 @@ public class HostAPIImpl implements HostAPI {
 		}
 		sql.append(" FROM host ");
 		sql.append("WHERE identifier='" + id + "'");
-		//sql.append("working=" + DbConnectionFactory.getDBTrue().replaceAll("'", ""));
+		
 		SQLQueryFactory sqlQueryFactory = new SQLQueryFactory(sql.toString());
 		Query query = sqlQueryFactory.getQuery();
 
@@ -881,15 +883,21 @@ public class HostAPIImpl implements HostAPI {
 			return null;
 
 		Host host = new Host();
-
+		
 		for (String key: list.get(0).keySet()) {
+			Object value = list.get(0).get(key);
 			if ( key.equals(languageIdColumn) ) {
-				host.setProperty(Contentlet.LANGUAGEID_KEY, list.get(0).get(key));
+				host.setProperty(Contentlet.LANGUAGEID_KEY, value);
+			} if (key.equals(isDefaultColumn)) { 
+				host.setProperty(Host.IS_DEFAULT_KEY, DbConnectionFactory.isDBTrue(value.toString()));
 			} else {
-				host.setProperty(key, list.get(0).get(key));
+				host.setProperty(key, value);
 			}
 		}
 		host.setProperty(Contentlet.MOD_DATE_KEY, new Date());//We don't really need this value for the system host but to avoid problems casting that field....
+		if ("SYSTEM_HOST".equals(id)) {
+			host.setProperty(Host.SYSTEM_HOST_KEY, true);
+		}
 
 		return host;
 	}
