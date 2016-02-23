@@ -1,34 +1,24 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
+
+import java.util.Map;
+import java.util.Optional;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
-import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotcms.visitor.business.VisitorAPI;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.portlets.personas.business.PersonaAPI;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
-import com.dotmarketing.portlets.rules.parameter.display.DropdownInput;
 import com.dotmarketing.portlets.rules.parameter.display.RestDropdownInput;
-import com.dotmarketing.tag.business.TagAPI;
-import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.viewtools.TagsWebAPI;
-import com.liferay.portal.model.User;
-
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkState;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * Actionlet to add tags to the visitor object.
@@ -36,6 +26,7 @@ import javax.servlet.http.HttpServletResponse;
  * Adding tag values is allowed but those values won't be saved to
  * the system tag list, these are only part of the visitor object and
  * there are not persisted anywhere else.
+ * Maximum number of tags allowed is defined on MAX_TAGS;
  */
 public class VisitorTagsActionlet extends RuleActionlet<VisitorTagsActionlet.Instance> {
 
@@ -44,6 +35,8 @@ public class VisitorTagsActionlet extends RuleActionlet<VisitorTagsActionlet.Ins
     private final VisitorAPI visitorAPI;
 
     public static final String TAGS_KEY = "tags";
+
+    public static final int MAX_TAGS = Config.getIntProperty("api.system.ruleengine.actionlet.VisitorTagsActionlet.MAX_TAGS", 10);
 
     @SuppressWarnings("unused")
     public VisitorTagsActionlet() {
@@ -55,7 +48,7 @@ public class VisitorTagsActionlet extends RuleActionlet<VisitorTagsActionlet.Ins
     	super(I18N_BASE,
     			new ParameterDefinition<>(1,
     					TAGS_KEY,
-                        new RestDropdownInput("/api/v1/tags", "key", "label").minSelections(0).maxSelections(50).allowAdditions()));
+                        new RestDropdownInput("/api/v1/tags", "key", "label").minSelections(1).maxSelections(MAX_TAGS).allowAdditions()));
         this.visitorAPI = visitorAPI;
     }
 

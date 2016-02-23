@@ -1,14 +1,10 @@
 package com.dotcms.rest;
 
 import com.dotcms.rest.api.RestTransform;
-import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.tag.model.Tag;
 
 import java.util.function.Function;
 
-/**
- * @author Geoff M. Granum
- */
 public class TagTransform implements RestTransform<Tag, RestTag>{
 
     public TagTransform() {
