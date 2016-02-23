@@ -105,7 +105,7 @@ public class ServletTestRunner extends HttpServlet {
     private void xmlReport ( HttpServletResponse response, String className ) throws ServletException, IOException {
 
         //Running the given junit test class
-        JUnitCore jUnitCore = new JUnitCore();
+          jUnitCore = new JUnitCore();
 
         //Preparing the reports folder
         String logsDirectory = ConfigUtils.getDynamicContentPath() + "/logs/test/";
