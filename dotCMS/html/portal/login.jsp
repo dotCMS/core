@@ -167,7 +167,6 @@ if(errorMessage != null){
 
  -->
 
-<script type="text/javascript" src="/html/js/chrome_frame/CFInstall.min.js"></script>
 
 <style>
 	body{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;}
