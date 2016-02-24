@@ -21,8 +21,8 @@ import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.impl.dataobjec
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.CallContext;
 import com.dotcms.repackage.org.apache.chemistry.opencmis.commons.server.ObjectInfoHandler;
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotcms.enterprise.cmis.server.CMISManager;

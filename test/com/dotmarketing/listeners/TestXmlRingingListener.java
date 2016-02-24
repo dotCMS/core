@@ -5,10 +5,10 @@ import com.dotcms.repackage.org.dom4j.DocumentHelper;
 import com.dotcms.repackage.org.dom4j.Element;
 import com.dotcms.repackage.org.dom4j.io.OutputFormat;
 import com.dotcms.repackage.org.dom4j.io.XMLWriter;
-import com.dotcms.repackage.org.junit.runner.Description;
-import com.dotcms.repackage.org.junit.runner.Result;
-import com.dotcms.repackage.org.junit.runner.notification.Failure;
-import com.dotcms.repackage.org.junit.runner.notification.RunListener;
+import org.junit.runner.Description;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
 
 import javax.servlet.http.HttpServletResponse;
 
@@ -188,7 +188,7 @@ public class TestXmlRingingListener extends RunListener {
 
     /**
      * Called when a test will not be run, generally because a test method is annotated
-     * with {@link com.dotcms.repackage.org.junit.Ignore}.
+     * with {@link org.junit.Ignore}.
      *
      * @param description describes the test that will not be run
      */

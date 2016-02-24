@@ -5,8 +5,8 @@ import javax.servlet.http.HttpServletRequest;
 import com.dotcms.repackage.org.apache.commons.httpclient.NameValuePair;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.PostMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
-import com.dotcms.repackage.org.mockito.stubbing.Answer;
-import com.dotcms.repackage.org.mockito.Mockito;
+import org.mockito.stubbing.Answer;
+import org.mockito.Mockito;
 import com.dotcms.enterprise.LicenseUtil;
 
 /*
@@ -27,7 +27,7 @@ public class LicenseTestUtil {
 			final StringBuilder reqcode=new StringBuilder();
 
 			Mockito.doAnswer(new Answer() {
-			    public Object answer(com.dotcms.repackage.org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
+			    public Object answer(org.mockito.invocation.InvocationOnMock invocation) throws Throwable {
 			        reqcode.append(invocation.getArguments()[1].toString());
 			        return null;
 			    }

@@ -8,8 +8,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import com.dotcms.repackage.org.apache.commons.io.FileUtils;
-import com.dotcms.repackage.org.junit.AfterClass;
-import com.dotcms.repackage.org.junit.BeforeClass;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 
 import com.dotcms.TestBase;
 import com.dotmarketing.beans.Host;

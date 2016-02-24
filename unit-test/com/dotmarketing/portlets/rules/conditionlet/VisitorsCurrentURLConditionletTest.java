@@ -11,7 +11,7 @@ import static com.dotmarketing.portlets.rules.parameter.comparison.Comparison.RE
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.Mockito.mock;
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.List;

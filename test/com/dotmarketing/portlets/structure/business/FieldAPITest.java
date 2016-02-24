@@ -1,11 +1,11 @@
 package com.dotmarketing.portlets.structure.business;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.util.List;
 
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.Test;
 import com.dotcms.TestBase;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;

@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
-import com.dotcms.repackage.junit.framework.Assert;
-import com.dotcms.repackage.org.junit.Test;
+import junit.framework.Assert;
+import org.junit.Test;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.osgi.GenericBundleActivator;

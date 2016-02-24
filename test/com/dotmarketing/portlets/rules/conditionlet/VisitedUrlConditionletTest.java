@@ -16,12 +16,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import com.dotcms.repackage.org.junit.Assert;
-import com.dotcms.repackage.org.junit.Before;
-import com.dotcms.repackage.org.junit.Rule;
-import com.dotcms.repackage.org.junit.Test;
-import com.dotcms.repackage.org.junit.rules.ExpectedException;
-import com.dotcms.repackage.org.mockito.Mockito;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionlet.Instance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;

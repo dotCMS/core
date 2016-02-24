@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.TestBase;
 import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.junit.After;
-import com.dotcms.repackage.org.junit.Test;
+import org.junit.After;
+import org.junit.Test;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -20,8 +20,8 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
 
-import static com.dotcms.repackage.org.junit.Assert.assertEquals;
-import static com.dotcms.repackage.org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 /**
  * jUnit test used to verify the results of calling the actionlets provided
