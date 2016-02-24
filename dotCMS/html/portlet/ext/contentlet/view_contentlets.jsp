@@ -1,6 +1,5 @@
 <%@page import="com.dotcms.repackage.bsh.This"%>
 <%@page import="com.dotmarketing.util.Logger"%>
-<%@page import="org.mockito.internal.matchers.EndsWith"%>
 <%@ include file="/html/portlet/ext/contentlet/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
