@@ -49,7 +49,7 @@ public class TagResource {
         List<Tag> tags = getTagsInternal();
         Map<String, RestTag> hash = Maps.newHashMapWithExpectedSize(tags.size());
         for (Tag tag : tags) {
-            hash.put(tag.getTagId(), transform.appToRest(tag));
+            hash.put(tag.getTagName(), transform.appToRest(tag));
         }
         return hash;
     }
