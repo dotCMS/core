@@ -136,4 +136,8 @@ public class Log4jUtil {
         }
     }
 
+    public static LoggerContext getLoggerContext () {
+        return (LoggerContext) LogManager.getContext(false);
+    }
+
 }
