@@ -1,9 +1,13 @@
 package com.dotmarketing.osgi.hooks;
 
+import com.dotcms.repackage.org.apache.logging.log4j.LogManager;
+import com.dotcms.repackage.org.apache.logging.log4j.core.LoggerContext;
 import com.dotcms.repackage.org.osgi.framework.BundleContext;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.loggers.Log4jUtil;
 import com.dotmarketing.osgi.GenericBundleActivator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.util.Logger;
 
 /**
  * Created by Jonathan Gamba
@@ -13,6 +17,14 @@ public class Activator extends GenericBundleActivator {
 
     @SuppressWarnings ("unchecked")
     public void start ( BundleContext context ) throws Exception {
+
+        //Initializing log4j...
+        LoggerContext dotcmsLoggerContext = Log4jUtil.getLoggerContext();
+        //Initialing the log4j context of this plugin based on the dotCMS logger context
+        LogManager.getContext(this.getClass().getClassLoader(),
+                false,
+                dotcmsLoggerContext,
+                dotcmsLoggerContext.getConfigLocation());
 
         //Initializing services...
         initializeServices ( context );
@@ -25,9 +37,9 @@ public class Activator extends GenericBundleActivator {
         ContentletAPI conAPI = APILocator.getContentletAPI();
 
         Long count = conAPI.contentletCount();
-        System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
-        System.out.println( "ContentletAPI.contentletCount() = " + count );
-        System.out.println( "+++++++++++++++++++++++++++++++++++++++++++++++" );
+        Logger.info(this, "+++++++++++++++++++++++++++++++++++++++++++++++");
+        Logger.info(this, "ContentletAPI.contentletCount() = " + count);
+        Logger.info(this, "+++++++++++++++++++++++++++++++++++++++++++++++");
     }
 
     public void stop ( BundleContext context ) throws Exception {

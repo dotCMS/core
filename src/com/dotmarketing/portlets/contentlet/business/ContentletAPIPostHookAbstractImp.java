@@ -456,16 +456,23 @@ public abstract class ContentletAPIPostHookAbstractImp implements ContentletAPIP
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException{
 	}
 
-    @Override
     public void publishAssociated(Contentlet contentlet, boolean isNew)
             throws DotSecurityException, DotDataException,
             DotContentletStateException, DotStateException {
-        
     }
-    @Override
-    public void publishAssociated(Contentlet contentlet, boolean isNew,
+
+	public void publishAssociated(Contentlet contentlet, boolean isNew,
             boolean isNewVersion) throws DotSecurityException,
             DotDataException, DotContentletStateException, DotStateException {        
     }
+
+	public void refreshContentUnderFolderPath(String hostId, String folderPath) throws DotReindexStateException {
+	}
+
+	public void findContentletsByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+	}
+
+	public void deleteByHost(Host host, User user, boolean respectFrontendRoles) {
+	}
 
 }
