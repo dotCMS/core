@@ -921,6 +921,9 @@ public class DotConnect {
 		if (DbConnectionFactory.isOracle()) {
 			BigDecimal result = (BigDecimal) loadObjectResults().get(0).get("count");
 			recordCount = new Long(result.toPlainString());
+		} else if (DbConnectionFactory.isMsSql()) {
+			Integer result = (Integer) loadObjectResults().get(0).get("count");
+			recordCount = new Long(result.toString());
 		} else {
 			recordCount = (Long) loadObjectResults().get(0).get("count");
 		}
