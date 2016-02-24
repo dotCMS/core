@@ -306,6 +306,8 @@
         <antcall target="deploy-plugins" />
         <delete file="${lib.app}/junit-4.12.jar"/>
         <delete file="${lib.app}/mockito-core-1.10.19.jar"/>
+        <delete file="${lib.app}/objenesis-2.1.jar"/>
+
     </target>
 
     <target name="jsp" depends="compile">
