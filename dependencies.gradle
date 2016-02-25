@@ -2,7 +2,7 @@
 dependencies {
 
     compile group: 'com.dotcms.enterprise', name: 'ee', version: '81833c4-SNAPSHOT'
-    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '3.5'
+    compile group: 'com.dotcms.enterprise', name: 'eelic', version: '3.5-Preview01-1-gaeb6cd0-SNAPSHOT'
 
     compile group: 'com.dotcms', name: 'ant-tooling', version: '1.2'
 
