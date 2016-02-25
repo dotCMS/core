@@ -10,6 +10,8 @@ import java.util.List;
 
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.TestBase;
+import com.dotmarketing.portlets.HTMLPageAssetUtil;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.ContainerStructure;
@@ -57,7 +59,7 @@ public class LinkCheckerAPITest extends TestBase {
     protected static Container container=null;
     protected static String pageExt=null;
     protected static HTMLPage detailPage=null;
-    protected static List<Contentlet> pages=new ArrayList<Contentlet>();
+    protected static List<HTMLPageAsset> pages=new ArrayList<>();
 
     @BeforeClass
     public static void createStructure() throws Exception {
@@ -155,7 +157,7 @@ public class LinkCheckerAPITest extends TestBase {
 
             for(HTMLPage pp : APILocator.getHTMLPageAPI().findHtmlPages(sysuser, false, null, null, null, null, template.getIdentifier(), 0, -1, null))
             		APILocator.getHTMLPageAPI().delete((HTMLPage)pp, sysuser, false);
-            for(Contentlet pp : pages){
+            for(HTMLPageAsset pp : pages){
             		APILocator.getContentletAPI().delete(pp, sysuser, false,true);
             }
             APILocator.getTemplateAPI().delete(template, sysuser, false);
@@ -219,10 +221,14 @@ public class LinkCheckerAPITest extends TestBase {
         Folder Fa=APILocator.getFolderAPI().findFolderByPath("/a_test/", host, sysuser, false);
         Folder Fab=APILocator.getFolderAPI().findFolderByPath("/a_test/b_test", host, sysuser, false);
 
-        IHTMLPage page1=createDummyPage("index","index", "index", template, Fa, host, true);
-        IHTMLPage page2=createDummyPage("something","something", "something", template, Fa, host, true);
-        IHTMLPage page3=createDummyPage("index","index", "index", template, Fab, host, true);
-        IHTMLPage page4=createDummyPage("something","something", "something", template, Fab, host, true);
+        HTMLPageAsset page1 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fa, host);
+        pages.add(page1);
+        HTMLPageAsset page2 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fa, host);
+        pages.add(page2);
+        HTMLPageAsset page3 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fab, host);
+        pages.add(page3);
+        HTMLPageAsset page4 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fab, host);
+        pages.add(page4);
         
         extlinks=new String[] {
             page1.getURI(), page2.getURI(), page3.getURI(), page4.getURI(), // direct hit!
@@ -315,7 +321,8 @@ public class LinkCheckerAPITest extends TestBase {
         // now lets add some salt here. If the content is added in a page in host2 it
         // should break the internal links
         Folder home=APILocator.getFolderAPI().createFolders("/home/", host2, sysuser, false);
-        IHTMLPage page5=createDummyPage("something","something", "something", template, home, null, false);
+        HTMLPageAsset page5 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, home, host2);
+        pages.add(page5);
 
         con=new Contentlet();
         con.setStringProperty("html", "<html><body>" +
@@ -349,10 +356,14 @@ public class LinkCheckerAPITest extends TestBase {
         Folder Fahtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/", host, sysuser, false);
         Folder Fabhtml=APILocator.getFolderAPI().findFolderByPath("/a_html_asset_test/b_html_asset_test", host, sysuser, false);
         
-        IHTMLPage page6=createDummyPage("index","index", "index", template, Fahtml, host, true);
-        IHTMLPage page7=createDummyPage("something","something", "something", template, Fahtml, host,true);
-        IHTMLPage page8=createDummyPage("index","index", "index", template, Fabhtml, host, true);
-        IHTMLPage page9=createDummyPage("something","something", "something", template, Fabhtml, host, true);
+        HTMLPageAsset page6 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fahtml, host);
+        pages.add(page6);
+        HTMLPageAsset page7 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fahtml, host);
+        pages.add(page7);
+        HTMLPageAsset page8 = HTMLPageAssetUtil.createDummyPage("index","index", "index", template, Fabhtml, host);
+        pages.add(page8);
+        HTMLPageAsset page9 = HTMLPageAssetUtil.createDummyPage("something","something", "something", template, Fabhtml, host);
+        pages.add(page9);
         
         
         extlinks=new String[] {
@@ -432,57 +443,5 @@ public class LinkCheckerAPITest extends TestBase {
     public void findAllCount() {
 
     }
-    
-	/**
-	 * Creates a dummy page. This method is able to create both legacy HTML
-	 * Pages and the new Content Pages.
-	 * 
-	 * @param friendlyName
-	 *            - The human-readable page name.
-	 * @param URL
-	 *            - The name of the page in the URL.
-	 * @param title
-	 *            - The title of the HTML page.
-	 * @param template
-	 *            - The template that provides the layout of the page.
-	 * @param folder
-	 *            - The folder where the page will be placed.
-	 * @param host
-	 *            - The site where the page will be created.
-	 * @param isContent
-	 *            - If {@code true}, the page to create will be a Content Page.
-	 *            Otherwise, a legacy HTML page will be created.
-	 * @return The new {@link IHTML} page.
-	 * @throws DotDataException
-	 *             An error occurred when inserting information in the database.
-	 * @throws DotSecurityException
-	 *             The specified user does not have permission to perform the
-	 *             page creation action.
-	 */
-    private IHTMLPage createDummyPage(String friendlyName, String URL, String title, Template template, Folder folder, Host host, boolean isContent) throws DotDataException, DotSecurityException{
-    	if(isContent){
-    		Contentlet contentAsset=new Contentlet();
-            contentAsset.setStructureInode(HTMLPageAssetAPIImpl.DEFAULT_HTMLPAGE_ASSET_STRUCTURE_INODE);
-            contentAsset.setHost(host.getIdentifier());
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.FRIENDLY_NAME_FIELD, friendlyName);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.URL_FIELD, URL);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.TITLE_FIELD, title);
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.CACHE_TTL_FIELD, "0");
-            contentAsset.setProperty(HTMLPageAssetAPIImpl.TEMPLATE_FIELD, template.getIdentifier());
-            contentAsset.setFolder(folder.getInode());
-            contentAsset=APILocator.getContentletAPI().checkin(contentAsset, sysuser, false);
-            pages.add(contentAsset);
-            
-            return APILocator.getHTMLPageAssetAPI().fromContentlet(contentAsset);
-    	}
-    	
-    	HTMLPage page=new HTMLPage();
-        page.setFriendlyName(friendlyName);
-        page.setPageUrl(URL+"."+pageExt);
-        page.setTitle(title);
-        page.setTemplateId(template.getIdentifier());
-        page=APILocator.getHTMLPageAPI().saveHTMLPage(page, template, folder, sysuser, false);
-    	
-    	return page; 	
-    }
+
 }

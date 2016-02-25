@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
@@ -22,11 +23,15 @@ public class RulePermissionableUtil {
             User systemUser = APILocator.getUserAPI().getSystemUser();
             Identifier iden = APILocator.getIdentifierAPI().find(parent);
 
-            if(iden.getAssetType().equals("folder")){
-                pp = APILocator.getFolderAPI().find(parent,systemUser,false);
-            }else{
-                pp = APILocator.getContentletAPI()
-                        .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+            if(UtilMethods.isSet(iden) && UtilMethods.isSet(iden.getAssetType())){
+                if(iden.getAssetType().equals("folder")){
+                    pp = APILocator.getFolderAPI().find(parent,systemUser,false);
+                }else{
+                    pp = APILocator.getContentletAPI()
+                            .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                }
+            } else {
+                throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
             }
 
         } catch (DotSecurityException e) {

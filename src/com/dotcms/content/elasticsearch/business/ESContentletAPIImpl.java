@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotmarketing.exception.*;
 import org.springframework.beans.BeanUtils;
 
 import com.dotcms.content.business.DotMappingException;
@@ -67,10 +68,6 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotHibernateException;
-import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -1266,6 +1263,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	itr.remove();
             	noErrors = false;
                 continue;
+            }
+
+            //Remove Rules with this contentlet as Parent.
+            try{
+                APILocator.getRulesAPI().deleteRulesByParent(con, user, respectFrontendRoles);
+            } catch (InvalidLicenseException ilexp){
+                Logger.warn(this, "License is required to delete rules under pages") ;
             }
 
             catAPI.removeChildren(con, APILocator.getUserAPI().getSystemUser(), true);
@@ -4615,6 +4619,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
             	newIdentifier = newContentlet.getIdentifier();
 
             perAPI.copyPermissions(contentlet, newContentlet);
+
+            try{
+                APILocator.getRulesAPI().copyRulesByParent(contentlet, newContentlet, user, respectFrontendRoles);
+            } catch (InvalidLicenseException ilexp){
+                Logger.warn(this, "License is required to copy rules under pages") ;
+            }
 
             if(isContentletLive)
             	APILocator.getVersionableAPI().setLive(newContentlet);

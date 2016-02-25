@@ -13,7 +13,7 @@
 		<div class="subNavCrumbTrail">
 			<ul id="subNavCrumbUl">
 				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.ES_SEARCH_PORTLET")%></a>
+					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.RULES_ENGINE_PORTLET")%></a>
 				</li>
 
 			</ul>
@@ -43,10 +43,11 @@
   }
 
   var siteParam="realmId=<%=request.getParameter("id")%>";
+  var hideFireOnParam = "hideFireOn=true";
 
 	
   //Add param to the rules engine iframe.
-  document.getElementById("rulesIframe").src = "/html/js/_rulesengine?" + localeParam + "&" + siteParam;
+  document.getElementById("rulesIframe").src = "/html/js/_rulesengine?" + localeParam + "&" + siteParam + "&" + hideFireOnParam;
   
 
 

@@ -27,7 +27,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /** @author Hibernate CodeGenerator */
-public class Folder extends Inode implements Serializable, Permissionable, Treeable,Ruleable {
+public class Folder extends Inode implements Serializable, Permissionable, Treeable, Ruleable {
 
 	private static final long serialVersionUID = 1L;
 

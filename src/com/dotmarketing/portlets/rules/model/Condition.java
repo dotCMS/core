@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
@@ -27,6 +28,25 @@ public class Condition implements RuleComponentModel, Serializable, Comparable<C
     private LogicalOperator operator;
     private int priority;
     private transient Conditionlet conditionlet;
+
+    public Condition(){
+
+    }
+
+    public Condition(Condition conditionToCopy){
+        id = conditionToCopy.id;
+        conditionletId = conditionToCopy.conditionletId;
+        conditionGroup = conditionToCopy.conditionGroup;
+        if(conditionToCopy.getValues() != null){
+            values = Lists.newArrayList();
+            for (ParameterModel value : conditionToCopy.getValues()) {
+                values.add(new ParameterModel(value));
+            }
+        }
+        modDate = conditionToCopy.modDate;
+        operator = conditionToCopy.operator;
+        priority = conditionToCopy.priority;
+    }
 
     public String getId() {
         return id;
