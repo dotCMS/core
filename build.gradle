@@ -7,6 +7,7 @@ configurations {
     ext.rulesEngineFolder ="dotCMS/html/js/_rulesengine"
     ext.libsFolder = "dotCMS/WEB-INF/lib"
     ext.felixFolder = "dotCMS/WEB-INF/felix/bundle"
+    ext.testLibsFolder = "libs/test"
 }
 //Import and apply the dependencies from the dependencies scripts
 apply from: "$rootDir/dependencies.gradle"
@@ -23,6 +24,21 @@ repositories {
     maven { url "http://repo.dotcms.com/artifactory/libs-snapshot-local" }
 }
 
+//Syncing the dotCMS/WEB-INF/lib folder
+task webinfLibs(type: Sync) {
+    from configurations.compile
+    into configurations.libsFolder
+
+    exclude '**/dot.org.apache.felix.bundlerepository*.jar'
+    exclude '**/dot.org.apache.felix.fileinstall*.jar'
+    exclude '**/dot.org.apache.felix.gogo.*.jar'
+    exclude '**/junit-*.jar'
+    exclude '**/objenesis-*.jar'
+    exclude '**/mockito-core-*.jar'
+    exclude '**/*.zip'
+}
+webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
+
 task copyToLib {
     copy {
         from configurations.compile
@@ -32,17 +48,15 @@ task copyToLib {
         include '**/dot.org.apache.felix.fileinstall*.jar'
         include '**/dot.org.apache.felix.gogo.*.jar'
         include '**/dot.org.apache.felix.http.bundle*.jar'
-
     }
 
     copy {
         from configurations.compile
-        into configurations.libsFolder
+        into configurations.testLibsFolder
 
-        exclude '**/dot.org.apache.felix.bundlerepository*.jar'
-        exclude '**/dot.org.apache.felix.fileinstall*.jar'
-        exclude '**/dot.org.apache.felix.gogo.*.jar'
-        exclude '**/*.zip'       
+        include '**/junit-*.jar'
+        include '**/objenesis-*.jar'
+        include '**/mockito-core-*.jar'
     }
 
     copy {
@@ -61,9 +75,9 @@ task copyToLib {
     }
 }
 
-copyToLib.description = 'Synchronizes the dependencies with the libs folders (dotCMS/WEB-INF/lib, dotCMS/WEB-INF/felix/bundle) and copies the starter.zip'
+copyToLib.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/felix/bundle folder, copies the starter.zip and the core-web project files'
 
-dependencies { 
+dependencies {
     antLibs group: 'org.apache.ant', name: 'ant-junit', version: '1.9.3'
     antLibs group: 'ant-contrib', name: 'ant-contrib', version: '1.0b3'
 }
@@ -71,7 +85,8 @@ dependencies {
 ClassLoader antClassLoader = org.apache.tools.ant.Project.class.classLoader
 configurations.antLibs.each { File f -> antClassLoader.addURL(f.toURI().toURL()) }
 
-//Move the dependencies to the WEB-INF/lib folder
+//Moving dependencies
+tasks.webinfLibs.execute()
 tasks.copyToLib.execute()
 
 ant.importBuild 'build.xml'

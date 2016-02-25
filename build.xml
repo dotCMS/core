@@ -58,6 +58,35 @@
         <pathelement path="${build.classes}" />
     </path>
 
+    <path id="tests-classpath">
+        <pathelement location="${java.home}/../lib/tools.jar"/>
+
+        <fileset dir="libs/test">
+            <include name="*.jar" />
+        </fileset>
+
+        <fileset dir="libs/buildlibs">
+            <include name="*.jar" />
+        </fileset>
+
+        <!--We should be able to remove it soon-->
+        <fileset dir="libs/buildlibs/jsp">
+            <include name="jasper.jar" />
+            <include name="jasper-el.jar" />
+            <include name="el-api.jar" />
+            <include name="tomcat-util.jar" />
+            <include name="tomcat-juli.jar" />
+            <include name="tomcat-api.jar" />
+        </fileset>
+        <!--We should be able to remove it soon-->
+
+        <fileset dir="${lib.app}">
+            <include name="**/*.jar" />
+            <exclude name="**/dotcms_*.jar" />
+        </fileset>
+        <pathelement path="${build.classes}" />
+    </path>
+
     <path id="files-classpath">
         <pathelement location="${java.home}/../lib/tools.jar"/>
 
@@ -304,10 +333,6 @@
         </delete>
         <copy file="${build.lib}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" tofile="${deploy.dir}/dotcms_${dotcms.release.version}_${dotcms.release.build}.jar" />
         <antcall target="deploy-plugins" />
-        <delete file="${lib.app}/junit-4.12.jar"/>
-        <delete file="${lib.app}/mockito-core-1.10.19.jar"/>
-        <delete file="${lib.app}/objenesis-2.1.jar"/>
-
     </target>
 
     <target name="jsp" depends="compile">
@@ -486,7 +511,7 @@
     <target name="create-jar-tests" depends="prepare,compile" description="Compiles all test source code and outputs a jar with the tests only">
         <mkdir dir="${build.dir}/testbuild" />
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.dir}/testbuild" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
-            <classpath refid="files-classpath" />
+            <classpath refid="tests-classpath" />
         </javac>
         <copy todir="${build.dir}/testbuild">
             <fileset dir="${src.tests.dir}">
@@ -495,6 +520,11 @@
         </copy>
         <jar jarfile="${distribution.file.output}/dotcms_tests_${dotcms.release.version}.jar" basedir="${build.dir}/testbuild" />
 
+        <copy todir="${distribution.file.output}">
+            <fileset dir="libs/test/">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
     </target>
 
     <target name="uncomment-test-servlet" description="By default we need ServletTestRunner to be commented in web.xml so deployments doesn't have /servlet/test as a public endpoint.">
