@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.model;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
@@ -20,6 +21,24 @@ public class ConditionGroup implements Serializable, Comparable<ConditionGroup> 
     private Date modDate;
     private int priority;
     List<Condition> conditions;
+
+    public ConditionGroup(){
+
+    }
+
+    public ConditionGroup(ConditionGroup conditionGroupToCopy){
+        id = conditionGroupToCopy.id;
+        ruleId = conditionGroupToCopy.ruleId;
+        operator = conditionGroupToCopy.operator;
+        modDate = conditionGroupToCopy.modDate;
+        priority = conditionGroupToCopy.priority;
+        if(conditionGroupToCopy.getConditions() != null) {
+            conditions = Lists.newArrayList();
+            for (Condition condition : conditionGroupToCopy.getConditions()) {
+                conditions.add(new Condition(condition));
+            }
+        }
+    }
 
     public String getId() {
         return id;

@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
 import com.dotcms.repackage.com.fasterxml.jackson.annotation.JsonIgnore;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionSummary;
@@ -70,6 +71,34 @@ public class Rule implements Permissionable, Serializable {
     private List<ConditionGroup> groups;
     private List<RuleAction> ruleActions;
     private Permissionable parentPermissionable;
+
+    public Rule(){
+
+    }
+
+    public Rule(Rule ruleToCopy) {
+        id = ruleToCopy.id;
+        name = ruleToCopy.name;
+        fireOn = ruleToCopy.fireOn;
+        shortCircuit = ruleToCopy.shortCircuit;
+        parent = ruleToCopy.parent;
+        folder = ruleToCopy.folder;
+        priority = ruleToCopy.priority;
+        enabled = ruleToCopy.enabled;
+        modDate = ruleToCopy.modDate;
+        if(ruleToCopy.getGroups() != null) {
+            groups = Lists.newArrayList();
+            for (ConditionGroup group : ruleToCopy.getGroups()) {
+                groups.add(new ConditionGroup(group));
+            }
+        }
+        if(ruleToCopy.getRuleActions() != null){
+            ruleActions = Lists.newArrayList();
+            for (RuleAction ruleAction : ruleToCopy.getRuleActions()) {
+                ruleActions.add(new RuleAction(ruleAction));
+            }
+        }
+    }
 
     public String getParent() {
 		return parent;

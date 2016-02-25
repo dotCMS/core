@@ -130,10 +130,10 @@ public class HTMLPageAsset extends Contentlet implements IHTMLPage {
         map.put("friendlyName", getFriendlyName());
         
         try {
-            map.put("live", isLive());
-            map.put("working", isWorking());
-            map.put("deleted", isArchived());
-            map.put("locked", isLocked());
+            map.put("live", map.containsKey("live") ? map.get("live") : isLive());
+            map.put("working", map.containsKey("working") ? map.get("working") : isWorking());
+            map.put("deleted", map.containsKey("deleted") ? map.get("deleted") : isArchived());
+            map.put("locked", map.containsKey("locked") ? map.get("locked") : isLocked());
         }
         catch(Exception ex) {
             throw new DotRuntimeException(ex.getMessage(),ex);

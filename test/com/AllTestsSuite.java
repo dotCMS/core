@@ -2,6 +2,7 @@ package com;
 
 
 //import com.dotcms.rest.api.v1.system.conditionlet.UsersCountryConditionletFTest;
+import com.dotmarketing.portlets.rules.RulesUnderPageAssetsFTest;
 import com.dotmarketing.portlets.rules.business.RulesAPIFTest;
 //import com.dotmarketing.portlets.rules.conditionlet.ConditionletTest;
 
@@ -127,7 +128,8 @@ import com.dotmarketing.webdav.WebDavTest;
     VisitedUrlConditionletFTest.class,
 	CurrentSessionLanguageConditionletFTest.class,
 	CurrentSessionLanguageConditionletTest.class,
-	TagAPITest.class
+	TagAPITest.class,
+	RulesUnderPageAssetsFTest.class
 })
 public class AllTestsSuite {
 

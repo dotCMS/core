@@ -51,7 +51,7 @@ import com.liferay.portal.model.User;
  * @author David Tores
  *
  */
-public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Exportable, Importable,Treeable, Ruleable  {
+public class Contentlet implements Serializable, Permissionable, Categorizable, Versionable, Exportable, Importable, Treeable, Ruleable  {
 
     private static final long serialVersionUID = 1L;
     public static final String INODE_KEY = "inode";

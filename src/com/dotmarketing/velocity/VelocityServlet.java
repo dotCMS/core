@@ -560,6 +560,9 @@ public abstract class VelocityServlet extends HttpServlet {
     			}
     		}
 
+			//Fire the page rules until we know we have permission.
+			RulesEngine.fireRules(request, response, page, Rule.FireOn.EVERY_PAGE);
+
     		Logger.debug(VelocityServlet.class, "Recording the ClickStream");
     		if(Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
     			if (user != null) {

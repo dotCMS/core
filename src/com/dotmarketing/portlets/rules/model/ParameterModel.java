@@ -15,6 +15,14 @@ public class ParameterModel implements Serializable {
     public ParameterModel() {
     }
 
+	public ParameterModel(ParameterModel parameterModelToCopy){
+		id = parameterModelToCopy.id;
+		ownerId = parameterModelToCopy.ownerId;
+		key = parameterModelToCopy.key;
+		value = parameterModelToCopy.value;
+		priority = parameterModelToCopy.priority;
+	}
+
     public ParameterModel(String key, String value) {
         this.key = key;
         this.value = value;
