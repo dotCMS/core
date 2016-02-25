@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.rules.parameter.display;
 
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotcms.rest.exception.InvalidConditionParameterException;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import com.dotmarketing.util.Logger;
@@ -107,17 +107,17 @@ public class DropdownInput extends TextInput<TextType> {
     }
 
     @Override
-    public void checkValid(String value) throws InvalidConditionParameterException, RuleEngineException{
+    public void checkValid(String value) throws InvalidRuleParameterException, RuleEngineException{
         if(allowAdditions)
         	try{
         		this.getDataType().checkValid(value);
         	}catch(Exception e){
         		Logger.error(this.getClass(), e.getMessage(), e);
-        		throw new RuleEngineException(e.getMessage());
+        		throw new InvalidRuleParameterException(e.getMessage());
         	}
         else
         	if(!options.containsKey(value))
-        		throw new InvalidConditionParameterException("Parameter '%s' is not allowed.  Additions are not allowed on the dropdown",value);
+        		throw new InvalidRuleParameterException("Parameter '%s' is not allowed.  Additions are not allowed on the dropdown",value);
     }
 }
 

@@ -1,6 +1,13 @@
 package com.dotmarketing.portlets.rules.parameter.display;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import com.dotcms.repackage.edu.emory.mathcs.backport.java.util.Arrays;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
+import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
+import com.dotmarketing.util.Logger;
 
 /**
  * Defines a Select input field that populates its Options from the values returned by a call to
@@ -84,5 +91,28 @@ public class RestDropdownInput extends TextInput<TextType> {
     public String getJsonLabelField() {
         return jsonLabelField;
     }
+
+    @Override
+    /**
+     * Does not allow duplicate values
+     */
+    public void checkValid(final String value) throws InvalidRuleParameterException, RuleEngineException{
+    	if(value==null)
+    		throw new InvalidRuleParameterException("Null is not a valid parameter value");
+    	try{
+    		this.getDataType().checkValid(value);
+    	}catch(Exception e){
+    		Logger.error(this.getClass(), e.getMessage(), e);
+    		throw new InvalidRuleParameterException(e.getMessage());
+    	}
+        if(maxSelections > 1){
+	        String[] values = value.split(",");
+			Set<String> uniqueValues = new HashSet<String>();
+			for (String currentValue : values){
+				if(!uniqueValues.add(currentValue))
+					throw new InvalidRuleParameterException("Parameter '%s' is duplicated.  Duplicated values are not allowed on the dropdown", currentValue);
+			}
+        }
+    }
 }
- 
+
