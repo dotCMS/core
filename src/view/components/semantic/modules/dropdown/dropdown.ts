@@ -155,7 +155,9 @@ export class Dropdown implements AfterViewInit, OnDestroy {
         return this.onLabelSelect($selectedLabels)
       },
       onNoResults: (searchValue)=> {
-        badSearch = searchValue
+        if(!this.allowAdditions){
+            badSearch = searchValue
+        }
         return this.onNoResults(searchValue)
       },
       onShow: ()=> {
