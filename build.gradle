@@ -33,8 +33,6 @@ task webinfLibs(type: Sync) {
     exclude '**/dot.org.apache.felix.fileinstall*.jar'
     exclude '**/dot.org.apache.felix.gogo.*.jar'
     exclude '**/junit-*.jar'
-    exclude '**/objenesis-*.jar'
-    exclude '**/mockito-core-*.jar'
     exclude '**/*.zip'
 }
 webinfLibs.description = 'Synchronizes the dependencies with the dotCMS/WEB-INF/lib folder'
@@ -55,8 +53,6 @@ task copyToLib {
         into configurations.testLibsFolder
 
         include '**/junit-*.jar'
-        include '**/objenesis-*.jar'
-        include '**/mockito-core-*.jar'
     }
 
     copy {
