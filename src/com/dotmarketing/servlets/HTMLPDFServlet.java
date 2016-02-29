@@ -137,7 +137,7 @@ public class HTMLPDFServlet extends VelocityServlet {
 
 
 
-		resp.setHeader("Content-Disposition", "attachment; filename=" + fName);
+		resp.setHeader("Content-Disposition", "attachment; filename=\"" + fName + "\"");
 		HttpSession session = req.getSession();
 		String reqURI = req.getRequestURI();
 
