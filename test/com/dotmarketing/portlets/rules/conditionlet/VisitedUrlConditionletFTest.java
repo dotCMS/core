@@ -67,11 +67,11 @@ public class VisitedUrlConditionletFTest {
         Condition condition = conditionDataGen.next();
         condition.setConditionletId(VisitedUrlConditionlet.class.getSimpleName());
         condition.addValue(Conditionlet.COMPARISON_KEY, IS.getId());
-        condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/index");
+        condition.addValue(VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/about-us/");
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        URLConnection conn = apiRequest.makeRequest("about-us/");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/");
         assertEquals("Specified response header should be present in the Response.", value,
@@ -159,10 +159,10 @@ public class VisitedUrlConditionletFTest {
         createRandomSetResponseHeaderRule(condition, randomKey, value);
 
         ApiRequest apiRequest = new ApiRequest(request);
-        URLConnection conn = apiRequest.makeRequest("about-us/index");
+        URLConnection conn = apiRequest.makeRequest("about-us/");
         assertNull("Specified response header should be NOT present in the Response.", conn.getHeaderField(randomKey));
         conn = apiRequest.makeRequest("products/");
-        conn = apiRequest.makeRequest("about-us/index");
+        conn = apiRequest.makeRequest("about-us/");
         assertEquals("Specified response header should be present in the Response.", value,
                 conn.getHeaderField(randomKey));
     }
