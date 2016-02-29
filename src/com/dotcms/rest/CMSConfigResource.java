@@ -336,7 +336,8 @@ public class CMSConfigResource {
                                         @FormParam ("type") String type,
                                         @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "9" );
+        //InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, true, request, true, "9" );
+        InitDataObject initData = webResource.init( "environment/" + environment, true, request, true, "9" );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "environment", environment );
