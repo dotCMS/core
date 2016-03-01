@@ -2538,7 +2538,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						throw new DotDataException(e.getMessage());
 					}
 					
-					Logger.debug(this.getClass(), "Loading Permissions for Permissionable: "+ permissionable.getPermissionId());
+					Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - started");
 
 					DotConnect dc1 = new DotConnect();
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
@@ -2577,6 +2577,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						HibernateUtil.rollbackTransaction();
 					}
 					throw new DotDataException(exception.getMessage(), exception);
+				}finally {
+		            Logger.debug(this.getClass(), "PERMDEBUG: " + Thread.currentThread().getName() + " - " + permissionable.getPermissionId() + " - ended");
 				}
 
 				bitPermissionsList = inheritedPermissions;
