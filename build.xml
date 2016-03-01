@@ -497,6 +497,13 @@
     </target>
 
     <target name="compile-tests" depends="prepare,compile,deploy-config" description="Compiles all test source code.">
+
+        <copy todir="${lib.app}">
+            <fileset dir="libs/test/">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+
         <javac encoding="UTF-8" debug="true" debuglevel="lines,vars,source" fork="true" srcdir="${src.tests.dir}" destdir="${build.classes}" source="1.8" target="1.8" compiler="javac1.8" nowarn="true" optimize="true" memoryinitialsize="256m" memorymaximumsize="512m">
             <classpath refid="files-classpath" />
         </javac>
