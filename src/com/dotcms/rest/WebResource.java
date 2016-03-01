@@ -345,7 +345,10 @@ public final class WebResource {
         for (int i=0; i < pathParts.length/2; i++) {
             String key = pathParts[2*i].toLowerCase();
             String value = pathParts[2*i+1];
-            pathMap.put(key, value);
+
+            if (!value.toLowerCase().equals("null")) {
+                pathMap.put(key, value);
+            }
         }
         return pathMap;
     }
