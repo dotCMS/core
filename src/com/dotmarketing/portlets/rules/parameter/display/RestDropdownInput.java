@@ -91,28 +91,5 @@ public class RestDropdownInput extends TextInput<TextType> {
     public String getJsonLabelField() {
         return jsonLabelField;
     }
-
-    @Override
-    /**
-     * Does not allow duplicate values
-     */
-    public void checkValid(final String value) throws InvalidRuleParameterException, RuleEngineException{
-    	if(value==null)
-    		throw new InvalidRuleParameterException("Null is not a valid parameter value");
-    	try{
-    		this.getDataType().checkValid(value);
-    	}catch(Exception e){
-    		Logger.error(this.getClass(), e.getMessage(), e);
-    		throw new InvalidRuleParameterException(e.getMessage());
-    	}
-        if(maxSelections > 1){
-	        String[] values = value.split(",");
-			Set<String> uniqueValues = new HashSet<String>();
-			for (String currentValue : values){
-				if(!uniqueValues.add(currentValue))
-					throw new InvalidRuleParameterException("Parameter '%s' is duplicated.  Duplicated values are not allowed on the dropdown", currentValue);
-			}
-        }
-    }
 }
 
