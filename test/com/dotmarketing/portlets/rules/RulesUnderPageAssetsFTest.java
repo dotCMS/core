@@ -58,6 +58,9 @@ public class RulesUnderPageAssetsFTest extends TestBase {
         int serverPort = request.getServerPort();
         robotsTxtUrl = String.format("http://%s:%s/robots.txt?t=", serverName, serverPort);
         indexUrl = String.format("http://%s:%s", serverName, serverPort);
+
+        //Clean the Attribute.
+        request.getServletContext().removeAttribute("count-" + Rule.FireOn.EVERY_PAGE.getCamelCaseName());
     }
 
     //Test firing rules only on live pages.
