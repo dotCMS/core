@@ -1164,7 +1164,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	@Override
 	protected List<Permission> getInheritablePermissions(Permissionable permissionable, boolean bitPermissions) throws DotDataException {
 		List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-		if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
+		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 			bitPermissionsList = loadPermissions(permissionable);
 		}
 
@@ -1194,7 +1194,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
         //Checking individual permissions
         List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache( permissionable.getPermissionId() );
-        if ( bitPermissionsList == null ) {//Already in cache
+        if ( bitPermissionsList == null || bitPermissionsList.isEmpty()) {//Already in cache
             bitPermissionsList = loadPermissions( permissionable );
             permissionCache.addToPermissionCache( permissionable.getPermissionId(), bitPermissionsList );
         }
@@ -1212,11 +1212,11 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 		List<Permission> bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
+		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 			synchronized(permissionable.getPermissionId().intern()){
 				//Checking individual permissions
 				bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
-				if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
+				if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}
@@ -1247,13 +1247,13 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 
 		//No permissions in cache have to look for individual permissions or inherited permissions
-		if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
+		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 			synchronized(permissionable.getPermissionId().intern()){
 
 				if(!forceLoadFromDB)
 					bitPermissionsList = permissionCache.getPermissionsFromCache(permissionable.getPermissionId());
 				//Checking individual permissions
-				if(bitPermissionsList == null || bitPermissionsList.size() == 0) {
+				if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 					bitPermissionsList = loadPermissions(permissionable);
 					permissionCache.addToPermissionCache(permissionable.getPermissionId(), bitPermissionsList);
 				}
@@ -2462,7 +2462,7 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			p.setBitPermission(true);
 		}
 		//Check permission reference
-		if(bitPermissionsList.size() == 0) {
+		if(bitPermissionsList == null || bitPermissionsList.isEmpty()) {
 			synchronized(permissionable.getPermissionId().intern()) {
 				//Need to determine who this asset should inherit from
 				String type = permissionable.getClass().getCanonicalName();
@@ -2537,6 +2537,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 					catch(Exception e){
 						throw new DotDataException(e.getMessage());
 					}
+					
+					Logger.debug(this.getClass(), "Loading Permissions for Permissionable: "+ permissionable.getPermissionId());
 
 					DotConnect dc1 = new DotConnect();
 					dc1.setSQL("SELECT inode FROM inode WHERE inode = ?");
