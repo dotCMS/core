@@ -346,7 +346,7 @@ public final class WebResource {
             String key = pathParts[2*i].toLowerCase();
             String value = pathParts[2*i+1];
 
-            if (!value.toLowerCase().equals("null")) {
+            if (UtilMethods.isSet(value)) {
                 pathMap.put(key, value);
             }
         }
