@@ -202,18 +202,28 @@ public class StructureFactory {
      * @param type: Integer type, according to valid content types specified in Structure.java class
      * @return structures: List of Structures 
      */
-	public static List<Structure> getAllStructuresByType(int type)
+	public static List<Structure> getAllStructuresByType(int structureType)
     {
         List<Structure> structures = new ArrayList<Structure>();
-        if(UtilMethods.isSet(type) && type <= 0){
+        if(UtilMethods.isSet(structureType) && structureType <= 0){
             //Invalid Type. Return empty list
             return structures;
         }
-        String condition = "structuretype = " + type;
-        String orderBy = "name";
-        String direction = "asc";
-        int limit = -1; 
-        structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
+        
+        structures = CacheLocator.getContentTypeCache().getStructuresByType(structureType);
+        
+        if(structures == null || structures.isEmpty()){
+            String condition = "structuretype = " + structureType;
+            String orderBy = "name";
+            String direction = "asc";
+            int limit = -1; 
+            structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
+        }
+        
+        if(!structures.isEmpty()){
+            CacheLocator.getContentTypeCache().addStructuresByType(structures, structureType);
+        }
+        
         return structures;
     }
 

@@ -23,7 +23,7 @@ public class TagCacheImpl extends TagCache {
     private String byHostCacheGroup = "tagsByHostCache";
 
     //Region's name for the cache
-    private String[] groupNames = { primaryGroup, byNameCacheGroup };
+    private String[] groupNames = { primaryGroup, byNameCacheGroup, byNameAndHostCacheGroup, byInodeCacheGroup, byHostCacheGroup};
 
     public TagCacheImpl () {
         cache = CacheLocator.getCacheAdministrator();
@@ -133,12 +133,10 @@ public class TagCacheImpl extends TagCache {
     }
 
     @Override
-    public void clearCache () {
-        cache.flushGroup(getPrimaryGroup());
-        cache.flushGroup(getTagByNameHostGroup());
-        cache.flushGroup(getTagsByNameGroup());
-        cache.flushGroup(getTagsByHostGroup());
-        cache.flushGroup(getTagsByInodeGroup());
+    public void clearCache() {
+        for (String cacheGroup : getGroups()) {
+            cache.flushGroup(cacheGroup);
+        }
     }
 
     @Override
