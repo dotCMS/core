@@ -213,15 +213,38 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertTemplateReferencesToAHostSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 		"insert into permission_reference (asset_id, reference_id, permission_type) " +
-		"select ":
-		 DbConnectionFactory.isOracle() ?
+		"select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident, " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		"insert into permission_reference (asset_id, reference_id, permission_type) " +
+		"select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		:
+		DbConnectionFactory.isOracle() ?
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"select permission_reference_seq.NEXTVAL, ":
+		"select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		:
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"select nextval('permission_reference_seq'), ") +
-		"ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"select nextval('permission_reference_seq'), ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenTemplateSQL + " and " +
 		"		 identifier.id not in (select inode_id from permission " +
@@ -1500,6 +1523,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(this.insertTemplateReferencesToAHostSQL);
 						dc.addParam(permissionable.getPermissionId());
 						dc.addParam(permissionable.getPermissionId());
+
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertTemplateReferencesToAHostSQL=" + insertTemplateReferencesToAHostSQL);
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 						dc.loadResult();
 
 						// Retrieving the list of templates changed to clear
@@ -1705,9 +1732,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						// Under any folder
 						dc.addParam(path + "%");
 						dc.addParam(path + "%");
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertContentReferencesByPathSQL=" + insertContentReferencesByPathSQL);
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 						dc.loadResult();
 
 						// Retrieving the list of links changed to clear their
@@ -2863,6 +2887,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(insertTemplateReferencesToAHostSQL);
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
+
+				Logger.info(PermissionBitFactoryImpl.class, "JBG:insertTemplateReferencesToAHostSQL=" + insertTemplateReferencesToAHostSQL);
+				Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 				dc.loadResult();
 				//Retrieving the list of templates to clear their caches later
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
@@ -3018,10 +3046,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
-
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:insertContentReferencesByPathSQL=" + insertContentReferencesByPathSQL);
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 			dc.loadResult();
 			//Retrieving the list of content changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
