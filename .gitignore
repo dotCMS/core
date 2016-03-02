@@ -46,6 +46,7 @@ Thumbs.db
 # Build #
 ######################
 dotCMS/WEB-INF/classes/
+libs/test
 build/
 out/
 dotCMS/WEB-INF/generated_web.xml
