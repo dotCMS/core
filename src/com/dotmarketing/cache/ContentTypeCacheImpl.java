@@ -43,6 +43,7 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
         cache.put(primaryGroup + velocityVarName, st, primaryGroup);
         if (UtilMethods.isSet(velocityVarName))
         	cache.put(primaryGroup + velocityVarName.toLowerCase(), st, primaryGroup);
+        removeStructuresByType(st.getStructureType());
 	}
     
     /*public static Structure getStructureByInode(long inode){
@@ -180,6 +181,7 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
         cache.remove(primaryGroup + inode,primaryGroup);
         cache.remove(primaryGroup + structureName,primaryGroup);
         clearURLMasterPattern();
+        removeStructuresByType(st.getStructureType());
     }
 
     public String getURLMasterPattern() throws DotCacheException {
