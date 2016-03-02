@@ -135,13 +135,13 @@ export class I18nService {
       })
       cNode.$markAsLoading(promise)
     } else {
-      console.log("I18n", "Awaiting: ", msgKey)
+      // console.log("I18n", "Awaiting: ", msgKey)
 
     }
     return Observable.defer(()=> {
       return Observable.create((obs:Observer<string>  )=> {
         if (cNode._loading == null) {
-          console.log("I18n", "Failed: ", msgKey, "=", cNode)
+          // console.log("I18n", "Failed: ", msgKey, "=", cNode)
           obs.next("-I18nLoadFailed-")
           obs.complete()
         } else {
@@ -150,7 +150,7 @@ export class I18nService {
             if(!cNode.$isLeaf() ){
                 if(forceText){
                   v = defaultValue
-                  console.log("Misconfigured resource:", msgKey )
+                  // console.log("Misconfigured resource:", msgKey )
                 } else {
                   v = cNode
                 }

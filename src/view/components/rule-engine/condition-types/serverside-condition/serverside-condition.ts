@@ -1,6 +1,6 @@
-import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy} from 'angular2/core';
-import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES} from 'angular2/common';
-import {Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
+import {Component, Input, Output, EventEmitter, ChangeDetectionStrategy, provide} from 'angular2/core';
+import {Control, Validators, CORE_DIRECTIVES, FormBuilder, FORM_DIRECTIVES, NG_VALUE_ACCESSOR} from 'angular2/common';
+import { Dropdown, InputOption} from '../../../../../view/components/semantic/modules/dropdown/dropdown'
 
 import {InputText} from "../../../semantic/elements/input-text/input-text";
 import {InputDate} from "../../../semantic/elements/input-date/input-date";
@@ -21,20 +21,19 @@ import {Verify} from "../../../../../api/validation/Verify";
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<form>
   <div flex layout="row" class="cw-condition-component-body">
-
     <template ngFor #input [ngForOf]="_inputs" #islast="last">
       <div *ngIf="input.type == 'spacer'" flex class="cw-input cw-input-placeholder">&nbsp;</div>
       <cw-input-dropdown *ngIf="input.type == 'dropdown'"
                          flex
                          class="cw-input"
                          [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                         [value]="input.value"
+                         [ngFormControl]="input.control"
                          placeholder="{{input.placeholder | async}}"
                          [required]="input.required"
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
                          [class.cw-last]="islast"
-                         (change)="handleParamValueChange(input.name, $event)">
+                         (blur)="onBlur(input)">
         <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
@@ -42,21 +41,27 @@ import {Verify} from "../../../../../api/validation/Verify";
             icon="{{opt.icon}}"></cw-input-option>
       </cw-input-dropdown>
 
-      <cw-input-rest-dropdown *ngIf="input.type == 'restDropdown'"
-                              flex
-                              class="cw-input"
-                              [value]="input.value"
-                              [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
-                              placeholder="{{input.placeholder | async}}"
-                              optionUrl="{{input.optionUrl}}"
-                              optionValueField="{{input.optionValueField}}"
-                              optionLabelField="{{input.optionLabelField}}"
-                              [required]="input.required"
-                              [allowAdditions]="input.allowAdditions"
-                              [class.cw-comparator-selector]="input.name == 'comparison'"
-                              [class.cw-last]="islast"
-                              (change)="handleParamValueChange(input.name, $event)">
-      </cw-input-rest-dropdown>
+      <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'restDropdown'">
+        <cw-input-rest-dropdown 
+                                flex
+                                class="cw-input"
+                                [value]="input.value"
+                                [ngFormControl]="input.control"
+                                [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+                                placeholder="{{input.placeholder | async}}"
+                                optionUrl="{{input.optionUrl}}"
+                                optionValueField="{{input.optionValueField}}"
+                                optionLabelField="{{input.optionLabelField}}"
+                                [required]="input.required"
+                                [allowAdditions]="input.allowAdditions"
+                                [class.cw-comparator-selector]="input.name == 'comparison'"
+                                [class.cw-last]="islast"
+                                (blur)="onBlur(input)"
+                                #rdInput="ngForm"
+                                >
+        </cw-input-rest-dropdown>
+        <div flex="50" [hidden]="!rdInput.touched || rdInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
+      </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
         <cw-input-text
@@ -65,6 +70,7 @@ import {Verify} from "../../../../../api/validation/Verify";
             [ngFormControl]="input.control"
             [type]="input.type"
             [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
+            (blur)="onBlur(input)"
             #fInput="ngForm"
         ></cw-input-text>
         <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
@@ -78,7 +84,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                      [placeholder]="input.placeholder | async"
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
-                     (blur)="handleParamValueChange(input.name, $event)"></cw-input-date>
+                     (blur)="onBlur(input)"></cw-input-date>
 
 
     </template>
@@ -92,7 +98,6 @@ export class ServersideCondition {
 
   private _inputs:Array<any>
   private _resources:I18nService
-
   private _rhArgCount:number
 
   constructor(fb:FormBuilder, resources:I18nService) {
@@ -142,6 +147,14 @@ export class ServersideCondition {
     }
   }
 
+  onBlur(input){
+    if(!input.control.valid){
+      console.log("ServersideCondition", "onBlur", "Invalid", input)
+    } else {
+      this.handleParamValueChange(input.name, input.control.value)
+    }
+  }
+
   getInputFor(type:string, param, paramDef:ParameterDefinition):any {
 
     let i18nBaseKey = paramDef.i18nBaseKey || this.componentInstance.type.i18nKey
@@ -166,45 +179,56 @@ export class ServersideCondition {
   private getTextInput(param, paramDef, i18nBaseKey:string) {
     let rsrcKey = i18nBaseKey + '.inputs.' + paramDef.key
     let placeholderKey = rsrcKey + '.placeholder'
-    let vFns:Function[] = []
-    let minLen = paramDef.inputType.dataType['minLength']
-    if (minLen > 0) {
-      vFns.push(Validators.required)
-      vFns.push(Validators.minLength(minLen))
-    }
-    if(paramDef.inputType.dataType['maxValue']){
-      var max = paramDef.inputType.dataType['maxValue']
-      vFns.push((control:Control) => {
-        let resp:any = null
-        let val = Number.parseFloat(control.value)
-        if(val > max){
-          resp = {maxValue: max, actualValue: val }
-        }
-        return resp
-      })
-    }
-    if(Verify.isNumber(paramDef.inputType.dataType['minValue'])){
-      var min = paramDef.inputType.dataType['minValue']
-      vFns.push((control:Control) => {
-        let resp:any = null
-        let val = Number.parseFloat(control.value)
-        if(val < min){
-            resp = {minValue: min, actualValue: val }
-        }
-        return resp
-      })
-    }
-
-    let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
-    control.valueChanges.debounceTime(250).subscribe((value) => {
-      this.handleParamValueChange(param.key, value)
-    })
+    let control = this.createNgControl(paramDef, param)
     return {
       name: param.key,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       control: control,
       required: paramDef.inputType.dataType['minLength'] > 0
     }
+  }
+
+  private createNgControl(paramDef, param):Control {
+    let vFns:Function[] = []
+    let minLen = paramDef.inputType.dataType['minLength']
+    if (minLen > 0) {
+      vFns.push(Validators.required)
+      vFns.push(Validators.minLength(minLen))
+    }
+    if (paramDef.inputType.dataType['maxValue']) {
+      var max = paramDef.inputType.dataType['maxValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if (val > max) {
+          resp = {maxValue: max, actualValue: val}
+        }
+        return resp
+      })
+    }
+    if (Verify.isNumber(paramDef.inputType.dataType['minValue'])) {
+      var min = paramDef.inputType.dataType['minValue']
+      vFns.push((control:Control) => {
+        let resp:any = null
+        let val = Number.parseFloat(control.value)
+        if (val < min) {
+          resp = {minValue: min, actualValue: val}
+        }
+        return resp
+      })
+    }
+
+    let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
+
+    control.statusChanges.subscribe((value) => {
+      console.log("ServersideCondition", "control.statusChanges", param.key, value,
+          ' status: ', control.status,
+          ' touched: ', control.touched,
+          ' dirty: ', control.dirty,
+          ' pending:', control.pending,
+          ' pristine:', control.pristine)
+    })
+    return control
   }
 
   private getDateTimeInput(param, paramDef, i18nBaseKey:string) {
@@ -223,9 +247,11 @@ export class ServersideCondition {
     let placeholderKey = rsrcKey + '.placeholder'
 
     let currentValue = this.componentInstance.getParameterValue(param.key)
+    const control = this.createNgControl(paramDef, param)
     let input:any = {
       value: currentValue,
       name: param.key,
+      control: control,
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       optionUrl: inputType.optionUrl,
       optionValueField: inputType.optionValueField,
@@ -282,11 +308,10 @@ export class ServersideCondition {
         label: ObservableHack.of(currentValue)
       })
     }
-
-
     let input:any = {
       value: currentValue,
       name: param.key,
+      control: this.createNgControl(paramDef, param),
       placeholder: this._resources.get(placeholderKey, paramDef.key),
       options: opts,
       minSelections: inputType.minSelections,

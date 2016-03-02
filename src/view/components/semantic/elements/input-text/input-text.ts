@@ -26,48 +26,35 @@ import {isBlank} from 'angular2/src/facade/lang';
            [value]="_modelValue"
            [disabled]="disabled"
            placeholder="{{placeholder}}"
-           (blur)="onTouched()"
+           (blur)="onBlur($event)"
            (change)="$event.stopPropagation()"
-
            (input)="onChange($event.target.value)" />
     <i [ngClass]="icon" *ngIf="icon"></i>
 </div>
   `,
   directives: []
 })
-export class InputText implements ControlValueAccessor {
+  export class InputText implements ControlValueAccessor {
 
   @Input() placeholder:string = ""
-  @Input()  type:string = ""
+  @Input() type:string = ""
   @Input() icon:string
   @Input() disabled:boolean = false
-  @Input() focused:boolean = false
   @Input() required:boolean = false
-  @Output() blur:EventEmitter<any>
+
+  @Output() blur:EventEmitter<any> = new EventEmitter()
 
   errorMessage:string
-  _modelValue:any
   onChange:Function
   onTouched:Function
 
+  private _modelValue:any
+  
   constructor( @Optional() control:NgControl, private _elementRef:ElementRef) {
     if(control){
       control.valueAccessor = this;
     }
-    this.blur = new EventEmitter()
   }
-
-  ngOnChanges(change) {
-    if (change.focused) {
-      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
-      if (f) {
-        let el = this._elementRef.nativeElement
-        el.children[0].children[0].focus()
-      }
-      this.focused = false;
-    }
-  }
-
 
   onBlur(value) {
     this.onTouched()
@@ -79,8 +66,12 @@ export class InputText implements ControlValueAccessor {
     this._elementRef.nativeElement.firstElementChild.firstElementChild.setAttribute('value', this._modelValue)
   }
 
-  registerOnChange(fn) { this.onChange = fn; }
+  registerOnChange(fn) {
+    this.onChange = fn;
+  }
 
-  registerOnTouched(fn) { this.onTouched = fn; }
+  registerOnTouched(fn) {
+    this.onTouched = fn;
+  }
 }
 

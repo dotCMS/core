@@ -14,9 +14,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
  *
  */
 @Component({
-  selector: 'cw-rule-engine'
-})
-@View({
+  selector: 'cw-rule-engine',
   template: `<div class="cw-rule-engine">
   <div class="cw-header">
     <div flex layout="row" layout-align="space-between center">
