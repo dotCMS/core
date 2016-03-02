@@ -635,28 +635,74 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertFileReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
+			"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"		select distinct identifier.id as i_id from identifier where " +
+				"			asset_type='contentlet' and identifier.host_inode = ? and identifier.parent_path like ? and " +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) t1 " +
+				"	WHERE identifier.id = t1.i_id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
+				"select  identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
-		"	from identifier where identifier.id in (" +
-		"		" + selectChildrenFileSQL + " and" +
-		"		identifier.id not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		"              join identifier ii on (ii.id=ref_folder.identifier) " +
-		"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		identifier.id not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -1505,8 +1551,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                         dc.addParam(parentHost.getPermissionId());
                         dc.addParam(path + "%");
 						dc.addParam(path + "%");
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertHTMLPageReferencesSQL=" + insertHTMLPageReferencesSQL);
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
 						dc.loadResult();
 
 						// Retrieving the list of pages changed to clear their
@@ -1546,6 +1590,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						// Under any folder
 						dc.addParam(path + "%");
 						dc.addParam(path + "%");
+
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertFileReferencesSQL=" + insertFileReferencesSQL);
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 						dc.loadResult();
 
 						// Retrieving the list of files changed to clear their
@@ -2852,8 +2900,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             dc.addParam(host.getPermissionId());
             dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:insertHTMLPageReferencesSQL=" + insertHTMLPageReferencesSQL);
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
 			dc.loadResult();
 			//Retrieving the list of htmlpages changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
@@ -2880,6 +2926,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
+
+			Logger.info(PermissionBitFactoryImpl.class, "JBG:insertFileReferencesSQL=" + insertFileReferencesSQL);
+			Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 			dc.loadResult();
 			//Retrieving the list of files changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
