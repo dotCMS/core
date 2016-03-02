@@ -205,9 +205,9 @@ function focusSelectedTag(e) {
 				return dijit.focus(dojo.byId(tagVelocityVarName));
 			}
 			var item = tagsOptionsLinks[pos];
-			item.className = "suggestedTagFocus";
+			item.classList.add("suggestedTagFocus");
 			if (item.nextSibling) {
-				item.nextSibling.className = "";
+				item.nextSibling.classList.remove("suggestedTagFocus");
 			}
 			break;
 		case keys.DOWN_ARROW:
@@ -219,9 +219,9 @@ function focusSelectedTag(e) {
 				pos++;
 			}
 			var item = tagsOptionsLinks[pos];
-			item.className = "suggestedTagFocus";
+			item.classList.add("suggestedTagFocus");
 			if (item.previousSibling) {
-				item.previousSibling.className = "";
+				item.previousSibling.classList.remove("suggestedTagFocus");
 			}
 			break;
 	}
@@ -311,7 +311,7 @@ function useThisTagForSearch(e) {
 				tagName += arrayTags[i] + ", ";
 			}
 			tagName += tagSuggested;
-			addTagToMap(tagSuggested, tagLink.className === "persona");
+			addTagToMap(tagSuggested, tagLink.className.indexOf("persona") > -1);
 			addTagLink(tagSuggested);
 			addTagValue(tagSuggested)
 		}
