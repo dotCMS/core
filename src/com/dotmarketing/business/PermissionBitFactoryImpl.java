@@ -490,15 +490,63 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertHTMLPageReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
+				"select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"	select distinct li.id as li_id from identifier li where" +
+                " 	li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
+            	" UNION ALL" +
+                " SELECT distinct li.id as li_id FROM identifier li" +
+                    " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " AND li.host_inode = ? and li.parent_path like ?" + 
+                    " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) all_ids where identifier.id = all_ids.li_id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+				"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenHTMLPageSQL + " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenHTMLPageSQL + " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-				"	identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		li.id not in (" +
@@ -1457,6 +1505,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                         dc.addParam(parentHost.getPermissionId());
                         dc.addParam(path + "%");
 						dc.addParam(path + "%");
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertHTMLPageReferencesSQL=" + insertHTMLPageReferencesSQL);
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
 						dc.loadResult();
 
 						// Retrieving the list of pages changed to clear their
@@ -2802,6 +2852,8 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
             dc.addParam(host.getPermissionId());
             dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
+			Logger.info(PermissionBitFactoryImpl.class, "JBG:insertHTMLPageReferencesSQL=" + insertHTMLPageReferencesSQL);
+			Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
 			dc.loadResult();
 			//Retrieving the list of htmlpages changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {

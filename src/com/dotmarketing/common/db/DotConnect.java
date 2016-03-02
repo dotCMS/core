@@ -60,6 +60,10 @@ public class DotConnect {
         forceQuery=force;
     }
 
+    public ArrayList<Object> getParamList() {
+        return paramList;
+    }
+    
     public int getInt(String x){
     	x = x.toLowerCase(); 
         Logger.debug(this, "getInt: " + x);
