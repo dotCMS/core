@@ -110,6 +110,7 @@ var tagsMap = {};
 var lastLength = 0;
 
 function suggestTagsForSearch(e) {
+	console.log(e);
 	if (!tagVelocityVarName || tagVelocityVarName == "") {
 		tagVelocityVarName = e.target.id;
 	}
@@ -267,7 +268,9 @@ function clearSuggestTagsForSearch() {
 		if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
 			dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "none");
 		}
-		dojo.byId(suggestedDiv).innerHTML = "";
+		if (suggestedDiv) {
+			dojo.byId(suggestedDiv).innerHTML = "";
+		}
 		dojo.byId(tagVelocityVarName).focus();
 		tagVelocityVarName = null;
 		suggestedDiv = null;
