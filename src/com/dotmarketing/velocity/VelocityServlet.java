@@ -122,7 +122,6 @@ public abstract class VelocityServlet extends HttpServlet {
         /*
 		 * Getting host object form the session
 		 */
-        HostWebAPI hostWebAPI = WebAPILocator.getHostWebAPI();
         Host host;
         try {
             host = hostWebAPI.getCurrentHost(request);
@@ -379,7 +378,13 @@ public abstract class VelocityServlet extends HttpServlet {
 	    LicenseUtil.startLiveMode();
 	    try {
 			String uri = URLDecoder.decode(request.getRequestURI(), UtilMethods.getCharsetConfiguration());
-    		Host host = (Host)request.getAttribute("host");
+    		Host host;
+            try {
+                host = hostWebAPI.getCurrentHost(request);
+            } catch (Exception e) {
+                Logger.error(this, "Unable to retrieve current request host for URI " + uri);
+                throw new ServletException(e.getMessage(), e);
+            }
 
 			//Find the current language
 			long currentLanguageId = VelocityUtil.getLanguageId(request);
