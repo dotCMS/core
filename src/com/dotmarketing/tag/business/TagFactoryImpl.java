@@ -127,7 +127,9 @@ public class TagFactoryImpl implements TagFactory {
         } else {
             dc.setSQL("SELECT * FROM tag WHERE tagname LIKE ? AND host_id LIKE ? ORDER BY tagname, host_id");
         }
-        dc.addParam(name.toLowerCase() + "%");
+
+        String sanitizeSQLInjectionParam = SQLUtil.sanitizeParameter(name.toLowerCase());
+        dc.addParam("%" + sanitizeSQLInjectionParam + "%");
         dc.addParam(Host.SYSTEM_HOST);
         if ( UtilMethods.isSet(hostId) ) {
             dc.addParam(hostId);
