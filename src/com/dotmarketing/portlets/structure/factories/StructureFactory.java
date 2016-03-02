@@ -213,7 +213,7 @@ public class StructureFactory {
         String orderBy = "name";
         String direction = "asc";
         int limit = -1; 
-        List list = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
+        structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
         return structures;
     }
 
