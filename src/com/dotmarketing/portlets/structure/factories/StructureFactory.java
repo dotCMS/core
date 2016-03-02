@@ -212,7 +212,7 @@ public class StructureFactory {
         
         structures = CacheLocator.getContentTypeCache().getStructuresByType(structureType);
         
-        if(structures == null || structures.isEmpty()){
+        if(structures == null){
             String condition = "structuretype = " + structureType;
             String orderBy = "name";
             String direction = "asc";
@@ -220,7 +220,7 @@ public class StructureFactory {
             structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
         }
         
-        if(!structures.isEmpty()){
+        if(structures != null){
             CacheLocator.getContentTypeCache().addStructuresByType(structures, structureType);
         }
         
