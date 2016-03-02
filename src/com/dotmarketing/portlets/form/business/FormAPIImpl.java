@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.form.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -63,7 +61,7 @@ public class FormAPIImpl implements FormAPI {
         List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_FORM);
         List<Structure> forms = new ArrayList<Structure>();
         for (Structure structure : sts) {
-            if (perAPI.doesUserHavePermission(structure, PERMISSION_READ, user, respectFrontEndPermissions)) {
+            if (perAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                 forms.add(structure);
             }
         }

@@ -1,7 +1,5 @@
 package com.dotmarketing.portlets.widget.business;
 
-import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,7 +43,7 @@ public class WidgetAPIImpl implements WidgetAPI {
 		List<Structure> sts = StructureFactory.getAllStructuresByType(Structure.STRUCTURE_TYPE_WIDGET);
 		List<Structure> wids = new ArrayList<Structure>();
 		for (Structure structure : sts) {
-            if (!structure.isSystem() && perAPI.doesUserHavePermission(structure, PERMISSION_READ, user, respectFrontEndPermissions)) {
+            if (!structure.isSystem() && perAPI.doesUserHavePermission(structure, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
                 wids.add(structure);
             }
 		}
