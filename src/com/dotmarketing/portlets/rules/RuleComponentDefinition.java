@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.rules;
 import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
 import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.javax.validation.constraints.NotNull;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleConstructionFailedException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.exception.RuleEvaluationFailedException;
@@ -55,7 +56,14 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
     public final T doCheckValid(RuleComponentModel data) {
         Map<String, ParameterModel> params = data.getParameters();
         for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
-            entry.getValue().checkValid(params.get(entry.getKey()));
+        	if(params.containsKey(entry.getKey()))
+        		entry.getValue().checkValid(params.get(entry.getKey()));
+        	else{
+        		if(Logger.isDebugEnabled(this.getClass())) {
+                    Logger.debug(this.getClass(), "The parameter '" + entry.getKey() + "' is missing.");
+                }
+        		throw new InvalidRuleParameterException("The parameter '%s' is missing.",entry.getKey());
+        	}
         }
 
         T instance;
@@ -63,7 +71,9 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
             instance = instanceFrom(params);
         } catch (RuleEngineException e) {
             throw e;
-        } catch (Exception e) {
+        } catch(InvalidRuleParameterException irp){
+        	throw irp;
+        }catch (Exception e) {
             throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s.",
                                                       this.getId(), data.toString());
         }
@@ -112,4 +122,4 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
     public abstract boolean evaluate(HttpServletRequest request, HttpServletResponse response, T instance);
 }
- 
+

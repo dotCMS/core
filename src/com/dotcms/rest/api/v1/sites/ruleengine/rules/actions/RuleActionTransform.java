@@ -45,7 +45,6 @@ public class RuleActionTransform {
         if(rest.parameters!=null)
             app.setParameters(rest.parameters);
 
-        app.checkValid();
         return app;
     }
 
