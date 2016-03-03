@@ -1,12 +1,14 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotcms.repackage.org.apache.commons.lang.SerializationUtils;
 import com.dotmarketing.portlets.rules.model.Condition;
 
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
+import com.dotmarketing.util.Logger;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class ConditionTransform {
     private final ParameterModelTransform parameterModelTransform = new ParameterModelTransform();
@@ -41,11 +43,17 @@ public class ConditionTransform {
         return toRest.apply(c);
     }
 
-    public Function<Condition, RestCondition> appToRestFn() {
-        return toRest;
-    }
-
     private final Function<Condition, RestCondition> toRest = (app) -> {
+
+        Map<String, RestConditionValue> values = Maps.newHashMap();
+        for (ParameterModel parameterModel : app.getValues()) {
+            RestConditionValue restCondition = parameterModelTransform.toRest(parameterModel);
+            RestConditionValue existing = values.put(restCondition.key, restCondition);
+            if(existing != null){
+                Logger.warn(ConditionTransform.class, "Duplicate key found for condition parameter '" + existing.key +
+                                                      "'. Was '" + existing.value + "', is now '" + restCondition.value + "'.");
+            }
+        }
 
         RestCondition rest = new RestCondition.Builder()
                 .id(app.getId())
@@ -53,9 +61,7 @@ public class ConditionTransform {
                 .conditionlet(app.getConditionletId())
                 .operator(app.getOperator().name())
                 .priority(app.getPriority())
-                .values(app.getValues().stream()
-                           .map(parameterModelTransform.toRest)
-                           .collect(Collectors.toMap(restCondition -> restCondition.key, Function.identity())))
+                .values(values)
                 .build();
 
         return rest;

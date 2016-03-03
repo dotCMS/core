@@ -8,7 +8,7 @@ public class InvalidRuleParameterException extends HttpStatusCodeException {
     private static final String ERROR_KEY = "dotcms.api.error.invalid_parameter";
 
     public InvalidRuleParameterException(String message, String... messageArgs) {
-        super(Response.Status.NOT_FOUND, ERROR_KEY, message, messageArgs);
+        super(Response.Status.BAD_REQUEST, ERROR_KEY, message, messageArgs);
     }
 }
 

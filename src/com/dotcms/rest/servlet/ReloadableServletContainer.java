@@ -40,7 +40,9 @@
 
 package com.dotcms.rest.servlet;
 
+import com.dotcms.repackage.com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.dotcms.repackage.com.fasterxml.jackson.jaxrs.json.JacksonJaxbJsonProvider;
+import com.dotcms.repackage.com.google.common.base.Throwables;
 import com.dotcms.repackage.javax.ws.rs.core.Application;
 import com.dotcms.repackage.org.glassfish.jersey.server.ResourceConfig;
 import com.dotcms.repackage.org.glassfish.jersey.servlet.ServletContainer;
@@ -50,11 +52,13 @@ import com.dotcms.rest.api.MyObjectMapperProvider;
 import com.dotcms.rest.config.DotRestApplication;
 import com.dotcms.rest.exception.mapper.InvalidFormatExceptionMapper;
 import com.dotcms.rest.exception.mapper.JsonParseExceptionMapper;
+import com.dotcms.rest.exception.mapper.UnrecognizedPropertyExceptionMapper;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Logger;
 
 import java.io.IOException;
 
+import java.util.List;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -93,14 +97,27 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
-        container.doFilter(req, res, chain);
+            container.doFilter(req, res, chain);
     }
 
     @Override
     public void service(ServletRequest req, ServletResponse res) throws ServletException, IOException {
         try {
             container.service(req, res);
-        } catch (ServletException | IOException e) {
+        } catch (ServletException e) {
+
+            List<Throwable> chain = Throwables.getCausalChain(e);
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if(chain.get(chain.size() - 1) instanceof UnrecognizedPropertyException){
+                // Log the exception at trace level only, since we handled it, and thus (presumably) understand what caused it.
+                Logger.getLogger(this.getClass()).warn("Bad request: " + e.getMessage());
+                Logger.getLogger(this.getClass()).trace("Bad request:", e);
+
+            } else{
+                Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
+                throw e;
+            }
+        } catch (IOException e) {
             Logger.getLogger(this.getClass()).error("Unhandled error during request processing: ", e);
             throw e;
         }
@@ -155,6 +172,7 @@ public class ReloadableServletContainer extends HttpServlet implements Filter {
                 .register(MyObjectMapperProvider.class)
                 .register(JacksonJaxbJsonProvider.class)
                 .register(InvalidFormatExceptionMapper.class)
-                .register(JsonParseExceptionMapper.class);
+                .register(JsonParseExceptionMapper.class)
+                .register(UnrecognizedPropertyExceptionMapper.class);
     }
 }
