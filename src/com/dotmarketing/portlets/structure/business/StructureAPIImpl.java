@@ -27,6 +27,16 @@ import com.dotmarketing.services.StructureServices;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * This API exposes useful methods to access and modify information related to
+ * Content Types in dotCMS. Please note that the term Structure is deprecated,
+ * and it's referred to as Content Type now.
+ * 
+ * @author Jorge Urdaneta
+ * @version 1.0
+ * @since Feb 11, 2013
+ *
+ */
 public class StructureAPIImpl implements StructureAPI {
 
     @Override
@@ -83,7 +93,6 @@ public class StructureAPIImpl implements StructureAPI {
             Structure sf = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(
                     FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
             if (UtilMethods.isSet(sf) && UtilMethods.isSet(sf.getInode())) {
-                Field field = st.getFieldVar(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME);
                 conAPI.delete( conAPI.search(
                         "+structureInode:" + sf.getInode() +
                         " +structureInode:" + st.getInode(), 0, 0,
@@ -124,8 +133,18 @@ public class StructureAPIImpl implements StructureAPI {
 			throw new DotSecurityException("User " + user + " does not have permission to struct " +inode);
 		}
 		return s;
+	}
 
+	@Override
+	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly) throws DotDataException {
+		return StructureFactory.getStructures(user, respectFrontendRoles, allowedStructsOnly);
+	}
 
+	@Override
+	public List<Structure> find(User user, boolean respectFrontendRoles, boolean allowedStructsOnly, String condition,
+			String orderBy, int limit, int offset, String direction) throws DotDataException {
+		return StructureFactory.getStructures(user, respectFrontendRoles, allowedStructsOnly, condition, orderBy, limit,
+				offset, direction);
 	}
 
 	/**
@@ -137,7 +156,6 @@ public class StructureAPIImpl implements StructureAPI {
 	     db.setSQL("delete from contentlet where structure_inode = '" + structureInode + "'");
 	     db.getResult();
 	}
-	
 	
 	@Override
 	public Structure findByVarName(String varName, User user) throws DotSecurityException, DotDataException{

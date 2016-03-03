@@ -101,7 +101,7 @@
 	//Setting structures in the request to list them
 	//Only contents are shown in the drop down menu
 	//http://jira.dotmarketing.net/browse/DOTCMS-2065
-	List<Structure> allStructures = StructureFactory.getStructures();
+	List<Structure> allStructures = StructureFactory.getStructures(user, false, true);
 	List<Structure> structures = new ArrayList<Structure>();
 
 	for(Structure st : allStructures){
@@ -232,12 +232,9 @@
 										break;
 									}
 								}
-
-// 								if(!exists) {
-		%>							<option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
-		<%
-// 								}
-							}
+         %>
+                                <option value="<%= structure.getInode() %>"><%= structure.getName() %></option>
+		<%                  }
 		%>
 							</select>
 							<button dojoType="dijit.form.Button"  onClick="addCodeTab()" iconClass="plusIcon" type="button">

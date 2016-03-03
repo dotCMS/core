@@ -47,6 +47,16 @@ import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
+/**
+ * Provides access to information related to Content Types and the different
+ * ways it is related to other types of objects in dotCMS. The term "Structure" 
+ * is deprecated, it has been changed to "Content Type" now. 
+ * 
+ * @author root
+ * @version 1.0
+ * @since Mar 22, 2012
+ *
+ */
 public class StructureFactory {
 
 	private static PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -183,6 +193,93 @@ public class StructureFactory {
 		return res;
 	}
 
+	/**
+	 * Retrieves a list of {@link Structure} objects that the current user is
+	 * allowed to access. The result set will contain all possible values,
+	 * grouped by Content Type and name, and in ascendent order. Depending on
+	 * the license level, some Content Types might not be included as part of
+	 * the results.
+	 * 
+	 * @param user
+	 *            - The {@link User} retrieving the list of Content Types.
+	 * @param respectFrontendRoles
+	 *            - If set to <code>true</code>, the permission handling will be
+	 *            based on the currently logged-in user or the Anonymous role.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param allowedStructsOnly
+	 *            - If set to <code>true</code>, returns only the Content Types
+	 *            the specified user has read permission on. Otherwise, set to
+	 *            <code>false</code>.
+	 * @return A list of permissioned {@link Structure} objects.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
+	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly)
+			throws DotDataException {
+		String condition = "";
+		String orderBy = "structuretype,upper(name)";
+		int limit = -1;
+		int offset = 0;
+		String direction = "asc";
+		return getStructures(user, respectFrontendRoles, allowedStructsOnly, condition, orderBy, limit, offset, direction);
+	}
+
+	/**
+	 * Retrieves a list of {@link Structure} objects that the current user is
+	 * allowed to access. It also allows you to have more control on the
+	 * filtering criteria for the result set. Depending on the license level,
+	 * some Content Types might not be included as part of the results.
+	 * 
+	 * @param user
+	 *            - The {@link User} retrieving the list of Content Types.
+	 * @param respectFrontendRoles
+	 *            - If set to <code>true</code>, the permission handling will be
+	 *            based on the currently logged-in user or the Anonymous role.
+	 *            Otherwise, set to <code>false</code>.
+	 * @param allowedStructsOnly
+	 *            - If set to <code>true</code>, returns only the Content Types
+	 *            the specified user has read permission on. Otherwise, set to
+	 *            <code>false</code>.
+	 * @param condition
+	 *            - Any specific condition or filtering criteria for the
+	 *            resulting Content Types.
+	 * @param orderBy
+	 *            - The column(s) to order the results by.
+	 * @param limit
+	 *            - The maximum number of records to return.
+	 * @param offset
+	 *            - The record offset for pagination purposes.
+	 * @param direction
+	 *            - The ordering of the results: <code>asc</code>, or
+	 *            <code>desc</code>.
+	 * @return A list of {@link Structure} objects based on the current user's
+	 *         permissions and the system license.
+	 * @throws DotDataException
+	 *             An error occurred when retrieving information from the
+	 *             database.
+	 */
+	public static List<Structure> getStructures(User user, boolean respectFrontendRoles, boolean allowedStructsOnly,
+			String condition, String orderBy, int limit, int offset, String direction) throws DotDataException {
+		condition = (UtilMethods.isSet(condition.trim())) ? condition + " AND " : "";
+		if (LicenseUtil.getLevel() < 200) {
+			condition += "structuretype NOT IN (" + Structure.STRUCTURE_TYPE_FORM + ", " + Structure.STRUCTURE_TYPE_PERSONA
+					+ ") ";
+		}
+		List<Structure> all = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class, condition, orderBy, limit,
+				offset, direction);
+		if (!allowedStructsOnly) {
+			return all;
+		}
+		List<Structure> retList = new ArrayList<Structure>();
+		for (Structure st : all) {
+			if (permissionAPI.doesUserHavePermission(st, PERMISSION_READ, user, respectFrontendRoles) && !st.isSystem()) {
+				retList.add(st);
+			}
+		}
+		return retList;
+	}
+	
 	public static List<Structure> getStructures()
 	{
 		String orderBy = "name";

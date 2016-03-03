@@ -9,15 +9,13 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.util.List;
 
-import com.dotcms.enterprise.rules.RulesAPIImpl;
+
+import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.DeserializationFeature;
 import com.dotcms.repackage.com.fasterxml.jackson.databind.ObjectMapper;
-import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
@@ -26,10 +24,21 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
+/**
+ * 
+ * @author Will Ezell
+ * @version 1.0
+ * @since Jan 25, 2016
+ *
+ */
 public class RulesImportExportUtil {
 
 	private static RulesImportExportUtil rulesImportExportUtil;
 
+	/**
+	 * 
+	 * @return
+	 */
 	public static RulesImportExportUtil getInstance() {
 		if (rulesImportExportUtil == null) {
 			synchronized ("RulesImportExportUtil.class") {
@@ -41,11 +50,23 @@ public class RulesImportExportUtil {
 		return rulesImportExportUtil;
 	}
 
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public String exportToJson() throws IOException, DotDataException, DotSecurityException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(buildExportObject(null));
 	}
 
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
 	public void export(File file) throws IOException {
 
 		BufferedWriter out = null;
@@ -62,9 +83,14 @@ public class RulesImportExportUtil {
 		}
 	}
 
+	/**
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
 	public void importRules(File file) throws IOException {
 
-		RulesAPIImpl rapi = (RulesAPIImpl) APILocator.getRulesAPI();
+		RulesAPI rapi = APILocator.getRulesAPI();
 
 		BufferedReader in = null;
 		try {
@@ -107,9 +133,16 @@ public class RulesImportExportUtil {
 		}
 	}
 
+	/**
+	 * 
+	 * @param parent
+	 * @return
+	 * @throws DotDataException
+	 * @throws DotSecurityException
+	 */
 	public RulesImportExportObject buildExportObject(Ruleable parent) throws DotDataException, DotSecurityException {
 
-		RulesAPIImpl rapi = (RulesAPIImpl) APILocator.getRulesAPI();
+		RulesAPI rapi = APILocator.getRulesAPI();
 		User user = APILocator.getUserAPI().getSystemUser();
 
 		List<Rule> rules = (parent == null) ? rapi.getAllRules(user, false) : rapi.getAllRulesByParent(parent, user, false);

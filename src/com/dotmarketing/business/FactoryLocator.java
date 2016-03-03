@@ -5,6 +5,7 @@ import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesFactory;
 import com.dotcms.content.elasticsearch.business.IndiciesFactoryImpl;
 import com.dotcms.enterprise.DashboardProxy;
+import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
 import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
@@ -52,7 +53,6 @@ import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
-import com.dotcms.enterprise.rules.RulesFactoryImpl;
 import com.dotmarketing.portlets.templates.business.TemplateFactory;
 import com.dotmarketing.portlets.templates.business.TemplateFactoryImpl;
 import com.dotmarketing.portlets.virtuallinks.business.VirtualLinkFactory;
@@ -341,7 +341,7 @@ enum FactoryIndex
             case SERVER_FACTORY: return new ServerFactoryImpl();
             case NOTIFICATION_FACTORY: return new NotificationFactoryImpl();
             case SERVER_ACTION_FACTORY: return new ServerActionFactoryImplProxy();
-            case RULES_FACTORY: return new RulesFactoryImpl();
+            case RULES_FACTORY: return new RulesFactoryProxy();
             case PERSONA_FACTORY: return new PersonaFactoryImpl();
             case TAG_FACTORY: return new TagFactoryImpl();
 		}
