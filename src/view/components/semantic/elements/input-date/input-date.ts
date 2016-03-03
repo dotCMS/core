@@ -104,6 +104,7 @@ export class InputDate implements ControlValueAccessor  {
 
   private static _defaultValue():string {
     let d = new Date()
+    let off = d.getTimezoneOffset()
     d.setHours(0)
     d.setMinutes(0)
     d.setSeconds(0)
@@ -111,11 +112,8 @@ export class InputDate implements ControlValueAccessor  {
     d.setMonth(d.getMonth() + 1)
     d.setDate(1)
     let r = d.toISOString()
-    console.log("InputDate", "_defaultValue", r)
-    if(r.endsWith('Z'))
-    {
-      r = r.substring(0, r.length - 1)
-    }
+    r = r.substring(0, r.indexOf('T') + 1)
+    r = r + "00:00:00"
     return r
   }
 }

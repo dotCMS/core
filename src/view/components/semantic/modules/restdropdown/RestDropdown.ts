@@ -8,7 +8,12 @@ import {Verify} from "../../../../../api/validation/Verify";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 import {Observer} from "rxjs/Observer";
 import {isBlank} from "angular2/src/facade/lang";
-
+//
+//<cw-input-dropdown [value]="value"  placeholder="{{placeholder}}" (change)="handleParamValueChange($event, input)" [maxSelections]="maxSelections"
+// [minSelections]="minSelections" [allowAdditions]="allowAdditions">
+// <cw-input-option *ngFor="#opt of _options | async" [value]="opt.value" [label]="opt.label" [icon]="opt.icon"></cw-input-option>
+// </cw-input-dropdown>`,
+// 
 @Component({
   selector: 'cw-input-rest-dropdown',
   directives: [CORE_DIRECTIVES, Dropdown, InputOption],
@@ -16,6 +21,9 @@ import {isBlank} from "angular2/src/facade/lang";
   <cw-input-dropdown 
       [value]="_modelValue"
       placeholder="{{placeholder}}"
+      [maxSelections]="maxSelections"
+      [minSelections]="minSelections"
+       [allowAdditions]="allowAdditions"
       (change)="fireChange($event)"
       (touch)="fireTouch($event)"
       >
@@ -59,7 +67,11 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
   }
 
   writeValue(value:any) {
-    this._modelValue = isBlank(value) ? '' : value
+    if(value && value.indexOf(',') > -1){
+      this._modelValue = value.split(',')
+    } else {
+      this._modelValue = isBlank(value) ? '' : value
+    }
   }
 
   registerOnChange(fn) {
@@ -85,6 +97,10 @@ export class RestDropdown implements AfterViewInit, ControlValueAccessor {
       let requestOptionArgs = this._apiRoot.getDefaultRequestOptions()
       this._options = this._http.get(change.optionUrl.currentValue, requestOptionArgs)
           .map((res:any)=> this.jsonEntriesToOptions(res))
+    }
+
+    if(change.value && change.value.currentValue && change.value.currentValue.indexOf(',') > -1){
+        this._modelValue = change.value.currentValue.split(',')
     }
   }
 

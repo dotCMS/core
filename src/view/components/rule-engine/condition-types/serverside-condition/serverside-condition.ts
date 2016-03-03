@@ -48,6 +48,8 @@ import {Verify} from "../../../../../api/validation/Verify";
                                 [ngFormControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                                 placeholder="{{input.placeholder | async}}"
+                                 [minSelections]="input.minSelections"
+                              [maxSelections]="input.maxSelections"
                                 optionUrl="{{input.optionUrl}}"
                                 optionValueField="{{input.optionValueField}}"
                                 optionLabelField="{{input.optionLabelField}}"
