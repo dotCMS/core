@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.dotcms.repackage.com.google.common.collect.Maps;
 import com.dotmarketing.exception.*;
 import org.springframework.beans.BeanUtils;
 
@@ -131,7 +132,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-
 
 /**
  * @author Jason Tesser
@@ -4482,6 +4482,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     	String newIdentifier = Strings.EMPTY;
     	ArrayList<Contentlet> versionsToCopy = new ArrayList<Contentlet>();
     	List<Contentlet> versionsToMarkWorking = new ArrayList<Contentlet>();
+        Map<String, Map<String, Contentlet>> contentletsToCopyRules = Maps.newHashMap();
 
     	versionsToCopy.addAll(findAllVersions(APILocator.getIdentifierAPI().find(contentletToCopy.getIdentifier()), user, respectFrontendRoles));
 
@@ -4620,10 +4621,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             perAPI.copyPermissions(contentlet, newContentlet);
 
-            try{
-                APILocator.getRulesAPI().copyRulesByParent(contentlet, newContentlet, user, respectFrontendRoles);
-            } catch (InvalidLicenseException ilexp){
-                Logger.warn(this, "License is required to copy rules under pages") ;
+
+            //Using a map to make sure one identifier per page.
+            //Avoiding multi languages pages.
+            if (!contentletsToCopyRules.containsKey(contentlet.getIdentifier())){
+                Map<String, Contentlet> contentletMap = Maps.newHashMap();
+                contentletMap.put("contentlet", contentlet);
+                contentletMap.put("newContentlet", newContentlet);
+                contentletsToCopyRules.put(contentlet.getIdentifier(), contentletMap);
             }
 
             if(isContentletLive)
@@ -4636,6 +4641,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
             if(contentlet.getInode().equals(contentletToCopy.getInode()))
             	resultContentlet = newContentlet;
     	}
+
+        for (Map<String, Contentlet> stringContentletMap : contentletsToCopyRules.values()) {
+            try{
+                Contentlet contentlet = stringContentletMap.get("contentlet");
+                Contentlet newContentlet = stringContentletMap.get("newContentlet");
+                APILocator.getRulesAPI().copyRulesByParent(contentlet, newContentlet, user, respectFrontendRoles);
+            } catch (InvalidLicenseException ilexp){
+                Logger.warn(this, "License is required to copy rules under pages") ;
+            }
+        }
 
     	for(Contentlet con : versionsToMarkWorking){
     		APILocator.getVersionableAPI().setWorking(con);
