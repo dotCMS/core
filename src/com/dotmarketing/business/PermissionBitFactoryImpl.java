@@ -297,21 +297,44 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertContainerReferencesToAHostSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 			"insert into permission_reference (asset_id, reference_id, permission_type) " +
-			"select ":
-		 DbConnectionFactory.isOracle()?
+			"select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident, " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "')) x where ident.id = x.id"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+			"insert into permission_reference (asset_id, reference_id, permission_type) " +
+			"select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))"
+		:
+		 DbConnectionFactory.isOracle() ?
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-			"select permission_reference_seq.NEXTVAL, ":
+			"select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))"	
+		:
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-			"select nextval('permission_reference_seq'), ") +
-		" ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
-		"	from identifier ident where ident.id in " +
-		"		(" + selectChildrenContainerSQL + " and " +
-		"		 identifier.id not in (select inode_id from permission " +
-		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 identifier.id not in (select asset_id from permission_reference where " +
-		"			permission_type = '" + Container.class.getCanonicalName() + "'))";
+			"select nextval('permission_reference_seq'), ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))";
 
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
@@ -1523,10 +1546,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(this.insertTemplateReferencesToAHostSQL);
 						dc.addParam(permissionable.getPermissionId());
 						dc.addParam(permissionable.getPermissionId());
-
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertTemplateReferencesToAHostSQL=" + insertTemplateReferencesToAHostSQL);
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 						dc.loadResult();
 
 						// Retrieving the list of templates changed to clear
@@ -1551,6 +1570,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						dc.setSQL(this.insertContainerReferencesToAHostSQL);
 						dc.addParam(permissionable.getPermissionId());
 						dc.addParam(permissionable.getPermissionId());
+
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertContainerReferencesToAHostSQL=" + insertContainerReferencesToAHostSQL);
+						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 						dc.loadResult();
 
 						// Retrieving the list of container changed to clear
@@ -2887,10 +2910,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(insertTemplateReferencesToAHostSQL);
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
-
-				Logger.info(PermissionBitFactoryImpl.class, "JBG:insertTemplateReferencesToAHostSQL=" + insertTemplateReferencesToAHostSQL);
-				Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 				dc.loadResult();
 				//Retrieving the list of templates to clear their caches later
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
@@ -2910,6 +2929,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 				dc.setSQL(insertContainerReferencesToAHostSQL);
 				dc.addParam(host.getPermissionId());
 				dc.addParam(host.getPermissionId());
+
+				Logger.info(PermissionBitFactoryImpl.class, "JBG:insertContainerReferencesToAHostSQL=" + insertContainerReferencesToAHostSQL);
+				Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
+
 				dc.loadResult();
 				//Retrieving the list of containers to clear their caches later
 				if(idsToClear.size()<MAX_IDS_CLEAR) {
