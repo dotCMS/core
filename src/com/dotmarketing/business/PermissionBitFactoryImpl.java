@@ -1759,10 +1759,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 						// Under any folder
 						dc.addParam(path + "%");
 						dc.addParam(path + "%");
-
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:insertLinkReferencesSQL=" + insertLinkReferencesSQL);
-						Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 						dc.loadResult();
 
 						// Retrieving the list of links changed to clear their
@@ -3085,10 +3081,6 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			dc.addParam(host.getPermissionId());
 			dc.addParam(isHost?"%":folderPath+"%");
 			dc.addParam(isHost?"%":folderPath+"%");
-
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:insertLinkReferencesSQL=" + insertLinkReferencesSQL);
-			Logger.info(PermissionBitFactoryImpl.class, "JBG:params=" + dc.getParamList());
-
 			dc.loadResult();
 			//Retrieving the list of links changed to clear their caches
 			if(idsToClear.size()<MAX_IDS_CLEAR) {
