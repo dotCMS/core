@@ -213,6 +213,8 @@ public class ActionResource {
             throw new BadRequestException(e, e.getMessage());
         } catch (DotSecurityException | InvalidLicenseException e) {
             throw new ForbiddenException(e, e.getMessage());
+        }catch(Exception e){
+            throw new BadRequestException(e, e.getMessage());
         }
     }
 

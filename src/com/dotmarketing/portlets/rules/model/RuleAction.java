@@ -113,7 +113,14 @@ public class RuleAction implements RuleComponentModel, Serializable {
     }
 
     public void checkValid() {
-        this.instance = getActionDefinition().doCheckValid(this);
+        RuleActionlet actionDefinition = getActionDefinition();
+
+        if (actionDefinition == null){
+            String message = String.format("RuleActionlet %1$s doesn't exist", actionlet);
+            throw new IllegalArgumentException(message);
+        }else{
+            this.instance = actionDefinition.doCheckValid(this);
+        }
     }
 
     public final boolean evaluate(HttpServletRequest req, HttpServletResponse res) {
