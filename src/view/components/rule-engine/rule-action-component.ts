@@ -28,7 +28,7 @@ import {ServersideCondition} from "./condition-types/serverside-condition/server
   <cw-serverside-condition flex="75"
                            class="cw-condition-component"
                            [componentInstance]="action"
-                           (change)="onActionChange($event)">
+                           (parameterValueChange)="onParameterValueChange($event)">
   </cw-serverside-condition>
   <div class="cw-btn-group cw-delete-btn">
     <div class="ui basic icon buttons">
@@ -47,8 +47,9 @@ export class RuleActionComponent {
 
   @Input()  action:ActionModel
   @Input()  index:number
-  @Output() change:EventEmitter<ActionModel>
-  @Output() remove:EventEmitter<ActionModel>
+  @Output() change:EventEmitter<any> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<{action:ActionModel, name:string, value:string}> = new EventEmitter(false)
+  @Output() remove:EventEmitter<any> = new EventEmitter(false)
 
   typeDropdown:any
 
@@ -58,8 +59,6 @@ export class RuleActionComponent {
 
 
   constructor(actionService:ActionService, typeService:ActionTypeService, resources:I18nService) {
-    this.change = new EventEmitter()
-    this.remove = new EventEmitter()
     this._types = {}
 
     this._actionService = actionService;
@@ -99,9 +98,8 @@ export class RuleActionComponent {
     this.change.emit(this.action)
   }
 
-  onActionChange(event) {
-    console.log("RuleActionComponent", "onActionChange")
-    this.change.emit(this.action)
+  onParameterValueChange(event:{name:string, value:string}) {
+    this.parameterValueChange.emit(Object.assign({action: this.action}, event))
   }
 
   removeAction() {

@@ -34,7 +34,9 @@ import {Observable} from "rxjs/Observable";
                       [condition]="condition"
                       [index]="i"
                       (remove)="onConditionRemove($event)"
-                      (change)="onConditionChange($event)"></rule-condition>
+                      (change)="onConditionChange($event)"
+                      (parameterValueChange)="onParamValueChange($event)"
+                      ></rule-condition>
       <div class="cw-btn-group cw-add-btn">
         <div class="ui basic icon buttons" *ngIf="i === (conditions.length - 1)">
           <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
@@ -131,6 +133,13 @@ export class ConditionGroupComponent {
     this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
     if (this.group.isPersisted()) {
       this._groupService.save(this.group)
+    }
+  }
+
+  onParamValueChange(event:{condition:ConditionModel, name:string, value:string, valid:boolean}){
+    if(event.valid){
+      event.condition.setParameter(event.name, event.value)
+      this.onConditionChange(event.condition)
     }
   }
 

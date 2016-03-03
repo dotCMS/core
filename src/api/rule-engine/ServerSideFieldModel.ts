@@ -83,7 +83,7 @@ export class ServerSideFieldModel extends CwModel {
         let paramDef = this.getParameterDef(key)
         let param = this.parameters[key]
         var value = param.value;
-        valid = valid && paramDef.inputType.verify(value).valid
+        valid = valid && ( paramDef.inputType.verify(value) == null )
       })
     }
     valid = valid && this._type && this._type.key && this._type.key != 'NoSelection'

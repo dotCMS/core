@@ -14,6 +14,7 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
 import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 import {Verify} from "../../../../../api/validation/Verify";
+import {GalacticBus} from "../../../../../api/system/GalacticBus";
 
 @Component({
   selector: 'cw-serverside-condition',
@@ -48,8 +49,8 @@ import {Verify} from "../../../../../api/validation/Verify";
                                 [ngFormControl]="input.control"
                                 [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                                 placeholder="{{input.placeholder | async}}"
-                                 [minSelections]="input.minSelections"
-                              [maxSelections]="input.maxSelections"
+                                [minSelections]="input.minSelections"
+                                [maxSelections]="input.maxSelections"
                                 optionUrl="{{input.optionUrl}}"
                                 optionValueField="{{input.optionValueField}}"
                                 optionLabelField="{{input.optionLabelField}}"
@@ -93,15 +94,14 @@ import {Verify} from "../../../../../api/validation/Verify";
 export class ServersideCondition {
 
   @Input() componentInstance:ServerSideFieldModel
-  @Output() change:EventEmitter<ServerSideFieldModel>
+  @Output() parameterValueChange:EventEmitter<{name:string, value:string, valid:boolean}> = new EventEmitter(false)
 
   private _inputs:Array<any>
   private _resources:I18nService
   private _rhArgCount:number
 
-  constructor(fb:FormBuilder, resources:I18nService) {
+  constructor(fb:FormBuilder, resources:I18nService, private _bus:GalacticBus) {
     this._resources = resources;
-    this.change = new EventEmitter();
     this._inputs = [];
   }
 
@@ -146,10 +146,15 @@ export class ServersideCondition {
   }
 
   onBlur(input){
-    if(!input.control.valid){
-      console.log("ServersideCondition", "onBlur", "Invalid", input)
-    } else {
-      this.handleParamValueChange(input.name, input.control.value)
+    if(input.control.dirty) {
+      this.setParameterValue(input.name, input.control.value, input.control.valid)
+    }
+  }
+
+  setParameterValue(name:string, value:any, valid:boolean) {
+    this.parameterValueChange.emit({name:name, value:value, valid:valid})
+    if(name == 'comparison'){
+      this.applyRhsCount(value)
     }
   }
 
@@ -187,36 +192,9 @@ export class ServersideCondition {
   }
 
   private createNgControl(paramDef, param):Control {
-    let vFns:Function[] = []
-    let minLen = paramDef.inputType.dataType['minLength']
-    if (minLen > 0) {
-      vFns.push(Validators.required)
-      vFns.push(Validators.minLength(minLen))
-    }
-    if (paramDef.inputType.dataType['maxValue']) {
-      var max = paramDef.inputType.dataType['maxValue']
-      vFns.push((control:Control) => {
-        let resp:any = null
-        let val = Number.parseFloat(control.value)
-        if (val > max) {
-          resp = {maxValue: max, actualValue: val}
-        }
-        return resp
-      })
-    }
-    if (Verify.isNumber(paramDef.inputType.dataType['minValue'])) {
-      var min = paramDef.inputType.dataType['minValue']
-      vFns.push((control:Control) => {
-        let resp:any = null
-        let val = Number.parseFloat(control.value)
-        if (val < min) {
-          resp = {minValue: min, actualValue: val}
-        }
-        return resp
-      })
-    }
-
-    let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
+    let control = new Control(
+        this.componentInstance.getParameterValue(param.key),
+        paramDef.inputType.dataType.validator())
 
     control.statusChanges.subscribe((value) => {
       console.log("ServersideCondition", "control.statusChanges", param.key, control.value,
@@ -234,6 +212,7 @@ export class ServersideCondition {
     return {
       name: param.key,
       value: this.componentInstance.getParameterValue(param.key),
+      control: this.createNgControl(paramDef, param ),
       required: paramDef.inputType.dataType['minLength'] > 0,
       visible: true
     }
@@ -324,14 +303,6 @@ export class ServersideCondition {
   }
 
 
-  handleParamValueChange(name:string, value:any) {
-    console.log("ServersideCondition", "handleParamValueChange", name, value)
-    this.componentInstance.setParameter(name, value)
-    this.change.emit(this.componentInstance)
-    if(name == 'comparison'){
-      this.applyRhsCount(value)
-    }
-  }
 
   private applyRhsCount(selectedComparison:string) {
     let comparisonDef = this.componentInstance.getParameterDef('comparison')

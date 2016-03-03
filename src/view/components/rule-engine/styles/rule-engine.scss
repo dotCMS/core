@@ -44,14 +44,17 @@ $primary-one: #209021;
     transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
-.ng-invalid input,
 input.ng-invalid,
 .ui.input input.ng-invalid,
 .ng-invalid .ui.input input,
+.ng-invalid .ui.input input:active,
+.ng-invalid .ui.input input:hover,
+.ng-invalid .ui.input input:focus,
 .ui.selection.dropdown.ng-invalid,
 cw-input-rest-dropdown.ng-dirty.ng-touched.ng-invalid input.search,
 .ng-dirty.ng-invalid .ui.selection.dropdown.search {
   border-left: 5px solid $warn;
+  border-color: $warn
 }
 
 

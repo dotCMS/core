@@ -102,7 +102,10 @@ var rsrc = {
       </div>
       <div flex layout="column" class="cw-rule-actions">
         <div layout="row" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
-          <rule-action flex layout="row" [action]="ruleAction" [index]="i" (change)="onActionChange($event)" (remove)="onActionRemove($event)"></rule-action>
+          <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
+              (change)="onActionChange($event)"
+               (parameterValueChange)="onActionParamValueChange($event)"
+              (remove)="onActionRemove($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
             <div class="ui basic icon buttons" *ngIf="i === (actions.length - 1)">
               <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
@@ -186,12 +189,14 @@ class RuleComponent {
     this._bus.ruleAddRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          this._outOfSync = true
+          console.log("RuleComponent", event.type)
+          this._outOfSync = this.actions.length > 1
         })
 
     this._bus.rulePatchRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
+          console.log("RuleComponent", event.type)
           this.setRuleEnabledState(false)
           this._saving = false
           this._outOfSync = false
@@ -200,18 +205,21 @@ class RuleComponent {
     this._bus.rulePatchedRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
+          console.log("RuleComponent", event.type)
           this._outOfSync = false
         })
 
     this._bus.ruleBecameInvalid$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
+          console.log("RuleComponent", event.type)
           this._outOfSync = true
           this._valid = false
         })
     this._bus.ruleBecameValid$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
+          console.log("RuleComponent", event.type)
           this._outOfSync = false
           this._valid = true
         })
@@ -305,7 +313,18 @@ class RuleComponent {
     this.sort()
   }
 
+  onActionParamValueChange(event:{action:ActionModel, name:string, value:string, valid:boolean}){
+    if(event.valid){
+      event.action.setParameter(event.name, event.value)
+      this.onActionChange(event.action)
+    } else {
+      this._bus.ruleBecameInvalid(this.rule, event.action)
+    }
+
+  }
+
   onActionChange(action:ActionModel) {
+    console.log("RuleComponent", "onActionChange", action.isValid())
     this._bus.rulePatchRuleAction(this.rule, action)
     if (action.isValid()) {
       if(this.rule.isValid() && !this._valid){

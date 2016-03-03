@@ -39,7 +39,7 @@ import {Verify} from "../../../api/validation/Verify";
                 <template ngSwitchDefault>
                     <cw-serverside-condition class="cw-condition-component"
                                              [componentInstance]="condition"
-                                             (change)="onConditionChange($event)">
+                                             (parameterValueChange)="onParameterValueChange($event)">
                     </cw-serverside-condition>
                 </template>
             </div>
@@ -62,8 +62,9 @@ export class ConditionComponent {
 
   @Input() condition:ConditionModel
   @Input() index:number
-  @Output() change:EventEmitter<ConditionModel>
-  @Output() remove:EventEmitter<ConditionModel>
+  @Output() change:EventEmitter<any> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<{condition:ConditionModel, name:string, value:string, valid:boolean}> = new EventEmitter(false)
+  @Output() remove:EventEmitter<ConditionModel> = new EventEmitter(false)
 
   typeDropdown:any
 
@@ -72,9 +73,6 @@ export class ConditionComponent {
   private _types:{[key:string]: any}
 
   constructor(conditionService:ConditionService, typeService:ConditionTypeService, resources:I18nService) {
-    this.change = new EventEmitter()
-    this.remove = new EventEmitter()
-
     this._conditionService = conditionService;
     this._typeService = typeService
     this._types = {}
@@ -119,8 +117,8 @@ export class ConditionComponent {
     this.change.emit(this.condition)
   }
 
-  onConditionChange(condition) {
-    this.change.emit(condition)
+  onParameterValueChange(event:{name:string, value:string, valid:boolean}) {
+      this.parameterValueChange.emit(Object.assign({ condition: this.condition }, event))
   }
 
   removeCondition() {
