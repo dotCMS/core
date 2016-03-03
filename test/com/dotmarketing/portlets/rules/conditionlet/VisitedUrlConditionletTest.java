@@ -37,6 +37,7 @@ public class VisitedUrlConditionletTest {
     private HttpSession session;
     private VisitedUrlConditionlet visitedConditionlet = new VisitedUrlConditionlet();
     private static Map<String, Set<String>> visitedUrls;
+    private static final String INDEX = "index";
 
     @Rule
     public final ExpectedException exception = ExpectedException.none();
@@ -104,7 +105,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL is "/products"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -126,7 +127,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL IS_NOT "/news-events/news"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -148,7 +149,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Incorrect, a visited URL IS_NOT "/about-us/index"
-        Assert.assertFalse(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertFalse(visitedConditionlet.evaluate(request, response, INDEX,  instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -168,7 +169,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL STARTS_WITH "/about"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -190,7 +191,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL ENDS_WITH "-us"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -212,7 +213,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL CONTAINS "tact"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -234,7 +235,7 @@ public class VisitedUrlConditionletTest {
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
         // Correct, a visited URL REGEX "/.*us"
-        Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+        Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
 
         // Verify is the new url was added to the visitedUrls
         Assert.assertTrue(visitedUrls.get(HOST_IDENTIFIER).contains(currentUrl));
@@ -255,7 +256,7 @@ public class VisitedUrlConditionletTest {
                 VisitedUrlConditionlet.PATTERN_URL_INPUT_KEY, "/.*yyy"));
 
         Instance instance = visitedConditionlet.instanceFrom(parameters);
-        final boolean result = visitedConditionlet.evaluate(request, response, instance);
+        final boolean result = visitedConditionlet.evaluate(request, response, INDEX, instance);
         // Incorrect, a visited URL REGEX "/.*yyy"
         Assert.assertFalse(result);
 
@@ -270,9 +271,9 @@ public class VisitedUrlConditionletTest {
                 visitedUrls);
 
         if (comparison.equalsIgnoreCase(IS_NOT.getId())) {
-            Assert.assertTrue(visitedConditionlet.evaluate(request, response, instance));
+            Assert.assertTrue(visitedConditionlet.evaluate(request, response, INDEX, instance));
         } else {
-            Assert.assertFalse(visitedConditionlet.evaluate(request, response, instance));
+            Assert.assertFalse(visitedConditionlet.evaluate(request, response, INDEX, instance));
         }
     }
 }

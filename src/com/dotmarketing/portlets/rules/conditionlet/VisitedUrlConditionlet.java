@@ -23,8 +23,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.filters.CMSFilter;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
-import com.dotmarketing.portlets.rules.conditionlet.VisitorsCurrentUrlConditionlet.Instance;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotPresentException;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -71,6 +71,10 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
      */
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
+    	return evaluate(request, response, CMSFilter.CMS_INDEX_PAGE, instance);
+    }
+
+    public boolean evaluate(HttpServletRequest request, HttpServletResponse response,String index, Instance instance) {
         final String hostId = getHostId(request);
         if (!UtilMethods.isSet(hostId)) {
             return false;
@@ -92,7 +96,7 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
         }
 
         // Find match with visited urls
-        boolean match = hasMatch(visitedUrlsByHost, instance);
+        boolean match = hasMatch(visitedUrlsByHost, index, instance);
 
         // Add new url to session is not exist
         final String uri = getUri(request);
@@ -120,17 +124,19 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
      * @param instance
      * @return true is there is a match otherwise false
      */
-    private boolean hasMatch(Set<String> visitedUrlsByHost, Instance instance) {
+    private boolean hasMatch(Set<String> visitedUrlsByHost, String index, Instance instance) {
         final boolean comparisonIS_NOT = instance.comparisonValue.equalsIgnoreCase(IS_NOT.getId());
 
         // Variable must starts with true when IS_NOT comparison
         boolean match = comparisonIS_NOT;
 
+        String pattern = processUrl(instance.patternUrl, index, instance.comparison);
+
         for (String url : visitedUrlsByHost) {
             if (comparisonIS_NOT) {
-                match &= instance.comparison.perform(url, instance.patternUrl);
+                match &= instance.comparison.perform(url, pattern);
             } else {
-                match |= instance.comparison.perform(url, instance.patternUrl);
+                match |= instance.comparison.perform(url, pattern);
             }
 
             if (!comparisonIS_NOT && match) {
@@ -155,13 +161,13 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 	 * @param baseUrl
 	 * @return
 	 */
-	private String processUrl(String baseUrl, String index, Instance instance){
+	private String processUrl(String baseUrl, String index, Comparison comparison){
 		String processedUrl = baseUrl;
 		if(processedUrl.indexOf("?") > 0)
 			processedUrl = processedUrl.substring(0,processedUrl.indexOf("?"));
-		if(instance.comparison.getId().equals(IS.getId())
-				|| instance.comparison.getId().equals(IS_NOT.getId())
-				|| instance.comparison.getId().equals(ENDS_WITH.getId())){
+		if(comparison.getId().equals(IS.getId())
+				|| comparison.getId().equals(IS_NOT.getId())
+				|| comparison.getId().equals(ENDS_WITH.getId())){
 			if(processedUrl.endsWith("/"))
 				processedUrl = processedUrl + index;
 		}
@@ -180,6 +186,9 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
 
         try {
             uri = HttpRequestDataUtil.getUri(request);
+            Object rewriteOpt = request.getAttribute(CMSFilter.CMS_FILTER_URI_OVERRIDE);
+			if(rewriteOpt != null)
+				uri = (String) rewriteOpt;
         } catch (UnsupportedEncodingException e) {
             Logger.error(this, "Could not retrieved a valid URI from request: " + request.getRequestURL());
         }
