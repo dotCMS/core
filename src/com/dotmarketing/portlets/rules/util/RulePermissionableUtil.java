@@ -6,6 +6,7 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -27,8 +28,8 @@ public class RulePermissionableUtil {
                 if(iden.getAssetType().equals("folder")){
                     pp = APILocator.getFolderAPI().find(parent,systemUser,false);
                 }else{
-                    pp = APILocator.getContentletAPI()
-                            .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
+                	pp = APILocator.getContentletAPI()
+                            .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false).getParentPermissionable();
                 }
             } else {
                 throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
