@@ -27,6 +27,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -243,7 +244,20 @@ public class CSSPreProcessServlet extends HttpServlet {
             
         }
         catch(Exception ex) {
-            Logger.error(this, "Exception while serving compiled css file",ex);
+        	
+        	try {
+				Class clazz = Class.forName("org.apache.catalina.connector.ClientAbortException");
+				if(ex.getClass().equals(clazz)){
+					Logger.debug(this, "ClientAbortException while serving compiled css file:" + ex.getMessage(), ex);
+				}
+				else{
+					Logger.error(this, "Exception while serving compiled css file",ex);
+				}
+			//if we are not running on tomcat
+			} catch (ClassNotFoundException e) {
+				 Logger.error(this, "Exception while serving compiled css file",ex);
+				
+			}
         }
         finally {
             try {
