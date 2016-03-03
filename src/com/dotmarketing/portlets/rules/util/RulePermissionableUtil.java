@@ -28,13 +28,8 @@ public class RulePermissionableUtil {
                 if(iden.getAssetType().equals("folder")){
                     pp = APILocator.getFolderAPI().find(parent,systemUser,false);
                 }else{
-                	Contentlet contentlet = APILocator.getContentletAPI()
-                            .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false);
-                    pp = contentlet;
-                    if(!contentlet.isHost()){
-                    	String folder = contentlet.getFolder();
-                    	pp = APILocator.getFolderAPI().find(folder,systemUser,false);
-                    }
+                	pp = APILocator.getContentletAPI()
+                            .findContentletByIdentifier(parent, false, APILocator.getLanguageAPI().getDefaultLanguage().getId(), systemUser, false).getParentPermissionable();
                 }
             } else {
                 throw new DotDataException("Parent Identifier: " + parent + " does NOT exist.");
