@@ -1,4 +1,5 @@
 {
+  "name": "Core-Web",
   "version": "3.5.0-beta",
   "description": "DotCMS Core-Web: ReST Client API and UI Components",
   "repository": {
@@ -66,8 +67,8 @@
     "webdriver-start": "webdriver-manager start"
   },
   "dependencies": {
-    "angular2": "2.0.0-beta.0",
     "angular-material": "^1.0.1",
+    "angular2": "2.0.0-beta.0",
     "core-js": "^1.2.x",
     "es6-promise": "^3.0.2",
     "es6-shim": "^0.34.0",

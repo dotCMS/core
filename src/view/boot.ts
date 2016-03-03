@@ -15,7 +15,9 @@ import {I18nService} from "../api/system/locale/I18n"
 import {ComparisonService} from "../api/system/ruleengine/conditionlets/Comparisons"
 import {InputService} from "../api/system/ruleengine/conditionlets/Inputs"
 import {ActionTypeService} from "../api/rule-engine/ActionType"
+import {GalacticBus} from "../api/system/GalacticBus";
 bootstrap(RuleEngineComponent, [
+  GalacticBus,
   ApiRoot,
   I18nService,
   ComparisonService,

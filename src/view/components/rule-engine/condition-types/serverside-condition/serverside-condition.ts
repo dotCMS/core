@@ -28,12 +28,12 @@ import {Verify} from "../../../../../api/validation/Verify";
                          class="cw-input"
                          [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                          [ngFormControl]="input.control"
-                         placeholder="{{input.placeholder | async}}"
                          [required]="input.required"
                          [allowAdditions]="input.allowAdditions"
                          [class.cw-comparator-selector]="input.name == 'comparison'"
                          [class.cw-last]="islast"
-                         (blur)="onBlur(input)">
+                         (touch)="onBlur(input)"
+                         placeholder="{{input.placeholder | async}}">
         <cw-input-option
             *ngFor="#opt of input.options"
             [value]="opt.value"
@@ -42,8 +42,7 @@ import {Verify} from "../../../../../api/validation/Verify";
       </cw-input-dropdown>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'restDropdown'">
-        <cw-input-rest-dropdown 
-                                flex
+        <cw-input-rest-dropdown flex
                                 class="cw-input"
                                 [value]="input.value"
                                 [ngFormControl]="input.control"
@@ -56,7 +55,7 @@ import {Verify} from "../../../../../api/validation/Verify";
                                 [allowAdditions]="input.allowAdditions"
                                 [class.cw-comparator-selector]="input.name == 'comparison'"
                                 [class.cw-last]="islast"
-                                (blur)="onBlur(input)"
+                                (touch)="onBlur(input)"
                                 #rdInput="ngForm"
                                 >
         </cw-input-rest-dropdown>
@@ -85,8 +84,6 @@ import {Verify} from "../../../../../api/validation/Verify";
                      [hidden]="input.argIndex !== null && input.argIndex >= _rhArgCount"
                      [value]="input.value"
                      (blur)="onBlur(input)"></cw-input-date>
-
-
     </template>
   </div>
 </form>`
@@ -143,7 +140,6 @@ export class ServersideCondition {
       if(comparison){
         this.applyRhsCount(comparison.value)
       }
-
     }
   }
 
@@ -221,7 +217,7 @@ export class ServersideCondition {
     let control = new Control(this.componentInstance.getParameterValue(param.key), Validators.compose(vFns))
 
     control.statusChanges.subscribe((value) => {
-      console.log("ServersideCondition", "control.statusChanges", param.key, value,
+      console.log("ServersideCondition", "control.statusChanges", param.key, control.value,
           ' status: ', control.status,
           ' touched: ', control.touched,
           ' dirty: ', control.dirty,
@@ -327,6 +323,7 @@ export class ServersideCondition {
 
 
   handleParamValueChange(name:string, value:any) {
+    console.log("ServersideCondition", "handleParamValueChange", name, value)
     this.componentInstance.setParameter(name, value)
     this.change.emit(this.componentInstance)
     if(name == 'comparison'){

@@ -17,38 +17,44 @@ $primary-one: #209021;
   box-shadow: none;
 }
 
-.ng-dirty {
-  &.ng-valid input:focus,
-  &input:focus.ng-valid,
-  &.ui.input input:focus.ng-valid,
-  &.ng-valid .ui.input input:focus,
-  &.ui.dropdown.ng-valid,
-  &.ui.selection.dropdown.ng-valid,
-  &.required.ui.dropdown.ng-valid {
+.ng-dirty.ng-valid input:focus,
+.ng-dirtyinput:focus.ng-valid,
+.ng-dirty.ui.input input:focus.ng-valid,
+.ng-dirty.ng-valid .ui.input input:focus,
+.ng-dirty.ui.selection.dropdown.ng-valid,
+.ng-touched.ng-valid .ui.selection.dropdown.search.visible {
     border-left: 5px solid $primary-one;
     transition-property: border-left;
     transition-delay: 0s;
     transition-duration: 0s;
-}}
+}
 
-.ng-dirty {
-  &.ng-valid input,
-  &input.ng-valid,
-  &.ui.input input.ng-valid,
-  &.ng-valid .ui.input input,
-  &.ui.dropdown.ng-valid,
-  &.ui.selection.dropdown.ng-valid,
-  &.required.ui.dropdown.ng-valid {
+
+  .ng-dirty.ng-valid input,
+  input.ng-dirty.ng-valid,
+  .ng-dirty.ui.input input.ng-valid,
+  .ng-dirty.ng-valid .ui.input input,
+  .ng-dirty.ui.dropdown.ng-valid,
+  .ng-dirty.ui.selection.dropdown.ng-valid,
+  .ng-touched.ng-valid .ui.selection.dropdown.search {
     border-left: 1px solid rgba(34, 36, 38, 0.15);
     transition-property: border-left, border-left-width;
     transition-delay: 1s;
     transition-duration: 600ms;
     transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  }}
+  }
 
-.ng-invalid input, input.ng-invalid, .ui.input input.ng-invalid, .ng-invalid .ui.input input, .ui.selection.dropdown.ng-invalid {
-  border-left: 5px solid $warn
+.ng-invalid input,
+input.ng-invalid,
+.ui.input input.ng-invalid,
+.ng-invalid .ui.input input,
+.ui.selection.dropdown.ng-invalid,
+cw-input-rest-dropdown.ng-dirty.ng-touched.ng-invalid input.search,
+.ng-dirty.ng-invalid .ui.selection.dropdown.search {
+  border-left: 5px solid $warn;
 }
+
+
 
 .cw-rule-engine {
   > .cw-header {
@@ -133,9 +139,21 @@ $primary-one: #209021;
   .cw-rule-caret {
     min-width: 1.25em;
     max-width: 1.25em;
-    margin-left: .5em;
+    margin-left: 0;
   }
 
+  .cw-rule-cloud {
+    min-width: 1.0em;
+    max-width: 1.0em;
+    margin-left: .5em;
+    margin-right: .25em;
+    color:white;
+    text-shadow: 1px 1px 8px #555555;
+    &.out-of-sync {
+      color:red;
+      text-shadow: 1px 1px 8px black;
+    }
+  }
   .cw-fire-on-label {
     font-weight: bold;
     margin-right: .5em;

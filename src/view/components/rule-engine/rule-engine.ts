@@ -1,4 +1,4 @@
-import {Provider, EventEmitter, Component, Directive, View, Injector} from 'angular2/core'
+import {Component} from 'angular2/core'
 import {CORE_DIRECTIVES} from 'angular2/common'
 import {Observable} from 'rxjs/Rx'
 
@@ -29,11 +29,11 @@ const I8N_BASE:string = 'api.sites.ruleengine'
     </div>
     <div class="cw-filter-links">
       <span>{{rsrc('inputs.filter.status.show.label') | async}}:</span>
-      <a href="javascript:void(0)" [ngClass]="{'active': !isFilteringField('enabled'),'cw-filter-link': true}" (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="!isFilteringField('enabled')" (click)="setFieldFilter('enabled',null)">{{rsrc('inputs.filter.status.all.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ngClass]="{'active': isFilteringField('enabled',true),'cw-filter-link': true}" (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',true)" (click)="setFieldFilter('enabled',true)">{{rsrc('inputs.filter.status.active.label') | async}}</a>
       <span>&#124;</span>
-      <a href="javascript:void(0)" [ngClass]="{'active': isFilteringField('enabled',false),'cw-filter-link': true}" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
+      <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
 

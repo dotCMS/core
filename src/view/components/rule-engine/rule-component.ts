@@ -22,6 +22,7 @@ import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel
 import {I18nService} from "../../../api/system/locale/I18n";
 import {UserModel} from "../../../api/auth/UserModel";
 import {ApiRoot} from "../../../api/persistence/ApiRoot";
+import {GalacticBus} from "../../../api/system/GalacticBus";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -42,6 +43,7 @@ var rsrc = {
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
+      <i flex="none" class="cloud icon cw-rule-cloud small" [class.download]="_loading" [class.upload]="_saving" [class.out-of-sync]="_outOfSync" aria-hidden="true"></i>
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
       <div flex="70" layout="column">
       <cw-input-text class="cw-rule-name-input"
@@ -72,7 +74,7 @@ var rsrc = {
                        [on-text]="rsrc('inputs.onOff.on.label') | async"
                        [off-text]="rsrc('inputs.onOff.off.label') | async"
                        [value]="rule.enabled"
-                       (change)="handleEnabledToggle($event)"
+                       (change)="setRuleEnabledState($event)"
                        (click)="$event.stopPropagation()">
       </cw-toggle-input>
       <div class="cw-btn-group">
@@ -127,18 +129,21 @@ class RuleComponent {
   hideFireOn:boolean
   actions:Array<ActionModel>
   groups:Array<ConditionGroupModel>
-
+  formModel:ControlGroup
   elementRef:ElementRef
+
   private ruleService:RuleService
   private actionService:ActionService
   private _groupService:ConditionGroupService
 
   private fireOn:any
+  private _outOfSync:boolean = false
   private _rsrcCache:{[key:string]:Observable<string>}
   private _user:UserModel
   resources:I18nService
 
-  formModel:ControlGroup
+  private _valid:boolean = true
+  private _saving:boolean = false
 
   constructor(fb:FormBuilder,
               user:UserModel,
@@ -147,7 +152,7 @@ class RuleComponent {
               actionService:ActionService,
               groupService:ConditionGroupService,
               resources:I18nService,
-              apiRoot:ApiRoot) {
+              apiRoot:ApiRoot, private _bus:GalacticBus) {
     this._user = user
     this.change = new EventEmitter()
     this.remove = new EventEmitter()
@@ -177,6 +182,39 @@ class RuleComponent {
       ]
     }
     this.initFormModel(fb)
+
+    this._bus.ruleAddRuleAction$()
+        .filter((event) => event.payload.rule === this.rule)
+        .subscribe((event) => {
+          this._outOfSync = true
+        })
+
+    this._bus.rulePatchRuleAction$()
+        .filter((event) => event.payload.rule === this.rule)
+        .subscribe((event) => {
+          this.setRuleEnabledState(false)
+          this._saving = false
+          this._outOfSync = false
+        })
+
+    this._bus.rulePatchedRuleAction$()
+        .filter((event) => event.payload.rule === this.rule)
+        .subscribe((event) => {
+          this._outOfSync = false
+        })
+
+    this._bus.ruleBecameInvalid$()
+        .filter((event) => event.payload.rule === this.rule)
+        .subscribe((event) => {
+          this._outOfSync = true
+          this._valid = false
+        })
+    this._bus.ruleBecameValid$()
+        .filter((event) => event.payload.rule === this.rule)
+        .subscribe((event) => {
+          this._outOfSync = false
+          this._valid = true
+        })
   }
 
   initFormModel(fb:FormBuilder) {
@@ -195,7 +233,6 @@ class RuleComponent {
       msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal )
       this._rsrcCache[subkey] = msgObserver
     }
-
     return msgObserver
   }
 
@@ -252,27 +289,38 @@ class RuleComponent {
     this.change.emit(this.rule)
   }
 
-  handleEnabledToggle(enabled:boolean) {
-    console.log("RuleComponent", "handleEnabledToggle", enabled)
-    this.rule.enabled = enabled
-    this.change.emit(this.rule)
+  setRuleEnabledState(enabled:boolean) {
+    if(enabled !== this.rule.enabled) {
+      this.rule.enabled = enabled
+      this.change.emit(this.rule)
+    }
   }
 
   addAction() {
+    this.setRuleEnabledState(false)
     let priority = this.actions.length ? this.actions[this.actions.length - 1].priority + 1 : 1
-    this.actions.push(new ActionModel(null, new ServerSideTypeModel(), this.rule, priority))
+    const action = new ActionModel(null, new ServerSideTypeModel(), this.rule, priority)
+    this._bus.ruleAddRuleAction(this.rule, action)
+    this.actions.push(action)
     this.sort()
   }
 
   onActionChange(action:ActionModel) {
+    this._bus.rulePatchRuleAction(this.rule, action)
     if (action.isValid()) {
+      if(this.rule.isValid() && !this._valid){
+        this._bus.ruleBecameValid(this.rule, action)
+      }
+      this._bus.rulePatchRuleAction(this.rule, action)
       if (!action.isPersisted()) {
         this.actions[this.actions.length -1 ] = action
         action.owningRule = this.rule
-        this.actionService.add(action)
+        this.actionService.add(action, ()=> this._bus.rulePatchedRuleAction(this.rule, action))
       } else {
-        this.actionService.save(action)
+        this.actionService.save(action, ()=> this._bus.rulePatchedRuleAction(this.rule, action))
       }
+    } else if(this._valid){
+      this._bus.ruleBecameInvalid(this.rule, action)
     }
   }
 
