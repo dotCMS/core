@@ -46,7 +46,7 @@ public class RequestParameterConditionlet extends Conditionlet<RequestParameterC
     
     @Override
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response, Instance instance) {
-        String parameterActualValue = request.getHeader(instance.parameterKey);
+        String parameterActualValue = request.getParameter(instance.parameterKey);
         boolean evalSuccess;
         if(instance.comparison == EXISTS) {
             evalSuccess = EXISTS.perform(parameterActualValue);
