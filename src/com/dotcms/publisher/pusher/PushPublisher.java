@@ -40,6 +40,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PushPublishLogger;
 import com.dotmarketing.util.UtilMethods;
 
 public class PushPublisher extends Publisher {
@@ -96,6 +97,7 @@ public class PushPublisher extends Publisher {
 			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
 			boolean isHistoryEmpty = endpointsMap.size() == 0;
 			currentStatusHistory.setPublishStart(new Date());
+			PushPublishLogger.log(this.getClass(), "Status Update: Sending to all environments");
 			pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
 			//Increment numTries
 			currentStatusHistory.addNumTries();
@@ -143,6 +145,7 @@ public class PushPublisher extends Publisher {
 
 	        			if(response.getStatus() == HttpStatus.SC_OK)
 	        			{
+							PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 	        				detail.setStatus(PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY.getCode());
 	        				detail.setInfo("Everything ok");
 	        			} else {
@@ -190,6 +193,7 @@ public class PushPublisher extends Publisher {
 			if(errorCounter==0) {
 				//Updating audit table
 		        currentStatusHistory.setPublishEnd(new Date());
+				PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
 				pubAuditAPI.updatePublishAuditStatus(config.getId(),
 						PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
 
@@ -210,6 +214,7 @@ public class PushPublisher extends Publisher {
 		} catch (Exception e) {
 			//Updating audit table
 			try {
+				PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish");
 				pubAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.FAILED_TO_PUBLISH, currentStatusHistory);
 			} catch (DotPublisherException e1) {
 				throw new DotPublishingException(e.getMessage());
