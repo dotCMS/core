@@ -213,15 +213,38 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertTemplateReferencesToAHostSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 		"insert into permission_reference (asset_id, reference_id, permission_type) " +
-		"select ":
-		 DbConnectionFactory.isOracle() ?
+		"select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident, " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "')) x where ident.id = x.id"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		"insert into permission_reference (asset_id, reference_id, permission_type) " +
+		"select ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		:
+		DbConnectionFactory.isOracle() ?
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"select permission_reference_seq.NEXTVAL, ":
+		"select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"	from identifier ident where ident.id in " +
+		"		(" + selectChildrenTemplateSQL + " and " +
+		"		 identifier.id not in (select inode_id from permission " +
+		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+		"		 identifier.id not in (select asset_id from permission_reference where " +
+		"			permission_type = '" + Template.class.getCanonicalName() + "'))"
+		:
 		"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-		"select nextval('permission_reference_seq'), ") +
-		"ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
+		"select nextval('permission_reference_seq'), ident.id, ?, '" + Template.class.getCanonicalName() + "'" +
 		"	from identifier ident where ident.id in " +
 		"		(" + selectChildrenTemplateSQL + " and " +
 		"		 identifier.id not in (select inode_id from permission " +
@@ -274,21 +297,44 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 2. The host id the templates belong to
 	 */
 	private final String insertContainerReferencesToAHostSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 			"insert into permission_reference (asset_id, reference_id, permission_type) " +
-			"select ":
-		 DbConnectionFactory.isOracle()?
+			"select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident, " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "')) x where ident.id = x.id"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+			"insert into permission_reference (asset_id, reference_id, permission_type) " +
+			"select ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))"
+		:
+		 DbConnectionFactory.isOracle() ?
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-			"select permission_reference_seq.NEXTVAL, ":
+			"select permission_reference_seq.NEXTVAL, ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))"
+		:
 			"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-			"select nextval('permission_reference_seq'), ") +
-		" ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
-		"	from identifier ident where ident.id in " +
-		"		(" + selectChildrenContainerSQL + " and " +
-		"		 identifier.id not in (select inode_id from permission " +
-		"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
-		"		 identifier.id not in (select asset_id from permission_reference where " +
-		"			permission_type = '" + Container.class.getCanonicalName() + "'))";
+			"select nextval('permission_reference_seq'), ident.id, ?, '" + Container.class.getCanonicalName() + "'" +
+			"	from identifier ident where ident.id in " +
+			"		(" + selectChildrenContainerSQL + " and " +
+			"		 identifier.id not in (select inode_id from permission " +
+			"			where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "') and " +
+			"		 identifier.id not in (select asset_id from permission_reference where " +
+			"			permission_type = '" + Container.class.getCanonicalName() + "'))";
 
 	/**
 	 * Function name to get the folder path. MSSql need owner prefix dbo
@@ -490,15 +536,63 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertHTMLPageReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
+				"select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"	select distinct li.id as li_id from identifier li where" +
+                " 	li.asset_type='htmlpage' and li.host_inode = ? and li.parent_path like ?" +
+            	" UNION ALL" +
+                " SELECT distinct li.id as li_id FROM identifier li" +
+                    " INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet')" +
+                    " INNER JOIN structure ls ON (lc.structure_inode = ls.inode and ls.structuretype = " + Structure.STRUCTURE_TYPE_HTMLPAGE + ")" +
+                    " AND li.host_inode = ? and li.parent_path like ?" +
+                    " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) all_ids where identifier.id = all_ids.li_id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+				"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenHTMLPageSQL + " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenHTMLPageSQL + " and" +
+				"		li.id not in (" +
+		        "			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+		        "                                join identifier on (ref_folder.identifier=identifier.id) " +
+		        "			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + IHTMLPage.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		li.id not in (" +
+				"			select inode_id from permission where permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-				"	identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + IHTMLPage.class.getCanonicalName() + "' " +
 				"	from identifier where identifier.id in (" +
 				"		" + selectChildrenHTMLPageSQL + " and" +
 				"		li.id not in (" +
@@ -587,28 +681,74 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertFileReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
+			"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"		select distinct identifier.id as i_id from identifier where " +
+				"			asset_type='contentlet' and identifier.host_inode = ? and identifier.parent_path like ? and " +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) t1 " +
+				"	WHERE identifier.id = t1.i_id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
+				"select  identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 		 DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
-		"	from identifier where identifier.id in (" +
-		"		" + selectChildrenFileSQL + " and" +
-		"		identifier.id not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		"              join identifier ii on (ii.id=ref_folder.identifier) " +
-		"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		identifier.id not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + File.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenFileSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"              join identifier ii on (ii.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + File.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load link identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -685,28 +825,72 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertLinkReferencesSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle() ?
+				"select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"		" + selectChildrenLinkSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"            join identifier ii on (ii.id=ref_folder.identifier) where " +
+				"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) x where identifier.id = x.id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+				"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenLinkSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"            join identifier ii on (ii.id=ref_folder.identifier) where " +
+				"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isOracle() ?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenLinkSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"            join identifier ii on (ii.id=ref_folder.identifier) where " +
+				"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"   identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
-		"	from identifier where identifier.id in (" +
-		"		" + selectChildrenLinkSQL + " and" +
-		"		identifier.id not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		"            join identifier ii on (ii.id=ref_folder.identifier) where " +
-		"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		identifier.id not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + Link.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenLinkSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"            join identifier ii on (ii.id=ref_folder.identifier) where " +
+				"			"+dotFolderPath+"(ii.parent_path,ii.asset_name) like ? and permission_type = '" + Link.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To load content identifiers that are in the same tree/hierarchy of a parent host/folder
@@ -820,28 +1004,73 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 	 * 4. same as 3
 	 */
 	private final String insertContentReferencesByPathSQL =
-		(DbConnectionFactory.isMySql() || DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+		DbConnectionFactory.isMySql() ?
 				"insert into permission_reference (asset_id, reference_id, permission_type) " +
-				"select ":
-		 DbConnectionFactory.isOracle()?
+				"select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
+				"	from identifier, (" +
+				"		" + selectChildrenContentByPathSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"                                join identifier on (identifier.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) x " +
+				"WHERE identifier.id = x.id " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isMsSql() || DbConnectionFactory.isH2() ?
+				"insert into permission_reference (asset_id, reference_id, permission_type) " +
+				"select identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenContentByPathSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"                                join identifier on (identifier.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
+		DbConnectionFactory.isOracle()?
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select permission_reference_seq.NEXTVAL, ":
+				"select permission_reference_seq.NEXTVAL, identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenContentByPathSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"                                join identifier on (identifier.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)"
+		:
 				"insert into permission_reference (id, asset_id, reference_id, permission_type) " +
-				"select nextval('permission_reference_seq'), ") +
-		"	identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
-		"	from identifier where identifier.id in (" +
-		"		" + selectChildrenContentByPathSQL + " and" +
-		"		identifier.id not in (" +
-		"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
-		"                                join identifier on (identifier.id=ref_folder.identifier) " +
-		"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
-		"		) and " +
-		"		identifier.id not in (" +
-		"			select inode_id from permission where " +
-		"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
-		"		) " +
-		"	) " +
-		"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
+				"select nextval('permission_reference_seq'), identifier.id, ?, '" + Contentlet.class.getCanonicalName() + "' " +
+				"	from identifier where identifier.id in (" +
+				"		" + selectChildrenContentByPathSQL + " and" +
+				"		identifier.id not in (" +
+				"			select asset_id from permission_reference join folder ref_folder on (reference_id = ref_folder.inode)" +
+				"                                join identifier on (identifier.id=ref_folder.identifier) " +
+				"			where "+dotFolderPath+"(parent_path,asset_name) like ? and permission_type = '" + Contentlet.class.getCanonicalName() + "'" +
+				"		) and " +
+				"		identifier.id not in (" +
+				"			select inode_id from permission where " +
+				"			permission_type = '" + PermissionAPI.INDIVIDUAL_PERMISSION_TYPE + "'" +
+				"		) " +
+				"	) " +
+				"and not exists (SELECT asset_id from permission_reference where asset_id = identifier.id)";
 
 	/*
 	 * To insert permission references for content under a parent folder hierarchy, it only inserts the references if the content
