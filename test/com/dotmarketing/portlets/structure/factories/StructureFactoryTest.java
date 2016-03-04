@@ -637,13 +637,14 @@ public class StructureFactoryTest extends ContentletBaseTest {
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
+        Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
         List<String> varNames = new ArrayList<String>();
-        varNames.add( UtilMethods.toCamelCase( "JUnit Test Image" ) );
+        varNames.add( UtilMethods.toCamelCase( "JUnit Test Image-" + identifier) );
 
         List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
-        fieldValues.add( new String[]{ "JUnit Test Image" } );
+        fieldValues.add( new String[]{ "JUnit Test Image-" + identifier } );
 
         //Getting the fields list
         List<Field> fieldList = StructureFactory.getImagesFieldsList( structure, varNames, fieldValues );
@@ -662,13 +663,14 @@ public class StructureFactoryTest extends ContentletBaseTest {
 
         //Getting a known structure
         Structure structure = structures.iterator().next();
+        Long identifier = uniqueIdentifier.get(structure.getName());
 
         //Preparing the parameters for the search
         List<String> varNames = new ArrayList<String>();
-        varNames.add( UtilMethods.toCamelCase( "JUnit Test File" ) );
+        varNames.add( UtilMethods.toCamelCase( "JUnit Test File-" + identifier) );
 
         List<String[]> fieldValues = new ArrayList<String[]>();//Not sure about this parameter, not sure what is for, the method getImagesFieldsList just ask if it is a null value.....
-        fieldValues.add( new String[]{ "JUnit Test File" } );
+        fieldValues.add( new String[]{ "JUnit Test File-" + identifier } );
 
         //Getting the fields list
         List<Field> fieldList = StructureFactory.getFilesFieldsList( structure, varNames, fieldValues );
