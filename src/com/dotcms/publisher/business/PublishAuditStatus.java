@@ -1,5 +1,6 @@
 package com.dotcms.publisher.business;
 
+import com.dotmarketing.util.PushPublishLogger;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -55,13 +56,14 @@ public class PublishAuditStatus implements Serializable {
 	public PublishAuditStatus(String bundleId) {
 		this.bundleId = bundleId;
 		this.createDate = new Date();
+		PushPublishLogger.log(this.getClass(), "Status Update: Pending.");
 		this.status = Status.BUNDLE_REQUESTED;
 	}
 	
 	/**
 	 * Useful to build a Audit Status with new status attribute
 	 * from an existing status
-	 * @param bundleId
+	 * @param origin
 	 * @param status
 	 */
 	public PublishAuditStatus(PublishAuditStatus origin, Status status) {
