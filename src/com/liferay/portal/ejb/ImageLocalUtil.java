@@ -122,12 +122,12 @@ public class ImageLocalUtil {
 
 	private byte[] _getDefaultBytes() {
 		byte[] defaultBytes = (byte[])_imagePool.get(PropsUtil.IMAGE_DEFAULT);
+		String imagePath = PropsUtil.get(PropsUtil.IMAGE_DEFAULT);
 
-		if (defaultBytes == null) {
+		if (defaultBytes == null &&  imagePath != null) {
 			try {
 				InputStream is =
-					getClass().getClassLoader().getResourceAsStream(
-						PropsUtil.get(PropsUtil.IMAGE_DEFAULT));
+					getClass().getClassLoader().getResourceAsStream(imagePath);
 
 				if (is != null) {
 					ByteArrayOutputStream buffer = new ByteArrayOutputStream();
