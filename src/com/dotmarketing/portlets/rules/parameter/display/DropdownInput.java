@@ -20,7 +20,11 @@ public class DropdownInput extends TextInput<TextType> {
     private int maxSelections = 1;
 
     public DropdownInput() {
-        super("dropdown", new TextType());
+        this(new TextType());
+    }
+
+    public DropdownInput(TextType type) {
+        super("dropdown", type);
     }
 
     public DropdownInput option(String optionKey) {

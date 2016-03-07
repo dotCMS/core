@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
 import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.collect.Lists;
 import com.dotcms.repackage.javax.ws.rs.*;
 import com.dotcms.repackage.javax.ws.rs.core.Context;
 import com.dotcms.repackage.javax.ws.rs.core.MediaType;
@@ -22,7 +23,6 @@ import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import javax.servlet.http.HttpServletRequest;
@@ -101,7 +101,7 @@ public class ConditionValueResource {
         try {
             getHost(siteId, user);
             ParameterModel value = rulesAPI.getConditionValueById(valueId, user, false);
-            RestConditionValue restConditionValue = parameterModelTransform.toRest.apply(value);
+            RestConditionValue restConditionValue = parameterModelTransform.toRest(value);
             return Response.ok(restConditionValue).build();
         } catch (DotDataException e) {
             throw new BadRequestException(e, e.getMessage());
@@ -253,12 +253,12 @@ public class ConditionValueResource {
 
     private List<RestConditionValue> getValuesInternal(User user, Condition condition) {
         List<ParameterModel> values = condition.getValues();
-        return values.stream().map(parameterModelTransform.toRest).collect(Collectors.toList());
+        return Lists.transform(values, parameterModelTransform.toRestFn);
     }
 
     private String createConditionValueInternal(String conditionId, RestConditionValue restValue, User user) {
         try {
-            ParameterModel parameterModel = parameterModelTransform.toApp.apply(restValue);
+            ParameterModel parameterModel = parameterModelTransform.toAppFn.apply(restValue);
             parameterModel.setOwnerId(conditionId);
 
             rulesAPI.saveConditionValue(parameterModel, user, false);

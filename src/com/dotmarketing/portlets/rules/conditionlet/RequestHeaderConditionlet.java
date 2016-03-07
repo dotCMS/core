@@ -43,7 +43,7 @@ public class RequestHeaderConditionlet extends Conditionlet<RequestHeaderConditi
 
     private static final ParameterDefinition<TextType> headerKey = new ParameterDefinition<>(
         1, HEADER_NAME_KEY,
-        new DropdownInput()
+        new DropdownInput(new TextType().maxLength(255))
             .allowAdditions()
             .minSelections(1)
             .option("Accept")

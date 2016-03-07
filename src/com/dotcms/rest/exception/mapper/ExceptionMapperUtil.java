@@ -10,7 +10,7 @@ import com.dotmarketing.util.json.JSONObject;
  *
  * Class to abstract methods that will be used in Mapper Exception classes on dotCMS.
  */
-public class DotExceptionMapper {
+public final class ExceptionMapperUtil {
 
     /**
      *
@@ -36,12 +36,13 @@ public class DotExceptionMapper {
      * @param entity JSON as String.
      * @return Response with Status 400 and Media Type JSON.
      */
-    public static Response createResponse(String entity){
+    public static Response createResponse(String entity, String message){
 
         //Return 4xx message to the client.
         return Response
                 .status(Response.Status.BAD_REQUEST)
                 .entity(entity)
+                .header("error-message", message)
                 .type(MediaType.APPLICATION_JSON)
                 .build();
     }

@@ -55,25 +55,23 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
 
     public final T doCheckValid(RuleComponentModel data) {
         Map<String, ParameterModel> params = data.getParameters();
-        for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
-        	if(params.containsKey(entry.getKey()))
-        		entry.getValue().checkValid(params.get(entry.getKey()));
-        	else{
-        		if(Logger.isDebugEnabled(this.getClass())) {
-                    Logger.debug(this.getClass(), "The parameter '" + entry.getKey() + "' is missing.");
-                }
-        		throw new InvalidRuleParameterException("The parameter '%s' is missing.",entry.getKey());
-        	}
+        String key = null;
+        try {
+            for (Map.Entry<String, ParameterDefinition> entry : this.getParameterDefinitions().entrySet()) {
+                key = entry.getKey();
+                entry.getValue().checkValid(params.get(key));
+            }
+        } catch (Exception e) {
+            throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s: "
+                                                         + "validation failed for parameter '%s'",
+                                                      this.getId(), data.toString(), key);
         }
-
         T instance;
         try {
             instance = instanceFrom(params);
-        } catch (RuleEngineException e) {
+        } catch (RuleEngineException | InvalidRuleParameterException e) {
             throw e;
-        } catch(InvalidRuleParameterException irp){
-        	throw irp;
-        }catch (Exception e) {
+        } catch (Exception e) {
             throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s.",
                                                       this.getId(), data.toString());
         }

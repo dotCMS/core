@@ -29,7 +29,6 @@ import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotmarketing.portlets.rules.model.Condition;
-import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 
 import java.net.URI;
