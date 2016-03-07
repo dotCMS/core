@@ -110,7 +110,6 @@ var tagsMap = {};
 var lastLength = 0;
 
 function suggestTagsForSearch(e) {
-	console.log(e);
 	if (!tagVelocityVarName || tagVelocityVarName == "") {
 		tagVelocityVarName = e.target.id;
 	}
@@ -183,8 +182,10 @@ function closeSuggetionBox(e) {
 
 function removeLastTag() {
 	var tags = query(".tagLink");
-	var tagToRemove = tags[tags.length - 1];
-	clearTag(tagToRemove);
+	if (tags.length) {
+		var tagToRemove = tags[tags.length - 1];
+		clearTag(tagToRemove);
+	}
 }
 
 var pos;
@@ -194,37 +195,39 @@ var query = dojo.require("dojo.query");
 
 function focusSelectedTag(e) {
 	var tagsOptionsLinks = query("#" + tagVelocityVarName + "SuggestedTagsDiv a");
-	var lastPos = tagsOptionsLinks.length - 1;
-	switch(e.keyCode) {
-		case keys.UP_ARROW:
-			e.preventDefault();
-			if (pos === null) {
-				pos = lastPos;
-			} else if (pos > 0) {
-				pos--;
-			} else {
-				return dijit.focus(dojo.byId(tagVelocityVarName));
-			}
-			var item = tagsOptionsLinks[pos];
-			item.classList.add("suggestedTagFocus");
-			if (item.nextSibling) {
-				item.nextSibling.classList.remove("suggestedTagFocus");
-			}
-			break;
-		case keys.DOWN_ARROW:
-			e.preventDefault();
+	if (tagsOptionsLinks.length) {
+		var lastPos = tagsOptionsLinks.length - 1;
+		switch(e.keyCode) {
+			case keys.UP_ARROW:
+				e.preventDefault();
+				if (pos === null) {
+					pos = lastPos;
+				} else if (pos > 0) {
+					pos--;
+				} else {
+					return dijit.focus(dojo.byId(tagVelocityVarName));
+				}
+				var item = tagsOptionsLinks[pos];
+				item.classList.add("suggestedTagFocus");
+				if (item.nextSibling) {
+					item.nextSibling.classList.remove("suggestedTagFocus");
+				}
+				break;
+			case keys.DOWN_ARROW:
+				e.preventDefault();
 
-			if (pos === null) {
-				pos = 0
-			} else if (pos < lastPos) {
-				pos++;
-			}
-			var item = tagsOptionsLinks[pos];
-			item.classList.add("suggestedTagFocus");
-			if (item.previousSibling) {
-				item.previousSibling.classList.remove("suggestedTagFocus");
-			}
-			break;
+				if (pos === null) {
+					pos = 0
+				} else if (pos < lastPos) {
+					pos++;
+				}
+				var item = tagsOptionsLinks[pos];
+				item.classList.add("suggestedTagFocus");
+				if (item.previousSibling) {
+					item.previousSibling.classList.remove("suggestedTagFocus");
+				}
+				break;
+		}
 	}
 }
 
