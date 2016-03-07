@@ -98,17 +98,22 @@ public class VisitorTagsActionlet extends RuleActionlet<VisitorTagsActionlet.Ins
          * @throws InvalidRuleParameterException
          */
         private String checkValid(final Map<String, ParameterModel> parameters) throws InvalidRuleParameterException{
-        	if(parameters == null || parameters.size()!=1)
+        	if(parameters == null || parameters.size() != 1	){
         		throw new InvalidRuleParameterException("This actionlet only allows '%s' as parameter",TAGS_KEY);
+        	}
         	String value = parameters.get(TAGS_KEY).getValue();
-        	if(value == null)
+        	if(value == null){
         		throw new InvalidRuleParameterException("Null is not a valid parameter value");
-        	String trimmedValue = value.trim().replace("\"", "");
-        	if(trimmedValue.startsWith(",") || trimmedValue.endsWith(","))
+        	}
+        	String trimmedValue = value.trim();
+        	if(trimmedValue.indexOf('\"') > -1 || trimmedValue.indexOf('\'') > -1)
+        		throw new InvalidRuleParameterException("Single or double quotes are not allowed");
+        	if(trimmedValue.startsWith(",") || trimmedValue.endsWith(",")){
         		throw new InvalidRuleParameterException("Empty tag values are not allowed");
+        	}
             if(REQUIRED){
             	if(trimmedValue.isEmpty())
-            		throw new InvalidRuleParameterException("The tags parameter requieres values. Empty values not allowed.");
+            		throw new InvalidRuleParameterException("The tags parameter requieres values. Empty values are not allowed.");
     	        String[] values = trimmedValue.trim().split(",");
     			Set<String> uniqueValues = new HashSet<String>();
     			for (String currentValue : values){
