@@ -15,7 +15,7 @@
     <Property name="TEST_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-test.log</Property>
     <Property name="TEST_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-test-%i.log.gz</Property>
     <Property name="PUSHPUBLISH_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-pushpublish.log</Property>
-    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-pushpublish-%i.log.gz</Property>
+    <Property name="PUSHPUBLISH_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-pushpublish-%i{BundleId}.log.gz</Property>
     <Property name="VELOCITY_LOG_FILE">${sys:DOTCMS_LOGGING_HOME}/dotcms-velocity.log</Property>
     <Property name="VELOCITY_FILENAME_PATTERN">${sys:DOTCMS_LOGGING_HOME}/archive/dotcms-velocity-%i.log.gz</Property>
     <Property name="PATTERN">%-5level %d %c:%M(%L): %m%n</Property>
