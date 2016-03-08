@@ -54,7 +54,7 @@ export function initSpec(TestUtil) {
     it('should have translations for the filter box placeholder text.', function () {
       rulePage = new RulePage("es")
       rulePage.navigateTo().then(()=>{
-        expect(rulePage.filterBox.getAttribute('placeholder')).toEqual('Empieza a escribir para filtrar reglas...');
+        expect(rulePage.getFilterPlaceholder()).toEqual('Empieza a escribir para filtrar reglas...');
       })
     });
 
@@ -88,43 +88,56 @@ export function initSpec(TestUtil) {
     });
 
     it('should save the fire-on value when changed.', function (done) {
+      var name
       rulePage.addRule('should save the fire-on value when changed.').then((rule:TestRuleComponent)=> {
-        var name = rule.name
-        rule.fireOn.setSearch('every r')
-        rulePage.filterBox.click()
-        rulePage.waitForSave()
-        rulePage.navigateTo().then(()=>{
-          rule = rulePage.findRule(name)
-          expect(rule.fireOn.getValueText()).toEqual('Every Request', "FireOn value should have been saved and restored.")
-          rule.remove().then(done)
-        })
-      })
-    });
-
-    it('should save the enabled value when changed.', function (done) {
-      rulePage.addRule('should save the enabled value when changed.').then((rule:TestRuleComponent)=> {
-        let name = rule.name
-        rule.toggleEnable.toggle().then(()=>{
-          rulePage.waitForSave()
-          rulePage.navigateTo().then(()=>{
-            rule = rulePage.findRule(name)
-            rule.toggleEnable.value().then(( newValue ) => {
-              expect(newValue).toEqual(true, "New rule should have been toggled to 'on' state.")
-              if(newValue){
+        name = rule.name
+        return rule.setFireOn('Every Request')
+      }).then(() => rulePage.navigateTo())
+          .then((rulePage:RulePage) => rulePage.findRule(name))
+          .then((rule:TestRuleComponent) => {
+            return rule.getFireOn().then((fireOn:string) => {
+              var expected = 'Every Request'
+              expect(fireOn).toEqual(expected, "FireOn value should have been saved and restored.")
+              if (fireOn == expected) {
                 rule.remove().then(done)
+              } else {
+                done()
               }
             })
           })
-        })
-      })
+    });
+
+    it('should save the enabled value when changed.', function (done) {
+      var name, rule
+      rulePage.addRule('should save the enabled value when changed.').then((r:TestRuleComponent)=> {
+            rule = r
+            name = rule.name
+            return rule.toggleEnable.toggle()
+          })
+          .then(()=> rulePage.saveAndReload())
+          .then((rulePage:RulePage) => rulePage.findRule(name))
+          .then((rule:TestRuleComponent) => rule.toggleEnable.value())
+          .then((newValue:boolean)=> {
+            expect(newValue).toEqual(true, "New rule should have been toggled to 'on' state.")
+            if (newValue) {
+              rule.remove().then(done)
+            } else {
+              done()
+            }
+          })
     });
 
     it('should expand when the expando icon is clicked.', function (done) {
-      rulePage.addRule('should expand when the expando icon is clicked.').then((rule:TestRuleComponent)=> {
-        rule.expand()
-        expect(rule.isShowingBody()).toEqual(true)
-        rule.remove().then(done)
-      })
+      var rule
+      rulePage.addRule('should expand when the expando icon is clicked.')
+          .then((r:TestRuleComponent)=> { rule = r; return rule.expand()})
+          .then(() =>rule.isShowingBody())
+          .then((showing:boolean)=> {
+            expect(showing).toEqual(true)
+            if(showing) {
+              rule.remove().then(done)
+            }
+          })
     })
 
     it('should expand when the name field is focused.', function (done) {
@@ -154,7 +167,6 @@ export function initSpec(TestUtil) {
 
           })
         })
-
       })
     })
 
@@ -167,7 +179,7 @@ export function initSpec(TestUtil) {
           rule = rulePage.findRule(name)
           rule.expand().then(()=> {
             conditionDef = <TestRequestHeaderCondition>rule.firstGroup().first()
-            conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT, rule.nameEl.el)
+            conditionDef.setComparison(TestConditionComponent.COMPARE_IS_NOT)
             rulePage.waitForSave()
             rulePage.navigateTo()
             rule = rulePage.findRule(name)

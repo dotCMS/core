@@ -23,10 +23,10 @@ export class Page {
     return this.baseUrl + v
   }
 
-  navigateTo():webdriver.promise.Promise<void>{
+  navigateTo():webdriver.promise.Promise<Page>{
     let result = browser.get(this.getFullUrl())
     expect(browser.getTitle()).toEqual(this.title);
-    return result
+    return result.then((  ) =>  this )
   }
 
   static logBrowserConsole(){
@@ -117,12 +117,10 @@ export class TestInputDropdown extends TestInputComponent {
     this.items = this.menu.all(by.css('[class~="item"]'))
   }
 
-  setSearch(value:string, el?:protractor.ElementFinder):webdriver.promise.Promise<void>{
+  setSearch(value:string):webdriver.promise.Promise<void>{
     this.search.clear()
     let p = this.search.sendKeys(value)
-    if(el){
-      p = el.click()
-    }
+    p = browser.element(by.css('body')).click()
     return p
   }
 
