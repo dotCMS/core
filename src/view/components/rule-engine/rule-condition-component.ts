@@ -9,6 +9,8 @@ import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Verify} from "../../../api/validation/Verify";
+import {CwChangeEvent} from "../../../api/util/CwEvent";
+import {ParameterChangeEvent} from "./rule-engine";
 
 
 @Component({
@@ -63,7 +65,7 @@ export class ConditionComponent {
   @Input() condition:ConditionModel
   @Input() index:number
   @Output() change:EventEmitter<any> = new EventEmitter(false)
-  @Output() parameterValueChange:EventEmitter<{condition:ConditionModel, name:string, value:string, valid:boolean}> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<CwChangeEvent> = new EventEmitter(false)
   @Output() remove:EventEmitter<ConditionModel> = new EventEmitter(false)
 
   typeDropdown:any
@@ -94,7 +96,6 @@ export class ConditionComponent {
   }
 
   ngOnChanges(change){
-    console.log("ConditionComponent", "ngOnChanges", change)
     if(change.condition){
       this.condition = change.condition.currentValue
       if(this.typeDropdown && this.condition.type){
@@ -117,8 +118,8 @@ export class ConditionComponent {
     this.change.emit(this.condition)
   }
 
-  onParameterValueChange(event:{name:string, value:string, valid:boolean}) {
-      this.parameterValueChange.emit(Object.assign({ condition: this.condition }, event))
+  onParameterValueChange(event:ParameterChangeEvent) {
+      this.parameterValueChange.emit(Object.assign({ source: this.condition }, event))
   }
 
   removeCondition() {

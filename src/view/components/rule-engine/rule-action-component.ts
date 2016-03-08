@@ -7,6 +7,7 @@ import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {ServersideCondition} from "./condition-types/serverside-condition/serverside-condition";
+import {ParameterChangeEvent, TypeChangeEvent} from "./rule-engine";
 
 @Component({
   selector: 'rule-action',
@@ -46,27 +47,20 @@ import {ServersideCondition} from "./condition-types/serverside-condition/server
 export class RuleActionComponent {
 
   @Input()  action:ActionModel
-  @Input()  index:number
+  @Input()  index:number = 0
   @Output() change:EventEmitter<any> = new EventEmitter(false)
-  @Output() parameterValueChange:EventEmitter<{action:ActionModel, name:string, value:string}> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<ParameterChangeEvent> = new EventEmitter(false)
+  @Output() typeChange:EventEmitter<TypeChangeEvent> = new EventEmitter(false)
   @Output() remove:EventEmitter<any> = new EventEmitter(false)
 
   typeDropdown:any
 
-  private _typeService:ActionTypeService
-  private _actionService:ActionService;
-  private _types:{[key:string]: any}
+  private _types:{[key:string]: any} = {}
 
 
-  constructor(actionService:ActionService, typeService:ActionTypeService, resources:I18nService) {
-    this._types = {}
+  constructor(private _actionService:ActionService, private _typeService:ActionTypeService, resources:I18nService) {
 
-    this._actionService = actionService;
-    this._typeService = typeService
-
-    this.index = 0
-
-    typeService.list().subscribe((types:ServerSideTypeModel[])=> {
+    _typeService.list().subscribe((types:ServerSideTypeModel[])=> {
       this.typeDropdown = {
         value: "",
         placeholder: resources.get("api.sites.ruleengine.rules.inputs.action.type.placeholder"),
@@ -82,7 +76,7 @@ export class RuleActionComponent {
 
   ngOnChanges(change){
     if (change.action){
-      this.action = change.action.currentValue
+      console.log("RuleActionComponent", "ngOnChanges")
       if (this.typeDropdown && this.action.type) {
         if(this.action.type.key != 'NoSelection') {
           this.typeDropdown.value = this.action.type.key
@@ -92,14 +86,15 @@ export class RuleActionComponent {
   }
 
   onTypeChange(value) {
-    this.action.type = this._types[value]
-    // required to force change detection on child that doesn't reference type.
-    this.action = new ActionModel(this.action.key, this.action.type, this.action.owningRule, this.action.priority)
-    this.change.emit(this.action)
+    console.log("RuleActionComponent", "onTypeChange", value)
+    const type = this._types[value]
+    this.typeChange.emit({valid:true, isBlur:true, value:type, index:this.index, source:this.action})
   }
 
-  onParameterValueChange(event:{name:string, value:string}) {
-    this.parameterValueChange.emit(Object.assign({action: this.action}, event))
+
+  onParameterValueChange(event:ParameterChangeEvent) {
+    console.log("RuleActionComponent", "onParameterValueChange", event)
+    this.parameterValueChange.emit(Object.assign({ source: this.action}, event))
   }
 
   removeAction() {

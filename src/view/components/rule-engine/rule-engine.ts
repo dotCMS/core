@@ -6,9 +6,26 @@ import {RuleComponent} from './rule-component'
 import {RuleService, RuleModel} from "../../../api/rule-engine/Rule"
 import {I18nService} from "../../../api/system/locale/I18n"
 import {CwFilter} from "../../../api/util/CwFilter"
+import {CwChangeEvent} from "../../../api/util/CwEvent";
+import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
+
+export interface ParameterChangeEvent extends CwChangeEvent {
+  rule?:RuleModel
+  source?:ServerSideFieldModel
+  name:string
+  value:string
+}
+
+
+export interface TypeChangeEvent extends CwChangeEvent {
+  rule?:RuleModel
+  source:ServerSideFieldModel
+  value:any
+  index:number
+}
 
 /**
  *
@@ -39,6 +56,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
 
   <rule *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
         (change)="onRuleChange($event)"
+        (enableStateChange)="onEnableStateChange($event.rule, $event.enabled)"
         (remove)="onRuleRemove($event)"></rule>
 </div>
 
@@ -85,6 +103,11 @@ export class RuleEngineComponent {
     this.rules.sort(function (a, b) {
       return b.priority - a.priority;
     });
+  }
+
+  onEnableStateChange(rule, enabled){
+    rule.enabled = enabled
+    this.onRuleChange(rule)
   }
 
   onRuleChange(rule:RuleModel) {

@@ -25,6 +25,7 @@ import {isBlank} from 'angular2/src/facade/lang';
            type="{{type}}"
            [value]="_modelValue"
            [disabled]="disabled"
+           tabindex="{{tabIndex || ''}}"
            placeholder="{{placeholder}}"
            (blur)="onBlur($event)"
            (change)="$event.stopPropagation()"
@@ -40,6 +41,8 @@ import {isBlank} from 'angular2/src/facade/lang';
   @Input() type:string = ""
   @Input() icon:string
   @Input() disabled:boolean = false
+  @Input() focused:boolean = false
+  @Input() tabIndex:number = null
   @Input() required:boolean = false
 
   @Output() blur:EventEmitter<any> = new EventEmitter()
@@ -55,6 +58,17 @@ import {isBlank} from 'angular2/src/facade/lang';
       control.valueAccessor = this;
     }
   }
+
+  ngOnChanges(change) {
+    if (change.focused) {
+      let f = change.focused.currentValue === true || change.focused.currentValue == 'true'
+      if (f) {
+        let el = this._elementRef.nativeElement
+        el.children[0].children[0].focus()
+      }
+    }
+  }
+
 
   onBlur(value) {
     this.onTouched()

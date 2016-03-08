@@ -9,6 +9,10 @@ export class CwValidationResults{
     this.valid = valid;
   }
 }
+interface TypeConstraint {
+  id:string,
+  args:{[key:string]:any}
+}
 
 interface ValidatorDefinition {
   key:string
@@ -17,46 +21,49 @@ interface ValidatorDefinition {
 const VALIDATIONS = {
   required: {
     key: 'required',
-    providerFn: (m:DataTypeModel, v:ValidatorDefinition) => CustomValidators.minLength(m[v.key])
+    providerFn: (constraint:TypeConstraint) => CustomValidators.required()
   },
   minLength: {
     key: 'minLength',
-    providerFn: (m:DataTypeModel, v:ValidatorDefinition) => CustomValidators.minLength(m[v.key])
+    providerFn: (constraint:TypeConstraint) => CustomValidators.minLength(constraint.args['value'])
   },
   maxLength: {
     key: 'maxLength',
-    providerFn: (m:DataTypeModel, v:ValidatorDefinition) => CustomValidators.maxLength(m[v.key])
+    providerFn: (constraint:TypeConstraint) => CustomValidators.maxLength(constraint.args['value'])
   },
   maxValue: {
     key: 'maxValue',
-    providerFn: (m:DataTypeModel, v:ValidatorDefinition) => CustomValidators.max(m[v.key])
+    providerFn: (constraint:TypeConstraint) => CustomValidators.max(constraint.args['value'])
   },
   minValue: {
     key: 'minValue',
-    providerFn: (m:DataTypeModel, v:ValidatorDefinition) => CustomValidators.min(m[v.key])
+    providerFn: (constraint:TypeConstraint) => CustomValidators.min(constraint.args['value'])
   }
-
 }
+
+
 export class DataTypeModel {
 
-  id:string
+  private _vFns:Function[]
 
-  constructor() {
+  constructor(public id:string, public errorMessageKey:string, private _constraints:any) {
+    console.log("DataTypeModel", "constructor", id, errorMessageKey, _constraints)
   }
 
   validators() {
-    let vFns:Function[] = []
-    let minLen = this['minLength']
-
-    Object.keys(VALIDATIONS).forEach((vDefKey)=> {
-      let vDef:ValidatorDefinition = VALIDATIONS[vDefKey]
-      let v = this[vDef.key]
-      if (v) {
-        vFns.push(vDef.providerFn(this, vDef))
-      }
-    })
-    console.log("DataTypeModel", "validators", Object.keys(this), this)
-    return vFns
+    if (this._vFns == null) {
+      this._vFns = []
+      Object.keys(VALIDATIONS).forEach((vDefKey)=> {
+        let vDef:ValidatorDefinition = VALIDATIONS[vDefKey]
+        let constraint:TypeConstraint = this._constraints[vDef.key]
+        if (constraint) {
+          const fn = vDef.providerFn(constraint)
+          this._vFns.push(fn)
+        }
+      })
+      console.log("DataTypeModel", "validators", Object.keys(this), this)
+    }
+    return this._vFns
   }
 
   validator() {
@@ -67,19 +74,41 @@ export class DataTypeModel {
 var Registry = {};
 
 export class CwInputDefinition {
-  type:string
-  placeholder:string
-  dataType: DataTypeModel
-  name:string
+  private _vFns:Function[]
+  private _validator:Function
+
+  constructor(public json:any, 
+              public type:string, 
+              public name:string, 
+              public placeholder:string, 
+              public dataType:DataTypeModel,
+              private _validators:Function[]= []) {
 
 
-  constructor(id:string, name:string) {
-    this.type = id
-    this.name = name
+  }
+
+  validators() {
+    if (this._vFns == null) {
+      this._vFns = this.dataType.validators().concat(this._validators)
+    }
+    return this._vFns
+  }
+
+  validator(){
+    if(this._validator == null){
+      this._vFns =  this.validators()
+      if(this._vFns && this._vFns.length){
+        this._validator = Validators.compose(this._vFns)
+      }
+      else{
+        this._validator = () => { return null }
+      }
+    }
+    return this._validator
   }
 
   verify(value:any):{[key: string]: boolean} {
-    return null
+    return this.validator()({value:value})
   }
 
   static registerType(typeId:string, type:Function){
@@ -87,17 +116,19 @@ export class CwInputDefinition {
   }
 
   static fromJson(json:any, name:string):CwInputDefinition{
-    let type = Registry[json.id || json.type]
+    let typeId = json.id || json.type
+    let type = Registry[typeId]
+
     if(!type){
-      let msg = "No input definition registered for '" + (json.id || json.type) + "'"
+      let msg = "No input definition registered for '" + (json.id || json.type) + "'. Using default."
       console.error(msg, json)
-      throw new Error(msg)
+      type = 'text'
     }
-    let m = type.fromJson(json, name);
-    m.placeholder = json.placeholder
-    m.dataType = new DataTypeModel()
-    Object.assign(m.dataType, json.dataType)
-    return m;
+    let dataType = null
+    if(json.dataType){
+      dataType = new DataTypeModel(json.dataType.id, json.dataType.errorMessageKey, json.dataType.constraints )
+    }
+    return new type(json, typeId, name, json.placeholder, dataType)
   }
 }
 
@@ -105,81 +136,43 @@ export class CwSpacerInputDefinition extends CwInputDefinition {
   private flex;
 
   constructor(flex:number) {
-    super("spacer", null);
+    super({}, "spacer", null, null, null);
     this.flex = flex
   }
 }
 
 
-export class CwTextInputModel extends CwInputDefinition {
-
-  constructor(id:string, name:string) {
-    super(id, name);
-  }
-
-  verify(value:string):{[key: string]: boolean} {
-    let x = this.dataType.validator()({value:value})
-    if(x != null){
-      debugger
-    }
-    return x
-  }
-
-  static fromJson(json:any, name:string):CwTextInputModel {
-    let m = new CwTextInputModel(json.id, name);
-    return m
-  }
-}
-CwInputDefinition.registerType("text", CwTextInputModel)
-
-export class CwDateTimeInputModel extends CwInputDefinition {
-
-  constructor(id:string, name:string) {
-    super(id, name);
-  }
-
-  verify(value:string):{[key: string]: boolean} {
-    return null
-  }
-
-  static fromJson(json:any, name:string):CwDateTimeInputModel {
-    let m = new CwDateTimeInputModel(json.id, name);
-    return m
-  }
-}
-CwInputDefinition.registerType("datetime", CwDateTimeInputModel)
-
-CwInputDefinition.registerType("number", CwTextInputModel)
+CwInputDefinition.registerType("text", CwInputDefinition)
+CwInputDefinition.registerType("datetime", CwInputDefinition)
+CwInputDefinition.registerType("number", CwInputDefinition)
 
 export class CwDropdownInputModel extends CwInputDefinition {
-  options: {[key:string]: any}
-  allowAdditions: boolean
+
+  options:{[key:string]: any}
+  allowAdditions:boolean
   minSelections:number = 0
   maxSelections:number = 1
-  selected:Array<any>
+  selected:Array<any> = []
   i18nBaseKey:string
 
-  constructor(id:string, name:string) {
-    super(id, name)
-    this.selected = []
-  }
-
-  verify(selections:any):{[key: string]: boolean} {
-    return null
-  }
-
-  static fromJson(json:any, name:string):CwDropdownInputModel {
-    let m = new CwDropdownInputModel(json.id, name);
-    m.options = json.options
-    m.allowAdditions = json.allowAdditions
-    m.minSelections = json.minSelections
-    m.maxSelections = json.maxSelections
+  constructor(json, type, name, placeholder, dataType) {
+    super(json, type, name, placeholder, dataType, CwDropdownInputModel.createValidators(json))
+    this.options = json.options
+    this.allowAdditions = json.allowAdditions
+    this.minSelections = json.minSelections
+    this.maxSelections = json.maxSelections
     let defV = json.dataType.defaultValue
-    m.selected = (defV == null || defV === '') ? [] : [defV]
-    return m
+    this.selected = (defV == null || defV === '') ? [] : [defV]
   }
-}
 
+  static createValidators(json:any) {
+    let ary = []
+    ary.push(CustomValidators.minSelections(json.minSelections || 0))
+    ary.push(CustomValidators.maxSelections(json.maxSelections || 1))
+    return ary
+  }
+
+}
 CwInputDefinition.registerType("dropdown", CwDropdownInputModel)
 
 export class CwRestDropdownInputModel extends CwInputDefinition {
@@ -189,31 +182,21 @@ export class CwRestDropdownInputModel extends CwInputDefinition {
   allowAdditions: boolean
   minSelections:number = 0
   maxSelections:number = 1
-  selected:Array<any>
+  selected:Array<any> = []
   i18nBaseKey:string
 
-  constructor(id:string, name:string) {
-    super(id, name)
-    this.selected = []
-  }
-
-  verify(selections:any):{[key: string]: boolean} {
-    debugger
-    return null
-  }
-
-  static fromJson(json:any, name:string):CwRestDropdownInputModel {
-    let m = new CwRestDropdownInputModel(json.id, name);
-    m.optionUrl = json.optionUrl
-    m.optionValueField = json.jsonValueField
-    m.optionLabelField = json.jsonLabelField
-    m.allowAdditions = json.allowAdditions
-    m.minSelections = json.minSelections
-    m.maxSelections = json.maxSelections
+  constructor(json, type, name, placeholder, dataType) {
+    super(json, type, name, placeholder, dataType, CwDropdownInputModel.createValidators(json))
+    this.optionUrl = json.optionUrl
+    this.optionValueField = json.jsonValueField
+    this.optionLabelField = json.jsonLabelField
+    this.allowAdditions = json.allowAdditions
+    this.minSelections = json.minSelections
+    this.maxSelections = json.maxSelections
     let defV = json.dataType.defaultValue
-    m.selected = (defV == null || defV === '') ? [] : [defV]
-    return m
+    this.selected = (defV == null || defV === '') ? [] : [defV]
   }
+
 }
 
 CwInputDefinition.registerType("restDropdown", CwRestDropdownInputModel)

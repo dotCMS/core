@@ -1,4 +1,4 @@
-import { Component, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
+import {Component, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
 import {
     CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
     ControlGroup
@@ -23,6 +23,7 @@ import {I18nService} from "../../../api/system/locale/I18n";
 import {UserModel} from "../../../api/auth/UserModel";
 import {ApiRoot} from "../../../api/persistence/ApiRoot";
 import {GalacticBus} from "../../../api/system/GalacticBus";
+import {ParameterChangeEvent, TypeChangeEvent} from "./rule-engine";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -103,7 +104,7 @@ var rsrc = {
       <div flex layout="column" class="cw-rule-actions">
         <div layout="row" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
           <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
-              (change)="onActionChange($event)"
+              (typeChange)="onActionTypeChange($event)"
                (parameterValueChange)="onActionParamValueChange($event)"
               (remove)="onActionRemove($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
@@ -125,8 +126,11 @@ class RuleComponent {
   @Input() rule:RuleModel
   @Input() hidden:boolean
 
-  @Output() change:EventEmitter<RuleModel>
-  @Output() remove:EventEmitter<RuleModel>
+  @Output() change:EventEmitter<RuleModel> = new EventEmitter(false)
+  @Output() remove:EventEmitter<RuleModel> = new EventEmitter(false)
+  @Output() enableStateChange:EventEmitter<{rule:RuleModel, enabled:boolean}> = new EventEmitter(false)
+
+  private _enableStateChangeDelay:EventEmitter<{rule:RuleModel, enabled:boolean}> = new EventEmitter(false)
 
   collapsed:boolean
   hideFireOn:boolean
@@ -157,8 +161,6 @@ class RuleComponent {
               resources:I18nService,
               apiRoot:ApiRoot, private _bus:GalacticBus) {
     this._user = user
-    this.change = new EventEmitter()
-    this.remove = new EventEmitter()
     this.elementRef = elementRef
     this.actionService = actionService
     this.ruleService = ruleService;
@@ -173,6 +175,10 @@ class RuleComponent {
     this.hidden = false
     this.collapsed = false
 
+    /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
+    this._enableStateChangeDelay.debounceTime(20).subscribe((event:{rule:RuleModel, enabled:boolean})=>{
+      this.enableStateChange.emit(event)
+    })
 
     this.fireOn = {
       value: 'EVERY_PAGE',
@@ -189,14 +195,12 @@ class RuleComponent {
     this._bus.ruleAddRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          console.log("RuleComponent", event.type)
           this._outOfSync = this.actions.length > 1
         })
 
     this._bus.rulePatchRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          console.log("RuleComponent", event.type)
           this.setRuleEnabledState(false)
           this._saving = false
           this._outOfSync = false
@@ -205,21 +209,18 @@ class RuleComponent {
     this._bus.rulePatchedRuleAction$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          console.log("RuleComponent", event.type)
           this._outOfSync = false
         })
 
     this._bus.ruleBecameInvalid$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          console.log("RuleComponent", event.type)
           this._outOfSync = true
           this._valid = false
         })
     this._bus.ruleBecameValid$()
         .filter((event) => event.payload.rule === this.rule)
         .subscribe((event) => {
-          console.log("RuleComponent", event.type)
           this._outOfSync = false
           this._valid = true
         })
@@ -238,7 +239,7 @@ class RuleComponent {
   rsrc(subkey:string, defVal:string = null) {
     let msgObserver = this._rsrcCache[subkey]
     if (!msgObserver) {
-      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal )
+      msgObserver = this.resources.get(I8N_BASE + '.rules.' + subkey, defVal)
       this._rsrcCache[subkey] = msgObserver
     }
     return msgObserver
@@ -298,14 +299,15 @@ class RuleComponent {
   }
 
   setRuleEnabledState(enabled:boolean) {
-    if(enabled !== this.rule.enabled) {
-      this.rule.enabled = enabled
-      this.change.emit(this.rule)
+    if (enabled !== this.rule.enabled) {
+      this._enableStateChangeDelay.emit({rule:this.rule, enabled:enabled})
     }
   }
 
   addAction() {
-    this.setRuleEnabledState(false)
+    if( this.actions.length > 0 ){
+      this.setRuleEnabledState(false)
+    }
     let priority = this.actions.length ? this.actions[this.actions.length - 1].priority + 1 : 1
     const action = new ActionModel(null, new ServerSideTypeModel(), this.rule, priority)
     this._bus.ruleAddRuleAction(this.rule, action)
@@ -313,32 +315,45 @@ class RuleComponent {
     this.sort()
   }
 
-  onActionParamValueChange(event:{action:ActionModel, name:string, value:string, valid:boolean}){
-    if(event.valid){
-      event.action.setParameter(event.name, event.value)
-      this.onActionChange(event.action)
-    } else {
-      this._bus.ruleBecameInvalid(this.rule, event.action)
+  onActionParamValueChange(event:ParameterChangeEvent) {
+    if (event.valid) {
+      let action = <ActionModel>event.source
+      if (event.isBlur) {
+        action.setParameter(event.name, event.value)
+        this.onActionChange(action)
+      } else {
+        this._bus.ruleBecameInvalid(this.rule, action)
+      }
     }
-
+  }
+  
+  onActionTypeChange(event:TypeChangeEvent){
+    try {
+      let action:ActionModel = <ActionModel>event.source
+      action.type = event.value
+      this.actions[event.index] = new ActionModel(action.key, action.type, action.owningRule, action.priority)
+      // required to force change detection on child that doesn't reference type.
+      this.onActionChange(action)
+    } catch (e) {
+      console.error("RuleComponent", "onActionTypeChange", e)
+    }
   }
 
+
   onActionChange(action:ActionModel) {
-    console.log("RuleComponent", "onActionChange", action.isValid())
-    this._bus.rulePatchRuleAction(this.rule, action)
     if (action.isValid()) {
-      if(this.rule.isValid() && !this._valid){
+      if (this.rule.isValid() && !this._valid) {
         this._bus.ruleBecameValid(this.rule, action)
       }
       this._bus.rulePatchRuleAction(this.rule, action)
       if (!action.isPersisted()) {
-        this.actions[this.actions.length -1 ] = action
+        this.actions[this.actions.length - 1] = action
         action.owningRule = this.rule
-        this.actionService.add(action, ()=> this._bus.rulePatchedRuleAction(this.rule, action))
+        this.actionService.add(action)
       } else {
-        this.actionService.save(action, ()=> this._bus.rulePatchedRuleAction(this.rule, action))
+        this.actionService.save(action)
       }
-    } else if(this._valid){
+    } else if (this._valid) {
       this._bus.ruleBecameInvalid(this.rule, action)
     }
   }
@@ -381,7 +396,7 @@ class RuleComponent {
     if (!noWarn) {
       noWarn = this.actions.length === 1 && !this.actions[0].isPersisted()
       noWarn = noWarn && this.groups.length === 1
-      if(noWarn){
+      if (noWarn) {
         let conditions = this.groups[0].conditions
         let keys = Object.keys(conditions)
         noWarn = noWarn && (keys.length === 0)

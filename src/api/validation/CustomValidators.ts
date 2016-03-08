@@ -3,11 +3,29 @@ import {Control} from "angular2/common";
 
 export class CustomValidators {
 
+
+  static required() {
+    return (control: Control): {[key: string]: any} => {
+      var v: string = control.value;
+      return Verify.empty(v) ? {"required": true} : null
+    };
+  }
   static isString(allowEmpty = false) {
     return (control: Control): {[key: string]: any} => {
       var v:string = control.value;
       return !Verify.isString(v, allowEmpty) ? {"isString": {"emptyAllowed": allowEmpty}} : null;
     }
+  }
+
+  static noQuotes() {
+    return (control: Control): {[key: string]: any} => {
+      let v: string = control.value;
+      let failed = false
+      if (!Verify.empty(v) && (v.indexOf('"') != -1 || v.indexOf("'") != -1)) {
+        failed = true
+      }
+      return failed ? {"noQuotes": true} : null
+    };
   }
 
   static maxLength(max) {

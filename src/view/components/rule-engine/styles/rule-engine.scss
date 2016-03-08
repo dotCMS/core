@@ -44,13 +44,13 @@ $primary-one: #209021;
     transition-timing-function: cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
-input.ng-invalid,
-.ui.input input.ng-invalid,
-.ng-invalid .ui.input input,
-.ng-invalid .ui.input input:active,
-.ng-invalid .ui.input input:hover,
-.ng-invalid .ui.input input:focus,
-.ui.selection.dropdown.ng-invalid,
+.ng-dirty.input.ng-invalid,
+.ng-dirty.ui.input input.ng-invalid,
+.ng-dirty.ng-invalid .ui.input input,
+.ng-dirty.ng-invalid .ui.input input:active,
+.ng-dirty.ng-invalid .ui.input input:hover,
+.ng-dirty.ng-invalid .ui.input input:focus,
+.ng-dirty.ng-invalid.ui.selection.dropdown,
 cw-input-rest-dropdown.ng-dirty.ng-touched.ng-invalid input.search,
 .ng-dirty.ng-invalid .ui.selection.dropdown.search {
   border-left: 5px solid $warn;
@@ -66,6 +66,10 @@ cw-input-rest-dropdown.ng-dirty.ng-touched.ng-invalid input.search,
       background-color: $background-tertiary;
       color: $foreground-tertiary;
     }
+  }
+
+  .cw-btn-group .ui.basic.buttons .ui.button:focus {
+    border: 1px solid #96C8DA;
   }
 }
 

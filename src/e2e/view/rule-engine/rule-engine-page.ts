@@ -25,6 +25,15 @@ export class RulePage extends Page {
     this.ruleEls = element.all(by.tagName('rule'))
   }
 
+  setFilter(text:string){
+    return this.filterBox.sendKeys(text);
+  }
+
+  getFilter():webdriver.promise.Promise<string>{
+    return this.filterBox.getAttribute('value')
+  }
+
+
   suppressAlerts(value:boolean){
     this.queryParams['suppressAlerts'] = value ? 'true' : 'false'
   }
@@ -121,7 +130,7 @@ export class TestRuleComponent {
 
   getName():webdriver.promise.Promise<string>{
     let v = this.nameEl.getValue()
-    v.then( name => this.name = name)
+    v = v.then( name => this.name = name)
     return v
   }
 
@@ -208,7 +217,7 @@ export class TestRuleComponent {
     return actionDef
   }
 
-  newSetPersonaAction(value?:string):TestPersonaAction{
+  newSetPersonaAction(value?:string):TestPersonaAction {
     let actionDef:TestPersonaAction= new TestPersonaAction(this.actionEls.last())
     actionDef.typeSelect.setSearch(TestPersonaAction.TYPE_NAME)
     this.fireOn.el.click()
@@ -240,6 +249,9 @@ export class TestRuleComponent {
     } else {
       result = this.removeBtn.optShiftClick()
     }
+    result.then(( ) => {
+      return browser.sleep(250)
+    })
     return result
   }
 
@@ -432,11 +444,11 @@ export class TestResponseHeaderAction extends TestActionComponent {
     return this.headerValueTF.getValue()
   }
   setHeaderKey(val:string):webdriver.promise.Promise<void>{
-    return this.headerKeyTF.setValue(val)
+    return this.headerKeyTF.setValue(val, this.headerValueTF.el)
   }
 
   setHeaderValue(val:string):webdriver.promise.Promise<void>{
-    return this.headerValueTF.setValue(val)
+    return this.headerValueTF.setValue(val, this.headerKeyTF.el)
   }
 }
 
@@ -464,7 +476,7 @@ export class TestSetRequestAttributeAction extends TestActionComponent {
   }
 
   setAttributeValue(val:string):webdriver.promise.Promise<void>{
-    return this.attributeValueTF.setValue(val)
+    return this.attributeValueTF.setValue(val, this.attributeKeyTF.el)
   }
 
 }

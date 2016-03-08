@@ -29,10 +29,6 @@ export class ActionModel extends ServerSideFieldModel {
     json.owningRule = this.owningRule;
     return json
   }
-
-  static fromJson():ActionModel {
-    return null
-  }
 }
 
 @Injectable()

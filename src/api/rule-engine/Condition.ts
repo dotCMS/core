@@ -1,14 +1,10 @@
 import {EventEmitter, Injectable} from 'angular2/core';
 import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
-import {RuleModel} from "./Rule";
-import {CwModel} from "../util/CwModel";
 import {ApiRoot} from "../persistence/ApiRoot";
 import {EntitySnapshot} from "../persistence/EntityBase";
 import {ConditionGroupModel} from "./ConditionGroup";
-import {CwChangeEvent} from "../util/CwEvent";
 import {ConditionTypeService} from "./ConditionType";
-import {ParameterDefinition} from "../util/CwInputModel";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 import {ServerSideFieldModel} from "./ServerSideFieldModel";
 
@@ -31,7 +27,11 @@ export class ConditionModel extends ServerSideFieldModel {
   }
 
   isValid() {
-    return !!this.owningGroup && !!this.getParameterValue('comparison') && super.isValid()
+    try {
+      return !!this.owningGroup && !!this.getParameterValue('comparison') && super.isValid()
+    } catch (e) {
+      console.error(e)
+    }
   }
 
   toJson():any {

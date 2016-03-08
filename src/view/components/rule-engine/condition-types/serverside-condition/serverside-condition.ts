@@ -15,6 +15,8 @@ import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 import {Verify} from "../../../../../api/validation/Verify";
 import {GalacticBus} from "../../../../../api/system/GalacticBus";
+import {ParameterChangeEvent} from "../../rule-engine";
+import {CustomValidators} from "../../../../../api/validation/CustomValidators";
 
 @Component({
   selector: 'cw-serverside-condition',
@@ -94,7 +96,9 @@ import {GalacticBus} from "../../../../../api/system/GalacticBus";
 export class ServersideCondition {
 
   @Input() componentInstance:ServerSideFieldModel
-  @Output() parameterValueChange:EventEmitter<{name:string, value:string, valid:boolean}> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<ParameterChangeEvent> = new EventEmitter(false)
+
+
 
   private _inputs:Array<any>
   private _resources:I18nService
@@ -147,12 +151,12 @@ export class ServersideCondition {
 
   onBlur(input){
     if(input.control.dirty) {
-      this.setParameterValue(input.name, input.control.value, input.control.valid)
+      this.setParameterValue(input.name, input.control.value, input.control.valid, true)
     }
   }
 
-  setParameterValue(name:string, value:any, valid:boolean) {
-    this.parameterValueChange.emit({name:name, value:value, valid:valid})
+  setParameterValue(name:string, value:any, valid:boolean, isBlur:boolean=false) {
+    this.parameterValueChange.emit({name, value, valid, isBlur})
     if(name == 'comparison'){
       this.applyRhsCount(value)
     }
@@ -192,17 +196,14 @@ export class ServersideCondition {
   }
 
   private createNgControl(paramDef, param):Control {
+    let vFn:Function[] = paramDef.inputType.dataType.validators()
+    vFn.push(CustomValidators.noQuotes())
     let control = new Control(
         this.componentInstance.getParameterValue(param.key),
-        paramDef.inputType.dataType.validator())
+        Validators.compose(vFn))
 
     control.statusChanges.subscribe((value) => {
-      console.log("ServersideCondition", "control.statusChanges", param.key, control.value,
-          ' status: ', control.status,
-          ' touched: ', control.touched,
-          ' dirty: ', control.dirty,
-          ' pending:', control.pending,
-          ' pristine:', control.pristine)
+
     })
     return control
   }
@@ -224,6 +225,10 @@ export class ServersideCondition {
     let placeholderKey = rsrcKey + '.placeholder'
 
     let currentValue = this.componentInstance.getParameterValue(param.key)
+    if(currentValue && ( currentValue.indexOf('"') != -1 || currentValue.indexOf("'") != -1) ){
+      currentValue = currentValue.replace(/["']/g, '')
+      this.componentInstance.setParameter(param.key, currentValue)
+    }
     const control = this.createNgControl(paramDef, param)
     let input:any = {
       value: currentValue,

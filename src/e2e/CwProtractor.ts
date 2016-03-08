@@ -91,9 +91,13 @@ export class TestInputText extends TestInputComponent{
     return this.valueInput.getAttribute('value')
   }
 
-  setValue(value:string):webdriver.promise.Promise<void>{
+  setValue(value:string, el?:protractor.ElementFinder):webdriver.promise.Promise<void>{
     this.valueInput.clear()
-    return this.valueInput.sendKeys(value)
+    let p = this.valueInput.sendKeys(value)
+    if(el){
+      p = el.click()
+    }
+    return p
   }
 }
 

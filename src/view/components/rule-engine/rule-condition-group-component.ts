@@ -10,6 +10,7 @@ import {ConditionService, ConditionModel} from "../../../api/rule-engine/Conditi
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Observable} from "rxjs/Observable";
+import {ParameterChangeEvent} from "./rule-engine";
 
 @Component({
   selector: 'condition-group',
@@ -136,10 +137,13 @@ export class ConditionGroupComponent {
     }
   }
 
-  onParamValueChange(event:{condition:ConditionModel, name:string, value:string, valid:boolean}){
-    if(event.valid){
-      event.condition.setParameter(event.name, event.value)
-      this.onConditionChange(event.condition)
+  onParamValueChange(event:ParameterChangeEvent) {
+    if (event.valid) {
+      if (event.isBlur) {
+        let source:ConditionModel = <ConditionModel>event.source
+        source.setParameter(event.name, event.value)
+        this.onConditionChange(source)
+      }
     }
   }
 

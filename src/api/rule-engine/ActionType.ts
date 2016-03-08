@@ -2,12 +2,9 @@ import {EventEmitter, Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {CwModel} from "../util/CwModel";
 import {EntitySnapshot} from "../persistence/EntityBase";
-import {CwChangeEvent} from "../util/CwEvent";
 import {I18nService} from "../system/locale/I18n";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
-import {TreeNode} from "../system/locale/I18n";
 
 let noop = (...arg:any[])=> {
 }

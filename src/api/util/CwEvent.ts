@@ -1,4 +1,5 @@
-export class CwChangeEvent<T> {
-  type:string
-  target:T
+
+export interface CwChangeEvent {
+  valid:boolean
+  isBlur:boolean
 }

@@ -87,7 +87,6 @@ export class Dropdown implements AfterViewInit, OnDestroy, ControlValueAccessor 
   }
 
   writeValue(value:any) {
-    console.log("Dropdown", "writeValue", value)
     this._modelValue = isBlank(value) ? '' : value
     this.applyValue(this._modelValue)
   }
