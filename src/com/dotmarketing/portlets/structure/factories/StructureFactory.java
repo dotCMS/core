@@ -286,6 +286,43 @@ public class StructureFactory {
 		int limit = -1;
 		return getStructures(orderBy,limit);
 	}
+	
+	   /**
+     * Returns a list of Content Type according to a specific Type
+     * These could be:
+     * 1. Contents.
+     * 2. Widgets.
+     * 3. Forms.
+     * 4. File Assets.
+     * 5. Pages.
+     * 6. Personas
+     * @param type: Integer type, according to valid content types specified in Structure.java class
+     * @return structures: List of Structures 
+     */
+	public static List<Structure> getAllStructuresByType(int structureType)
+    {
+        List<Structure> structures = new ArrayList<Structure>();
+        if(UtilMethods.isSet(structureType) && structureType <= 0){
+            //Invalid Type. Return empty list
+            return structures;
+        }
+        
+        structures = CacheLocator.getContentTypeCache().getStructuresByType(structureType);
+        
+        if(structures == null){
+            String condition = "structuretype = " + structureType;
+            String orderBy = "name";
+            String direction = "asc";
+            int limit = -1; 
+            structures = InodeFactory.getInodesOfClassByConditionAndOrderBy(Structure.class,condition,orderBy,limit,0,direction);
+        }
+        
+        if(structures != null){
+            CacheLocator.getContentTypeCache().addStructuresByType(structures, structureType);
+        }
+        
+        return structures;
+    }
 
 	public static List<Structure> getStructuresByUser(User user, String condition, String orderBy,int limit,int offset,String direction) {
 
