@@ -27,7 +27,7 @@ public class SetSessionAttributeActionlet extends RuleActionlet<SetSessionAttrib
     private static final String SESSION_KEY = "sessionKey";
 
     public SetSessionAttributeActionlet() {
-        super(I18N_BASE, new ParameterDefinition<>(1, SESSION_KEY, new TextInput<>(new TextType().minLength(1))),
+        super(I18N_BASE, new ParameterDefinition<>(1, SESSION_KEY, new TextInput<>(new TextType().required())),
               new ParameterDefinition<>(2, SESSION_VALUE, new TextInput<>(new TextType()))
         );
     }

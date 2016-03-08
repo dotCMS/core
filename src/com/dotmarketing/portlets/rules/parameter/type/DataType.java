@@ -1,9 +1,11 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.org.apache.commons.lang.NotImplementedException;
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import java.util.List;
+import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * @author Geoff M. Granum
@@ -13,7 +15,7 @@ public abstract class DataType<T> {
     private final String id;
     private final String errorMessageKey;
 
-    private List<Comparison<?>> restrictions = Lists.newArrayList();
+    private Map<String, TypeConstraint> restrictions = Maps.newHashMap();
 
     public DataType(String id, String errorMessageKey) {
         this.id = id;
@@ -30,13 +32,40 @@ public abstract class DataType<T> {
 
     public abstract T convert(String from);
 
-    public void checkValid(String value){
-        throw new NotImplementedException();
+    /**
+     * Verify that a value can be represented by this DataType. If valid an empty list will
+     * be returned. If invalid a map containing each failed constraint will be returned.
+     * @param value The string representation of the value to be verified.
+     * @return A map of Errors
+     */
+    public final Map<String, String> verify(String value){
+        Map<String, String> errors = null;
+        for (TypeConstraint constraint : restrictions.values()) {
+            if(!constraint.fn.apply(value)) {
+                if(errors == null) {
+                    errors = Maps.newHashMap();
+                }
+                errors.put(constraint.id, value);
+            }
+        }
+        return errors == null ? Collections.emptyMap() : errors;
     }
 
-    public DataType<T> restrict(Comparison<?> restriction){
-        this.restrictions.add(restriction);
+    public void checkValid(String value){
+        Map<String, String> errors = verify(value);
+        if(!errors.isEmpty()){
+            String failedMsg = "Constraint(s) failed: [" + StringUtils.join(errors.keySet(), ",") + "]";
+            throw new ParameterNotValidException(failedMsg);
+        }
+    }
+
+    public DataType<T> restrict(TypeConstraint restriction) {
+        this.restrictions.put(restriction.id, restriction);
         return this;
+    }
+
+    public Map<String, TypeConstraint> getConstraints() {
+        return ImmutableMap.copyOf(this.restrictions);
     }
 }
  

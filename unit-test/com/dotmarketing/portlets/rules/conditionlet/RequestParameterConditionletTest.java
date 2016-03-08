@@ -173,7 +173,7 @@ public class RequestParameterConditionletTest {
         );
         /* Matches Regex */
         mockedActual = "This is a test of the Request Parameter Conditionlet";
-        userValue = ".*test.*Parameter";
+        userValue = ".*test.*Parameter.*";
         description = String.format("Comparison 'Regex' should eval true for header value == '%s' and user value == '%s'.", mockedActual, userValue);
         data.add(new TestCase(description)
                      .withComparison(Comparison.REGEX)

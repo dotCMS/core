@@ -1,16 +1,13 @@
 package com.dotmarketing.portlets.rules.parameter.type;
 
-import com.dotmarketing.portlets.rules.parameter.comparison.Comparison;
-import com.dotmarketing.portlets.rules.parameter.comparison.MatcherCheck;
-import org.hamcrest.Matchers;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.StandardConstraints;
+import com.dotmarketing.portlets.rules.parameter.type.constraint.TypeConstraint;
 
 /**
  * @author Geoff M. Granum
  */
-public class TextType extends DataType {
+public class TextType extends DataType<String> {
 
-    private int minLength = 0;
-    private int maxLength = 255;
     private String defaultValue = "";
 
     public TextType() {
@@ -21,26 +18,20 @@ public class TextType extends DataType {
         super(id, "api.system.type.text");
     }
 
-    public int getMinLength() {
-        return minLength;
-    }
-
-    public int getMaxLength() {
-        return maxLength;
-    }
-
     public String getDefaultValue() {
         return defaultValue;
     }
 
+    public TextType required() {
+        return this.restrict(StandardConstraints.required);
+    }
+
     public TextType minLength(int minLength) {
-        this.minLength = minLength;
-        return this;
+        return this.restrict(StandardConstraints.minLength(minLength));
     }
 
     public TextType maxLength(int maxLength) {
-        this.maxLength = maxLength;
-        return this;
+        return this.restrict(StandardConstraints.maxLength(maxLength));
     }
 
     public TextType defaultValue(String defaultValue){
@@ -53,15 +44,10 @@ public class TextType extends DataType {
     }
 
     @Override
-    public void checkValid(String value) {
-        if(minLength != 0){
-            MatcherCheck.checkThat(value, Matchers.notNullValue());
-        }
-    }
-
-    @Override
-    public TextType restrict(Comparison restriction) {
+    public TextType restrict(TypeConstraint restriction) {
         return (TextType)super.restrict(restriction);
     }
+
+
 }
  

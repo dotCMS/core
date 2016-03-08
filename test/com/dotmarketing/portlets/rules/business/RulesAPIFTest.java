@@ -1,7 +1,6 @@
 package com.dotmarketing.portlets.rules.business;
 
 import com.dotcms.enterprise.rules.RulesAPI;
-import com.dotcms.enterprise.rules.RulesAPIImpl;
 import com.dotmarketing.portlets.rules.actionlet.ThrowErrorActionlet;
 import com.dotmarketing.portlets.rules.conditionlet.ThrowErrorConditionlet;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -212,7 +211,7 @@ public class RulesAPIFTest extends TestBase {
 
 	@Test
 	public void testRefreshConditionletsMapNoExceptionWhenErrorInCustomConditionlet() {
-		RulesAPI rulesAPI = new RulesAPIImpl();
+		RulesAPI rulesAPI = APILocator.getRulesAPI();
 		// addConditionlet calls refreshConditionletsMap under the cover
 		// shouldn't throw error
 		rulesAPI.addConditionlet(ThrowErrorConditionlet.class);
@@ -220,7 +219,7 @@ public class RulesAPIFTest extends TestBase {
 
 	@Test
 	public void testRefreshActionletsMapNoExceptionWhenErrorInCustomActionlet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		RulesAPI rulesAPI = new RulesAPIImpl();
+		RulesAPI rulesAPI = APILocator.getRulesAPI();
 		// addRuleActionlet calls refreshActionletsMap under the cover
 		// shouldn't throw error
 		rulesAPI.addRuleActionlet(ThrowErrorActionlet.class);

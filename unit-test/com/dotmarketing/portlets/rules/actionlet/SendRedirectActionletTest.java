@@ -22,7 +22,7 @@ public class SendRedirectActionletTest {
     @Test
     public void testGeneralConfiguration() throws Exception {
         SendRedirectActionlet actionlet = new SendRedirectActionlet();
-        assertThat(actionlet.getI18nKey(), is("com.dotmarketing.osgi.ruleengine.actionlet.send_redirect"));
+        assertThat(actionlet.getI18nKey(), is("api.system.ruleengine.actionlet.send_redirect"));
         assertThat("There is only one parameter.", actionlet.getParameterDefinitions().size(), is(1));
         assertThat(actionlet.getId(), is("SendRedirectActionlet"));
     }

@@ -24,7 +24,7 @@ public class SendRedirectActionlet extends RuleActionlet<SendRedirectActionlet.I
 
     public SendRedirectActionlet() {
         super("api.system.ruleengine.actionlet.send_redirect",
-              new ParameterDefinition<>(1, INPUT_URL_KEY, new TextInput<>(new TextType().minLength(1))));
+              new ParameterDefinition<>(1, INPUT_URL_KEY, new TextInput<>(new TextType().required())));
     }
 
     @Override

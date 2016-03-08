@@ -72,6 +72,7 @@ public abstract class RuleComponentDefinition<T extends RuleComponentInstance> i
         } catch (RuleEngineException | InvalidRuleParameterException e) {
             throw e;
         } catch (Exception e) {
+            Logger.warn(RuleComponentDefinition.class, "Unexpected error creating component.", e);
             throw new RuleConstructionFailedException(e, "Could not create Component Instance of type %s from provided model %s.",
                                                       this.getId(), data.toString());
         }
