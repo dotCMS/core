@@ -21,8 +21,9 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
     private DotCacheAdministrator cache;
     private final String primaryGroup = "StructureCache";
     private final String containerStructureGroup = "ContainerStructureCache";
+    private final String structuresByTypeGroup = "StructuresByTypeCache";
     // region's name for the cache
-    private final String[] groups = { primaryGroup, containerStructureGroup };
+    private final String[] groups = { primaryGroup, containerStructureGroup, structuresByTypeGroup };
 
     public ContentTypeCacheImpl() {
         cache = CacheLocator.getCacheAdministrator();
@@ -42,6 +43,7 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
         cache.put(primaryGroup + velocityVarName, st, primaryGroup);
         if (UtilMethods.isSet(velocityVarName))
         	cache.put(primaryGroup + velocityVarName.toLowerCase(), st, primaryGroup);
+        removeStructuresByType(st.getStructureType());
 	}
     
     /*public static Structure getStructureByInode(long inode){
@@ -179,6 +181,7 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
         cache.remove(primaryGroup + inode,primaryGroup);
         cache.remove(primaryGroup + structureName,primaryGroup);
         clearURLMasterPattern();
+        removeStructuresByType(st.getStructureType());
     }
 
     public String getURLMasterPattern() throws DotCacheException {
@@ -217,10 +220,39 @@ public class ContentTypeCacheImpl extends ContentTypeCache {
         cache.remove(containerStructureGroup + containerIdentifier + containerInode, containerStructureGroup);
     }
     
+    public String getStructuresByTypeGroup() {
+        return structuresByTypeGroup;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Structure> getStructuresByType(int structureType) {
+        List<Structure> structuresByType = null;
+
+        try{
+            structuresByType = (List<Structure>) cache.get(structuresByTypeGroup + structureType, structuresByTypeGroup);
+            return structuresByType;
+
+        } catch (DotCacheException e) {
+            Logger.debug(ContentTypeCacheImpl.class, "Cache Entry not found: ", e);
+            return null;
+        }
+    }
+
+    public void addStructuresByType(List<Structure> structures, int structureType){
+        cache.put(structuresByTypeGroup + structureType, structures, structuresByTypeGroup);
+    }
+
+    public void removeStructuresByType(int structureType) {
+        cache.remove(structuresByTypeGroup + structureType, structuresByTypeGroup);
+    }
+
     public void clearCache(){
 	    //clear the cache
-	    cache.flushGroup(primaryGroup);
+        for (String cacheGroup : getGroups()) {
+            cache.flushGroup(cacheGroup);
+	    }
 	}
+
 	public String[] getGroups() {
     	return groups;
     }
