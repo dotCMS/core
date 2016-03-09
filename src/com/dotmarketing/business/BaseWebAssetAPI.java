@@ -499,10 +499,10 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
         dc.addParam(date);
         dc.loadResult();
 
-		String deleteContainerStructures = "delete from container_structures where container_inode in ("+inodesToDelete+")";
-		dc.setSQL(deleteContainerStructures);
-		dc.addParam(date);
-		dc.loadResult();
+        String deleteContainerStructures = "delete from container_structures where container_inode in ("+inodesToDelete+")";
+        dc.setSQL(deleteContainerStructures);
+        dc.addParam(date);
+        dc.loadResult();
 
         String deleteContentletSQL = "delete from "+assetType+" where  "+condition;
         dc.setSQL(deleteContentletSQL);
