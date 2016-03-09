@@ -41,16 +41,7 @@
 		<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
 		<%if( LicenseUtil.getLevel() < 200){ %>
-
-			<div class="subNavCrumbTrail">
-				<ul id="subNavCrumbUl">
-					<li class="lastCrumb">
-						<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.RULES_ENGINE_PORTLET")%></a>
-					</li>
-
-				</ul>
-				<div class="clear"></div>
-			</div>
+		
 			<jsp:include page="/WEB-INF/jsp/rules_engine_portlet/not_licensed.jsp"></jsp:include>
 
 		<%return;}%>
