@@ -37,25 +37,15 @@
 	}
 %>
 
-
-<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
-
-<%if( LicenseUtil.getLevel() < 200){ %>
 	<div class="portlet-wrapper">
-		<div class="subNavCrumbTrail">
-			<ul id="subNavCrumbUl">
-				<li class="lastCrumb">
-					<a href="#" ><%=LanguageUtil.get(pageContext, "com.dotcms.repackage.javax.portlet.title.RULES_ENGINE_PORTLET")%></a>
-				</li>
+		<%@ include file="/html/portlet/ext/common/sub_nav_inc.jsp" %>
 
-			</ul>
-			<div class="clear"></div>
-		</div>
-		<jsp:include page="/WEB-INF/jsp/rules_engine_portlet/not_licensed.jsp"></jsp:include>
+		<%if( LicenseUtil.getLevel() < 200){ %>
+		
+			<jsp:include page="/WEB-INF/jsp/rules_engine_portlet/not_licensed.jsp"></jsp:include>
 
+		<%return;}%>
 	</div>
-<%return;}%>
-
 	
 	<div id="rules-engine-container" class="portlet-wrapper">
 	  <iframe id="rulesIframe" name="rulesIframe" width="100%" height="100%" frameborder="0" style="width:100%;height:100%"></iframe>
