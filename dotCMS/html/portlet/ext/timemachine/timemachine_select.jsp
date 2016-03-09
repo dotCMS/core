@@ -16,10 +16,14 @@
 	session.removeAttribute("tm_host");
 %>
 
-<% if(LicenseUtil.getLevel()< 199){ %>
-<%@ include file="/html/portlet/ext/timemachine/not_licensed.jsp" %>
+<div class="portlet-wrapper">
 
-<%return;} %>
+	<%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
+
+	<% if(LicenseUtil.getLevel()< 199){ %>
+	<%@ include file="/html/portlet/ext/timemachine/not_licensed.jsp" %>
+
+	<%return;} %>
 
 
 
@@ -242,10 +246,6 @@ function futureChange() {
 
 
 </script>
-
-<div class="portlet-wrapper">
-
-    <%@ include file="/html/portlet/ext/timemachine/sub_nav.jsp" %>
 
     <div id="timemachineMain">
 
