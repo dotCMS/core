@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -468,57 +470,95 @@ public abstract class BaseWebAssetAPI extends BaseInodeAPI {
 		return WebAssetFactory.getAssetsCountPerConditionWithPermission(hostId, condition, c, -1, 0, parent, user);
 	}
 
-	public int deleteOldVersions(Date olderThan, String assetType) throws DotDataException, DotHibernateException {
-	    Calendar calendar = Calendar.getInstance();
+	public int deleteOldVersions(final Date olderThan, final String assetType) throws DotDataException {
+        DotConnect dc = new DotConnect();
+
+        //Setting the date to olderThan 00:00:00.
+        Calendar calendar = Calendar.getInstance();
         calendar.setTime(olderThan);
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         Date date = calendar.getTime();
-        DotConnect dc = new DotConnect();
 
-        String countSQL = ("select count(*) as count from "+ assetType);
+        //Get the count of the assetType before deleting.
+        String countSQL = "select count(*) as count from " + assetType;
         dc.setSQL(countSQL);
         List<Map<String, String>> result = dc.loadResults();
         int before = Integer.parseInt(result.get(0).get("count"));
+        int after = before;
+
         String versionInfoTable = UtilMethods.getVersionInfoTableName(assetType);
 
-        String condition = " mod_date < ? and not exists (select * from "+versionInfoTable+
-                " where working_inode="+assetType+".inode or live_inode="+assetType+".inode)";
+        String condition =  " mod_date < ? " +
+                            " and not exists (select 1 from " + versionInfoTable +
+                                                " where working_inode = " + assetType + ".inode" +
+                                                " or live_inode = " + assetType + ".inode)";
 
-        String inodesToDelete = "select inode from "+assetType+" where "+condition;
+        String inodesToDeleteSQL = "select inode from " + assetType + " where " + condition;
 
-        String treeChildDelete = "delete from tree where child in ("+inodesToDelete+")";
-        dc.setSQL(treeChildDelete);
+        //Get the list of inodes to delete.
+        dc.setSQL(inodesToDeleteSQL);
         dc.addParam(date);
-        dc.loadResult();
+        List<Map<String, Object>> resultInodes = dc.loadObjectResults();
 
-        String treeParentDelete = "delete from tree where parent in ("+inodesToDelete+")";
-        dc.setSQL(treeParentDelete);
-        dc.addParam(date);
-        dc.loadResult();
+        //No need to run all the SQL is we don't get any inodes from the condition.
+        if(!resultInodes.isEmpty()){
+            List<String> inodesToDelete = new ArrayList<>();
+            List<List<String>> inodesToDeleteMatrix = new ArrayList<>();
+            int truncateAt = 100;
 
-        String deleteContainerStructures = "delete from container_structures where container_inode in ("+inodesToDelete+")";
-        dc.setSQL(deleteContainerStructures);
-        dc.addParam(date);
-        dc.loadResult();
+            //Fill inodesToDelete where each inode from the result.
+            for (Map<String, Object> row : resultInodes) {
+                inodesToDelete.add(row.get("inode").toString());
+            }
 
-        String deleteContentletSQL = "delete from "+assetType+" where  "+condition;
-        dc.setSQL(deleteContentletSQL);
-        dc.addParam(date);
-        dc.loadResult();
+            //We want to create lists of 100 inodes.
+            while (inodesToDelete.size() >= truncateAt){
+                inodesToDeleteMatrix.add(inodesToDelete.subList(0,truncateAt));
+                inodesToDelete.subList(0,truncateAt).clear();
+            }
+            inodesToDeleteMatrix.add(inodesToDelete.subList(0, inodesToDelete.size()));
 
-        String deleteInodesSQL = "delete from inode where type=? and idate < ? and inode not in (select inode from "+assetType+")";
-        dc.setSQL(deleteInodesSQL);
-        dc.addParam(assetType);
-        dc.addParam(date);
-        dc.loadResult();
+            //These are all the queries we want to run involving the inodes.
+            List<String> queries = Lists.newArrayList("delete from tree where child in (?)",
+                    "delete from tree where parent in (?)",
+                    "delete from container_structures where container_inode in (?)",
+                    "delete from " + assetType + " where inode in (?)");
 
-        dc.setSQL(countSQL);
-        result = dc.loadResults();
-        int after = Integer.parseInt(result.get(0).get("count"));
+            //For each query we will run sets of 100 inodes at a time.
+            for (String query : queries) {
+                for (List<String> inodes : inodesToDeleteMatrix) {
+                    //Create (?,?,?...) string depending of the number of inodes.
+                    String parameterPlaceholders = DotConnect.createParametersPlaceholder(inodes.size());
+                    //Replace '?' in the query, with the correct number of '?'s.
+                    dc.setSQL(query.replace("?", parameterPlaceholders));
 
-	    return before-after;
+                    for (String inode : inodes) {
+                        dc.addParam(inode);
+                    }
+
+                    dc.loadResult();
+                }
+            }
+
+            //Clean inode table.
+            String deleteInodesSQL = "delete from inode " +
+                    "where type = ? " +
+                    "and idate < ? " +
+                    "and inode not in (select inode from " + assetType + ")";
+            dc.setSQL(deleteInodesSQL);
+            dc.addParam(assetType);
+            dc.addParam(date);
+            dc.loadResult();
+
+            //Get the count of the assetType after deleting.
+            dc.setSQL(countSQL);
+            result = dc.loadResults();
+            after = Integer.parseInt(result.get(0).get("count"));
+        }
+
+	    return before - after;
 	}
 }
