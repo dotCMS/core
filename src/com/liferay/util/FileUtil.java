@@ -259,11 +259,12 @@ public class FileUtil {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		FileInputStream in = new FileInputStream(file);
 
-		int c = in.read();
+		byte buffer[] = new byte[2048];
 
-		while (c != -1) {
-			out.write(c);
-			c = in.read();
+		int c;
+
+		while (( c = in.read(buffer) ) != -1) {
+			out.write(buffer, 0, c);
 		}
 
 		in.close();
