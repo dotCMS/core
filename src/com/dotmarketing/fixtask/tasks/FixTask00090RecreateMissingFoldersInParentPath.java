@@ -1,5 +1,8 @@
 package com.dotmarketing.fixtask.tasks;
 
+import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.dotcms.repackage.com.google.common.base.Strings;
 import com.dotcms.repackage.com.thoughtworks.xstream.XStream;
 import com.dotcms.repackage.com.thoughtworks.xstream.io.xml.DomDriver;
 import com.dotmarketing.beans.FixAudit;
@@ -77,13 +80,18 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		return returnValue;
 	}
 
-	private void recreateMissingFoldersInParentPath(String parentPath, String hostId) throws SQLException, DotDataException, DotSecurityException {
+	@VisibleForTesting
+	protected void recreateMissingFoldersInParentPath(String parentPath, String hostId) throws SQLException, DotDataException, DotSecurityException {
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(parentPath));
+		Preconditions.checkArgument(!Strings.isNullOrEmpty(hostId));
+
 		if(parentPath.equals("/") || parentPath.equals("/System folder")) return;
 		List<LiteFolder> folders = getFoldersFromParentPath(parentPath, hostId);
 		recreateMissingFolders(folders);
  	}
 
-	private void recreateMissingFolders(List<LiteFolder> folders) throws SQLException, DotSecurityException, DotDataException {
+	@VisibleForTesting
+	protected void recreateMissingFolders(List<LiteFolder> folders) throws SQLException, DotSecurityException, DotDataException {
 		for(LiteFolder folder: folders) {
 			if(isFolderIdentifierMissing(folder)) {
 				createFolder(folder);
@@ -93,7 +101,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		}
 	}
 
-	private boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
+	@VisibleForTesting
+	protected boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
 		String sql = "SELECT COUNT(1) FROM identifier WHERE parent_path = ? AND asset_name = ? AND asset_type = ? and host_inode = ?";
 
 		boolean missing = false;
@@ -115,7 +124,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		return missing;
 	}
 
-	private void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException, SQLException {
+	@VisibleForTesting
+	protected void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException, SQLException {
 		try {
 			DbConnectionFactory.getConnection().setAutoCommit(false);
 
@@ -150,7 +160,8 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		return identifier;
 	}
 
-	private List<LiteFolder> getFoldersFromParentPath(String parentPath, String hostId) {
+	@VisibleForTesting
+	protected List<LiteFolder> getFoldersFromParentPath(String parentPath, String hostId) {
 		List<LiteFolder> folders = new ArrayList<>();
 		String[] parts = parentPath.split("/");
 		StringBuilder folderParentPath = new StringBuilder("/");
@@ -220,10 +231,11 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		return true;
 	}
 
-	private class LiteFolder {
-		private String name;
-		private String parentPath;
-		private String hostId;
+	@VisibleForTesting
+	protected static class LiteFolder {
+		protected String name;
+		protected String parentPath;
+		protected String hostId;
 		private static final String type = "folder" ;
 
 		private LiteFolder name(String name) {
