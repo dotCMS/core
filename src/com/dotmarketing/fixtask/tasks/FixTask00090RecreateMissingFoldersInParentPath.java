@@ -49,18 +49,18 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		List<Map<String, Object>> returnValue = new ArrayList<Map<String, Object>>();
 
 		if (!FixAssetsProcessStatus.getRunning()) {
-			HibernateUtil.startTransaction();
+
 			try {
 				FixAssetsProcessStatus.startProgress();
 				FixAssetsProcessStatus.setDescription("task 90: " + TASKNAME);
 
 				try (Connection c = DbConnectionFactory.getConnection()) {
-					try (PreparedStatement stmt = c.prepareStatement("SELECT * FROM identifier");
+					try (PreparedStatement stmt = c.prepareStatement("SELECT DISTINCT parent_path, host_inode FROM identifier");
 						 ResultSet rs = stmt.executeQuery()) {
 
 						while (rs.next()) {
-							Identifier identifier = getIdentifierFromDBRow(rs);
-							recreateMissingFoldersInParentPath(identifier.getParentPath(), identifier.getHostId());
+							LiteIdentifier identifier = getIdentifierFromDBRow(rs);
+							recreateMissingFoldersInParentPath(identifier.parentPath, identifier.hostId);
 						}
 					}
 				}
@@ -68,8 +68,7 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 				createFixAudit(returnValue, total);
 				Logger.debug(FixTask00090RecreateMissingFoldersInParentPath.class, "Ending " + TASKNAME);
 			} catch (Exception e) {
-				Logger.debug(FixTask00090RecreateMissingFoldersInParentPath.class, "There was a problem during " + TASKNAME, e);
-				HibernateUtil.rollbackTransaction();
+				Logger.error(FixTask00090RecreateMissingFoldersInParentPath.class, "There was a problem during " + TASKNAME, e);
 				FixAssetsProcessStatus.setActual(-1);
 			} finally {
 				FixAssetsProcessStatus.stopProgress();
@@ -80,46 +79,65 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 
 	private void recreateMissingFoldersInParentPath(String parentPath, String hostId) throws SQLException, DotDataException, DotSecurityException {
 		if(parentPath.equals("/") || parentPath.equals("/System folder")) return;
-		LiteFolder folder = getFolderFromParentPath(parentPath, hostId);
-		recreateMissingFolder(folder);
-		recreateMissingFoldersInParentPath(folder.parentPath, folder.hostId);
+		List<LiteFolder> folders = getFoldersFromParentPath(parentPath, hostId);
+		recreateMissingFolders(folders);
  	}
 
-	private void recreateMissingFolder(LiteFolder folder) throws SQLException, DotSecurityException, DotDataException {
+	private void recreateMissingFolders(List<LiteFolder> folders) throws SQLException, DotSecurityException, DotDataException {
+		for(LiteFolder folder: folders) {
+			if(isFolderIdentifierMissing(folder)) {
+				createFolder(folder);
+				total++;
+				FixAssetsProcessStatus.addAError();
+			}
+		}
+	}
+
+	private boolean isFolderIdentifierMissing(LiteFolder folder) throws SQLException {
 		String sql = "SELECT COUNT(1) FROM identifier WHERE parent_path = ? AND asset_name = ? AND asset_type = ? and host_inode = ?";
 
-		try (Connection c = DbConnectionFactory.getConnection();
-			 PreparedStatement stmt = c.prepareStatement(sql)) {
+		boolean missing = false;
 
+		try (PreparedStatement stmt = DbConnectionFactory.getConnection().prepareStatement(sql)) {
 			stmt.setObject(1, folder.parentPath);
 			stmt.setObject(2, folder.name);
 			stmt.setObject(3, LiteFolder.type);
 			stmt.setObject(4, folder.hostId);
 
 			try (ResultSet rs = stmt.executeQuery()) {
-				int count = rs.getInt(1);
-
-				if(count==0) {
-					total++;
-					createFolder(folder);
-					FixAssetsProcessStatus.addAError();
+				if (rs.next()) {
+					int count = rs.getInt(1);
+					missing = (count == 0);
 				}
 			}
 		}
+
+		return missing;
 	}
 
-	private void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException {
-		Folder f= new Folder();
-		f.setName(folder.name);
-		f.setTitle(folder.name);
-		f.setShowOnMenu(false);
-		f.setSortOrder(0);
-		f.setFilesMasks("");
-		f.setHostId(folder.hostId);
-		f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
-		Identifier identifier = createIdentifier(folder);
-		f.setIdentifier(identifier.getId());
-		APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
+	private void createFolder(LiteFolder folder) throws DotDataException, DotSecurityException, SQLException {
+		try {
+			DbConnectionFactory.getConnection().setAutoCommit(false);
+
+			Folder f = new Folder();
+			f.setName(folder.name);
+			f.setTitle(folder.name);
+			f.setShowOnMenu(false);
+			f.setSortOrder(0);
+			f.setFilesMasks("");
+			f.setHostId(folder.hostId);
+			f.setDefaultFileType(CacheLocator.getContentTypeCache().getStructureByVelocityVarName(APILocator.getFileAssetAPI().DEFAULT_FILE_ASSET_STRUCTURE_VELOCITY_VAR_NAME).getInode());
+			Identifier identifier = createIdentifier(folder);
+			f.setIdentifier(identifier.getId());
+			APILocator.getFolderAPI().save(f, APILocator.getUserAPI().getSystemUser(), false);
+
+			DbConnectionFactory.getConnection().commit();
+		} catch (Exception e) {
+			DbConnectionFactory.getConnection().rollback();
+			throw e;
+		} finally {
+			DbConnectionFactory.getConnection().setAutoCommit(true);
+		}
 	}
 
 	private Identifier createIdentifier(LiteFolder folder) throws DotDataException {
@@ -132,21 +150,31 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		return identifier;
 	}
 
-	private LiteFolder getFolderFromParentPath(String parentPath, String hostId) {
+	private List<LiteFolder> getFoldersFromParentPath(String parentPath, String hostId) {
+		List<LiteFolder> folders = new ArrayList<>();
 		String[] parts = parentPath.split("/");
-		String assetName=  parts[parts.length-1];
-		String assetParentPath = parentPath.substring(0, parentPath.indexOf(assetName));
-		return new LiteFolder().name(assetName).parentPath(assetParentPath).hostId(hostId);
+		StringBuilder folderParentPath = new StringBuilder("/");
+
+		for (int i = 0; i < parts.length-1; i++) {
+			LiteFolder folder = new LiteFolder();
+
+			if(i>0) {
+				folderParentPath.append(parts[i]).append("/");
+			}
+
+			folder.parentPath(folderParentPath.toString());
+			folder.name(parts[i+1]);
+			folder.hostId(hostId);
+			folders.add(folder);
+		}
+
+		return folders;
 	}
 
-	private Identifier getIdentifierFromDBRow(ResultSet rs) throws SQLException {
-		Identifier identifier = new Identifier();
-		identifier.setId(rs.getString("id"));
-		identifier.setParentPath(rs.getString("parent_path"));
-		identifier.setAssetName(rs.getString("asset_name"));
-		identifier.setHostId(rs.getString("host_inode"));
-		identifier.setAssetType(rs.getString("asset_type"));
-		return identifier;
+	private LiteIdentifier getIdentifierFromDBRow(ResultSet rs) throws SQLException {
+		return new LiteIdentifier()
+				.parentPath(rs.getString("parent_path"))
+				.hostId(rs.getString("host_inode"));
 	}
 
 	private void createFixAudit(List<Map<String, Object>> returnValue, int total) throws Exception {
@@ -209,6 +237,21 @@ public class FixTask00090RecreateMissingFoldersInParentPath implements FixTask {
 		}
 
 		private LiteFolder hostId(String hostId) {
+			this.hostId = hostId;
+			return this;
+		}
+	}
+
+	private class LiteIdentifier {
+		private String parentPath;
+		private String hostId;
+
+		private LiteIdentifier parentPath(String parentPath) {
+			this.parentPath = parentPath;
+			return this;
+		}
+
+		private LiteIdentifier hostId(String hostId) {
 			this.hostId = hostId;
 			return this;
 		}
