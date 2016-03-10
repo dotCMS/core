@@ -192,7 +192,7 @@
             var begin = counters["begin"];
             var end = counters["end"];
     		var totalPages = counters["totalPages"];
-    		
+
             headers = data[1];
 
             for (var i = 3; i < data.length; i++) {
@@ -1468,7 +1468,7 @@
                 	fieldsValues[fieldsValues.length] = "languageId";
                 	fieldsValues[fieldsValues.length] = getSelectedLanguageId();
                 }
-                
+
                 if(getSelectedLanguageId() == ""){
                         dijit.byId('language_id').focus() ;
                         return false;
@@ -1663,7 +1663,7 @@
                 }
         }
 
-        /* Displays the Push Publish dialog. If the content is archived, allow 
+        /* Displays the Push Publish dialog. If the content is archived, allow
         users to ONLY do a "Remove", not a "Push" or "Push & Remove". */
         function remotePublish(objId, referrer, isArchived) {
             pushHandler.showDialog(objId, false, isArchived);
@@ -1760,12 +1760,12 @@
                                 //console.log(headers[j]);
                                 cell.setAttribute("align","left");
                                 if (j == 0 ) {
-                                
+
                                 	if(languages.length>1){
                                 		cell.setAttribute("nowrap","true");
                                         languageId = cellData["languageId"];
                                         locale = "";
-                                        	
+
                                         for (var n = 0; n < languages.length; ++n) {
                                             if (languages[n][0] == languageId) {
 	                                            locale = "<img style='margin-top: 3px;' src='/html/images/languages/" + languages[n][1] + "_" + languages[n][2] + ".gif' width='16px' height='11px' />&nbsp;(" + languages[n][1] + "_" + languages[n][2] + ")";
@@ -1890,7 +1890,7 @@
 
 								popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"bundleIcon\" onClick=\"addToBundle('" + cellData.inode + "','<%= referer %>');\"><%=LanguageUtil.get(pageContext, "Add-To-Bundle") %></div>";
 						}
-						
+
 						if (cellData.allowUnpublishOfLiveVersion=="true" && workflowMandatory=="false"){
                           if(selectedStructureVarName == 'calendarEvent'){
                                 popupMenus += "<div dojoType=\"dijit.MenuItem\" iconClass=\"unpublishIcon\" onClick=\"unpublishEvent('" + cellData.inodeOfLiveVersion + "','<%= user.getUserId() %>','<%= referer %>'," + liveSt + "," + workingSt + "," + write + ");\"><%=LanguageUtil.get(pageContext, "Unpublish") %></div>";
