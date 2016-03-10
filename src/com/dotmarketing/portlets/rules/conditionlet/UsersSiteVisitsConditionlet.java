@@ -24,7 +24,7 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 
 	private static final long serialVersionUID = 1L;
 
-	private static final String SITE_VISITS_KEY = "site-visits";
+	public static final String SITE_VISITS_KEY = "site-visits";
 	
 	private static final ParameterDefinition<NumericType> siteVisitsValue =
 			new ParameterDefinition<>(1,SITE_VISITS_KEY, new NumericInput<>(new NumericType().minValue(0)));
