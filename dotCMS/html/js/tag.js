@@ -108,15 +108,19 @@ var suggestedDiv;
 var tagsContainer;
 var tagsMap = {};
 var lastLength = 0;
+var contentSearchField;
 
-function suggestTagsForSearch(e) {
+function suggestTagsForSearch(e, searchField) {
+	if (searchField) {
+		contentSearchField = searchField;
+	}
 	if (!tagVelocityVarName || tagVelocityVarName == "") {
 		tagVelocityVarName = e.target.id;
 	}
 	if (!tagsContainer || tagsContainer == "") {
 		tagsContainer = document.getElementById("widget_" + tagVelocityVarName);
 	}
-	suggestedDiv = tagVelocityVarName + "SuggestedTagsDiv";
+	suggestedDiv = tagVelocityVarName.replace(".", "") + "SuggestedTagsDiv";
 	var inputTags = document.getElementById(tagVelocityVarName).value;
 	inputTags = RTrim(inputTags);
 	inputTags = LTrim(inputTags);
@@ -194,7 +198,8 @@ var keys = dojo.require("dojo.keys");
 var query = dojo.require("dojo.query");
 
 function focusSelectedTag(e) {
-	var tagsOptionsLinks = query("#" + tagVelocityVarName + "SuggestedTagsDiv a");
+	var tagsOptionsLinks = query("#" + suggestedDiv + " a");
+
 	if (tagsOptionsLinks.length) {
 		var lastPos = tagsOptionsLinks.length - 1;
 		switch(e.keyCode) {
@@ -250,10 +255,10 @@ function showTagsForSearch(result) {
 			var tagDiv = document.getElementById(suggestedDiv);
 			tagDiv.innerHTML = personasTags + tags;
 
-			if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
-				dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "block");
-				dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "left", getInputPosition());
-				dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "top", getInputHeight());
+			if (dojo.byId(suggestedDiv)) {
+				dojo.style(suggestedDiv, "display", "block");
+				dojo.style(suggestedDiv, "left", getInputPosition());
+				dojo.style(suggestedDiv, "top", getInputHeight());
 			}
 			pos = null;
 			if (!keyboardEvents) {
@@ -268,8 +273,8 @@ function showTagsForSearch(result) {
 
 function clearSuggestTagsForSearch() {
 	if (tagVelocityVarName) {
-		if (dojo.byId(tagVelocityVarName + "SuggestedTagsDiv")) {
-			dojo.style(tagVelocityVarName + "SuggestedTagsDiv", "display", "none");
+		if (dojo.byId(suggestedDiv)) {
+			dojo.style(suggestedDiv, "display", "none");
 		}
 		if (suggestedDiv) {
 			dojo.byId(suggestedDiv).innerHTML = "";
@@ -319,7 +324,7 @@ function useThisTagForSearch(e) {
 			tagName += tagSuggested;
 			addTagToMap(tagSuggested, tagLink.className.indexOf("persona") > -1);
 			addTagLink(tagSuggested);
-			addTagValue(tagSuggested)
+			addTagValue(tagSuggested);
 		}
 	}
 	document.getElementById(tagVelocityVarName).value = "";
@@ -357,6 +362,16 @@ function addTagLink(tag) {
 function addTagValue(tag) {
 	var tagValues = document.getElementById(tagVelocityVarName + "Content");
 
+	if (contentSearchField) {
+		var contentSearchFieldEl = document.getElementById(contentSearchField)
+
+		if (contentSearchFieldEl.value.length) {
+			contentSearchFieldEl.value += ", ";
+		}
+		contentSearchFieldEl.value += tag;
+		contentSearchFieldEl.onchange();
+	}
+
 	if (tagValues.value.length) {
 		tagValues.value += ", ";
 	}
@@ -392,7 +407,11 @@ function createTagLink(tag) {
 	return node;
 }
 
-function fillExistingTags(elementId, value) {
+function fillExistingTags(elementId, value, searchField) {
+	if (searchField) {
+		contentSearchField = searchField;
+	}
+
 	if (!tagVelocityVarName) {
 		tagVelocityVarName = elementId;
 	}
@@ -459,7 +478,6 @@ function isTagAdded(tag) {
 }
 
 function removeTagValue(tagToRemove) {
-
 	tagToRemove = RTrim(tagToRemove);
 	tagToRemove = LTrim(tagToRemove);
 
@@ -467,8 +485,8 @@ function removeTagValue(tagToRemove) {
 	if (tagValues.value.length) {
 		var tagsExisting = tagValues.value.split(",");
 		var updatedTagValues = [];
-		tagsExisting.forEach(function(tag) {
 
+		tagsExisting.forEach(function(tag) {
 			tag = RTrim(tag);
 			tag = LTrim(tag);
 
@@ -477,6 +495,12 @@ function removeTagValue(tagToRemove) {
 			}
 		});
 		tagValues.value = updatedTagValues.join(", ");
+
+		if (contentSearchField) {
+			var contentSearchFieldEl = document.getElementById(contentSearchField);
+			contentSearchFieldEl.value = tagValues.value;
+			contentSearchFieldEl.onchange();
+		}
 	}
 }
 

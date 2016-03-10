@@ -587,18 +587,35 @@
                     return result;
 
           }else if(type=='tag'){
+                        var fieldId = selectedStruct + fieldContentlet + "Field";
+                        var searchFieldId = selectedStruct + "." + fieldContentlet + "Field";
                         dijit.registry.remove(selectedStruct+"."+ fieldContentlet +"Field");
-                        var result="<table style='width:210px;' border=\"0\">";
-                        result = result + "<tr><td style='padding:0px;'>";
-                        result = result +"<textarea onchange=\"setTimeout(doSearch, 500);\" value=\""+value+"\" dojoType=\"dijit.form.Textarea\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" cols=\"20\" rows=\"2\" onkeyup=\"suggestTagsForSearch(this,'"+ selectedStruct+"."+ fieldContentlet + "suggestedTagsDiv');\" style=\"border-color: #7F9DB9; border-style: solid; border-width: 1px; font-family: Verdana, Arial,Helvetica; font-size: 11px; height: 50px; width: 160px;\"></textarea><br/><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span></td></tr>";
-                        result = result + "<tr><td valign=\"top\" style='padding:0px;'>";
-                        result = result + "<div id=\"" + selectedStruct+"." + fieldContentlet + "suggestedTagsDiv\" style=\"height: 50px; font-size:10px;font-color:gray; width: 146px; border:1px solid #ccc;overflow: auto;\"></div><span style=\"font-size:11px; color:#999;\"><%= LanguageUtil.get(pageContext, "Suggested-Tags") %></span><br></td></tr></table>";
+                        var result = [
+                            "<div class=\"tagsWrapper\" id=\"" + fieldId + "Wrapper" + "\">",
+                            "<input type=\"hidden\" value=\"" + value + "\" id=\"" + searchFieldId + "\" onchange=\"setTimeout(doSearch, 500);\" />",
+                            "<input type=\"hidden\" style=\"border: solid 1px red\" id=\"" + fieldId + "Content" + "\" value=\"" + value + "\"  />",
+                            "<input type=\"text\" dojoType=\"dijit.form.TextBox\" id=\"" + fieldId + "\" name=\"" + selectedStruct+"."+ fieldContentlet + "Field\" />",
+                            "<span style=\"font-size:11px; color:#999; display:block\"><%= LanguageUtil.get(pageContext, "Type-your-tag-You-can-enter-multiple-comma-separated-tags") %></span>",
+                            "<div class=\"tagsOptions\" id=\"" + fieldId.replace(".", "") + "SuggestedTagsDiv" + "\" style=\"display:none;\"></div>",
+                            "</div>"
+                        ].join("");
+
+                        dojo.addOnLoad(function() {
+                          var tagField = dojo.byId(fieldId);
+                          dojo.connect(tagField, "onkeyup", function(e) {
+                            suggestTagsForSearch(e, searchFieldId);
+                          });
+                          dojo.connect(tagField, "onblur", closeSuggetionBox);
+                          if (value.length) {
+                            fillExistingTags(fieldId, value, searchFieldId);
+                          }
+                        })
 
                         setDotFieldTypeStr = setDotFieldTypeStr
-                                                                        + "dojo.attr("
-                                                                        + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
-                                                                        + ",'" + DOT_FIELD_TYPE + "'"
-                                                                        + ",'" + type + "');";
+                                            + "dojo.attr("
+                                            + "'" + selectedStruct + "." + fieldContentlet + "Field" + "'"
+                                            + ",'" + DOT_FIELD_TYPE + "'"
+                                            + ",'" + type + "');";
 
                     return result;
           }//http://jira.dotmarketing.net/browse/DOTCMS-3232
