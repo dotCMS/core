@@ -12,8 +12,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
-
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -47,12 +48,6 @@ public class SQLResultsViewTool implements ViewTool {
 
             try{
 
-                ica = new InternalContextAdapterImpl(ctx);
-                String fieldResourceName = ica.getCurrentTemplateName();
-                String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-
-                Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-
                 if (!UtilMethods.isSet(sql)) {
                     //SQL Query is not Set. Return Empty List
                     return new ArrayList<HashMap<String, String>>();
@@ -60,7 +55,7 @@ public class SQLResultsViewTool implements ViewTool {
 
                 try {
 
-                    if(!isSQLValid(sql, con)){
+                    if(!isSQLValid(sql)){
                         return errorResults;
                     }
                     DotConnect dc = new DotConnect();
@@ -128,12 +123,6 @@ public class SQLResultsViewTool implements ViewTool {
 
             try{
 
-                ica = new InternalContextAdapterImpl(ctx);
-                String fieldResourceName = ica.getCurrentTemplateName();
-                String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-
-                Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-
                 if (!UtilMethods.isSet(sql)) {
                     //SQL Query is not Set. Return Empty List
                     return new ArrayList<HashMap<String, String>>();
@@ -141,7 +130,7 @@ public class SQLResultsViewTool implements ViewTool {
 
                 try {
 
-                    if(!isSQLValid(sql, con)){
+                    if(!isSQLValid(sql)){
                         return errorResults;
                     }
 
@@ -162,7 +151,7 @@ public class SQLResultsViewTool implements ViewTool {
                     }
 
                     for(Object obj:params){
-                        if(!isSQLValid(obj.toString(), con)){
+                        if(!isSQLValid(obj.toString())){
                             return errorResults;
                         }
                     }
@@ -229,11 +218,35 @@ public class SQLResultsViewTool implements ViewTool {
         try{
             ica = new InternalContextAdapterImpl(ctx);
             String fieldResourceName = ica.getCurrentTemplateName();
-            String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
+            String inode = null;
+            String userId = null;
+            if (fieldResourceName.indexOf("field") > -1) {
+                inode = fieldResourceName.substring(fieldResourceName.lastIndexOf("/") + 1, fieldResourceName.indexOf("_"));
+                Contentlet con = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), true);
+                userId = con.getModUser();
+            } else if (fieldResourceName.indexOf(".vtl") > -1) {
+                String[] segments = fieldResourceName.split("/");
+                inode = segments[segments.length-3];
+                Contentlet con = APILocator.getContentletAPI().find(inode, APILocator.getUserAPI().getSystemUser(), true);
+                userId = con.getModUser();
+            }
+            else if (fieldResourceName.indexOf("template") > -1) {
+                inode = fieldResourceName.substring(fieldResourceName.lastIndexOf("/") + 1, fieldResourceName.indexOf("."));
+                Template t = APILocator.getTemplateAPI().findWorkingTemplate(inode,
+                        APILocator.getUserAPI().getSystemUser(), true);
+                userId = t.getModUser();
 
-            Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
+            } else if (fieldResourceName.indexOf("container") > -1) {
+                inode = fieldResourceName.substring(fieldResourceName.lastIndexOf("/") + 1, fieldResourceName.indexOf("."));
+                Container c = APILocator.getContainerAPI().getWorkingContainerById(inode,
+                        APILocator.getUserAPI().getSystemUser(), true);
+                userId = c.getModUser();
+            }
+            if(userId ==null){
+                return false;
+            }
 
-            User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
+            User mu = userAPI.loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true);
             Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
             return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
         }
@@ -243,10 +256,9 @@ public class SQLResultsViewTool implements ViewTool {
         }
     }
 
-    protected boolean isSQLValid (String sql, Contentlet con) {
+    protected boolean isSQLValid (String sql) {
         if (sql.toLowerCase().indexOf("user_") > -1) {
             Logger.error(this,"getSQLResults Tool is trying to query the user_ table");
-            Logger.debug(this,"Check content with id: " + con.getIdentifier());
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("hasDotConnectSQLError", "true");
             map.put("dotConnectSQLError", "getSQLResults Tool is trying to query the user_ table");
@@ -255,7 +267,6 @@ public class SQLResultsViewTool implements ViewTool {
         }
         if (sql.toLowerCase().indexOf("cms_role") > -1) {
             Logger.error(this,"getSQLResults Tool is trying to query the cms_role table");
-            Logger.debug(this,"Check content with id: " + con.getIdentifier());
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("hasDotConnectSQLError", "true");
             map.put("dotConnectSQLError", "getSQLResults Tool is trying to query the cms_role table");
@@ -266,7 +277,6 @@ public class SQLResultsViewTool implements ViewTool {
                 || sql.toLowerCase().indexOf("truncate ") > -1 || sql.toLowerCase().indexOf("alter ") > -1
                 || sql.toLowerCase().indexOf("create ") > -1 || sql.toLowerCase().indexOf("update ") > -1) {
             Logger.error(this,"getSQLResults Tool is trying to run a forbidden query");
-            Logger.debug(this,"Check content with id: " + con.getIdentifier());
             HashMap<String, String> map = new HashMap<String, String>();
             map.put("hasDotConnectSQLError", "true");
             map.put("dotConnectSQLError", "getSQLResults Tool is trying to run a forbidden query");
