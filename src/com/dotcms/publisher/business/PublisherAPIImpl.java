@@ -5,6 +5,8 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.mapper.PublishQueueMapper;
 import com.dotcms.publisher.util.PublisherUtil;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotcms.repackage.org.apache.commons.lang.StringUtils;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -15,7 +17,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portlets.folders.model.Folder;
-import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Logger;
@@ -58,39 +59,17 @@ public class PublisherAPIImpl extends PublisherAPI{
 										"bundle_id ";
 	private static final String MANDATORY_PLACE_HOLDER = "?,?,?,?,?,?,?" ;
 
-//
-	//"last_results, "+
-	//	"last_try,  "+
-	//	"num_of_tries, "+
-
 	private static final String INSERTSQL="insert into publishing_queue("+MANDATORY_FIELDS+") values("+MANDATORY_PLACE_HOLDER+")";
 
-    /**
-     * Prepare the given assets to be published adding them to the Publishing queue
-     *
-     * @param identifiers
-     * @param bundleId
-     * @param publishDate
-     * @param user
-     * @throws DotPublisherException
-     */
+	@Override
     public Map<String, Object> addContentsToPublish ( List<String> identifiers, String bundleId, Date publishDate, User user ) throws DotPublisherException {
     	return addAssetsToQueue(identifiers, bundleId, publishDate, user, ADD_OR_UPDATE_ELEMENT);
     }
 
-    /**
-     * Prepare the given assets to be unpublished adding them to the Publishing queue
-     *
-     * @param identifiers
-     * @param bundleId
-     * @param unpublishDate
-     * @param user
-     * @throws DotPublisherException
-     */
+	@Override
     public Map<String, Object> addContentsToUnpublish ( List<String> identifiers, String bundleId, Date unpublishDate, User user ) throws DotPublisherException {
     	return addAssetsToQueue(identifiers, bundleId, unpublishDate, user, DELETE_ELEMENT);
     }
-
 
     @Override
 	public Map<String, Object> saveBundleAssets(List<String> identifiers, String bundleId,
@@ -98,27 +77,48 @@ public class PublisherAPIImpl extends PublisherAPI{
     	return addAssetsToQueue(identifiers, bundleId, null, user, -1);
 	}
 
-    /**
-     * Adds a list of given identifiers to the Push Publish Queue,
-     *
-     * @param identifiers   Identifiers to add to the Push Publish Queue
-     * @param bundleId      The id of the bundle the assets will be part of
-     * @param operationDate When to apply the operation
-     * @param user          current user
-     * @param operationType Publish/Un-publish
-     * @return A map with the results of the operation, this map contains: the total number of assets we tried to add (<strong>total</strong>)<br/>
-     *         the number of failed assets (<strong>errors</strong> -> Permissions problems) and an ArrayList of error messages for the failed assets (<strong>errorMessages</strong>)<br/>
-     *         <strong>Keys: total, errors, errorMessages</strong>
-     * @throws DotPublisherException
-     */
+	/**
+	 * Adds a list of given identifiers to the Push Publish Queue. Each asset in
+	 * the queue table will be analyzed and classified depending on its type:
+	 * OSGi bundle, Content Type, Contentlet, Category, etc. An asset might not
+	 * make it to the queue if one of the following conditions applies:
+	 * <ol>
+	 * <li>The user doesn't have permissions to access the selected asset(s).</li>
+	 * <li>The type of asset is not currently supported by the Push Publish
+	 * mechanism.</li>
+	 * </ol>
+	 *
+	 * @param identifiers
+	 *            - Identifiers to add to the Push Publish Queue.
+	 * @param bundleId
+	 *            - The id of the bundle the assets will be part of.
+	 * @param operationDate
+	 *            - When to apply the operation.
+	 * @param user
+	 *            - The current user.
+	 * @param operationType
+	 *            - Publish/Un-publish.
+	 * @return A map with the results of the operation, this map contains 3
+	 *         properties:
+	 *         <ul>
+	 *         <li><strong>total</strong>: The total number of assets added to
+	 *         the queue.</li>
+	 *         <li><strong>errors</strong>: The number of assets that failed to
+	 *         be added to the queue.</li>
+	 *         <li><strong>errorMessages</strong>: The list of error messages
+	 *         for the failed assets.</li>
+	 *         </ul>
+	 * @throws DotPublisherException
+	 *             An error occurred during the analysis of data that is being
+	 *             added to the queue.
+	 */
     private Map<String, Object> addAssetsToQueue(List<String> identifiers, String bundleId, Date operationDate, User user, long operationType ) throws DotPublisherException {
-
         //Map to store the results and errors adding Assets to que Queue
         Map<String, Object> resultMap = new HashMap<String, Object>();
         List<String> errorsList = new ArrayList<String>();
 
     	  if ( identifiers != null ) {
-
+    		  String idToProcess = null;
     		  boolean localTransaction = false;
 
     		  try {
@@ -129,7 +129,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
               try {
                   for ( String identifier : identifiers ) {
-
+                	  idToProcess = identifier;
                       DotConnect dc = new DotConnect();
                       dc.setSQL( INSERTSQL );
                       PermissionAPI strPerAPI = APILocator.getPermissionAPI();
@@ -159,7 +159,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                                   if ( UtilMethods.isSet( st ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( st, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                           //Generate and append the error message
-                                          appendPermissionError( errorsList, user, "Structure", st.getName(), st.getIdentifier() );
+                                          appendError( errorsList, ErrorType.PERMISSION, user, "Structure", st.getName(), st.getIdentifier() );
                                           continue;
                                       }
                                   }
@@ -174,28 +174,37 @@ public class PublisherAPIImpl extends PublisherAPI{
                                       type = "category";
                                   } // check if it is a language
                                   else if(!UtilMethods.isSet(type) && APILocator.getLanguageAPI().isAssetTypeLanguage(identifier)) {
-                                      type = Language.ASSET_TYPE;
+                                      type = PusheableAsset.LANGUAGE.getType();
+                                  } // Check if it's a Rule
+                                  else if (!UtilMethods.isSet(type) && APILocator.getRulesAPI()
+  										.getRuleById(identifier, user, false) != null) {
+                                	  type = PusheableAsset.RULE.getType();
                                   }
                                   // check if it is a folder
                                   else if ( !UtilMethods.isSet(type) && UtilMethods.isSet( folder = APILocator.getFolderAPI().find( identifier, user, false ) ) ) {
                                       if ( !strPerAPI.doesUserHavePermission( folder, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                           //Generate and append the error message
-                                          appendPermissionError( errorsList, user, "Folder", folder.getName(), folder.getIdentifier() );
+                                          appendError( errorsList, ErrorType.PERMISSION, user, "Folder", folder.getName(), folder.getIdentifier() );
                                           continue;
                                       }
 
                                       type = "folder";
                                   }
                               } catch ( Exception ex ) {
-                            	  if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
-                                	  type = "workflow";
-                                  }
+                            	  try {
+									if ( UtilMethods.isSet( APILocator.getWorkflowAPI().findScheme(identifier) )) {
+										  type = "workflow";
+									  }
+									} catch (DotDataException e) {
+										// The identifier to process cannot be 
+										// mapped to a valid asset type
+										appendError(errorsList, ErrorType.DATA, user, type, "", identifier);
+									}
                               }
-
                           } else {
                               if ( !strPerAPI.doesUserHavePermission( iden, PermissionAPI.PERMISSION_PUBLISH, user ) ) {
                                   //Generate and append the error message
-                                  appendPermissionError( errorsList, user, iden.getAssetType(), null, iden.getId() );
+                                  appendError( errorsList, ErrorType.PERMISSION, user, iden.getAssetType(), null, iden.getId() );
                                   continue;
                               }
                               type = UtilMethods.isSet( APILocator.getHostAPI().find( identifier, user, false ) ) ? "host" : iden.getAssetType();
@@ -217,10 +226,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
                       dc.addObject( type );
                       dc.addObject( bundleId );
-
                       dc.loadResult();
-
-
                       PushPublishLogger.log(getClass(), "Asset added to Push Publish Queue. Action: "+action+", Asset Type: " + type + ", Asset Id: " + identifier, bundleId, user);
                   }
 
@@ -236,7 +242,7 @@ public class PublisherAPIImpl extends PublisherAPI{
                       }
                   }
                   Logger.error( PublisherAPIImpl.class, e.getMessage(), e );
-                  throw new DotPublisherException( "Unable to add element to publish queue table:" + e.getMessage(), e );
+                  throw new DotPublisherException( "Unable to add element " + idToProcess + " to publish queue table: " + e.getMessage(), e );
               }
           }
 
@@ -248,16 +254,44 @@ public class PublisherAPIImpl extends PublisherAPI{
         return resultMap;
     }
 
-    /**
-     * Generate and append Permissions error messages
-     *
-     * @param errorsList
-     * @param user
-     * @param assetType
-     * @param assetName
-     * @param identifier
-     */
-    private void appendPermissionError ( List<String> errorsList, User user, String assetType, String assetName, String identifier ) {
+	/**
+	 * Utility enum to identify the type of error that might be generated during
+	 * the addition of assets to the publishing queue.
+	 * 
+	 * @author Jose Castro
+	 * @version 1.0
+	 * @since Mar 9, 2016
+	 *
+	 */
+    private enum ErrorType {
+		PERMISSION,
+		DATA
+	}
+
+	/**
+	 * Generate and append error messages in case anything goes wrong when
+	 * adding the selected assets to the publishing queue. An asset might failed
+	 * to be added to the queue under the following circumstances:
+	 * <ul>
+	 * <li>The user does not have permissions to access it.</li>
+	 * <li>The asset type is not valid for Push Publish (is not pusheable).</li>
+	 * <li>The asset does not exist in the database anymore.</li>
+	 * </ul>
+	 * 
+	 * @param errorsList
+	 *            - The list of errors reported during the execution process.
+	 * @param errorType
+	 *            - The {@link ErrorType} marking the root cause of the problem.
+	 * @param user
+	 *            - The {@link User} performing the action.
+	 * @param assetType
+	 *            - The type of asset that presented a problem (optional).
+	 * @param assetName
+	 *            - The name of the asset that presented a problem (optional).
+	 * @param identifier
+	 *            - The asset identifier that presented a problem.
+	 */
+    private void appendError ( List<String> errorsList, ErrorType errorType, User user, String assetType, String assetName, String identifier ) {
 
         //First we should get the authentication type for this company
         Company company = PublicCompanyFactory.getDefaultCompany();
@@ -275,19 +309,27 @@ public class PublisherAPIImpl extends PublisherAPI{
         }
 
         //Generate and append the error message
-        String errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + identifier;//For logs
-        Logger.warn( PublisherAPIImpl.class, errorMessage );
-        errorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + assetName;//For user
-        errorsList.add( errorMessage );
+		String logErrorMessage = "";
+		String uiErrorMessage = "";
+		switch (errorType) {
+		case PERMISSION:
+			logErrorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": "
+					+ identifier;
+			uiErrorMessage = "User: " + userData + " does not have Publish Permission over " + assetType + ": " + assetName;
+			break;
+		case DATA:
+			logErrorMessage = "Object " + identifier + " cannot be mapped to a valid pusheable type";
+			uiErrorMessage = "Object " + (StringUtils.isNotBlank(assetName) ? assetName : identifier)
+					+ " cannot be mapped to a valid pusheable type";
+			break;
+		}
+        Logger.warn( PublisherAPIImpl.class, logErrorMessage );
+        errorsList.add( uiErrorMessage );
     }
 
     private static final String TREE_QUERY = "select * from tree where child = ? or parent = ?";
-	/**
-	 * Get tree data of a content
-	 * @param indentifier
-	 * @return
-	 * @throws DotPublisherException
-	 */
+
+    @Override
 	public List<Map<String,Object>> getContentTreeMatrix(String id) throws DotPublisherException {
 		List<Map<String,Object>> res = null;
 		DotConnect dc=new DotConnect();
@@ -304,13 +346,9 @@ public class PublisherAPIImpl extends PublisherAPI{
 		return res;
 	}
 
-
 	private static final String MULTI_TREE_QUERY = "select multi_tree.* from multi_tree join htmlpage_version_info on htmlpage_version_info.identifier = multi_tree.parent1 join container_version_info on container_version_info.identifier = multi_tree.parent2 join contentlet_version_info on contentlet_version_info.identifier = multi_tree.child where multi_tree.child = ? and htmlpage_version_info.deleted = ? and container_version_info.deleted = ? and contentlet_version_info.deleted = ?";
-	/**
-	 * Get multi tree data of a content
-	 * @param indentifier
-	 * @return
-	 */
+
+	@Override
 	public List<Map<String,Object>> getContentMultiTreeMatrix(String id) throws DotPublisherException {
 		List<Map<String,Object>> res = null;
 		DotConnect dc=new DotConnect();
@@ -335,6 +373,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"where p.bundle_id = a.bundle_id "+
 			"and a.status = ? ";
 
+	@Override
 	public List<Map<String,Object>> getQueueElementsByStatus(Status status) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -353,6 +392,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"SELECT * "+
 			"FROM publishing_queue p order by bundle_id ";
 
+	@Override
 	public List<PublishQueueElement> getQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -368,6 +408,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String COUNTENTRIES="select count(*) as count from publishing_queue ";
 
+	@Override
 	public Integer countQueueElements() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -387,7 +428,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"FROM publishing_queue p, publishing_queue_audit a " +
 			"where p.bundle_id = a.bundle_id group by bundle_id ";
 
-
+	@Override
 	public List<Map<String,Object>> getQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -399,6 +440,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
+	@Override
 	public List<Map<String,Object>> getQueueElementsGroupByBundleId(String offset, String limit) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -417,10 +459,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String COUNTBUNDLES="select count(distinct(bundle_id)) as bundle_count from publishing_queue where publish_date is not null";
 
-	/**
-	 * Gets the count of the bundles to be published
-	 * @return
-	 */
+	@Override
 	public Integer countQueueBundleIds() throws DotPublisherException {
 		DotConnect dc = new DotConnect();
 		dc.setSQL(COUNTBUNDLES);
@@ -434,14 +473,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
-
-
-
-	/**
-	 * get bundle_ids available
-	 * @return List<Map<String,Object>>
-	 * @throws DotPublisherException
-	 */
+	@Override
 	public List<Map<String,Object>> getQueueBundleIds(int limit, int offest) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -467,7 +499,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 			"((a.status != ? and a.status != ?) or a.status is null ) and p.publish_date is not null "+
 			"order by publish_date ASC,operation ASC";
 
-
+	@Override
 	public List<Map<String, Object>> getQueueBundleIdsToProcess() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -485,16 +517,11 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
-
 	private static final String GETENTRIESBYBUNDLE=
 			"SELECT * "+
 			"FROM publishing_queue p where bundle_id = ? order by asset ";
 
-	/**
-	 * get queue elements by bundle_id
-	 * @return List<Map<String,Object>>
-	 * @throws DotPublisherException
-	 */
+	@Override
 	public List<PublishQueueElement> getQueueElementsByBundleId(String bundleId) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -512,6 +539,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String COUNTENTRIESGROUPED="select count(distinct(bundle_id)) as count from publishing_queue ";
 
+	@Override
 	public Integer countQueueElementsGroupByBundleId() throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -525,6 +553,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 	private static final String GETENTRY="select * from publishing_queue where asset = ?";
 
+	@Override
 	public List<PublishQueueElement> getQueueElementsByAsset(String asset) throws DotPublisherException {
 		try{
 			DotConnect dc = new DotConnect();
@@ -539,19 +568,12 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 	}
 
-
 	/**
 	 * update element from publishing_queue table by id
 	 */
 	private static final String UPDATEELEMENTFROMQUEUESQL="UPDATE publishing_queue SET last_try=?, num_of_tries=?, in_error=?, last_results=? where id=?";
-	/**
-	 * update element from publishing_queue table by id
-	 * @param id ID of the element in the publishing_queue
-	 * @param next_try date of the next intent to execute the query
-	 * @param in_error bolean indication if there was an error
-	 * @param last_results error message
-	 * @throws DotPublisherException
-	 */
+
+	@Override
 	public void updateElementStatusFromPublishQueueTable(long id, Date last_try,int num_of_tries, boolean in_error,String last_results ) throws DotPublisherException {
 
 		boolean localTransaction = false;
@@ -592,12 +614,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete element from publishing_queue table by id
 	 */
 	private static final String DELETEELEMENTFROMQUEUESQL="DELETE FROM publishing_queue where asset=?";
-	/**
-	 * Delete element from publishing_queue table by bundleId
-	 * @param id ID of the element in the table
-	 * @return boolean
-	 * @throws DotPublisherException
-	 */
+
+	@Override
 	public void deleteElementFromPublishQueueTable(String identifier) throws DotPublisherException{
 		boolean localTransaction = false;
 
@@ -633,12 +651,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 	 * Delete element(s) from publishing_queue table by id
 	 */
 	private static final String DELETEELEMENTSFROMQUEUESQL="DELETE FROM publishing_queue where bundle_id=?";
-	/**
-	 * Delete element from publishing_queue table by bundleId
-	 * @param id ID of the element in the table
-	 * @return boolean
-	 * @throws DotPublisherException
-	 */
+
+	@Override
 	public void deleteElementsFromPublishQueueTable(String bundleId) throws DotPublisherException{
 		boolean localTransaction = false;
 
@@ -671,10 +685,8 @@ public class PublisherAPIImpl extends PublisherAPI{
 	}
 
 	private static final String DELETEALLELEMENTFROMQUEUESQL="DELETE FROM publishing_queue";
-	/**
-	 * Delete all elements from publishing_queue table
-	 * @return boolean
-	 */
+
+	@Override
 	public void deleteAllElementsFromPublishQueueTable() throws DotPublisherException{
 		boolean localTransaction = false;
 
@@ -759,6 +771,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 
 		return res;
 	}
+
 	@Override
 	public void publishBundleAssets(String bundleId, Date publishDate)
 			throws DotPublisherException {
@@ -779,6 +792,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 
 	}
+
 	@Override
 	public void unpublishBundleAssets(String bundleId, Date expireDate)
 			throws DotPublisherException {
@@ -799,6 +813,7 @@ public class PublisherAPIImpl extends PublisherAPI{
 		}
 
 	}
+
 	@Override
 	public void publishAndExpireBundleAssets(String bundleId, Date publishDate,
 			Date expireDate, User user) throws DotPublisherException {
