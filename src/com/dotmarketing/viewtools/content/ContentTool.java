@@ -502,7 +502,7 @@ public class ContentTool implements ViewTool {
 		
 		
 		
-		int maxBoost = 10;
+		int maxBoost = Config.getIntProperty("PULLPERSONALIZED_PERSONA_WEIGHT", 100);
 		
 		if(tags.size()>0){
 			maxBoost = tags.get(0).getCount() + maxBoost;
