@@ -56,6 +56,21 @@ public abstract class CookieUtilTest {
         conn.setRequestProperty(REQUEST_COOKIES_HEADER, join(cookies));
     }
 
+    public static String[] getCookiesAsString(List<HttpCookie> cookies) {
+        String[] result = null;
+
+        if (cookies != null) {
+            result = new String[cookies.size()];
+
+            for (int i = 0; i < cookies.size(); i++) {
+                HttpCookie cookie = cookies.get(i);
+                result[i] = cookie.toString();
+            }
+        }
+
+        return result;
+    }
+
     private static String join(List<HttpCookie> cookies) {
 
         StringBuffer buffer = new StringBuffer();

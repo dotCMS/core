@@ -41,7 +41,8 @@ public class UsersSiteVisitsConditionlet extends Conditionlet<UsersSiteVisitsCon
 		
 		String siteVisits = (UtilMethods.isSet(request.getCookies())) ? UtilMethods.getCookieValue(request.getCookies(), com.dotmarketing.util.WebKeys.SITE_VISITS_COOKIE) : "1";
 		String siteVisitsValue = instance.siteVisits;
-		
+
+		siteVisits = String.valueOf( Long.parseLong(siteVisits) - 1 );
 		return instance.comparison.perform(siteVisits, siteVisitsValue);
 		
 	}

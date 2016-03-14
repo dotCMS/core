@@ -182,7 +182,7 @@ public class CMSFilter implements Filter {
 
 		if(iAm == IAm.PAGE){
 			countPageVisit(request);
-
+			countSiteVisit(request, response);
 		}
 
 		// if we are not rewriting anything, use the uri
@@ -245,6 +245,21 @@ public class CMSFilter implements Filter {
 
 	}
 
+	private void countSiteVisit(HttpServletRequest request,  HttpServletResponse response) {
+
+		HttpSession session = request.getSession(false);
+		boolean PAGE_MODE = true;
+
+		if(session != null){
+			PAGE_MODE = PageRequestModeUtil.isPageMode(session);
+		}
+
+		if (PAGE_MODE) {
+			NumberOfTimeVisitedCounter.maybeCount(request, response);
+
+		}
+	}
+
 	private void countPageVisit(HttpServletRequest request) {
 
 		HttpSession session = request.getSession(false);
@@ -262,8 +277,6 @@ public class CMSFilter implements Filter {
 			}
 
 		}
-
-
 	}
 
 
