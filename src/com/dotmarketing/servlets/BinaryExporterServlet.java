@@ -452,7 +452,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 			resp.setContentType(mimeType);
-			resp.setHeader("Content-Disposition", "inline; filename=" + UtilMethods.encodeURL(downloadName));
+			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 
 			if (req.getParameter("dotcms_force_download") != null || req.getParameter("force_download") != null) {
 
@@ -462,7 +462,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				if(!x.equals(y)){
 					downloadName = downloadName.replaceAll("\\." + x, "\\." + y);
 				}
-				resp.setHeader("Content-Disposition", "attachment; filename=" + UtilMethods.encodeURL(downloadName));
+				resp.setHeader("Content-Disposition", "attachment; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"");
 				resp.setHeader("Content-Type", "application/force-download");
 			} else {
 
