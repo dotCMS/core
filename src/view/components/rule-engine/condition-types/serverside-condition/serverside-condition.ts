@@ -7,7 +7,6 @@ import {InputDate} from "../../../semantic/elements/input-date/input-date";
 import {ParameterDefinition} from "../../../../../api/util/CwInputModel";
 import {CwDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {CwComponent} from "../../../../../api/util/CwComponent";
-import {ParameterModel} from "../../../../../api/rule-engine/Condition";
 import {ServerSideFieldModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ObservableHack} from "../../../../../api/util/ObservableHack";
@@ -15,8 +14,8 @@ import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 import {Verify} from "../../../../../api/validation/Verify";
 import {GalacticBus} from "../../../../../api/system/GalacticBus";
-import {ParameterChangeEvent} from "../../rule-engine";
 import {CustomValidators} from "../../../../../api/validation/CustomValidators";
+import {ParameterModel} from "../../../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'cw-serverside-condition',
@@ -96,7 +95,7 @@ import {CustomValidators} from "../../../../../api/validation/CustomValidators";
 export class ServersideCondition {
 
   @Input() componentInstance:ServerSideFieldModel
-  @Output() parameterValueChange:EventEmitter<ParameterChangeEvent> = new EventEmitter(false)
+  @Output() parameterValueChange:EventEmitter<{name:string, value:string}> = new EventEmitter(false)
 
 
 
@@ -120,12 +119,14 @@ export class ServersideCondition {
       let prevPriority = 0
       this._inputs = []
       Object.keys(paramDefs).forEach(key => {
+
         let paramDef = this.componentInstance.getParameterDef(key)
         let param = this.componentInstance.getParameter(key);
         if (paramDef.priority > (prevPriority + 1)) {
           this._inputs.push({type: 'spacer', flex: 40})
         }
         prevPriority = paramDef.priority
+        console.log("ServersideCondition", "onChange", "params", key, param)
         let input = this.getInputFor(paramDef.inputType.type, param, paramDef)
         this._inputs.push(input)
       })
@@ -156,7 +157,7 @@ export class ServersideCondition {
   }
 
   setParameterValue(name:string, value:any, valid:boolean, isBlur:boolean=false) {
-    this.parameterValueChange.emit({name, value, valid, isBlur})
+    this.parameterValueChange.emit({name, value})
     if(name == 'comparison'){
       this.applyRhsCount(value)
     }

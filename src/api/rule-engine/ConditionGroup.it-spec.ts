@@ -1,13 +1,11 @@
-import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
+import {RuleModel, RuleService, ConditionGroupModel} from '../../api/rule-engine/Rule';
 import {ConditionService} from '../../api/rule-engine/Condition';
 import {Injector, Provider} from 'angular2/core';
-import {DataStore} from '../../api/persistence/DataStore'
-import {RestDataStore} from '../../api/persistence/RestDataStore';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 import {ActionService} from '../../api/rule-engine/Action';
-import {ConditionGroupService, ConditionGroupModel} from '../../api/rule-engine/ConditionGroup';
+import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
 import {ActionTypeService} from "./ActionType";
 import {I18nService} from "../system/locale/I18n";
 import {HTTP_PROVIDERS} from "angular2/http";
@@ -21,8 +19,7 @@ var injector = Injector.resolveAndCreate([ApiRoot,
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,
-  HTTP_PROVIDERS,
-  new Provider(DataStore, {useClass: RestDataStore})
+  HTTP_PROVIDERS
 ])
 
 describe('Integration.api.rule-engine.ConditionGroupService', function () {
@@ -38,7 +35,7 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
 
     Gen.createRules(ruleService)
 
-    onAddSub = ruleService.list().subscribe((rule:RuleModel[]) => {
+    onAddSub = ruleService.loadRules().subscribe((rule:RuleModel[]) => {
       ruleUnderTest = rule[0]
       done()
     }, (err) => {
@@ -48,7 +45,7 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   });
 
   afterEach(function(done){
-    ruleService.remove(ruleUnderTest, ()=>{
+    ruleService.deleteRule(ruleUnderTest.key).subscribe( ()=>{
       ruleUnderTest = null
       onAddSub.unsubscribe()
       done()
@@ -61,9 +58,9 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   })
 
   it("Can add a new ConditionGroup", function(done){
-    var aConditionGroup = new ConditionGroupModel(null, ruleUnderTest, "OR", 1)
+    var aConditionGroup = new ConditionGroupModel({operator: 'OR', priority:99})
 
-    conditionGroupService.add(aConditionGroup, (conditionGroup:ConditionGroupModel) => {
+    conditionGroupService.add(ruleUnderTest.key, aConditionGroup).subscribe((conditionGroup:ConditionGroupModel) => {
       //noinspection TypeScriptUnresolvedFunction
       expect(conditionGroup.isPersisted()).toBe(true, "ConditionGroup is not persisted!")
       done()
@@ -71,18 +68,17 @@ describe('Integration.api.rule-engine.ConditionGroupService', function () {
   })
 
   it("ConditionGroup being added to the owning rule is persisted to server.", function(done){
-    var aConditionGroup = new ConditionGroupModel(null, ruleUnderTest, "OR", 99)
-    aConditionGroup.owningRule = ruleUnderTest
-    conditionGroupService.add(aConditionGroup,(conditionGroup:ConditionGroupModel) => {
-        ruleService.get(ruleUnderTest.key, (rule:RuleModel)=> {
-          expect(rule.groups[conditionGroup.key]).toBeDefined("Well that's odd")
-          expect(rule.groups[conditionGroup.key].operator).toEqual("OR")
+    var aConditionGroup = new ConditionGroupModel({operator: 'OR', priority:99})
+    conditionGroupService.add(ruleUnderTest.key, aConditionGroup).subscribe((conditionGroup:ConditionGroupModel) => {
+        ruleService.loadRule(ruleUnderTest.key).subscribe( (rule:RuleModel)=> {
+          expect(rule.conditionGroups[conditionGroup.key]).toBeDefined("Well that's odd")
+          expect(rule.conditionGroups[conditionGroup.key].operator).toEqual("OR")
 
           // @todo ggranum: Defect=Cannot set priority at creation time.
           //expect(rule.groups[conditionGroup.key].priority).toEqual(99)
 
           /* Now read the ConditionGroups off the rule we just got back. Add listener first, then trigger call. */
-          conditionGroupService.list(rule).subscribe((conditionGroups:ConditionGroupModel[])=>{
+          conditionGroupService.all(rule.key, Object.keys(rule.conditionGroups)).subscribe((conditionGroups:ConditionGroupModel[])=>{
             let condGroup = conditionGroups[0]
             expect(conditionGroup.operator).toEqual("OR")
             // @todo ggranum: Defect=Cannot set priority at creation time.
@@ -103,7 +99,7 @@ class Gen {
     rule.enabled = true
     rule.name = "TestRule-" + new Date().getTime()
 
-    ruleService.add(rule)
+    ruleService.createRule(rule)
 
   }
 }

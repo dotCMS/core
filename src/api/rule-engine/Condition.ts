@@ -1,91 +1,48 @@
-import {EventEmitter, Injectable} from 'angular2/core';
-import {Observable, ConnectableObservable} from 'rxjs/Rx'
+import {Injectable} from 'angular2/core';
+import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {EntitySnapshot} from "../persistence/EntityBase";
-import {ConditionGroupModel} from "./ConditionGroup";
 import {ConditionTypeService} from "./ConditionType";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
-import {ServerSideFieldModel} from "./ServerSideFieldModel";
+import {Http, Response} from "angular2/http";
+import {ConditionGroupModel, ConditionModel, ICondition} from "./Rule";
+import {codify} from "angular2/src/core/change_detection/codegen_facade";
 
 
 let noop = (...arg:any[])=> {
 }
 
-export interface ParameterModel {
-  key:string
-  value:string
-  priority:number
-}
-
-export class ConditionModel extends ServerSideFieldModel {
-  operator:string
-  owningGroup:ConditionGroupModel
-
-  constructor(key:string, type:ServerSideTypeModel) {
-    super(key, type)
-  }
-
-  isValid() {
-    try {
-      return !!this.owningGroup && !!this.getParameterValue('comparison') && super.isValid()
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  toJson():any {
-    let json = super.toJson()
-    json.owningGroup = this.owningGroup;
-    return json
-  }
-
-  static fromJson():ConditionModel {
-    return null
-  }
-}
-
 @Injectable()
 export class ConditionService {
-  private _apiRoot;
-  private _ref;
   private _conditionTypeService:ConditionTypeService
-  private _cacheMap:{[key:string]: ServerSideTypeModel}
+  private _apiRoot:ApiRoot
+  private _http:Http
+  private _baseUrl:string
 
-  constructor(apiRoot:ApiRoot, conditionTypeService:ConditionTypeService) {
+  constructor(apiRoot:ApiRoot, conditionTypeService:ConditionTypeService, http:Http) {
     this._apiRoot = apiRoot
     this._conditionTypeService = conditionTypeService
-    this._ref = apiRoot.defaultSite.child('ruleengine/conditions')
-    this._cacheMap = {};
+    this._http = http;
+    this._baseUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`
   }
 
-  fromSnapshot(group:ConditionGroupModel, snapshot:EntitySnapshot, cb:Function = noop) {
-    let val:any = snapshot.val()
-    let count = 0
-    this._conditionTypeService.get(val.conditionlet, (type:ServerSideTypeModel)=> {
-      console.log("ConditionService", "count:", count++, snapshot.key())
-      try {
-        let ra = new ConditionModel(snapshot.key(), type)
-        ra.owningGroup = group
-        ra.priority = val.priority
-        ra.operator = val.operator
-
-        Object.keys(val.values).forEach((key)=> {
-          let x = val.values[key]
-          ra.setParameter(key, x.value, x.priority)
-        })
-        cb(ra)
-      } catch (e) {
-        console.log("Error reading Condition.", e)
-        throw e;
+  makeRequest(childPath:string):Observable<any> {
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    return this._http.get(this._baseUrl + '/' + childPath, opts).map((res:Response) => {
+      return res.json()
+    }).catch((err:any, source:Observable<any>)=> {
+      if (err && err.status === 404) {
+        console.log("Could not retrieve Condition Types: URL not valid.")
+      } else if (err) {
+        console.log("Could not retrieve Condition Types.", "response status code: ", err.status, 'error:', err)
       }
+      return Observable.empty()
     })
   }
 
   static toJson(condition:ConditionModel):any {
     let json:any = {}
     json.id = condition.key
-    json.owningGroup = condition.owningGroup.key
     json.conditionlet = condition.type.key
     json.priority = condition.priority
     json.operator = condition.operator
@@ -93,83 +50,95 @@ export class ConditionService {
     return json
   }
 
-  listForGroup(group:ConditionGroupModel):Observable<ConditionModel[]> {
-    let ee = new EventEmitter()
-    let deferred = Observable.defer(() => ee)
-    var keys = Object.keys(group.conditions);
-    let count = 0
-    let conditions = []
-    keys.forEach((conditionId)=> {
-      if (this._cacheMap[conditionId]) {
-        count++
-        conditions.push(this._cacheMap[conditionId])
-        if (count == keys.length) {
-          ee.emit(conditions)
-        }
-      } else {
-        let cRef = this._ref.child(conditionId)
-        cRef.once('value', (conditionSnap)=> {
-          this.fromSnapshot(group, conditionSnap, (model)=> {
-            count++
-            conditions.push(model)
-            this._cacheMap[model.key] = model
-            if (count == keys.length) {
-              ee.emit(conditions)
-            }
-          })
-        }, (e)=> {
-          throw e
-        })
-      }
-    })
-    return deferred
+  listForGroup(group:ConditionGroupModel, conditionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ConditionModel[]> {
+    return Observable.fromArray(Object.keys(group.conditions)).flatMap(conditionId => {
+      return this.get(conditionId, conditionTypes)
+    }).reduce(( acc:ConditionModel[], entity:ConditionModel ) => {
+      acc.push(entity)
+      return acc
+    }, [])
   }
 
-  get(group:ConditionGroupModel, key:string, cb:Function = null) {
-    this._ref.child(key).once('value', (conditionSnap)=> {
-      let model = this.fromSnapshot(group, conditionSnap, (model) => {
-        cb(model)
-      });
+  get(conditionId:string, conditionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ConditionModel> {
+    let conditionModelResult:Observable<ICondition>
+    conditionModelResult = this.makeRequest(conditionId)
 
-    }, (e)=> {
-      throw e
+    return conditionModelResult.map((entity)=>{
+      entity.id = conditionId
+      entity._type = conditionTypes ? conditionTypes[entity.conditionlet] : null
+      return ConditionService.fromServerConditionTransformFn(entity)
     })
   }
 
-  add(model:ConditionModel, cb:Function = noop) {
+  add(groupId:string, model:ConditionModel):Observable<any> {
     console.log("api.rule-engine.ConditionService", "add", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionService.toJson(model)
-    this._ref.push(json, (e, result)=> {
-      if (e) {
-        throw e;
-      }
-      model.key = result.key()
-      cb(model)
+    json.owningGroup = groupId
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    let add = this._http.post(this._baseUrl + '/', JSON.stringify(json), opts).map((res:Response) => {
+      let json = res.json()
+      model.key = json.id
+      return model
     })
+    return add.catch(this._catchRequestError('add'))
   }
 
-  save(model:ConditionModel, cb:Function = noop) {
+  save(groupId:string, model:ConditionModel) {
     console.log("api.rule-engine.ConditionService", "save", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {
-      this.add(model, cb)
+      this.add(groupId, model)
     } else {
       let json = ConditionService.toJson(model)
-      this._ref.child(model.key).set(json, (result)=> {
-        cb(model)
+      json.owningGroup = groupId
+      let opts = this._apiRoot.getDefaultRequestOptions()
+      let body = JSON.stringify(json)
+      let save = this._http.put(this._baseUrl + '/' + model.key, body, opts).map((res:Response) => {
+        return model
       })
+      return save.catch(this._catchRequestError("save"))
     }
   }
 
-  remove(model:ConditionModel, cb:Function = noop) {
-    console.log("api.rule-engine.ConditionService", "remove", model)
-    this._ref.child(model.key).remove(()=> {
-      cb(model)
+  remove(model:ConditionModel) {
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    let remove = this._http.delete(this._baseUrl + '/' + model.key, opts).map((res:Response) => {
+      return model
     })
+    return remove.catch(this._catchRequestError('remove'))
+  }
+
+  static fromServerConditionTransformFn(condition:ICondition):ConditionModel {
+    let conditionModel:ConditionModel = null
+    try {
+      conditionModel = new ConditionModel(condition)
+      let values = condition['values']
+
+      Object.keys(values).forEach((key)=> {
+        let x = values[key]
+        conditionModel.setParameter(key, x.value, x.priority)
+        console.log("ConditionService", "setting parameter", key, x)
+      })
+
+    } catch (e) {
+      console.error("Error reading Condition.", e)
+      throw e;
+    }
+    return conditionModel
+  }
+  private _catchRequestError(operation) {
+    return (err:any) => {
+      if (err && err.status === 404) {
+        console.log("Could not " + operation + " Condition: URL not valid.")
+      } else if (err) {
+        console.log("Could not " + operation + " Condition.", "response status code: ", err.status, 'error:', err)
+      }
+      return Observable.empty()
+    }
   }
 }

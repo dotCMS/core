@@ -1,6 +1,4 @@
 import {Injector, Provider} from 'angular2/core';
-import {DataStore} from '../../../api/persistence/DataStore'
-import {RestDataStore} from '../../../api/persistence/RestDataStore';
 import {UserModel} from '../../../api/auth/UserModel';
 import {ApiRoot} from '../../../api/persistence/ApiRoot';
 import {I18nService} from "./I18n";
@@ -11,8 +9,7 @@ var injector = Injector.resolveAndCreate([
   UserModel,
   ApiRoot,
   I18nService,
-  HTTP_PROVIDERS,
-  new Provider(DataStore, {useClass: RestDataStore})
+  HTTP_PROVIDERS
 ])
 
 describe('Integration.api.system.locale.I18n', function () {

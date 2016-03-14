@@ -1,78 +1,66 @@
-import {EventEmitter, Injectable} from 'angular2/core';
-import {Observable} from 'rxjs/Rx'
-import {ApiRoot} from "../persistence/ApiRoot";
-import {EntitySnapshot} from "../persistence/EntityBase";
-import {I18nService} from "../system/locale/I18n";
-import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {Injectable} from 'angular2/core';
+import {Observable, ConnectableObservable} from 'rxjs/Rx'
 
-let noop = (...arg:any[])=> {
-}
+import {ApiRoot} from "../persistence/ApiRoot";
+import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {Subscriber} from "rxjs/Subscriber";
+import {Http, Response} from "angular2/http";
 
 @Injectable()
 export class ConditionTypeService {
-  private _apiRoot;
-  private _ref;
-  private _cacheMap:{[key:string]: ServerSideTypeModel}
-  private _rsrcService:I18nService;
+  private _apiRoot:ApiRoot
+  private _http:Http
+  private _baseUrl:string
+  private _shareObservable:ConnectableObservable<ServerSideTypeModel>
 
-  constructor(apiRoot:ApiRoot, rsrcService:I18nService) {
+  constructor(apiRoot:ApiRoot, http:Http) {
     this._apiRoot = apiRoot
-    this._rsrcService = rsrcService
-    this._ref = apiRoot.root.child('system/ruleengine/conditionlets')
-    this._cacheMap = {}
+    this._http = http;
+    this._baseUrl = apiRoot.baseUrl + 'api/v1/system/ruleengine/conditionlets'
   }
 
-
-  list():Observable<ServerSideTypeModel[]> {
-    return Observable.defer(() => this._list())
+  makeRequest():Observable<any> {
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    return this._http.get(this._baseUrl, opts).map((res:Response) => {
+      return res.json()
+    }).catch((err:any, source:Observable<any>)=> {
+      if (err && err.status === 404) {
+        console.error("Could not retrieve Condition Types: URL not valid.")
+      } else if (err) {
+        console.error("Could not retrieve Condition Types.", "response status code: ", err.status, 'error:', err, 'source', source)
+      }
+      return Observable.empty()
+    })
   }
 
-  private _list(cb:Function = noop):Observable<ServerSideTypeModel[]> {
-    let ee;
-    var cachedKeys = Object.keys(this._cacheMap);
-    if (cachedKeys.length > 0) {
-      ee = this._listFromCache(cachedKeys);
-    } else {
-      ee = new EventEmitter()
-      this._ref.once('value', (snap:EntitySnapshot) => {
-        let types = snap.val()
-        let conditionTypes = []
+  allAsArray():Observable<ServerSideTypeModel[]> {
+    return this.all().reduce(( acc:ServerSideTypeModel[], item:ServerSideTypeModel ) => {
+      acc.push(item)
+      return acc
+    }, [])
+  }
+
+  all():ConnectableObservable<ServerSideTypeModel> {
+    if(!this._shareObservable){
+      this._shareObservable = this._list().publishReplay()
+      this._shareObservable.connect()
+    }
+    return this._shareObservable
+  }
+
+  private _list():ConnectableObservable<ServerSideTypeModel> {
+    return ConnectableObservable.create((sub:Subscriber<ServerSideTypeModel>)=> {
+      this.makeRequest().subscribe(types => {
         let keys = Object.keys(types);
-        let count = 0
         keys.forEach((key) => {
-          let json:any = snap.child(key).val()
+          let json:any = types[key]
           json.key = key
           let model = ServerSideTypeModel.fromJson(json)
-          this._cacheMap[model.key] = model
-          conditionTypes.push(model)
+          sub.next(model)
         })
-        ee.emit(conditionTypes)
-        cb(conditionTypes)
-      }, (e)=> {
-        throw e
+        sub.complete()
       })
-    }
-    return ee
-  }
-
-  private _listFromCache(cachedKeys) {
-    let conditionTypes = []
-    cachedKeys.forEach(key => conditionTypes.push(this._cacheMap[key]))
-    return Observable.of(conditionTypes);
-  };
-
-  get(key:string, cb:Function = noop) {
-    console.log("ConditionTypeService", "get")
-    let cachedValue = this._cacheMap[key]
-    if (cachedValue) {
-      cb(cachedValue)
-    } else {
-      /* There is no direct endpoint to get conditions by key. So we'll hydrate all of them  */
-      var sub = this.list().subscribe(()=> {
-        sub.unsubscribe()
-        cb(this._cacheMap[key])
-      })
-    }
+    })
   }
 
 }

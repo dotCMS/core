@@ -1,16 +1,13 @@
 import {bootstrap} from 'angular2/bootstrap'
-import {Attribute, Component, View, Provider} from 'angular2/core'
-import {CORE_DIRECTIVES, FORM_DIRECTIVES} from 'angular2/common'
+import {Attribute, Component, View} from 'angular2/core'
 import {HTTP_PROVIDERS} from 'angular2/http'
 
 import {ServersideCondition} from './serverside-condition';
-import {ConditionModel} from "../../../../../api/rule-engine/Condition";
 import {ServerSideTypeModel} from "../../../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../../../api/system/locale/I18n";
 import {ApiRoot} from "../../../../../api/persistence/ApiRoot";
 import {UserModel} from "../../../../../api/auth/UserModel";
-import {RestDataStore} from "../../../../../api/persistence/RestDataStore";
-import {DataStore} from "../../../../../api/persistence/DataStore";
+import {ConditionModel} from "../../../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'demo'
@@ -32,7 +29,7 @@ class App {
   constructor(@Attribute('id') id:string) {
     this.paramDefs = MOCK_CONDITIONLET.parameterDefinitions
     this.demo = {
-      'one': new ConditionModel("test2", new ServerSideTypeModel("Demo1Condition", "demo1", MOCK_CONDITIONLET.parameterDefinitions)),
+      'one': new ConditionModel({ id: "test2", _type: new ServerSideTypeModel("Demo1Condition", "demo1", MOCK_CONDITIONLET.parameterDefinitions)}),
       'two': {},
       'three': {}
     };
@@ -47,8 +44,7 @@ export function main() {
     ApiRoot,
     I18nService,
     UserModel,
-    HTTP_PROVIDERS,
-    new Provider(DataStore, {useClass: RestDataStore})
+    HTTP_PROVIDERS
   ])
   app.then((appRef) => {
     console.log("Bootstrapped App: ", appRef)

@@ -2,128 +2,119 @@ import { Component, Directive, View, Inject, EventEmitter, Input, Output} from '
 import {CORE_DIRECTIVES} from 'angular2/common';
 
 import {ServersideCondition} from './condition-types/serverside-condition/serverside-condition'
-import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 
 import {Dropdown, InputOption} from '../../../view/components/semantic/modules/dropdown/dropdown'
-import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
-import {Verify} from "../../../api/validation/Verify";
-import {CwChangeEvent} from "../../../api/util/CwEvent";
-import {ParameterChangeEvent} from "./rule-engine";
+import {
+    RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_TYPE,
+    RULE_CONDITION_DELETE, RULE_CONDITION_GROUP_UPDATE_OPERATOR, RULE_CONDITION_UPDATE_OPERATOR, ConditionModel
+} from "../../../api/rule-engine/Rule";
 
 
 @Component({
   selector: 'rule-condition',
-  template: `
-        <div *ngIf="typeDropdown != null && condition.type != null" flex layout="row" class="cw-condition cw-entry">
-            <div class="cw-btn-group cw-condition-toggle">
-    <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
-                    {{condition.operator}}
-                </button>
-            </div>
-            <cw-input-dropdown
-                    flex="25"
-                    class="cw-type-dropdown"
-                    [value]="condition.type.key"
-                    placeholder="{{typeDropdown.placeholder | async}}"
-                    (change)="onTypeChange($event)">
-                <cw-input-option
-                        *ngFor="#opt of typeDropdown.options"
-                        [value]="opt.value"
-                        [label]="opt.label | async"
-                        icon="{{opt.icon}}"></cw-input-option>
-            </cw-input-dropdown>
-            <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
-                <template [ngSwitchWhen]="'NoSelection'">
-                    <div class="cw-condition-component"></div>
-                </template>
-                <template ngSwitchDefault>
-                    <cw-serverside-condition class="cw-condition-component"
-                                             [componentInstance]="condition"
-                                             (parameterValueChange)="onParameterValueChange($event)">
-                    </cw-serverside-condition>
-                </template>
-            </div>
-        </div>
-        <div class="cw-btn-group cw-delete-btn">
-            <div class="ui basic icon buttons">
-                <button class="ui button" aria-label="Delete Condition" (click)="removeCondition()">
-                    <i class="trash icon"></i>
-                </button>
-    </div>
-</div>
-`,
   directives: [CORE_DIRECTIVES,
     ServersideCondition,
     Dropdown,
     InputOption
-  ]
+  ],
+  template: `<div *ngIf="typeDropdown != null" flex layout="row" class="cw-condition cw-entry">
+  <div class="cw-btn-group cw-condition-toggle">
+    <button class="ui basic button cw-button-toggle-operator" aria-label="Swap And/Or" (click)="toggleOperator()" *ngIf="index !== 0">
+      {{condition.operator}}
+    </button>
+  </div>
+  <cw-input-dropdown
+      flex="25"
+      class="cw-type-dropdown"
+      [value]="condition.type?.key"
+      placeholder="{{typeDropdown.placeholder | async}}"
+      (change)="onTypeChange($event)">
+    <cw-input-option
+        *ngFor="#opt of typeDropdown.options"
+        [value]="opt.value"
+        [label]="opt.label | async"
+        icon="{{opt.icon}}"></cw-input-option>
+  </cw-input-dropdown>
+  <div flex="75" class="cw-condition-row-main" [ngSwitch]="condition.type?.key">
+    <template [ngSwitchWhen]="'NoSelection'">
+      <div class="cw-condition-component"></div>
+    </template>
+    <template ngSwitchDefault>
+      <cw-serverside-condition class="cw-condition-component"
+                               [componentInstance]="condition"
+                               (parameterValueChange)="onParameterValueChange($event)">
+      </cw-serverside-condition>
+    </template>
+  </div>
+</div>
+<div class="cw-btn-group cw-delete-btn">
+  <div class="ui basic icon buttons">
+    <button class="ui button" aria-label="Delete Condition" (click)="onDeleteConditionClicked()">
+      <i class="trash icon"></i>
+    </button>
+  </div>
+</div>
+`
 })
 export class ConditionComponent {
 
   @Input() condition:ConditionModel
   @Input() index:number
-  @Output() change:EventEmitter<any> = new EventEmitter(false)
-  @Output() parameterValueChange:EventEmitter<CwChangeEvent> = new EventEmitter(false)
-  @Output() remove:EventEmitter<ConditionModel> = new EventEmitter(false)
+  @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
+
+  @Output() updateConditionType:EventEmitter<{type:string, payload:{condition: ConditionModel, value:string, index:number}}> = new EventEmitter(false)
+  @Output() updateConditionParameter:EventEmitter<{type:string, payload:{condition:ConditionModel, name:string, value:string, index:number}}> = new EventEmitter(false)
+  @Output() updateConditionOperator:EventEmitter<{type:string, payload:{condition: ConditionModel, value:string, index:number}}> = new EventEmitter(false)
+
+  @Output() deleteCondition:EventEmitter<{type: string, payload:{condition:ConditionModel}}> = new EventEmitter(false)
 
   typeDropdown:any
 
-  private _typeService:ConditionTypeService
-  private _conditionService:ConditionService;
-  private _types:{[key:string]: any}
-
-  constructor(conditionService:ConditionService, typeService:ConditionTypeService, resources:I18nService) {
-    this._conditionService = conditionService;
-    this._typeService = typeService
-    this._types = {}
-
-    this.condition = new ConditionModel(null, new ServerSideTypeModel())
-    this.index = 0
-
-    typeService.list().subscribe((types:ServerSideTypeModel[])=> {
-      this.typeDropdown = {
-        placeholder: resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder"),
-        options: []
-      }
-      types.forEach(type => {
-        this._types[type.key] = type
-        let opt = { value: type.key, label: resources.get(type.i18nKey + '.name', type.i18nKey)}
-        this.typeDropdown.options.push(opt)
-      })
-    })
+  constructor(private _resources:I18nService) {
   }
 
   ngOnChanges(change){
-    if(change.condition){
-      this.condition = change.condition.currentValue
-      if(this.typeDropdown && this.condition.type){
-        this.typeDropdown.value = this.condition.type.key
+
+    if (change.condition){
+      console.log("ConditionComponent", "ngOnChanges-condition", change.condition.currentValue)
+      if (this.typeDropdown && this.condition.type) {
+        if(this.condition.type.key != 'NoSelection') {
+          this.typeDropdown.value = this.condition.type.key
+        }
       }
+    }
+    if(change.conditionTypes && !this.typeDropdown){
+      this.typeDropdown = {
+        options: [],
+        placeholder: this._resources.get("api.sites.ruleengine.rules.inputs.condition.type.placeholder"),
+      }
+      Object.keys(this.conditionTypes).forEach(key => {
+        let type = this.conditionTypes[key]
+        this.typeDropdown.options.push(type._opt)
+      })
     }
   }
 
-  onTypeChange(value) {
-    this.condition.type = this._types[value]
-    // @todo ggranum aaaaand this is where we need to move to a Redux style state engine. Business logic is all over the UI at this point. Ugh.
-    if(Verify.empty(this.condition.getParameter('comparison'))) {
-      this.condition.setParameter('comparison', this.condition.type.parameters['comparison'].defaultValue)
-    }
-    this.change.emit(this.condition)
+  onTypeChange(type:string) {
+    console.log("ConditionComponent", "onTypeChange")
+    this.updateConditionType.emit({type: RULE_CONDITION_UPDATE_TYPE, payload: {condition:this.condition, value: type, index:this.index}})
+  }
+
+
+  onParameterValueChange(event:{name:string, value:string}) {
+    console.log("ConditionComponent", "onParameterValueChange")
+    this.updateConditionParameter.emit({type: RULE_CONDITION_UPDATE_PARAMETER, payload: {condition:this.condition, name: event.name, value: event.value, index:this.index}})
   }
 
   toggleOperator() {
-    this.condition.operator = this.condition.operator === 'AND' ? 'OR' : 'AND'
-    this.change.emit(this.condition)
+    let op = this.condition.operator === 'AND' ? 'OR' : 'AND'
+    this.updateConditionOperator.emit({type: RULE_CONDITION_UPDATE_OPERATOR, payload: {condition:this.condition, value: op, index:this.index}})
   }
 
-  onParameterValueChange(event:ParameterChangeEvent) {
-      this.parameterValueChange.emit(Object.assign({ source: this.condition }, event))
-  }
-
-  removeCondition() {
-    this.remove.emit(this.condition)
+  onDeleteConditionClicked() {
+    this.deleteCondition.emit({type:RULE_CONDITION_DELETE, payload:{condition:this.condition}})
   }
 }
 

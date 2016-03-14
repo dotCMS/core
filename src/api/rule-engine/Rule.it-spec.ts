@@ -1,8 +1,6 @@
 import {RuleModel, RuleService} from '../../api/rule-engine/Rule';
 import {ConditionService} from '../../api/rule-engine/Condition';
 import {Injector, Provider} from 'angular2/core';
-import {DataStore} from '../../api/persistence/DataStore'
-import {RestDataStore} from '../../api/persistence/RestDataStore';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
@@ -23,8 +21,7 @@ var injector = Injector.resolveAndCreate([
   ConditionTypeService,
   ConditionService,
   ConditionGroupService,
-  HTTP_PROVIDERS,
-  new Provider(DataStore, {useClass: RestDataStore})
+  HTTP_PROVIDERS
 ])
 
 describe('Integration.api.rule-engine.RuleService', function () {
@@ -41,7 +38,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   afterEach(function () {
     rulesToRemove.forEach((rule) => {
-      ruleService.remove(rule);
+      ruleService.deleteRule(rule.key);
     })
   })
 
@@ -51,7 +48,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
     clientRule.enabled = true
     clientRule.name = "TestRule-" + new Date().getTime()
 
-    ruleService.add(clientRule, (serverRule:RuleModel) => {
+    ruleService.createRule(clientRule).subscribe( (serverRule:RuleModel) => {
       rulesToRemove.push(serverRule)
       expect(serverRule.isPersisted()).toBe(true)
       expect(serverRule.enabled).toBe(true)

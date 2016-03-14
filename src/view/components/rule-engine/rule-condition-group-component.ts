@@ -4,13 +4,14 @@ import {CORE_DIRECTIVES} from 'angular2/common';
 
 import {ConditionComponent} from './rule-condition-component';
 
-import {ApiRoot} from '../../../api/persistence/ApiRoot'
-import {ConditionGroupService, ConditionGroupModel} from "../../../api/rule-engine/ConditionGroup";
-import {ConditionService, ConditionModel} from "../../../api/rule-engine/Condition";
 import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {Observable} from "rxjs/Observable";
-import {ParameterChangeEvent} from "./rule-engine";
+import { ConditionActionEvent, ConditionGroupActionEvent} from "./rule-engine.container";
+import {
+    RULE_CONDITION_GROUP_DELETE, RULE_CONDITION_GROUP_UPDATE_OPERATOR,
+    RULE_CONDITION_GROUP_CREATE, RULE_CONDITION_CREATE, ConditionGroupModel, ConditionModel
+} from "../../../api/rule-engine/Rule";
 
 @Component({
   selector: 'condition-group',
@@ -33,14 +34,16 @@ import {ParameterChangeEvent} from "./rule-engine";
          *ngFor="var condition of conditions; var i=index">
       <rule-condition flex layout="row"
                       [condition]="condition"
+                      [conditionTypes]="conditionTypes"
                       [index]="i"
-                      (remove)="onConditionRemove($event)"
-                      (change)="onConditionChange($event)"
-                      (parameterValueChange)="onParamValueChange($event)"
+                      (deleteCondition)="deleteCondition.emit($event)"
+                      (updateConditionType)="updateConditionType.emit($event)"
+                      (updateConditionParameter)="updateConditionParameter.emit($event)"
+                      (updateConditionOperator)="updateConditionOperator.emit($event)"
                       ></rule-condition>
       <div class="cw-btn-group cw-add-btn">
         <div class="ui basic icon buttons" *ngIf="i === (conditions.length - 1)">
-          <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="addCondition();" [disabled]="!condition.isPersisted()">
+          <button class="cw-button-add-item ui button" arial-label="Add Condition" (click)="onCreateCondition()" [disabled]="!condition.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
@@ -57,36 +60,30 @@ export class ConditionGroupComponent {
   private static I8N_BASE:string = 'api.sites.ruleengine.rules'
 
   @Input() group:ConditionGroupModel
-  @Input() groupIndex:number
-  @Output() change:EventEmitter<ConditionGroupModel>
-  @Output() remove:EventEmitter<ConditionGroupModel>
+  @Input() conditions:ConditionModel[]
 
-  conditions:Array<ConditionModel>;
-  groupCollapsed:boolean
+  @Input() groupIndex:number = 0
+  @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
 
-  private apiRoot:ApiRoot
-  private _groupService:ConditionGroupService;
-  private _conditionService:ConditionService;
+  @Output() deleteConditionGroup:EventEmitter<ConditionGroupModel> = new EventEmitter(false)
+  @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+
+  @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() deleteCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+
+
+
   private resources:I18nService
   private _rsrcCache:{[key:string]:Observable<string>}
 
-  constructor(apiRoot:ApiRoot,
-              groupService:ConditionGroupService,
-              conditionService:ConditionService,
-              resources:I18nService) {
+  constructor(resources:I18nService) {
     this.resources = resources
     this._rsrcCache = {}
-
-    this.change = new EventEmitter()
-    this.remove = new EventEmitter()
-    this.apiRoot = apiRoot
-    this._groupService = groupService;
-    this._conditionService = conditionService;
-    this.groupCollapsed = false
-    this.conditions = []
-    this.groupIndex = 0
-
   }
+
   rsrc(subkey:string) {
     let x = this._rsrcCache[subkey]
     if(!x){
@@ -95,87 +92,14 @@ export class ConditionGroupComponent {
     }
     return x
   }
-  ngOnChanges(change) {
-    if (change.group) {
-      let group:ConditionGroupModel = change.group.currentValue
-      let groupKeys = Object.keys(group.conditions)
-      if (groupKeys.length === 0) {
-        this.addCondition()
-      } else {
-        this._conditionService.listForGroup(group).subscribe(conditions => {
-          this.conditions = conditions
-          this.sort()
-        })
-      }
-    }
-  }
 
-  addCondition() {
-    let condition = new ConditionModel(null, new ServerSideTypeModel())
-    condition.priority = this.conditions.length ? this.conditions[this.conditions.length - 1].priority + 1 : 1
-    condition.owningGroup = this.group
-    condition.operator = 'AND'
-    this.conditions.push(condition)
-  }
-
-  sort() {
-    this.conditions.sort(function (a, b) {
-      return a.priority - b.priority;
-    });
-  }
-
-  _addCondition(condition:ConditionModel) {
-    if (condition.isValid()) {
-      this._conditionService.add(condition)
-    }
+  onCreateCondition(){
+    console.log("ConditionGroupComponent", "onCreateCondition")
+    this.createCondition.emit( { type:RULE_CONDITION_CREATE, payload:{conditionGroup: this.group, index:this.groupIndex}} )
   }
 
   toggleGroupOperator() {
-    this.group.operator = this.group.operator === "AND" ? "OR" : "AND"
-    if (this.group.isPersisted()) {
-      this._groupService.save(this.group)
-    }
-  }
-
-  onParamValueChange(event:ParameterChangeEvent) {
-    if (event.valid) {
-      if (event.isBlur) {
-        let source:ConditionModel = <ConditionModel>event.source
-        source.setParameter(event.name, event.value)
-        this.onConditionChange(source)
-      }
-    }
-  }
-
-  onConditionChange(condition:ConditionModel) {
-    if (condition.isValid()) {
-      if (condition.isPersisted()) {
-        this._conditionService.save(condition)
-      } else {
-        if (!this.group.isPersisted()) {
-          this._groupService.add(this.group, (foo) => {
-            this._conditionService.add(condition, () => {
-              this.group.conditions[condition.key] = true
-            })
-          })
-        } else {
-          this._conditionService.add(condition, () => {
-            this.group.conditions[condition.key] = true
-          })
-        }
-      }
-    }
-  }
-
-  onConditionRemove(conditionModel:ConditionModel) {
-
-    this._conditionService.remove(conditionModel, () =>{
-      this.conditions = this.conditions.filter((aryModel:ConditionModel)=> {
-        return aryModel.key != conditionModel.key
-      })
-      if (this.conditions.length === 0) {
-        this.remove.emit(this.group)
-      }
-    })
+    let value = this.group.operator === "AND" ? "OR" : "AND"
+    this.updateConditionGroupOperator.emit({type:RULE_CONDITION_GROUP_UPDATE_OPERATOR, payload: {conditionGroup:this.group, value:value, index:this.groupIndex}})
   }
 }

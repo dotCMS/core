@@ -1,37 +1,28 @@
-import {Component} from 'angular2/core'
+import {Component, EventEmitter, Input, Output, ChangeDetectionStrategy} from 'angular2/core';
+
 import {CORE_DIRECTIVES} from 'angular2/common'
 import {Observable} from 'rxjs/Rx'
 
 import {RuleComponent} from './rule-component'
-import {RuleService, RuleModel} from "../../../api/rule-engine/Rule"
+import {RuleModel, RULE_CREATE} from "../../../api/rule-engine/Rule"
 import {I18nService} from "../../../api/system/locale/I18n"
 import {CwFilter} from "../../../api/util/CwFilter"
-import {CwChangeEvent} from "../../../api/util/CwEvent";
-import {ServerSideFieldModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
+import {
+    ConditionActionEvent, RuleActionActionEvent, RuleActionEvent,
+    ConditionGroupActionEvent
+} from "./rule-engine.container";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
-export interface ParameterChangeEvent extends CwChangeEvent {
-  rule?:RuleModel
-  source?:ServerSideFieldModel
-  name:string
-  value:string
-}
-
-
-export interface TypeChangeEvent extends CwChangeEvent {
-  rule?:RuleModel
-  source:ServerSideFieldModel
-  value:any
-  index:number
-}
 
 /**
  *
  */
 @Component({
   selector: 'cw-rule-engine',
+  directives: [CORE_DIRECTIVES, RuleComponent],
   template: `<div class="cw-rule-engine">
   <div class="cw-header">
     <div flex layout="row" layout-align="space-between center">
@@ -54,39 +45,76 @@ export interface TypeChangeEvent extends CwChangeEvent {
     </div>
   </div>
 
-  <rule *ngFor="var r of rules" [rule]="r" [hidden]="isFiltered(r) == true"
-        (change)="onRuleChange($event)"
-        (enableStateChange)="onEnableStateChange($event.rule, $event.enabled)"
-        (remove)="onRuleRemove($event)"></rule>
+  <rule *ngFor="var rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
+         [conditionGroups]="rule._conditionGroups"
+         [ruleActions]="rule._ruleActions"
+         [ruleActionTypes]="ruleActionTypes"
+         [conditionTypes]="conditionTypes"
+        (updateName)="updateName.emit($event)"
+        (updateFireOn)="updateFireOn.emit($event)"
+        (updateEnabledState)="updateEnabledState.emit($event)"
+        (updateExpandedState)="updateExpandedState.emit($event)"
+        
+        (createRuleAction)="createRuleAction.emit($event)"
+        (updateRuleActionType)="updateRuleActionType.emit($event)"
+        (updateRuleActionParameter)="updateRuleActionParameter.emit($event)"
+        (deleteRuleAction)="deleteRuleAction.emit($event)"
+        
+        (createCondition)="createCondition.emit($event)"
+        (onUpdateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+        (updateConditionType)="updateConditionType.emit($event)"
+        (updateConditionParameter)="updateConditionParameter.emit($event)"
+        (deleteCondition)="deleteCondition.emit($event)"
+
+        (deleteRule)="deleteRule.emit($event)"></rule>
 </div>
 
-`,
-  directives: [CORE_DIRECTIVES, RuleComponent]
+`
 })
 export class RuleEngineComponent {
-  rules:Array<RuleModel>
+
+  @Input() rules:RuleModel[]
+  @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
+  @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
+
+  @Output() createRule:EventEmitter<{type:string}> = new EventEmitter(false)
+  @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateName:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateExpandedState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateEnabledState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateFireOn:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+
+  @Output() createRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+
+  @Output() updateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+
+  @Output() createCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() deleteCondition:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+
+
+
   filterText:string
   status:string
   activeRules:number
-  private ruleService:RuleService;
+
   private resources:I18nService;
   private _rsrcCache:{[key:string]:Observable<string>}
 
-  constructor(ruleService:RuleService, resources:I18nService) {
+
+  constructor(resources:I18nService) {
     this.resources = resources
-    resources.get(I8N_BASE).subscribe((rsrc)=> {
-    })
-    this.ruleService = ruleService
+    resources.get(I8N_BASE).subscribe((rsrc)=> { })
     this.filterText = ""
     this.rules = []
     this._rsrcCache = {}
-    this.ruleService.list().subscribe(rules => {
-      this.rules = rules
-      this.sort()
-    })
     this.status = null
 
-    this.getFilteredRulesStatus()
   }
 
   rsrc(subkey:string) {
@@ -96,50 +124,19 @@ export class RuleEngineComponent {
       this._rsrcCache[subkey] = x
     }
     return x
-
   }
 
-  sort() {
-    this.rules.sort(function (a, b) {
-      return b.priority - a.priority;
-    });
-  }
-
-  onEnableStateChange(rule, enabled){
-    rule.enabled = enabled
-    this.onRuleChange(rule)
-  }
-
-  onRuleChange(rule:RuleModel) {
-    if (rule.isValid()) {
-      if (rule.isPersisted()) {
-        this.ruleService.save(rule)
-      }
-      else {
-        this.ruleService.add(rule);
-      }
+  ngOnChange(change){
+    if(change.rules){
+      this.updateActiveRuleCount()
     }
-    this.getFilteredRulesStatus()
-  }
-
-  onRuleRemove(rule:RuleModel) {
-    if (rule.isPersisted()) {
-      this.ruleService.remove(rule)
-    }
-    this.rules = this.rules.filter((arrayRule) => {
-      return arrayRule.key !== rule.key
-    })
-    this.getFilteredRulesStatus()
   }
 
   addRule() {
-    let rule = new RuleModel(null)
-    rule.priority = this.rules.length ? this.rules[0].priority + 1 : 1;
-    this.rules.unshift(rule)
-    this.sort()
+    this.createRule.emit({type:RULE_CREATE})
   }
 
-  getFilteredRulesStatus() {
+  updateActiveRuleCount() {
     this.activeRules = 0;
     for (var i = 0; i < this.rules.length; i++) {
       if (this.rules[i].enabled) {
@@ -171,7 +168,5 @@ export class RuleEngineComponent {
   isFiltered(rule:RuleModel) {
     return CwFilter.isFiltered(rule, this.filterText)
   }
+
 }
-
-
-

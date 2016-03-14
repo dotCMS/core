@@ -1,8 +1,7 @@
 import {Injectable} from 'angular2/core';
 import {BehaviorSubject} from "rxjs/Rx";
 import {Observable} from "rxjs/Observable";
-import {ActionModel} from "../rule-engine/Action";
-import {RuleModel} from "../rule-engine/Rule";
+import {RuleModel, ActionModel} from "../rule-engine/Rule";
 
 
 export interface BusEvent {

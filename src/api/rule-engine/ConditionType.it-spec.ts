@@ -1,7 +1,5 @@
 import * as Rx from 'rxjs/Rx'
 import {Injector, Provider} from 'angular2/core';
-import {DataStore} from '../../api/persistence/DataStore'
-import {RestDataStore} from '../../api/persistence/RestDataStore';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
 import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
@@ -14,8 +12,7 @@ var injector = Injector.resolveAndCreate([
   I18nService,
   UserModel,
   ConditionTypeService,
-  HTTP_PROVIDERS,
-  new Provider(DataStore, {useClass: RestDataStore})
+  HTTP_PROVIDERS
 ])
 
 describe('Integration.api.rule-engine.RuleService', function () {
@@ -37,9 +34,9 @@ describe('Integration.api.rule-engine.RuleService', function () {
 
   it("Can list condition types, and they are all persisted and valid.", function(done){
     let count = 0;
-    let subscription = typeService.list().subscribe((types:ServerSideTypeModel[]) => {
+    let subscription = typeService.allAsArray().subscribe((types:ServerSideTypeModel[]) => {
       types.forEach((type:ServerSideTypeModel)=>{
-        expect(type.isPersisted()).toBe(true, "Condition types are readonly and should always be persisted.")
+        expect(type.key).toBeDefined("Condition types are readonly and should always be persisted.")
         expect(type.isValid()).toBe(true, "Condition types are readonly and should always be valid.")
       })
       done()
@@ -52,7 +49,7 @@ describe('Integration.api.rule-engine.RuleService', function () {
   })
 
   it("There are (n) active condition types.", function(done){
-    typeService.list().subscribe((types:ServerSideTypeModel[])=>{
+    typeService.allAsArray().subscribe((types:ServerSideTypeModel[])=>{
       expect(types.length).toEqual(12, "We have 12 implemented condition types.")
       done()
     })

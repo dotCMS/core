@@ -1,16 +1,11 @@
-import {Injector, Provider} from 'angular2/core';
-
-
-import {I18nService} from "../system/locale/I18n";
+import {Injector} from 'angular2/core';
 import {UserModel} from "../../api/auth/UserModel";
 import {ApiRoot} from '../../api/persistence/ApiRoot';
-import {DataStore} from '../../api/persistence/DataStore'
-import {LocalDataStore} from "../../api/persistence/LocalDataStore";
+
 
 var injector = Injector.resolveAndCreate([
   UserModel,
-    ApiRoot,
-  new Provider(DataStore, {useClass: LocalDataStore})
+    ApiRoot
 ])
 describe('Unit.api.persistence.ApiRoot', function () {
 

@@ -1,4 +1,4 @@
-import {Component, EventEmitter, ElementRef, Input, Output} from 'angular2/core';
+import {Component, EventEmitter, ElementRef, Input, Output, ChangeDetectionStrategy} from 'angular2/core';
 import {
     CORE_DIRECTIVES, Control, Validators, FORM_DIRECTIVES, NgFormModel, FormBuilder,
     ControlGroup
@@ -12,18 +12,27 @@ import {ConditionGroupComponent} from './rule-condition-group-component';
 
 import {InputToggle} from '../../../view/components/input/toggle/InputToggle'
 
-import {RuleService, RuleModel} from "../../../api/rule-engine/Rule";
-import {ActionService, ActionModel} from "../../../api/rule-engine/Action";
-import {ConditionGroupModel, ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
+import {
+    RuleModel, RULE_UPDATE_ENABLED_STATE,
+    RULE_UPDATE_NAME,
+    RULE_UPDATE_FIRE_ON,
+    RULE_DELETE,
+    RULE_RULE_ACTION_UPDATE_TYPE,
+    RULE_RULE_ACTION_UPDATE_PARAMETER,
+    V_RULE_UPDATE_EXPANDED_STATE, RULE_CONDITION_UPDATE_PARAMETER, RULE_CONDITION_UPDATE_OPERATOR,
+    RULE_CONDITION_UPDATE_TYPE, ConditionGroupModel, ActionModel, RULE_RULE_ACTION_DELETE, RULE_RULE_ACTION_CREATE
+} from "../../../api/rule-engine/Rule";
 
 import {Dropdown, InputOption} from "../semantic/modules/dropdown/dropdown";
 import {InputText} from "../semantic/elements/input-text/input-text";
-import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {I18nService} from "../../../api/system/locale/I18n";
 import {UserModel} from "../../../api/auth/UserModel";
 import {ApiRoot} from "../../../api/persistence/ApiRoot";
-import {GalacticBus} from "../../../api/system/GalacticBus";
-import {ParameterChangeEvent, TypeChangeEvent} from "./rule-engine";
+import {
+    ConditionActionEvent,
+    RuleActionActionEvent, RuleActionEvent, ConditionGroupActionEvent
+} from "./rule-engine.container";
+import {ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 
 
 const I8N_BASE:string = 'api.sites.ruleengine'
@@ -42,10 +51,10 @@ var rsrc = {
   directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
   <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
-  <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="toggleCollapsed()">
-    <div flex="70" layout="row" layout-align="start center" class="cw-header-info" *ngIf="!hidden">
-      <i flex="none" class="cloud icon cw-rule-cloud small" [class.download]="_loading" [class.upload]="_saving" [class.out-of-sync]="_outOfSync" aria-hidden="true"></i>
-      <i flex="none" class="caret icon cw-rule-caret large" [class.right]="collapsed" [class.down]="!collapsed" aria-hidden="true"></i>
+  <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
+    <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
+      <i flex="none" class="cloud icon cw-rule-cloud small" [class.download]="_loading" [class.upload]="_saving" [class.out-of-sync]="rule._outOfSync" aria-hidden="true"></i>
+      <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
       <cw-input-text class="cw-rule-name-input"
                      focused="{{rule.key == null}}"
@@ -61,7 +70,7 @@ var rsrc = {
                          class="cw-fire-on-dropdown"
                          [value]="fireOn.value"
                          placeholder="{{fireOn.placeholder | async}}"
-                         (change)="onFireOnChange($event)"
+                         (change)="updateFireOn.emit({type: 'RULE_UPDATE_FIRE_ON', payload:{rule:rule, fireOn:$event}})"
                          (click)="$event.stopPropagation()">
         <cw-input-option
             *ngFor="#opt of fireOn.options"
@@ -70,7 +79,7 @@ var rsrc = {
             icon="{{opt.icon}}"></cw-input-option>
       </cw-input-dropdown>
     </div>
-    <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" *ngIf="!hidden">
+    <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
       <cw-toggle-input class="cw-input"
                        [on-text]="rsrc('inputs.onOff.on.label') | async"
                        [off-text]="rsrc('inputs.onOff.off.label') | async"
@@ -80,36 +89,44 @@ var rsrc = {
       </cw-toggle-input>
       <div class="cw-btn-group">
         <div class="ui basic icon buttons">
-          <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="removeRule($event)">
+          <button class="ui button cw-delete-rule" aria-label="Delete Rule" (click)="deleteRuleClicked($event)">
             <i class="trash icon"></i>
           </button>
-          <button class="ui button cw-add-group" arial-label="Add Group" (click)="addGroup(); collapsed=false; $event.stopPropagation()" [disabled]="!rule.isPersisted()">
+          <button class="ui button cw-add-group" arial-label="Add Group" (click)="addGroup(); setRuleExpandedState(true); $event.stopPropagation()" [disabled]="!rule.isPersisted()">
             <i class="plus icon" aria-hidden="true"></i>
           </button>
         </div>
       </div>
     </div>
   </div>
-  <div class="cw-accordion-body" [class.cw-hidden]="collapsed">
-    <condition-group *ngFor="var group of groups; var i=index"
+  <div class="cw-accordion-body" *ngIf="rule._expanded">
+    <condition-group *ngFor="var group of conditionGroups; var i=index"
                      [rule]="rule"
                      [group]="group"
+                     [conditions]="group._conditions"
+                     [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
-                     (remove)="onConditionGroupRemove($event)"
-                     (change)="onConditionGroupChange($event)"></condition-group>
+                     (createCondition)="createCondition.emit($event)"
+                     (deleteCondition)="onDeleteCondition($event)"
+                     (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
+                     (updateConditionType)="onUpdateConditionType($event, group)"
+                     (updateConditionParameter)="onUpdateConditionParameter($event, group)"
+                     (updateConditionOperator)="onUpdateConditionOperator($event, group)"
+                     ></condition-group>
     <div class="cw-action-group">
       <div class="cw-action-separator">
         {{rsrc('inputs.action.firesActions') | async}}
       </div>
       <div flex layout="column" class="cw-rule-actions">
-        <div layout="row" class="cw-action-row" *ngFor="var ruleAction of actions; #i=index">
+        <div layout="row" class="cw-action-row" *ngFor="var ruleAction of ruleActions; #i=index">
           <rule-action flex layout="row" [action]="ruleAction" [index]="i" 
-              (typeChange)="onActionTypeChange($event)"
-               (parameterValueChange)="onActionParamValueChange($event)"
-              (remove)="onActionRemove($event)"></rule-action>
+              [ruleActionTypes]="ruleActionTypes"
+              (updateRuleActionType)="onUpdateRuleActionType($event)"
+               (updateRuleActionParameter)="onUpdateRuleActionParameter($event)"
+              (deleteRuleAction)="onDeleteRuleAction($event)"></rule-action>
           <div class="cw-btn-group cw-add-btn">
-            <div class="ui basic icon buttons" *ngIf="i === (actions.length - 1)">
-              <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="addAction();" [disabled]="!ruleAction.isPersisted()">
+            <div class="ui basic icon buttons" *ngIf="i === (ruleActions.length - 1)">
+              <button class="cw-button-add-item ui button" arial-label="Add Action" (click)="onCreateRuleAction();" [disabled]="!ruleAction.isPersisted()">
                 <i class="plus icon" aria-hidden="true"></i>
               </button>
             </div>
@@ -120,64 +137,64 @@ var rsrc = {
   </div>
 </div>
 </form>
-`,
+`
 })
 class RuleComponent {
   @Input() rule:RuleModel
-  @Input() hidden:boolean
+  @Input() ruleActions:ActionModel[]
+  @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
+  @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
 
-  @Output() change:EventEmitter<RuleModel> = new EventEmitter(false)
-  @Output() remove:EventEmitter<RuleModel> = new EventEmitter(false)
-  @Output() enableStateChange:EventEmitter<{rule:RuleModel, enabled:boolean}> = new EventEmitter(false)
+  @Input() conditionGroups:ConditionGroupModel[]
+  @Input() hidden:boolean = false
 
-  private _enableStateChangeDelay:EventEmitter<{rule:RuleModel, enabled:boolean}> = new EventEmitter(false)
+  @Output() deleteRule:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateExpandedState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateName:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateEnabledState:EventEmitter<RuleActionEvent> = new EventEmitter(false)
+  @Output() updateFireOn:EventEmitter<RuleActionEvent> = new EventEmitter(false)
 
-  collapsed:boolean
+  @Output() createRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() updateRuleActionType:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() updateRuleActionParameter:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() deleteRuleAction:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+
+  @Output() onUpdateConditionGroupOperator:EventEmitter<ConditionGroupActionEvent> = new EventEmitter(false)
+
+
+  @Output() createCondition:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() deleteCondition:EventEmitter<RuleActionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionType:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionParameter:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+  @Output() updateConditionOperator:EventEmitter<ConditionActionEvent> = new EventEmitter(false)
+
+  private _updateEnabledStateDelay:EventEmitter<{type:string, payload: {rule:RuleModel, value:boolean}}> = new EventEmitter(false)
+
   hideFireOn:boolean
-  actions:Array<ActionModel>
-  groups:Array<ConditionGroupModel>
   formModel:ControlGroup
   elementRef:ElementRef
 
-  private ruleService:RuleService
-  private actionService:ActionService
-  private _groupService:ConditionGroupService
-
   private fireOn:any
-  private _outOfSync:boolean = false
   private _rsrcCache:{[key:string]:Observable<string>}
   private _user:UserModel
   resources:I18nService
 
-  private _valid:boolean = true
-  private _saving:boolean = false
 
   constructor(fb:FormBuilder,
               user:UserModel,
               elementRef:ElementRef,
-              ruleService:RuleService,
-              actionService:ActionService,
-              groupService:ConditionGroupService,
               resources:I18nService,
-              apiRoot:ApiRoot, private _bus:GalacticBus) {
+              apiRoot:ApiRoot) {
     this._user = user
     this.elementRef = elementRef
-    this.actionService = actionService
-    this.ruleService = ruleService;
-    this._groupService = groupService
     this.resources = resources
     this._rsrcCache = {}
     this.hideFireOn = apiRoot.hideFireOn
 
-    this.groups = []
-    this.actions = []
-
-    this.hidden = false
-    this.collapsed = false
 
     /* Need to delay the firing of the state change toggle, to give any blur events time to fire. */
-    this._enableStateChangeDelay.debounceTime(20).subscribe((event:{rule:RuleModel, enabled:boolean})=>{
-      this.enableStateChange.emit(event)
+    this._updateEnabledStateDelay.debounceTime(20).subscribe((event:RuleActionEvent)=> {
+      this.updateEnabledState.emit(event)
     })
 
     this.fireOn = {
@@ -192,38 +209,6 @@ class RuleComponent {
     }
     this.initFormModel(fb)
 
-    this._bus.ruleAddRuleAction$()
-        .filter((event) => event.payload.rule === this.rule)
-        .subscribe((event) => {
-          this._outOfSync = this.actions.length > 1
-        })
-
-    this._bus.rulePatchRuleAction$()
-        .filter((event) => event.payload.rule === this.rule)
-        .subscribe((event) => {
-          this.setRuleEnabledState(false)
-          this._saving = false
-          this._outOfSync = false
-        })
-
-    this._bus.rulePatchedRuleAction$()
-        .filter((event) => event.payload.rule === this.rule)
-        .subscribe((event) => {
-          this._outOfSync = false
-        })
-
-    this._bus.ruleBecameInvalid$()
-        .filter((event) => event.payload.rule === this.rule)
-        .subscribe((event) => {
-          this._outOfSync = true
-          this._valid = false
-        })
-    this._bus.ruleBecameValid$()
-        .filter((event) => event.payload.rule === this.rule)
-        .subscribe((event) => {
-          this._outOfSync = false
-          this._valid = true
-        })
   }
 
   initFormModel(fb:FormBuilder) {
@@ -233,7 +218,6 @@ class RuleComponent {
     this.formModel = fb.group({
       name: new Control(this.rule ? this.rule.name : '', Validators.compose(vFns))
     })
-
   }
 
   rsrc(subkey:string, defVal:string = null) {
@@ -247,164 +231,93 @@ class RuleComponent {
 
   ngOnChanges(change) {
     if (change.rule) {
-      let rule:RuleModel = change.rule.currentValue
+      let rule = this.rule
       let ctrl:Control = <Control>this.formModel.controls['name']
       ctrl.updateValue(this.rule.name, {})
       ctrl.valueChanges.debounceTime(250).subscribe((name:string)=> {
-        this.rule.name = name
-        this.change.emit(this.rule)
+        if (ctrl.valid) {
+          this.updateName.emit({type: RULE_UPDATE_NAME, payload: {rule: this.rule, value: name}})
+        }
       })
       if (rule.isPersisted()) {
-        this._groupService.list(rule).subscribe((groups) => {
-          this.groups = groups || []
-          if (this.groups.length === 0) {
-            this.addGroup()
-          } else {
-            this.sort()
-          }
-        })
-        this.actionService.list(rule).subscribe((actions) => {
-          this.actions = actions || []
-          if (this.actions.length === 0) {
-            this.addAction()
-          } else {
-            this.sort()
-          }
-        })
         this.fireOn.value = rule.fireOn
-        this.collapsed = rule.isPersisted()
-      } else {
-        this.addGroup()
-        this.addAction()
       }
     }
   }
 
-  sort() {
-    this.groups.sort(function (a, b) {
-      return a.priority - b.priority;
-    });
-    this.actions.sort(function (a, b) {
-      return a.priority - b.priority;
-    });
-  }
-
-  toggleCollapsed() {
-    this.collapsed = !this.collapsed
-  }
-
-  onFireOnChange(value:string) {
-    this.rule.fireOn = value
-    this.change.emit(this.rule)
+  setRuleExpandedState(expanded:boolean) {
+    this.updateExpandedState.emit({type: V_RULE_UPDATE_EXPANDED_STATE, payload: {rule:this.rule, value:expanded}})
   }
 
   setRuleEnabledState(enabled:boolean) {
-    if (enabled !== this.rule.enabled) {
-      this._enableStateChangeDelay.emit({rule:this.rule, enabled:enabled})
-    }
-  }
-
-  addAction() {
-    if( this.actions.length > 0 ){
-      this.setRuleEnabledState(false)
-    }
-    let priority = this.actions.length ? this.actions[this.actions.length - 1].priority + 1 : 1
-    const action = new ActionModel(null, new ServerSideTypeModel(), this.rule, priority)
-    this._bus.ruleAddRuleAction(this.rule, action)
-    this.actions.push(action)
-    this.sort()
-  }
-
-  onActionParamValueChange(event:ParameterChangeEvent) {
-    if (event.valid) {
-      let action = <ActionModel>event.source
-      if (event.isBlur) {
-        action.setParameter(event.name, event.value)
-        this.onActionChange(action)
-      } else {
-        this._bus.ruleBecameInvalid(this.rule, action)
-      }
-    }
-  }
-  
-  onActionTypeChange(event:TypeChangeEvent){
-    try {
-      let action:ActionModel = <ActionModel>event.source
-      action.type = event.value
-      this.actions[event.index] = new ActionModel(action.key, action.type, action.owningRule, action.priority)
-      // required to force change detection on child that doesn't reference type.
-      this.onActionChange(action)
-    } catch (e) {
-      console.error("RuleComponent", "onActionTypeChange", e)
-    }
-  }
-
-
-  onActionChange(action:ActionModel) {
-    if (action.isValid()) {
-      if (this.rule.isValid() && !this._valid) {
-        this._bus.ruleBecameValid(this.rule, action)
-      }
-      this._bus.rulePatchRuleAction(this.rule, action)
-      if (!action.isPersisted()) {
-        this.actions[this.actions.length - 1] = action
-        action.owningRule = this.rule
-        this.actionService.add(action)
-      } else {
-        this.actionService.save(action)
-      }
-    } else if (this._valid) {
-      this._bus.ruleBecameInvalid(this.rule, action)
-    }
-  }
-
-  onActionRemove(action:ActionModel) {
-    if (action.isPersisted()) {
-      this.actionService.remove(action)
-    }
-    this.actions = this.actions.filter((aryAction)=> {
-      return aryAction.key != action.key
+    this._updateEnabledStateDelay.emit({
+      type: RULE_UPDATE_ENABLED_STATE,
+      payload: {rule: this.rule, value: enabled}
     })
-    if (this.actions.length === 0) {
-      this.addAction()
-    }
   }
 
-  addGroup() {
-    let priority = this.groups.length ? this.groups[this.groups.length - 1].priority + 1 : 1
-    let group = new ConditionGroupModel(null, this.rule, 'AND', priority)
-    this.groups.push(group)
-    this.sort()
+  onCreateRuleAction(){
+    console.log("RuleComponent", "onCreateRuleAction")
+    this.createRuleAction.emit( { type:RULE_RULE_ACTION_CREATE, payload:{rule:this.rule}} )
   }
 
-  onConditionGroupChange(group:ConditionGroupComponent) {
+  onDeleteCondition(event:ConditionActionEvent){
+    Object.assign(event.payload, { rule:this.rule })
+    this.deleteCondition.emit( event )
   }
 
-  onConditionGroupRemove(group:ConditionGroupModel) {
-    this._groupService.remove(group)
-    this.groups = this.groups.filter((aryGroup)=> {
-      return aryGroup.key != group.key
-    })
-    if (this.groups.length === 0) {
-      this.addGroup()
-    }
+  onCreateCondition(event:ConditionActionEvent){
+    Object.assign(event.payload, { rule:this.rule })
+    this.createCondition.emit( event )
   }
 
-  removeRule(event:any) {
+  onUpdateRuleActionType(event:{type:string, payload:{value:string, index:number}}){
+    console.log("RuleComponent", "onUpdateRuleActionType")
+    this.updateRuleActionType.emit( { type:RULE_RULE_ACTION_UPDATE_TYPE, payload:Object.assign({rule:this.rule}, event.payload) } )
+  }
+
+  onUpdateRuleActionParameter(event){
+    console.log("RuleComponent", "onUpdateRuleActionParameter")
+    this.updateRuleActionParameter.emit( { type: RULE_RULE_ACTION_UPDATE_PARAMETER, payload:Object.assign({rule:this.rule}, event.payload) } )
+  }
+
+  onDeleteRuleAction(event:{type:string, payload:{value:string, index:number}}){
+    console.log("RuleComponent", "onDeleteRuleAction")
+    this.deleteRuleAction.emit( { type:RULE_RULE_ACTION_DELETE, payload:Object.assign({rule:this.rule}, event.payload) } )
+  }
+
+
+
+  onUpdateConditionType(event:{type:string, payload:{value:string, index:number}}, conditionGroup:ConditionGroupModel){
+    console.log("RuleComponent", "onUpdateConditionType")
+    this.updateConditionType.emit( { type:RULE_CONDITION_UPDATE_TYPE, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  }
+
+  onUpdateConditionParameter(event, conditionGroup:ConditionGroupModel){
+    console.log("RuleComponent", "onUpdateConditionParameter")
+    this.updateConditionParameter.emit( { type: RULE_CONDITION_UPDATE_PARAMETER, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  }
+
+  onUpdateConditionOperator(event, conditionGroup:ConditionGroupModel){
+    console.log("RuleComponent", "onUpdateConditionOperator")
+    this.updateConditionOperator.emit( { type: RULE_CONDITION_UPDATE_OPERATOR, payload:Object.assign({rule:this.rule, conditionGroup: conditionGroup}, event.payload) } )
+  }
+
+  deleteRuleClicked(event:any) {
     event.stopPropagation()
     let noWarn = this._user.suppressAlerts || (event.altKey && event.shiftKey)
     if (!noWarn) {
-      noWarn = this.actions.length === 1 && !this.actions[0].isPersisted()
-      noWarn = noWarn && this.groups.length === 1
+      noWarn = this.ruleActions.length === 1 && !this.ruleActions[0].isPersisted()
+      noWarn = noWarn && this.conditionGroups.length === 1
       if (noWarn) {
-        let conditions = this.groups[0].conditions
+        let conditions = this.conditionGroups[0].conditions
         let keys = Object.keys(conditions)
         noWarn = noWarn && (keys.length === 0)
       }
     }
 
     if (noWarn || confirm('Are you sure you want delete this rule?')) {
-      this.remove.emit(this.rule)
+      this.deleteRule.emit({type: RULE_DELETE, payload: {rule: this.rule}})
     }
   }
 }

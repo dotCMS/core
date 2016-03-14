@@ -1,143 +1,153 @@
-import {EventEmitter, Injectable} from 'angular2/core';
+import {Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../persistence/ApiRoot";
-import {RuleModel} from "./Rule";
-import {EntitySnapshot} from "../persistence/EntityBase";
 import {ActionTypeService} from "./ActionType";
-import {ServerSideFieldModel} from "./ServerSideFieldModel";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
+import {Http, Response} from "angular2/http";
+import {ActionModel} from "./Rule";
 
 let noop = (...arg:any[])=> {
 }
 
-export class ActionModel extends ServerSideFieldModel {
-  comparison:string
-  operator:string
-  owningRule:RuleModel
-
-  constructor(key:string, type:ServerSideTypeModel, rule:RuleModel, priority:number=1) {
-    super(key, type, priority)
-    this.owningRule = rule;
-  }
-
-  isValid():boolean {
-    return !!this.owningRule && super.isValid()
-  }
-
-  toJson():any {
-    let json = super.toJson()
-    json.owningRule = this.owningRule;
-    return json
-  }
-}
 
 @Injectable()
 export class ActionService {
-
-  private apiRoot;
-  private ref;
   private _typeService:ActionTypeService
 
-  constructor(apiRoot:ApiRoot, typeService:ActionTypeService) {
+  private _typeName:string = "Action"
+
+  private _apiRoot:ApiRoot
+  private _http:Http
+  private _actionsEndpointUrl:string
+
+  constructor(apiRoot:ApiRoot, typeService:ActionTypeService, http:Http) {
+    this._apiRoot = apiRoot
     this._typeService = typeService
-    this.ref = apiRoot.defaultSite.child('ruleengine/actions')
-    this.apiRoot = apiRoot
+    this._http = http;
+    this._actionsEndpointUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`
   }
 
-  _fromSnapshot(rule:RuleModel, snapshot:EntitySnapshot, cb:Function=noop) {
-    let val:any = snapshot.val()
-    this._typeService.get(val.actionlet, (type)=> {
-      let ra = new ActionModel(snapshot.key(), type, rule)
-      ra.owningRule = rule
-      Object.keys(val.parameters).forEach((key)=> {
-        let param = val.parameters[key]
-        ra.setParameter(key, param.value)
-      })
-      cb(ra)
+
+  static fromJson(type:ServerSideTypeModel, json:any):ActionModel {
+    let ra = new ActionModel(json.key, type, null, json.priority)
+    Object.keys(json.parameters).forEach((key)=> {
+      let param = json.parameters[key]
+      ra.setParameter(key, param.value)
     })
+    return ra
   }
 
-  _toJson(action:ActionModel):any {
+  static toJson(action:ActionModel):any {
     let json:any = {}
-    json.owningRule = action.owningRule.key
     json.actionlet = action.type.key
     json.priority = action.priority
     json.parameters = action.parameters
     return json
   }
 
-  list(rule:RuleModel):Observable<ActionModel[]> {
-    let ee = new EventEmitter()
-
-    if (rule.isPersisted()) {
-      var keys = Object.keys(rule.actions);
-      var count = 0
-      var actions = []
-      keys.forEach((actionId)=> {
-        this.get(rule, actionId, action => {
-          count++
-          actions.push(action)
-          if(count = keys.length){
-            ee.emit(actions)
-          }
-        })
-      })
-      if(keys.length === 0){
-        /* @todo ggranum remove stupid hack (ee returning after an emit means no fire on subscribe) */
-        window.setTimeout(() => ee.emit([]), 250)
-      }
+  makeRequest(childPath?:string):Observable<any> {
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    let path = this._actionsEndpointUrl
+    if (childPath) {
+      path = `${path}${childPath}`
     }
-    return ee
-
-  }
-
-  get(rule:RuleModel, key:string, cb:Function = noop) {
-    this.ref.child(key).once('value', (actionSnap:EntitySnapshot)=> {
-      this._fromSnapshot(rule, actionSnap, (model)=>{
-        cb(model)
-      })
-    }, (e)=> {
-      throw e
-    })
-  }
-
-  add(model:ActionModel, cb:Function = noop) {
-    console.log("api.rule-engine.ActionService", "add", model)
-    let json = this._toJson(model)
-    this.ref.push(json, (e, result) => {
-      if (e) {
-        cb(model, e)
-      } else {
-        model.key = result.key()
-        cb(model)
+    return this._http.get(path, opts).map((res:Response) => {
+      return res.json()
+    }).catch((err:any, source:Observable<any>)=> {
+      if (err && err.status === 404) {
+        console.error("Could not retrieve " + this._typeName + " : 404 path not valid.", path)
+      } else if (err) {
+        console.log("Could not retrieve" + this._typeName + ": Response status code: ", err.status, 'error:', err, path)
       }
+      return Observable.empty()
     })
   }
 
-  save(model:ActionModel, cb:Function = noop) {
-    console.log("api.rule-engine.ActionService", "save", model)
+  allAsArray(ruleKey:string, keys:string[], ruleActionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ActionModel[]> {
+    return this.all(ruleKey, keys, ruleActionTypes).reduce(( acc:ActionModel[], item:ActionModel ) => {
+      acc.push(item)
+      return acc
+    }, [])
+  }
+
+  all(ruleKey:string, keys:string[], ruleActionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ActionModel> {
+    return Observable.fromArray(keys).flatMap(groupKey=> {
+      return this.get(ruleKey, groupKey, ruleActionTypes)
+    })
+  }
+
+
+  get(ruleKey:string, key:string, ruleActionTypes?:{[key:string]: ServerSideTypeModel}):Observable<ActionModel> {
+    let result:Observable<ActionModel>
+    return this.makeRequest(key).map( (json) => {
+      json.id = key
+      json.key = key
+      return ActionService.fromJson(ruleActionTypes[json.actionlet], json)
+    })
+  }
+
+
+  add(ruleId: string, model:ActionModel):Observable<any> {
+    console.log("Action", "add", model)
     if (!model.isValid()) {
-      throw new Error("This should be thrown from a checkValid function on model, and should provide the info needed to make the user aware of the fix.")
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
+    }
+    let json = ActionService.toJson(model)
+    json.owningRule = ruleId
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    let path = this._getPath(ruleId)
+
+    let add = this._http.post(path, JSON.stringify(json), opts).map((res:Response) => {
+      let json = res.json()
+      model.key = json.id
+      return model
+    })
+    return add.catch(this._catchRequestError('add'))
+  }
+
+  private _getPath(ruleKey:string, key?:string) {
+    let p = this._actionsEndpointUrl
+    if(key){
+      p = p + key
+    }
+    return p
+  }
+
+  save(ruleId:string, model:ActionModel) {
+    console.log("actionService", "save")
+    if (!model.isValid()) {
+      throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {
-      this.add(model, cb)
-    }
-    else {
-      let json = this._toJson(model)
-      this.ref.child(model.key).set(json, (e, result)=> {
-        if (e) {
-          throw e
-        }
-        cb(model)
+      this.add(ruleId, model)
+    } else {
+      let json = ActionService.toJson(model)
+      json.owningRule = ruleId
+      let opts = this._apiRoot.getDefaultRequestOptions()
+      let save = this._http.put(this._getPath(ruleId, model.key), JSON.stringify(json), opts).map((res:Response) => {
+        return model
       })
+      return save.catch(this._catchRequestError("save"))
     }
   }
 
-  remove(model:ActionModel, cb:Function = noop) {
-    console.log("api.rule-engine.ActionService", "remove", model)
-    this.ref.child(model.key).remove(()=> {
-      cb(model)
+  remove(ruleId, model:ActionModel) {
+    let opts = this._apiRoot.getDefaultRequestOptions()
+    let remove = this._http.delete(this._getPath(ruleId, model.key), opts).map((res:Response) => {
+      return model
     })
+    return remove.catch(this._catchRequestError('remove'))
+
+  }
+
+  private _catchRequestError(operation) {
+    return (err:any) => {
+      if (err && err.status === 404) {
+        console.log("Could not " + operation + " Rule Action: URL not valid.")
+      } else if (err) {
+        console.log("Could not " + operation + " Rule Action.", "response status code: ", err.status, 'error:', err)
+      }
+      return Observable.empty()
+    }
   }
 }
-
