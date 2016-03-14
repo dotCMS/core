@@ -20,6 +20,7 @@ public class HostWrapper implements ContentWrapper {
 	private List<Map<String,Object>> tree;
 	private List<Tag> tags;
 	private Operation operation;
+	private Map<String, List<Tag>> contentTags;
 
 	public ContentletVersionInfo getInfo() {
 		return info;
@@ -72,5 +73,14 @@ public class HostWrapper implements ContentWrapper {
 
 	public Language getLanguage() {
 		return null;
+	}
+
+	@Override
+	public Map<String, List<Tag>> getContentTags() {
+		return contentTags;
+	}
+
+	public void setContentTags(Map<String, List<Tag>> contentTags) {
+		this.contentTags = contentTags;
 	}
 }

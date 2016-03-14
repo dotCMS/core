@@ -25,4 +25,6 @@ public interface ContentWrapper {
 
     Language getLanguage();
 
+    Map<String, List<Tag>> getContentTags();
+
 }
