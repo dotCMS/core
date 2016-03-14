@@ -50,10 +50,9 @@ var rsrc = {
   selector: 'rule',
   directives: [CORE_DIRECTIVES, FORM_DIRECTIVES, NgFormModel, InputToggle, RuleActionComponent, ConditionGroupComponent, InputText, Dropdown, InputOption],
   template: `<form [ngFormModel]="formModel" #rf="ngForm">
-  <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled">
+  <div class="cw-rule" [class.cw-hidden]="hidden" [class.cw-disabled]="!rule.enabled" [class.cw-saving]="saving" [class.cw-saved]="saved" [class.cw-out-of-sync]="!saved && !saving">
   <div flex layout="row" class="cw-header" *ngIf="!hidden" (click)="setRuleExpandedState(!rule._expanded)">
     <div flex="70" layout="row" layout-align="start center" class="cw-header-info" >
-      <i flex="none" class="cloud icon cw-rule-cloud small" [class.download]="_loading" [class.upload]="_saving" [class.out-of-sync]="rule._outOfSync" aria-hidden="true"></i>
       <i flex="none" class="caret icon cw-rule-caret large" [class.right]="!rule._expanded" [class.down]="rule._expanded" aria-hidden="true"></i>
       <div flex="70" layout="column">
       <cw-input-text class="cw-rule-name-input"
@@ -70,7 +69,7 @@ var rsrc = {
                          class="cw-fire-on-dropdown"
                          [value]="fireOn.value"
                          placeholder="{{fireOn.placeholder | async}}"
-                         (change)="updateFireOn.emit({type: 'RULE_UPDATE_FIRE_ON', payload:{rule:rule, fireOn:$event}})"
+                         (change)="updateFireOn.emit({type: 'RULE_UPDATE_FIRE_ON', payload:{rule:rule, value:$event}})"
                          (click)="$event.stopPropagation()">
         <cw-input-option
             *ngFor="#opt of fireOn.options"
@@ -80,9 +79,11 @@ var rsrc = {
       </cw-input-dropdown>
     </div>
     <div flex="30" layout="row" layout-align="end center" class="cw-header-actions" >
+      <span class="cw-rule-status-text" >{{statusText()}}</span>
       <cw-toggle-input class="cw-input"
                        [on-text]="rsrc('inputs.onOff.on.label') | async"
                        [off-text]="rsrc('inputs.onOff.off.label') | async"
+                       [disabled]="!saved"
                        [value]="rule.enabled"
                        (change)="setRuleEnabledState($event)"
                        (click)="$event.stopPropagation()">
@@ -107,7 +108,7 @@ var rsrc = {
                      [conditionTypes]="conditionTypes"
                      [groupIndex]="i"
                      (createCondition)="createCondition.emit($event)"
-                     (deleteCondition)="onDeleteCondition($event)"
+                     (deleteCondition)="onDeleteCondition($event, group)"
                      (updateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
                      (updateConditionType)="onUpdateConditionType($event, group)"
                      (updateConditionParameter)="onUpdateConditionParameter($event, group)"
@@ -137,10 +138,14 @@ var rsrc = {
   </div>
 </div>
 </form>
-`
+`,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 class RuleComponent {
   @Input() rule:RuleModel
+  @Input() saved:boolean
+  @Input() saving:boolean
+  @Input() errors:{[key:string]:any}
   @Input() ruleActions:ActionModel[]
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel}
@@ -243,6 +248,20 @@ class RuleComponent {
         this.fireOn.value = rule.fireOn
       }
     }
+
+  }
+
+  statusText() {
+    let t = "";
+    if (this.saved)
+    { t = "All changes saved"
+    }
+    else if(this.saving){
+      t = "Saving..."
+    } else if(this.errors){
+      t = this.errors['invalid'] || "Unsaved changes..."
+    }
+    return t;
   }
 
   setRuleExpandedState(expanded:boolean) {
@@ -261,8 +280,8 @@ class RuleComponent {
     this.createRuleAction.emit( { type:RULE_RULE_ACTION_CREATE, payload:{rule:this.rule}} )
   }
 
-  onDeleteCondition(event:ConditionActionEvent){
-    Object.assign(event.payload, { rule:this.rule })
+  onDeleteCondition(event:ConditionActionEvent, conditionGroup:ConditionGroupModel){
+    Object.assign(event.payload, { rule:this.rule, conditionGroup:conditionGroup })
     this.deleteCondition.emit( event )
   }
 

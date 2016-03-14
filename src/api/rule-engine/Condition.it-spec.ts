@@ -4,10 +4,8 @@ import {ConditionService} from '../../api/rule-engine/Condition';
 import {Injector} from 'angular2/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from '../../api/auth/UserModel';
-import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 import {ActionService} from '../../api/rule-engine/Action';
 import {ConditionGroupService} from '../../api/rule-engine/ConditionGroup';
-import {ActionTypeService} from "./ActionType";
 import {I18nService} from "../system/locale/I18n";
 import {HTTP_PROVIDERS} from "angular2/http";
 
@@ -16,8 +14,6 @@ var injector = Injector.resolveAndCreate([ApiRoot,
   UserModel,
   RuleService,
   ActionService,
-  ActionTypeService,
-  ConditionTypeService,
   ConditionService,
   ConditionGroupService,
   HTTP_PROVIDERS
@@ -34,7 +30,6 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   var ruleUnderTest:RuleModel
   var groupUnderTest:ConditionGroupModel
 
-  var conditionTypeService:ConditionTypeService
   var conditionTypes = {}
   var usersCountryConditionType
   var requestHeaderConditionType
@@ -43,9 +38,8 @@ describe('Integration.api.rule-engine.ConditionService', function () {
   beforeAll(function(done){
     ruleService = injector.get(RuleService)
     conditionGroupService = injector.get(ConditionGroupService)
-    conditionTypeService = injector.get(ConditionTypeService)
     conditionService = injector.get(ConditionService)
-    conditionTypeService.allAsArray().subscribe((typesAry:ConditionModel[])=>{
+    ruleService.getConditionTypes().subscribe((typesAry:ConditionModel[])=>{
       typesAry.forEach((item) => conditionTypes[item.key] = item )
       usersCountryConditionType = conditionTypes["UsersCountryConditionlet"]
       requestHeaderConditionType = conditionTypes["RequestHeaderConditionlet"]
@@ -63,7 +57,7 @@ describe('Integration.api.rule-engine.ConditionService', function () {
     ruleOnAddSub = ruleService.loadRules().subscribe((rule:RuleModel[]) => {
       ruleUnderTest = rule[0]
       groupUnderTest = new ConditionGroupModel({operator: 'OR', priority:1})
-      conditionGroupService.add(ruleUnderTest.key, groupUnderTest).subscribe( () => done)
+      conditionGroupService.createConditionGroup(ruleUnderTest.key, groupUnderTest).subscribe( () => done)
     })
   });
 

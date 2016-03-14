@@ -80,13 +80,12 @@ export class ConditionGroupService {
     return result
   }
 
-  add(ruleId:string, model:ConditionGroupModel):Observable<any> {
+  createConditionGroup(ruleId:string, model:ConditionGroupModel):Observable<any> {
     console.log("ConditionGroupService", "add", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     let json = ConditionGroupService.toJson(model)
-    json.owningRule = ruleId
     let opts = this._apiRoot.getDefaultRequestOptions()
     let path = this._getPath(ruleId)
 
@@ -106,16 +105,15 @@ export class ConditionGroupService {
     return p
   }
 
-  save(ruleId:string, model:ConditionGroupModel) {
+  updateConditionGroup(ruleId:string, model:ConditionGroupModel) {
     console.log("ConditionGroupService", "save")
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {
-      this.add(ruleId, model)
+      this.createConditionGroup(ruleId, model)
     } else {
       let json = ConditionGroupService.toJson(model)
-      json.owningRule = ruleId
       let opts = this._apiRoot.getDefaultRequestOptions()
       let save = this._http.put(this._getPath(ruleId, model.key), JSON.stringify(json), opts).map((res:Response) => {
         return model

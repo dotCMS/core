@@ -1,10 +1,13 @@
 import {Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Rx'
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ActionTypeService} from "./ActionType";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 import {Http, Response} from "angular2/http";
 import {ActionModel} from "./Rule";
+import {
+    UNKNOWN_RESPONSE_ERROR, CwError, SERVER_RESPONSE_ERROR,
+    NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES
+} from "../system/http-response-util";
 
 let noop = (...arg:any[])=> {
 }
@@ -12,7 +15,6 @@ let noop = (...arg:any[])=> {
 
 @Injectable()
 export class ActionService {
-  private _typeService:ActionTypeService
 
   private _typeName:string = "Action"
 
@@ -20,16 +22,15 @@ export class ActionService {
   private _http:Http
   private _actionsEndpointUrl:string
 
-  constructor(apiRoot:ApiRoot, typeService:ActionTypeService, http:Http) {
+  constructor(apiRoot:ApiRoot, http:Http) {
     this._apiRoot = apiRoot
-    this._typeService = typeService
     this._http = http;
     this._actionsEndpointUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/actions/`
   }
 
 
   static fromJson(type:ServerSideTypeModel, json:any):ActionModel {
-    let ra = new ActionModel(json.key, type, null, json.priority)
+    let ra = new ActionModel(json.key, type, json.priority)
     Object.keys(json.parameters).forEach((key)=> {
       let param = json.parameters[key]
       ra.setParameter(key, param.value)
@@ -87,7 +88,7 @@ export class ActionService {
   }
 
 
-  add(ruleId: string, model:ActionModel):Observable<any> {
+  createRuleAction(ruleId: string, model:ActionModel):Observable<any> {
     console.log("Action", "add", model)
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
@@ -113,13 +114,13 @@ export class ActionService {
     return p
   }
 
-  save(ruleId:string, model:ActionModel) {
+  updateRuleAction(ruleId:string, model:ActionModel) {
     console.log("actionService", "save")
     if (!model.isValid()) {
       throw new Error("This should be thrown from a checkValid function on the model, and should provide the info needed to make the user aware of the fix.")
     }
     if (!model.isPersisted()) {
-      this.add(ruleId, model)
+      this.createRuleAction(ruleId, model)
     } else {
       let json = ActionService.toJson(model)
       json.owningRule = ruleId
@@ -141,13 +142,24 @@ export class ActionService {
   }
 
   private _catchRequestError(operation) {
-    return (err:any) => {
-      if (err && err.status === 404) {
-        console.log("Could not " + operation + " Rule Action: URL not valid.")
-      } else if (err) {
-        console.log("Could not " + operation + " Rule Action.", "response status code: ", err.status, 'error:', err)
+    return (response:Response, original:Observable<any>):Observable<any> => {
+      if (response) {
+        if (response.status === 500) {
+          if(response.text() && response.text().indexOf("ECONNREFUSED") >= 0){
+            throw new CwError(NETWORK_CONNECTION_ERROR, CLIENTS_ONLY_MESSAGES[NETWORK_CONNECTION_ERROR])
+          } else{
+            throw new CwError(SERVER_RESPONSE_ERROR, response.headers.get('error-message'))
+          }
+        }
+        else if (response.status === 404) {
+          console.error("Could not execute request: 404 path not valid.")
+          throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'))
+        } else {
+          console.log("Could not execute request: Response status code: ", response.status, 'error:', response)
+          throw new CwError(UNKNOWN_RESPONSE_ERROR, response.headers.get('error-message'))
+        }
       }
-      return Observable.empty()
+      return null
     }
   }
 }

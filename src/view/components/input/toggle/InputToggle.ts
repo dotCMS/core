@@ -34,7 +34,7 @@ import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/
 
 </style>
   <span class="ui toggle fitted checkbox" [class.on]="value === true" [class.off]="value === false">
-    <input type="checkbox" [value]="value" [checked]="value" (change)="updateValue($event)">
+    <input type="checkbox" [value]="value" [checked]="value" (change)="updateValue($event)" [disabled]="disabled">
     <label></label>
     <span class="on-label">{{onText}}</span>
     <span class="off-label">{{offText}}</span>
@@ -42,18 +42,14 @@ import {Component, View, EventEmitter, Attribute, Input, Output} from 'angular2/
   `
 })
 export class InputToggle {
-  @Input() value:boolean
-  onText:string
-  offText:string
+  @Input() value:boolean = false
+  @Input() disabled:boolean = false
+  @Input() onText:string = 'On'
+  @Input() offText:string = 'Off'
 
-  @Output() change:EventEmitter<boolean>
+  @Output() change:EventEmitter<boolean> = new EventEmitter()
 
-  constructor(@Attribute('value') value:string, @Attribute('onText') onText:string, @Attribute('offText') offText:string) {
-    this.value = (value !== 'false')
-    this.onText = onText || 'On'
-    this.offText = offText || 'Off'
-    this.change = new EventEmitter()
-  }
+  constructor() {}
 
   ngOnChanges(change){
     if(change.value){

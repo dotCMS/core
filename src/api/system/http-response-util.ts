@@ -10,7 +10,7 @@ export const CLIENTS_ONLY_MESSAGES = {
 
 export class CwError {
 
-  constructor(public code:number, public message:string, public request:Request, public response:Response, public source:any){}
+  constructor(public code:number, public message:string, public request?:Request, public response?:Response, public source?:any){}
 
 }
 

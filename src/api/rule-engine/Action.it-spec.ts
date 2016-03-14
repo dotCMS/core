@@ -4,11 +4,9 @@ import {RuleModel, RuleService, ActionModel} from '../../api/rule-engine/Rule';
 import {Injector} from 'angular2/core';
 import {ApiRoot} from '../../api/persistence/ApiRoot';
 import {UserModel} from "../../api/auth/UserModel";
-import {ConditionTypeService} from '../../api/rule-engine/ConditionType';
 import {ActionService} from "../../api/rule-engine/Action";
 import {ConditionGroupService} from "../../api/rule-engine/ConditionGroup";
 import {ConditionService} from "../../api/rule-engine/Condition";
-import {ActionTypeService} from "./ActionType";
 import {I18nService} from "../system/locale/I18n";
 import {HTTP_PROVIDERS} from "angular2/http";
 
@@ -17,8 +15,6 @@ var injector = Injector.resolveAndCreate([ApiRoot,
   UserModel,
   RuleService,
   ActionService,
-  ActionTypeService,
-  ConditionTypeService,
   ConditionService,
   ConditionGroupService,
   HTTP_PROVIDERS
@@ -32,21 +28,17 @@ describe('Integration.api.rule-engine.ActionService', function () {
 
   var actionService:ActionService
   var ruleUnderTest:RuleModel
-  var actionTypeService:ActionTypeService
   var actionTypes = {}
   var setSessionActionlet
 
   beforeAll(function (done) {
     ruleService = injector.get(RuleService)
-    actionTypeService = injector.get(ActionTypeService)
     actionService = injector.get(ActionService)
-    actionTypeService.list().subscribe((typesAry)=> {
+    ruleService.getRuleActionTypes().subscribe((typesAry)=> {
       typesAry.forEach((item) => actionTypes[item.key] = item)
       setSessionActionlet = actionTypes["SetSessionAttributeActionlet"]
       done()
     })
-
-
   })
 
   beforeEach(function (done) {
@@ -74,24 +66,22 @@ describe('Integration.api.rule-engine.ActionService', function () {
 
   it("Can add a new Action", function (done) {
     console.log("can add new", setSessionActionlet)
-    var anAction = new ActionModel(null, setSessionActionlet, ruleUnderTest)
+    var anAction = new ActionModel(null, setSessionActionlet)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
 
-    actionService.add(ruleUnderTest.key, anAction).subscribe((action:ActionModel) => {
+    actionService.createRuleAction(ruleUnderTest.key, anAction).subscribe((action:ActionModel) => {
       expect(action.isPersisted()).toBe(true, "Action is not persisted!")
       done()
     })
-
-
   })
 
   it("Action being added to the owning rule is persisted to server.", function (done) {
-    var anAction = new ActionModel(null, setSessionActionlet, ruleUnderTest)
+    var anAction = new ActionModel(null, setSessionActionlet)
     anAction.setParameter("sessionKey", "foo")
     anAction.setParameter("sessionValue", "bar")
 
-    actionService.add(ruleUnderTest.key, anAction).subscribe((action:ActionModel) => {
+    actionService.createRuleAction(ruleUnderTest.key, anAction).subscribe((action:ActionModel) => {
       ruleService.updateRule(ruleUnderTest.key, ruleUnderTest).subscribe( () => {
         ruleService.loadRule(ruleUnderTest.key).subscribe( (rule:RuleModel)=> {
           expect(rule.ruleActions[action.key]).toBe(true)
@@ -113,18 +103,18 @@ describe('Integration.api.rule-engine.ActionService', function () {
   })
 
   it("Will add a new action parameters to an existing action.", function (done) {
-    var clientAction = new ActionModel(null, setSessionActionlet, ruleUnderTest)
+    var clientAction = new ActionModel(null, setSessionActionlet)
     clientAction.setParameter("sessionKey", "foo")
     clientAction.setParameter("sessionValue", "bar")
 
     let key = "sessionKey"
     let value = "aParamValue"
 
-    actionService.add(ruleUnderTest.key, clientAction).subscribe( ()=> {
+    actionService.createRuleAction(ruleUnderTest.key, clientAction).subscribe( ()=> {
       expect(clientAction.isPersisted()).toBe(true, "Action is not persisted!")
 
       clientAction.setParameter(key, value)
-      actionService.save(ruleUnderTest.key, clientAction).subscribe( ()=> {
+      actionService.updateRuleAction(ruleUnderTest.key, clientAction).subscribe( ()=> {
         // savedAction is also the same instance as resultAction
         actionService.get(ruleUnderTest.key, clientAction.key).subscribe( (updatedAction)=> {
           // updatedAction and clientAction SHOULD NOT be the same instance object.
@@ -142,13 +132,13 @@ describe('Integration.api.rule-engine.ActionService', function () {
     let param1 = {key: 'sessionKey', v1: 'value1', v2: 'value2'}
     let param2 = {key: 'sessionValue', v1: 'abc123', v2: 'def456'}
 
-    var clientAction = new ActionModel(null, setSessionActionlet, ruleUnderTest)
+    var clientAction = new ActionModel(null, setSessionActionlet)
     clientAction.setParameter(param1.key, param1.v1)
     clientAction.setParameter(param2.key, param2.v1)
 
-    actionService.add(ruleUnderTest.key, clientAction).subscribe( ()=> {
+    actionService.createRuleAction(ruleUnderTest.key, clientAction).subscribe( ()=> {
       clientAction.setParameter(param1.key, param1.v2)
-      actionService.save(ruleUnderTest.key, clientAction).subscribe( ()=> {
+      actionService.updateRuleAction(ruleUnderTest.key, clientAction).subscribe( ()=> {
         actionService.get(ruleUnderTest.key, clientAction.key).subscribe( (updatedAction)=> {
           expect(updatedAction.getParameterValue(param1.key)).toBe(param1.v2)
           expect(updatedAction.getParameterValue(param2.key)).toBe(param2.v1)

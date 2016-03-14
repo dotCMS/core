@@ -13,7 +13,6 @@ import {ObservableHack} from "../../../../../api/util/ObservableHack";
 import {CwRestDropdownInputModel} from "../../../../../api/util/CwInputModel";
 import {RestDropdown} from "../../../semantic/modules/restdropdown/RestDropdown";
 import {Verify} from "../../../../../api/validation/Verify";
-import {GalacticBus} from "../../../../../api/system/GalacticBus";
 import {CustomValidators} from "../../../../../api/validation/CustomValidators";
 import {ParameterModel} from "../../../../../api/rule-engine/Rule";
 
@@ -63,7 +62,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
                                 #rdInput="ngForm"
                                 >
         </cw-input-rest-dropdown>
-        <div flex="50" [hidden]="!rdInput.touched || rdInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
+        <div flex="50" *ngIf="rdInput.touched && !rdInput.valid" class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 
       <div flex layout-fill layout="column" class="cw-input" [class.cw-last]="islast" *ngIf="input.type == 'text' || input.type == 'number'">
@@ -76,7 +75,7 @@ import {ParameterModel} from "../../../../../api/rule-engine/Rule";
             (blur)="onBlur(input)"
             #fInput="ngForm"
         ></cw-input-text>
-        <div flex="50" [hidden]="!fInput.touched || fInput.valid" class="name cw-warn basic label">[Better Msgs Soon]</div>
+        <div flex="50" *ngIf="fInput.touched && !fInput.valid"  class="name cw-warn basic label">{{getErrorMessage(input)}}</div>
       </div>
 
       <cw-input-date *ngIf="input.type == 'datetime'"
@@ -97,17 +96,20 @@ export class ServersideCondition {
   @Input() componentInstance:ServerSideFieldModel
   @Output() parameterValueChange:EventEmitter<{name:string, value:string}> = new EventEmitter(false)
 
-
-
   private _inputs:Array<any>
   private _resources:I18nService
   private _rhArgCount:number
 
-  constructor(fb:FormBuilder, resources:I18nService, private _bus:GalacticBus) {
+  private _errorMessageFormatters = {
+    required: "Required",
+    minLength: "Input must be at least ${len} characters long.",
+    noQuotes: "Input cannot contain quote [\" or '] characters."
+  }
+
+  constructor(fb:FormBuilder, resources:I18nService) {
     this._resources = resources;
     this._inputs = [];
   }
-
 
   ngOnChanges(change) {
     let paramDefs = null
@@ -148,6 +150,24 @@ export class ServersideCondition {
         this.applyRhsCount(comparison.value)
       }
     }
+  }
+
+  /**
+   * Brute force error messages from lookup table for now.
+   * @todo look up the known error formatters by key ('required', 'minLength', etc) from the I18NResource endpoint
+   * and pre-cache them, so that we can retrieve them synchronously.
+   */
+  getErrorMessage(input):string{
+    let control = input.control
+    let message = ""
+    Object.keys(control.errors || {}).forEach((key) => {
+      let err = control.errors[key]
+       message +=  this._errorMessageFormatters[key]
+      if(Object.keys(err).length){
+        debugger
+      }
+    })
+    return message
   }
 
   onBlur(input){

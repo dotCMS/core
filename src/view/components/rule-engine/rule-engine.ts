@@ -16,14 +16,16 @@ import {
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
-
 /**
  *
  */
 @Component({
   selector: 'cw-rule-engine',
   directives: [CORE_DIRECTIVES, RuleComponent],
-  template: `<div class="cw-rule-engine">
+  template: `
+  <div class="cw-modal-glasspane"  [class.cw-loading]="loading" *ngIf="loading"></div>
+
+<div class="cw-rule-engine" *ngIf="!loading">
   <div class="cw-header">
     <div flex layout="row" layout-align="space-between center">
       <div flex layout="row" layout-align="space-between center" class="ui icon input">
@@ -44,12 +46,14 @@ const I8N_BASE:string = 'api.sites.ruleengine'
       <a href="javascript:void(0)" class="cw-filter-link" [class.active]="isFilteringField('enabled',false)" (click)="setFieldFilter('enabled',false)">{{rsrc('inputs.filter.status.inactive.label') | async}}</a>
     </div>
   </div>
-
   <rule *ngFor="var rule of rules" [rule]="rule" [hidden]="isFiltered(rule) == true"
          [conditionGroups]="rule._conditionGroups"
          [ruleActions]="rule._ruleActions"
          [ruleActionTypes]="ruleActionTypes"
          [conditionTypes]="conditionTypes"
+         [saved]="rule._saved"
+         [saving]="rule._saving"
+         [errors]="rule._errors"
         (updateName)="updateName.emit($event)"
         (updateFireOn)="updateFireOn.emit($event)"
         (updateEnabledState)="updateEnabledState.emit($event)"
@@ -64,6 +68,7 @@ const I8N_BASE:string = 'api.sites.ruleengine'
         (onUpdateConditionGroupOperator)="updateConditionGroupOperator.emit($event)"
         (updateConditionType)="updateConditionType.emit($event)"
         (updateConditionParameter)="updateConditionParameter.emit($event)"
+        (updateConditionOperator)="updateConditionOperator.emit($event)"
         (deleteCondition)="deleteCondition.emit($event)"
 
         (deleteRule)="deleteRule.emit($event)"></rule>
@@ -75,6 +80,7 @@ export class RuleEngineComponent {
 
   @Input() rules:RuleModel[]
   @Input() ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
+  @Input() loading:boolean
   @Input() conditionTypes:{[key:string]: ServerSideTypeModel} = {}
 
   @Output() createRule:EventEmitter<{type:string}> = new EventEmitter(false)

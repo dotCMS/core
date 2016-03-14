@@ -2,11 +2,9 @@ import {Injectable} from 'angular2/core';
 import {Observable} from 'rxjs/Rx'
 
 import {ApiRoot} from "../persistence/ApiRoot";
-import {ConditionTypeService} from "./ConditionType";
 import {ServerSideTypeModel} from "./ServerSideFieldModel";
 import {Http, Response} from "angular2/http";
 import {ConditionGroupModel, ConditionModel, ICondition} from "./Rule";
-import {codify} from "angular2/src/core/change_detection/codegen_facade";
 
 
 let noop = (...arg:any[])=> {
@@ -14,14 +12,12 @@ let noop = (...arg:any[])=> {
 
 @Injectable()
 export class ConditionService {
-  private _conditionTypeService:ConditionTypeService
   private _apiRoot:ApiRoot
   private _http:Http
   private _baseUrl:string
 
-  constructor(apiRoot:ApiRoot, conditionTypeService:ConditionTypeService, http:Http) {
+  constructor(apiRoot:ApiRoot, http:Http) {
     this._apiRoot = apiRoot
-    this._conditionTypeService = conditionTypeService
     this._http = http;
     this._baseUrl = `${apiRoot.baseUrl}api/v1/sites/${apiRoot.siteId}/ruleengine/conditions`
   }

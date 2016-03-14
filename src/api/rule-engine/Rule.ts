@@ -39,10 +39,19 @@ export function getNextId():string{
   return 'tempId' + ++idCounter
 }
 
+export class RuleEngineState {
+  loading:boolean = true
+  saving:boolean = false
+  hasError:boolean = false
+  filter:string = ''
+  deleting:boolean = false
+}
+
+
 export interface IRecord {
   _id?: string,
-  saving?: boolean
-  saved?: boolean
+  _saving?: boolean
+  _saved?: boolean
   deleting?: boolean
   errors?:any
   set?(string, any):any
@@ -81,8 +90,8 @@ export interface IRule extends IRecord {
   ruleActions?: any
   set?(string, any):IRule
   id?: string
-  saving?: boolean
-  saved?: boolean
+  _saving?: boolean
+  _saved?: boolean
   deleting?: boolean
   _id?: string
   _expanded?:boolean
@@ -102,7 +111,7 @@ export interface ParameterModel {
 
 export class ActionModel extends ServerSideFieldModel {
 
-  constructor(key:string, type:ServerSideTypeModel, rule:RuleModel, priority:number=1) {
+  constructor(key:string, type:ServerSideTypeModel, priority:number=1) {
     super(key, type, priority)
     this.priority = priority || 1
     this.type = type
@@ -127,6 +136,7 @@ export class ConditionModel extends ServerSideFieldModel {
     this.key = iCondition.id
     this.priority = iCondition.priority || 1
     this.type = iCondition._type
+    this.operator = iCondition.operator
   }
 
   isValid() {
@@ -158,6 +168,7 @@ export class ConditionGroupModel {
   isPersisted() {
     return this.key != null
   }
+
   isValid() {
     let valid = this.operator && (this.operator === 'AND' || this.operator === 'OR')
     return valid
@@ -177,12 +188,17 @@ export class RuleModel {
   _expanded:boolean = false
   _conditionGroups: ConditionGroupModel[] = []
   _ruleActions: ActionModel[] = []
+  _saved:boolean = true
+  _saving:boolean = false
+  _deleting:boolean = true
+  _errors:{[key:string]: any}
+
 
   constructor(iRule:IRule) {
     Object.assign(this, iRule)
     this.key = iRule.id
     this._id = this.key != null ? this.key : getNextId()
-    let conGroups = Object.keys(iRule.conditionGroups)
+    let conGroups = Object.keys(iRule.conditionGroups || {})
     conGroups.forEach(( groupId ) => {
       let g = this.conditionGroups[groupId]
       let mg = new ConditionGroupModel(Object.assign({id: groupId}, g))
@@ -220,10 +236,14 @@ export const DEFAULT_RULE:IRule = {
 export class RuleService {
   private _rulesEndpointUrl:string
   private _actionsEndpointUrl:string
+  private _conditionTypesEndpointUrl:string
+  private _ruleActionTypesEndpointUrl:string
 
   constructor(private _apiRoot:ApiRoot, private _http:Http) {
     this._rulesEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/rules`
     this._actionsEndpointUrl = `${this._apiRoot.defaultSiteUrl}/ruleengine/actions`
+    this._conditionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/conditionlets`
+    this._ruleActionTypesEndpointUrl = `${this._apiRoot.baseUrl}api/v1/system/ruleengine/actionlets`
 
   }
 
@@ -233,7 +253,7 @@ export class RuleService {
       method: RequestMethod.Post,
       url: this._rulesEndpointUrl
     }).map((result:RuleModel)=> {
-      body.key = result.key 
+      body.key = result['id'] // @todo:ggranum type the POST result correctly.
       return Object.assign({}, DEFAULT_RULE, body, result)
     });
   }
@@ -260,9 +280,7 @@ export class RuleService {
       method: RequestMethod.Get,
       url: `${this._rulesEndpointUrl}/${id}`
     }).map((result)=> {
-      let r = Object.assign({}, DEFAULT_RULE, result)
-      r.id = id
-      return r
+      return Object.assign({key:id}, DEFAULT_RULE, result)
     })
   }
 
@@ -285,7 +303,22 @@ export class RuleService {
     return result
   }
 
-  request(options:any):Observable<RuleModel[]|CwError|RuleModel|IConditionGroup> {
+  getConditionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method:RequestMethod.Get,
+      url: this._conditionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+  getRuleActionTypes():Observable<ServerSideTypeModel[]> {
+    return this.request({
+      method:RequestMethod.Get,
+      url: this._ruleActionTypesEndpointUrl,
+    }).map(RuleService.fromServerServersideTypesTransformFn)
+  }
+
+
+  request(options:any):Observable<RuleModel[]|ServerSideTypeModel[]|CwError|RuleModel|IConditionGroup> {
     options.headers = this._apiRoot.getDefaultRequestHeaders();
     var source = options.body
     if (options.body) {
@@ -329,10 +362,39 @@ export class RuleService {
   }
 
   static fromClientRuleTransformFn(rule:RuleModel):any{
-    let r = Object.assign({}, DEFAULT_RULE, rule)
-    r.key = rule.key
-    delete r.id
-    return r;
+    let sendRule = Object.assign({}, DEFAULT_RULE, rule)
+    sendRule.key = rule.key
+    delete sendRule.id
+    sendRule.conditionGroups = {}
+    sendRule._conditionGroups.forEach((conditionGroup:ConditionGroupModel)=>{
+      let sendGroup = {
+        operator: conditionGroup.operator,
+        priority: conditionGroup.priority,
+        conditions: {}
+      }
+      conditionGroup._conditions.forEach((condition:ConditionModel)=>{
+        sendGroup.conditions[condition.key] = true
+      })
+      sendRule.conditionGroups[conditionGroup.key] = sendGroup
+    })
+    RuleService.removeMeta(sendRule)
+    return sendRule;
+  }
+
+  static removeMeta(entity:any){
+    Object.keys(entity).forEach((key)=>{
+      if(key[0] == '_'){
+        delete entity[key]
+      }
+    })
+  }
+
+  static fromServerServersideTypesTransformFn(typesMap):ServerSideTypeModel[]{
+    return Object.keys(typesMap).map((key:string) => {
+      let json:any = typesMap[key]
+      json.key = key
+      return ServerSideTypeModel.fromJson(json)
+    })
   }
 
 }

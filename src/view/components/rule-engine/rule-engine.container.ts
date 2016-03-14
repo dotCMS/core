@@ -1,16 +1,18 @@
 import {Component, EventEmitter} from 'angular2/core'
 import {CORE_DIRECTIVES} from 'angular2/common'
-import {RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel} from "../../../api/rule-engine/Rule"
+import {
+    RuleModel, RuleService, ConditionGroupModel, ConditionModel, ActionModel,
+    RuleEngineState
+} from "../../../api/rule-engine/Rule"
 import {CwChangeEvent} from "../../../api/util/CwEvent";
 import {ServerSideFieldModel, ServerSideTypeModel} from "../../../api/rule-engine/ServerSideFieldModel";
 import {RuleEngineComponent} from "./rule-engine";
 import {ConditionService} from "../../../api/rule-engine/Condition";
 import {ActionService} from "../../../api/rule-engine/Action";
 import {ConditionGroupService} from "../../../api/rule-engine/ConditionGroup";
-import {ActionTypeService} from "../../../api/rule-engine/ActionType";
 import {I18nService} from "../../../api/system/locale/I18n";
-import {ConditionTypeService} from "../../../api/rule-engine/ConditionType";
 import {Observable} from "rxjs/Observable";
+import {CwError} from "../../../api/system/http-response-util";
 
 const I8N_BASE:string = 'api.sites.ruleengine'
 
@@ -53,6 +55,7 @@ export interface ConditionActionEvent extends RuleActionEvent {
       [rules]="rules"
       [ruleActionTypes]="_ruleActionTypes"
       [conditionTypes]="_conditionTypes"
+      [loading]="state.loading"
       (createRule)="onCreateRule($event)"
       (deleteRule)="onDeleteRule($event)"
       (updateName)="onUpdateRuleName($event)"
@@ -70,7 +73,6 @@ export interface ConditionActionEvent extends RuleActionEvent {
       (updateConditionParameter)="onUpdateConditionParameter($event)"
       (updateConditionOperator)="onUpdateConditionOperator($event)"
       (deleteCondition)="onDeleteCondition($event)"
-      
     ></cw-rule-engine>
 `
 })
@@ -78,21 +80,19 @@ export class RuleEngineContainer {
 
   rules:RuleModel[] = []
 
+  state:RuleEngineState = new RuleEngineState()
+
   private _ruleActionTypes:{[key:string]: ServerSideTypeModel} = {}
   private _conditionTypes:{[key:string]: ServerSideTypeModel} = {}
-
-
 
   rules$:EventEmitter<RuleModel[]> = new EventEmitter()
   ruleActions$:EventEmitter<ActionModel[]> = new EventEmitter()
   conditionGroups$:EventEmitter<ConditionGroupModel[]> = new EventEmitter()
 
   constructor(private _ruleService:RuleService,
-              private _ruleActionTypeService:ActionTypeService,
               private _ruleActionService:ActionService,
               private _conditionGroupService:ConditionGroupService,
               private _conditionService:ConditionService,
-              private _conditionTypeService:ConditionTypeService,
               private _resources:I18nService
   ) {
 
@@ -114,16 +114,18 @@ export class RuleEngineContainer {
   }
 
   private initRules() {
+    this.state.loading = true
     this._ruleService.loadRules().subscribe((rules:RuleModel[]) => {
       rules.sort(function (a, b) {
         return b.priority - a.priority;
       });
       this.rules$.emit(rules)
+      this.state.loading = false
     })
   }
 
   private initActionTypes() {
-    this._ruleActionTypeService.list().subscribe((types:ServerSideTypeModel[])=> {
+    this._ruleService.getRuleActionTypes().subscribe((types:ServerSideTypeModel[])=> {
       types.forEach(type => {
         type._opt = {value: type.key, label: this._resources.get(type.i18nKey + '.name', type.i18nKey)}
         this._ruleActionTypes[type.key] = type
@@ -132,7 +134,7 @@ export class RuleEngineContainer {
   }
 
   private initConditionTypes() {
-    this._conditionTypeService.allAsArray().subscribe((types:ServerSideTypeModel[])=> {
+    this._ruleService.getConditionTypes().subscribe((types:ServerSideTypeModel[])=> {
       types.sort(this.alphaSort('key'))
       console.log("RuleEngineContainer", "initConditionTypes", types)
       types.forEach(type => {
@@ -171,13 +173,19 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onCreateRule", event)
     let priority = this.rules.length ? this.rules[0].priority + 1 : 1;
     let rule = new RuleModel({ priority})
+    rule._saved = false
     this.rules$.emit([rule].concat(this.rules))
   }
   
   onDeleteRule(event:RuleActionEvent) {
+    console.log("RuleEngineContainer", "onDeleteRule")
     let rule = event.payload.rule
+    rule._deleting = true
+    this.state.deleting = true
     if (rule.isPersisted()) {
-      this._ruleService.deleteRule(rule.key)
+      this._ruleService.deleteRule(rule.key).subscribe(( result ) => {
+        this.state.deleting = false
+      })
     }
     let rules = this.rules.filter((arrayRule) => arrayRule.key !== rule.key)
     this.rules$.emit(rules)
@@ -186,20 +194,20 @@ export class RuleEngineContainer {
   onUpdateEnabledState(event:RuleActionEvent) {
     console.log("RuleEngineContainer", "onUpdateEnabledState", event)
     event.payload.rule.enabled = <boolean>event.payload.value
-    this.patchRule(event.payload.rule)
+    this.patchRule(event.payload.rule, false)
   }
 
   onUpdateRuleName(event:RuleActionEvent){
     console.log("RuleEngineContainer", "onUpdateRuleName", event)
     event.payload.rule.name = <string>event.payload.value
-    this.patchRule(event.payload.rule)
+    this.patchRule(event.payload.rule, false)
   }
 
 
   onUpdateFireOn(event:RuleActionEvent){
     console.log("RuleEngineContainer", "onUpdateFireOn", event)
     event.payload.rule.fireOn = <string>event.payload.value
-    this.patchRule(event.payload.rule)
+    this.patchRule(event.payload.rule, false)
   }
 
   onUpdateExpandedState(event:RuleActionEvent) {
@@ -212,61 +220,60 @@ export class RuleEngineContainer {
      */
     let rule = event.payload.rule
     rule._expanded = <boolean>event.payload.value
-    let obs2:Observable<ConditionGroupModel>
-    if (rule._conditionGroups.length == 0) {
-      let obs:Observable<ConditionGroupModel[]> = this._conditionGroupService.allAsArray(rule.key, Object.keys(rule.conditionGroups))
-      obs2 = obs.flatMap((groups:ConditionGroupModel[]) => Observable.from(groups))
-    } else {
-      obs2 = Observable.from(rule._conditionGroups)
-    }
-    let obs3:Observable<ConditionGroupModel> = obs2.flatMap(
-        (group:ConditionGroupModel) => this._conditionService.listForGroup(group, this._conditionTypes),
-        (group:ConditionGroupModel, conditions:ConditionModel[])=> {
-          if (conditions) {
-            conditions.forEach((condition:ConditionModel)=> {
-              condition.type = this._conditionTypes[condition.conditionlet]
-            })
-          }
-          group._conditions = conditions
-          return group
-        }
-    )
-
-    let obs4:Observable<ConditionGroupModel[]> = obs3.reduce(
-        (acc:ConditionGroupModel[], group:ConditionGroupModel) => {
-          if (group._conditions.length == 0) {
-            debugger
-          }
-          acc.push(group)
-          return acc
-        }, [])
-
-    obs4.subscribe((groups:ConditionGroupModel[]) => {
-      rule._conditionGroups = groups
-      if (rule._conditionGroups.length === 0) {
-        console.log("RuleEngineContainer", "conditionGroups", "Add stub group")
-        let group = new ConditionGroupModel({operator: 'AND', priority: 1})
-        group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
-        rule._conditionGroups.push(group)
+    if (rule._expanded) {
+      let obs2:Observable<ConditionGroupModel>
+      if (rule._conditionGroups.length == 0) {
+        let obs:Observable<ConditionGroupModel[]> = this._conditionGroupService.allAsArray(rule.key, Object.keys(rule.conditionGroups))
+        obs2 = obs.flatMap((groups:ConditionGroupModel[]) => Observable.from(groups))
       } else {
-        rule._conditionGroups.sort(this.prioritySortFn)
-        rule._conditionGroups.forEach((group:ConditionGroupModel) => group._conditions.sort(this.prioritySortFn))
+        obs2 = Observable.from(rule._conditionGroups)
       }
-    }, (e)=> {
-      console.error("RuleEngineContainer", e)
-    })
+      let obs3:Observable<ConditionGroupModel> = obs2.flatMap(
+          (group:ConditionGroupModel) => this._conditionService.listForGroup(group, this._conditionTypes),
+          (group:ConditionGroupModel, conditions:ConditionModel[])=> {
+            if (conditions) {
+              conditions.forEach((condition:ConditionModel)=> {
+                condition.type = this._conditionTypes[condition.conditionlet]
+              })
+            }
+            group._conditions = conditions
+            return group
+          }
+      )
 
-    if (rule._ruleActions.length == 0) {
-      this._ruleActionService.allAsArray(rule.key, Object.keys(rule.ruleActions), this._ruleActionTypes).subscribe((actions) => {
-        rule._ruleActions = actions
-        if (rule._ruleActions.length === 0) {
-          let action = new ActionModel(null, new ServerSideTypeModel(), rule, 1)
-          rule._ruleActions.push(action)
-          rule._ruleActions.sort(this.prioritySortFn)
+      let obs4:Observable<ConditionGroupModel[]> = obs3.reduce(
+          (acc:ConditionGroupModel[], group:ConditionGroupModel) => {
+            acc.push(group)
+            return acc
+          }, [])
+
+      obs4.subscribe((groups:ConditionGroupModel[]) => {
+        rule._conditionGroups = groups
+        if (rule._conditionGroups.length === 0) {
+          console.log("RuleEngineContainer", "conditionGroups", "Add stub group")
+          let group = new ConditionGroupModel({operator: 'AND', priority: 1})
+          group._conditions.push(new ConditionModel({priority: 1, _type: new ServerSideTypeModel(), operator: 'AND'}))
+          rule._conditionGroups.push(group)
         } else {
-          rule._ruleActions.sort(this.prioritySortFn)
+          rule._conditionGroups.sort(this.prioritySortFn)
+          rule._conditionGroups.forEach((group:ConditionGroupModel) => group._conditions.sort(this.prioritySortFn))
         }
+      }, (e)=> {
+        console.error("RuleEngineContainer", e)
       })
+
+      if (rule._ruleActions.length == 0) {
+        this._ruleActionService.allAsArray(rule.key, Object.keys(rule.ruleActions), this._ruleActionTypes).subscribe((actions) => {
+          rule._ruleActions = actions
+          if (rule._ruleActions.length === 0) {
+            let action = new ActionModel(null, new ServerSideTypeModel(), 1)
+            rule._ruleActions.push(action)
+            rule._ruleActions.sort(this.prioritySortFn)
+          } else {
+            rule._ruleActions.sort(this.prioritySortFn)
+          }
+        })
+      }
     }
   }
 
@@ -274,17 +281,11 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onCreateRuleAction", event)
     let rule = event.payload.rule
     let priority = rule._ruleActions.length ? rule._ruleActions[rule._ruleActions.length - 1].priority + 1 : 1
-    let entity = new ActionModel(null, new ServerSideTypeModel(), rule, priority)
-    if (entity.isValid()) {
-      this._ruleActionService.add(rule.key, entity).subscribe((result)=>{
-        rule._ruleActions.push(entity)
-        rule._ruleActions.sort(this.prioritySortFn)
-      })
-    } else {
-      rule._ruleActions.push(entity)
-      rule._ruleActions.sort(this.prioritySortFn)
-    }
+    let entity = new ActionModel(null, new ServerSideTypeModel(), priority)
 
+    this.patchRule(rule, true)
+    rule._ruleActions.push(entity)
+    rule._saved = false
   }
 
   onDeleteRuleAction(event:RuleActionActionEvent) {
@@ -312,7 +313,7 @@ export class RuleEngineContainer {
       let rule = event.payload.rule
       let idx = event.payload.index
       let type:ServerSideTypeModel = this._ruleActionTypes[<string>event.payload.value]
-      rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, rule, ruleAction.priority)
+      rule._ruleActions[idx] = new ActionModel(ruleAction.key, type, ruleAction.priority)
       this.patchAction(rule, ruleAction)
     } catch (e) {
       console.error("RuleComponent", "onActionTypeChange", e)
@@ -340,7 +341,7 @@ export class RuleEngineContainer {
     console.log("RuleEngineContainer", "onUpdateConditionGroupOperator")
     let group = event.payload.conditionGroup
     group.operator = <string>event.payload.value
-    this.patchConditionGroup(event.payload.rule, group)
+    this.patchRule(event.payload.rule)
   }
 
   onDeleteConditionGroup(event:ConditionGroupActionEvent) {
@@ -352,18 +353,11 @@ export class RuleEngineContainer {
 
   onCreateCondition(event:ConditionActionEvent){
     let rule = event.payload.rule
-    let parent = event.payload.conditionGroup
-    let priority = parent._conditions.length ? parent._conditions[parent._conditions.length - 1].priority + 1 : 1
+    let group = event.payload.conditionGroup
+    let priority = group._conditions.length ? group._conditions[group._conditions.length - 1].priority + 1 : 1
     let entity = new ConditionModel({ priority:priority, _type:new ServerSideTypeModel(), operator: 'AND'})
-
-    if (entity.isValid()) {
-      this._conditionService.add(parent.key, entity).subscribe((result)=>{
-        console.log("RuleEngineContainer", "createdCondition", result)
-      })
-    } else {
-      parent._conditions.push(entity)
-    }
-    this.patchCondition(rule, parent, entity)
+    group._conditions.push(entity)
+    rule._saved = false
   }
 
   onUpdateConditionType(event:ConditionActionEvent) {
@@ -374,7 +368,9 @@ export class RuleEngineContainer {
       let rule = event.payload.rule
       let idx = event.payload.index
       let type:ServerSideTypeModel = this._conditionTypes[<string>event.payload.value]
-      group._conditions[idx] = new ConditionModel({id: condition.key, _type: type, priority:condition.priority})
+      // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
+      condition = new ConditionModel({id: condition.key, _type: type, priority:condition.priority})
+      group._conditions[idx] = condition
       this.patchCondition(rule, group, condition)
     } catch (e) {
       console.error("RuleComponent", "onActionTypeChange", e)
@@ -396,7 +392,7 @@ export class RuleEngineContainer {
   }
 
   onDeleteCondition(event:ConditionActionEvent) {
-    console.log("RuleEngineContainer", "onDeleteRuleAction", event)
+    console.log("RuleEngineContainer", "onDeleteCondition", event)
     let group = event.payload.conditionGroup
     let condition = event.payload.condition
     if (condition.isPersisted()) {
@@ -409,68 +405,116 @@ export class RuleEngineContainer {
         }
       })
     }
-
   }
 
+  ruleUpdating(rule, disable:boolean = true){
+    if(disable && rule.enabled && rule.key){
+      console.log("RuleEngineContainer", "ruleUpdating", "disabling rule due for edit.")
+      this.patchRule(rule, true)
+    }
+    rule._saved = false
+    rule._saving = true
+    rule._errors = null
+  }
 
-  patchRule(rule:RuleModel) {
+  ruleUpdated(rule:RuleModel, errors?:{[key:string]: any}){
+    rule._saving = false
+    if (!errors) {
+      rule._saved = true
+    }
+    else {
+      rule._errors = errors
+    }
+  }
+
+  patchRule(rule:RuleModel, disable:boolean=true) {
+    this.ruleUpdating(rule, false)
+    if(disable && rule.enabled){
+      rule.enabled = false
+    }
     if (rule.isValid()) {
       if (rule.isPersisted()) {
-        this._ruleService.updateRule(rule.key, rule)
+        this._ruleService.updateRule(rule.key, rule).subscribe(() => {
+          this.ruleUpdated(rule)
+        }, (e:CwError)=>{
+            this.ruleUpdated(rule, {serverError: e.message})
+        })
       }
       else {
-        this._ruleService.createRule(rule);
+        this._ruleService.createRule(rule).subscribe(() => {
+          this.ruleUpdated(rule)
+        }, (e:CwError)=>{
+          this.ruleUpdated(rule, {serverError: e.message})
+        })
       }
+    } else{
+      this.ruleUpdated(rule, {
+        invalid: "Cannot save, rule is not valid."
+      })
     }
     // this.updateActiveRuleCount()
   }
 
   patchAction(rule:RuleModel, ruleAction:ActionModel) {
+    this.ruleUpdating(rule)
     if (ruleAction.isValid()) {
       if (!ruleAction.isPersisted()) {
-        this._ruleActionService.add(rule.key, ruleAction).subscribe((result)=>{
+        this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe((result)=>{
+          this.ruleUpdated(rule)
+        }, (e:CwError)=>{
+          this.ruleUpdated(rule, {invalid: e.message})
         })
       } else {
-        this._ruleActionService.save(rule.key, ruleAction).subscribe((result)=>{
-          console.log("RuleEngineContainer", "patchAction", "ruleAction patched")
+        this._ruleActionService.updateRuleAction(rule.key, ruleAction).subscribe((result)=>{
+          this.ruleUpdated(rule)
+        }, (e:any)=>{
+          this.ruleUpdated(rule, {invalid: e.message})
         })
       }
-    }
-  }
-
-  patchConditionGroup(rule:RuleModel, conditionGroup:ConditionGroupModel) {
-    if (conditionGroup.isValid()) {
-      if (!conditionGroup.isPersisted()) {
-        this._conditionGroupService.add(rule.key, conditionGroup).subscribe((result)=>{ })
-      } else {
-        this._conditionGroupService.save(rule.key, conditionGroup)
-      }
+    }else{
+      this.ruleUpdated(rule, {
+        invalid: "Cannot save, action is not valid."
+      })
     }
   }
 
   patchCondition(rule:RuleModel, group:ConditionGroupModel, condition:ConditionModel) {
+    this.ruleUpdating(rule)
     try {
       if (condition.isValid()) {
         if (condition.isPersisted()) {
           this._conditionService.save(group.key, condition).subscribe((result)=>{
-            console.log("RuleEngineContainer", "conditionSaved", result)
+            this.ruleUpdated(rule)
+          }, (e:any)=>{
+            this.ruleUpdated(rule, {invalid: e.message})
           })
         } else {
           if (!group.isPersisted()) {
-            this._conditionGroupService.add(rule.key, group).subscribe((foo) => {
+            this._conditionGroupService.createConditionGroup(rule.key, group).subscribe((foo) => {
               this._conditionService.add(group.key, condition).subscribe(() => {
                 group.conditions[condition.key] = true
+                this.ruleUpdated(rule)
+              }, (e:CwError)=>{
+                this.ruleUpdated(rule, {invalid: e.message})
               })
             })
           } else {
             this._conditionService.add(group.key, condition).subscribe(() => {
               group.conditions[condition.key] = true
+              this.ruleUpdated(rule)
+            }, (e:CwError)=>{
+              this.ruleUpdated(rule, {invalid: e.message})
             })
           }
         }
+      } else {
+        console.log("RuleEngineContainer", "patchCondition", "Not valid")
+        rule._saving = false
+        rule._errors = { invalid: "Condition not valid." }
       }
     } catch (e) {
       console.error(e)
+      this.ruleUpdated(rule, {invalid: e.message})
     }
   }
 
